@@ -89,6 +89,8 @@ pub fn main(init: std.process.Init) !void {
 }
 
 test {
+    _ = @import("services/artwork.zig");
+    _ = @import("services/tray.zig");
     _ = adapter;
     _ = @import("aqueous/icons.zig");
     _ = @import("aqueous/transport.zig");

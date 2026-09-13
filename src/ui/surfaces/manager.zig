@@ -86,6 +86,7 @@ pub const Manager = struct {
     power: @import("../../services/power.zig").Power = undefined,
     network: @import("../../services/network.zig").Network = undefined,
     bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
+    session_services: @import("../../services/session.zig").Session = undefined,
     services_started: bool = false,
     osd_label: ?*gtk.Label = null,
     osd_pending: @import("../../services/policy.zig").Text(512) = .{},
@@ -122,11 +123,13 @@ pub const Manager = struct {
         if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_BACKLIGHT")) |root| self.power.backlight_root.set(std.mem.span(root));
         self.network = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
         self.bluetooth = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
+        self.session_services = .{ .app = self.app.as(gio.Application), .context = self, .changed = sessionChanged };
         self.services_started = true;
         self.audio.start();
         self.power.start();
         self.network.start();
         self.bluetooth.start();
+        self.session_services.start();
         self.armClock();
         gtk.IconTheme.getForDisplay(self.display).addResourcePath("/org/aqueous/Pearl/icons");
         self.monitor_signal = gio.ListModel.signals.items_changed.connect(self.display.getMonitors(), *Manager, monitorsChanged, self, .{});
@@ -150,6 +153,7 @@ pub const Manager = struct {
             self.power.stop();
             self.network.stop();
             self.bluetooth.stop();
+            self.session_services.stop();
             self.services_started = false;
         }
         if (self.osd_flush != 0) _ = glib.Source.remove(self.osd_flush);
@@ -167,6 +171,10 @@ pub const Manager = struct {
         self.hideOsd();
         for (self.outputs.items) |o| o.destroy();
         self.outputs.clearRetainingCapacity();
+    }
+    fn sessionChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.servicesChanged();
     }
     fn servicesChanged(self: *Manager) void {
         if (!self.running) return;
@@ -569,13 +577,16 @@ pub const Manager = struct {
         }
     }
     pub fn control(self: *Manager, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
+        if (request.op == .session_status) return self.session_services.status(alloc, request.offset orelse 0);
         if (request.op == .status) return self.status(alloc);
         if (request.op == .connectivity_status) return @import("../../services/connectivity_status.zig").encode(alloc, &self.network, &self.bluetooth, request.offset orelse 0);
         if (request.op == .services_status) return std.json.Stringify.valueAlloc(alloc, try self.serviceStatus(alloc, request.offset orelse 0), .{});
         if (self.client.availability != .ready) return error.Unavailable;
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         switch (request.op) {
-            .status, .services_status, .connectivity_status => unreachable,
+            .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .session_action => { try self.session_services.act(request); return "{\"queued\":true}"; },
+            .notifications_toggle, .media_toggle, .tray_toggle => {},
             .connectivity_action => {
                 if (request.service.? == .network) {
                     if (request.generation.? != self.network.peer.epoch) return error.Unavailable;

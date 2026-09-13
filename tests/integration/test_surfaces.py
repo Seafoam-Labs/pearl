@@ -294,6 +294,9 @@ def blur(args, checks):
         ctl(s, args.ctl, 'popup', 'show', '--output', target['id'])
         time.sleep(.3)
         enabled = capture(s, 'native-blur', target['connector'])
+        # Aqueous now reaches Pearl's notification daemon on each config reload.
+        # Suppress those toasts so this experiment measures only the blur rule.
+        ctl(s, args.ctl, 'session', 'action', '--command', 'dnd_on')
         rules = Path(s.env['XDG_CONFIG_HOME']) / 'aqueous/rules.toml'
         original = rules.read_text() if rules.exists() else ''
         reloads = sum('configuration hot-reloaded' in line for line in s.compositor.lines)

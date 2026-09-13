@@ -248,8 +248,10 @@ pub const Export = struct {
     node: ?*gio.DBusNodeInfo = null,
     id: c_uint = 0,
     pub fn start(self: *Export, peer: *Peer, object_path: [:0]const u8, xml: [:0]const u8, vtable: *const gio.DBusInterfaceVTable, data: *anyopaque) bool {
+        return self.startConnection(peer.connection() orelse return false, object_path, xml, vtable, data);
+    }
+    pub fn startConnection(self: *Export, conn: *gio.DBusConnection, object_path: [:0]const u8, xml: [:0]const u8, vtable: *const gio.DBusInterfaceVTable, data: *anyopaque) bool {
         self.stop();
-        const conn = peer.connection() orelse return false;
         const node = gio.DBusNodeInfo.newForXml(xml, null) orelse return false;
         self.node = node;
         conn.ref();

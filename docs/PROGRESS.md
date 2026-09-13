@@ -1,5 +1,41 @@
 # Pearl implementation progress
 
+## T09 — Complete, September 13, 2026
+
+Implemented notification, StatusNotifier/DBusMenu and MPRIS services in Zig 0.16.0
+using the pinned Ghostty GIO/GTK bindings. Notification replacement, exact action
+keys, resident/transient behavior and closure reasons are verified by real
+private protocol clients. A bounded, grouped in-memory history and DND accompany
+independent non-keyboard toast surfaces. Actual Aqueous lock/unlock suppresses
+content and actions without replaying locked deliveries.
+
+The bar renders tray pixmaps/icons and exposes overflow. A watcher/host follows
+registration and unique owners, cooperates with an existing watcher, and renders
+nested DBusMenu entries with toggle, visibility and sensitivity state. Media
+cards offer player selection, capability-aware controls and track-bound seeking.
+Progress timers belong to open playing views. One cancellable artwork worker
+accepts bounded local PNG/JPEG files; remote URLs intentionally use a fallback.
+
+Existing notification/tray service names are never replaced. A private session
+bus restart exposed GApplication retaining a closed shared GIO connection; the
+service transport now creates an independent connection for reconnects. Owners,
+menu revisions and transport epochs reject stale replies and user actions.
+A blur regression also exposed actual Aqueous configuration-reload notifications;
+that pixel experiment now enables DND to isolate its blur variable.
+
+Verification: 70 tests across the pure, adapter and binding test binaries;
+18 private T09 groups including real GTK keyboard actions, seek edits surviving
+progress ticks, nested menu navigation, real lock/unlock, owner churn, limits,
+production ownership conflicts and session-bus restart. Existing connectivity,
+audio/power, desktop, surface/blur and lifecycle suites pass. Exact counts,
+binary/source hashes and logs are recorded in [T09 verification](../artifacts/t09/verification/README.md).
+[Actual captures beside DMS](../artifacts/t09/comparison.html) cover history/toasts,
+media and nested tray menus. The protocol/CLI contract and supported limits are
+in [SESSION_SERVICES.md](SESSION_SERVICES.md).
+
+T10 is the next numbered task. T08's physical scan acceptance remains pending;
+no host Wi-Fi/Bluetooth state was changed for T09.
+
 ## T08 — Implemented; physical scan acceptance pending, September 13, 2026
 
 Implemented NetworkManager and BlueZ through the pinned Ghostty GIO bindings in
@@ -43,7 +79,7 @@ NetworkManager to autoconnect a saved profile. User approval for this host state
 change is pending, so **T08's physical scan acceptance is not marked complete**.
 Actual physical secure association/pairing has not been claimed from fake tests.
 
-T09 is the next implementation task after T08 acceptance.
+T09 proceeded on its T06 dependency; the separate T08 physical scan gate remains pending.
 
 ## T07 — Complete, September 13, 2026
 

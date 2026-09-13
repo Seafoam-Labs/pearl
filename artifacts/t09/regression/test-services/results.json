@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "checks": {
+    "initial-audio-battery-logind-profiles-and-validated-backlight": true,
+    "rapid-volume-final-value-mute-balance-and-default-change-bind-identity": true,
+    "playback-recording-streams-volume-mute-and-routing": true,
+    "delayed-brightness-and-profile-writes-coalesce-final-intent": true,
+    "brightness-denial-preserves-independent-pending-profile-intent": true,
+    "permission-denied-retains-authoritative-value-and-visible-error": true,
+    "battery-removal-session-inactive-and-logind-preparation": true,
+    "backlight-removal-does-not-crash-open-panel": true,
+    "power-owner-restart-discards-old-pending-actions": true,
+    "legacy-power-profile-service-fallback": true,
+    "system-bus-restart-does-not-exit-shell": true,
+    "audio-server-restart-reenumerates-and-rejects-stale-generation": true,
+    "rapid-osd-replacement-keeps-focus-and-expires": true,
+    "real-power-button-requires-confirmation-and-reflects-denial-and-acceptance": true,
+    "pending-service-shutdown-and-no-incidental-power-off": true
+  },
+  "pearl_sha256": "52f0f23c4a609b047fe8795a21d128733551860347128c204dd6989927b5e2f4",
+  "ctl_sha256": "cf43b9264d99b86849ffaba0420233a9cfe0926422b8014b192b0d95e019b93d"
+}

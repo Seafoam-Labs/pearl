@@ -1,0 +1,28 @@
+Build Summary: 22/22 steps succeeded; 70/70 tests passed
+install success
++- install pearl success
+|  +- compile exe pearl ReleaseSafe native cached 18ms MaxRSS:56M
+|     +- run pkg-config success 1ms
+|     +- translate-c cached 16ms MaxRSS:55M
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|        +- compile exe zig-wayland-scanner Debug native cached 12ms MaxRSS:53M
++- install pearl-t00 cached
+|  +- compile exe pearl-t00 ReleaseSafe native cached 19ms MaxRSS:56M
+|     +- run pkg-config (reused)
+|     +- translate-c (reused)
++- install pearlctl cached
+   +- compile exe pearlctl ReleaseSafe native cached 17ms MaxRSS:58M
+test success
++- run test 53 pass (53 total) 82ms MaxRSS:10M
+   +- compile test ReleaseSafe native cached 11ms MaxRSS:54M
+test-adapter-unit success
++- run test 16 pass (16 total) 3ms MaxRSS:13M
+   +- compile test ReleaseSafe native success 8s MaxRSS:343M
+test-bindings success
++- run test 1 pass (1 total) 1ms MaxRSS:13M
+   +- compile test ReleaseSafe native cached 17ms MaxRSS:56M
+      +- run pkg-config (reused)
+      +- translate-c (reused)
+

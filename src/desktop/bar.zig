@@ -8,7 +8,7 @@ const policy = @import("policy.zig");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
-pub const Pane = enum { launcher, calendar, control };
+pub const Pane = enum { launcher, calendar, control, notifications, media, tray };
 pub const Event = union(enum) { pane: Pane, workspace: []const u8, keyboard, overview };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
@@ -17,6 +17,10 @@ pub const Bar = struct {
     power_service: *@import("../services/power.zig").Power,
     network_service: *@import("../services/network.zig").Network,
     bluetooth_service: *@import("../services/bluetooth.zig").Bluetooth,
+    session_services: *@import("../services/session.zig").Session,
+    tray: ?*@import("tray.zig").Bar = null,
+    notification_label: ?*gtk.Label = null,
+    media_label: ?*gtk.Label = null,
     network_label: ?*gtk.Label = null,
     bluetooth_label: ?*gtk.Label = null,
     audio_label: ?*gtk.Label = null,
@@ -38,9 +42,9 @@ pub const Bar = struct {
     keyboard: ?*gtk.Label = null,
     vertical: bool = false,
     compact: bool = false,
-    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth) !*Bar {
+    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session) !*Bar {
         const self = try a.create(Bar);
-        self.* = .{ .host = host, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
+        self.* = .{ .host = host, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
         self.groups = .{ try a.dupeZ(u8, "launcher,workspaces,title"), try a.dupeZ(u8, "clock"), try a.dupeZ(u8, (policy.Groups{}).right) };
         try self.build();
         return self;
@@ -59,6 +63,7 @@ pub const Bar = struct {
         list.* = .empty;
     }
     fn clear(self: *Bar) void {
+        if (self.tray) |tray| tray.destroy(); self.tray = null; self.notification_label = null; self.media_label = null;
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         freeHandlers(&self.handlers);
         freeHandlers(&self.workspace_handlers);
@@ -125,6 +130,19 @@ pub const Bar = struct {
             while (parts.next()) |part| {
                 const item = std.meta.stringToEnum(policy.Item, part) orelse continue;
                 const widget: *gtk.Widget = switch (item) {
+                    .tray => blk: {
+                        const tray_host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
+                        self.tray = try @import("tray.zig").Bar.create(tray_host, &self.session_services.tray, self, openTray);
+                        break :blk tray_host.as(gtk.Widget);
+                    },
+                    .notifications, .media => blk: {
+                        const button = try self.makeButton(.{ .pane = if (item == .media) .media else .notifications }, null, "", false);
+                        const content = w.row(4); content.append(w.icon(if (item == .media) "pearl-media-symbolic" else "pearl-notifications-symbolic").as(gtk.Widget));
+                        const label = gtk.Label.new(""); label.setEllipsize(.end); label.setMaxWidthChars(if (item == .media) 16 else 4); content.append(label.as(gtk.Widget)); button.setChild(content.as(gtk.Widget));
+                        if (item == .media) self.media_label = label else self.notification_label = label;
+                        w.name(button.as(gtk.Widget), if (item == .media) "Media" else "Notifications");
+                        break :blk button.as(gtk.Widget);
+                    },
                     .launcher => (try self.makeButton(.{ .pane = .launcher }, "pearl-application-x-executable-symbolic", tr("Applications", "Programme"), false)).as(gtk.Widget),
                     .overview => (try self.makeButton(.overview, "pearl-view-grid-symbolic", tr("Overview", "Übersicht"), false)).as(gtk.Widget),
                     .control => (try self.makeButton(.{ .pane = .control }, "pearl-emblem-system-symbolic", tr("Control center", "Schnelleinstellungen"), false)).as(gtk.Widget),
@@ -213,7 +231,14 @@ pub const Bar = struct {
         if (self.widgets[@intFromEnum(policy.Item.overview)]) |v| v.setVisible(@intFromBool(!self.compact));
         // Primary controls survive; overview also lives in the control center.
     }
+    fn openTray(data: *anyopaque) void { const self: *Bar = @ptrCast(@alignCast(data)); self.action(self.context, .{ .pane = .tray }); }
     pub fn update(self: *Bar) void {
+        if (self.tray) |tray| tray.update();
+        if (self.notification_label) |label| {
+            var count: usize = 0; for (&self.session_services.notifications.model.records) |*r| if (r.id != 0) { count += 1; };
+            var buf: [20]u8 = undefined; label.setText(std.fmt.bufPrintZ(&buf, "{s}{d}", .{if (self.session_services.notifications.model.dnd) "− " else "", count}) catch "");
+        }
+        if (self.media_label) |label| label.setText(if (self.session_services.media.current()) |p| p.title.z() else "");
         var service_buffer: [256]u8 = undefined;
         if (self.audio_label) |label| {
             const device = self.audio_service.default(.sink);

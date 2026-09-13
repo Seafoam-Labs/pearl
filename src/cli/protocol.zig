@@ -5,13 +5,19 @@ pub const Edge = @import("../ui/surfaces/policy.zig").Edge;
 pub const max_frame = 8192;
 pub const ConnectivityService = enum { network, bluetooth };
 pub const ConnectivityAction = enum { scan, connect, connect_saved, disconnect, enable, disable, cancel, pair, trust, untrust, discover, stop_discovery };
-pub const Op = enum { connectivity_status, connectivity_action, status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit, launcher_show, launcher_hide, launcher_toggle, control_show, control_toggle, calendar_toggle, bar_groups, layout_get, layout_set, overview_toggle, services_status, audio_set, brightness_set, profile_set };
+pub const SessionAction = enum { dnd_on, dnd_off, clear_history, dismiss, invoke, select, play_pause, play, pause, stop, next, previous, seek, tray_activate, tray_secondary, tray_menu, tray_click };
+pub const Op = enum { session_status, session_action, notifications_toggle, media_toggle, tray_toggle, connectivity_status, connectivity_action, status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit, launcher_show, launcher_hide, launcher_toggle, control_show, control_toggle, calendar_toggle, bar_groups, layout_get, layout_set, overview_toggle, services_status, audio_set, brightness_set, profile_set };
 pub const Request = struct {
     pearl: u32 = 1,
     id: []const u8 = "1",
     session: []const u8 = "",
     display: []const u8 = "",
     op: Op,
+    command: ?SessionAction = null,
+    notification: ?u32 = null,
+    position: ?i64 = null,
+    menu_id: ?i32 = null,
+    revision: ?u64 = null,
     service: ?ConnectivityService = null,
     action: ?ConnectivityAction = null,
     path: ?[]const u8 = null,
@@ -78,11 +84,13 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
         if (std.mem.eql(u8, key, "pearl") or std.mem.eql(u8, key, "id") or std.mem.eql(u8, key, "session") or std.mem.eql(u8, key, "display") or std.mem.eql(u8, key, "op")) continue;
         const allowed = switch (r.op) {
             .status, .popup_hide, .launcher_hide, .quit => &[_][]const u8{},
-            .popup_show, .popup_toggle, .launcher_show, .launcher_toggle, .control_show, .control_toggle, .calendar_toggle, .overview_toggle, .layout_get => &[_][]const u8{"output"},
+            .notifications_toggle, .media_toggle, .tray_toggle, .popup_show, .popup_toggle, .launcher_show, .launcher_toggle, .control_show, .control_toggle, .calendar_toggle, .overview_toggle, .layout_get => &[_][]const u8{"output"},
             .bar_set, .frame_set => &[_][]const u8{ "output", "edge", "size" },
             .osd_show => &[_][]const u8{ "output", "text", "duration_ms" },
             .bar_groups => &[_][]const u8{ "output", "left", "center", "right" },
             .layout_set => &[_][]const u8{ "output", "layout" },
+            .session_status => &[_][]const u8{"offset"},
+            .session_action => &[_][]const u8{ "command", "notification", "generation", "position", "menu_id", "revision", "text" },
             .connectivity_status => &[_][]const u8{"offset"},
             .connectivity_action => &[_][]const u8{ "service", "action", "path", "generation" },
             .services_status => &[_][]const u8{"offset"},
@@ -99,6 +107,19 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     }
     if (r.output) |id| if (id.len == 0 or id.len > 1024 or std.mem.indexOfScalar(u8, id, 0) != null) return error.InvalidRequest;
     switch (r.op) {
+        .session_status => if ((r.offset orelse 0) > 64) return error.InvalidRequest,
+        .session_action => {
+            const c = r.command orelse return error.InvalidRequest;
+            const note = c == .dismiss or c == .invoke;
+            const player = c == .select or c == .play_pause or c == .play or c == .pause or c == .stop or c == .next or c == .previous or c == .seek;
+            const tray = c == .tray_activate or c == .tray_secondary or c == .tray_menu or c == .tray_click;
+            if (note != (r.notification != null) or (player or tray) != (r.generation != null) or (c == .seek) != (r.position != null) or (c == .invoke) != (r.text != null) or (c == .tray_click) != (r.revision != null)) return error.InvalidRequest;
+            if (r.notification == 0 or r.generation == 0) return error.InvalidRequest;
+            if (r.menu_id != null and c != .tray_menu and c != .tray_click) return error.InvalidRequest;
+            if (c == .tray_click and r.menu_id == null) return error.InvalidRequest;
+            if (r.position) |v| if (v < 0) return error.InvalidRequest;
+            if (r.text) |v| if (v.len == 0 or v.len > 96 or std.mem.indexOfScalar(u8, v, 0) != null) return error.InvalidRequest;
+        },
         .connectivity_action => {
             const service = r.service orelse return error.InvalidRequest;
             const action = r.action orelse return error.InvalidRequest;

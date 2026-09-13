@@ -23,6 +23,8 @@ zig build test-bindings -Doptimize=ReleaseSafe
 zig build test-components -Doptimize=ReleaseSafe
 zig build test-desktop -Doptimize=ReleaseSafe
 zig build test-services -Doptimize=ReleaseSafe
+zig build test-connectivity -Doptimize=ReleaseSafe
+zig build test-session-services -Doptimize=ReleaseSafe
 zig build integration -Doptimize=ReleaseSafe
 ```
 

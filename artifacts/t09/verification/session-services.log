@@ -1,0 +1,47 @@
+{
+  "status": "passed",
+  "checks": {
+    "initial-mpris-owner-discovery-and-sni-registration-pixmap": true,
+    "truthful-notification-capabilities": true,
+    "replacement-history-and-toast-popup-coexistence": true,
+    "notification-action-through-gtk-keyboard": true,
+    "action-residency-transient-expiry-and-all-closure-reasons": true,
+    "dnd-history-no-replay-and-bounded-bursts": true,
+    "real-aqueous-lock-hides-content-blocks-actions-and-prevents-replay": true,
+    "keyboard-seek-edit-survives-progress-timer-and-focus-change": true,
+    "media-keyboard-controls-position-capabilities-and-rejection": true,
+    "bounded-cancellable-artwork-local-only-and-hidden-view-timers": true,
+    "tray-activation-secondary-and-nested-dbusmenu-keyboard-actions": true,
+    "malformed-pixmaps-menu-limits-and-stale-menu-rejection": true,
+    "owner-loss-restart-and-stale-replies-clean-cards": true,
+    "player-selection-falls-back-after-owner-exit": true,
+    "clean-shutdown": true,
+    "existing-daemon-respected-and-external-watcher-hosting": true,
+    "queued-names-acquired-after-existing-services-exit": true,
+    "production-session-bus-reconnect-restores-protocols": true
+  },
+  "pearl_sha256": "52f0f23c4a609b047fe8795a21d128733551860347128c204dd6989927b5e2f4",
+  "ctl_sha256": "cf43b9264d99b86849ffaba0420233a9cfe0926422b8014b192b0d95e019b93d",
+  "production_sha256": "ce47da776a3ebedf13ec8e5b9d004f4a5cdbb2b3acddf421cc560d5904f48389"
+}
+Build Summary: 13/13 steps succeeded
+test-session-services success
++- run python3 success 23s
+   +- compile exe pearl-integration ReleaseSafe native success 20s MaxRSS:533M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 13ms MaxRSS:54M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:55M
+   +- compile exe pearl ReleaseSafe native success 16s MaxRSS:533M
+   |  +- run pkg-config (reused)
+   |  +- translate-c (reused)
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+   +- compile exe pearl-t00 ReleaseSafe native cached 14ms MaxRSS:58M
+   |  +- run pkg-config (reused)
+   |  +- translate-c (reused)
+   +- compile exe pearlctl ReleaseSafe native cached 14ms MaxRSS:60M
+

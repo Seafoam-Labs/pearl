@@ -1,7 +1,7 @@
 # Pearl AI implementation tasks
 
 Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T07 are complete**;
-T08 is implemented with physical scan acceptance pending; T09–T16 are not started. Follow their dependency order and record evidence in
+T08 is implemented with physical scan acceptance pending; T09 is complete; T10–T16 are not started. Follow their dependency order and record evidence in
 [PROGRESS.md](PROGRESS.md). Task IDs are stable and may be split into smaller
 changes without changing their acceptance criteria.
 
@@ -171,6 +171,8 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 **Done when:** secure Wi-Fi, cancellation, rejected credentials, Bluetooth passkey confirmation, removed devices and daemon owner changes pass fake-service tests; at least one physical Wi-Fi and Bluetooth path is demonstrated. Secrets never enter persistent shell config or logs.
 
 ## T09 — Notifications, tray and media
+
+**Status:** complete. See [SESSION_SERVICES.md](SESSION_SERVICES.md), [PROGRESS.md](PROGRESS.md) and [T09 verification](../artifacts/t09/verification/README.md). Artwork currently supports local PNG/JPEG files; remote URLs use a fallback.
 
 **Depends on:** T06. **Primary files:** notification/tray/MPRIS services, notification center and media cards.
 

@@ -11,7 +11,7 @@ pub fn parse(args: []const []const u8) !Options {
         if (std.mem.eql(u8, args[0], "quit")) break :blk .quit;
         if (args.len < 2) return error.Usage;
         index = 2;
-        const pairs = .{ .{ "connectivity", "status", protocol.Op.connectivity_status }, .{ "connectivity", "action", protocol.Op.connectivity_action }, .{ "services", "status", protocol.Op.services_status }, .{ "audio", "set", protocol.Op.audio_set }, .{ "brightness", "set", protocol.Op.brightness_set }, .{ "profile", "set", protocol.Op.profile_set }, .{ "popup", "show", protocol.Op.popup_show }, .{ "popup", "hide", protocol.Op.popup_hide }, .{ "popup", "toggle", protocol.Op.popup_toggle }, .{ "bar", "set", protocol.Op.bar_set }, .{ "frame", "set", protocol.Op.frame_set }, .{ "osd", "show", protocol.Op.osd_show }, .{ "launcher", "show", protocol.Op.launcher_show }, .{ "launcher", "hide", protocol.Op.launcher_hide }, .{ "launcher", "toggle", protocol.Op.launcher_toggle }, .{ "control-center", "show", protocol.Op.control_show }, .{ "control-center", "toggle", protocol.Op.control_toggle }, .{ "calendar", "toggle", protocol.Op.calendar_toggle }, .{ "bar", "groups", protocol.Op.bar_groups }, .{ "layout", "get", protocol.Op.layout_get }, .{ "layout", "set", protocol.Op.layout_set }, .{ "overview", "toggle", protocol.Op.overview_toggle } };
+        const pairs = .{ .{ "session", "status", protocol.Op.session_status }, .{ "session", "action", protocol.Op.session_action }, .{ "notifications", "toggle", protocol.Op.notifications_toggle }, .{ "media", "toggle", protocol.Op.media_toggle }, .{ "tray", "toggle", protocol.Op.tray_toggle }, .{ "connectivity", "status", protocol.Op.connectivity_status }, .{ "connectivity", "action", protocol.Op.connectivity_action }, .{ "services", "status", protocol.Op.services_status }, .{ "audio", "set", protocol.Op.audio_set }, .{ "brightness", "set", protocol.Op.brightness_set }, .{ "profile", "set", protocol.Op.profile_set }, .{ "popup", "show", protocol.Op.popup_show }, .{ "popup", "hide", protocol.Op.popup_hide }, .{ "popup", "toggle", protocol.Op.popup_toggle }, .{ "bar", "set", protocol.Op.bar_set }, .{ "frame", "set", protocol.Op.frame_set }, .{ "osd", "show", protocol.Op.osd_show }, .{ "launcher", "show", protocol.Op.launcher_show }, .{ "launcher", "hide", protocol.Op.launcher_hide }, .{ "launcher", "toggle", protocol.Op.launcher_toggle }, .{ "control-center", "show", protocol.Op.control_show }, .{ "control-center", "toggle", protocol.Op.control_toggle }, .{ "calendar", "toggle", protocol.Op.calendar_toggle }, .{ "bar", "groups", protocol.Op.bar_groups }, .{ "layout", "get", protocol.Op.layout_get }, .{ "layout", "set", protocol.Op.layout_set }, .{ "overview", "toggle", protocol.Op.overview_toggle } };
         inline for (pairs) |p| if (std.mem.eql(u8, args[0], p[0]) and std.mem.eql(u8, args[1], p[1])) break :blk p[2];
         return error.Usage;
     };
@@ -20,7 +20,17 @@ pub fn parse(args: []const []const u8) !Options {
         if (index + 1 >= args.len) return error.Usage;
         const flag = args[index];
         const value = args[index + 1];
-        if (std.mem.eql(u8, flag, "--service") and r.service == null) {
+        if (std.mem.eql(u8, flag, "--command") and r.command == null) {
+            r.command = std.meta.stringToEnum(protocol.SessionAction, value) orelse return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--notification") and r.notification == null) {
+            r.notification = std.fmt.parseInt(u32, value, 10) catch return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--position") and r.position == null) {
+            r.position = std.fmt.parseInt(i64, value, 10) catch return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--menu-id") and r.menu_id == null) {
+            r.menu_id = std.fmt.parseInt(i32, value, 10) catch return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--revision") and r.revision == null) {
+            r.revision = std.fmt.parseInt(u64, value, 10) catch return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--service") and r.service == null) {
             r.service = std.meta.stringToEnum(protocol.ConnectivityService, value) orelse return error.Usage;
         } else if (std.mem.eql(u8, flag, "--action") and r.action == null) {
             r.action = std.meta.stringToEnum(protocol.ConnectivityAction, value) orelse return error.Usage;

@@ -2,7 +2,7 @@
 
 Pearl is the working name for a planned **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with a look and feel closely modeled on Dank Material Shell.
 
-T00–T07 are complete; T08 is implemented with physical scan acceptance pending. The pinned Zig 0.16.0 stack has generated
+T00–T07 and T09 are complete; T08 is implemented with physical scan acceptance pending. The pinned Zig 0.16.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
 resources and a demo gallery. Private Aqueous tests cover startup, shutdown,
 cancellation and session isolation. A bounded Aqueous decoder and atomic state
@@ -18,7 +18,9 @@ Audio devices/streams, battery, brightness, power profiles and bounded OSD feedb
 are connected. Power-off/restart controls require confirmation. NetworkManager
 Wi-Fi/saved profiles and BlueZ pairing/discovery now have real service agents and
 GTK controls. Physical enumeration passed; the opt-in hardware scan remains
-pending. T09 covers notifications, tray and media. The full shell remains in progress.
+pending. Notifications/history/DND, StatusNotifier tray menus and MPRIS media controls
+are now connected, with owner-safe session-bus recovery and bounded local artwork.
+The full shell remains in progress.
 
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
 - [AI implementation tasks](docs/TASKS.md): ordered work packages with dependencies, concrete deliverables, and acceptance criteria.
@@ -27,6 +29,7 @@ pending. T09 covers notifications, tray and media. The full shell remains in pro
 - [Aqueous model](docs/AQUEOUS_MODEL.md): decoder limits, atomic updates, derived views and ownership contracts.
 - [Aqueous adapter](docs/AQUEOUS_ADAPTER.md): persistent connections, command completion, recovery and icon caching.
 - [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.
+- [Notifications, tray and media](docs/SESSION_SERVICES.md) and [T09 visual evidence](artifacts/t09/comparison.html): protocol contracts, bounds, keyboard controls, ownership and session-bus recovery.
 - [Network and Bluetooth](docs/CONNECTIVITY.md) and [T08 visual evidence](artifacts/t08/comparison.html): connection/pairing agents, bounded discovery, credential handling and hardware acceptance.
 - [Audio and power](docs/SERVICES.md) and [T07 visual evidence](artifacts/t07/comparison.html): service behavior, CLI, permissions and physical release checks.
 - [Surfaces and CLI](docs/SURFACES.md): output identity, reservations, popup/input policy, native blur and control v1.

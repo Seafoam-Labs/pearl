@@ -1,0 +1,80 @@
+{
+  "recorded_utc": "2026-09-13T20:41:18.738442+00:00",
+  "zig": "0.16.0",
+  "optimize": "ReleaseSafe",
+  "gtk": "4.22.5",
+  "glib": "2.88.3",
+  "aqueous_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480",
+  "aqueous_source_clean": true,
+  "installed_binary_sha256": {
+    "pearl": "ce47da776a3ebedf13ec8e5b9d004f4a5cdbb2b3acddf421cc560d5904f48389",
+    "pearlctl": "cf43b9264d99b86849ffaba0420233a9cfe0926422b8014b192b0d95e019b93d"
+  },
+  "instrumented_binary_sha256": "52f0f23c4a609b047fe8795a21d128733551860347128c204dd6989927b5e2f4",
+  "suite_summary": {
+    "session-services": {
+      "path": "artifacts/t09/latest/result.json",
+      "binary": "instrumented",
+      "status": "passed",
+      "checks": 18,
+      "binary_sha256": "52f0f23c4a609b047fe8795a21d128733551860347128c204dd6989927b5e2f4",
+      "result_sha256": "59d23e98f9195cf4a05e243f249bf9313b8aec1c5a95f6e5cff1384c77215dc6"
+    },
+    "connectivity": {
+      "path": "artifacts/t09/regression/test-connectivity/result.json",
+      "binary": "instrumented",
+      "status": "passed",
+      "checks": 27,
+      "binary_sha256": "52f0f23c4a609b047fe8795a21d128733551860347128c204dd6989927b5e2f4",
+      "result_sha256": "2103114f0839b1d985db644fecf281c2efe6bdd397bf62092c8faeb7ad3dbe1e"
+    },
+    "services": {
+      "path": "artifacts/t09/regression/test-services/results.json",
+      "binary": "instrumented",
+      "status": "passed",
+      "checks": 15,
+      "binary_sha256": "52f0f23c4a609b047fe8795a21d128733551860347128c204dd6989927b5e2f4",
+      "result_sha256": "a8f6200c27f57b17311b1d5dcc87eb62053c1396d788880680c3532b564a4f9b"
+    },
+    "desktop": {
+      "path": "artifacts/t09/regression/test-desktop/results.json",
+      "binary": "production",
+      "status": "passed",
+      "checks": 15,
+      "binary_sha256": "ce47da776a3ebedf13ec8e5b9d004f4a5cdbb2b3acddf421cc560d5904f48389",
+      "result_sha256": "2cb377ea4befd13af04b58a8c3d8e99ab3ad5a037e7d487d73629278d3a55a88"
+    },
+    "surfaces": {
+      "path": "artifacts/t09/regression/test-surfaces/results.json",
+      "binary": "production",
+      "status": "passed",
+      "checks": 17,
+      "binary_sha256": "ce47da776a3ebedf13ec8e5b9d004f4a5cdbb2b3acddf421cc560d5904f48389",
+      "result_sha256": "48d5b9350e2ed55269fbe98e83a8eeab3a667e3de5b07533f4f3acfc4c031071"
+    },
+    "lifecycle": {
+      "path": "artifacts/t09/regression/integration/results.json",
+      "binary": "instrumented",
+      "status": "pass",
+      "checks": 12,
+      "binary_sha256": "52f0f23c4a609b047fe8795a21d128733551860347128c204dd6989927b5e2f4",
+      "result_sha256": "de1a125b1ffb03f3beec811ffca1f0c6afc6b831317b2b366f0d342148f5ed2a"
+    }
+  },
+  "unit_checks": {
+    "pure": 53,
+    "adapter_services": 16,
+    "bindings": 1
+  },
+  "all_suite_binaries_match": true,
+  "source_manifest_sha256": "21269f036f8a4e1a87a2a1d3a9a23aa4e0bcf3a8adaaf4edffe2e7b30908dc7d",
+  "dms_references": {
+    "dms-dark-media.png": "046dcb545a815e8146d6f57c1566b8bb88fbc4e5d00e126f1f46907488e09eb3",
+    "dms-dark-notifications.png": "fb720dd2a11c4ce6f98308f2666e12b39c154a6806a66e12ac0d46e4dceea240"
+  },
+  "scope_limits": [
+    "In-memory notification history",
+    "Local PNG/JPEG artwork only",
+    "T08 physical scan gate remains pending"
+  ]
+}

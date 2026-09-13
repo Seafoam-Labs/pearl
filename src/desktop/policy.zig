@@ -2,11 +2,11 @@
 const std = @import("std");
 const Window = @import("../aqueous/entities.zig").Window;
 pub const Layout = enum { tile, monocle, grid, rows, dwindle, @"reverse-dwindle", scrolling, float, @"game-mode", composable };
-pub const Item = enum { launcher, workspaces, title, clock, keyboard, overview, control, audio, battery, network, bluetooth };
+pub const Item = enum { launcher, workspaces, title, clock, keyboard, overview, control, audio, battery, network, bluetooth, notifications, media, tray };
 pub const Groups = struct {
     left: []const u8 = "launcher,workspaces,title",
     center: []const u8 = "clock",
-    right: []const u8 = "audio,network,battery,keyboard,overview,control",
+    right: []const u8 = "media,tray,audio,network,battery,notifications,keyboard,control",
     pub fn validate(self: Groups) !void {
         var seen = std.EnumSet(Item).initEmpty();
         for ([_][]const u8{ self.left, self.center, self.right }) |group| {
