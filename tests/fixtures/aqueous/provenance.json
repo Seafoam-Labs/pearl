@@ -1,0 +1,36 @@
+{
+  "fixtures_sha256": {
+    "GPL-3.0-only.txt": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
+    "accepted-exit.json": "57182f9e0f59bf205437a2c8afe9e6b1c4776982e5e8193fa92e322800a76e5a",
+    "ack-response.json": "3323e4aecf3a3d6d24ceb5cdd18d6cffe4284d57a4e6dbd2b1a3bb5c182bf131",
+    "command-response.json": "25f209e0ac23a92772bd782735ebadda6cd925c316a229a1471178be319e769e",
+    "delta-event.json": "7d00ce60ce6282a7b66703d9c8ce8837bbd21d1fe4e97115e6208c52df2380dc",
+    "desktop-event.json": "55c30accf77e28690a33f85e9637b8cd47564195f82c351c1107bc703e28cb17",
+    "hello-response.json": "bf8bcb29546a948f62f554d9c5e31f842781eb2eb889c3ff74ce204909429408",
+    "output-removal-event.json": "ce0d248f66ffa2749d1b3a9fe4ec081a1c8a0322374ac5e71d728d63a0da82f5",
+    "snapshot-event.json": "7903bad8e6d9433857dfa2b0d224aa6f07da7253dc3dd15f4852ded1c9450d1f",
+    "snapshot-response.json": "e63756c36fb6723d8b17233b74f1257f94026b5951697b217459be7d1b5cded4",
+    "stale-session-error.json": "c109fc334e0a831ebcab9242a4ef4673ea8a0726c79e1dfbcea97d81384f4810",
+    "subscribe-response.json": "bdc8c700f72f50c2a79b483aa8db4b53b8f477bfd79ad145a5a9c09003411c6a",
+    "window-icon-response.json": "3694552bd2c26bf2f0b91ce72a79ce668c9b4341f0846dbdfb7e413b3b30f884"
+  },
+  "source_files_sha256": {
+    "compositor/aqueous/IpcProtocol.zig": "f611ee78c7b2b8141c843fad3ba1cde44eeb5b8a4965ed81f2bf7d0d2e88e190",
+    "compositor/aqueous/ShellManager.zig": "b77d2586e4f11a6d79b95ed827f702e8328fbfd282806fcb2771c05297d8d308",
+    "compositor/protocol/aqueous-ipc-v1.md": "4daa754c23404eacd33b90bfd425f571f245231b4882ac4ff350ecdfd9c06eaa",
+    "compositor/protocol/aqueous-ipc-v1.schema.json": "f1929b815e353afd95a29e1e21e9b366a0b363907f5df122ffdd594b889f490a",
+    "compositor/protocol/aqueous-shell-v1.md": "37bc8be421158c60581377b7ca7b3630a38f5e02ad58860889c7b01639de6985",
+    "compositor/protocol/aqueous-shell-v1.schema.json": "4d5f5f113a84cdbde0c19d9d119dc83841ec54b485b745fcb730f8636cfbe75c",
+    "compositor/scripts/fixtures/ipc/accepted-exit.json": "9c35e7783844388208c13457a4a5e34fca8c7dc59d7a0b4b73ee3d2dc00d4d6a",
+    "compositor/scripts/fixtures/ipc/ack-response.json": "713587a165be6db2256a4bef367656e76eea77a76e264c58b3418edb52a0666c",
+    "compositor/scripts/fixtures/ipc/command-response.json": "445f3073465e21270f9c2576d5d2d6fe9c3e2efb468c8985b9ec3050c0f2d10a",
+    "compositor/scripts/fixtures/ipc/delta-event.json": "e30e20bb0b0f97babe09e9a3ba3d9e09356a5c9b5601b0da1be7914ea8d73120",
+    "compositor/scripts/fixtures/ipc/hello-response.json": "718c821c44878c3987b3b8b6e36b7761c8cbb2296d4170b4df93d81390f7aaab",
+    "compositor/scripts/fixtures/ipc/snapshot-event.json": "8fe4e2b67ff85cd977a8e07889553eaaa5a6854652d1a01b84a0995c4f29bdf9",
+    "compositor/scripts/fixtures/ipc/snapshot-response.json": "854d240a20e0072182805ccc2537468f22e63cc31b6c8f09f54eea6f6fa1faff",
+    "compositor/scripts/fixtures/ipc/stale-session-error.json": "e70bb8c1494cb007f9840f6189c62391b3fa284b1ebc0022a363eaf7f4eed0b5",
+    "compositor/scripts/fixtures/ipc/subscribe-response.json": "63704096c3c64ade9083d6e78a4076f875048a385e0e11e263566b32813aacc2",
+    "compositor/scripts/fixtures/ipc/window-icon-response.json": "ab15e6cc09ba537c7e62477e208d24717e6f2b82fb33b8b370adb1f47a30a02b"
+  },
+  "source_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480"
+}

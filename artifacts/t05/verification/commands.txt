@@ -1,0 +1,15 @@
+Commands run from /home/zoey/Pearl with Zig 0.16.0:
+
+ZIG_GLOBAL_CACHE_DIR=$PWD/.cache/zig zig build test test-adapter-unit test-bindings -Doptimize=ReleaseSafe --summary all
+ZIG_GLOBAL_CACHE_DIR=$PWD/.cache/zig zig build integration test-components test-adapter -Doptimize=ReleaseSafe --summary all
+ZIG_GLOBAL_CACHE_DIR=$PWD/.cache/zig zig build test-surfaces -Doptimize=ReleaseSafe --summary all
+python3 scripts/check-wayland-bindings.py
+ZIG_GLOBAL_CACHE_DIR=$PWD/.cache/zig zig build test install generate-wayland -Doptimize=ReleaseSafe --summary all
+
+Effects build (reference checkout read-only, output/cache local to Pearl):
+PKG_CONFIG_PATH=/home/zoey/RiderProjects/Aqueous/compositor/.deps/wlroots-render-hook/lib/pkgconfig ZIG_GLOBAL_CACHE_DIR=$PWD/.cache/zig zig build --build-file /home/zoey/RiderProjects/Aqueous/compositor/build.zig --cache-dir $PWD/.cache/aqueous-effects-build --prefix $PWD/.cache/aqueous-effects -Dvulkan-effects=true -Dman-pages=false -Doptimize=ReleaseSafe -Dllvm
+
+All commands above succeeded. Earlier regressions ran before the final control
+schema error normalization and OSD word/character wrapping changes; the final
+T05 suite and build validate those changes. Private headless/nested sessions
+own all test sockets, buses, rules and injected input. No host desktop modified.

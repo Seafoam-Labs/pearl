@@ -1,0 +1,21 @@
+Build Summary: 17/17 steps succeeded; 36/36 tests passed
+test success
++- run test 36 pass (36 total) 76ms MaxRSS:9M
+   +- compile test ReleaseSafe native cached 9ms MaxRSS:55M
+install success
++- install pearl success
+|  +- compile exe pearl ReleaseSafe native cached 15ms MaxRSS:59M
+|     +- run pkg-config success 1ms
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|        +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:54M
++- install pearl-t00 cached
+|  +- compile exe pearl-t00 ReleaseSafe native cached 15ms MaxRSS:59M
+|     +- run pkg-config (reused)
++- install pearlctl success
+   +- compile exe pearlctl ReleaseSafe native cached 16ms MaxRSS:57M
+generate-wayland success
++- install generated to share/pearl/bindings/wayland.zig success
+   +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+

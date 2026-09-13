@@ -1,0 +1,44 @@
+PASS fragmentation-idle-priority
+PASS png-filters-bounds-and-negative-cache
+PASS server-rejections-and-negotiated-request-limit
+PASS bounded-queue-unknown-restart
+PASS invalid-ack
+PASS invalid-sequence
+PASS session-mismatch
+PASS reply-id-mismatch
+PASS invalid-accepted
+PASS subscribe-order
+PASS command-timeout
+PASS socket-backpressure
+PASS subscription-timeout
+PASS hello-timeout
+PASS locked-revalidation
+PASS restricted-capabilities
+PASS ambiguous-seat
+PASS target-disappearance
+PASS stale-icon
+PASS real-nested-commands-and-idle
+PASS real-exit-and-new-endpoint-isolation
+PASS: T01 lifecycle, resources, cancellation and session isolation
+PASS: T03 components, keyboard, translation, virtualization, idle and captures
+Build Summary: 15/15 steps succeeded
+integration success
++- run python3 success 6s
+   +- compile exe pearl-integration ReleaseSafe native success 12s MaxRSS:432M
+   |  +- run pkg-config success 946us
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:58M
+   +- compile exe pearl ReleaseSafe native cached 16ms MaxRSS:59M
+      +- run pkg-config (reused)
+      +- run glib-compile-resources (pearl.gresource) (reused)
+      +- options cached
+      +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+test-components success
++- run python3 success 42s
+   +- compile exe pearl-integration ReleaseSafe native (+4 more reused dependencies)
+test-adapter success
++- run python3 success 9s
+   +- compile exe pearl-adapter-probe ReleaseSafe native success 11s MaxRSS:400M
+

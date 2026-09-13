@@ -1,0 +1,267 @@
+[
+  {
+    "args": [
+      "theme",
+      "dark"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "dark\n"
+  },
+  {
+    "args": [
+      "launcher",
+      "open"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "LAUNCHER_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "launcher",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "LAUNCHER_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "control-center",
+      "open"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "CONTROL_CENTER_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "control-center",
+      "hide"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "CONTROL_CENTER_HIDE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "notifications",
+      "open"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "NOTIFICATION_MODAL_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "notifications",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "NOTIFICATION_MODAL_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "dash",
+      "open",
+      "calendar"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "DASH_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "dash",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "DASH_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "dash",
+      "open",
+      "media"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "DASH_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "dash",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "DASH_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "settings",
+      "open"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "SETTINGS_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "settings",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "SETTINGS_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "theme",
+      "light"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "light\n"
+  },
+  {
+    "args": [
+      "launcher",
+      "open"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "LAUNCHER_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "launcher",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "LAUNCHER_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "control-center",
+      "open"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "CONTROL_CENTER_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "control-center",
+      "hide"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "CONTROL_CENTER_HIDE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "notifications",
+      "open"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "NOTIFICATION_MODAL_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "notifications",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "NOTIFICATION_MODAL_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "dash",
+      "open",
+      "calendar"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "DASH_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "dash",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "DASH_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "dash",
+      "open",
+      "media"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "DASH_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "dash",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "DASH_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "settings",
+      "open"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "SETTINGS_OPEN_SUCCESS\n"
+  },
+  {
+    "args": [
+      "settings",
+      "close"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "SETTINGS_CLOSE_SUCCESS\n"
+  },
+  {
+    "args": [
+      "lock",
+      "demo"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": ""
+  },
+  {
+    "args": [
+      "theme",
+      "dark"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "dark\n"
+  },
+  {
+    "args": [
+      "theme",
+      "light"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout": "light\n"
+  }
+]

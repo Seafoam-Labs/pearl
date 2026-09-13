@@ -1,0 +1,7 @@
+.cache/
+.zig-cache/
+zig-out/
+zig-pkg/
+__pycache__/
+*.pyc
+artifacts/t00/runs/

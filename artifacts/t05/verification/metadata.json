@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-13",
+  "zig": "0.16.0",
+  "aqueous_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480",
+  "aqueous_status": "",
+  "sha256": {
+    "zig-out/bin/pearl": "fc00a300b524ac37b43abe06d14c01cde87e4e3c4177193f4f3d86caccf2d4df",
+    "zig-out/bin/pearlctl": "945b7e9d3e5e2ad3454a895874b512683a68af50bc7f13a6c5bce8b554d32a6c",
+    ".cache/aqueous-effects/bin/aqueous": "7baaa710450fb494aa0f4034e380ff4d0028ed8287f8a0462652d1b8b2d33a52",
+    "bindings/protocols/inputs.json": "301bc3e24c400cf7ef42853191b1769a1925a4dab99fe4d066876c650ab96be8",
+    "build.zig.zon": "b63cc184cec5338bfafae957b008bb2a1bdb19eb676064b3f785aac9c6a992ba"
+  }
+}

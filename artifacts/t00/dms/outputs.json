@@ -1,0 +1,66 @@
+[
+  {
+    "adaptive_sync": false,
+    "description": "Headless output 2",
+    "edid_sha256": null,
+    "enabled": true,
+    "make": null,
+    "mirror_error": null,
+    "mirror_of": "",
+    "mirror_status": "extended",
+    "model": null,
+    "modes": [
+      {
+        "current": true,
+        "height": 720,
+        "preferred": false,
+        "refresh": 0.0,
+        "width": 1280
+      }
+    ],
+    "name": "HEADLESS-2",
+    "physical_size": {
+      "height": 0,
+      "width": 0
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "scale": 1.0,
+    "serial": null,
+    "transform": "normal"
+  },
+  {
+    "adaptive_sync": false,
+    "description": "Headless output 1",
+    "edid_sha256": null,
+    "enabled": true,
+    "make": null,
+    "mirror_error": null,
+    "mirror_of": "",
+    "mirror_status": "extended",
+    "model": null,
+    "modes": [
+      {
+        "current": true,
+        "height": 720,
+        "preferred": false,
+        "refresh": 0.0,
+        "width": 1280
+      }
+    ],
+    "name": "HEADLESS-1",
+    "physical_size": {
+      "height": 0,
+      "width": 0
+    },
+    "position": {
+      "x": 1280,
+      "y": 0
+    },
+    "scale": 1.0,
+    "serial": null,
+    "transform": "normal"
+  }
+]

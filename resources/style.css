@@ -1,0 +1,67 @@
+.pearl-root.$scope { background: $surface$; color: $text$; font-family: Inter, sans-serif; font-size: 14px; }
+.pearl-root.$scope.pearl-large { font-size: 20px; }
+.pearl-root.$scope .titlebar { background: $surface$; color: $text$; }
+.pearl-root.$scope .pearl-content { padding: 24px; }
+.pearl-root.$scope .pearl-title { font-size: 1.8em; font-weight: 600; letter-spacing: -0.5px; }
+.pearl-root.$scope .pearl-subtitle, .pearl-root.$scope .pearl-secondary { color: $secondary$; }
+.pearl-root.$scope .pearl-badge { color: $primary$; font-size: 0.8em; font-weight: 600; letter-spacing: 1px; }
+.pearl-root.$scope .pearl-card { background: $container$; border: 1px solid alpha($outline$, 0.18); border-radius: 20px; padding: 20px; }
+.pearl-root.$scope .pearl-card-title { font-size: 1.15em; font-weight: 600; }
+.pearl-root.$scope .pearl-profile { background: $high$; padding: 16px; border-radius: 16px; }
+.pearl-root.$scope .pearl-avatar { background: $primary_container$; color: $on_container$; border-radius: 999px; padding: 16px; }
+.pearl-root.$scope button { background-image: none; box-shadow: none; text-shadow: none; border: 1px solid transparent; background: $high$; color: $text$; border-radius: 999px; padding: 9px 16px; min-height: 20px; transition: background-color 150ms ease; }
+.pearl-root.$scope button:hover { background: mix($high$, $primary$, 0.12); }
+.pearl-root.$scope button:active { background: mix($high$, $primary$, 0.20); }
+.pearl-root.$scope button:checked, .pearl-root.$scope button.pearl-primary { background: $primary$; color: $on_primary$; }
+.pearl-root.$scope button:checked:hover, .pearl-root.$scope button.pearl-primary:hover { background: mix($primary$, $on_primary$, 0.08); }
+.pearl-root.$scope button:checked:active, .pearl-root.$scope button.pearl-primary:active { background: mix($primary$, $on_primary$, 0.12); }
+.pearl-root.$scope button:disabled { background: $low$; color: $secondary$; border-color: alpha($outline$, 0.3); opacity: 1; }
+.pearl-root.$scope button.pearl-icon { min-width: 24px; min-height: 24px; padding: 8px; }
+.pearl-root.$scope button.pearl-pill { min-width: 20px; padding: 5px 10px; }
+.pearl-root.$scope button.pearl-tile { border-radius: 16px; padding: 12px; }
+.pearl-root.$scope button.pearl-tile:checked .pearl-secondary { color: $on_primary$; }
+.pearl-root.$scope .pearl-row { padding: 8px 0; }
+.pearl-root.$scope flowboxchild { padding: 0; background: transparent; }
+.pearl-root.$scope entry, .pearl-root.$scope searchentry { background: $low$; color: $text$; border: 1px solid $outline$; border-radius: 999px; padding: 10px 14px; box-shadow: none; min-width: 0; }
+.pearl-root.$scope entry selection, .pearl-root.$scope searchentry selection { background: $primary_container$; color: $on_container$; }
+.pearl-root.$scope button:focus-visible, .pearl-root.$scope switch:focus-visible, .pearl-root.$scope scale:focus-visible, .pearl-root.$scope row:focus-visible { outline: 2px solid $primary$; outline-offset: 2px; }
+.pearl-root.$scope entry:focus-within, .pearl-root.$scope searchentry:focus-within { outline: 2px solid $primary$; outline-offset: 1px; }
+.pearl-root.$scope switch { background: $high$; border: 1px solid $outline$; border-radius: 999px; min-width: 46px; min-height: 26px; }
+.pearl-root.$scope switch:checked { background: $primary$; border-color: $primary$; }
+.pearl-root.$scope switch slider { background: $secondary$; border: 0; box-shadow: none; border-radius: 999px; min-width: 18px; min-height: 18px; margin: 3px; }
+.pearl-root.$scope switch:checked slider { background: $on_primary$; }
+.pearl-root.$scope scale { padding: 10px 6px; }
+.pearl-root.$scope scale trough { background: $high$; min-height: 8px; border: 0; border-radius: 999px; }
+.pearl-root.$scope scale highlight { background: $primary$; border-radius: 999px; }
+.pearl-root.$scope scale slider { background: $primary$; border: 3px solid $container$; min-width: 18px; min-height: 18px; box-shadow: none; }
+.pearl-root.$scope listview { background: transparent; color: $text$; }
+.pearl-root.$scope listview row { padding: 0; border-radius: 12px; margin: 2px 3px; }
+.pearl-root.$scope listview row:hover { background: $high$; }
+.pearl-root.$scope listview row:selected { background: $primary_container$; color: $on_container$; }
+.pearl-root.$scope .pearl-list-row { padding: 10px 12px; }
+.pearl-root.$scope .pearl-state { background: $low$; border-radius: 16px; padding: 16px; }
+.pearl-root.$scope .pearl-error { background: $error_container$; color: $error_color$; }
+.pearl-root.$scope .pearl-error .pearl-secondary { color: $error_color$; }
+.pearl-root.$scope .pearl-state-icon { color: $primary$; }
+.pearl-root.$scope .pearl-error .pearl-state-icon { color: $error_color$; }
+.pearl-root.$scope separator { background: alpha($outline$, 0.25); min-height: 1px; }
+.pearl-root.$scope.pearl-compact .pearl-content { padding: 16px; }
+.pearl-root.$scope.pearl-compact .pearl-card { padding: 14px; border-radius: 16px; }
+.pearl-root.$scope.pearl-compact .pearl-profile { padding: 12px; }
+.pearl-root.$scope.pearl-compact button { padding: 6px 12px; }
+.pearl-root.$scope.pearl-compact button.pearl-icon { padding: 6px; }
+.pearl-root.$scope.pearl-compact button.pearl-pill { padding: 3px 8px; }
+.pearl-root.$scope.pearl-compact .pearl-list-row { padding: 6px 10px; }
+.pearl-root.$scope.pearl-reduced *, .pearl-root.$scope.pearl-reduced { transition: none; animation: none; }
+.pearl-root.$scope .titlebar button { padding: 4px; min-height: 20px; min-width: 20px; }
+.pearl-root.$scope label selection { background: $primary_container$; color: $on_container$; }
+
+/* Session surfaces: background alpha is independent of compositor opacity. */
+.pearl-root.$scope.pearl-shell { background: transparent; }
+.pearl-root.$scope.pearl-wallpaper { background: linear-gradient(135deg, $surface$, $primary_container$); }
+.pearl-root.$scope.pearl-shell .pearl-surface-panel { background: $container$; color: $text$; border-radius: 14px; }
+.pearl-root.$scope.pearl-shell.pearl-blur .pearl-surface-panel { background: alpha($container$, 0.86); }
+.pearl-root.$scope.pearl-shell .pearl-popup-panel { padding: 20px; }
+.pearl-root.$scope.pearl-shell .pearl-osd-panel { padding: 14px; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button { padding: 2px 12px; min-height: 24px; background: transparent; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button:hover { background: $high$; }

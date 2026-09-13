@@ -1,0 +1,25 @@
+PASS: T01 lifecycle, resources, cancellation and session isolation
+Build Summary: 18/18 steps succeeded; 38/38 tests passed
+install success
++- install pearl success
+|  +- compile exe pearl ReleaseSafe native success 12s MaxRSS:415M
+|     +- run pkg-config success 1ms
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
++- install pearl-t00 success
+   +- compile exe pearl-t00 ReleaseSafe native success 6s MaxRSS:329M
+      +- run pkg-config (reused)
+test success
++- run test 31 pass (31 total) 70ms MaxRSS:11M
+   +- compile test ReleaseSafe native success 12s MaxRSS:417M
+test-adapter-unit success
++- run test 7 pass (7 total) 2ms MaxRSS:11M
+   +- compile test ReleaseSafe native success 9s MaxRSS:336M
+integration success
++- run python3 success 5s
+   +- compile exe pearl-integration ReleaseSafe native success 12s MaxRSS:418M
+   |  +- run pkg-config (reused)
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   +- compile exe pearl ReleaseSafe native (+3 more reused dependencies)
+

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/org/aqueous/Pearl">
+    <file>style.css</file>
+    <file>gallery.ui</file>
+    <file>session.ui</file>
+    <file alias="aqueous-desktop.json">../tests/fixtures/aqueous/desktop-event.json</file>
+    <file alias="fixture-license.txt">../tests/fixtures/aqueous/GPL-3.0-only.txt</file>
+    <file>demo.txt</file>
+    <file>icons/scalable/actions/pearl-application-x-executable-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-audio-volume-high-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-avatar-default-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-bluetooth-active-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-content-loading-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-dialog-warning-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-display-brightness-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-emblem-ok-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-emblem-system-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-network-wireless-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-weather-clear-night-symbolic.svg</file>
+  </gresource>
+</gresources>

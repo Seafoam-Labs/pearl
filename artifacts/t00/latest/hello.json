@@ -1,0 +1,21 @@
+{
+  "capabilities": {
+    "commands": true,
+    "config_reload": true,
+    "icon_fetch": true,
+    "icon_metadata": true,
+    "keyboard": true,
+    "overview": true,
+    "shortcut_inhibition": true,
+    "state": true
+  },
+  "max_batch_bytes": 4194304,
+  "max_clients": 16,
+  "max_depth": 16,
+  "max_frame_bytes": 4259840,
+  "max_pending_requests": 1,
+  "max_request_bytes": 65536,
+  "max_state_bytes": 2097152,
+  "schema": 1,
+  "session": "10347f62037bbb5f0bfc9e69be7bf25a"
+}

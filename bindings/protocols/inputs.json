@@ -1,0 +1,28 @@
+{
+  "generator": "zig-wayland v0.6.0 (package integrity in build.zig.zon)",
+  "zig": "0.16.0",
+  "globals": {
+    "wl_compositor": 6,
+    "ext_background_effect_manager_v1": 1,
+    "aqueous_shell_manager_v1": 2
+  },
+  "inputs": {
+    "wayland.xml": {
+      "source": "Wayland 1.26.0: protocol/wayland.xml",
+      "sha256": "cc860987e54f8d85c940e97fa1270c69b6e4ad31fbcf5a7f00107ce1157f5e07"
+    },
+    "ext-background-effect-v1.xml": {
+      "source": "wayland-protocols 1.49: staging/ext-background-effect/ext-background-effect-v1.xml",
+      "sha256": "e463b7863c97d7be05489b52b15cd0b3a5d8290b51340f62023b47d03b4217e3"
+    },
+    "aqueous-shell-v1.xml": {
+      "source": "Aqueous 7611e23c653a72b24d6dd4d8b6404d1d1feb7480: compositor/protocol/aqueous-shell-v1.xml",
+      "sha256": "05a25b5b4a55ba4cb603ef2ecdac483c13725d19b0eb89c73c1c4102bf905007"
+    },
+    "ext-workspace-v1.xml": {
+      "source": "Aqueous 7611e23c653a72b24d6dd4d8b6404d1d1feb7480: compositor/protocol/upstream/ext-workspace-v1.xml",
+      "sha256": "9b449d9d5d40f6032eba9813d18093b84f249a2cf38d6755dec7bca7eb96b0f3"
+    }
+  },
+  "generated_sha256": "18d6d099fd39f75964bc7bb93bd1b64c2819e33c9e5cfd42d819d52df80cfbc8"
+}

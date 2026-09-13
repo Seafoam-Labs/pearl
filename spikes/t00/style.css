@@ -1,0 +1,5 @@
+window.pearl-t00-bar { background: #141218; color: #e6e0e9; font: 14px sans-serif; }
+window.pearl-t00-bar button { margin: 4px; padding: 4px 16px; border-radius: 12px; background: #4f378b; color: #e6e0e9; }
+window.pearl-t00-popup { background: rgba(0, 0, 0, 0.25); color: #e6e0e9; font: 14px sans-serif; }
+.panel { border-radius: 12px; padding: 24px; background: #211f26; }
+.panel entry { border-radius: 12px; padding: 12px; background: #36343a; color: #e6e0e9; }

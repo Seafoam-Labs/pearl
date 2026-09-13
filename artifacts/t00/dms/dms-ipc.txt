@@ -1,0 +1,20 @@
+target niri
+  function screenshot(): string
+  function screenshotScreen(): string
+  function screenshotWindow(): string
+target theme
+  function toggle(): string
+  function getMode(): string
+  function light(): string
+  function dark(): string
+target plugin-scan
+  function reload(pluginId: string): string
+  function list(): string
+  function rescan(pluginId: string): string
+  function scan(): string
+  function status(pluginId: string): string
+target aqueous
+  function selectSeat(name: string): string
+  function overview(action: string, output: string): string
+  function snapshot(path: string): string
+  function status(): string

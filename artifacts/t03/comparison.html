@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pearl T03 · DMS reference comparison</title>
+<style>
+body{margin:0;padding:24px;font:16px system-ui;background:#141218;color:#e6e0e9}h1{font-size:24px}p{max-width:85ch;line-height:1.6;color:#cac4d0}label{display:inline-block;margin:0 16px 12px 0}select{font:inherit;padding:8px;border-radius:8px;background:#2b2930;color:inherit;border:1px solid #79747e}main{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}figcaption{padding:12px 0}img{display:block;width:100%;border:1px solid #79747e;border-radius:8px}a{color:#d0bcff}@media(max-width:900px){main{grid-template-columns:1fr}}
+</style>
+<h1>Pearl components beside the frozen DMS reference</h1>
+<p>Original captures are shown without image editing. DMS is the complete shell; Pearl is a component gallery with sample data. Compare tonal surfaces, purple selections, rounded controls, spacing and hierarchy. Live services, shell placement and compositor blur are later tasks.</p>
+<label>Palette <select id="palette"><option value="dark">Dark</option><option value="light">Light</option></select></label>
+<label>Pearl density <select id="density"><option value="default">Default</option><option value="compact">Compact</option></select></label>
+<label>DMS surface <select id="surface"><option value="control-center">Control center</option><option value="launcher">Launcher</option><option value="settings">Settings</option></select></label>
+<main><figure><figcaption>DMS · T00 frozen reference</figcaption><a id="reference-link"><img id="reference" alt="Frozen DMS reference"></a></figure><figure><figcaption>Pearl · T03 component gallery</figcaption><a id="pearl-link"><img id="pearl" alt="Pearl gallery"></a></figure></main>
+<p>Pearl requests Inter, with the installed sans-serif as fallback (Noto Sans on this machine). It uses original symbolic SVG icons rather than DMS's Material Symbols font. Gallery surfaces are opaque, and the title bar is native GTK. The header and two-column arrangement belong to this review gallery; they are not final desktop-shell placement. Compact is Pearl's density variant, compared against the same frozen DMS default reference.</p>
+<p>Additional captures: <a href="latest/dark-large-german.png">larger German text</a>, <a href="latest/empty-search.png">empty search</a>, <a href="latest/states-and-controls.png">error, pending and calendar states</a>, <a href="latest/narrow-large-german.png">640 px reflow</a>, <a href="latest/narrow-large-states.png">640 px lower content</a>. <a href="latest/results.json">Recorded checks</a>.</p>
+<script>
+const palette=document.querySelector('#palette'),density=document.querySelector('#density'),surface=document.querySelector('#surface');
+function update(){const reference='../t00/dms/dms-'+palette.value+'-'+surface.value+'.png',pearl='latest/'+palette.value+'-'+density.value+'.png';document.querySelector('#reference').src=reference;document.querySelector('#reference-link').href=reference;document.querySelector('#pearl').src=pearl;document.querySelector('#pearl-link').href=pearl;}
+for(const select of [palette,density,surface])select.addEventListener('change',update);update();
+</script></html>

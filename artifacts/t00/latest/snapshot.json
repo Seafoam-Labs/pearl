@@ -1,0 +1,237 @@
+{
+  "batch": {
+    "base_sequence": null,
+    "removed": [],
+    "schema": 1,
+    "sequence": "1",
+    "session": "10347f62037bbb5f0bfc9e69be7bf25a",
+    "type": "snapshot",
+    "upsert": [
+      {
+        "active": false,
+        "id": "12",
+        "kind": "workspace",
+        "name": "3",
+        "number": 3,
+        "output": "2",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "2",
+        "kind": "workspace",
+        "name": "2",
+        "number": 2,
+        "output": "1",
+        "urgent": false
+      },
+      {
+        "default_seat": "default",
+        "id": "session",
+        "kind": "session",
+        "locked": false,
+        "overview_output": null,
+        "overview_window": null
+      },
+      {
+        "active": false,
+        "id": "11",
+        "kind": "workspace",
+        "name": "2",
+        "number": 2,
+        "output": "2",
+        "urgent": false
+      },
+      {
+        "active_workspace": "1",
+        "bounds": {
+          "height": 720,
+          "width": 1280,
+          "x": 0,
+          "y": 0
+        },
+        "enabled": true,
+        "id": "1",
+        "kind": "output",
+        "name": "HEADLESS-2",
+        "powered": true,
+        "scale": 1,
+        "transform": "normal",
+        "usable_bounds": {
+          "height": 720,
+          "width": 1280,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "active": false,
+        "id": "18",
+        "kind": "workspace",
+        "name": "9",
+        "number": 9,
+        "output": "2",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "16",
+        "kind": "workspace",
+        "name": "7",
+        "number": 7,
+        "output": "2",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "15",
+        "kind": "workspace",
+        "name": "6",
+        "number": 6,
+        "output": "2",
+        "urgent": false
+      },
+      {
+        "active": true,
+        "id": "10",
+        "kind": "workspace",
+        "name": "1",
+        "number": 1,
+        "output": "2",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "5",
+        "kind": "workspace",
+        "name": "5",
+        "number": 5,
+        "output": "1",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "9",
+        "kind": "workspace",
+        "name": "9",
+        "number": 9,
+        "output": "1",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "4",
+        "kind": "workspace",
+        "name": "4",
+        "number": 4,
+        "output": "1",
+        "urgent": false
+      },
+      {
+        "focus_kind": "none",
+        "id": "default",
+        "keyboard": null,
+        "kind": "seat",
+        "output": "1",
+        "window": null
+      },
+      {
+        "active": false,
+        "id": "3",
+        "kind": "workspace",
+        "name": "3",
+        "number": 3,
+        "output": "1",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "14",
+        "kind": "workspace",
+        "name": "5",
+        "number": 5,
+        "output": "2",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "7",
+        "kind": "workspace",
+        "name": "7",
+        "number": 7,
+        "output": "1",
+        "urgent": false
+      },
+      {
+        "active": true,
+        "id": "1",
+        "kind": "workspace",
+        "name": "1",
+        "number": 1,
+        "output": "1",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "6",
+        "kind": "workspace",
+        "name": "6",
+        "number": 6,
+        "output": "1",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "8",
+        "kind": "workspace",
+        "name": "8",
+        "number": 8,
+        "output": "1",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "13",
+        "kind": "workspace",
+        "name": "4",
+        "number": 4,
+        "output": "2",
+        "urgent": false
+      },
+      {
+        "active": false,
+        "id": "17",
+        "kind": "workspace",
+        "name": "8",
+        "number": 8,
+        "output": "2",
+        "urgent": false
+      },
+      {
+        "active_workspace": "10",
+        "bounds": {
+          "height": 720,
+          "width": 1280,
+          "x": 1280,
+          "y": 0
+        },
+        "enabled": true,
+        "id": "2",
+        "kind": "output",
+        "name": "HEADLESS-1",
+        "powered": true,
+        "scale": 1,
+        "transform": "normal",
+        "usable_bounds": {
+          "height": 720,
+          "width": 1280,
+          "x": 1280,
+          "y": 0
+        }
+      }
+    ]
+  },
+  "delivery": "1",
+  "event": "state",
+  "ipc": 1
+}

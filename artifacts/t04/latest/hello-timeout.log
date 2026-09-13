@@ -1,0 +1,4 @@
+availability=connecting
+availability=reconnecting
+fault=RequestTimeout
+availability=stopped

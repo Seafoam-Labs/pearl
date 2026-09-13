@@ -1,0 +1,133 @@
+[32m  INFO[0m: Launching config: "/home/zoey/DankMaterialShell/quickshell/shell.qml"
+[32m  INFO[0m: Shell ID: "01e81ae6f717c743b73a5bd6ad393e66" Path ID "01e81ae6f717c743b73a5bd6ad393e66"
+[32m  INFO[0m: Saving logs to "/tmp/pearl-t00-rwh2utie/run/quickshell/by-id/nc5517hfalt/log.qslog"
+[32m  INFO[0m: QML tooling support enabled
+[32m  INFO[97m qml[0m: [CacheData:311] No cache file found, starting fresh
+[32m  INFO[97m qml[0m: SessionData: Migrating session from version 0 to version 2
+[32m  INFO[97m qml[0m: SessionData: Importing weather location and coordinates from settings
+[32m  INFO[97m qml[0m: SessionData: Migrating session to version 3
+[32m  INFO[97m qml[0m: SessionData: Migrating session to version 4
+[32m  INFO[97m qml[0m: SessionData: Dropping keys that match defaults; session.json now stores only changed values
+[32m  INFO[97m qml[0m: SessionData: Migrating session from version 0 to version 2
+[32m  INFO[97m qml[0m: SessionData: Importing weather location and coordinates from settings
+[32m  INFO[97m qml[0m: SessionData: Migrating session to version 3
+[32m  INFO[97m qml[0m: SessionData: Migrating session to version 4
+[32m  INFO[97m qml[0m: SessionData: Dropping keys that match defaults; session.json now stores only changed values
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 2
+[32m  INFO[97m qml[0m: Migrated single bar settings to barConfigs
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 3
+[32m  INFO[97m qml[0m: Per-widget controlCenterButton config now supported via widgetData properties
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 4
+[32m  INFO[97m qml[0m: Migrating desktop widgets to unified desktopWidgetInstances
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 5
+[32m  INFO[97m qml[0m: Moving sensitive data (weather location, coordinates) to session.json
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 6
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 12
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 13
+[32m  INFO[97m qml[0m: Moving device and network pins to cache.json
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 14
+[32m  INFO[97m qml[0m: Dropping keys that match defaults; settings.json now stores only changed values
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 15
+[32m  INFO[97m qml[0m: Moving machine-specific state to session.json and usage histories to cache.json
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 16
+[32m  INFO[97m qml[0m: Moving Niri overview close behavior to the window focus setting
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 17
+[32m  INFO[97m qml[0m: Converting batteryPillStyle to batteryStyle
+[32m  INFO[97m qml[0m: Migrating settings from version 0 to version 18
+[32m  INFO[97m qml[0m: Moving the shell-wide Dank Island onto its bar config as a per-instance mode
+[33m  WARN[97m quickshell.service.powerprofiles[0m: Could not connect to DBus. PowerProfiles services will not work.
+[33m  WARN[97m quickshell.service.upower[0m: Could not connect to DBus. UPower service will not work.
+[32m  INFO[97m qml[0m: [PolkitService:80] Initialized successfully
+[32m  INFO[0m: Configuration Loaded
+[33m  WARN[97m scene[0m: QML FileView at @Common/CacheData.qml[295:5]: Read of /tmp/pearl-t00-rwh2utie/cache/DankMaterialShell/cache.json failed: File does not exist.
+[33m  WARN[97m scene[0m: QML FileView at @Common/CacheData.qml[285:5]: Read of /tmp/pearl-t00-rwh2utie/cache/DankMaterialShell/launcher_cache.json failed: File does not exist.
+[33m  WARN[97m scene[0m: QML FileView at @Common/Theme.qml[2212:5]: Read of /tmp/pearl-t00-rwh2utie/cache/DankMaterialShell/dms-colors.json failed: File does not exist.
+[33m  WARN[97m qml[0m: [I18n:153] Falling back to built-in English strings
+[33m  WARN[97m quickshell.service.polkit.listener[0m: failed to register listener: Could not connect: No such file or directory
+[33m  WARN[97m quickshell.service.polkit[0m: failed to register listener on path "/org/quickshell/PolkitAgent"
+[33m  WARN[97m qt.qpa.services[0m: Failed to register with host portal QDBusError("org.freedesktop.DBus.Error.ServiceUnknown", "The name org.freedesktop.portal.Desktop was not provided by any .service files")
+[33m  WARN[97m quickshell.I3.ipc[0m: $I3SOCK is unset. Trying $SWAYSOCK.
+[33m  WARN[97m quickshell.I3.ipc[0m: $SWAYSOCK and I3SOCK are unset. Cannot connect to socket.
+[33m  WARN[0m: $HYPRLAND_INSTANCE_SIGNATURE is unset. Cannot connect to hyprland.
+[32m  INFO[97m qml[0m: [NetworkService:130] Initializing...
+[32m  INFO[97m qml[0m: [NetworkService:132] DMS_SOCKET not set, network backend unavailable
+[33m  WARN[97m quickshell.bluetooth[0m: Could not connect to DBus. Bluetooth integration is not available.
+[31m ERROR[97m quickshell.service.pipewire.loop[0m: Failed to connect pipewire context. Errno: 112
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[32m  INFO[97m qml[0m: [CompositorService:992] Detected aqueous from Wayland socket owner: aqueous
+[33m  WARN[97m quickshell.io.fileview[0m: got operation finished from dropped operation qs::io::FileViewOperation(0x7f8e52417e40)
+[32m  INFO[97m qml[0m: [BlurService:61] Compositor does not support ext-background-effect-v1
+[32m  INFO[97m qml[0m: [DgopService:667] Detected distribution: CachyOS
+[32m  INFO[97m qml[0m: [CompositorService:992] Detected aqueous from Wayland socket owner: aqueous
+[33m  WARN[97m scene[0m: QML IpcHandler at @DMSShellIPC.qml[279:5]: Error parsing function "_resolveTabId": Type of argument 1 (tab: QVariant) cannot be used across IPC.
+[33m  WARN[97m scene[0m: QML IpcHandler at @DMSShellIPC.qml[279:5]: Error parsing function "_resolvePosition": Type of argument 1 (position: QVariant) cannot be used across IPC.
+[33m  WARN[97m scene[0m: QML IpcHandler at @DMSShellIPC.qml[279:5]: Error parsing function "_dashBar": Type of argument 1 (position: QVariant) cannot be used across IPC.
+[33m  WARN[97m scene[0m: QML IpcHandler at @DMSShellIPC.qml[279:5]: Error parsing function "_openDash": Type of argument 1 (tab: QVariant) cannot be used across IPC.
+[33m  WARN[97m scene[0m: QML IpcHandler at @DMSShellIPC.qml[279:5]: Error parsing function "_toggleDash": Type of argument 1 (tab: QVariant) cannot be used across IPC.
+[32m  INFO[97m qml[0m: [PortalService:201] DMS_SOCKET not set
+[33m  WARN[97m scene[0m: @Services/IconThemeService.qml[87:-1]: ReferenceError: GSettings is not defined
+[33m  WARN[97m scene[0m: @Modules/Dock/DockBody.qml[26:5]: Unable to assign [undefined] to bool
+[33m  WARN[97m scene[0m: @Modules/Dock/DockBody.qml[354:-1]: ReferenceError: screenName is not defined
+[33m  WARN[97m scene[0m: @Modules/Dock/DockBody.qml[26:5]: Unable to assign [undefined] to bool
+[33m  WARN[97m scene[0m: @Modules/Dock/DockBody.qml[354:-1]: ReferenceError: screenName is not defined
+[32m  INFO[97m qml[0m: [DisplayConfigState:791] Validating profiles against current outputs...
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[97m scene[0m: QML FileView at @Common/AppUsageHistoryData.qml[117:5]: Read of /tmp/pearl-t00-rwh2utie/state/DankMaterialShell/appusage.json failed: File does not exist.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[97m scene[0m: QML FileView at @Services/NotepadStorageService.qml[76:5]: Read of /tmp/pearl-t00-rwh2utie/state/DankMaterialShell/notepad-session.json failed: File does not exist.
+[32m  INFO[97m qml[0m: [FirstLaunchService:85] Existing user detected, silently creating marker
+[32m  INFO[97m qml[0m: [FirstLaunchService:107] First launch marker created
+[32m  INFO[97m qt.multimedia.ffmpeg[0m: Using Qt multimedia with FFmpeg version n9.0.1 GPL version 3 or later
+[32m  INFO[0m: Failed to connect to pipewire instance "Host is down"
+[33m  WARN[0m: PulseAudioService: pa_context_connect() failed
+Input #0, wav, from '/home/zoey/DankMaterialShell/quickshell/assets/sounds/freedesktop/audio-volume-change.wav':
+  Metadata:
+    encoder         : Lavf62.3.100
+  Duration: 00:00:00.06, bitrate: 1420 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 44100 Hz, 2 channels, s16, 1411 kb/s
+Input #0, wav, from '/home/zoey/DankMaterialShell/quickshell/assets/sounds/freedesktop/message.wav':
+  Metadata:
+    encoder         : Lavf62.3.100
+  Duration: 00:00:00.31, bitrate: 1413 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 44100 Hz, 2 channels, s16, 1411 kb/s
+Input #0, wav, from '/home/zoey/DankMaterialShell/quickshell/assets/sounds/freedesktop/message-new-instant.wav':
+  Metadata:
+    encoder         : Lavf62.3.100
+  Duration: 00:00:01.03, bitrate: 1411 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 44100 Hz, 2 channels, s16, 1411 kb/s
+Input #0, wav, from '/home/zoey/DankMaterialShell/quickshell/assets/sounds/plasma/power-plug.wav':
+  Metadata:
+    encoder         : Lavf62.3.100
+  Duration: 00:00:03.00, bitrate: 1411 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 44100 Hz, 2 channels, s16, 1411 kb/s
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+Input #0, wav, from '/home/zoey/DankMaterialShell/quickshell/assets/sounds/plasma/power-unplug.wav':
+  Metadata:
+    encoder         : Lavf62.3.100
+  Duration: 00:00:03.00, bitrate: 1411 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 44100 Hz, 2 channels, s16, 1411 kb/s
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: No audio device detected
+Input #0, wav, from '/home/zoey/DankMaterialShell/quickshell/assets/sounds/freedesktop/desktop-login.wav':
+  Metadata:
+    encoder         : Lavf61.7.100
+  Duration: 00:00:04.02, bitrate: 1411 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 44100 Hz, 2 channels, s16, 1411 kb/s
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Process failed to start, likely because the binary could not be found. Command: QList("khal", "printformats")
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.
+[33m  WARN[0m: Cannot enable background effect as ext-background-effect-v1 is not supported by the current compositor.

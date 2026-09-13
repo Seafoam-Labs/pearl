@@ -1,0 +1,12 @@
+pub const hello = @embedFile("hello-response.json");
+pub const snapshot = @embedFile("snapshot-event.json");
+pub const snapshot_response = @embedFile("snapshot-response.json");
+pub const delta = @embedFile("delta-event.json");
+pub const subscribe = @embedFile("subscribe-response.json");
+pub const ack = @embedFile("ack-response.json");
+pub const command = @embedFile("command-response.json");
+pub const accepted = @embedFile("accepted-exit.json");
+pub const failure = @embedFile("stale-session-error.json");
+pub const icon = @embedFile("window-icon-response.json");
+pub const desktop = @embedFile("desktop-event.json");
+pub const output_removal = @embedFile("output-removal-event.json");

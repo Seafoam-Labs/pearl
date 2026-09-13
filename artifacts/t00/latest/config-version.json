@@ -1,0 +1,1 @@
+{"ok":true,"protocol":1,"version":"0.7.2","capabilities":["schema_fields","validate","generation_check","stdin_requests","atomic_file_replace","monitor_modes","monitor_mirroring","live_outputs","keybinds","window_rules","cursor_sync","typography_sync","shell_dms","shell_none","monitor_scale"]}

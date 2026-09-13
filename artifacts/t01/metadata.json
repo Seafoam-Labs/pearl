@@ -1,0 +1,27 @@
+{
+  "aqueous_executable_sha256": "1c612d3e503fe5b28c3af2595bac52b7b4441b808e259ba5fd303de2259eade1",
+  "input_sha256": {
+    ".zigversion": "aa037454b5e8320521a32b278a3f4aff05fc79009ab5503f5d4a1b9a33b38c47",
+    "build.zig": "005c93c5d19821870eea13ed6a9a170a94715ef6f57e0374fd51e0ec12ab6e45",
+    "build.zig.zon": "e79dbe4b05a5522b47c404417a05601a78e923eabdee2b54631eb5a49853f9c5",
+    "resources/demo.txt": "d7ac57d6f215621cf08a58d66ad6b8eac316b6535fb2ab969ac2c021d42124ae",
+    "resources/gallery.ui": "45a18b93aa90df214249a3fa3dbc97bf78042c77f609136f6c5c046808cde6dd",
+    "resources/pearl.gresource.xml": "d65b63ca39878aaa3b21d2fbf22b1ca09d1ed47d885df7c70c9208a4c994a19e",
+    "resources/style.css": "d3236defc11cea45221a50df8db5d82d3e6bb7aec251332acd859c922c5d48f6",
+    "scripts/dev-session.py": "ff586a96a9583660473dfde289ffc24e0eeebfb6f04594d3597924855720dc41",
+    "scripts/generate-bindings.py": "30ddc57950e3fa4a13bf560cda84e1dbb6046b6aba1fbdf7e26073fe8ca726e8",
+    "scripts/pearl_session.py": "fe4e485ecdbf5f038c37dd579cb71d98f7a42ee897734769e4846a2b03c6e1cc",
+    "scripts/t00-metadata.py": "199d8d62427bb0375353ef56abdbe242265c19e0c52df6cc33b166cfd73c3c3f",
+    "scripts/t00.py": "735da96ba4a4e4e4dd22d61ab6c2ad168dea54cb09e030f92bd82e497d1d1f52",
+    "src/core/application.zig": "c39a8df86509448fd23783de505e5e76a70358db1a6297eb97ebed8a7bb730f0",
+    "src/core/lifecycle.zig": "52be9c7f6391f44b03795a346a385c2aaa79045c4141c87a77336e60e2455b44",
+    "src/core/startup.zig": "2ef1c80d28392ba709260a92ecfee590102e9eb91bc36f89faa694afa02682d0",
+    "src/core/tests.zig": "0aee555e574400368e2ab78f9a53a717b707506abe5e657bed6c3f962d2195ee",
+    "src/main.zig": "de082e8e73c821a7708e53c60cf9dc7df2ae1dd07e96b245e91087395a6e3a2e",
+    "tests/integration/test_lifecycle.py": "4b81b644c58d3f5e7b6f1baabfa5279f6154dd4e8106bb8a68afff4c4d5f80dc"
+  },
+  "matches_t00_aqueous_binary": true,
+  "optimize": "ReleaseSafe",
+  "production_executable_sha256": "36068f8aaed084341eaf19621a974efd25e9ffd9e57b20ee7308de14dd4995a3",
+  "zig": "0.16.0"
+}

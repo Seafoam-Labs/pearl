@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="GtkBox" id="content">
+    <property name="orientation">vertical</property>
+    <child><object class="GtkScrolledWindow">
+      <property name="hscrollbar-policy">never</property><property name="vexpand">true</property>
+      <child><object class="GtkBox">
+        <property name="orientation">vertical</property><property name="spacing">20</property>
+        <style><class name="pearl-content"/></style>
+        <child><object class="GtkLabel" id="badge"><property name="xalign">0</property><property name="wrap">true</property><style><class name="pearl-badge"/></style></object></child>
+        <child><object class="GtkLabel" id="heading"><property name="xalign">0</property><property name="wrap">true</property><style><class name="pearl-title"/></style></object></child>
+        <child><object class="GtkLabel" id="subtitle"><property name="xalign">0</property><property name="wrap">true</property><style><class name="pearl-subtitle"/></style></object></child>
+        <child><object class="GtkBox" id="gallery_host"><property name="orientation">vertical</property><property name="spacing">20</property></object></child>
+        <child><object class="GtkBox">
+          <property name="orientation">vertical</property><property name="spacing">12</property>
+          <style><class name="pearl-card"/></style>
+          <child><object class="GtkLabel" id="card_title"><property name="xalign">0</property><property name="wrap">true</property><style><class name="pearl-card-title"/></style></object></child>
+          <child><object class="GtkLabel" id="preview"><property name="xalign">0</property><property name="wrap">true</property><property name="selectable">true</property></object></child>
+          <child><object class="GtkButton" id="reload"><property name="halign">start</property><style><class name="pearl-primary"/></style></object></child>
+        </object></child>
+        <child><object class="GtkButton" id="close"><property name="halign">end</property></object></child>
+      </object></child>
+    </object></child>
+  </object>
+</interface>

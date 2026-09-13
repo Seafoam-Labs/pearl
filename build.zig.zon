@@ -1,0 +1,22 @@
+.{
+    .name = .pearl,
+    .fingerprint = 0x231087f3fa26aa9b,
+    .version = "0.0.0",
+    .minimum_zig_version = "0.16.0",
+    .paths = .{ "build.zig", "build.zig.zon", ".zigversion", "spikes", "bindings", "scripts", "src", "resources", "tests" },
+    .dependencies = .{
+        .wayland = .{
+            .url = "https://codeberg.org/ifreund/zig-wayland/archive/v0.6.0.tar.gz",
+            .hash = "wayland-0.6.0-lQa1kqz8AQADQmdNJsNhLoNHcnEGEUjrOaPV-dtEnEmX",
+        },
+        .gobject_codegen = .{
+            .url = "https://codeload.github.com/jcollie/zig-gobject/tar.gz/4ff7b4d030465b50796b90af72fec41eb9b3b5c6",
+            .hash = "gobject_codegen-0.3.2-B33qzUZkBwClXYYiisnB18xbuUvR8B2Z9C28-bnLxbnA",
+            .lazy = true,
+        },
+        .gobject = .{
+            .url = "https://deps.files.ghostty.org/gobject-2026-07-28-36-1.tar.zst",
+            .hash = "gobject-0.3.2-Skun7F6HogCMynX2JqeSHS7xr-8pK4ob-qRFIcEasVi3",
+        },
+    },
+}

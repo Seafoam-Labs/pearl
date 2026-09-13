@@ -1,0 +1,4 @@
+info(pearl): event=ready mode=session
+info(pearl): event=stopping reason=window-close pending=false
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

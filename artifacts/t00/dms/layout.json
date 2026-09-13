@@ -1,0 +1,16 @@
+{
+  "before": {
+    "layout": "monocle",
+    "ok": true,
+    "output": "HEADLESS-2",
+    "status": "success",
+    "workspace": 1
+  },
+  "changed": {
+    "layout": "grid",
+    "ok": true,
+    "output": "HEADLESS-2",
+    "status": "success",
+    "workspace": 1
+  }
+}
