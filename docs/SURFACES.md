@@ -1,6 +1,8 @@
 # Output surfaces and control (T05)
 
-Session mode now owns desktop surfaces on the verified Aqueous display. The
+Session mode owns desktop surfaces on the verified Aqueous display.
+T06 now supplies their live desktop content; see [DESKTOP.md](DESKTOP.md).
+The primitive descriptions below record the T05 milestone. The
 wallpaper, bar, modal popup, OSD and invisible frame are primitives for T06 and
 later services. The bar currently has one Pearl button; the popup has a title,
 explanatory text and Close button. There is no application launcher, complete

@@ -4,7 +4,9 @@ Pearl now has an application entry point, compiled GTK resources, a development
 gallery with Material components and a private Aqueous launcher. Session mode
 owns a persistent Aqueous adapter, per-output surfaces, native background blur
 and a session-scoped `pearlctl` endpoint. See [SURFACES.md](SURFACES.md) for the
-implemented primitives, control schema and isolated Vulkan test.
+implemented surface policies, control schema and isolated Vulkan test.
+[DESKTOP.md](DESKTOP.md) covers T06’s live bar, GIO launcher, local calendar,
+control center, runtime groups and native layout requests.
 
 ## Build and run
 
@@ -17,6 +19,7 @@ zig build -Doptimize=ReleaseSafe
 zig build test -Doptimize=ReleaseSafe
 zig build test-bindings -Doptimize=ReleaseSafe
 zig build test-components -Doptimize=ReleaseSafe
+zig build test-desktop -Doptimize=ReleaseSafe
 zig build integration -Doptimize=ReleaseSafe
 ```
 
@@ -79,8 +82,8 @@ entry or host configuration is installed by these commands.
 `pearl --help` and `--version` work without a display. Ordinary session mode
 requires an Aqueous desktop token, a Wayland display, a normalized runtime path
 and an existing Unix socket at `aqueous/<instance>/ipc.sock` within that runtime.
-These are launch checks. T04 now performs the authoritative paired handshake
-and state subscription, shows connection availability, and reconnects to the same
+These are launch checks. T04 performs the authoritative paired handshake
+and state subscription, publishes connection availability, and reconnects to the same
 endpoint after failure. The [adapter contract](AQUEOUS_ADAPTER.md) documents its
 command API and ownership rules; T02 supplies the [decoder and atomic model](AQUEOUS_MODEL.md).
 
@@ -177,3 +180,13 @@ credential rejection and bounded icon handling through the generated bindings.
 `zig build test-adapter -Doptimize=ReleaseSafe` adds scripted socket faults and
 real commands in private nested Aqueous. See [AQUEOUS_ADAPTER.md](AQUEOUS_ADAPTER.md)
 for full commands, completion semantics and test-driver isolation.
+
+
+## Desktop preview tests (T06)
+
+`zig build test-desktop -Doptimize=ReleaseSafe` drives real private desktop files,
+application launches, bar workspace/window actions, keyboard state, native layout
+changes and the calendar/control center. It needs Python/PyGObject GTK4 and the
+T00 input fixture compiler dependencies in addition to the normal integration
+tools. Its 2,000-app test records search-to-frame and warm opening latency.
+See [DESKTOP.md](DESKTOP.md) for limits, ownership, the full CLI and reproduction.

@@ -1,0 +1,20 @@
+PASS T06 live desktop, discovery, launch, controls and latency
+Build Summary: 14/14 steps succeeded
+install success
++- install pearl success
+|  +- compile exe pearl ReleaseSafe native success 15s MaxRSS:467M
+|     +- run pkg-config success 1ms
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|        +- compile exe zig-wayland-scanner Debug native cached 11ms MaxRSS:58M
++- install pearl-t00 cached
+|  +- compile exe pearl-t00 ReleaseSafe native cached 15ms MaxRSS:58M
+|     +- run pkg-config (reused)
++- install pearlctl cached
+   +- compile exe pearlctl ReleaseSafe native cached 14ms MaxRSS:59M
+test-desktop success
++- run python3 success 18s
+   +- compile exe pearl ReleaseSafe native (+4 more reused dependencies)
+   +- compile exe pearlctl ReleaseSafe native (reused)
+

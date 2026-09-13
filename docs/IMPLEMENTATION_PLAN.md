@@ -1,6 +1,6 @@
 # Pearl implementation plan
 
-Status: implementation specification, September 13, 2026. T00–T05 are complete;
+Status: implementation specification, September 13, 2026. T00–T06 are complete;
 see [PROGRESS.md](PROGRESS.md) and [COMPATIBILITY.md](COMPATIBILITY.md) for its
 verified stack and evidence. “Pearl” is a working name taken from this workspace.
 
@@ -228,7 +228,7 @@ The GTK connection belongs to GTK. Do not dispatch it using a competing reader t
 
 ### Gaps to handle explicitly
 
-- **Runtime layout:** the inspected socket actions do not include layout selection. Implement the existing `aqueous-window-info-v1` query/set interface used by `aqueousctl layout`, on a Pearl-owned Wayland connection. Refresh on popup open and relevant workspace/output changes; do not invent a socket action or poll from each widget. If continuous external layout-change observation is unavailable, document this and add a small capability-negotiated Aqueous extension in a separate task before claiming live layout parity.
+- **Runtime layout:** the inspected socket actions do not include layout selection. Implement the existing `aqueous-window-info-v1` query/set interface used by `aqueousctl layout`, on GTK’s verified Wayland connection (implemented in T06 with generated version-3 bindings). Refresh on popup open and relevant workspace/output changes; do not invent a socket action or poll from each widget. If continuous external layout-change observation is unavailable, document this and add a small capability-negotiated Aqueous extension in a separate task before claiming live layout parity.
 - **Display configuration:** shell state is not a full display-edit API. Use wlr output management for test/apply previews and `aqueous-config` for persistence.
 - **Persistent configuration:** never send arbitrary TOML writes over shell IPC. Reuse the helper described below.
 - **Missing installed capabilities:** disable only the dependent feature with an explanation. Set a minimum Aqueous revision/capability contract at release; no compatibility adapters for other compositors.

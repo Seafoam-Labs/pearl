@@ -48,7 +48,8 @@ does not depend on those UI frameworks.
 | --- | --- |
 | GTK layer-shell | **Implemented:** complete `Gtk4LayerShell-1.0` GIR namespace generated as `gtk4layershell1` |
 | GTK session-lock | **Implemented:** complete `Gtk4SessionLock-1.0` GIR namespace generated as `gtk4sessionlock1`; real monitor/locked/unlocked callbacks exercised |
-| Aqueous layout, idle, data-control and capture protocols | Generate Zig protocol bindings from pinned XML when their tasks begin; no handwritten wire marshalling. T00 probes layout through `aqueousctl` |
+| Aqueous layout | **Implemented in T06:** generated window-info manager v3 query/set requests on GTK’s verified display; refresh on demand/active-workspace change, no continuous external layout observation |
+| Idle, data-control and capture protocols | Generate Zig protocol bindings from pinned XML when their tasks begin; no handwritten wire marshalling |
 | libpulse and PAM | Generate direct Zig ABI declarations from pinned headers using Zig's C translation tooling when needed; no custom C bridge |
 | Polkit agent | Generate its missing GIR namespace using the same workflow; authentication behavior remains T12 work |
 | Native background blur | **Implemented in T05:** generated `ext-background-effect-v1` on GTK’s existing display/surfaces. Private Vulkan tests verify native blur, namespace veto, capability changes, resizing and remap; see [SURFACES.md](SURFACES.md) |
@@ -213,3 +214,22 @@ Native XML inputs and zig-wayland **v0.6.0** output are pinned in
 See [SURFACES.md](SURFACES.md) for reproduction and the wlroots teardown allocation
 diagnostic. This evidence does not cover physical DPMS/resume, other GPUs,
 HDR/VRR, accessibility or production GPU performance.
+
+
+## T06 live desktop validation
+
+[T06 preview results](../artifacts/t06/latest/results.json) record the final
+Pearl/pearlctl hashes, 2,000-application search and warm opening timings. GIO
+semantics are exercised through real temporary desktop files, independent GTK
+applications, a private terminal stub and private D-Bus activation. Duplicate
+window titles/workspace numbers, effective keyboard state, exclusion/minimized
+hints, application install/removal, empty/localized catalogs, native layout
+query/set and 100/125/150/200% scale pass the preview gate.
+
+The Aqueous revision and toolkit floor remain unchanged. T06 adds Ghostty's
+`giounix2` module and two pinned XML inputs, preserving their copyright/license
+notices. No new custom C bridge or compositor modification is used. The borrowed
+GTK display already passes T05's native-session/IPC identity check. One-shot
+layout semantics and remaining external-observation limits are documented in
+[DESKTOP.md](DESKTOP.md). [The visual comparison](../artifacts/t06/comparison.html)
+uses actual DMS/Pearl captures and records deliberate feature/layout differences.

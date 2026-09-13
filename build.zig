@@ -20,6 +20,9 @@ pub fn build(b: *std.Build) void {
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-background-effect-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-shell-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-workspace-v1.xml"));
+    scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-window-info-v1.xml"));
+    scanner.addCustomProtocol(b.path("bindings/protocols/ext-foreign-toplevel-list-v1.xml"));
+    scanner.generate("aqueous_window_info_manager_v1", 3);
     scanner.generate("aqueous_shell_manager_v1", 2);
     scanner.generate("wl_compositor", 6);
     scanner.generate("ext_background_effect_manager_v1", 1);
@@ -102,6 +105,13 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| surfaces.addArgs(args);
     b.step("test-surfaces", "Verify surfaces, CLI isolation and native blur in private Aqueous").dependOn(&surfaces.step);
 
+    const desktop = b.addSystemCommand(&.{ "python3", "tests/integration/test_desktop.py", "--pearl" });
+    desktop.addArtifactArg(app);
+    desktop.addArg("--ctl");
+    desktop.addArtifactArg(ctl);
+    if (b.args) |args| desktop.addArgs(args);
+    b.step("test-desktop", "Verify T06 live desktop and GIO discovery/activation in private Aqueous").dependOn(&desktop.step);
+
     const dev_backend = b.option(enum { headless, nested }, "dev-backend", "Development compositor backend") orelse .headless;
     for ([_][]const u8{ "run", "gallery" }) |name| {
         const launch = b.addSystemCommand(&.{ "python3", "scripts/dev-session.py", "--backend", @tagName(dev_backend), "--" });
@@ -121,6 +131,11 @@ fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.L
 
 fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, source: []const u8) *std.Build.Module {
     const module = b.createModule(.{ .root_source_file = b.path(source), .target = target, .optimize = optimize, .link_libc = true });
+    const pulse = b.addTranslateC(.{ .root_source_file = b.path("bindings/headers/pulse.h"), .target = target, .optimize = optimize });
+    pulse.addIncludePath(b.path("bindings/headers"));
+    module.addImport("pulse", pulse.createModule());
+    module.linkSystemLibrary("libpulse", .{ .use_pkg_config = .force });
+    module.linkSystemLibrary("libpulse-mainloop-glib", .{ .use_pkg_config = .force });
     // Interposition requires layer-shell to load before GTK's Wayland dependency.
     module.linkSystemLibrary("gtk4-layer-shell-0", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
@@ -136,7 +151,7 @@ fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.R
         while (imports.next()) |entry| generated.addImport(entry.key_ptr.*, entry.value_ptr.*);
         module.addImport(name, generated);
     }
-    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "glibunix2", "gobject2", "pango1", "gdkpixbuf2", "gdkwayland4", "cairo1" }) |name|
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "glibunix2", "gobject2", "pango1", "gdkpixbuf2", "gdkwayland4", "cairo1", "giounix2" }) |name|
         module.addImport(name, bindings.module(name));
     return module;
 }

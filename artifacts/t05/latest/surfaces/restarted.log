@@ -4,7 +4,8 @@ info(pearl): event=aqueous-availability state=subscribing
 info(pearl): event=aqueous-availability state=ready
 info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
 info: event=output-mapped id=2 connector=HEADLESS-1 scale=1.5
-info(pearl): event=control-ready session=ab2387217215a81bb6dfe2c10177f585
+info(pearl): event=control-ready session=dc832ca801b1214b24a739fe2197c896
+info: event=app-index-ready entries=158 truncated=false
 info(pearl): event=stopping reason=control-quit pending=false
 info(pearl): event=aqueous-availability state=stopped
 info(pearl): event=cleanup pending=false watched_objects=0

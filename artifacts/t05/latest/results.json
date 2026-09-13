@@ -15,11 +15,11 @@
     "native-wayland-session-matches-ipc-before-surfaces-or-control": true,
     "control-schema-frame-limit-eight-client-bound-and-partial-request-deadline": true,
     "private-nested-stale-session-and-cross-display-cli-isolation": true,
-    "native-blur-pixel-difference-under-rule-veto": 1.3244010966455548,
+    "native-blur-pixel-difference-under-rule-veto": 1.308216334541063,
     "rule-restored-pixel-difference": 0.0,
     "gtk-owned-surface-native-protocol-capability-resize-remap-lifecycle": true
   },
-  "pearl_sha256": "fc00a300b524ac37b43abe06d14c01cde87e4e3c4177193f4f3d86caccf2d4df",
-  "ctl_sha256": "945b7e9d3e5e2ad3454a895874b512683a68af50bc7f13a6c5bce8b554d32a6c",
+  "pearl_sha256": "cf3e698af1f341a4b99de5cedfcb8adda6a95c9e8359f8ceb8627b7761591e3a",
+  "ctl_sha256": "2ecc5882a9732b7c4b4d82afe32cf779d6c5d4ccf7b001db7048a176c7bd760b",
   "effects_aqueous_sha256": "7baaa710450fb494aa0f4034e380ff4d0028ed8287f8a0462652d1b8b2d33a52"
 }

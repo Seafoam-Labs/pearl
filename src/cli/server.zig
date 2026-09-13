@@ -179,7 +179,7 @@ const Slot = struct {
         }
         const result = self.owner.handle(self.owner.context, request, alloc) catch |err| {
             try self.failure(alloc, request.id, switch (err) {
-                error.Unavailable, error.OutputUnavailable, error.Locked, error.AmbiguousSeat, error.EdgeOccupied, error.InvalidSize => err,
+                error.Unavailable, error.OutputUnavailable, error.Locked, error.AmbiguousSeat, error.EdgeOccupied, error.InvalidSize, error.InvalidGroups, error.InvalidValue, error.Busy, error.Unsupported => err,
                 else => error.Internal,
             });
             return;

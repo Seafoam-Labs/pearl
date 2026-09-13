@@ -1,6 +1,6 @@
 # Native Wayland bindings
 
-T05 generates native protocols directly in Zig using **zig-wayland v0.6.0**,
+T05/T06 generate native protocols directly in Zig using **zig-wayland v0.6.0**,
 whose URL/integrity hash is pinned in `build.zig.zon`. GObject/GTK declarations
 continue to come from Ghostty's package; there is no custom C bridge or
 handwritten Wayland wire marshalling.
@@ -11,7 +11,9 @@ and copyright text. Aqueous's protocol has an MIT SPDX notice; its full permissi
 notice is retained with the generator and other notices in
 [../licenses](../licenses/). The workspace protocol is an input because Aqueous's
 shell XML references its handle type; Pearl does not bind a workspace manager
-in T05. Core XML is also pinned, so system protocol upgrades do not silently
+in T05. T06 adds `aqueous_window_info_manager_v1` v3 for layout requests and
+the `ext-foreign-toplevel-list-v1` XML type dependency; it does not use that
+protocol for duplicate window enumeration. Core XML is also pinned, so system protocol upgrades do not silently
 change generated declarations.
 
 Ordinary builds generate into Zig's cache and import that module. To export the

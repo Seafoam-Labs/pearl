@@ -46,3 +46,33 @@ test "popup clamps rotated negative-origin logical outputs without rescaling" {
     const tiny = popup(.{ .x = 100, .y = 50, .width = 120, .height = 90 }, .{ .x = 110, .y = 60, .width = 100, .height = 70 }, 440, 280);
     try std.testing.expectEqual(Rect{ .x = 10, .y = 10, .width = 100, .height = 70 }, tiny);
 }
+
+/// Calendar/control popovers follow the occupied bar edge inside usable bounds.
+pub fn anchored(bounds: Rect, usable: Rect, width: i32, height: i32, edge: Edge, end: bool) Rect {
+    var rect = popup(bounds, usable, width, height);
+    const left = @max(0, usable.x - bounds.x);
+    const top = @max(0, usable.y - bounds.y);
+    const right = @min(bounds.width, usable.x - bounds.x + usable.width) - rect.width;
+    const bottom = @min(bounds.height, usable.y - bounds.y + usable.height) - rect.height;
+    switch (edge) {
+        .top, .bottom => {
+            rect.y = if (edge == .top) @min(top + 4, bottom) else @max(top, bottom - 4);
+            if (end) rect.x = @max(left, right - 4);
+        },
+        .left, .right => {
+            rect.x = if (edge == .left) @min(left + 4, right) else @max(left, right - 4);
+            if (end) rect.y = @max(top, bottom - 4);
+        },
+    }
+    return rect;
+}
+test "edge-anchored control and calendar remain inside usable bounds" {
+    const bounds: Rect = .{ .x = -1280, .y = 0, .width = 1280, .height = 720 };
+    const usable: Rect = .{ .x = -1280, .y = 48, .width = 1280, .height = 672 };
+    const top = anchored(bounds, usable, 600, 560, .top, true);
+    try std.testing.expectEqual(@as(i32, 52), top.y);
+    try std.testing.expectEqual(@as(i32, 676), top.x);
+    const tiny = anchored(bounds, usable, 600, 800, .bottom, false);
+    try std.testing.expectEqual(@as(i32, 48), tiny.y);
+    try std.testing.expectEqual(@as(i32, 672), tiny.height);
+}

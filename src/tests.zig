@@ -1,4 +1,5 @@
 test {
+    _ = @import("desktop/policy.zig");
     _ = @import("ui/surfaces/policy.zig");
     _ = @import("cli/options.zig");
     _ = @import("cli/protocol.zig");
@@ -6,4 +7,8 @@ test {
     _ = @import("aqueous/tests.zig");
     _ = @import("theme/theme.zig");
     _ = @import("ui/i18n.zig");
+}
+
+comptime {
+    _ = @import("services/policy.zig");
 }

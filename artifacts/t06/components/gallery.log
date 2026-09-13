@@ -1,0 +1,101 @@
+info(gallery): event=search results=518
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(pearl): event=work-started generation=1
+info(pearl): event=ready mode=demo
+info(gallery): event=search results=518
+info(pearl): event=work-finished applied=true canceled=false
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=8 focus=search volume=65 quiet=false selected=0
+info(gallery): event=appearance light=true compact=false large=false reduced=false
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=72 focus=search volume=65 quiet=false selected=0
+info(gallery): event=appearance light=true compact=true large=false reduced=false
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=137 focus=search volume=65 quiet=false selected=0
+info(gallery): event=appearance light=false compact=true large=false reduced=false
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=201 focus=search volume=65 quiet=false selected=0
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(gallery): event=appearance light=false compact=false large=true reduced=false
+info(gallery): event=search results=518
+info(gallery): event=language value=de
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=306 focus=search volume=65 quiet=false selected=0
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(gallery): event=search results=518
+info(gallery): event=language value=en
+info(gallery): event=search results=4
+info(gallery): event=search results=2
+info(gallery): event=search results=1
+info(gallery): event=search results=1
+info(gallery): event=search results=1
+info(gallery): event=search results=1
+info(gallery): event=search results=1
+info(gallery): event=search results=1
+info(gallery): event=sample-activated title=Terminal
+info(gallery): event=search results=518
+info(gallery): event=search results=518
+info(gallery): event=search results=1
+info(gallery): event=search results=1
+info(gallery): event=search results=1
+info(gallery): event=search results=1
+info(gallery): event=sample-activated title=Café notes
+info(gallery): event=search results=518
+info(gallery): event=search results=518
+info(gallery): event=search results=515
+info(gallery): event=search results=1
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=search results=0
+info(gallery): event=gallery-probe rows=0 total=0 clipped=0 width=1280 height=720 frame=603 focus=search volume=65 quiet=false selected=4294967295
+info(gallery): event=search results=518
+info(gallery): event=search results=518
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=657 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=sample-activated title=Sample window 0512
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=750 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=795 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=838 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=883 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=925 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=946 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=975 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1018 focus=theme-light volume=65 quiet=false selected=517
+info(gallery): event=appearance light=true compact=false large=false reduced=false
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1066 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1111 focus=density-compact volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1154 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1198 focus=text-large volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1227 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1270 focus=motion-reduced volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1298 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1342 focus=language volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1369 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1412 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1440 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1484 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1523 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1568 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1596 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1640 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1669 focus=GtkApplicationWindow volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1713 focus=volume volume=65 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1757 focus=volume volume=66 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1800 focus=brightness volume=66 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1843 focus=quiet volume=66 quiet=false selected=517
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1888 focus=quiet volume=66 quiet=true selected=517
+info(gallery): event=appearance light=true compact=false large=false reduced=true
+info(gallery): event=idle-audit frames=1
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=1280 height=720 frame=1957 focus=GtkApplicationWindow volume=66 quiet=true selected=517
+info(gallery): event=appearance light=true compact=false large=true reduced=true
+info(gallery): event=search results=518
+info(gallery): event=language value=de
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=640 height=720 frame=1995 focus=theme-light volume=66 quiet=true selected=0
+info(gallery): event=gallery-probe rows=205 total=518 clipped=0 width=640 height=720 frame=2016 focus=GtkApplicationWindow volume=66 quiet=true selected=2
+info(pearl): event=stopping reason=signal pending=false
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

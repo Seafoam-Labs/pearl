@@ -1,5 +1,55 @@
 # Pearl implementation progress
 
+## T06 — Complete, September 13, 2026
+
+Session mode now has configurable bar groups, live per-output workspaces and
+focused titles, effective keyboard layout, clock/calendar, a real application
+and running-window launcher, overview and control-center composition. Workspace
+and window actions use authoritative runtime IDs, including duplicate labels
+across outputs. Overflowing workspace strips reveal the newly active workspace.
+
+GIO owns desktop discovery and launch semantics, including localized metadata,
+visibility, desktop actions, field codes, working directories, terminal and
+D-Bus activation. A monitored immutable catalog feeds bounded asynchronous
+Unicode search and a virtualized result list. Session/generation validation,
+stable selection identity and cancellation/drain protect refresh and teardown.
+
+Generated native Aqueous bindings query and set runtime workspace layout on
+GTK's verified Wayland connection. The control center exposes these real layout
+controls; future audio, network, brightness and media services show unavailable.
+External layout changes on the same workspace require Refresh because Aqueous
+does not continuously publish them. Bar preferences and recent applications are
+currently in memory; persistent settings remain T13 work.
+
+Validation and evidence:
+
+- **49/49 unit and binding tests** pass on exact Zig 0.16.0, ReleaseSafe
+  (41 pure, seven adapter and one generated API test).
+- **15 desktop acceptance groups** pass in
+  [desktop results](../artifacts/t06/latest/results.json): real GIO launches,
+  duplicate identities, keyboard/workspace/window actions, native layout,
+  install/removal, empty catalogs, German labels, long text, mixed scale and
+  pending-search teardown.
+- With **2,000 applications**, 132 search-to-paint measurements have median
+  **12.8 ms** and p95 **28.3 ms**. Eight warm launcher openings have median
+  **37.6 ms**, maximum **49.9 ms**, including CLI/status observation overhead.
+  These are private headless measurements, not physical input/display latency.
+- All **17 surface checks** pass on the final desktop binary, including native
+  Vulkan blur, focus/input, reservations, hotplug and session isolation. Monitor
+  property observation fixes GDK connectors arriving after list insertion.
+- Existing lifecycle, Material gallery and **21 adapter scenarios** pass.
+  [Verification records](../artifacts/t06/verification/README.md) identify suite
+  binaries, commands, logs and the final workspace-scroll follow-up.
+- Fresh-cache native binding generation matches SHA-256
+  `c1cfb6bbd6ff33e83e18ca9f73e095fe9f6c1f10e5825f2f38ef92bc0ac16fdf`.
+
+[DESKTOP.md](DESKTOP.md) documents implementation, commands and limits.
+The [visual comparison](../artifacts/t06/comparison.html) pairs actual Pearl
+captures with the frozen DMS reference and records deliberate scope differences.
+Tests use private sessions without changing the host desktop. Physical-display
+performance, extended soak, full service coverage and accessibility remain later
+release gates. **T07 is next: audio, power and OSD services.**
+
 ## T05 — Complete, September 13, 2026
 
 Session mode now owns wallpaper/bar surfaces per matched GDK/Aqueous connector,
@@ -49,8 +99,7 @@ protocol errors. Physical output/DPMS/resume, other GPUs and accessibility remai
 release-gate work. The popup/bar are explicit T05 primitives, not completed
 launcher or control-center services.
 
-**T06 is next:** the first complete desktop slice with real bar groups, launcher,
-workspace/window actions, clock/calendar and control-center composition.
+**T06 was next at this milestone; see the completed T06 entry above.**
 
 
 ## T04 — Complete, September 13, 2026

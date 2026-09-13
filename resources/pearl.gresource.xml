@@ -18,5 +18,7 @@
     <file>icons/scalable/actions/pearl-emblem-system-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-network-wireless-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-weather-clear-night-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-view-grid-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-window-symbolic.svg</file>
   </gresource>
 </gresources>

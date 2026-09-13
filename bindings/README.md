@@ -3,8 +3,8 @@
 Pearl uses Ghostty's generated GObject package for GTK, GDK, GLib, GIO,
 GObject and Pango. The package does not contain gtk4-layer-shell or
 gtk4-session-lock. Both missing namespaces are now generated in this directory.
-There is no Pearl C bridge. T05 additionally generates native core, background-effect
-and Aqueous shell declarations using pinned zig-wayland/XML inputs; see
+There is no Pearl C bridge. T05/T06 additionally generate native core, background-effect, Aqueous shell
+and window-info/layout declarations using pinned zig-wayland/XML inputs; see
 [protocols/README.md](protocols/README.md).
 
 ## Pinned inputs

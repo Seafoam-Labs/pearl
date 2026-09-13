@@ -3,18 +3,32 @@ const std = @import("std");
 const e = @import("../aqueous/entities.zig");
 pub const Edge = @import("../ui/surfaces/policy.zig").Edge;
 pub const max_frame = 8192;
-pub const Op = enum { status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit };
+pub const Op = enum { status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit, launcher_show, launcher_hide, launcher_toggle, control_show, control_toggle, calendar_toggle, bar_groups, layout_get, layout_set, overview_toggle, services_status, audio_set, brightness_set, profile_set };
 pub const Request = struct {
     pearl: u32 = 1,
     id: []const u8 = "1",
     session: []const u8 = "",
     display: []const u8 = "",
     op: Op,
+    generation: ?u64 = null,
+    device: ?u32 = null,
+    kind: ?@import("../services/policy.zig").Kind = null,
+    volume: ?u8 = null,
+    mute: ?bool = null,
+    make_default: ?bool = null,
+    target: ?u32 = null,
+    percent: ?u8 = null,
+    profile: ?u8 = null,
+    offset: ?u16 = null,
     output: ?[]const u8 = null,
     edge: ?Edge = null,
     size: ?u16 = null,
     text: ?[]const u8 = null,
     duration_ms: ?u32 = null,
+    left: ?[]const u8 = null,
+    center: ?[]const u8 = null,
+    right: ?[]const u8 = null,
+    layout: ?[]const u8 = null,
 };
 pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     if (bytes.len == 0 or bytes.len > max_frame or !std.unicode.utf8ValidateSlice(bytes)) return error.InvalidRequest;
@@ -58,10 +72,16 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
         const key = field.key_ptr.*;
         if (std.mem.eql(u8, key, "pearl") or std.mem.eql(u8, key, "id") or std.mem.eql(u8, key, "session") or std.mem.eql(u8, key, "display") or std.mem.eql(u8, key, "op")) continue;
         const allowed = switch (r.op) {
-            .status, .popup_hide, .quit => &[_][]const u8{},
-            .popup_show, .popup_toggle => &[_][]const u8{"output"},
+            .status, .popup_hide, .launcher_hide, .quit => &[_][]const u8{},
+            .popup_show, .popup_toggle, .launcher_show, .launcher_toggle, .control_show, .control_toggle, .calendar_toggle, .overview_toggle, .layout_get => &[_][]const u8{"output"},
             .bar_set, .frame_set => &[_][]const u8{ "output", "edge", "size" },
             .osd_show => &[_][]const u8{ "output", "text", "duration_ms" },
+            .bar_groups => &[_][]const u8{ "output", "left", "center", "right" },
+            .layout_set => &[_][]const u8{ "output", "layout" },
+            .services_status => &[_][]const u8{"offset"},
+            .audio_set => &[_][]const u8{ "generation", "device", "kind", "volume", "mute", "make_default", "target" },
+            .brightness_set => &[_][]const u8{"percent"},
+            .profile_set => &[_][]const u8{"profile"},
         };
         var found = false;
         for (allowed) |name| if (std.mem.eql(u8, key, name)) {
@@ -72,6 +92,27 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     }
     if (r.output) |id| if (id.len == 0 or id.len > 1024 or std.mem.indexOfScalar(u8, id, 0) != null) return error.InvalidRequest;
     switch (r.op) {
+        .audio_set => {
+            const kind = r.kind orelse return error.InvalidRequest;
+            if ((r.device == null) != (r.generation == null)) return error.InvalidRequest;
+            if (r.device == null and kind != .sink and kind != .source) return error.InvalidRequest;
+            if (r.volume == null and r.mute == null and r.make_default == null and r.target == null) return error.InvalidRequest;
+            if (r.volume) |v| if (v > 100) return error.InvalidRequest;
+            if (r.make_default) |v| if (!v or (kind != .sink and kind != .source)) return error.InvalidRequest;
+            if (r.target != null and kind != .playback and kind != .recording) return error.InvalidRequest;
+        },
+        .brightness_set => if (r.percent == null or r.percent.? > 100) return error.InvalidRequest,
+        .profile_set => if (r.profile == null or r.profile.? > 2) return error.InvalidRequest,
+        .services_status => if (r.offset != null and r.offset.? > 128) return error.InvalidRequest,
+        .bar_groups => {
+            if (r.output == null or r.left == null or r.center == null or r.right == null) return error.InvalidRequest;
+            try (@import("../desktop/policy.zig").Groups{ .left = r.left.?, .center = r.center.?, .right = r.right.? }).validate();
+        },
+        .layout_get => if (r.output == null) return error.InvalidRequest,
+        .layout_set => {
+            if (r.output == null or r.layout == null) return error.InvalidRequest;
+            _ = std.meta.stringToEnum(@import("../desktop/policy.zig").Layout, r.layout.?) orelse return error.InvalidRequest;
+        },
         .bar_set, .frame_set => {
             if (r.output == null or r.edge == null or r.size == null) return error.InvalidRequest;
             if (r.size.? > 160 or (r.op == .bar_set and r.size.? < 32)) return error.InvalidRequest;

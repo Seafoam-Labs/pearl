@@ -1,0 +1,81 @@
+{
+  "recorded_utc": "2026-09-13T18:03:11.699950+00:00",
+  "zig": "0.16.0",
+  "optimize": "ReleaseSafe",
+  "aqueous_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480",
+  "aqueous_source_clean": true,
+  "installed_binary_sha256": {
+    "pearl": "c7d2769fa061f386be02867bf430e3c90646a13475298f5a08a8501649a31ecc",
+    "pearlctl": "e09ced93258a169ea4d4d38d1d89059d208e3197320a64afa72b5c474386db57"
+  },
+  "protocol_manifest": {
+    "generator": "zig-wayland v0.6.0 (package integrity in build.zig.zon)",
+    "zig": "0.16.0",
+    "globals": {
+      "wl_compositor": 6,
+      "ext_background_effect_manager_v1": 1,
+      "aqueous_shell_manager_v1": 2,
+      "aqueous_window_info_manager_v1": 3
+    },
+    "inputs": {
+      "wayland.xml": {
+        "source": "Wayland 1.26.0: protocol/wayland.xml",
+        "sha256": "cc860987e54f8d85c940e97fa1270c69b6e4ad31fbcf5a7f00107ce1157f5e07"
+      },
+      "ext-background-effect-v1.xml": {
+        "source": "wayland-protocols 1.49: staging/ext-background-effect/ext-background-effect-v1.xml",
+        "sha256": "e463b7863c97d7be05489b52b15cd0b3a5d8290b51340f62023b47d03b4217e3"
+      },
+      "aqueous-shell-v1.xml": {
+        "source": "Aqueous 7611e23c653a72b24d6dd4d8b6404d1d1feb7480: compositor/protocol/aqueous-shell-v1.xml",
+        "sha256": "05a25b5b4a55ba4cb603ef2ecdac483c13725d19b0eb89c73c1c4102bf905007"
+      },
+      "ext-workspace-v1.xml": {
+        "source": "Aqueous 7611e23c653a72b24d6dd4d8b6404d1d1feb7480: compositor/protocol/upstream/ext-workspace-v1.xml",
+        "sha256": "9b449d9d5d40f6032eba9813d18093b84f249a2cf38d6755dec7bca7eb96b0f3"
+      },
+      "aqueous-window-info-v1.xml": {
+        "source": "Aqueous 7611e23c653a72b24d6dd4d8b6404d1d1feb7480: compositor/protocol/aqueous-window-info-v1.xml",
+        "sha256": "2cfbcfa0526d8e58e741428813864119c86cb615f1877ba14854a52156d6bdd1"
+      },
+      "ext-foreign-toplevel-list-v1.xml": {
+        "source": "wayland-protocols 1.49: staging/ext-foreign-toplevel-list/ext-foreign-toplevel-list-v1.xml",
+        "sha256": "6b2ffb3a07d679d1c4170263adfefb9a7c37dd34ed3db5180bf58cb8ff8fbd0b"
+      }
+    },
+    "generated_sha256": "c1cfb6bbd6ff33e83e18ca9f73e095fe9f6c1f10e5825f2f38ef92bc0ac16fdf"
+  },
+  "dms_reference_sha256": {
+    "artifacts/t00/dms/dms-dark-launcher.png": "4b4116bdb3d1d7b5ed5378e914df18cc63ab04337a68f7bf0cb1684d8c089f5d",
+    "artifacts/t00/dms/dms-dark-control-center.png": "5da83267ab83bb6bff82565983354ac40a240afdb9dccc1b1bff530eadb0648e",
+    "artifacts/t00/dms/dms-dark-calendar-media.png": "ef83c4a3c7f4e1d11d11e9ffa4f5b1653a65bee882f425c530a4b7d74dda3a6d"
+  },
+  "suite_summary": {
+    "latest": {
+      "status": "passed",
+      "pearl_sha256": "c7d2769fa061f386be02867bf430e3c90646a13475298f5a08a8501649a31ecc",
+      "ctl_sha256": "e09ced93258a169ea4d4d38d1d89059d208e3197320a64afa72b5c474386db57"
+    },
+    "surfaces": {
+      "status": "passed",
+      "pearl_sha256": "c7d2769fa061f386be02867bf430e3c90646a13475298f5a08a8501649a31ecc",
+      "ctl_sha256": "e09ced93258a169ea4d4d38d1d89059d208e3197320a64afa72b5c474386db57",
+      "effects_aqueous_sha256": "7baaa710450fb494aa0f4034e380ff4d0028ed8287f8a0462652d1b8b2d33a52"
+    },
+    "lifecycle": {
+      "executable_sha256": "3693af42fa505eca943b8129bf056ad5ce1675ee68153ea26ab081efba9fe76a",
+      "production_executable_sha256": "4deff2d868ed94ec7ded43033fba2151cbfe5c65e0f2525576c2e6bedd35f61e",
+      "status": "pass"
+    },
+    "components": {
+      "executable_sha256": "3693af42fa505eca943b8129bf056ad5ce1675ee68153ea26ab081efba9fe76a",
+      "status": "pass"
+    },
+    "adapter": {
+      "status": "passed",
+      "executable_sha256": "cf856b659af024579c7292d02dac49a34f9299500e842444d85b877eea34243d"
+    }
+  },
+  "source_hash_manifest": "source-sha256.json",
+  "note": "Desktop and surface checks cover the final binary. Lifecycle, gallery and adapter regressions passed before the final isolated active-workspace scroll adjustment; their recorded binary hashes are preserved."
+}

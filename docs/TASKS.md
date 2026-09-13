@@ -1,7 +1,7 @@
 # Pearl AI implementation tasks
 
-Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T05 are complete**;
-T06–T16 are not started. Follow their dependency order and record evidence in
+Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T06 are complete**;
+T07–T16 are not started. Follow their dependency order and record evidence in
 [PROGRESS.md](PROGRESS.md). Task IDs are stable and may be split into smaller
 changes without changing their acceptance criteria.
 
@@ -132,6 +132,9 @@ Dependencies express technical prerequisites, not a requirement to use parallel 
 **Done when:** mixed-scale two-output tests show correct target placement, exactly one reservation per edge, Escape/outside-click dismissal, click-through empty regions and no focus theft by OSD. Killing the shell restores usable bounds. Stale/nested CLI environments cannot address the host instance.
 
 ## T06 — First complete desktop slice
+
+**Complete:** see [desktop contract](DESKTOP.md), [preview results](../artifacts/t06/latest/results.json)
+and [DMS/Pearl comparison](../artifacts/t06/comparison.html).
 
 **Depends on:** T03, T05. **Primary files:** bar, launcher, shared app index and control-center surface.
 

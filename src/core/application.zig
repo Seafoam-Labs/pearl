@@ -212,6 +212,7 @@ fn aqueousChanged(context: *anyopaque, event: adapter.Event) void {
     if (event == .availability) log.info("event=aqueous-availability state={s}", .{@tagName(event.availability)});
     if (event == .fault) log.warn("event=aqueous-disconnected reason={s}", .{event.fault});
     if (self.life.phase == .stopping) return;
+    if (event == .completion) if (self.surfaces) |*surfaces| surfaces.completion(event.completion);
     if (event == .availability or event == .state) {
         if (self.surfaces) |*surfaces| surfaces.schedule();
         if (self.session_source == 0) self.session_source = glib.idleAdd(sessionChanged, self);

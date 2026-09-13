@@ -2,7 +2,7 @@
 
 Pearl is the working name for a planned **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with a look and feel closely modeled on Dank Material Shell.
 
-T00–T05 are implemented. The pinned Zig 0.16.0 stack has generated
+T00–T06 are implemented. The pinned Zig 0.16.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
 resources and a demo gallery. Private Aqueous tests cover startup, shutdown,
 cancellation and session isolation. A bounded Aqueous decoder and atomic state
@@ -11,8 +11,10 @@ components, compact density, larger text, translations and virtualized search.
 Session mode now maintains two Aqueous connections with validated commands,
 reconnect recovery and bounded window icons. Session surfaces now include per-output
 wallpaper and bar, modal popup, click-through OSD and frame reservations, native
-Aqueous blur and the session-scoped `pearlctl` CLI. T06 is next: the first complete
-bar/launcher/control-center slice. The full shell remains in progress.
+Aqueous blur and the session-scoped `pearlctl` CLI. The first desktop slice now
+includes configurable live bar groups, GIO application/window search and launch,
+a local calendar, and a control center with native Aqueous layout controls.
+T07 is next: audio, power and OSD services. The full shell remains in progress.
 
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
 - [AI implementation tasks](docs/TASKS.md): ordered work packages with dependencies, concrete deliverables, and acceptance criteria.
@@ -20,6 +22,7 @@ bar/launcher/control-center slice. The full shell remains in progress.
 - [Development guide](docs/DEVELOPMENT.md): run the gallery, use isolated sessions, and follow lifecycle/ownership conventions.
 - [Aqueous model](docs/AQUEOUS_MODEL.md): decoder limits, atomic updates, derived views and ownership contracts.
 - [Aqueous adapter](docs/AQUEOUS_ADAPTER.md): persistent connections, command completion, recovery and icon caching.
+- [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.
 - [Surfaces and CLI](docs/SURFACES.md): output identity, reservations, popup/input policy, native blur and control v1.
 - [Components](docs/COMPONENTS.md) and [DMS visual comparison](artifacts/t03/comparison.html): gallery controls, keyboard behavior and captured differences.
 - [Generated bindings](bindings/README.md): full layer-shell/session-lock namespaces sharing Ghostty's GTK types, with no C bridge.

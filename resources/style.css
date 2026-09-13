@@ -65,3 +65,15 @@
 .pearl-root.$scope.pearl-shell .pearl-osd-panel { padding: 14px; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button { padding: 2px 12px; min-height: 24px; background: transparent; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button:hover { background: $high$; }
+
+/* T06 desktop composition: primary bar controls survive compact output widths. */
+.pearl-root.$scope.pearl-shell .pearl-bar-panel { padding: 0 6px; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-icon { padding: 2px 8px; min-width: 24px; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-workspace { padding: 2px 8px; min-width: 16px; color: $secondary$; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-workspace-active { padding: 2px 12px; min-width: 20px; background: $primary$; color: $on_primary$; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-urgent { border-color: $primary$; }
+.pearl-root.$scope.pearl-shell .pearl-launcher-row { padding: 10px 12px; min-height: 38px; }
+.pearl-root.$scope.pearl-shell button.pearl-selected { background: $primary$; color: $on_primary$; }
+.pearl-root.$scope.pearl-shell calendar { background: $low$; color: $text$; padding: 12px; border-radius: 16px; }
+.pearl-root.$scope.pearl-shell calendar:selected { background: $primary$; color: $on_primary$; }
+.pearl-root.$scope.pearl-shell .pearl-layout-card { padding: 14px; }
