@@ -16,6 +16,11 @@ pub fn build(b: *std.Build) void {
         }
         return;
     }
+    const pulse = b.addTranslateC(.{ .root_source_file = b.path("bindings/headers/pulse.h"), .target = target, .optimize = optimize });
+    pulse.addIncludePath(b.path("bindings/headers"));
+    const pulse_module = pulse.createModule();
+    const pulse_export = b.addInstallFile(pulse.getOutput(), "share/pearl/bindings/pulse.zig");
+    b.step("generate-pulse", "Export the translated pinned libpulse ABI").dependOn(&pulse_export.step);
     const scanner = Scanner.create(b, .{ .wayland_xml = b.path("bindings/protocols/wayland.xml"), .wayland_protocols = b.path("bindings/protocols") });
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-background-effect-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-shell-v1.xml"));
@@ -31,8 +36,9 @@ pub fn build(b: *std.Build) void {
     b.step("generate-wayland", "Export generated native protocol bindings for review and reproducibility checks").dependOn(&native_export.step);
 
     const system_versions = b.addSystemCommand(&.{
-        "pkg-config",     "--print-errors",     "--exists",
-        "gtk4 >= 4.22.5", "glib-2.0 >= 2.88.3", "gtk4-layer-shell-0 >= 1.3.0",
+        "pkg-config",       "--print-errors",                 "--exists",
+        "gtk4 >= 4.22.5",   "glib-2.0 >= 2.88.3",             "gtk4-layer-shell-0 >= 1.3.0",
+        "libpulse >= 17.0", "libpulse-mainloop-glib >= 17.0",
     });
     const resource_command = b.addSystemCommand(&.{"glib-compile-resources"});
     resource_command.addFileArg(b.path("resources/pearl.gresource.xml"));
@@ -43,14 +49,14 @@ pub fn build(b: *std.Build) void {
     resource_command.addArg("--dependency-file");
     _ = resource_command.addDepFileOutputArg("pearl.gresource.d");
 
-    const module = gtkModule(b, bindings, target, optimize, "src/main.zig");
+    const module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
     configureApp(b, module, resources, false);
     module.addImport("wayland", native);
     const app = b.addExecutable(.{ .name = "pearl", .root_module = module });
     app.step.dependOn(&system_versions.step);
     b.installArtifact(app);
 
-    const spike_module = gtkModule(b, bindings, target, optimize, "spikes/t00/main.zig");
+    const spike_module = gtkModule(b, bindings, target, optimize, "spikes/t00/main.zig", pulse_module);
     const spike = b.addExecutable(.{ .name = "pearl-t00", .root_module = spike_module });
     spike.step.dependOn(&system_versions.step);
     b.installArtifact(spike);
@@ -80,7 +86,7 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| adapter_test.addArgs(args);
     b.step("test-adapter", "Exercise IPC recovery, policy and commands on private sockets and nested Aqueous").dependOn(&adapter_test.step);
 
-    const test_module = gtkModule(b, bindings, target, optimize, "src/main.zig");
+    const test_module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
     configureApp(b, test_module, resources, true);
     test_module.addImport("wayland", native);
     const integration_app = b.addExecutable(.{ .name = "pearl-integration", .root_module = test_module });
@@ -112,6 +118,13 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| desktop.addArgs(args);
     b.step("test-desktop", "Verify T06 live desktop and GIO discovery/activation in private Aqueous").dependOn(&desktop.step);
 
+    const services = b.addSystemCommand(&.{ "python3", "tests/integration/test_services.py", "--pearl" });
+    services.addArtifactArg(integration_app);
+    services.addArg("--ctl");
+    services.addArtifactArg(ctl);
+    if (b.args) |args| services.addArgs(args);
+    b.step("test-services", "Verify audio and power on private synthetic services").dependOn(&services.step);
+
     const dev_backend = b.option(enum { headless, nested }, "dev-backend", "Development compositor backend") orelse .headless;
     for ([_][]const u8{ "run", "gallery" }) |name| {
         const launch = b.addSystemCommand(&.{ "python3", "scripts/dev-session.py", "--backend", @tagName(dev_backend), "--" });
@@ -129,11 +142,9 @@ fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.L
     module.addOptions("build_options", options);
 }
 
-fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, source: []const u8) *std.Build.Module {
+fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, source: []const u8, pulse: *std.Build.Module) *std.Build.Module {
     const module = b.createModule(.{ .root_source_file = b.path(source), .target = target, .optimize = optimize, .link_libc = true });
-    const pulse = b.addTranslateC(.{ .root_source_file = b.path("bindings/headers/pulse.h"), .target = target, .optimize = optimize });
-    pulse.addIncludePath(b.path("bindings/headers"));
-    module.addImport("pulse", pulse.createModule());
+    module.addImport("pulse", pulse);
     module.linkSystemLibrary("libpulse", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("libpulse-mainloop-glib", .{ .use_pkg_config = .force });
     // Interposition requires layer-shell to load before GTK's Wayland dependency.

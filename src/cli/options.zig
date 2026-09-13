@@ -85,7 +85,7 @@ pub const usage =
     \\       pearlctl overview toggle [--output ID]
     \\       pearlctl layout get|set --output ID [--layout NAME]
     \\       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS
-    \\       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control
+    \\       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery
     \\
     \\       pearlctl services status [--offset N]
     \\       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]
@@ -118,4 +118,18 @@ test "desktop commands validate group ownership and native layout names" {
     try t.expectError(error.Usage, parse(&.{ "layout", "get", "--output", "x", "--layout", "grid" }));
     try t.expectError(error.Usage, parse(&.{ "launcher", "hide", "--output", "x" }));
     try t.expectError(error.Usage, parse(&.{ "bar", "groups", "--output", "x", "--left", "launcher", "--center", "clock", "--right", "clock" }));
+}
+
+test "service commands validate identity pairs, ranges and action fields" {
+    const t = std.testing;
+    const volume = try parse(&.{ "audio", "set", "--kind", "sink", "--volume", "42" });
+    try t.expectEqual(@as(?u8, 42), volume.request.volume);
+    try t.expectError(error.Usage, parse(&.{ "audio", "set", "--kind", "playback", "--volume", "42" }));
+    try t.expectError(error.Usage, parse(&.{ "audio", "set", "--kind", "sink", "--device", "1", "--volume", "42" }));
+    try t.expectError(error.Usage, parse(&.{ "audio", "set", "--kind", "sink", "--volume", "101" }));
+    try t.expectError(error.Usage, parse(&.{ "audio", "set", "--kind", "sink", "--target", "4" }));
+    try t.expectError(error.Usage, parse(&.{ "brightness", "set", "--percent", "101" }));
+    try t.expectError(error.Usage, parse(&.{ "profile", "set", "--profile", "turbo" }));
+    try t.expectError(error.Usage, parse(&.{ "services", "status", "--offset", "129" }));
+    try t.expectError(error.Usage, parse(&.{ "services", "status", "--volume", "1" }));
 }

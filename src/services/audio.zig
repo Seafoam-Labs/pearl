@@ -29,6 +29,7 @@ pub const Audio = struct {
     deadline: c_uint = 0,
     running: bool = false,
     ready: bool = false,
+    retry_ms: u32 = 1000,
     generation: u64 = 0,
     devices: [128]Device = undefined,
     count: usize = 0,
@@ -104,14 +105,25 @@ pub const Audio = struct {
         self.deadline = glib.timeoutAdd(5000, timedOut, self);
     }
     fn failed(self: *Audio) void {
+        const report = self.ready or self.active != null or self.queue.len > 0;
+        if (self.op) |op| p.pa_operation_cancel(op);
+        self.done();
+        if (self.subscription) |op| {
+            p.pa_operation_cancel(op);
+            p.pa_operation_unref(op);
+        }
+        self.subscription = null;
+        self.phase = 0;
+        self.feedback = null;
         self.ready = false;
         self.count = 0;
         self.queue.len = 0;
         self.active = null;
         self.err = "Audio service disconnected; pending changes were discarded.";
         if (self.timer != 0) _ = glib.Source.remove(self.timer);
-        self.timer = glib.timeoutAdd(1500, retry, self);
-        self.changed(self.context, .failure);
+        self.timer = glib.timeoutAdd(self.retry_ms, retry, self);
+        self.retry_ms = @min(30000, self.retry_ms * 2);
+        self.changed(self.context, if (report) .failure else .state);
     }
     fn retry(data: ?*anyopaque) callconv(.c) c_int {
         const self = cast(data);
@@ -134,6 +146,7 @@ pub const Audio = struct {
             p.PA_CONTEXT_READY => {
                 if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
                 self.deadline = 0;
+                self.retry_ms = 1000;
                 self.ready = true;
                 self.err = null;
                 p.pa_context_set_subscribe_callback(c, subscribed, self);
@@ -164,6 +177,15 @@ pub const Audio = struct {
         const name = if (kind == .sink) self.default_sink.slice() else self.default_source.slice();
         for (self.devices[0..self.count]) |*d| if (d.key.kind == kind and std.mem.eql(u8, d.name.slice(), name)) return d;
         return null;
+    }
+    pub fn desiredMute(self: *const Audio, key: Key) bool {
+        for (self.queue.items[0..self.queue.len]) |write| if (std.meta.eql(write.key, key)) {
+            if (write.mute) |value| return value;
+        };
+        if (self.active) |write| if (std.meta.eql(write.key, key)) {
+            if (write.mute) |value| return value;
+        };
+        return if (self.find(key)) |device| device.mute else false;
     }
     pub fn request(self: *Audio, write: Write) !void {
         if (!self.ready) return error.Unavailable;
@@ -262,14 +284,14 @@ pub const Audio = struct {
         self.next(1);
     }
     fn add(self: *Audio, kind: Kind, index: u32, name: [*c]const u8, label: [*c]const u8, volume: p.pa_cvolume, mute: c_int, target: u32, writable: bool) void {
-        if (self.staged == self.staging.len) {
+        if (span(name).len > 256 or self.staged == self.staging.len) {
             self.truncated = true;
             return;
         }
         var d: Device = .{ .key = .{ .generation = self.generation, .kind = kind, .index = index }, .channels = volume, .mute = mute != 0, .target = target, .writable = writable };
         d.name.set(span(name));
         d.label.set(span(label));
-        d.volume = @intCast(@min(100, (@as(u64, p.pa_cvolume_avg(&volume)) * 100 + p.PA_VOLUME_NORM / 2) / p.PA_VOLUME_NORM));
+        d.volume = @intCast(@min(100, (@as(u64, p.pa_cvolume_max(&volume)) * 100 + p.PA_VOLUME_NORM / 2) / p.PA_VOLUME_NORM));
         self.staging[self.staged] = d;
         self.staged += 1;
     }

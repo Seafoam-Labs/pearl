@@ -1,0 +1,90 @@
+{
+  "recorded_utc": "2026-09-13T19:00:31.479923+00:00",
+  "zig": "0.16.0",
+  "optimize": "ReleaseSafe",
+  "libpulse_versions": [
+    "17.0-98-gb096",
+    "17.0-98-gb096"
+  ],
+  "pipewire": [
+    "pipewire",
+    "Compiled with libpipewire 1.6.8",
+    "Linked with libpipewire 1.6.8"
+  ],
+  "aqueous_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480",
+  "aqueous_source_clean": true,
+  "installed_binary_sha256": {
+    "pearl": "8e714156b8ea55ef76c5b89c0435747038c0a543bcb9ecb2d00439ef67f6c1ab",
+    "pearlctl": "010aa399fe5e7b9c7f1e6432e2ec7ae0dfd397dea6bbe61bf5b544d44b6b2ec6"
+  },
+  "instrumented_binary_sha256": "681a208ada1c4f41f929315d7bb814392dac80196c724ce94ddcec0a4f6f49a1",
+  "pulse_manifest": {
+    "libpulse": "17.0-98-gb096",
+    "source": "installed libpulse development headers; upstream copyright and LGPL notices retained per header",
+    "headers": {
+      "pulse/cdecl.h": "5409316469361899e1dfe4cc8437c60b5a3d19e6bb9a0f2cf1ebb06c3acc149d",
+      "pulse/channelmap.h": "74a1615e0e3a6e8577e2f668185a22d9f09b4b5ca5c615bfb47d991c76dc0f71",
+      "pulse/context.h": "9c11f1c982c990e122592ec7e428cc8cf07d7bfbda177a37ab34d8fb682a96e3",
+      "pulse/def.h": "57241aeafcce72061367ba0b04fd96a254b64591ff191a5fa6cea11544b27481",
+      "pulse/direction.h": "9243db0ff8ec0fb0928fbafa08b3cc5e86120a324c1a0f4fbb6c99305819bc44",
+      "pulse/error.h": "4db392efcefdcc4ec9b58ceb7fb5ad5a286dd845a8186d10b988661ee053530b",
+      "pulse/ext-device-manager.h": "14601ac7fb587f9fd12469223dec94133337620c63dd1be39b2fc1b53929e0ed",
+      "pulse/ext-device-restore.h": "05781cb0b079e9fcd63a587f7071e9999f70e25def8240f7af6745541c46e07c",
+      "pulse/ext-stream-restore.h": "84c0e28465238f7d517abb8e766dbf8508e37b5491ac5e5733e09bba2ef47966",
+      "pulse/format.h": "015214b2a3c2c5732ede1ff60e5b1b22a372b94037e1595d60197f54655ab755",
+      "pulse/gccmacro.h": "d1e4ae489b989c4f9d4bb2491f21ab8d1c44590d55649b28b2762e158f7b2e44",
+      "pulse/glib-mainloop.h": "39a5df77160c4e787910a1dc95dc38980c4c9315ca7640e1f5f9b73ed69e1504",
+      "pulse/introspect.h": "fdf38178ac144476d706abde9456ce5a0d1bae6ffc2a58b42ff9a2097ab81f84",
+      "pulse/mainloop-api.h": "4adccd28ccf414ec8dea3354a07d6c398f7df324df5f5c50c673db83dbad9504",
+      "pulse/mainloop-signal.h": "0aa10d63118b31845446d79133bb0ff2a91486021947d000dc6a50583276fed9",
+      "pulse/mainloop.h": "db728dea865ace80fcee233028a9ff03792952065c0867218fe16f30f25c1735",
+      "pulse/operation.h": "f5afe1deb0ac539aeb74a23e646c6a2f3d4f6aead06d9f24bda717695f75f21c",
+      "pulse/proplist.h": "55bbfbf16fd12ca7e3d3ba37f44c6e8bc4b519b48c3a9419d3e8f7b01efc8e7e",
+      "pulse/pulseaudio.h": "6f9a42d6cc00a25944e5cee62f96c36d119aeef14fa265a52791996cca9c5fd6",
+      "pulse/rtclock.h": "bd1ef12c706e09241730115bf4f48d8f3bebe268a4bd5f3cf6a11ea0bd6b81a4",
+      "pulse/sample.h": "ec2e621b68fd8bffd577033af2296d642de6c6d4425d1806507883c3bd1571a9",
+      "pulse/scache.h": "9e39fb3a3ddce99991c59570a54e19ff6d0ae242422b08af12f7a1ab2f743b81",
+      "pulse/simple.h": "d31e5931758234943e984144d1ba6f07521439f691a47da328aa812aacc838bd",
+      "pulse/stream.h": "3422eda7e0b3b3948c0cbec43f12be877ed992baa4c523a535d4c303a447a1a8",
+      "pulse/subscribe.h": "14e1c88d2c2f9ebd5e5da3b522b48ebb71ae3fa70e85868975b4e269f36f4b32",
+      "pulse/thread-mainloop.h": "a02e3e2fa5a4ea9f2d3cb64e4eb647225811a31d6ae5ae4605926a55a2e24acc",
+      "pulse/timeval.h": "e1fa8f1c86eed95828737c3e4daed9a790cf4388c556d127854370a27c08ba18",
+      "pulse/utf8.h": "a4fce745ee797efd0b60312b05ed5606c64110dcee6fe12aa5d1729b0bccb3ef",
+      "pulse/util.h": "6fb670e2ef3bdd9b62dc043bef564f265c4019501fbf9d5a4f687f8a0c49d166",
+      "pulse/version.h": "d630c8602031118ee8f234d9111af441f99df44ba1e38f62f50c124ff69ce221",
+      "pulse/volume.h": "8b7f02059f8b0f3a07f9a340861605a4ee2fd1b7f3145d4d7734bd2ed7661942",
+      "pulse/xmalloc.h": "3c03250b39d1cf2f4b9f6f7db80fbbb1677253b29684ddda9eb940cd00f27c31",
+      "pulse.h": "19557c80c3b2c2a66273035599243cb348f94fe5a4b1e2fa2d2f4dd33676bc66",
+      "glib.h": "a2f64c24b05210ed43756bc86877c08d794269076fb2378c7db16c15c328a165"
+    },
+    "glib_context_source": {
+      "file": "GLib 2.88.3 glib/gmain.h",
+      "sha256": "39861c0b59cc7ab42bdb710a44a02a138509a7bd8d5f065b765a2d2457365b4b",
+      "declaration": "typedef struct _GMainContext            GMainContext;"
+    },
+    "zig": "0.16.0",
+    "translation_target": "x86_64-linux-gnu",
+    "generated_sha256": "14ceb08f4aa8e64533eaef3e748ccd4b1ce74c969912723641049cc2e28c2a74"
+  },
+  "dms_reference_sha256": "5da83267ab83bb6bff82565983354ac40a240afdb9dccc1b1bff530eadb0648e",
+  "physical_backlight_devices": [],
+  "suite_summary": {
+    "latest": {
+      "status": "passed",
+      "check_count": 15
+    },
+    "desktop": {
+      "status": "passed",
+      "check_count": 15
+    },
+    "surfaces": {
+      "status": "passed",
+      "check_count": 17
+    },
+    "lifecycle": {
+      "status": "pass",
+      "check_count": 12
+    }
+  },
+  "note": "Service fixtures use the instrumented binary for an isolated backlight root and read-only GTK probes. Desktop/surface regressions match the final production binary; lifecycle checks both. Only fake power-service replies were exercised."
+}

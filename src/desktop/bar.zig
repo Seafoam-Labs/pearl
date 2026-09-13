@@ -13,12 +13,16 @@ pub const Event = union(enum) { pane: Pane, workspace: []const u8, keyboard, ove
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
     host: *gtk.Box,
+    audio_service: *@import("../services/audio.zig").Audio,
+    power_service: *@import("../services/power.zig").Power,
+    audio_label: ?*gtk.Label = null,
+    battery_label: ?*gtk.Label = null,
     client: *Client,
     output: []const u8,
     context: *anyopaque,
     action: *const fn (*anyopaque, Event) void,
     groups: [3][:0]u8,
-    widgets: [7]?*gtk.Widget = @splat(null),
+    widgets: [9]?*gtk.Widget = @splat(null),
     handlers: std.ArrayList(*Button) = .empty,
     workspace_handlers: std.ArrayList(*Button) = .empty,
     workspace_hash: u64 = 0,
@@ -30,10 +34,10 @@ pub const Bar = struct {
     keyboard: ?*gtk.Label = null,
     vertical: bool = false,
     compact: bool = false,
-    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action")) !*Bar {
+    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power) !*Bar {
         const self = try a.create(Bar);
-        self.* = .{ .host = host, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
-        self.groups = .{ try a.dupeZ(u8, "launcher,workspaces,title"), try a.dupeZ(u8, "clock"), try a.dupeZ(u8, "keyboard,overview,control") };
+        self.* = .{ .host = host, .audio_service = audio, .power_service = power, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
+        self.groups = .{ try a.dupeZ(u8, "launcher,workspaces,title"), try a.dupeZ(u8, "clock"), try a.dupeZ(u8, (policy.Groups{}).right) };
         try self.build();
         return self;
     }
@@ -58,6 +62,8 @@ pub const Bar = struct {
         self.title = null;
         self.clock = null;
         self.keyboard = null;
+        self.audio_label = null;
+        self.battery_label = null;
         self.workspace_hash = 0;
         self.workspace_view = null;
         self.active_workspace = null;
@@ -122,6 +128,16 @@ pub const Bar = struct {
                         button.setChild(self.clock.?.as(gtk.Widget));
                         break :blk button.as(gtk.Widget);
                     },
+                    .audio, .battery => blk: {
+                        const button = try self.makeButton(.{ .pane = .control }, null, "", false);
+                        const content = w.row(4);
+                        content.append(w.icon(if (item == .audio) "pearl-audio-volume-high-symbolic" else "pearl-battery-symbolic").as(gtk.Widget));
+                        const label = gtk.Label.new("");
+                        content.append(label.as(gtk.Widget));
+                        if (item == .audio) self.audio_label = label else self.battery_label = label;
+                        button.setChild(content.as(gtk.Widget));
+                        break :blk button.as(gtk.Widget);
+                    },
                     .keyboard => blk: {
                         const button = try self.makeButton(.keyboard, null, "", false);
                         button.as(gtk.Widget).setTooltipText(tr("Switch keyboard layout", "Tastaturbelegung wechseln"));
@@ -180,6 +196,21 @@ pub const Bar = struct {
         // Primary controls survive; overview also lives in the control center.
     }
     pub fn update(self: *Bar) void {
+        var service_buffer: [256]u8 = undefined;
+        if (self.audio_label) |label| {
+            const device = self.audio_service.default(.sink);
+            label.setText(if (device) |d| if (d.mute) tr("Muted", "Stumm") else std.fmt.bufPrintZ(&service_buffer, "{d}%", .{d.volume}) catch "" else "—");
+            const widget = self.widgets[@intFromEnum(policy.Item.audio)].?;
+            widget.setTooltipText(if (device) |d| d.label.z() else tr("Audio unavailable", "Audio nicht verfügbar"));
+            w.name(widget, if (device != null) tr("Audio controls", "Audiosteuerung") else tr("Audio unavailable", "Audio nicht verfügbar"));
+        }
+        if (self.battery_label) |label| {
+            label.setText(std.fmt.bufPrintZ(&service_buffer, "{d:.0}%", .{self.power_service.percentage}) catch "");
+            const widget = self.widgets[@intFromEnum(policy.Item.battery)].?;
+            widget.setVisible(@intFromBool(self.power_service.battery_present));
+            widget.setTooltipText(if (self.power_service.battery_state == 1) tr("Battery charging", "Akku lädt") else tr("Battery and power", "Akku und Energie"));
+            w.name(widget, tr("Battery and power", "Akku und Energie"));
+        }
         const focus = self.client.model.focus(null) catch null;
         if (self.title) |label| {
             const title: []const u8 = if (focus) |f| blk: {

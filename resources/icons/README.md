@@ -1,6 +1,6 @@
 # Pearl symbolic icons
 
-Original 24-unit SVG artwork for Pearl's component gallery and T06 desktop. T06 adds grid/window symbols. These files use
+Original 24-unit SVG artwork for Pearl's component gallery and live desktop. T06 adds grid/window symbols; T07 adds a battery symbol. These files use
 filled outlines and even-odd cutouts so GTK's symbolic icon recoloring preserves
 their shape in dark/light palettes and selected controls. No external icon font
 or third-party artwork is copied. Register the compiled resource path once per

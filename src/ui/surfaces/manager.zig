@@ -405,7 +405,7 @@ pub const Manager = struct {
             .bar => {
                 panel_widget.addCssClass("pearl-bar-panel");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, 4);
-                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction);
+                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -488,6 +488,14 @@ pub const Manager = struct {
         self.popup = try self.create(output, .popup);
         self.positionPopup();
         self.popup.?.window.present();
+        if (@import("build_options").test_hooks and pane == .control) {
+            const surface = self.popup.?;
+            if (surface.window.as(gtk.Widget).getFrameClock()) |clock| {
+                _ = clock.ref();
+                surface.measure_clock = clock;
+                surface.measure_signal = gdk.FrameClock.signals.after_paint.connect(clock, *Surface, serviceProbe, surface, .{});
+            }
+        }
         if (self.popup.?.launcher) |launcher| {
             if (self.popup.?.window.as(gtk.Widget).getFrameClock()) |clock| launcher.observeFrame(clock);
             _ = launcher.search.as(gtk.Widget).grabFocus();
@@ -627,6 +635,8 @@ pub const Manager = struct {
                 }
             },
             .osd_show => {
+                if (self.osd_flush != 0) _ = glib.Source.remove(self.osd_flush);
+                self.osd_flush = 0;
                 const o = try self.selected(request.output);
                 if (self.osd != null and self.osd.?.output != o) self.hideOsd();
                 const s = self.osd orelse try self.create(o, .osd);
@@ -647,28 +657,33 @@ pub const Manager = struct {
         return "{\"applied\":true}";
     }
     const ServiceStatus = struct {
-        audio: struct { ready: bool, generation: u64, count: usize, truncated: bool, pending: bool, err: ?[]const u8, default_sink: ?u32, default_source: ?u32, devices: []const DeviceStatus, next_offset: ?usize },
-        power: struct { battery_present: bool, percentage: f64, state: u32, on_battery: bool, time_to_empty: i64, time_to_full: i64, profile: []const u8, profiles: [3]bool, degraded: []const u8, can_power_off: bool, can_reboot: bool, session_active: bool, preparing: bool, pending: bool, err: ?[]const u8 },
-        brightness: struct { available: bool, device: []const u8, maximum: u32, value: u32, percent: u8, pending: bool },
+        audio: struct { ready: bool, generation: u64, count: usize, truncated: bool, pending: bool, in_flight: bool, err: ?[]const u8, default_sink: ?u32, default_source: ?u32, devices: []const DeviceStatus, next_offset: ?usize },
+        power: struct { battery_present: bool, percentage: f64, state: u32, on_battery: bool, time_to_empty: i64, time_to_full: i64, profile: []const u8, profiles: [3]bool, degraded: []const u8, can_power_off: bool, can_reboot: bool, session_active: bool, preparing: bool, pending: bool, profile_in_flight: bool, err: ?[]const u8 },
+        brightness: struct { available: bool, device: []const u8, maximum: u32, value: u32, percent: u8, pending: bool, in_flight: bool },
     };
     const DeviceStatus = struct { kind: @import("../../services/audio.zig").Kind, index: u32, name: []const u8, label: []const u8, volume: u8, mute: bool, target: u32, writable: bool };
     fn serviceStatus(self: *Manager, alloc: std.mem.Allocator, offset: ?u16) !ServiceStatus {
         var devices: std.ArrayList(DeviceStatus) = .empty;
         const first: usize = @min(offset orelse self.audio.count, self.audio.count);
-        const end = @min(first + 8, self.audio.count);
-        for (self.audio.devices[first..end]) |d| try devices.append(alloc, .{ .kind = d.key.kind, .index = d.key.index, .name = d.name.slice(), .label = d.label.slice(), .volume = d.volume, .mute = d.mute, .target = d.target, .writable = d.writable });
+        const end = @min(first + 4, self.audio.count);
+        for (self.audio.devices[first..end]) |*d| try devices.append(alloc, .{ .kind = d.key.kind, .index = d.key.index, .name = textPreview(d.name.slice(), 64), .label = textPreview(d.label.slice(), 96), .volume = d.volume, .mute = d.mute, .target = d.target, .writable = d.writable });
         const power = &self.power;
         return .{
-            .audio = .{ .ready = self.audio.ready, .generation = self.audio.generation, .count = self.audio.count, .truncated = self.audio.truncated, .pending = self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null, .err = self.audio.err, .default_sink = if (self.audio.default(.sink)) |d| d.key.index else null, .default_source = if (self.audio.default(.source)) |d| d.key.index else null, .devices = devices.items, .next_offset = if (end < self.audio.count) end else null },
-            .power = .{ .battery_present = power.battery_present, .percentage = power.percentage, .state = power.battery_state, .on_battery = power.on_battery, .time_to_empty = power.time_to_empty, .time_to_full = power.time_to_full, .profile = power.profile.slice(), .profiles = power.profiles, .degraded = power.degraded.slice(), .can_power_off = power.can_off, .can_reboot = power.can_reboot, .session_active = power.session_active, .preparing = power.preparing, .pending = power.profile_pending or power.profile_wanted != null or power.action_pending, .err = power.err },
-            .brightness = .{ .available = power.brightnessAvailable(), .device = power.backlight.name.slice(), .maximum = power.backlight.maximum, .value = power.backlight.value, .percent = power.backlight.percent(), .pending = power.brightness_pending or power.brightness_wanted != null },
+            .audio = .{ .ready = self.audio.ready, .generation = self.audio.generation, .count = self.audio.count, .truncated = self.audio.truncated, .pending = self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null, .in_flight = self.audio.active != null, .err = self.audio.err, .default_sink = if (self.audio.default(.sink)) |d| d.key.index else null, .default_source = if (self.audio.default(.source)) |d| d.key.index else null, .devices = devices.items, .next_offset = if (end < self.audio.count) end else null },
+            .power = .{ .battery_present = power.battery_present, .percentage = power.percentage, .state = power.battery_state, .on_battery = power.on_battery, .time_to_empty = power.time_to_empty, .time_to_full = power.time_to_full, .profile = power.profile.slice(), .profiles = power.profiles, .degraded = power.degraded.slice(), .can_power_off = power.can_off, .can_reboot = power.can_reboot, .session_active = power.session_active, .preparing = power.preparing, .pending = power.profile_pending or power.profile_wanted != null or power.action_pending, .profile_in_flight = power.profile_pending, .err = power.err },
+            .brightness = .{ .available = power.brightnessAvailable(), .device = power.backlight.name.slice(), .maximum = power.backlight.maximum, .value = power.backlight.value, .percent = power.backlight.percent(), .pending = power.brightness_pending or power.brightness_wanted != null, .in_flight = power.brightness_pending },
         };
+    }
+    fn textPreview(value: []const u8, maximum: usize) []const u8 {
+        var end = @min(value.len, maximum);
+        while (end > 0 and !std.unicode.utf8ValidateSlice(value[0..end])) end -= 1;
+        return value[0..end];
     }
     fn status(self: *Manager, alloc: std.mem.Allocator) ![]const u8 {
         const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, frames: [4]u16 };
         var items: std.ArrayList(Item) = .empty;
         for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .frames = o.reservations.frames });
-        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .osd = self.osd != null }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .osd = self.osd != null, .osd_text = if (self.osd_label) |label| std.mem.span(label.getText()) else "" }, .{});
     }
 };
 fn rectangle(r: anytype) !Rect {
@@ -700,6 +715,9 @@ fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     const content = if (s.kind == .frame) size else size -| 8;
     s.panel.setSizeRequest(if (horizontal) -1 else content, if (horizontal) content else -1);
     layer.setExclusiveZone(s.window, size);
+}
+fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
+    if (s.control) |panel| panel.services.probe(s.window);
 }
 fn measured(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     if (s.bar) |bar| bar.painted();

@@ -6,6 +6,10 @@ adapter and T05 surface/control machinery. All desktop discovery and launch
 behavior comes from GIO; normal session mode never substitutes fixture data.
 The demo gallery remains a separate `--demo` application mode.
 
+This page records T06. [T07 services](SERVICES.md) now supply audio, battery,
+brightness, power profiles and confirmed power actions; their bar groups and
+control-center contents supersede the unavailable T06 placeholders below.
+
 ## Use the desktop
 
 The launcher button opens a shared search surface on its output. Type to search,

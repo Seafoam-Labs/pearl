@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pearl T07 · Audio and power</title>
+<style>
+body{margin:0;padding:24px;font:16px system-ui;background:#141218;color:#e6e0e9}h1{font-size:24px}p{max-width:90ch;line-height:1.6;color:#cac4d0}select{font:inherit;padding:8px;border-radius:10px;background:#2b2930;color:inherit;border:1px solid #79747e}main{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}figure{margin:0}figcaption{padding:12px 0}img{display:block;width:100%;border:1px solid #79747e;border-radius:8px}a{color:#d0bcff}@media(max-width:900px){main{grid-template-columns:1fr}}
+</style>
+<h1>Pearl audio and power beside the DMS reference</h1>
+<p>Actual, unedited 1280×720 captures. DMS is the frozen T00 purple reference; Pearl is the running T07 shell in a private Aqueous session. Audio uses a real PipeWire/Pulse server with synthetic devices. Battery, backlight and power replies come from an explicitly private test peer. No physical power operation occurred.</p>
+<label>Pearl surface <select id="surface"><option value="control-center-audio-power">Audio device controls</option><option value="battery-brightness-profiles">Battery, brightness and profiles</option><option value="power-confirmation">Deliberate power confirmation</option><option value="permission-denied">Permission denied</option><option value="audio-disconnected">Audio unavailable</option><option value="coalesced-osd">Repeated OSD updates</option></select></label>
+<main><figure><figcaption>DMS · frozen control-center reference</figcaption><a href="../t00/dms/dms-dark-control-center.png"><img src="../t00/dms/dms-dark-control-center.png" alt="DMS control center reference"></a></figure><figure><figcaption>Pearl · live T07 services</figcaption><a id="full"><img id="pearl" alt="Pearl live service controls"></a></figure></main>
+<p>Pearl retains rounded tonal cards, purple sliders/selections and a compact bar. The control center scrolls through device/application sound details, power controls and native Aqueous layouts. Its composition is taller and more explicit than the reference. Network/Bluetooth remain unavailable until T08; media remains T09. Brightness disappears after the fixture device is removed, and power confirmation is exercised only against the fake peer.</p>
+<p><a href="latest/results.json">Service results</a> · <a href="desktop/results.json">Desktop regression</a> · <a href="surfaces/results.json">Surface and blur regression</a> · <a href="lifecycle/results.json">Lifecycle regression</a> · <a href="verification/README.md">Verification records</a> · <a href="../../docs/SERVICES.md">Implementation and physical release checklist</a></p>
+<script>
+const selector=document.querySelector('#surface');function update(){const path='latest/services/'+selector.value+'.png';document.querySelector('#pearl').src=path;document.querySelector('#full').href=path;}selector.addEventListener('change',update);update();
+</script></html>

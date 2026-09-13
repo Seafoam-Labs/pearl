@@ -1,5 +1,52 @@
 # Pearl implementation progress
 
+## T07 — Complete, September 13, 2026
+
+Implemented libpulse audio through generated Zig declarations and the GLib main
+loop: devices, playback/recording streams, defaults, channel-preserving volume,
+mute and routing. Bounded queues coalesce rapid changes while preserving writes
+received during an in-flight operation. Default changes retain captured target
+identity; server loss drops old mutations and reconnects with a new generation.
+
+UPower supplies battery state; logind supplies active-session and power-action
+availability plus validated brightness writes. Modern and legacy power-profile
+services expose only advertised profiles. D-Bus requests target unique owners,
+validate reply types and drain safely through service/bus restart and shutdown.
+Backlight discovery runs in a worker; permission denial and missing readback stay
+visible without claiming success. Physical brightness/power tests remain explicit
+release checks. Suspend/lock/inhibitor orchestration remains T12.
+
+The control center now contains these live services, with audio/battery bar
+groups. Power off and restart require two deliberate activations of the same
+button within ten seconds; cancellation, expiry and owner changes invalidate
+confirmation. OSD coalesces service feedback and reuses one non-focusable,
+click-through surface, label and expiry timer. Sliders retain displayed intent
+until authoritative readback arrives.
+
+Validation and evidence:
+
+- **54/54 unit and binding tests** pass on exact Zig 0.16.0, ReleaseSafe:
+  46 pure tests, seven adapter tests and one generated binding API test.
+- **15 service acceptance groups** pass with separate private buses, synthetic
+  PipeWire/Pulse devices, real playback/recording clients and a delayed/denied
+  UPower/logind/profile peer. Coverage includes in-flight final-value retention,
+  balance, defaults, device removal, daemon/bus recovery, legacy profiles, real
+  GTK keyboard confirmation, denial/acceptance, OSD reuse and pending shutdown.
+- Desktop (**15 groups**), surfaces/native blur (**17 checks**) and lifecycle
+  (**12 checks**) regressions pass. No host audio, physical brightness or physical
+  power operation was used by these tests.
+- Fresh-cache libpulse generation matches SHA-256
+  `14ceb08f4aa8e64533eaef3e748ccd4b1ce74c969912723641049cc2e28c2a74`.
+  Pinned public headers and the opaque GLib type shim contain declarations only;
+  no C bridge was introduced.
+
+[SERVICES.md](SERVICES.md) documents APIs, bounds, permissions and physical
+release checks. [Visual evidence](../artifacts/t07/comparison.html),
+[service results](../artifacts/t07/latest/results.json) and
+[verification records](../artifacts/t07/verification/README.md) retain actual
+captures, fixture behavior, commands and binary identities.
+**T08 is next: NetworkManager and Bluetooth.**
+
 ## T06 — Complete, September 13, 2026
 
 Session mode now has configurable bar groups, live per-output workspaces and
@@ -48,7 +95,7 @@ The [visual comparison](../artifacts/t06/comparison.html) pairs actual Pearl
 captures with the frozen DMS reference and records deliberate scope differences.
 Tests use private sessions without changing the host desktop. Physical-display
 performance, extended soak, full service coverage and accessibility remain later
-release gates. **T07 is next: audio, power and OSD services.**
+release gates. **T07 was next at this milestone; see the completed entry above.**
 
 ## T05 — Complete, September 13, 2026
 

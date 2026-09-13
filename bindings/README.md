@@ -5,7 +5,8 @@ GObject and Pango. The package does not contain gtk4-layer-shell or
 gtk4-session-lock. Both missing namespaces are now generated in this directory.
 There is no Pearl C bridge. T05/T06 additionally generate native core, background-effect, Aqueous shell
 and window-info/layout declarations using pinned zig-wayland/XML inputs; see
-[protocols/README.md](protocols/README.md).
+[protocols/README.md](protocols/README.md). T07 adds the translated libpulse/GLib
+main-loop ABI from [pinned headers](headers/README.md).
 
 ## Pinned inputs
 

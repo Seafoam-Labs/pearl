@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "checks": {
+    "gio-hidden-nodisplay-showin-tryexec-filtering": true,
+    "unicode-ranked-virtualized-search-and-enter-launch": true,
+    "gio-field-codes-working-directory-desktop-action-and-session-context": true,
+    "terminal-semantics-and-private-dbus-activation": true,
+    "duplicate-titles-activate-by-runtime-id-across-outputs": true,
+    "switcher-exclusion-taskbar-distinction-and-minimized-state": true,
+    "configurable-groups-and-duplicate-workspace-numbers-target-output-id": true,
+    "effective-keyboard-layout-follows-authoritative-state": true,
+    "calendar-control-center-unavailable-services-and-native-layout-query-set": true,
+    "empty-overview-rejection-has-visible-feedback": true,
+    "overview-control-uses-real-aqueous-action": true,
+    "monitored-app-install-removal-and-long-text-mixed-scale": true,
+    "fractional-125-150-200-percent-and-pending-search-teardown": true,
+    "localized-gio-desktop-labels-and-german-surface-text": true,
+    "empty-gio-catalog-and-no-results-state": true
+  },
+  "pearl_sha256": "8e714156b8ea55ef76c5b89c0435747038c0a543bcb9ecb2d00439ef67f6c1ab",
+  "ctl_sha256": "010aa399fe5e7b9c7f1e6432e2ec7ae0dfd397dea6bbe61bf5b544d44b6b2ec6",
+  "warm_launcher_open_us": {
+    "samples": 8,
+    "median": 35511.5,
+    "maximum": 37582
+  },
+  "launcher_latency_us": {
+    "samples": 133,
+    "median": 13375,
+    "p95": 29014,
+    "maximum": 37384
+  }
+}

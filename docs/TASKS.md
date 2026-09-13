@@ -1,7 +1,7 @@
 # Pearl AI implementation tasks
 
-Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T06 are complete**;
-T07–T16 are not started. Follow their dependency order and record evidence in
+Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T07 are complete**;
+T08–T16 are not started. Follow their dependency order and record evidence in
 [PROGRESS.md](PROGRESS.md). Task IDs are stable and may be split into smaller
 changes without changing their acceptance criteria.
 
@@ -146,6 +146,9 @@ and [DMS/Pearl comparison](../artifacts/t06/comparison.html).
 **Done when:** the preview gate passes: real bar/launcher on two outputs; duplicate titles/workspace numbers do not break activation; long text and many apps remain usable; keyboard layout follows effective state. Show real DMS/Pearl comparisons and measure launcher latency.
 
 ## T07 — Audio, power and OSD
+
+**Complete:** see [service contract](SERVICES.md), [private-service results](../artifacts/t07/latest/results.json)
+and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain on the explicit release checklist.
 
 **Depends on:** T06. **Primary files:** audio/power/brightness services and control-center detail views.
 

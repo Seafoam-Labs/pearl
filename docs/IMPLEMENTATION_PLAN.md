@@ -1,6 +1,6 @@
 # Pearl implementation plan
 
-Status: implementation specification, September 13, 2026. T00–T06 are complete;
+Status: implementation specification, September 13, 2026. T00–T07 are complete;
 see [PROGRESS.md](PROGRESS.md) and [COMPATIBILITY.md](COMPATIBILITY.md) for its
 verified stack and evidence. “Pearl” is a working name taken from this workspace.
 

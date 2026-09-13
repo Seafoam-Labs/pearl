@@ -135,7 +135,8 @@ class PrivateSession:
         self.env.update(USER='pearl-demo', LOGNAME='pearl-demo', XDG_SESSION_TYPE='wayland',
                         XDG_CURRENT_DESKTOP='Aqueous', GDK_BACKEND='wayland', GTK_A11Y='none', GSK_RENDERER='cairo',
                         DBUS_SESSION_BUS_ADDRESS='unix:path=' + str(self.runtime / 'bus'),
-                        DBUS_SYSTEM_BUS_ADDRESS='unix:path=' + str(self.runtime / 'no-system-bus'))
+                        DBUS_SYSTEM_BUS_ADDRESS='unix:path=' + str(self.runtime / 'no-system-bus'),
+                        PULSE_SERVER='unix:' + str(self.runtime / 'pulse/native'))
         config = self.base / 'bus.conf'
         config.write_text('<busconfig><type>session</type><listen>' + escape(self.env['DBUS_SESSION_BUS_ADDRESS']) +
                           '</listen><auth>EXTERNAL</auth><policy context="default"><allow own="*"/>'

@@ -50,7 +50,8 @@ does not depend on those UI frameworks.
 | GTK session-lock | **Implemented:** complete `Gtk4SessionLock-1.0` GIR namespace generated as `gtk4sessionlock1`; real monitor/locked/unlocked callbacks exercised |
 | Aqueous layout | **Implemented in T06:** generated window-info manager v3 query/set requests on GTK’s verified display; refresh on demand/active-workspace change, no continuous external layout observation |
 | Idle, data-control and capture protocols | Generate Zig protocol bindings from pinned XML when their tasks begin; no handwritten wire marshalling |
-| libpulse and PAM | Generate direct Zig ABI declarations from pinned headers using Zig's C translation tooling when needed; no custom C bridge |
+| libpulse | **Implemented in T07:** translate pinned 17.0-98-gb096 headers with Zig 0.16.0; GLib main-loop adapter, no C bridge |
+| PAM | Generate direct Zig ABI declarations from pinned headers when its task begins; no custom C bridge |
 | Polkit agent | Generate its missing GIR namespace using the same workflow; authentication behavior remains T12 work |
 | Native background blur | **Implemented in T05:** generated `ext-background-effect-v1` on GTK’s existing display/surfaces. Private Vulkan tests verify native blur, namespace veto, capability changes, resizing and remap; see [SURFACES.md](SURFACES.md) |
 
@@ -233,3 +234,23 @@ GTK display already passes T05's native-session/IPC identity check. One-shot
 layout semantics and remaining external-observation limits are documented in
 [DESKTOP.md](DESKTOP.md). [The visual comparison](../artifacts/t06/comparison.html)
 uses actual DMS/Pearl captures and records deliberate feature/layout differences.
+
+
+## T07 service validation
+
+The [service contract](SERVICES.md) records the implemented audio/power behavior
+and physical release checklist. Dependencies added for normal builds are
+`libpulse` and `libpulse-mainloop-glib`, tested at **17.0-98-gb096**. The private
+integration fixture uses installed **PipeWire 1.6.8**, synthetic null sinks,
+playback/recording clients, separate D-Bus buses and a fake UPower/logind/profile
+peer. It does not load hardware monitor modules. No host audio or power service
+was used for mutations.
+
+[Results](../artifacts/t07/latest/results.json) verify delayed writes, permission
+denial, device removal, defaults, channel balance, modern/legacy profiles, daemon
+and bus recovery, keyboard power confirmation, OSD replacement/focus and shutdown
+with pending work. Physical backlight/battery/power checks remain open; this
+machine's `/sys/class/backlight` is empty. Suspend/lock/inhibitor handling remains
+T12. [Header pins](../bindings/headers/inputs.json) and
+[verification records](../artifacts/t07/verification/README.md) retain generated
+ABI identity, binary hashes and regression evidence.

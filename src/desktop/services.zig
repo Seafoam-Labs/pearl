@@ -16,6 +16,7 @@ pub const View = struct {
     devices: *gtk.Box,
     audio_status: *gtk.Label,
     power_status: *gtk.Label,
+    profile_status: *gtk.Label,
     brightness_label: *gtk.Label,
     error_label: *gtk.Label,
     brightness: *gtk.Scale,
@@ -25,18 +26,17 @@ pub const View = struct {
     rows: [128]Row = undefined,
     count: usize = 0,
     updating: bool = false,
+    probe_focus: ?*gtk.Widget = null,
     connections: std.ArrayList(Connection) = .empty,
     row_connections: std.ArrayList(Connection) = .empty,
-    armed: ?bool = null,
-    armed_at: i64 = 0,
-    armed_epoch: u64 = 0,
+    confirmation: @import("../services/policy.zig").Confirmation = .{},
     profile_choices: [3]ProfileChoice = undefined,
     const ProfileChoice = struct { view: *View, index: u8 };
     pub fn create(host: *gtk.Box, audio: *Audio.Audio, power: *Power) !*View {
         const self = try a.create(View);
         const root = w.column(16);
         host.append(root.as(gtk.Widget));
-        self.* = .{ .audio = audio, .power = power, .root = root, .devices = undefined, .audio_status = undefined, .power_status = undefined, .brightness_label = undefined, .error_label = undefined, .brightness = undefined, .profiles = undefined, .off = undefined, .reboot = undefined };
+        self.* = .{ .audio = audio, .power = power, .root = root, .devices = undefined, .audio_status = undefined, .power_status = undefined, .profile_status = undefined, .brightness_label = undefined, .error_label = undefined, .brightness = undefined, .profiles = undefined, .off = undefined, .reboot = undefined };
         const sound = w.card();
         root.append(sound.as(gtk.Widget));
         sound.append(w.label(tr("Sound", "Klang"), "pearl-card-title").as(gtk.Widget));
@@ -62,10 +62,12 @@ pub const View = struct {
         self.brightness.as(gtk.Widget).setTooltipText(tr("Display brightness", "Bildschirmhelligkeit"));
         power_card.append(self.brightness.as(gtk.Widget));
         self.remember(self.brightness.as(object.Object), gtk.Range.signals.value_changed.connect(self.brightness.as(gtk.Range), *View, brightnessChanged, self, .{}), false);
+        self.profile_status = w.label("", "pearl-secondary");
+        power_card.append(self.profile_status.as(gtk.Widget));
         const profile_box = w.row(8);
         power_card.append(profile_box.as(gtk.Widget));
         for (&self.profiles, 0..) |*button, i| {
-            button.* = gtk.Button.newWithLabel(Power.profile_names[i]);
+            button.* = gtk.Button.newWithLabel(([_][*:0]const u8{ tr("Power saver", "Energiesparen"), tr("Balanced", "Ausgeglichen"), tr("Performance", "Leistung") })[i]);
             self.profile_choices[i] = .{ .view = self, .index = @intCast(i) };
             profile_box.append(button.*.as(gtk.Widget));
             self.remember(button.*.as(object.Object), gtk.Button.signals.clicked.connect(button.*, *ProfileChoice, profileClicked, &self.profile_choices[i], .{}), false);
@@ -128,7 +130,7 @@ pub const View = struct {
             controls.append(scale.as(gtk.Widget));
             const mute = gtk.Button.newWithLabel(tr("Mute", "Stumm"));
             controls.append(mute.as(gtk.Widget));
-            const route = gtk.Button.newWithLabel(if (d.key.kind == .sink or d.key.kind == .source) tr("Use default", "Als Standard") else tr("Move to default", "Zum Standard verschieben"));
+            const route = gtk.Button.newWithLabel(if (d.key.kind == .sink or d.key.kind == .source) tr("Set default", "Als Standard") else tr("Move to default", "Zum Standard verschieben"));
             controls.append(route.as(gtk.Widget));
             row.* = .{ .view = self, .key = d.key, .title = title, .scale = scale, .mute = mute, .route = route };
             self.remember(scale.as(object.Object), gtk.Range.signals.value_changed.connect(scale.as(gtk.Range), *Row, volumeChanged, row, .{}), true);
@@ -148,17 +150,14 @@ pub const View = struct {
         };
         if (different) self.rebuild();
         var buffer: [1024]u8 = undefined;
-        const sound_text = if (!self.audio.ready) tr("Audio unavailable", "Audio nicht verfügbar") else if (self.audio.count == 0) tr("No audio devices", "Keine Audiogeräte") else std.fmt.bufPrintZ(&buffer, "{s}: {s}\n{s}: {s}{s}", .{ tr("Output", "Ausgabe"), if (self.audio.default(.sink)) |d| d.label.slice() else "—", tr("Input", "Eingabe"), if (self.audio.default(.source)) |d| d.label.slice() else "—", if (self.audio.active != null or self.audio.queue.len > 0) tr(" · Applying…", " · Wird angewendet…") else "" }) catch "Audio";
+        const sound_text = if (!self.audio.ready) tr("Audio unavailable", "Audio nicht verfügbar") else if (self.audio.count == 0) tr("No audio devices", "Keine Audiogeräte") else std.fmt.bufPrintZ(&buffer, "{s}: {s}\n{s}: {s}{s}", .{ tr("Output", "Ausgabe"), if (self.audio.default(.sink)) |d| d.label.slice() else "—", tr("Input", "Eingabe"), if (self.audio.default(.source)) |d| d.label.slice() else "—", if (self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null) tr(" · Applying…", " · Wird angewendet…") else "" }) catch "Audio";
         self.audio_status.setText(sound_text);
+        if (self.audio.err) |message| self.audio_status.setText(std.fmt.bufPrintZ(&buffer, "{s}", .{message}) catch "Audio unavailable");
         for (self.rows[0..self.count], self.audio.devices[0..self.count]) |*row, d| {
             const kind = if (d.key.kind == .sink) tr("Output", "Ausgabe") else if (d.key.kind == .source) tr("Input", "Eingabe") else if (d.key.kind == .playback) tr("Playback", "Wiedergabe") else tr("Recording", "Aufnahme");
             row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ kind, d.label.slice() }) catch d.label.z());
             row.scale.as(gtk.Widget).setTooltipText(row.title.getText());
-            var pending = false;
-            if (self.audio.active) |active| pending = std.meta.eql(active.key, row.key);
-            for (self.audio.queue.items[0..self.audio.queue.len]) |write| if (std.meta.eql(write.key, row.key)) {
-                pending = true;
-            };
+            const pending = self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null;
             if (!pending) row.scale.as(gtk.Range).setValue(@floatFromInt(d.volume));
             row.scale.as(gtk.Widget).setSensitive(@intFromBool(d.writable));
             row.mute.setLabel(if (d.mute) tr("Unmute", "Ton ein") else tr("Mute", "Stumm"));
@@ -172,25 +171,34 @@ pub const View = struct {
         self.brightness_label.setText(if (power.backlight.maximum == 0) tr("Brightness unavailable · no supported backlight", "Helligkeit nicht verfügbar · keine unterstützte Hintergrundbeleuchtung") else std.fmt.bufPrintZ(&buffer, "{s} · {s}{s}", .{ tr("Brightness", "Helligkeit"), power.backlight.name.slice(), if (power.brightness_pending or power.brightness_wanted != null) tr(" · Applying…", " · Wird angewendet…") else "" }) catch "Brightness");
         self.brightness_label.setWrap(1);
         self.brightness.as(gtk.Widget).setSensitive(@intFromBool(power.brightnessAvailable()));
-        if (!power.brightness_pending and power.brightness_wanted == null) self.brightness.as(gtk.Range).setValue(@floatFromInt(power.backlight.percent()));
+        if (!power.brightness_pending and power.brightness_wanted == null and power.feedback == null) self.brightness.as(gtk.Range).setValue(@floatFromInt(power.backlight.percent()));
+        self.profile_status.setText(if (!power.profiles[0] and !power.profiles[1] and !power.profiles[2]) tr("Power profiles unavailable", "Energieprofile nicht verfügbar") else tr("Power profile", "Energieprofil"));
+        self.off.as(gtk.Widget).setTooltipText(if (power.can_off) tr("Power off after confirmation", "Ausschalten nach Bestätigung") else tr("Power off is unavailable or requires permission", "Ausschalten ist nicht verfügbar oder erfordert eine Berechtigung"));
+        self.reboot.as(gtk.Widget).setTooltipText(if (power.can_reboot) tr("Restart after confirmation", "Neustart nach Bestätigung") else tr("Restart is unavailable or requires permission", "Neustart ist nicht verfügbar oder erfordert eine Berechtigung"));
+        if (power.backlight.maximum > 0 and !power.brightnessAvailable()) self.brightness_label.setText(tr("Brightness unavailable · an active session is required", "Helligkeit nicht verfügbar · eine aktive Sitzung ist erforderlich"));
         for (self.profiles, 0..) |button, i| {
             button.as(gtk.Widget).setSensitive(@intFromBool(power.profiles[i]));
             if (std.mem.eql(u8, power.profile.slice(), Power.profile_names[i])) button.as(gtk.Widget).addCssClass("pearl-selected") else button.as(gtk.Widget).removeCssClass("pearl-selected");
         }
-        if (self.armed_epoch != power.epoch() or glib.getMonotonicTime() - self.armed_at > 10_000_000) self.armed = null;
-        self.off.setLabel(if (self.armed != null and !self.armed.?) tr("Confirm power off", "Ausschalten bestätigen") else tr("Power off…", "Ausschalten…"));
-        self.reboot.setLabel(if (self.armed != null and self.armed.?) tr("Confirm restart", "Neustart bestätigen") else tr("Restart…", "Neu starten…"));
+        _ = self.confirmation.valid(power.epoch(), glib.getMonotonicTime());
+        self.off.setLabel(if (self.confirmation.action != null and !self.confirmation.action.?) tr("Confirm power off", "Ausschalten bestätigen") else tr("Power off…", "Ausschalten…"));
+        self.reboot.setLabel(if (self.confirmation.action != null and self.confirmation.action.?) tr("Confirm restart", "Neustart bestätigen") else tr("Restart…", "Neu starten…"));
         self.off.as(gtk.Widget).setSensitive(@intFromBool(power.can_off and !power.action_pending and !power.preparing));
         self.reboot.as(gtk.Widget).setSensitive(@intFromBool(power.can_reboot and !power.action_pending and !power.preparing));
-        self.error_label.setText(if (self.audio.err) |e| std.fmt.bufPrintZ(&buffer, "{s}", .{e}) catch "Audio error" else if (power.err) |e| std.fmt.bufPrintZ(&buffer, "{s}", .{e}) catch "Power error" else if (power.profile_pending or power.profile_wanted != null) tr("Applying power profile…", "Energieprofil wird angewendet…") else if (power.action_pending) tr("Waiting for the power service…", "Warten auf den Energiedienst…") else power.degraded.z());
+        self.error_label.setText(if (power.err) |e| std.fmt.bufPrintZ(&buffer, "{s}", .{e}) catch "Power error" else if (power.profile_pending or power.profile_wanted != null) tr("Applying power profile…", "Energieprofil wird angewendet…") else if (power.action_pending) tr("Waiting for the power service…", "Warten auf den Energiedienst…") else power.degraded.z());
+    }
+    pub fn probe(self: *View, window: *gtk.Window) void {
+        const focus = window.getFocus();
+        if (focus == self.probe_focus) return;
+        self.probe_focus = focus;
+        std.log.info("event=services-focus target={s}", .{if (focus == self.brightness.as(gtk.Widget)) "brightness" else if (focus == self.off.as(gtk.Widget)) "power-off" else if (focus == self.reboot.as(gtk.Widget)) "reboot" else "other"});
     }
     fn volumeChanged(range: *gtk.Range, row: *Row) callconv(.c) void {
         if (row.view.updating) return;
         row.view.audio.request(.{ .key = row.key, .volume = @intFromFloat(range.getValue()) }) catch {};
     }
     fn muteClicked(_: *gtk.Button, row: *Row) callconv(.c) void {
-        const device = row.view.audio.find(row.key) orelse return;
-        row.view.audio.request(.{ .key = row.key, .mute = !device.mute }) catch {};
+        row.view.audio.request(.{ .key = row.key, .mute = !row.view.audio.desiredMute(row.key) }) catch {};
     }
     fn routeClicked(_: *gtk.Button, row: *Row) callconv(.c) void {
         var write: Audio.Write = .{ .key = row.key };
@@ -207,21 +215,18 @@ pub const View = struct {
         choice.view.power.setProfile(choice.index) catch {};
     }
     fn cancelClicked(_: *gtk.Button, self: *View) callconv(.c) void {
-        self.armed = null;
+        self.confirmation.action = null;
         self.update();
     }
     fn powerClicked(button: *gtk.Button, self: *View) callconv(.c) void {
         const reboot = button == self.reboot;
         const now = glib.getMonotonicTime();
-        if (self.armed != null and self.armed.? == reboot and self.armed_epoch == self.power.epoch() and now - self.armed_at <= 10_000_000) {
-            self.armed = null;
-            self.power.powerAction(reboot) catch {};
-            self.update();
-        } else {
-            self.armed = reboot;
-            self.armed_at = now;
-            self.armed_epoch = self.power.epoch();
-            self.update();
-        }
+        const confirmed = self.confirmation.click(reboot, self.power.epoch(), now);
+        if (@import("build_options").test_hooks) std.log.info("event=power-intent reboot={} confirmed={}", .{ reboot, confirmed });
+        if (confirmed) self.power.powerAction(reboot) catch {
+            self.power.err = "Power action unavailable. Review the current service state.";
+            self.power.changed(self.power.context, .failure);
+        };
+        self.update();
     }
 };

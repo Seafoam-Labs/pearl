@@ -90,3 +90,41 @@ test "brightness validates device components and clamps hardware minimum" {
     try std.testing.expectError(error.InvalidValue, brightness(101, 1000));
     try std.testing.expectError(error.InvalidValue, brightness(50, 0));
 }
+
+pub const Confirmation = struct {
+    action: ?bool = null,
+    timestamp: i64 = 0,
+    epoch: u64 = 0,
+    pub fn valid(self: *Confirmation, epoch: u64, now: i64) bool {
+        if (self.epoch != epoch or now - self.timestamp > 10_000_000 or now < self.timestamp) self.action = null;
+        return self.action != null;
+    }
+    pub fn click(self: *Confirmation, reboot: bool, epoch: u64, now: i64) bool {
+        if (self.valid(epoch, now) and self.action.? == reboot) {
+            self.action = null;
+            return true;
+        }
+        self.* = .{ .action = reboot, .epoch = epoch, .timestamp = now };
+        return false;
+    }
+};
+test "power confirmation expires, cancels, and cannot survive owner or action changes" {
+    var c: Confirmation = .{};
+    try std.testing.expect(!c.click(false, 1, 0));
+    try std.testing.expect(!c.click(true, 1, 1));
+    try std.testing.expect(!c.click(true, 2, 2));
+    try std.testing.expect(c.click(true, 2, 3));
+    try std.testing.expect(!c.click(true, 2, 4));
+    try std.testing.expect(!c.click(true, 2, 10_000_005));
+    c.action = null;
+    try std.testing.expect(!c.click(true, 2, 10_000_006));
+}
+test "queue bounds targets and separates service generations" {
+    var q: Queue = .{};
+    for (0..32) |i| try q.put(.{ .key = .{ .generation = 1, .kind = .sink, .index = @intCast(i) }, .volume = 20 });
+    try std.testing.expectError(error.Busy, q.put(.{ .key = .{ .generation = 2, .kind = .sink, .index = 0 }, .volume = 40 }));
+    _ = q.take();
+    try q.put(.{ .key = .{ .generation = 2, .kind = .sink, .index = 0 }, .volume = 40 });
+    for (0..31) |_| try std.testing.expectEqual(@as(u64, 1), q.take().?.key.generation);
+    try std.testing.expectEqual(@as(u64, 2), q.take().?.key.generation);
+}

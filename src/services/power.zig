@@ -11,7 +11,8 @@ const Tag = enum { battery, upower, login, session, profiles, legacy_profiles };
 const names = [_][:0]const u8{ "org.freedesktop.UPower", "org.freedesktop.UPower", "org.freedesktop.login1", "org.freedesktop.login1", "org.freedesktop.UPower.PowerProfiles", "net.hadess.PowerProfiles" };
 const paths = [_][:0]const u8{ "/org/freedesktop/UPower/devices/DisplayDevice", "/org/freedesktop/UPower", "/org/freedesktop/login1", "", "/org/freedesktop/UPower/PowerProfiles", "/net/hadess/PowerProfiles" };
 const interfaces = [_][:0]const u8{ "org.freedesktop.UPower.Device", "org.freedesktop.UPower", "org.freedesktop.login1.Manager", "org.freedesktop.login1.Session", "org.freedesktop.UPower.PowerProfiles", "net.hadess.PowerProfiles" };
-const Slot = struct { service: *Power, tag: Tag, proxy: ?*gio.DBusProxy = null, creating: bool = false, generation: u64 = 0, owner: Text(256) = .{}, signals: [3]c_ulong = .{ 0, 0, 0 } };
+const Slot = struct { service: *Power, tag: Tag, proxy: ?*gio.DBusProxy = null, creating: bool = false, generation: u64 = 0, owner: Text(256) = .{}, bus_signal: c_ulong = 0, signals: [3]c_ulong = .{ 0, 0, 0 } };
+const Creation = struct { slot: *Slot, generation: u64 };
 const Purpose = enum { can_off, can_reboot, session, brightness, profile, power_off, reboot };
 const Call = struct { service: *Power, tag: Tag, generation: u64, purpose: Purpose };
 pub const Backlight = struct {
@@ -37,6 +38,7 @@ pub const Power = struct {
     time_to_empty: i64 = 0,
     time_to_full: i64 = 0,
     on_battery: bool = false,
+    capability_pending: [2]bool = .{ false, false },
     can_off: bool = false,
     can_reboot: bool = false,
     session_active: bool = false,
@@ -79,6 +81,8 @@ pub const Power = struct {
         slot.owner = .{};
         if (slot.proxy) |proxy| {
             for (slot.signals) |id| if (id != 0) object.signalHandlerDisconnect(proxy.as(object.Object), id);
+            if (slot.bus_signal != 0) object.signalHandlerDisconnect(proxy.getConnection().as(object.Object), slot.bus_signal);
+            slot.bus_signal = 0;
             proxy.unref();
         }
         slot.proxy = null;
@@ -105,13 +109,17 @@ pub const Power = struct {
     fn create(self: *Power, slot: *Slot) void {
         if (slot.creating or slot.proxy != null) return;
         if (slot.tag == .session and self.session_path.len == 0) return;
+        const job = a.create(Creation) catch return;
+        job.* = .{ .slot = slot, .generation = slot.generation };
         slot.creating = true;
         self.app.hold();
         const i = @intFromEnum(slot.tag);
-        gio.DBusProxy.newForBus(.system, .{ .do_not_auto_start = true, .get_invalidated_properties = true }, null, names[i], if (slot.tag == .session) self.session_path.z() else paths[i], interfaces[i], self.cancel, created, slot);
+        gio.DBusProxy.newForBus(.system, .{ .do_not_auto_start = true, .get_invalidated_properties = true }, null, names[i], if (slot.tag == .session) self.session_path.z() else paths[i], interfaces[i], self.cancel, created, job);
     }
     fn created(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
-        const slot: *Slot = @ptrCast(@alignCast(data.?));
+        const job: *Creation = @ptrCast(@alignCast(data.?));
+        const slot = job.slot;
+        defer a.destroy(job);
         const self = slot.service;
         defer self.app.release();
         slot.creating = false;
@@ -122,13 +130,47 @@ pub const Power = struct {
             if (proxy) |p| p.unref();
             return;
         }
+        if (slot.generation != job.generation) {
+            if (proxy) |p| p.unref();
+            self.create(slot);
+            return;
+        }
         slot.proxy = proxy;
         if (proxy) |p| {
+            p.getConnection().setExitOnClose(0);
             slot.signals[0] = gio.DBusProxy.signals.g_properties_changed.connect(p, *Slot, propertiesChanged, slot, .{});
             slot.signals[1] = object.Object.signals.notify.connect(p.as(object.Object), *Slot, ownerChanged, slot, .{ .detail = "g-name-owner" });
             slot.signals[2] = gio.DBusProxy.signals.g_signal.connect(p, *Slot, signalChanged, slot, .{});
+            slot.bus_signal = gio.DBusConnection.signals.closed.connect(p.getConnection(), *Slot, busClosed, slot, .{});
             self.owner(slot);
         } else if (self.retry_source == 0) self.retry_source = glib.timeoutAdd(5000, retry, self);
+    }
+    fn busClosed(_: *gio.DBusConnection, _: c_int, _: ?*glib.Error, slot: *Slot) callconv(.c) void {
+        const self = slot.service;
+        closeSlot(slot);
+        if (!self.running) return;
+        self.capability_pending = .{ false, false };
+        self.can_off = false;
+        self.can_reboot = false;
+        self.brightness_pending = false;
+        self.brightness_wanted = null;
+        self.profile_pending = false;
+        self.profile_wanted = null;
+        self.action_pending = false;
+        self.err = "System bus disconnected; pending changes were discarded.";
+        self.refresh();
+        if (self.retry_source == 0) self.retry_source = glib.timeoutAdd(5000, retry, self);
+    }
+    fn capabilities(self: *Power) void {
+        const slot = self.available(.login) orelse return;
+        if (!self.capability_pending[0]) {
+            self.call(slot, .can_off, "CanPowerOff", null, null) catch return;
+            self.capability_pending[0] = true;
+        }
+        if (!self.capability_pending[1]) {
+            self.call(slot, .can_reboot, "CanReboot", null, null) catch return;
+            self.capability_pending[1] = true;
+        }
     }
     fn retry(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Power = @ptrCast(@alignCast(data.?));
@@ -146,8 +188,10 @@ pub const Power = struct {
         if (!std.mem.eql(u8, slot.owner.slice(), name)) {
             slot.generation += 1;
             slot.owner.set(name);
+            if (name.len != 0) self.err = null;
             switch (slot.tag) {
                 .login => {
+                    self.capability_pending = .{ false, false };
                     self.can_off = false;
                     self.can_reboot = false;
                     self.preparing = false;
@@ -158,8 +202,7 @@ pub const Power = struct {
                     self.brightness_wanted = null;
                     self.brightness_pending = false;
                     if (name.len != 0) {
-                        self.call(slot, .can_off, "CanPowerOff", null, null) catch {};
-                        self.call(slot, .can_reboot, "CanReboot", null, null) catch {};
+                        self.capabilities();
                         self.call(slot, .session, "GetSessionByPID", tuple(&.{glib.Variant.newUint32(@intCast(std.c.getpid()))}), null) catch {};
                     }
                 },
@@ -253,7 +296,8 @@ pub const Power = struct {
                 for (0..@min(v.nChildren(), 16)) |i| {
                     const item = v.getChildValue(i);
                     defer item.unref();
-                    const val = item.lookupValue("Profile", null) orelse continue;
+                    const lookup: *const fn (*glib.Variant, [*:0]const u8, ?*const glib.VariantType) callconv(.c) ?*glib.Variant = @ptrCast(&glib.Variant.lookupValue);
+                    const val = lookup(item, "Profile", null) orelse continue;
                     defer val.unref();
                     if (is(val, "s")) for (profile_names, 0..) |name, j| {
                         if (std.mem.eql(u8, name, std.mem.span(val.getString(null)))) self.profiles[j] = true;
@@ -335,7 +379,13 @@ pub const Power = struct {
         const job = try a.create(Call);
         job.* = .{ .service = self, .tag = slot.tag, .generation = slot.generation, .purpose = purpose };
         self.app.hold();
-        slot.proxy.?.getConnection().call(slot.owner.z(), if (slot.tag == .session) self.session_path.z() else paths[@intFromEnum(slot.tag)], interface orelse interfaces[@intFromEnum(slot.tag)], method, parameters, null, .{ .no_auto_start = true }, 3000, self.cancel, called, job);
+        const reply_type = glib.VariantType.new(switch (purpose) {
+            .can_off, .can_reboot => "(s)",
+            .session => "(o)",
+            else => "()",
+        });
+        defer reply_type.free();
+        slot.proxy.?.getConnection().call(slot.owner.z(), if (slot.tag == .session) self.session_path.z() else paths[@intFromEnum(slot.tag)], interface orelse interfaces[@intFromEnum(slot.tag)], method, parameters, reply_type, .{ .no_auto_start = true }, 3000, self.cancel, called, job);
     }
     fn called(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
         const job: *Call = @ptrCast(@alignCast(data.?));
@@ -347,6 +397,8 @@ pub const Power = struct {
         defer if (value) |v| v.unref();
         defer if (err) |e| e.free();
         if (!self.running or self.slots[@intFromEnum(job.tag)].generation != job.generation) return;
+        if (job.purpose == .can_off) self.capability_pending[0] = false;
+        if (job.purpose == .can_reboot) self.capability_pending[1] = false;
         const mutation = job.purpose == .brightness or job.purpose == .profile or job.purpose == .power_off or job.purpose == .reboot;
         switch (job.purpose) {
             .brightness => self.brightness_pending = false,
@@ -390,14 +442,18 @@ pub const Power = struct {
                 }
                 break :blk "Service did not confirm the change. Refresh before retrying.";
             } else "Service did not confirm the change.";
-            self.brightness_wanted = null;
-            self.profile_wanted = null;
+            switch (job.purpose) {
+                .brightness => self.brightness_wanted = null,
+                .profile => self.profile_wanted = null,
+                else => {},
+            }
             self.changed(self.context, .failure);
         }
         self.refresh();
         if (self.brightness_wanted != null or self.profile_wanted != null) self.arm();
     }
     pub fn panel(self: *Power, open: bool) void {
+        if (open and !self.panel_open) self.capabilities();
         self.panel_open = open;
         if (self.poll_source != 0) _ = glib.Source.remove(self.poll_source);
         self.poll_source = 0;
@@ -480,7 +536,10 @@ pub const Power = struct {
         if (!self.running) return;
         if (!std.mem.eql(u8, self.backlight.name.slice(), job.result.name.slice())) self.brightness_wanted = null;
         self.backlight = job.result;
-        self.changed(self.context, if (self.feedback != null) .applied else .state);
+        if (self.feedback != null and self.backlight.maximum == 0) {
+            self.err = "Backlight unavailable after the change; final brightness was not confirmed.";
+            self.changed(self.context, .failure);
+        } else self.changed(self.context, if (self.feedback != null) .applied else .state);
         self.feedback = null;
         if (self.scan_again) {
             self.scan_again = false;

@@ -7,6 +7,8 @@ and a session-scoped `pearlctl` endpoint. See [SURFACES.md](SURFACES.md) for the
 implemented surface policies, control schema and isolated Vulkan test.
 [DESKTOP.md](DESKTOP.md) covers T06’s live bar, GIO launcher, local calendar,
 control center, runtime groups and native layout requests.
+[SERVICES.md](SERVICES.md) covers T07 audio/power adapters, CLI actions, service
+restart policy, private fixtures and physical checks.
 
 ## Build and run
 
@@ -20,6 +22,7 @@ zig build test -Doptimize=ReleaseSafe
 zig build test-bindings -Doptimize=ReleaseSafe
 zig build test-components -Doptimize=ReleaseSafe
 zig build test-desktop -Doptimize=ReleaseSafe
+zig build test-services -Doptimize=ReleaseSafe
 zig build integration -Doptimize=ReleaseSafe
 ```
 
