@@ -20,23 +20,41 @@ pub const Bus = struct {
     subscription: c_uint = 0,
     closed_signal: c_ulong = 0,
     retry: c_uint = 0,
+    address: db.Text(4096) = .{},
     pub fn start(self: *Bus) void {
         self.running = true;
+        // GApplication can retain GIO's closed shared bus connection. Keep the
+        // UI alive and use a separately constructed connection for reconnects.
+        if (self.app.getDbusConnection()) |connection| connection.setExitOnClose(0);
+        if (glib.getenv("DBUS_SESSION_BUS_ADDRESS")) |address| {
+            self.address.set(std.mem.span(address));
+        } else if (glib.getenv("XDG_RUNTIME_DIR")) |runtime| {
+            var buffer: [4096]u8 = undefined;
+            self.address.set(std.fmt.bufPrint(&buffer, "unix:path={s}/bus", .{std.mem.span(runtime)}) catch "");
+        }
         self.cancel = gio.Cancellable.new();
         self.open();
     }
     fn open(self: *Bus) void {
         self.app.hold();
-        gio.busGet(.session, self.cancel, opened, self);
+        gio.DBusConnection.newForAddress(self.address.z(), .{ .authentication_client = true, .message_bus_connection = true }, null, self.cancel, opened, self);
     }
     fn opened(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
         const self: *Bus = @ptrCast(@alignCast(data.?));
         defer self.app.release();
         var err: ?*glib.Error = null;
-        const conn = gio.busGetFinish(result, &err);
+        const conn = gio.DBusConnection.newForAddressFinish(result, &err);
         if (err) |e| e.free();
-        if (!self.running) { if (conn) |c| c.unref(); return; }
+        if (!self.running) {
+            if (conn) |c| c.unref();
+            return;
+        }
         if (conn) |c| {
+            if (c.isClosed() != 0) {
+                c.unref();
+                self.retry = glib.timeoutAdd(3000, retryTick, self);
+                return;
+            }
             self.conn = c;
             c.setExitOnClose(0);
             self.closed_signal = gio.DBusConnection.signals.closed.connect(c, *Bus, closed, self, .{});
@@ -64,7 +82,10 @@ pub const Bus = struct {
             c.unref();
         }
         self.conn = null;
-        if (self.running) { self.cancel.unref(); self.cancel = gio.Cancellable.new(); }
+        if (self.running) {
+            self.cancel.unref();
+            self.cancel = gio.Cancellable.new();
+        }
     }
     pub fn stop(self: *Bus) void {
         self.running = false;

@@ -5,7 +5,9 @@ const db = t.db;
 const gio = db.gio;
 const glib = db.glib;
 pub const Session = struct {
-    app: *gio.Application, context: *anyopaque, changed: *const fn (*anyopaque) void,
+    app: *gio.Application,
+    context: *anyopaque,
+    changed: *const fn (*anyopaque) void,
     bus: t.Bus = undefined,
     notifications: @import("notifications.zig").Notifications = undefined,
     media: @import("mpris.zig").Media = undefined,
@@ -17,19 +19,30 @@ pub const Session = struct {
         self.tray = .{ .bus = &self.bus, .context = self.context, .changed = self.changed };
         self.bus.start();
     }
-    pub fn stop(self: *Session) void { self.bus.stop(); }
+    pub fn stop(self: *Session) void {
+        self.bus.stop();
+    }
     fn connectionChanged(data: *anyopaque, connected: bool) void {
         const self: *Session = @ptrCast(@alignCast(data));
-        if (connected) { self.notifications.start(); self.media.start(); self.tray.start(); }
-        else { self.notifications.stop(); self.media.stop(); self.tray.stop(); }
+        if (connected) {
+            self.notifications.start();
+            self.media.start();
+            self.tray.start();
+        } else {
+            self.notifications.stop();
+            self.media.stop();
+            self.tray.stop();
+        }
         self.changed(self.context);
     }
     fn signal(_: *gio.DBusConnection, sender: ?[*:0]const u8, path: [*:0]const u8, iface: [*:0]const u8, member: [*:0]const u8, params: *glib.Variant, data: ?*anyopaque) callconv(.c) void {
         const self: *Session = @ptrCast(@alignCast(data.?));
         const owner = if (sender) |s| std.mem.span(s) else return;
         if (std.mem.eql(u8, owner, "org.freedesktop.DBus") and std.mem.eql(u8, std.mem.span(iface), "org.freedesktop.DBus") and std.mem.eql(u8, std.mem.span(path), "/org/freedesktop/DBus") and std.mem.eql(u8, std.mem.span(member), "NameOwnerChanged") and db.is(params, "(sss)")) {
-            const name = t.childText(256, params, 0); const new = t.childText(256, params, 2);
-            self.media.ownerChanged(name.z(), new.slice()); self.tray.ownerChanged(name.z(), new.slice());
+            const name = t.childText(256, params, 0);
+            const new = t.childText(256, params, 2);
+            self.media.ownerChanged(name.z(), new.slice());
+            self.tray.ownerChanged(name.z(), new.slice());
         } else {
             self.media.signal(owner, std.mem.span(path), std.mem.span(iface), std.mem.span(member), params);
             self.tray.signal(owner, std.mem.span(path), std.mem.span(iface), std.mem.span(member), params);
@@ -38,8 +51,13 @@ pub const Session = struct {
     pub fn act(self: *Session, r: @import("../cli/protocol.zig").Request) !void {
         switch (r.command.?) {
             .dnd_on, .dnd_off => self.notifications.setDnd(r.command.? == .dnd_on),
-            .clear_history => { self.notifications.model.clearHistory(); self.notifications.update(); },
-            .dismiss => if (!self.notifications.close(r.notification.?, 2)) { return error.InvalidValue; },
+            .clear_history => {
+                self.notifications.model.clearHistory();
+                self.notifications.update();
+            },
+            .dismiss => if (!self.notifications.close(r.notification.?, 2)) {
+                return error.InvalidValue;
+            },
             .invoke => try self.notifications.invoke(r.notification.?, r.text.?),
             .select, .play_pause, .play, .pause, .stop, .next, .previous, .seek => try self.media.act(r.generation.?, std.meta.stringToEnum(@import("mpris.zig").Action, @tagName(r.command.?)).?, r.position orelse 0),
             .tray_activate, .tray_secondary => try self.tray.activate(r.generation.?, r.command.? == .tray_secondary),
@@ -51,10 +69,17 @@ pub const Session = struct {
         const N = struct { id: u32, app: []const u8, summary: []const u8, active: bool, toast: bool, actions: usize };
         const P = struct { generation: u64, name: []const u8, title: []const u8, playback: []const u8, ready: bool, busy: bool, position: i64, length: i64, seek: bool };
         const I = struct { generation: u64, registration: []const u8, title: []const u8, ready: bool, image: bool, menu_ready: bool, menu_revision: u64, nodes: usize };
-        var notes: std.ArrayList(N) = .empty; var players: std.ArrayList(P) = .empty; var items: std.ArrayList(I) = .empty;
-        var n: usize = 0; var active: usize = 0; var toasts: usize = 0; var pcount: usize = 0; var icount: usize = 0;
+        var notes: std.ArrayList(N) = .empty;
+        var players: std.ArrayList(P) = .empty;
+        var items: std.ArrayList(I) = .empty;
+        var n: usize = 0;
+        var active: usize = 0;
+        var toasts: usize = 0;
+        var pcount: usize = 0;
+        var icount: usize = 0;
         for (&self.notifications.model.records) |*r| if (r.id != 0) {
-            if (r.active) active += 1; if (r.toast_until > 0) toasts += 1;
+            if (r.active) active += 1;
+            if (r.toast_until > 0) toasts += 1;
             if (n >= offset and n < offset + 4) try notes.append(a, .{ .id = r.id, .app = preview(r.app.slice()), .summary = if (self.notifications.model.locked) "" else preview(r.summary.slice()), .active = r.active, .toast = r.toast_until > 0, .actions = r.action_count });
             n += 1;
         };
@@ -67,12 +92,17 @@ pub const Session = struct {
             icount += 1;
         };
         return std.json.Stringify.valueAlloc(a, .{
-            .connected = self.bus.conn != null, .jobs = self.bus.jobs,
+            .connected = self.bus.conn != null,
+            .jobs = self.bus.jobs,
             .notifications = .{ .available = self.notifications.available, .dnd = self.notifications.model.dnd, .locked = self.notifications.model.locked, .count = n, .active = active, .toasts = @min(3, toasts), .records = notes.items },
-            .media = .{ .count = pcount, .selected = self.media.selected, .timer = self.media.timer != 0, .err = self.media.err, .players = players.items },
+            .media = .{ .count = pcount, .selected = self.media.selected, .timer = self.media.timer != 0, .views = self.media.viewers, .err = self.media.err, .players = players.items },
             .tray = .{ .watcher = self.tray.watcher, .external = self.tray.external.slice(), .count = icount, .err = self.tray.err, .items = items.items },
             .next_offset = if (offset + 4 < @max(n, @max(pcount, icount))) @as(?usize, offset + 4) else null,
         }, .{});
     }
 };
-fn preview(value: []const u8) []const u8 { var n = @min(96, value.len); while (n > 0 and !std.unicode.utf8ValidateSlice(value[0..n])) n -= 1; return value[0..n]; }
+fn preview(value: []const u8) []const u8 {
+    var n = @min(96, value.len);
+    while (n > 0 and !std.unicode.utf8ValidateSlice(value[0..n])) n -= 1;
+    return value[0..n];
+}

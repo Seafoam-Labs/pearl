@@ -26,16 +26,21 @@ pub const Notifications = struct {
         self.name_id = 0;
         self.available = false;
         self.exported.stop();
-        for (&self.model.records) |*r| if (r.active) { _ = self.model.close(r.id); };
+        for (&self.model.records) |*r| if (r.active) {
+            _ = self.model.close(r.id);
+        };
         self.changed(self.context);
     }
     fn acquired(_: *gio.DBusConnection, _: [*:0]const u8, data: ?*anyopaque) callconv(.c) void {
         const self: *Notifications = @ptrCast(@alignCast(data.?));
-        self.available = true; self.changed(self.context);
+        self.available = true;
+        self.changed(self.context);
     }
     fn lost(_: *gio.DBusConnection, _: [*:0]const u8, data: ?*anyopaque) callconv(.c) void {
         const self: *Notifications = @ptrCast(@alignCast(data.?));
-        self.available = false; self.model.suppress(); self.changed(self.context);
+        self.available = false;
+        self.model.suppress();
+        self.changed(self.context);
     }
     pub fn setDnd(self: *Notifications, value: bool) void {
         self.model.dnd = value;
@@ -52,7 +57,7 @@ pub const Notifications = struct {
         const r = self.model.find(id) orelse return false;
         const owner = r.owner;
         if (!self.model.close(id)) return false;
-        self.bus.emit(owner.z(), path, name, "NotificationClosed", db.tuple(&.{glib.Variant.newUint32(id), glib.Variant.newUint32(reason)}));
+        self.bus.emit(owner.z(), path, name, "NotificationClosed", db.tuple(&.{ glib.Variant.newUint32(id), glib.Variant.newUint32(reason) }));
         self.update();
         return true;
     }
@@ -61,7 +66,7 @@ pub const Notifications = struct {
         const r = self.model.find(id) orelse return error.InvalidValue;
         if (!r.active) return error.InvalidValue;
         for (r.actions[0..r.action_count]) |action| if (std.mem.eql(u8, key, action.key.slice())) {
-            self.bus.emit(r.owner.z(), path, name, "ActionInvoked", db.tuple(&.{glib.Variant.newUint32(id), db.str(action.key.z())}));
+            self.bus.emit(r.owner.z(), path, name, "ActionInvoked", db.tuple(&.{ glib.Variant.newUint32(id), db.str(action.key.z()) }));
             if (!r.resident) _ = self.close(id, 2);
             return;
         };
@@ -84,52 +89,95 @@ pub const Notifications = struct {
         self.timer = 0;
         const now = glib.getMonotonicTime();
         for (&self.model.records) |*r| {
-            if (r.active and r.deadline > 0 and r.deadline <= now) { _ = self.close(r.id, 1); continue; }
-            if (r.toast_until > 0 and r.toast_until <= now) { r.toast_until = 0; self.model.serial += 1; }
+            if (r.active and r.deadline > 0 and r.deadline <= now) {
+                _ = self.close(r.id, 1);
+                continue;
+            }
+            if (r.toast_until > 0 and r.toast_until <= now) {
+                r.toast_until = 0;
+                self.model.serial += 1;
+            }
         }
-        self.update(); return 0;
+        self.update();
+        return 0;
     }
     const vtable: gio.DBusInterfaceVTable = .{ .f_method_call = method, .f_get_property = null, .f_set_property = null, .f_padding = @splat(undefined) };
     fn method(_: *gio.DBusConnection, sender: ?[*:0]const u8, _: [*:0]const u8, _: ?[*:0]const u8, member: [*:0]const u8, params: *glib.Variant, invocation: *gio.DBusMethodInvocation, data: ?*anyopaque) callconv(.c) void {
         const self: *Notifications = @ptrCast(@alignCast(data.?));
-        if (!self.available) { invocation.returnDbusError("org.freedesktop.DBus.Error.NotSupported", "Another notification service owns the name."); return; }
+        if (!self.available) {
+            invocation.returnDbusError("org.freedesktop.DBus.Error.NotSupported", "Another notification service owns the name.");
+            return;
+        }
         const m = std.mem.span(member);
         if (std.mem.eql(u8, m, "GetCapabilities")) {
             invocation.returnValue(db.tuple(&.{db.array("s", &.{ db.str("body"), db.str("actions"), db.str("persistence") })}));
         } else if (std.mem.eql(u8, m, "GetServerInformation")) {
             invocation.returnValue(db.tuple(&.{ db.str("Pearl"), db.str("Aqueous"), db.str("0.1.0"), db.str("1.2") }));
         } else if (std.mem.eql(u8, m, "CloseNotification")) {
-            const v = params.getChildValue(0); defer v.unref();
+            const v = params.getChildValue(0);
+            defer v.unref();
             const r = self.model.find(v.getUint32());
             if (r == null or !std.mem.eql(u8, r.?.owner.slice(), if (sender) |s| std.mem.span(s) else "") or !self.close(v.getUint32(), 3)) {
-                invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "No active notification for this sender."); return;
+                invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "No active notification for this sender.");
+                return;
             }
             invocation.returnValue(null);
         } else if (std.mem.eql(u8, m, "Notify")) {
-            if (params.getSize() > 64 * 1024) { invocation.returnDbusError("org.freedesktop.DBus.Error.LimitsExceeded", "Notification exceeds 64 KiB."); return; }
+            if (params.getSize() > 64 * 1024) {
+                invocation.returnDbusError("org.freedesktop.DBus.Error.LimitsExceeded", "Notification exceeds 64 KiB.");
+                return;
+            }
             var r: policy.Record = .{};
             r.owner.set(if (sender) |s| std.mem.span(s) else "");
-            inline for (.{ .{0, "app", 160}, .{2, "icon", 160}, .{3, "summary", 256}, .{4, "body", 2048} }) |field| {
-                const v = params.getChildValue(field[0]); defer v.unref();
+            inline for (.{ .{ 0, "app", 160 }, .{ 2, "icon", 160 }, .{ 3, "summary", 256 }, .{ 4, "body", 2048 } }) |field| {
+                const v = params.getChildValue(field[0]);
+                defer v.unref();
                 @field(r, field[1]) = policy.sanitize(field[2], std.mem.span(v.getString(null)));
             }
             // Only themed names, never remote URLs or arbitrary paths.
-            for (r.icon.slice()) |c| if (!(std.ascii.isAlphanumeric(c) or c == '-' or c == '_' or c == '.')) { r.icon = .{}; break; };
-            const actions = params.getChildValue(5); defer actions.unref();
-            if (actions.nChildren() % 2 != 0 or actions.nChildren() > 16) { invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "At most eight action pairs are supported."); return; }
+            for (r.icon.slice()) |c| if (!(std.ascii.isAlphanumeric(c) or c == '-' or c == '_' or c == '.')) {
+                r.icon = .{};
+                break;
+            };
+            const actions = params.getChildValue(5);
+            defer actions.unref();
+            if (actions.nChildren() % 2 != 0 or actions.nChildren() > 16) {
+                invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "At most eight action pairs are supported.");
+                return;
+            }
             var i: usize = 0;
             while (i < actions.nChildren()) : (i += 2) {
+                const raw_key = actions.getChildValue(i);
+                defer raw_key.unref();
+                const key_slice = std.mem.span(raw_key.getString(null));
+                if (key_slice.len == 0 or key_slice.len > 96) {
+                    invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "Action keys must contain 1–96 bytes.");
+                    return;
+                }
+                for (r.actions[0..r.action_count]) |old| if (std.mem.eql(u8, old.key.slice(), key_slice)) {
+                    invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "Action keys must be unique.");
+                    return;
+                };
                 const key = transport.childText(96, actions, i);
                 const label = transport.childText(160, actions, i + 1);
-                r.actions[r.action_count] = .{ .key = key, .label = policy.sanitize(160, label.slice()) }; r.action_count += 1;
+                r.actions[r.action_count] = .{ .key = key, .label = policy.sanitize(160, label.slice()) };
+                r.action_count += 1;
             }
-            const hints = params.getChildValue(6); defer hints.unref();
-            r.transient = db.boolean(hints, "transient"); r.resident = db.boolean(hints, "resident");
-            if (db.lookup(hints, "urgency", "y")) |v| { defer v.unref(); r.urgency = @min(2, v.getByte()); }
-            const replace = params.getChildValue(1); defer replace.unref();
-            const timeout = params.getChildValue(7); defer timeout.unref();
+            const hints = params.getChildValue(6);
+            defer hints.unref();
+            r.transient = db.boolean(hints, "transient");
+            r.resident = db.boolean(hints, "resident");
+            if (db.lookup(hints, "urgency", "y")) |v| {
+                defer v.unref();
+                r.urgency = @min(2, v.getByte());
+            }
+            const replace = params.getChildValue(1);
+            defer replace.unref();
+            const timeout = params.getChildValue(7);
+            defer timeout.unref();
             const record = self.model.add(r, replace.getUint32(), timeout.getInt32(), glib.getMonotonicTime()) catch {
-                invocation.returnDbusError("org.freedesktop.DBus.Error.LimitsExceeded", "Active notification limit reached."); return;
+                invocation.returnDbusError("org.freedesktop.DBus.Error.LimitsExceeded", "Active notification limit reached.");
+                return;
             };
             invocation.returnValue(db.tuple(&.{glib.Variant.newUint32(record.id)}));
             self.update();

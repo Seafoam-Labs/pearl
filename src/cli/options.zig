@@ -101,7 +101,13 @@ pub const usage =
     \\       pearlctl overview toggle [--output ID]
     \\       pearlctl layout get|set --output ID [--layout NAME]
     \\       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS
-    \\       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth
+    \\       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray
+    \\
+    \\       pearlctl notifications|media|tray toggle [--output ID]
+    \\       pearlctl session status [--offset N]
+    \\       pearlctl session action --command COMMAND [--generation N] [--notification ID]
+    \\                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]
+    \\       See docs/SESSION_SERVICES.md for commands and identity fields.
     \\
     \\       pearlctl connectivity status [--offset N]
     \\       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]
@@ -161,4 +167,15 @@ test "connectivity actions validate service, generation, object path and forbid 
     try t.expectError(error.Usage, parse(&.{ "connectivity", "action", "--service", "bluetooth", "--action", "pair", "--generation", "9", "--path", "/x/../y" }));
     try t.expectError(error.Usage, parse(&.{ "connectivity", "action", "--service", "bluetooth", "--action", "cancel", "--generation", "9", "--path", "/x" }));
     try t.expectError(error.Usage, parse(&.{ "connectivity", "status", "--password", "must-not-accept" }));
+}
+
+test "session controls bind generations and reject missing or unrelated action fields" {
+    const t = std.testing;
+    _ = try parse(&.{ "session", "action", "--command", "dnd_on" });
+    _ = try parse(&.{ "session", "action", "--command", "seek", "--generation", "1", "--position", "50" });
+    try t.expectError(error.Usage, parse(&.{ "session", "action", "--command", "seek", "--generation", "1" }));
+    try t.expectError(error.Usage, parse(&.{ "session", "action", "--command", "seek", "--generation", "1", "--position", "-1" }));
+    try t.expectError(error.Usage, parse(&.{ "session", "action", "--command", "tray_click", "--generation", "1", "--menu-id", "2" }));
+    try t.expectError(error.Usage, parse(&.{ "session", "action", "--command", "invoke", "--notification", "1" }));
+    try t.expectError(error.Usage, parse(&.{ "session", "action", "--command", "dnd_on", "--generation", "1" }));
 }

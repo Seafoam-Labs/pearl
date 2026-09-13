@@ -20,7 +20,7 @@ const tr = @import("../../desktop/text.zig").tr;
 const a = std.heap.c_allocator;
 const Rect = policy.Rect;
 const Edge = policy.Edge;
-const Kind = enum { wallpaper, bar, popup, osd, frame };
+const Kind = enum { wallpaper, bar, popup, osd, frame, notification };
 const Surface = struct {
     manager: *Manager,
     output: *Output,
@@ -32,9 +32,15 @@ const Surface = struct {
     bar: ?*Bar.Bar = null,
     launcher: ?*Launcher = null,
     control: ?*Panels.Control = null,
+    notifications: ?*@import("../../desktop/notifications.zig").View = null,
+    media: ?*@import("../../desktop/media.zig").View = null,
+    tray: ?*@import("../../desktop/tray.zig").View = null,
     measure_signal: c_ulong = 0,
     measure_clock: ?*gdk.FrameClock = null,
     fn destroy(self: *Surface) void {
+        if (self.notifications) |view| view.destroy();
+        if (self.media) |view| view.destroy();
+        if (self.tray) |view| view.destroy();
         if (self.bar) |bar| bar.destroy();
         if (self.launcher) |launcher| launcher.destroy();
         if (self.control) |control| control.destroy();
@@ -97,6 +103,7 @@ pub const Manager = struct {
     clock_source: c_uint = 0,
     error_pending: bool = false,
     osd: ?*Surface = null,
+    notification: ?*Surface = null,
     osd_source: c_uint = 0,
     sync_source: c_uint = 0,
     monitor_signal: c_ulong = 0,
@@ -169,6 +176,7 @@ pub const Manager = struct {
     pub fn clear(self: *Manager) void {
         self.hidePopup();
         self.hideOsd();
+        self.hideNotifications();
         for (self.outputs.items) |o| o.destroy();
         self.outputs.clearRetainingCapacity();
     }
@@ -277,6 +285,7 @@ pub const Manager = struct {
     }
     fn sync(self: *Manager) !void {
         if (self.client.availability != .ready) {
+            self.session_services.notifications.setLocked(true);
             self.clear();
             return;
         }
@@ -349,6 +358,7 @@ pub const Manager = struct {
             if (!o.seen) {
                 if (self.popup != null and self.popup.?.output == o) self.hidePopup();
                 if (self.osd != null and self.osd.?.output == o) self.hideOsd();
+                if (self.notification != null and self.notification.?.output == o) self.hideNotifications();
                 _ = self.outputs.orderedRemove(i);
                 o.destroy();
             } else i += 1;
@@ -356,6 +366,9 @@ pub const Manager = struct {
         if (self.popup) |popup| {
             if (popup.launcher) |launcher| launcher.refresh();
             if (popup.control) |panel| panel.update();
+            if (popup.notifications) |view| view.update();
+            if (popup.media) |view| view.update();
+            if (popup.tray) |view| view.update();
             if (popup.control != null and self.layout_stamp != self.workspaceStamp(popup.output)) {
                 self.layout.?.cancel();
                 self.queryLayout(popup.output, null) catch {};
@@ -370,6 +383,8 @@ pub const Manager = struct {
             defer arena.deinit();
             _ = self.control(.{ .op = .osd_show, .text = tr("The desktop action could not be completed.", "Die Desktop-Aktion konnte nicht abgeschlossen werden."), .duration_ms = 3000 }, arena.allocator()) catch "";
         }
+        self.session_services.notifications.setLocked(self.client.model.get(.session, "session").?.locked);
+        try self.syncNotifications();
         if (self.client.model.get(.session, "session").?.locked) {
             self.hidePopup();
             self.hideOsd();
@@ -395,12 +410,13 @@ pub const Manager = struct {
             .bar => "pearl:bar",
             .popup => "pearl:popup",
             .osd => "pearl:osd",
+            .notification => "pearl:notification",
             .frame => "pearl:frame-exclusion",
         });
         layer.setLayer(window, switch (kind) {
             .wallpaper => .background,
             .bar, .frame => .top,
-            .popup, .osd => .overlay,
+            .popup, .osd, .notification => .overlay,
         });
         layer.setExclusiveZone(window, 0);
         layer.setKeyboardMode(window, if (kind == .popup) .exclusive else .none);
@@ -414,6 +430,9 @@ pub const Manager = struct {
             if (s.bar) |bar| bar.destroy();
             if (s.launcher) |launcher| launcher.destroy();
             if (s.control) |panel_control| panel_control.destroy();
+            if (s.notifications) |view| view.destroy();
+            if (s.media) |view| view.destroy();
+            if (s.tray) |view| view.destroy();
         }
         switch (kind) {
             .wallpaper => {
@@ -425,7 +444,7 @@ pub const Manager = struct {
             .bar => {
                 panel_widget.addCssClass("pearl-bar-panel");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, 4);
-                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth);
+                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -454,8 +473,19 @@ pub const Manager = struct {
                 switch (self.pane) {
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
                     .calendar => Panels.calendar(panel),
+                    .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
+                    .media => {
+                        const scroll = gtk.ScrolledWindow.new();
+                        scroll.setPolicy(.never, .automatic);
+                        scroll.as(gtk.Widget).setVexpand(1);
+                        const content = gtk.Box.new(.vertical, 12);
+                        scroll.setChild(content.as(gtk.Widget));
+                        panel.append(scroll.as(gtk.Widget));
+                        s.media = try @import("../../desktop/media.zig").View.create(content, &self.session_services.media);
+                    },
+                    .tray => s.tray = try @import("../../desktop/tray.zig").View.create(panel, &self.session_services.tray),
                     .control => {
-                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, &self.audio, &self.power, &self.network, &self.bluetooth);
+                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services.media);
                         const overview = gtk.Button.newWithLabel(tr("Window overview", "Fensterübersicht"));
                         _ = gtk.Button.signals.clicked.connect(overview, *Surface, overviewClicked, s, .{});
                         panel.append(overview.as(gtk.Widget));
@@ -470,6 +500,15 @@ pub const Manager = struct {
                 _ = gtk.GestureClick.signals.released.connect(click, *Manager, outsideReleased, self, .{});
                 window.as(gtk.Widget).addController(click.as(gtk.EventController));
             },
+            .notification => {
+                layer.setAnchor(window, .top, 1);
+                layer.setAnchor(window, .right, 1);
+                layer.setMargin(window, .top, 16);
+                layer.setMargin(window, .right, 16);
+                window.setDefaultSize(@min(400, output.bounds.width - 32), -1);
+                window.setChild(panel_widget);
+                s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, true);
+            },
             .osd => {
                 layer.setAnchor(window, .bottom, 1);
                 layer.setMargin(window, .bottom, 24);
@@ -478,8 +517,8 @@ pub const Manager = struct {
                 window.setChild(panel_widget);
             },
         }
-        try s.effects.init(&self.effects, window, panel_widget, kind == .bar or kind == .popup or kind == .osd, if (kind == .popup) .full else if (kind == .bar) .panel else .empty);
-        if (kind != .popup and kind != .osd and kind != .frame) window.present();
+        try s.effects.init(&self.effects, window, panel_widget, kind == .bar or kind == .popup or kind == .osd or kind == .notification, if (kind == .popup) .full else if (kind == .bar or kind == .notification) .panel else .empty);
+        if (kind != .popup and kind != .osd and kind != .frame and kind != .notification) window.present();
         if (kind == .bar) {
             if (window.as(gtk.Widget).getFrameClock()) |clock| {
                 _ = clock.ref();
@@ -508,7 +547,7 @@ pub const Manager = struct {
         self.popup = try self.create(output, .popup);
         self.positionPopup();
         self.popup.?.window.present();
-        if (@import("build_options").test_hooks and pane == .control) {
+        if (@import("build_options").test_hooks and pane != .launcher and pane != .calendar) {
             const surface = self.popup.?;
             if (surface.window.as(gtk.Widget).getFrameClock()) |clock| {
                 _ = clock.ref();
@@ -526,11 +565,12 @@ pub const Manager = struct {
     fn positionPopup(self: *Manager) void {
         const s = self.popup orelse return;
         const o = s.output;
-        const rect = if (self.pane == .launcher) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if (self.pane == .calendar) 440 else 600, if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane == .control);
+        const rect = if (self.pane == .launcher) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if (self.pane == .control) 600 else 440, if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;
         fixed.move(s.panel, @floatFromInt(rect.x - (o.usable.x - o.bounds.x)), @floatFromInt(rect.y - (o.usable.y - o.bounds.y)));
         s.panel.setSizeRequest(rect.width, rect.height);
+        self.positionNotifications();
     }
     pub fn hidePopup(self: *Manager) void {
         if (self.popup) |s| {
@@ -538,8 +578,42 @@ pub const Manager = struct {
             self.popup_rect = null;
             if (self.layout) |*layout| layout.cancel();
             s.destroy();
+            self.positionNotifications();
             std.log.info("event=popup-closed", .{});
         }
+    }
+    fn positionNotifications(self: *Manager) void {
+        const s = self.notification orelse return;
+        const left = self.popup != null;
+        layer.setAnchor(s.window, .right, @intFromBool(!left));
+        layer.setAnchor(s.window, .left, @intFromBool(left));
+        layer.setMargin(s.window, .right, if (left) 0 else 16);
+        layer.setMargin(s.window, .left, if (left) 16 else 0);
+    }
+    fn hideNotifications(self: *Manager) void {
+        if (self.notification) |s| {
+            self.notification = null;
+            s.destroy();
+        }
+    }
+    fn syncNotifications(self: *Manager) !void {
+        const model = &self.session_services.notifications.model;
+        var count: usize = 0;
+        if (!model.locked and !model.dnd) for (&model.records) |*r| {
+            if (r.toast_until > glib.getMonotonicTime()) count += 1;
+        };
+        if (count == 0) {
+            self.hideNotifications();
+            return;
+        }
+        if (self.notification == null) {
+            const output = self.selected(null) catch return;
+            self.notification = try self.create(output, .notification);
+            self.notification.?.window.present();
+        }
+        self.notification.?.notifications.?.display_limit = @intCast(@min(3, @max(1, @divTrunc(self.notification.?.output.usable.height - 32, 210))));
+        self.positionNotifications();
+        self.notification.?.notifications.?.update();
     }
     fn hideOsd(self: *Manager) void {
         if (self.osd_source != 0) _ = glib.Source.remove(self.osd_source);
@@ -577,7 +651,10 @@ pub const Manager = struct {
         }
     }
     pub fn control(self: *Manager, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
-        if (request.op == .session_status) return self.session_services.status(alloc, request.offset orelse 0);
+        if (request.op == .session_status) {
+            self.session_services.notifications.setLocked(self.client.availability != .ready or (if (self.client.model.get(.session, "session")) |session| session.locked else true));
+            return self.session_services.status(alloc, request.offset orelse 0);
+        }
         if (request.op == .status) return self.status(alloc);
         if (request.op == .connectivity_status) return @import("../../services/connectivity_status.zig").encode(alloc, &self.network, &self.bluetooth, request.offset orelse 0);
         if (request.op == .services_status) return std.json.Stringify.valueAlloc(alloc, try self.serviceStatus(alloc, request.offset orelse 0), .{});
@@ -585,8 +662,19 @@ pub const Manager = struct {
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         switch (request.op) {
             .status, .services_status, .connectivity_status, .session_status => unreachable,
-            .session_action => { try self.session_services.act(request); return "{\"queued\":true}"; },
-            .notifications_toggle, .media_toggle, .tray_toggle => {},
+            .session_action => {
+                try self.session_services.act(request);
+                return "{\"queued\":true}";
+            },
+            .notifications_toggle, .media_toggle, .tray_toggle => {
+                const pane: Bar.Pane = switch (request.op) {
+                    .notifications_toggle => .notifications,
+                    .media_toggle => .media,
+                    else => .tray,
+                };
+                const output = try self.selected(request.output);
+                if (self.popup != null and self.popup.?.output == output and self.pane == pane) self.hidePopup() else try self.showPane(output, pane);
+            },
             .connectivity_action => {
                 if (request.service.? == .network) {
                     if (request.generation.? != self.network.peer.epoch) return error.Unavailable;
@@ -739,7 +827,7 @@ pub const Manager = struct {
         const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, frames: [4]u16 };
         var items: std.ArrayList(Item) = .empty;
         for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .frames = o.reservations.frames });
-        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .osd = self.osd != null, .osd_text = if (self.osd_label) |label| std.mem.span(label.getText()) else "" }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .osd = self.osd != null, .osd_text = if (self.osd_label) |label| std.mem.span(label.getText()) else "" }, .{});
     }
 };
 fn rectangle(r: anytype) !Rect {
@@ -773,7 +861,11 @@ fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     layer.setExclusiveZone(s.window, size);
 }
 fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
+    if (s.notifications) |view| view.probe(s.window);
+    if (s.media) |view| view.probe(s.window);
+    if (s.tray) |view| view.probe(s.window);
     if (s.control) |panel| {
+        panel.media.probe(s.window);
         panel.services.probe(s.window);
         panel.connectivity.probe(s.window);
     }
@@ -792,6 +884,10 @@ fn barAction(context: *anyopaque, event: Bar.Event) void {
     const self = s.manager;
     switch (event) {
         .pane => |pane| {
+            if (pane == .tray and self.popup != null and self.popup.?.output == s.output and self.pane == .tray) {
+                self.popup.?.tray.?.update();
+                return;
+            }
             if (self.popup != null and self.popup.?.output == s.output and self.pane == pane) self.hidePopup() else self.showPane(s.output, pane) catch {};
         },
         .workspace => |id| {

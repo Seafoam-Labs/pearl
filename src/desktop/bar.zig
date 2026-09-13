@@ -63,7 +63,10 @@ pub const Bar = struct {
         list.* = .empty;
     }
     fn clear(self: *Bar) void {
-        if (self.tray) |tray| tray.destroy(); self.tray = null; self.notification_label = null; self.media_label = null;
+        if (self.tray) |tray| tray.destroy();
+        self.tray = null;
+        self.notification_label = null;
+        self.media_label = null;
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         freeHandlers(&self.handlers);
         freeHandlers(&self.workspace_handlers);
@@ -137,8 +140,13 @@ pub const Bar = struct {
                     },
                     .notifications, .media => blk: {
                         const button = try self.makeButton(.{ .pane = if (item == .media) .media else .notifications }, null, "", false);
-                        const content = w.row(4); content.append(w.icon(if (item == .media) "pearl-media-symbolic" else "pearl-notifications-symbolic").as(gtk.Widget));
-                        const label = gtk.Label.new(""); label.setEllipsize(.end); label.setMaxWidthChars(if (item == .media) 16 else 4); content.append(label.as(gtk.Widget)); button.setChild(content.as(gtk.Widget));
+                        const content = w.row(4);
+                        content.append(w.icon(if (item == .media) "pearl-media-symbolic" else "pearl-notifications-symbolic").as(gtk.Widget));
+                        const label = gtk.Label.new("");
+                        label.setEllipsize(.end);
+                        label.setMaxWidthChars(if (item == .media) 16 else 4);
+                        content.append(label.as(gtk.Widget));
+                        button.setChild(content.as(gtk.Widget));
                         if (item == .media) self.media_label = label else self.notification_label = label;
                         w.name(button.as(gtk.Widget), if (item == .media) "Media" else "Notifications");
                         break :blk button.as(gtk.Widget);
@@ -227,16 +235,25 @@ pub const Bar = struct {
         }
     }
     fn fit(self: *Bar) void {
+        if (self.tray) |tray| tray.setLimit(if (self.compact or self.vertical) 2 else 4);
+        if (self.media_label) |label| label.as(gtk.Widget).setVisible(@intFromBool(!self.compact and !self.vertical));
         if (self.widgets[@intFromEnum(policy.Item.title)]) |v| v.setVisible(@intFromBool(!self.compact and !self.vertical));
         if (self.widgets[@intFromEnum(policy.Item.overview)]) |v| v.setVisible(@intFromBool(!self.compact));
         // Primary controls survive; overview also lives in the control center.
     }
-    fn openTray(data: *anyopaque) void { const self: *Bar = @ptrCast(@alignCast(data)); self.action(self.context, .{ .pane = .tray }); }
+    fn openTray(data: *anyopaque) void {
+        const self: *Bar = @ptrCast(@alignCast(data));
+        self.action(self.context, .{ .pane = .tray });
+    }
     pub fn update(self: *Bar) void {
         if (self.tray) |tray| tray.update();
         if (self.notification_label) |label| {
-            var count: usize = 0; for (&self.session_services.notifications.model.records) |*r| if (r.id != 0) { count += 1; };
-            var buf: [20]u8 = undefined; label.setText(std.fmt.bufPrintZ(&buf, "{s}{d}", .{if (self.session_services.notifications.model.dnd) "− " else "", count}) catch "");
+            var count: usize = 0;
+            for (&self.session_services.notifications.model.records) |*r| if (r.id != 0) {
+                count += 1;
+            };
+            var buf: [20]u8 = undefined;
+            label.setText(std.fmt.bufPrintZ(&buf, "{s}{d}", .{ if (self.session_services.notifications.model.dnd) "− " else "", count }) catch "");
         }
         if (self.media_label) |label| label.setText(if (self.session_services.media.current()) |p| p.title.z() else "");
         var service_buffer: [256]u8 = undefined;
