@@ -16,7 +16,7 @@ pub const Job = struct {
     service: *Service,
     arena: std.heap.ArenaAllocator,
     cancel: *gio.Cancellable,
-    stage: enum { prepare, persist } = .prepare,
+    stage: enum { prepare, recover, persist } = .prepare,
     requested: ?[]const u8 = null,
     expected: [64]u8,
     disk: ?io.Read = null,
@@ -24,6 +24,7 @@ pub const Job = struct {
     json: []const u8 = "{}",
     css: [:0]const u8 = "",
     image: ?*pixbuf.Pixbuf = null,
+    texture: ?*gdk.Texture = null,
     provider: ?*gtk.CssProvider = null,
     native_provider: ?*gtk.CssProvider = null,
     native_name: [:0]const u8 = "",
@@ -38,6 +39,7 @@ pub const Job = struct {
     skip_unchanged: bool = false,
     fn destroy(self: *Job) void {
         if (self.image) |p| p.unref();
+        if (self.texture) |p| p.unref();
         if (self.provider) |p| p.unref();
         if (self.native_provider) |p| p.unref();
         self.cancel.unref();
@@ -50,6 +52,7 @@ pub const Service = struct {
     display: *gdk.Display,
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
+    validate: ?*const fn (*anyopaque, model.Preferences) anyerror!void = null,
     dir: [:0]u8 = undefined,
     cache_dir: [:0]u8 = undefined,
     path: [:0]u8 = undefined,
@@ -59,6 +62,7 @@ pub const Service = struct {
     job: ?*Job = null,
     running: bool = false,
     pending_reload: bool = false,
+    force_reload: bool = false,
     debounce: c_uint = 0,
     deadline: c_uint = 0,
     revision: u64 = 0,
@@ -68,9 +72,11 @@ pub const Service = struct {
     export_error: ?anyerror = null,
     jobs: u64 = 0,
     draft: ?[]u8 = null,
+    draft_base: ?[]u8 = null,
     draft_revision: u64 = 0,
     pub fn keepDraft(self: *Service, json: []const u8, revision: u64) void {
         const copy = a.dupe(u8, json) catch return;
+        if (self.draft_base == null) self.draft_base = std.json.Stringify.valueAlloc(a, self.prefs(), .{}) catch null;
         if (self.draft) |old| a.free(old);
         self.draft = copy;
         self.draft_revision = revision;
@@ -78,6 +84,23 @@ pub const Service = struct {
     pub fn discardDraft(self: *Service) void {
         if (self.draft) |old| a.free(old);
         self.draft = null;
+        if (self.draft_base) |old| a.free(old);
+        self.draft_base = null;
+    }
+    pub fn mergeDraft(self: *Service) !void {
+        if (self.job != null or self.pending_reload) return error.Busy;
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const alloc = arena.allocator();
+        const current = try std.json.Stringify.valueAlloc(alloc, self.prefs(), .{});
+        const merged = try @import("merge.zig").json(alloc, self.draft_base orelse return error.NoDraft, self.draft orelse return error.NoDraft, current);
+        const next = try a.dupe(u8, merged);
+        errdefer a.free(next);
+        const base = try a.dupe(u8, current);
+        self.discardDraft();
+        self.draft = next;
+        self.draft_base = base;
+        self.draft_revision = self.revision;
     }
 
     pub fn prefs(self: *const Service) model.Preferences {
@@ -85,14 +108,18 @@ pub const Service = struct {
     }
     pub fn start(self: *Service) !void {
         self.dir = try std.fmt.allocPrintSentinel(a, "{s}/pearl", .{std.mem.span(glib.getUserConfigDir())}, 0);
+        errdefer a.free(self.dir);
         self.cache_dir = try std.fmt.allocPrintSentinel(a, "{s}/pearl/themes", .{std.mem.span(glib.getUserCacheDir())}, 0);
+        errdefer a.free(self.cache_dir);
         self.path = try std.fmt.allocPrintSentinel(a, "{s}/preferences.json", .{self.dir}, 0);
+        errdefer a.free(self.path);
         self.good_path = try std.fmt.allocPrintSentinel(a, "{s}/last-good.json", .{self.dir}, 0);
+        errdefer a.free(self.good_path);
         try io.mkdir(self.dir);
         try io.mkdir(self.cache_dir);
         const file = gio.File.newForPath(self.dir);
         defer file.unref();
-        self.monitor = file.monitorDirectory(.{ .watch_moves = true }, null, null);
+        self.monitor = file.monitorDirectory(.{ .watch_moves = true }, null, null) orelse return error.MonitorUnavailable;
         if (self.monitor) |m| _ = gio.FileMonitor.signals.changed.connect(m, *Service, fileChanged, self, .{});
         self.running = true;
         self.reload();
@@ -127,9 +154,13 @@ pub const Service = struct {
         a.free(self.cache_dir);
     }
     pub fn reload(self: *Service) void {
+        self.queueReload(true);
+    }
+    fn queueReload(self: *Service, force: bool) void {
         if (!self.running) return;
+        self.force_reload = self.force_reload or force;
         self.pending_reload = true;
-        if (self.job) |j| if (j.stage == .prepare and j.requested == null) {
+        if (self.job) |j| if (j.requested == null) {
             j.obsolete = true;
             j.cancel.cancel();
         };
@@ -158,12 +189,12 @@ pub const Service = struct {
     }
     fn launch(self: *Service, requested: ?[]const u8) !void {
         const j = try a.create(Job);
-        j.* = .{ .service = self, .arena = std.heap.ArenaAllocator.init(a), .cancel = gio.Cancellable.new(), .expected = self.observed, .skip_unchanged = self.err == null };
+        j.* = .{ .service = self, .arena = std.heap.ArenaAllocator.init(a), .cancel = gio.Cancellable.new(), .expected = self.observed, .skip_unchanged = !self.force_reload };
         errdefer j.destroy();
         if (requested) |json| j.requested = try j.arena.allocator().dupe(u8, json);
         self.job = j;
         self.jobs += 1;
-        self.err = null;
+        self.force_reload = false;
         self.deadline = glib.timeoutAdd(15000, timedOut, self);
         self.dispatch(j);
         self.changed(self.context);
@@ -188,16 +219,59 @@ pub const Service = struct {
         defer if (name) |v| glib.free(v);
         const next = if (other) |o| o.getBasename() else null;
         defer if (next) |v| glib.free(v);
-        if ((if (name) |v| std.mem.eql(u8, std.mem.span(v), "preferences.json") else false) or (if (next) |v| std.mem.eql(u8, std.mem.span(v), "preferences.json") else false)) self.reload();
+        if ((if (name) |v| std.mem.eql(u8, std.mem.span(v), "preferences.json") else false) or (if (next) |v| std.mem.eql(u8, std.mem.span(v), "preferences.json") else false)) self.queueReload(false);
     }
     fn work(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
         const j: *Job = @ptrCast(@alignCast(data.?));
         if (j.stage == .prepare) prepare(j) catch |err| {
-            j.failure = err;
+            if (j.service.appearance == 0 and j.requested == null and j.cancel.isCancelled() == 0) {
+                recover(j, err) catch |failure| {
+                    j.failure = failure;
+                };
+            } else j.failure = err;
+        } else if (j.stage == .recover) {
+            if (j.recovered) {
+                if (j.image) |image| {
+                    image.unref();
+                    j.image = null;
+                }
+                j.native_name = "";
+                j.prefs.theme.mode = .static;
+                j.prefs.wallpaper.mode = .solid;
+                prepareAppearance(j) catch |err| {
+                    j.failure = err;
+                };
+            } else recover(j, j.warning.?) catch |err| {
+                j.failure = err;
+            };
         } else persist(j) catch |err| {
             j.failure = err;
         };
         task.returnBoolean(1);
+    }
+    fn recover(j: *Job, failure: anyerror) !void {
+        const alloc = j.arena.allocator();
+        if (j.image) |image| {
+            image.unref();
+            j.image = null;
+        }
+        j.native_name = "";
+        const good = io.read(alloc, j.service.good_path, model.max_bytes, j.cancel) catch null;
+        j.prefs = if (good) |file| model.parse(alloc, if (file.missing) "{}" else file.bytes) catch .{} else .{};
+        j.recovered = true;
+        j.warning = failure;
+        prepareAppearance(j) catch {
+            if (j.image) |image| {
+                image.unref();
+                j.image = null;
+            }
+            j.native_name = "";
+            // A last-good file may refer to a removed font/theme/image too.
+            // Keep it on disk; show a static fallback with an explicit error.
+            j.prefs.theme.mode = .static;
+            j.prefs.wallpaper.mode = .solid;
+            try prepareAppearance(j);
+        };
     }
     fn prepare(j: *Job) !void {
         const alloc = j.arena.allocator();
@@ -223,6 +297,11 @@ pub const Service = struct {
                 break :blk try model.parse(alloc, if (good.missing) "{}" else good.bytes);
             };
         }
+        try prepareAppearance(j);
+    }
+    fn prepareAppearance(j: *Job) !void {
+        const alloc = j.arena.allocator();
+        const self = j.service;
         j.json = try std.json.Stringify.valueAlloc(alloc, j.prefs, .{ .whitespace = .indent_2 });
         var image_bytes: ?[]const u8 = null;
         const p = j.prefs;
@@ -235,7 +314,7 @@ pub const Service = struct {
             defer bytes.unref();
             const stream = gio.MemoryInputStream.newFromBytes(bytes);
             defer stream.unref();
-            j.image = pixbuf.Pixbuf.newFromStreamAtScale(stream.as(gio.InputStream), 4096, 4096, 1, j.cancel, null) orelse return error.ImageDecodeFailed;
+            j.image = pixbuf.Pixbuf.newFromStream(stream.as(gio.InputStream), j.cancel, null) orelse return error.ImageDecodeFailed;
         }
         j.palette = if (p.theme.variant == .dark) theme.dark else theme.light;
         if (p.theme.mode == .dynamic) j.palette = try generator.palette(alloc, p, image_bytes, self.cache_dir, j.cancel, &j.cache_hit);
@@ -248,7 +327,7 @@ pub const Service = struct {
             defer resource.unref();
             var n: usize = 0;
             const raw = resource.getData(&n).?;
-            if (p.theme.mode == .gtk) break :blk try alloc.dupeZ(u8,@as([*]const u8,@ptrCast(raw))[0..n]);
+            if (p.theme.mode == .gtk) break :blk try alloc.dupeZ(u8, @as([*]const u8, @ptrCast(raw))[0..n]);
             break :blk try theme.scopedCss(alloc, @as([*]const u8, @ptrCast(raw))[0..n], "pearl-custom", j.palette);
         };
         const font = if (p.font.len > 0) try std.fmt.allocPrint(alloc, ".pearl-root.pearl-shell {{ font-family: \"{s}\", sans-serif; font-size: {d}px; }}\n", .{ p.font, p.font_size }) else if (p.theme.mode != .gtk or p.font_size != 14) try std.fmt.allocPrint(alloc, ".pearl-root.pearl-shell {{ font-size: {d}px; }}\n", .{p.font_size}) else "";
@@ -263,6 +342,7 @@ pub const Service = struct {
         if (!j.recovered) io.atomic(self.good_path, j.json, false) catch |err| {
             j.warning = err;
         };
+        if (j.recovered) return;
         // Export failure is independent: it must never undo a successful shell save.
         exports(j) catch |err| {
             j.export_error = err;
@@ -272,10 +352,31 @@ pub const Service = struct {
         const j: *Job = @ptrCast(@alignCast(data.?));
         const self = j.service;
         defer self.app.release();
-        if (self.running and !j.obsolete and j.failure == null and !j.unchanged and j.stage == .prepare) {
+        if (self.running and !j.obsolete and j.failure == null and !j.unchanged and j.stage != .persist) {
             validateProviders(j) catch |err| {
                 j.failure = err;
             };
+            if (j.failure != null and self.appearance == 0 and j.requested == null and j.cancel.isCancelled() == 0 and (!j.recovered or j.prefs.theme.mode == .gtk)) {
+                // CSS is parsed on the GTK thread. Give this failure the same
+                // last-good recovery path as worker-side validation failures.
+                if (j.provider) |provider| {
+                    provider.unref();
+                    j.provider = null;
+                }
+                if (j.native_provider) |provider| {
+                    provider.unref();
+                    j.native_provider = null;
+                }
+                if (j.texture) |texture| {
+                    texture.unref();
+                    j.texture = null;
+                }
+                j.warning = j.failure;
+                j.failure = null;
+                j.stage = .recover;
+                self.dispatch(j);
+                return;
+            }
             if (j.failure == null) {
                 j.stage = .persist;
                 self.dispatch(j);
@@ -306,7 +407,7 @@ pub const Service = struct {
                     self.revision += 1;
                 }
                 gtk.StyleContext.addProviderForDisplay(self.display, j.provider.?.as(gtk.StyleProvider), 601);
-                if (j.native_provider) |p| gtk.StyleContext.addProviderForDisplay(self.display, p.as(gtk.StyleProvider), 201);
+                if (j.native_provider) |p| gtk.StyleContext.addProviderForDisplay(self.display, p.as(gtk.StyleProvider), 599);
                 self.export_error = j.export_error;
                 std.log.info("event=preferences-applied revision={d} mode={s} cache={}", .{ self.revision, @tagName(j.prefs.theme.mode), j.cache_hit });
             } else {
@@ -329,7 +430,8 @@ pub const Service = struct {
         }
     }
     pub fn status(self: *Service, alloc: std.mem.Allocator) ![]const u8 {
-        return std.json.Stringify.valueAlloc(alloc, .{ .revision = self.revision, .appearance = self.appearance, .busy = self.job != null or self.pending_reload, .jobs = self.jobs, .err = if (self.err) |e| @errorName(e) else null, .export_error = if (self.export_error) |e| @errorName(e) else null, .cache_hit = if (self.live) |j| j.cache_hit else false, .recovered = if (self.live) |j| j.recovered else false, .path = self.path, .preferences = self.prefs() }, .{});
+        const encoded = try std.json.Stringify.valueAlloc(alloc, self.prefs(), .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .revision = self.revision, .appearance = self.appearance, .busy = self.job != null or self.pending_reload, .jobs = self.jobs, .err = if (self.err) |e| @errorName(e) else null, .export_error = if (self.export_error) |e| @errorName(e) else null, .cache_hit = if (self.live) |j| j.cache_hit else false, .recovered = if (self.live) |j| j.recovered else false, .draft_dirty = self.draft != null, .draft_revision = if (self.draft != null) @as(?u64, self.draft_revision) else null, .path = self.path, .preferences_truncated = encoded.len > 5500, .preferences = if (encoded.len <= 5500) @as(?model.Preferences, self.prefs()) else null }, .{});
     }
     pub fn style(self: *Service, widget: *gtk.Widget, panel: *gtk.Widget) void {
         const p = self.prefs();
@@ -345,6 +447,8 @@ fn cssError(_: *gtk.CssProvider, _: *gtk.CssSection, err: *glib.Error, failed: *
     if (err.f_domain == gtk.cssParserErrorQuark()) failed.* = true;
 }
 fn validateProviders(j: *Job) !void {
+    if (j.service.validate) |validate| try validate(j.service.context, j.prefs);
+    if (j.image) |image| j.texture = gdk.Texture.newForPixbuf(image);
     var failed = false;
     j.provider = gtk.CssProvider.new();
     const id = gtk.CssProvider.signals.parsing_error.connect(j.provider.?, *bool, cssError, &failed, .{});

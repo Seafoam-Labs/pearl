@@ -74,13 +74,14 @@ pub fn scopedCss(allocator: std.mem.Allocator, template: []const u8, scope: []co
 }
 pub fn validate(p: Palette) !void {
     inline for (@typeInfo(Palette).@"struct".fields) |field| if (!@import("../config/preferences.zig").hex(@field(p, field.name))) return error.InvalidPalette;
-    for ([_][2][]const u8{ .{p.text,p.surface}, .{p.text,p.high}, .{p.secondary,p.container}, .{p.on_primary,p.primary}, .{p.on_container,p.primary_container} }) |pair| {
-        const x = luminance(pair[0]); const y = luminance(pair[1]);
-        if ((@max(x,y) + 0.05) / (@min(x,y) + 0.05) < 4.5) return error.InsufficientContrast;
+    for ([_][2][]const u8{ .{ p.text, p.surface }, .{ p.text, p.high }, .{ p.secondary, p.container }, .{ p.on_primary, p.primary }, .{ p.on_container, p.primary_container } }) |pair| {
+        const x = luminance(pair[0]);
+        const y = luminance(pair[1]);
+        if ((@max(x, y) + 0.05) / (@min(x, y) + 0.05) < 4.5) return error.InsufficientContrast;
     }
 }
 pub fn matugenPalette(a: std.mem.Allocator, json: []const u8, variant: []const u8) !Palette {
-    if (json.len > 131072) return error.InvalidPalette;
+    try @import("../config/preferences.zig").boundedJson(json, 131072, 8);
     const dom = try std.json.parseFromSliceLeaky(std.json.Value, a, json, .{});
     const colors = try member(dom, "colors");
     var palette: Palette = undefined;
@@ -117,4 +118,19 @@ test "both palettes meet normal text and control contrast targets" {
         const y = luminance(p.surface);
         try std.testing.expect((@max(x, y) + 0.05) / (@min(x, y) + 0.05) >= 3);
     }
+}
+
+test "palette validation rejects missing roles, CSS injection and low contrast" {
+    try validate(dark);
+    try validate(light);
+    var bad = dark;
+    bad.primary = "red; color: pink";
+    try std.testing.expectError(error.InvalidPalette, validate(bad));
+    bad = dark;
+    bad.text = bad.surface;
+    try std.testing.expectError(error.InsufficientContrast, validate(bad));
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    try std.testing.expectError(error.InvalidPalette, matugenPalette(arena.allocator(), "{\"colors\":{}}", "dark"));
+    try std.testing.expectError(error.InvalidConfig, matugenPalette(arena.allocator(), "[" ** 9, "dark"));
 }

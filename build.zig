@@ -134,7 +134,8 @@ pub fn build(b: *std.Build) void {
 
     const preferences = b.addSystemCommand(&.{ "python3", "tests/integration/test_preferences.py", "--pearl" });
     preferences.addArtifactArg(integration_app);
-    preferences.addArg("--ctl"); preferences.addArtifactArg(ctl);
+    preferences.addArg("--ctl");
+    preferences.addArtifactArg(ctl);
     if (b.args) |args| preferences.addArgs(args);
     b.step("test-preferences", "Verify preferences, wallpaper, dynamic and native GTK themes in private Aqueous").dependOn(&preferences.step);
 

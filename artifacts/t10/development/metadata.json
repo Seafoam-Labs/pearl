@@ -1,6 +1,21 @@
 {
-  "status": "running",
-  "checks": {},
-  "pearl_sha256": "81a69bf0901e1b3c0b3c51394f36dc94323a8bcc25a9284db709015f89effa78",
+  "status": "passed",
+  "checks": {
+    "defaults-atomic-save-and-live-popup-theme": true,
+    "corrupt-external-config-and-stale-revision": true,
+    "bounded-images-fifo-rejection-and-dynamic-palette-cache": true,
+    "missing-font-falls-back": true,
+    "installed-gtk-theme-and-system-follow-without-material-css": true,
+    "per-connector-bar-and-popup-policies": true,
+    "gtk-draft-survives-close-external-edit-and-three-way-merge": true,
+    "opt-in-exports-ownership-backup-and-disable": true,
+    "no-theme-work-at-idle": true,
+    "restart-uses-last-good-without-overwriting-corruption": true,
+    "generator-failure-malformed-output-bounds-and-deadline": true,
+    "rapid-edits-cancel-obsolete-generator-and-coalesce-latest": true,
+    "concurrent-disk-edit-blocks-save-before-atomic-replacement": true,
+    "shutdown-cancels-worker-and-reaps-generator": true
+  },
+  "pearl_sha256": "4af70a300d0d3b15485fd62156b7421325d50605778c65eb26cd60aaba899dc7",
   "ctl_sha256": "b1b119ccf1b11afa818cd62441fd4c8bdf175669357c93e35278a29eb7f80b9a"
 }

@@ -37,6 +37,7 @@ const Surface = struct {
     tray: ?*@import("../../desktop/tray.zig").View = null,
     settings: ?*@import("../../desktop/settings.zig").View = null,
     wallpaper_picture: ?*gtk.Picture = null,
+    appearance_revision: u64 = std.math.maxInt(u64),
     measure_signal: c_ulong = 0,
     measure_clock: ?*gdk.FrameClock = null,
     fn destroy(self: *Surface) void {
@@ -136,7 +137,7 @@ pub const Manager = struct {
         self.network = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
         self.bluetooth = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
         self.session_services = .{ .app = self.app.as(gio.Application), .context = self, .changed = sessionChanged };
-        self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged };
+        self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged, .validate = validatePreferences };
         try self.preferences.start();
         self.services_started = true;
         self.audio.start();
@@ -188,6 +189,14 @@ pub const Manager = struct {
         for (self.outputs.items) |o| o.destroy();
         self.outputs.clearRetainingCapacity();
     }
+    fn validatePreferences(context: *anyopaque, prefs: @import("../../config/preferences.zig").Preferences) !void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        for (self.outputs.items) |output| {
+            var reservations = output.reservations;
+            const bar = prefs.forOutput(output.connector);
+            try reservations.bar(bar.edge, bar.size);
+        }
+    }
     fn preferencesChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
@@ -201,14 +210,15 @@ pub const Manager = struct {
         self.schedule();
     }
     fn styleSurface(self: *Manager, surface: *Surface) void {
+        if (surface.appearance_revision == self.preferences.appearance) return;
+        surface.appearance_revision = self.preferences.appearance;
         self.preferences.style(surface.window.as(gtk.Widget), surface.panel);
+        if (surface.kind == .wallpaper or surface.kind == .frame) surface.panel.removeCssClass("background");
         if (surface.wallpaper_picture) |picture| {
             const prefs = self.preferences.prefs();
-            const image = if (self.preferences.live) |live| live.image else null;
+            const image = if (self.preferences.live) |live| live.texture else null;
             if (image != null and (prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain)) {
-                const texture = gdk.Texture.newForPixbuf(image.?);
-                defer texture.unref();
-                picture.setPaintable(texture.as(gdk.Paintable));
+                picture.setPaintable(image.?.as(gdk.Paintable));
                 picture.setContentFit(if (prefs.wallpaper.mode == .cover) .cover else .contain);
             } else picture.setPaintable(null);
         }

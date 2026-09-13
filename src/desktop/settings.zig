@@ -11,6 +11,7 @@ const a = std.heap.c_allocator;
 pub const View = struct {
     service: *Service,
     host: *gtk.Box,
+    forms: [2]*gtk.Box,
     arena: std.heap.ArenaAllocator,
     base: model.Preferences = .{},
     revision: u64 = 0,
@@ -30,6 +31,7 @@ pub const View = struct {
     raw: *gtk.TextBuffer,
     message: *gtk.Label,
     apply_button: *gtk.Button,
+    merge_button: *gtk.Button = undefined,
     last_probe: [48]u8 = @splat(0),
     pub fn create(host: *gtk.Box, service: *Service) !*View {
         const self = try a.create(View);
@@ -41,7 +43,7 @@ pub const View = struct {
         const appearance = page(notebook, "Appearance");
         const bar = page(notebook, "Bar & behavior");
         const advanced = page(notebook, "Advanced");
-        self.* = .{ .service = service, .host = host, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme" }), .variant = dropdown(appearance, "Color variant", &.{ "Dark", "Light" }), .source = dropdown(appearance, "Dynamic colors from", &.{ "Seed color", "Wallpaper" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
+        self.* = .{ .service = service, .host = host, .forms = .{ appearance, bar }, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme" }), .variant = dropdown(appearance, "Color variant", &.{ "Dark", "Light" }), .source = dropdown(appearance, "Dynamic colors from", &.{ "Seed color", "Wallpaper" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
         const hints = w.label("GTK theme: leave the name empty to follow the system. Installed themes must support GTK4. Dynamic colors use optional matugen 4.x.", "pearl-secondary");
         appearance.append(hints.as(gtk.Widget));
         self.entries[0] = entry(appearance, "GTK theme name", "System default");
@@ -78,6 +80,9 @@ pub const View = struct {
         host.append(actions.as(gtk.Widget));
         const discard = gtk.Button.newWithLabel("Discard draft");
         actions.append(discard.as(gtk.Widget));
+        self.merge_button = gtk.Button.newWithLabel("Merge external changes");
+        actions.append(self.merge_button.as(gtk.Widget));
+        _ = gtk.Button.signals.clicked.connect(self.merge_button, *View, merged, self, .{});
         self.apply_button = gtk.Button.newWithLabel("Apply & save");
         self.apply_button.as(gtk.Widget).addCssClass("pearl-primary");
         actions.append(self.apply_button.as(gtk.Widget));
@@ -87,13 +92,15 @@ pub const View = struct {
         for ([_]*gtk.DropDown{ self.mode, self.variant, self.source, self.fit, self.density, self.edge, self.placement }) |d| _ = object.Object.signals.notify.connect(d.as(object.Object), *View, selected, self, .{ .detail = "selected" });
         for ([_]*gtk.SpinButton{ self.font_size, self.bar_size }) |s| _ = gtk.SpinButton.signals.value_changed.connect(s, *View, spun, self, .{});
         for ([_]*gtk.CheckButton{ self.motion, self.outside }) |c| _ = gtk.CheckButton.signals.toggled.connect(c, *View, toggled, self, .{});
+        _ = gtk.TextBuffer.signals.insert_text.connect(self.raw, *View, inserting, self, .{});
         _ = gtk.TextBuffer.signals.changed.connect(self.raw, *View, rawEdited, self, .{});
-        _ = gtk.Notebook.signals.switch_page.connect(notebook,*View,switched,self,.{});
+        _ = gtk.Notebook.signals.switch_page.connect(notebook, *View, switched, self, .{});
         self.fill();
         self.update();
         return self;
     }
     pub fn destroy(self: *View) void {
+        self.filling = true;
         // Disconnect through parent destruction before freeing callback data.
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         self.arena.deinit();
@@ -105,7 +112,12 @@ pub const View = struct {
         _ = self.arena.reset(.retain_capacity);
         const alloc = self.arena.allocator();
         const json = self.service.draft orelse (std.json.Stringify.valueAlloc(alloc, self.service.prefs(), .{ .whitespace = .indent_2 }) catch "{}");
-        self.base = model.parse(alloc, json) catch self.service.prefs();
+        var valid = true;
+        self.base = model.parse(alloc, json) catch blk: {
+            valid = false;
+            break :blk (model.parse(alloc, std.json.Stringify.valueAlloc(alloc, self.service.prefs(), .{}) catch "{}") catch .{});
+        };
+        for (self.forms) |form| form.as(gtk.Widget).setSensitive(@intFromBool(valid));
         self.revision = if (self.service.draft != null) self.service.draft_revision else self.service.revision;
         const p = self.base;
         for (self.entries, [_][]const u8{ p.theme.gtk_name, p.theme.seed, p.wallpaper.path, p.wallpaper.color, p.font, p.bar.groups.left, p.bar.groups.right }) |e, value| e.as(gtk.Editable).setText(alloc.dupeZ(u8, value) catch "");
@@ -157,9 +169,11 @@ pub const View = struct {
         if (self.service.draft == null and self.revision != self.service.revision) self.fill();
         const busy = self.service.job != null or self.service.pending_reload;
         const conflict = self.service.draft != null and self.revision != self.service.revision;
+        self.merge_button.as(gtk.Widget).setVisible(@intFromBool(conflict));
+        self.merge_button.as(gtk.Widget).setSensitive(@intFromBool(!busy and conflict));
         self.apply_button.as(gtk.Widget).setSensitive(@intFromBool(!busy and !conflict and self.service.draft != null));
         var buffer: [256]u8 = undefined;
-        const message = if (busy) "Preparing settings…" else if (conflict) "Settings changed externally. Your draft is retained. Copy it from Advanced before discarding or merging the external change." else if (self.service.err) |err| std.fmt.bufPrintZ(&buffer, "Could not apply: {s}. Your draft and working appearance are retained.", .{@errorName(err)}) catch "Could not apply settings." else if (self.service.export_error) |err| std.fmt.bufPrintZ(&buffer, "Settings saved. Export needs attention: {s}", .{@errorName(err)}) catch "Export failed." else if (self.service.draft != null) "Unsaved draft" else "Settings are up to date.";
+        const message = if (busy) "Preparing settings…" else if (conflict) "Settings changed externally. Your draft is retained. Merge independent edits, or review conflicting fields in Advanced." else if (self.service.err) |err| std.fmt.bufPrintZ(&buffer, "Could not apply: {s}. Your draft and working appearance are retained.", .{@errorName(err)}) catch "Could not apply settings." else if (self.service.export_error) |err| std.fmt.bufPrintZ(&buffer, "Settings saved. Export needs attention: {s}", .{@errorName(err)}) catch "Export failed." else if (self.service.draft != null) "Unsaved draft" else "Settings are up to date.";
         self.message.setText(message);
     }
     fn edited(_: *gtk.Editable, self: *View) callconv(.c) void {
@@ -174,6 +188,18 @@ pub const View = struct {
     fn toggled(_: *gtk.CheckButton, self: *View) callconv(.c) void {
         self.saveForm();
     }
+    fn inserting(buffer: *gtk.TextBuffer, _: *gtk.TextIter, _: [*:0]u8, length: c_int, self: *View) callconv(.c) void {
+        if (self.filling) return;
+        var start: gtk.TextIter = undefined;
+        var end: gtk.TextIter = undefined;
+        buffer.getBounds(&start, &end);
+        const old = buffer.getText(&start, &end, 1);
+        defer glib.free(old);
+        if (length < 0 or std.mem.span(old).len + @as(usize, @intCast(length)) > model.max_bytes) {
+            object.signalStopEmissionByName(buffer.as(object.Object), "insert-text");
+            self.message.setText("Draft is limited to 64 KiB. The insertion was rejected; existing text is retained.");
+        }
+    }
     fn rawEdited(_: *gtk.TextBuffer, self: *View) callconv(.c) void {
         if (self.filling) return;
         var start: gtk.TextIter = undefined;
@@ -186,13 +212,18 @@ pub const View = struct {
             return;
         }
         self.service.keepDraft(std.mem.span(json), self.revision);
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const valid = if (model.parse(arena.allocator(), std.mem.span(json))) |_| true else |_| false;
+        for (self.forms) |form| form.as(gtk.Widget).setSensitive(@intFromBool(valid));
         self.update();
     }
     fn switched(_: *gtk.Notebook, _: *gtk.Widget, page_number: c_uint, self: *View) callconv(.c) void {
-        if (page_number == 2) return;
+        if (self.filling or page_number == 2) return;
         if (self.service.draft) |json| {
-            var arena = std.heap.ArenaAllocator.init(a); defer arena.deinit();
-            if (model.parse(arena.allocator(),json)) |_| self.fill() else |_| self.message.setText("Advanced JSON is invalid. Correct it before using the form.");
+            var arena = std.heap.ArenaAllocator.init(a);
+            defer arena.deinit();
+            if (model.parse(arena.allocator(), json)) |_| self.fill() else |_| self.message.setText("Advanced JSON is invalid. Correct it before using the form.");
         }
     }
     fn applied(_: *gtk.Button, self: *View) callconv(.c) void {
@@ -201,6 +232,14 @@ pub const View = struct {
             self.service.err = err;
             self.update();
         };
+    }
+    fn merged(_: *gtk.Button, self: *View) callconv(.c) void {
+        self.service.mergeDraft() catch |err| {
+            self.message.setText(if (err == error.MergeConflict) "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it." else "Cannot merge this draft. Correct its JSON and try again.");
+            return;
+        };
+        self.fill();
+        self.update();
     }
     fn discarded(_: *gtk.Button, self: *View) callconv(.c) void {
         self.service.discardDraft();
@@ -214,6 +253,7 @@ pub const View = struct {
             name = n;
         };
         if (focused == self.apply_button.as(gtk.Widget)) name = "settings-apply";
+        if (focused == self.merge_button.as(gtk.Widget)) name = "settings-merge";
         const prior = std.mem.sliceTo(&self.last_probe, 0);
         if (!std.mem.eql(u8, prior, name)) {
             @memset(&self.last_probe, 0);

@@ -79,7 +79,21 @@ pub fn hex(s: []const u8) bool {
     return true;
 }
 pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Preferences {
-    if (bytes.len > max_bytes or !std.unicode.utf8ValidateSlice(bytes)) return error.InvalidConfig;
+    try boundedJson(bytes, max_bytes, 8);
+    const dom = try std.json.parseFromSliceLeaky(std.json.Value, a, bytes, .{});
+    if (dom != .object) return error.InvalidConfig;
+    const version: std.json.Value = dom.object.get("version") orelse .{ .integer = 1 };
+    if (version != .integer) return error.UnsupportedVersion;
+    const p: Preferences = if (version.integer == 0) blk: {
+        const Legacy = struct { version: u32, dark: bool = true, wallpaper: []const u8 = "" };
+        const old = try std.json.parseFromSliceLeaky(Legacy, a, bytes, .{ .allocate = .alloc_always });
+        break :blk .{ .theme = .{ .variant = if (old.dark) .dark else .light }, .wallpaper = .{ .path = old.wallpaper, .mode = if (old.wallpaper.len == 0) .gradient else .cover } };
+    } else if (version.integer == 1) try std.json.parseFromSliceLeaky(Preferences, a, bytes, .{ .allocate = .alloc_always }) else return error.UnsupportedVersion;
+    try p.validate();
+    return p;
+}
+pub fn boundedJson(bytes: []const u8, max: usize, max_depth: usize) !void {
+    if (bytes.len > max or !std.unicode.utf8ValidateSlice(bytes)) return error.InvalidConfig;
     // Bound nesting before allocating a DOM (including unknown fields).
     var depth: usize = 0;
     var quoted = false;
@@ -89,25 +103,22 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Preferences {
             if (escaped) escaped = false else if (ch == '\\') escaped = true else if (ch == '"') quoted = false;
         } else switch (ch) {
             '"' => quoted = true,
-            '{', '[' => { depth += 1; if (depth > 8) return error.InvalidConfig; },
-            '}', ']' => { if (depth == 0) return error.InvalidConfig; depth -= 1; },
+            '{', '[' => {
+                depth += 1;
+                if (depth > max_depth) return error.InvalidConfig;
+            },
+            '}', ']' => {
+                if (depth == 0) return error.InvalidConfig;
+                depth -= 1;
+            },
             else => {},
         }
     }
-    const dom = try std.json.parseFromSliceLeaky(std.json.Value, a, bytes, .{});
-    if (dom != .object) return error.InvalidConfig;
-    const version = dom.object.get("version") orelse .{ .integer = 1 };
-    if (version != .integer) return error.UnsupportedVersion;
-    const p: Preferences = if (version.integer == 0) blk: {
-        const Legacy = struct { version: u32, dark: bool = true, wallpaper: []const u8 = "" };
-        const old = try std.json.parseFromSliceLeaky(Legacy, a, bytes, .{});
-        break :blk .{ .theme = .{ .variant = if (old.dark) .dark else .light }, .wallpaper = .{ .path = old.wallpaper, .mode = if (old.wallpaper.len == 0) .gradient else .cover } };
-    } else if (version.integer == 1) try std.json.parseFromSliceLeaky(Preferences, a, bytes, .{}) else return error.UnsupportedVersion;
-    try p.validate();
-    return p;
 }
 test "preferences migrate legacy, reject unknown versions, injection and conflicting output groups" {
-    var arena = std.heap.ArenaAllocator.init(std.testing.allocator); defer arena.deinit(); const a = arena.allocator();
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
     try (Preferences{}).validate();
     const p = try parse(a, "{\"version\":0,\"dark\":false}");
     try std.testing.expectEqual(.light, p.theme.variant);
@@ -117,4 +128,17 @@ test "preferences migrate legacy, reject unknown versions, injection and conflic
     try std.testing.expectError(error.InvalidGroups, parse(a, "{\"bar\":{\"groups\":{\"right\":\"clock\"}}}"));
     try std.testing.expectError(error.DuplicateOutput, parse(a, "{\"outputs\":[{\"connector\":\"DP-1\"},{\"connector\":\"DP-1\"}]}"));
     try std.testing.expectError(error.InvalidExportName, parse(a, "{\"exports\":[{\"name\":\"../gtk.css\",\"template\":\"\"}]}"));
+}
+
+test "preferences enforce JSON bounds and own parsed strings" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var bytes = "{\"font\":\"Inter\"}".*;
+    const p = try parse(a, &bytes);
+    @memset(&bytes, ' ');
+    try std.testing.expectEqualStrings("Inter", p.font);
+    try std.testing.expectError(error.InvalidConfig, parse(a, "[" ** 9));
+    try std.testing.expectError(error.InvalidConfig, parse(a, " " ** (max_bytes + 1)));
+    try std.testing.expectError(error.DuplicateField, parse(a, "{\"version\":1,\"version\":1}"));
 }
