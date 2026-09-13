@@ -2,7 +2,7 @@
 
 Pearl is the working name for a planned **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with a look and feel closely modeled on Dank Material Shell.
 
-T00–T07 and T09 are complete; T08 is implemented with physical scan acceptance pending. The pinned Zig 0.16.0 stack has generated
+T00–T07 and T09–T10 are complete; T08 is implemented with physical scan acceptance pending. The pinned Zig 0.16.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
 resources and a demo gallery. Private Aqueous tests cover startup, shutdown,
 cancellation and session isolation. A bounded Aqueous decoder and atomic state
@@ -20,6 +20,9 @@ Wi-Fi/saved profiles and BlueZ pairing/discovery now have real service agents an
 GTK controls. Physical enumeration passed; the opt-in hardware scan remains
 pending. Notifications/history/DND, StatusNotifier tray menus and MPRIS media controls
 are now connected, with owner-safe session-bus recovery and bounded local artwork.
+Preferences, per-output bar policies, wallpaper, dynamic Material palettes, and
+native system/installed GTK4 themes now update the shell live. Settings drafts
+survive external edits, with conflict-aware merging and atomic persistence.
 The full shell remains in progress.
 
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
@@ -29,6 +32,7 @@ The full shell remains in progress.
 - [Aqueous model](docs/AQUEOUS_MODEL.md): decoder limits, atomic updates, derived views and ownership contracts.
 - [Aqueous adapter](docs/AQUEOUS_ADAPTER.md): persistent connections, command completion, recovery and icon caching.
 - [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.
+- [Preferences, wallpaper and themes](docs/PREFERENCES.md) and [T10 visual evidence](artifacts/t10/comparison.html): settings, dynamic Material colors, native GTK themes, draft recovery and opt-in exports.
 - [Notifications, tray and media](docs/SESSION_SERVICES.md) and [T09 visual evidence](artifacts/t09/comparison.html): protocol contracts, bounds, keyboard controls, ownership and session-bus recovery.
 - [Network and Bluetooth](docs/CONNECTIVITY.md) and [T08 visual evidence](artifacts/t08/comparison.html): connection/pairing agents, bounded discovery, credential handling and hardware acceptance.
 - [Audio and power](docs/SERVICES.md) and [T07 visual evidence](artifacts/t07/comparison.html): service behavior, CLI, permissions and physical release checks.

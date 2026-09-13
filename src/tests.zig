@@ -1,4 +1,5 @@
 test {
+    _ = @import("config/preferences.zig");
     _ = @import("services/notification_policy.zig");
     _ = @import("services/connectivity_policy.zig");
     _ = @import("desktop/policy.zig");

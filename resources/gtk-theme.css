@@ -1,0 +1,11 @@
+/* Layout only. Colors, typography, controls and state rendering come from GTK. */
+.pearl-root.pearl-gtk.pearl-shell { background: transparent; }
+.pearl-root.pearl-gtk .pearl-surface-panel { border-radius: 14px; }
+.pearl-root.pearl-gtk .pearl-popup-panel { padding: 20px; }
+.pearl-root.pearl-gtk .pearl-osd-panel { padding: 14px; }
+.pearl-root.pearl-gtk .pearl-bar-panel { padding: 0 6px; }
+.pearl-root.pearl-gtk .pearl-bar-panel button { padding: 2px 8px; min-height: 24px; }
+.pearl-root.pearl-gtk .pearl-card { padding: 16px; border-radius: 16px; }
+.pearl-root.pearl-gtk.pearl-compact .pearl-card { padding: 12px; }
+.pearl-root.pearl-gtk .pearl-launcher-row { padding: 10px 12px; min-height: 38px; }
+.pearl-root.pearl-gtk.pearl-reduced-motion * { transition: none; animation: none; }

@@ -1,5 +1,51 @@
 # Pearl implementation progress
 
+## T10 — Complete, September 13, 2026
+
+Implemented versioned Pearl preferences, settings pages, wallpaper, dynamic
+Material palettes and the additional native GTK theme mode in Zig 0.16.0.
+Static Material remains usable without matugen. GTK mode follows normal GTK
+settings or an installed GTK4 theme, including its controls and surface styles;
+Material overrides are removed from those roots. Native Aqueous blur remains
+supported, with opacity supplied by the selected theme.
+
+One bounded GTask worker validates and prepares configuration, wallpaper and
+palette changes. A main-thread CSS check precedes atomic persistence and a shared
+provider/texture swap across output surfaces. Matugen receives a private empty
+configuration, dry-run argv, bounded pipes and a deadline; obsolete loads are
+cancelled and processes are reaped. Eight cache slots use validated role colors
+and input/mode/generator identity. There is no recurring theme work at idle.
+
+Typed validation and migration, etag/content conflict checks, atomic first
+creation/replacement, directory monitoring and a last-good snapshot preserve
+working settings. Settings drafts remain in memory through popup close, output
+changes and external edits. Three-way merging combines disjoint fields and keeps
+overlapping conflicts for review. Bar groups/edge/size can differ by connector;
+fonts, density, popup placement/limits/dismissal and wallpaper fit are live.
+Opt-in text exports require ownership hashes and keep a first-replacement backup.
+
+Verification: **74 unit/binding tests and 125 integration checks/groups pass**,
+including 21 T10 groups. The T10 suite uses real GTK keyboard editing, draft
+close/reopen/merge/apply, real matugen output, custom GTK theme pixel checks,
+corrupt/large/legacy files, CSS rejection, missing fonts/images/themes, failed
+saves, reservation conflicts, cross-output OSD styling, export ownership, cache,
+idle behavior, generator failure/deadline/cancellation, concurrent edits and
+restart recovery without matugen. Desktop, notifications/tray/media, audio/power,
+connectivity, surfaces/native blur, and lifecycle/isolation regressions pass.
+All suites match the final production/instrumented binaries; see
+[T10 verification](../artifacts/t10/verification/README.md) and
+[unedited captures beside DMS](../artifacts/t10/comparison.html).
+
+[PREFERENCES.md](PREFERENCES.md) documents the schema and limits. GTK themes must
+support GTK4; wallpaper currently accepts bounded local regular PNG/JPEG files.
+One wallpaper is shared across output surfaces, and drafts survive popup closure
+but not process exit. Exports are generated in Pearl's owned export directory
+for consumers to include/link explicitly. The settings UI uses tabbed pages and
+an Advanced editor; it does not yet provide the full future sidebar/search UI.
+Aqueous's settings helper/frontend belongs to **T11, the next numbered task**.
+No host theme, wallpaper, radio, daemon ownership or Aqueous configuration was
+changed. T08's physical scan acceptance remains pending.
+
 ## T09 — Complete, September 13, 2026
 
 Implemented notification, StatusNotifier/DBusMenu and MPRIS services in Zig 0.16.0
@@ -33,7 +79,7 @@ binary/source hashes and logs are recorded in [T09 verification](../artifacts/t0
 media and nested tray menus. The protocol/CLI contract and supported limits are
 in [SESSION_SERVICES.md](SESSION_SERVICES.md).
 
-T10 is the next numbered task. T08's physical scan acceptance remains pending;
+T10 was next at this milestone; see its completed entry above. T08's physical scan acceptance remains pending;
 no host Wi-Fi/Bluetooth state was changed for T09.
 
 ## T08 — Implemented; physical scan acceptance pending, September 13, 2026

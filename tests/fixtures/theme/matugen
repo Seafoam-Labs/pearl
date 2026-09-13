@@ -1,0 +1,17 @@
+#!/usr/bin/python3
+"""Private T10 generator failure/delay fixture; pass mode runs real matugen."""
+import json,os,sys,time
+from pathlib import Path
+mode=Path(os.environ['PEARL_TEST_GENERATOR_MODE']).read_text().strip()
+if '--version' in sys.argv:
+    print('matugen 4.2.0');sys.exit(0)
+with open(os.environ['PEARL_TEST_GENERATOR_LOG'],'a') as log:
+    log.write(json.dumps({'mode':mode,'argv':sys.argv[1:],'pid':os.getpid()})+'\n')
+if mode=='fail': sys.exit(2)
+if mode=='invalid': print('{"colors":{}}');sys.exit(0)
+if mode=='huge': print('x'*200000);sys.exit(0)
+if mode=='hang':
+    os.close(1)
+    while True: time.sleep(1)
+if mode=='slow': time.sleep(10)
+os.execv('/usr/bin/matugen',['matugen',*sys.argv[1:]])

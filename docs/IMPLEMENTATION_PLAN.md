@@ -1,7 +1,7 @@
 # Pearl implementation plan
 
 Status: implementation specification, September 13, 2026. T00–T07 are complete;
-T08 is implemented with physical scan acceptance pending; T09 is complete;
+T08 is implemented with physical scan acceptance pending; T09–T10 are complete;
 see [PROGRESS.md](PROGRESS.md) and [COMPATIBILITY.md](COMPATIBILITY.md) for its
 verified stack and evidence. “Pearl” is a working name taken from this workspace.
 
@@ -263,7 +263,7 @@ Night light needs an explicit capability/ownership check and coordination with a
 
 ### Ownership
 
-- Pearl preferences: `$XDG_CONFIG_HOME/pearl/config.json`, a versioned typed schema with defaults, migrations, validation, atomic replacement and a last-known-good copy. JSON avoids introducing a second TOML implementation merely for shell preferences.
+- Pearl preferences: `$XDG_CONFIG_HOME/pearl/preferences.json`, a versioned typed schema with defaults, migrations, validation, atomic replacement and a last-known-good copy. JSON avoids introducing a second TOML implementation merely for shell preferences.
 - Pearl state: `$XDG_STATE_HOME/pearl/` for explicitly persisted history/usage; caches under `$XDG_CACHE_HOME/pearl/` with size limits. Honor standard XDG home fallbacks.
 - Aqueous compositor policy: existing canonical TOML files, exclusively through the established `aqueous-config` backend. Do not duplicate the settings application's parser/serializer.
 
@@ -280,6 +280,13 @@ Capture live output configuration, test the proposed configuration, apply it asy
 An in-process timer alone cannot recover after Pearl crashes during a bad display preview. Before shipping this feature, implement a bounded separate watchdog or a compositor-owned rollback lease, with explicit conflict semantics and crash tests. If that gate is not met, retain the established settings entry point and do not advertise safe preview/revert.
 
 ### Theme pipeline
+
+T10 implements static Material, dynamic Material, and native GTK theme modes.
+Native GTK mode follows the system or selects an installed GTK4 theme, using
+GTK's control/surface styles with layout-only Pearl CSS. The complete schema,
+UI, bounds, drafts and export ownership contract is in [PREFERENCES.md](PREFERENCES.md).
+The current settings panel uses responsive tabbed pages and an Advanced editor;
+a broader sidebar/search settings application remains a later frontend refinement.
 
 `wallpaper/seed/mode change → bounded palette job → validate roles → atomic Theme swap → regenerate scoped CSS → repaint affected surfaces`.
 

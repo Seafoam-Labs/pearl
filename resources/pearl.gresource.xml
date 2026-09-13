@@ -2,6 +2,7 @@
 <gresources>
   <gresource prefix="/org/aqueous/Pearl">
     <file>style.css</file>
+    <file>gtk-theme.css</file>
     <file>gallery.ui</file>
     <file>session.ui</file>
     <file alias="aqueous-desktop.json">../tests/fixtures/aqueous/desktop-event.json</file>

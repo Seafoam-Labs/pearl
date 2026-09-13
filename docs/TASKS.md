@@ -1,7 +1,7 @@
 # Pearl AI implementation tasks
 
 Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T07 are complete**;
-T08 is implemented with physical scan acceptance pending; T09 is complete; T10–T16 are not started. Follow their dependency order and record evidence in
+T08 is implemented with physical scan acceptance pending; T09–T10 are complete; T11–T16 are not started. Follow their dependency order and record evidence in
 [PROGRESS.md](PROGRESS.md). Task IDs are stable and may be split into smaller
 changes without changing their acceptance criteria.
 
@@ -184,11 +184,13 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 
 ## T10 — Preferences, wallpaper and dynamic themes
 
+**Status:** complete, including native GTK theme support requested in addition to Material themes. See [PREFERENCES.md](PREFERENCES.md), [PROGRESS.md](PROGRESS.md), and [T10 verification](../artifacts/t10/verification/README.md).
+
 **Depends on:** T06. **Primary files:** `src/config/`, wallpaper/theme services, shell-settings pages.
 
 - Implement versioned Pearl JSON preferences, migrations, validation, atomic save, external-change handling and last-known-good state.
 - Add bar widget ordering/output preferences, popup policies, fonts/density, wallpaper modes and theme controls.
-- Add cancellable/coalesced matugen adapter, palette cache/validation and atomic theme swap. Keep static themes functional without matugen.
+- Add cancellable/coalesced matugen adapter, palette cache/validation and atomic theme swap. Keep static themes functional without matugen. Also support the system GTK theme and installed GTK4 themes with their native control/surface styling.
 - Add opt-in export templates with explicit ownership and backups.
 
 **Done when:** corrupt config, failed generator, rapid wallpaper changes, missing font/image and external edits do not lose working settings or drafts. One theme change updates every surface without process restart; theme work is absent at idle.

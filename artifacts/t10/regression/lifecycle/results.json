@@ -1,0 +1,55 @@
+{
+  "checks": {
+    "cli_without_display_and_unsupported_desktop": "pass",
+    "eight_cycles_cancel_drain_finalize_unregister": "pass",
+    "eight_cycles_complete_finalize_unregister": "pass",
+    "failed_compositor_start_cleans_private_bus_and_directories": "pass",
+    "missing_and_non_socket_endpoints_rejected": "pass",
+    "nested_display_private_bus_and_reused_bus_isolation": "pass",
+    "poisoned_host_environment_removed": "pass",
+    "private_directories_removed": "pass",
+    "production_executable_ignores_test_hooks": "pass",
+    "same_bus_and_display_launches_are_independent": "pass",
+    "session_mode_has_no_fixture_work": "pass",
+    "sigint_and_sigterm_drain_cleanly": "pass"
+  },
+  "executable_sha256": "a906fd342f871d4fc3e442ca43b8acebbbab9cf81ddd67511da576239e245c3f",
+  "nested_outputs": [
+    {
+      "adaptive_sync": true,
+      "description": "Wayland output 1",
+      "edid_sha256": null,
+      "enabled": true,
+      "make": null,
+      "mirror_error": null,
+      "mirror_of": "",
+      "mirror_status": "extended",
+      "model": null,
+      "modes": [
+        {
+          "current": true,
+          "height": 720,
+          "preferred": false,
+          "refresh": 0.0,
+          "width": 1280
+        }
+      ],
+      "name": "WL-1",
+      "physical_size": {
+        "height": 0,
+        "width": 0
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": 1.0,
+      "serial": null,
+      "transform": "normal"
+    }
+  ],
+  "private_bus_names": "NAME                    PID PROCESS         USER CONNECTION UNIT              SESSION DESCRIPTION\n:1.34                780277 pearl-integrati zoey :1.34      user@1000.service -       -\n:1.38                780311 busctl          zoey :1.38      user@1000.service -       -\norg.freedesktop.DBus 779876 dbus-daemon     zoey -          user@1000.service -       -\n",
+  "production_executable_sha256": "e2eaa1c72192329975c9c4a33db0d5018e8c696bcde26dc1c7b44bbe0d6e15d3",
+  "recorded_utc": "2026-09-13T21:33:33.957672+00:00",
+  "status": "pass"
+}

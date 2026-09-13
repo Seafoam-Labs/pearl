@@ -132,6 +132,12 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| connectivity.addArgs(args);
     b.step("test-connectivity", "Verify NetworkManager and BlueZ on private services").dependOn(&connectivity.step);
 
+    const preferences = b.addSystemCommand(&.{ "python3", "tests/integration/test_preferences.py", "--pearl" });
+    preferences.addArtifactArg(integration_app);
+    preferences.addArg("--ctl"); preferences.addArtifactArg(ctl);
+    if (b.args) |args| preferences.addArgs(args);
+    b.step("test-preferences", "Verify preferences, wallpaper, dynamic and native GTK themes in private Aqueous").dependOn(&preferences.step);
+
     const session_services = b.addSystemCommand(&.{ "python3", "tests/integration/test_session_services.py", "--pearl" });
     session_services.addArtifactArg(integration_app);
     session_services.addArg("--production-pearl");

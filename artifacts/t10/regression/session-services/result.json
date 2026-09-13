@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "checks": {
+    "initial-mpris-owner-discovery-and-sni-registration-pixmap": true,
+    "truthful-notification-capabilities": true,
+    "replacement-history-and-toast-popup-coexistence": true,
+    "notification-action-through-gtk-keyboard": true,
+    "action-residency-transient-expiry-and-all-closure-reasons": true,
+    "dnd-history-no-replay-and-bounded-bursts": true,
+    "real-aqueous-lock-hides-content-blocks-actions-and-prevents-replay": true,
+    "keyboard-seek-edit-survives-progress-timer-and-focus-change": true,
+    "media-keyboard-controls-position-capabilities-and-rejection": true,
+    "bounded-cancellable-artwork-local-only-and-hidden-view-timers": true,
+    "tray-activation-secondary-and-nested-dbusmenu-keyboard-actions": true,
+    "malformed-pixmaps-menu-limits-and-stale-menu-rejection": true,
+    "owner-loss-restart-and-stale-replies-clean-cards": true,
+    "player-selection-falls-back-after-owner-exit": true,
+    "clean-shutdown": true,
+    "existing-daemon-respected-and-external-watcher-hosting": true,
+    "queued-names-acquired-after-existing-services-exit": true,
+    "production-session-bus-reconnect-restores-protocols": true
+  },
+  "pearl_sha256": "a906fd342f871d4fc3e442ca43b8acebbbab9cf81ddd67511da576239e245c3f",
+  "ctl_sha256": "b1b119ccf1b11afa818cd62441fd4c8bdf175669357c93e35278a29eb7f80b9a",
+  "production_sha256": "e2eaa1c72192329975c9c4a33db0d5018e8c696bcde26dc1c7b44bbe0d6e15d3"
+}

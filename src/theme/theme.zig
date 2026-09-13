@@ -55,16 +55,47 @@ pub fn css(allocator: std.mem.Allocator, template: []const u8) ![:0]u8 {
     var result: std.ArrayList(u8) = .empty;
     defer result.deinit(allocator);
     inline for (.{ .{ "pearl-dark", dark }, .{ "pearl-light", light } }) |pair| {
-        var sheet = try std.mem.replaceOwned(u8, allocator, template, "$scope", pair[0]);
+        const sheet = try scopedCss(allocator, template, pair[0], pair[1]);
         defer allocator.free(sheet);
-        inline for (@typeInfo(Palette).@"struct".fields) |field| {
-            const next = try std.mem.replaceOwned(u8, allocator, sheet, "$" ++ field.name ++ "$", @field(pair[1], field.name));
-            allocator.free(sheet);
-            sheet = next;
-        }
         try result.appendSlice(allocator, sheet);
     }
     return allocator.dupeZ(u8, result.items);
+}
+
+pub fn scopedCss(allocator: std.mem.Allocator, template: []const u8, scope: []const u8, palette: Palette) ![:0]u8 {
+    var sheet = try std.mem.replaceOwned(u8, allocator, template, "$scope", scope);
+    defer allocator.free(sheet);
+    inline for (@typeInfo(Palette).@"struct".fields) |field| {
+        const next = try std.mem.replaceOwned(u8, allocator, sheet, "$" ++ field.name ++ "$", @field(palette, field.name));
+        allocator.free(sheet);
+        sheet = next;
+    }
+    return allocator.dupeZ(u8, sheet);
+}
+pub fn validate(p: Palette) !void {
+    inline for (@typeInfo(Palette).@"struct".fields) |field| if (!@import("../config/preferences.zig").hex(@field(p, field.name))) return error.InvalidPalette;
+    for ([_][2][]const u8{ .{p.text,p.surface}, .{p.text,p.high}, .{p.secondary,p.container}, .{p.on_primary,p.primary}, .{p.on_container,p.primary_container} }) |pair| {
+        const x = luminance(pair[0]); const y = luminance(pair[1]);
+        if ((@max(x,y) + 0.05) / (@min(x,y) + 0.05) < 4.5) return error.InsufficientContrast;
+    }
+}
+pub fn matugenPalette(a: std.mem.Allocator, json: []const u8, variant: []const u8) !Palette {
+    if (json.len > 131072) return error.InvalidPalette;
+    const dom = try std.json.parseFromSliceLeaky(std.json.Value, a, json, .{});
+    const colors = try member(dom, "colors");
+    var palette: Palette = undefined;
+    const roles = .{ "surface", "surface_container_low", "surface_container", "surface_container_high", "on_surface", "on_surface_variant", "primary", "on_primary", "primary_container", "on_primary_container", "outline", "error", "error_container" };
+    inline for (@typeInfo(Palette).@"struct".fields, roles) |field, role| {
+        const value = try member(try member(try member(colors, role), variant), "color");
+        if (value != .string) return error.InvalidPalette;
+        @field(palette, field.name) = value.string;
+    }
+    try validate(palette);
+    return palette;
+}
+fn member(v: std.json.Value, key: []const u8) !std.json.Value {
+    if (v != .object) return error.InvalidPalette;
+    return v.object.get(key) orelse error.InvalidPalette;
 }
 
 fn luminance(hex: []const u8) f64 {

@@ -35,9 +35,12 @@ const Surface = struct {
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
     media: ?*@import("../../desktop/media.zig").View = null,
     tray: ?*@import("../../desktop/tray.zig").View = null,
+    settings: ?*@import("../../desktop/settings.zig").View = null,
+    wallpaper_picture: ?*gtk.Picture = null,
     measure_signal: c_ulong = 0,
     measure_clock: ?*gdk.FrameClock = null,
     fn destroy(self: *Surface) void {
+        if (self.settings) |view| view.destroy();
         if (self.notifications) |view| view.destroy();
         if (self.media) |view| view.destroy();
         if (self.tray) |view| view.destroy();
@@ -69,6 +72,7 @@ const Output = struct {
     bar: ?*Surface = null,
     frames: [4]?*Surface = .{ null, null, null, null },
     seen: bool = false,
+    preferences_revision: u64 = 0,
     fn destroy(self: *Output) void {
         if (self.wallpaper) |s| s.destroy();
         if (self.bar) |s| s.destroy();
@@ -94,6 +98,7 @@ pub const Manager = struct {
     bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
     session_services: @import("../../services/session.zig").Session = undefined,
     services_started: bool = false,
+    preferences: @import("../../config/service.zig").Service = undefined,
     osd_label: ?*gtk.Label = null,
     osd_pending: @import("../../services/policy.zig").Text(512) = .{},
     osd_flush: c_uint = 0,
@@ -131,6 +136,8 @@ pub const Manager = struct {
         self.network = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
         self.bluetooth = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
         self.session_services = .{ .app = self.app.as(gio.Application), .context = self, .changed = sessionChanged };
+        self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged };
+        try self.preferences.start();
         self.services_started = true;
         self.audio.start();
         self.power.start();
@@ -156,6 +163,7 @@ pub const Manager = struct {
         self.monitor_watches.deinit(a);
         self.clear();
         if (self.services_started) {
+            self.preferences.stop();
             self.audio.stop();
             self.power.stop();
             self.network.stop();
@@ -179,6 +187,31 @@ pub const Manager = struct {
         self.hideNotifications();
         for (self.outputs.items) |o| o.destroy();
         self.outputs.clearRetainingCapacity();
+    }
+    fn preferencesChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        for (self.outputs.items) |o| {
+            if (o.wallpaper) |surface| self.styleSurface(surface);
+            if (o.bar) |surface| self.styleSurface(surface);
+        }
+        for ([_]?*Surface{ self.popup, self.osd, self.notification }) |maybe| if (maybe) |surface| self.styleSurface(surface);
+        if (self.popup) |surface| if (surface.settings) |view| view.update();
+        self.positionPopup();
+        self.schedule();
+    }
+    fn styleSurface(self: *Manager, surface: *Surface) void {
+        self.preferences.style(surface.window.as(gtk.Widget), surface.panel);
+        if (surface.wallpaper_picture) |picture| {
+            const prefs = self.preferences.prefs();
+            const image = if (self.preferences.live) |live| live.image else null;
+            if (image != null and (prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain)) {
+                const texture = gdk.Texture.newForPixbuf(image.?);
+                defer texture.unref();
+                picture.setPaintable(texture.as(gdk.Paintable));
+                picture.setContentFit(if (prefs.wallpaper.mode == .cover) .cover else .contain);
+            } else picture.setPaintable(null);
+        }
     }
     fn sessionChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -341,6 +374,14 @@ pub const Manager = struct {
             }
             const o = output.?;
             o.seen = true;
+            if (o.preferences_revision != self.preferences.appearance) {
+                const pref = self.preferences.prefs().forOutput(o.connector);
+                try o.reservations.bar(pref.edge, pref.size);
+                o.bar.?.edge = pref.edge;
+                sizeEdge(o.bar.?, pref.edge, pref.size);
+                try o.bar.?.bar.?.configure(pref.groups);
+                o.preferences_revision = self.preferences.appearance;
+            }
             const changed = !std.meta.eql(o.bounds, bounds) or !std.meta.eql(o.usable, usable);
             o.bounds = bounds;
             o.usable = usable;
@@ -433,12 +474,19 @@ pub const Manager = struct {
             if (s.notifications) |view| view.destroy();
             if (s.media) |view| view.destroy();
             if (s.tray) |view| view.destroy();
+            if (s.settings) |view| view.destroy();
         }
         switch (kind) {
             .wallpaper => {
                 window.as(gtk.Widget).addCssClass("pearl-wallpaper");
                 anchors(window, null);
                 layer.setExclusiveZone(window, -1);
+                const picture = gtk.Picture.new();
+                picture.setCanShrink(1);
+                picture.as(gtk.Widget).setHexpand(1);
+                picture.as(gtk.Widget).setVexpand(1);
+                panel.append(picture.as(gtk.Widget));
+                s.wallpaper_picture = picture;
                 window.setChild(panel_widget);
             },
             .bar => {
@@ -471,6 +519,7 @@ pub const Manager = struct {
                 window.setChild(fixed.as(gtk.Widget));
                 panel_widget.addCssClass("pearl-popup-panel");
                 switch (self.pane) {
+                    .settings => s.settings = try @import("../../desktop/settings.zig").View.create(panel, &self.preferences),
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
                     .calendar => Panels.calendar(panel),
                     .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
@@ -489,6 +538,9 @@ pub const Manager = struct {
                         const overview = gtk.Button.newWithLabel(tr("Window overview", "Fensterübersicht"));
                         _ = gtk.Button.signals.clicked.connect(overview, *Surface, overviewClicked, s, .{});
                         panel.append(overview.as(gtk.Widget));
+                        const settings = gtk.Button.newWithLabel("Pearl settings");
+                        _ = gtk.Button.signals.clicked.connect(settings, *Surface, settingsClicked, s, .{});
+                        panel.append(settings.as(gtk.Widget));
                     },
                 }
                 const keys = gtk.EventControllerKey.new();
@@ -517,6 +569,7 @@ pub const Manager = struct {
                 window.setChild(panel_widget);
             },
         }
+        self.styleSurface(s);
         try s.effects.init(&self.effects, window, panel_widget, kind == .bar or kind == .popup or kind == .osd or kind == .notification, if (kind == .popup) .full else if (kind == .bar or kind == .notification) .panel else .empty);
         if (kind != .popup and kind != .osd and kind != .frame and kind != .notification) window.present();
         if (kind == .bar) {
@@ -565,7 +618,11 @@ pub const Manager = struct {
     fn positionPopup(self: *Manager) void {
         const s = self.popup orelse return;
         const o = s.output;
-        const rect = if (self.pane == .launcher) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if (self.pane == .control) 600 else 440, if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
+        const prefs = self.preferences.prefs().popup;
+        var rect = if (self.pane == .launcher) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if (self.pane == .settings) 700 else if (self.pane == .control) 600 else 440, if (self.pane == .settings) 720 else if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
+        const width = @min(rect.width, prefs.max_width);
+        const height = @min(rect.height, prefs.max_height);
+        rect = if (prefs.placement == .centered or self.pane == .launcher) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, o.usable, width, height, o.reservations.bar_edge, self.pane != .calendar);
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;
         fixed.move(s.panel, @floatFromInt(rect.x - (o.usable.x - o.bounds.x)), @floatFromInt(rect.y - (o.usable.y - o.bounds.y)));
@@ -655,13 +712,23 @@ pub const Manager = struct {
             self.session_services.notifications.setLocked(self.client.availability != .ready or (if (self.client.model.get(.session, "session")) |session| session.locked else true));
             return self.session_services.status(alloc, request.offset orelse 0);
         }
+        if (request.op == .preferences_status) return self.preferences.status(alloc);
         if (request.op == .status) return self.status(alloc);
         if (request.op == .connectivity_status) return @import("../../services/connectivity_status.zig").encode(alloc, &self.network, &self.bluetooth, request.offset orelse 0);
         if (request.op == .services_status) return std.json.Stringify.valueAlloc(alloc, try self.serviceStatus(alloc, request.offset orelse 0), .{});
         if (self.client.availability != .ready) return error.Unavailable;
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         switch (request.op) {
-            .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .preferences_apply => {
+                try self.preferences.apply(request.text.?, request.revision.?);
+                return "{\"queued\":true}";
+            },
+            .preferences_reload => {
+                self.preferences.reload();
+                return "{\"queued\":true}";
+            },
+            .settings_show => try self.showPane(try self.selected(request.output), .settings),
             .session_action => {
                 try self.session_services.act(request);
                 return "{\"queued\":true}";
@@ -861,6 +928,7 @@ fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     layer.setExclusiveZone(s.window, size);
 }
 fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
+    if (s.settings) |view| view.probe(s.window);
     if (s.notifications) |view| view.probe(s.window);
     if (s.media) |view| view.probe(s.window);
     if (s.tray) |view| view.probe(s.window);
@@ -912,6 +980,9 @@ fn layoutAction(context: *anyopaque, value: ?[]const u8) void {
         s.control.?.label.setText(tr("Layout change unavailable", "Anordnung kann nicht geändert werden"));
     };
 }
+fn settingsClicked(_: *gtk.Button, s: *Surface) callconv(.c) void {
+    barAction(s, .{ .pane = .settings });
+}
 fn overviewClicked(_: *gtk.Button, s: *Surface) callconv(.c) void {
     barAction(s, .overview);
 }
@@ -921,6 +992,7 @@ fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.Modifie
     return 1;
 }
 fn outsideReleased(_: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Manager) callconv(.c) void {
+    if (!self.preferences.prefs().popup.dismiss_outside) return;
     const s = self.popup orelse return;
     const picked = s.window.as(gtk.Widget).pick(x, y, .{});
     if (picked) |widget| if (widget == s.panel or widget.isAncestor(s.panel) != 0) return;

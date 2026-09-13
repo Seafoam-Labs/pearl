@@ -1,0 +1,82 @@
+{
+  "recorded_utc": "2026-09-13T21:36:09.469706+00:00",
+  "zig": "0.16.0",
+  "gtk": "4.22.5",
+  "glib": "2.88.3",
+  "matugen": "matugen 4.2.0",
+  "optimize": "ReleaseSafe",
+  "production_sha256": "e2eaa1c72192329975c9c4a33db0d5018e8c696bcde26dc1c7b44bbe0d6e15d3",
+  "instrumented_sha256": "a906fd342f871d4fc3e442ca43b8acebbbab9cf81ddd67511da576239e245c3f",
+  "ctl_sha256": "b1b119ccf1b11afa818cd62441fd4c8bdf175669357c93e35278a29eb7f80b9a",
+  "all_suite_binaries_match": true,
+  "unit_counts": {
+    "pure": 57,
+    "adapter_services": 16,
+    "bindings": 1
+  },
+  "unit_total": 74,
+  "integration_total": 125,
+  "suites": {
+    "preferences": {
+      "path": "verification/metadata.json",
+      "status": "passed",
+      "checks": 21,
+      "binary": "instrumented",
+      "binary_sha256": "a906fd342f871d4fc3e442ca43b8acebbbab9cf81ddd67511da576239e245c3f",
+      "result_sha256": "e621eb6d352f6e0eb0f7c2ad868cc206d1726032cbc3d25629b5f7dd16b434e0"
+    },
+    "desktop": {
+      "path": "regression/desktop/results.json",
+      "status": "passed",
+      "checks": 15,
+      "binary": "production",
+      "binary_sha256": "e2eaa1c72192329975c9c4a33db0d5018e8c696bcde26dc1c7b44bbe0d6e15d3",
+      "result_sha256": "cbb6b8f2901c4c382db636c8390ab975faf3e6aac9ad1ac48a1d221b57441b16"
+    },
+    "surfaces": {
+      "path": "regression/surfaces/results.json",
+      "status": "passed",
+      "checks": 17,
+      "binary": "production",
+      "binary_sha256": "e2eaa1c72192329975c9c4a33db0d5018e8c696bcde26dc1c7b44bbe0d6e15d3",
+      "result_sha256": "7737bafa6de8da996d14acff829fcf5c97d0a37fc44e8fb040d39d94a7572d1f"
+    },
+    "session-services": {
+      "path": "regression/session-services/result.json",
+      "status": "passed",
+      "checks": 18,
+      "binary": "instrumented",
+      "binary_sha256": "a906fd342f871d4fc3e442ca43b8acebbbab9cf81ddd67511da576239e245c3f",
+      "result_sha256": "2f3e10377471bc5e62cf4551133d9ec2e572a9312440d522b406a1f165cf6605"
+    },
+    "lifecycle": {
+      "path": "regression/lifecycle/results.json",
+      "status": "pass",
+      "checks": 12,
+      "binary": "instrumented",
+      "binary_sha256": "a906fd342f871d4fc3e442ca43b8acebbbab9cf81ddd67511da576239e245c3f",
+      "result_sha256": "8f9e58c7f19f35610b6e8a546b0ec7764e3a13ec19d29d1198a632b6b86dcb5b"
+    },
+    "services": {
+      "path": "regression/services/results.json",
+      "status": "passed",
+      "checks": 15,
+      "binary": "instrumented",
+      "binary_sha256": "a906fd342f871d4fc3e442ca43b8acebbbab9cf81ddd67511da576239e245c3f",
+      "result_sha256": "100da1f222a9d8496c79ac4550df58d94cd9b38b2a1262a5f7b80a3e3b6de0a9"
+    },
+    "connectivity": {
+      "path": "regression/connectivity/result.json",
+      "status": "passed",
+      "checks": 27,
+      "binary": "instrumented",
+      "binary_sha256": "a906fd342f871d4fc3e442ca43b8acebbbab9cf81ddd67511da576239e245c3f",
+      "result_sha256": "25a9392a2150a2ee284d2c0b18e8115700509052591062c710e8e6aa34b438f2"
+    }
+  },
+  "source_manifest_sha256": "9d9a0994ddbe5a68129347036096eb116fb68159566661d7edd3d4aa564549b4",
+  "dms_references": {
+    "artifacts/t00/dms/dms-dark-settings.png": "be16dcf625241181e59232633757ce04cbdbbe994298b8e6cb9bd18786fe2264",
+    "artifacts/t00/dms/dms-light-settings.png": "317ab48a4b6617c027f9f06c16989b19b68bf171cc3a69f76f5d1e289b69b31f"
+  }
+}

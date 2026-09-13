@@ -77,3 +77,14 @@
 .pearl-root.$scope.pearl-shell calendar { background: $low$; color: $text$; padding: 12px; border-radius: 16px; }
 .pearl-root.$scope.pearl-shell calendar:selected { background: $primary$; color: $on_primary$; }
 .pearl-root.$scope.pearl-shell .pearl-layout-card { padding: 14px; }
+
+/* Settings pages must not inherit the system notebook/text editor background. */
+.pearl-root.$scope notebook { background: transparent; color: $text$; border: none; }
+.pearl-root.$scope notebook > stack { background: transparent; color: $text$; border: none; }
+.pearl-root.$scope notebook > header { background: $low$; color: $secondary$; border: none; border-radius: 12px; padding: 4px; }
+.pearl-root.$scope notebook > header tab { color: $secondary$; border: none; padding: 8px 14px; }
+.pearl-root.$scope notebook > header tab:checked { color: $on_container$; background: $primary_container$; border-radius: 10px; box-shadow: none; }
+.pearl-root.$scope textview, .pearl-root.$scope textview text { background: $low$; color: $text$; caret-color: $primary$; }
+.pearl-root.$scope textview { padding: 12px; border-radius: 12px; }
+.pearl-root.$scope spinbutton { background: $high$; color: $text$; border-radius: 12px; }
+.pearl-root.$scope spinbutton text { background: transparent; color: $text$; }
