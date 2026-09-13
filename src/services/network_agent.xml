@@ -1,0 +1,6 @@
+<node><interface name="org.freedesktop.NetworkManager.SecretAgent">
+<method name="GetSecrets"><arg type="a{sa{sv}}" direction="in"/><arg type="o" direction="in"/><arg type="s" direction="in"/><arg type="as" direction="in"/><arg type="u" direction="in"/><arg type="a{sa{sv}}" direction="out"/></method>
+<method name="CancelGetSecrets"><arg type="o" direction="in"/><arg type="s" direction="in"/></method>
+<method name="SaveSecrets"><arg type="a{sa{sv}}" direction="in"/><arg type="o" direction="in"/></method>
+<method name="DeleteSecrets"><arg type="a{sa{sv}}" direction="in"/><arg type="o" direction="in"/></method>
+</interface></node>

@@ -3,13 +3,18 @@ const std = @import("std");
 const e = @import("../aqueous/entities.zig");
 pub const Edge = @import("../ui/surfaces/policy.zig").Edge;
 pub const max_frame = 8192;
-pub const Op = enum { status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit, launcher_show, launcher_hide, launcher_toggle, control_show, control_toggle, calendar_toggle, bar_groups, layout_get, layout_set, overview_toggle, services_status, audio_set, brightness_set, profile_set };
+pub const ConnectivityService = enum { network, bluetooth };
+pub const ConnectivityAction = enum { scan, connect, connect_saved, disconnect, enable, disable, cancel, pair, trust, untrust, discover, stop_discovery };
+pub const Op = enum { connectivity_status, connectivity_action, status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit, launcher_show, launcher_hide, launcher_toggle, control_show, control_toggle, calendar_toggle, bar_groups, layout_get, layout_set, overview_toggle, services_status, audio_set, brightness_set, profile_set };
 pub const Request = struct {
     pearl: u32 = 1,
     id: []const u8 = "1",
     session: []const u8 = "",
     display: []const u8 = "",
     op: Op,
+    service: ?ConnectivityService = null,
+    action: ?ConnectivityAction = null,
+    path: ?[]const u8 = null,
     generation: ?u64 = null,
     device: ?u32 = null,
     kind: ?@import("../services/policy.zig").Kind = null,
@@ -78,6 +83,8 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
             .osd_show => &[_][]const u8{ "output", "text", "duration_ms" },
             .bar_groups => &[_][]const u8{ "output", "left", "center", "right" },
             .layout_set => &[_][]const u8{ "output", "layout" },
+            .connectivity_status => &[_][]const u8{"offset"},
+            .connectivity_action => &[_][]const u8{ "service", "action", "path", "generation" },
             .services_status => &[_][]const u8{"offset"},
             .audio_set => &[_][]const u8{ "generation", "device", "kind", "volume", "mute", "make_default", "target" },
             .brightness_set => &[_][]const u8{"percent"},
@@ -92,6 +99,19 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     }
     if (r.output) |id| if (id.len == 0 or id.len > 1024 or std.mem.indexOfScalar(u8, id, 0) != null) return error.InvalidRequest;
     switch (r.op) {
+        .connectivity_action => {
+            const service = r.service orelse return error.InvalidRequest;
+            const action = r.action orelse return error.InvalidRequest;
+            if (r.generation == null) return error.InvalidRequest;
+            if (service == .network and (action == .pair or action == .trust or action == .untrust or action == .discover or action == .stop_discovery)) return error.InvalidRequest;
+            if (service == .bluetooth and (action == .scan or action == .connect_saved)) return error.InvalidRequest;
+            const needs_path = action != .cancel and action != .stop_discovery and !(service == .network and (action == .enable or action == .disable));
+            if (needs_path != (r.path != null)) return error.InvalidRequest;
+            if (r.path) |path| {
+                if (path.len < 2 or path.len > 512 or path[0] != '/' or path[path.len - 1] == '/' or std.mem.indexOf(u8, path, "//") != null) return error.InvalidRequest;
+                for (path) |c| if (!(std.ascii.isAlphanumeric(c) or c == '/' or c == '_')) return error.InvalidRequest;
+            }
+        },
         .audio_set => {
             const kind = r.kind orelse return error.InvalidRequest;
             if ((r.device == null) != (r.generation == null)) return error.InvalidRequest;

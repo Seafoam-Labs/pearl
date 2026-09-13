@@ -125,6 +125,13 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| services.addArgs(args);
     b.step("test-services", "Verify audio and power on private synthetic services").dependOn(&services.step);
 
+    const connectivity = b.addSystemCommand(&.{ "python3", "tests/integration/test_connectivity.py", "--pearl" });
+    connectivity.addArtifactArg(integration_app);
+    connectivity.addArg("--ctl");
+    connectivity.addArtifactArg(ctl);
+    if (b.args) |args| connectivity.addArgs(args);
+    b.step("test-connectivity", "Verify NetworkManager and BlueZ on private services").dependOn(&connectivity.step);
+
     const dev_backend = b.option(enum { headless, nested }, "dev-backend", "Development compositor backend") orelse .headless;
     for ([_][]const u8{ "run", "gallery" }) |name| {
         const launch = b.addSystemCommand(&.{ "python3", "scripts/dev-session.py", "--backend", @tagName(dev_backend), "--" });

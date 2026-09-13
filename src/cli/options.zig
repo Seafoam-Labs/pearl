@@ -11,7 +11,7 @@ pub fn parse(args: []const []const u8) !Options {
         if (std.mem.eql(u8, args[0], "quit")) break :blk .quit;
         if (args.len < 2) return error.Usage;
         index = 2;
-        const pairs = .{ .{ "services", "status", protocol.Op.services_status }, .{ "audio", "set", protocol.Op.audio_set }, .{ "brightness", "set", protocol.Op.brightness_set }, .{ "profile", "set", protocol.Op.profile_set }, .{ "popup", "show", protocol.Op.popup_show }, .{ "popup", "hide", protocol.Op.popup_hide }, .{ "popup", "toggle", protocol.Op.popup_toggle }, .{ "bar", "set", protocol.Op.bar_set }, .{ "frame", "set", protocol.Op.frame_set }, .{ "osd", "show", protocol.Op.osd_show }, .{ "launcher", "show", protocol.Op.launcher_show }, .{ "launcher", "hide", protocol.Op.launcher_hide }, .{ "launcher", "toggle", protocol.Op.launcher_toggle }, .{ "control-center", "show", protocol.Op.control_show }, .{ "control-center", "toggle", protocol.Op.control_toggle }, .{ "calendar", "toggle", protocol.Op.calendar_toggle }, .{ "bar", "groups", protocol.Op.bar_groups }, .{ "layout", "get", protocol.Op.layout_get }, .{ "layout", "set", protocol.Op.layout_set }, .{ "overview", "toggle", protocol.Op.overview_toggle } };
+        const pairs = .{ .{ "connectivity", "status", protocol.Op.connectivity_status }, .{ "connectivity", "action", protocol.Op.connectivity_action }, .{ "services", "status", protocol.Op.services_status }, .{ "audio", "set", protocol.Op.audio_set }, .{ "brightness", "set", protocol.Op.brightness_set }, .{ "profile", "set", protocol.Op.profile_set }, .{ "popup", "show", protocol.Op.popup_show }, .{ "popup", "hide", protocol.Op.popup_hide }, .{ "popup", "toggle", protocol.Op.popup_toggle }, .{ "bar", "set", protocol.Op.bar_set }, .{ "frame", "set", protocol.Op.frame_set }, .{ "osd", "show", protocol.Op.osd_show }, .{ "launcher", "show", protocol.Op.launcher_show }, .{ "launcher", "hide", protocol.Op.launcher_hide }, .{ "launcher", "toggle", protocol.Op.launcher_toggle }, .{ "control-center", "show", protocol.Op.control_show }, .{ "control-center", "toggle", protocol.Op.control_toggle }, .{ "calendar", "toggle", protocol.Op.calendar_toggle }, .{ "bar", "groups", protocol.Op.bar_groups }, .{ "layout", "get", protocol.Op.layout_get }, .{ "layout", "set", protocol.Op.layout_set }, .{ "overview", "toggle", protocol.Op.overview_toggle } };
         inline for (pairs) |p| if (std.mem.eql(u8, args[0], p[0]) and std.mem.eql(u8, args[1], p[1])) break :blk p[2];
         return error.Usage;
     };
@@ -20,7 +20,13 @@ pub fn parse(args: []const []const u8) !Options {
         if (index + 1 >= args.len) return error.Usage;
         const flag = args[index];
         const value = args[index + 1];
-        if (std.mem.eql(u8, flag, "--output") and r.output == null) {
+        if (std.mem.eql(u8, flag, "--service") and r.service == null) {
+            r.service = std.meta.stringToEnum(protocol.ConnectivityService, value) orelse return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--action") and r.action == null) {
+            r.action = std.meta.stringToEnum(protocol.ConnectivityAction, value) orelse return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--path") and r.path == null) {
+            r.path = value;
+        } else if (std.mem.eql(u8, flag, "--output") and r.output == null) {
             r.output = value;
         } else if (std.mem.eql(u8, flag, "--edge") and r.edge == null) {
             r.edge = std.meta.stringToEnum(protocol.Edge, value) orelse return error.Usage;
@@ -85,8 +91,10 @@ pub const usage =
     \\       pearlctl overview toggle [--output ID]
     \\       pearlctl layout get|set --output ID [--layout NAME]
     \\       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS
-    \\       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery
+    \\       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth
     \\
+    \\       pearlctl connectivity status [--offset N]
+    \\       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]
     \\       pearlctl services status [--offset N]
     \\       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]
     \\                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]
@@ -132,4 +140,15 @@ test "service commands validate identity pairs, ranges and action fields" {
     try t.expectError(error.Usage, parse(&.{ "profile", "set", "--profile", "turbo" }));
     try t.expectError(error.Usage, parse(&.{ "services", "status", "--offset", "129" }));
     try t.expectError(error.Usage, parse(&.{ "services", "status", "--volume", "1" }));
+}
+
+test "connectivity actions validate service, generation, object path and forbid secret arguments" {
+    const t = std.testing;
+    const r = try parse(&.{ "connectivity", "action", "--service", "network", "--action", "connect", "--generation", "9", "--path", "/org/freedesktop/NetworkManager/AccessPoint/1" });
+    try t.expectEqual(protocol.Op.connectivity_action, r.request.op);
+    try t.expectError(error.Usage, parse(&.{ "connectivity", "action", "--service", "network", "--action", "pair", "--generation", "9", "--path", "/x" }));
+    try t.expectError(error.Usage, parse(&.{ "connectivity", "action", "--service", "bluetooth", "--action", "pair", "--path", "/x" }));
+    try t.expectError(error.Usage, parse(&.{ "connectivity", "action", "--service", "bluetooth", "--action", "pair", "--generation", "9", "--path", "/x/../y" }));
+    try t.expectError(error.Usage, parse(&.{ "connectivity", "action", "--service", "bluetooth", "--action", "cancel", "--generation", "9", "--path", "/x" }));
+    try t.expectError(error.Usage, parse(&.{ "connectivity", "status", "--password", "must-not-accept" }));
 }

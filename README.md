@@ -2,7 +2,7 @@
 
 Pearl is the working name for a planned **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with a look and feel closely modeled on Dank Material Shell.
 
-T00–T07 are implemented. The pinned Zig 0.16.0 stack has generated
+T00–T07 are complete; T08 is implemented with physical scan acceptance pending. The pinned Zig 0.16.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
 resources and a demo gallery. Private Aqueous tests cover startup, shutdown,
 cancellation and session isolation. A bounded Aqueous decoder and atomic state
@@ -15,8 +15,10 @@ Aqueous blur and the session-scoped `pearlctl` CLI. The first desktop slice now
 includes configurable live bar groups, GIO application/window search and launch,
 a local calendar, and a control center with native Aqueous layout controls.
 Audio devices/streams, battery, brightness, power profiles and bounded OSD feedback
-are connected. Power-off/restart controls require confirmation. T08 is next:
-NetworkManager and Bluetooth. The full shell remains in progress.
+are connected. Power-off/restart controls require confirmation. NetworkManager
+Wi-Fi/saved profiles and BlueZ pairing/discovery now have real service agents and
+GTK controls. Physical enumeration passed; the opt-in hardware scan remains
+pending. T09 covers notifications, tray and media. The full shell remains in progress.
 
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
 - [AI implementation tasks](docs/TASKS.md): ordered work packages with dependencies, concrete deliverables, and acceptance criteria.
@@ -25,6 +27,7 @@ NetworkManager and Bluetooth. The full shell remains in progress.
 - [Aqueous model](docs/AQUEOUS_MODEL.md): decoder limits, atomic updates, derived views and ownership contracts.
 - [Aqueous adapter](docs/AQUEOUS_ADAPTER.md): persistent connections, command completion, recovery and icon caching.
 - [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.
+- [Network and Bluetooth](docs/CONNECTIVITY.md) and [T08 visual evidence](artifacts/t08/comparison.html): connection/pairing agents, bounded discovery, credential handling and hardware acceptance.
 - [Audio and power](docs/SERVICES.md) and [T07 visual evidence](artifacts/t07/comparison.html): service behavior, CLI, permissions and physical release checks.
 - [Surfaces and CLI](docs/SURFACES.md): output identity, reservations, popup/input policy, native blur and control v1.
 - [Components](docs/COMPONENTS.md) and [DMS visual comparison](artifacts/t03/comparison.html): gallery controls, keyboard behavior and captured differences.

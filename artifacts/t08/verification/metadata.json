@@ -1,0 +1,51 @@
+{
+  "recorded_utc": "2026-09-13T19:48:29.058478+00:00",
+  "zig": "0.16.0",
+  "optimize": "ReleaseSafe",
+  "gtk": "4.22.5",
+  "glib": "2.88.3",
+  "networkmanager": "nmcli tool, version 1.58.1-1",
+  "bluez": "bluetoothctl: 5.87",
+  "aqueous_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480",
+  "aqueous_source_clean": true,
+  "installed_binary_sha256": {
+    "pearl": "b57228652844a3ae2f7355e3260925ff5c0fc5f5c07469a1b57de844b2bd3e5f",
+    "pearlctl": "6724d0183047ebbb5aec060fc5ced29def1f9fe58b320fc1e35917293e1d8fe8"
+  },
+  "instrumented_binary_sha256": "1dfd199a8ebba89607f58ed783ec17d62a8ab8b9ecf3acbd2b88644eaafd30da",
+  "dms_reference_sha256": "5da83267ab83bb6bff82565983354ac40a240afdb9dccc1b1bff530eadb0648e",
+  "suite_summary": {
+    "connectivity": {
+      "status": "passed",
+      "check_count": 27
+    },
+    "services": {
+      "status": "passed",
+      "check_count": 15
+    },
+    "desktop": {
+      "status": "passed",
+      "check_count": 15
+    },
+    "surfaces": {
+      "status": "passed",
+      "check_count": 17
+    },
+    "lifecycle": {
+      "status": "pass",
+      "check_count": 12
+    },
+    "physical-read-only": {
+      "status": "passed",
+      "check_count": 4
+    }
+  },
+  "unit_tests": {
+    "pure": 50,
+    "adapter": 7,
+    "bindings": 1,
+    "total": 58
+  },
+  "physical_scan_acceptance": "pending user approval; Wi-Fi is off. No radio changes or physical pairing were performed.",
+  "note": "All reported current suites match the final production/instrumented binary hashes. Only instrumented builds provide read-only GTK focus probes. Hardware evidence is read-only and does not substitute for secure physical association/pairing."
+}

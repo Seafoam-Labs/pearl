@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "mode": "read-only",
+  "pearl_sha256": "b57228652844a3ae2f7355e3260925ff5c0fc5f5c07469a1b57de844b2bd3e5f",
+  "checks": {
+    "physical-wifi-adapter-enumerated": true,
+    "physical-bluetooth-adapter-enumerated": true,
+    "existing-bluetooth-connections-preserved": true,
+    "original-wifi-radio-state-preserved": true
+  },
+  "initial": {
+    "wifi_enabled": true,
+    "wifi_hardware_enabled": true,
+    "wifi_device_states": [
+      30
+    ],
+    "bluetooth_connected_devices": 1,
+    "network_agent_registered": true,
+    "bluetooth_agent_registered": true
+  }
+}

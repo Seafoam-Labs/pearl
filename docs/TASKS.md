@@ -1,7 +1,7 @@
 # Pearl AI implementation tasks
 
 Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T07 are complete**;
-T08–T16 are not started. Follow their dependency order and record evidence in
+T08 is implemented with physical scan acceptance pending; T09–T16 are not started. Follow their dependency order and record evidence in
 [PROGRESS.md](PROGRESS.md). Task IDs are stable and may be split into smaller
 changes without changing their acceptance criteria.
 
@@ -159,6 +159,8 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 **Done when:** mocked service restart/default-device changes and rapid slider updates retain the final intended value; no missing device crashes a panel; OSD never grabs focus. Physical brightness/power checks remain an explicit release checklist rather than incidental CI operations.
 
 ## T08 — Network and Bluetooth
+
+**Status:** implemented; physical scan acceptance pending. See [CONNECTIVITY.md](CONNECTIVITY.md), [PROGRESS.md](PROGRESS.md) and [T08 evidence](../artifacts/t08/verification/README.md).
 
 **Depends on:** T06. **Primary files:** network/Bluetooth services and connection/pairing panels.
 

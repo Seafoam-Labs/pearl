@@ -84,6 +84,8 @@ pub const Manager = struct {
     pane: Bar.Pane = .launcher,
     audio: @import("../../services/audio.zig").Audio = undefined,
     power: @import("../../services/power.zig").Power = undefined,
+    network: @import("../../services/network.zig").Network = undefined,
+    bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
     services_started: bool = false,
     osd_label: ?*gtk.Label = null,
     osd_pending: @import("../../services/policy.zig").Text(512) = .{},
@@ -118,9 +120,13 @@ pub const Manager = struct {
         self.audio = .{ .context = self, .changed = audioChanged };
         self.power = .{ .app = self.app.as(gio.Application), .context = self, .changed = powerChanged };
         if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_BACKLIGHT")) |root| self.power.backlight_root.set(std.mem.span(root));
+        self.network = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
+        self.bluetooth = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
         self.services_started = true;
         self.audio.start();
         self.power.start();
+        self.network.start();
+        self.bluetooth.start();
         self.armClock();
         gtk.IconTheme.getForDisplay(self.display).addResourcePath("/org/aqueous/Pearl/icons");
         self.monitor_signal = gio.ListModel.signals.items_changed.connect(self.display.getMonitors(), *Manager, monitorsChanged, self, .{});
@@ -142,6 +148,8 @@ pub const Manager = struct {
         if (self.services_started) {
             self.audio.stop();
             self.power.stop();
+            self.network.stop();
+            self.bluetooth.stop();
             self.services_started = false;
         }
         if (self.osd_flush != 0) _ = glib.Source.remove(self.osd_flush);
@@ -164,6 +172,10 @@ pub const Manager = struct {
         if (!self.running) return;
         // Reconcile UI only in an idle callback, outside service signal stacks.
         self.schedule();
+    }
+    fn connectivityChanged(context: *anyopaque, _: @import("../../services/audio.zig").Event) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.servicesChanged();
     }
     fn audioChanged(context: *anyopaque, event: @import("../../services/audio.zig").Event) void {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -405,7 +417,7 @@ pub const Manager = struct {
             .bar => {
                 panel_widget.addCssClass("pearl-bar-panel");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, 4);
-                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power);
+                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -435,7 +447,7 @@ pub const Manager = struct {
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
                     .calendar => Panels.calendar(panel),
                     .control => {
-                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, &self.audio, &self.power);
+                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, &self.audio, &self.power, &self.network, &self.bluetooth);
                         const overview = gtk.Button.newWithLabel(tr("Window overview", "Fensterübersicht"));
                         _ = gtk.Button.signals.clicked.connect(overview, *Surface, overviewClicked, s, .{});
                         panel.append(overview.as(gtk.Widget));
@@ -558,11 +570,44 @@ pub const Manager = struct {
     }
     pub fn control(self: *Manager, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
         if (request.op == .status) return self.status(alloc);
+        if (request.op == .connectivity_status) return @import("../../services/connectivity_status.zig").encode(alloc, &self.network, &self.bluetooth, request.offset orelse 0);
         if (request.op == .services_status) return std.json.Stringify.valueAlloc(alloc, try self.serviceStatus(alloc, request.offset orelse 0), .{});
         if (self.client.availability != .ready) return error.Unavailable;
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         switch (request.op) {
-            .status, .services_status => unreachable,
+            .status, .services_status, .connectivity_status => unreachable,
+            .connectivity_action => {
+                if (request.service.? == .network) {
+                    if (request.generation.? != self.network.peer.epoch) return error.Unavailable;
+                    switch (request.action.?) {
+                        .scan => try self.network.scan(request.generation.?, request.path.?),
+                        .connect => try self.network.connectAP(request.generation.?, request.path.?),
+                        .connect_saved => try self.network.connectSaved(request.generation.?, request.path.?),
+                        .disconnect => try self.network.disconnect(request.generation.?, request.path.?),
+                        .enable, .disable => try self.network.setEnabled(request.action.? == .enable),
+                        .cancel => self.network.cancelOperation(),
+                        else => return error.InvalidRequest,
+                    }
+                } else {
+                    if (request.generation.? != self.bluetooth.peer.epoch) return error.Unavailable;
+                    switch (request.action.?) {
+                        .discover => try self.bluetooth.discover(request.generation.?, request.path.?),
+                        .stop_discovery => self.bluetooth.stopDiscovery(),
+                        .cancel => self.bluetooth.cancelOperation(),
+                        else => try self.bluetooth.request(request.generation.?, request.path.?, switch (request.action.?) {
+                            .pair => .pair,
+                            .connect => .connect,
+                            .disconnect => .disconnect,
+                            .trust => .trust,
+                            .untrust => .untrust,
+                            .enable => .power_on,
+                            .disable => .power_off,
+                            else => return error.InvalidRequest,
+                        }),
+                    }
+                }
+                return "{\"queued\":true}";
+            },
             .audio_set => {
                 const device = if (request.device) |id| self.audio.find(.{ .generation = request.generation.?, .kind = request.kind.?, .index = id }) else self.audio.default(request.kind.?);
                 try self.audio.request(.{ .key = (device orelse return error.Unavailable).key, .volume = request.volume, .mute = request.mute, .default = request.make_default orelse false, .move = request.target });
@@ -717,7 +762,10 @@ fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     layer.setExclusiveZone(s.window, size);
 }
 fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
-    if (s.control) |panel| panel.services.probe(s.window);
+    if (s.control) |panel| {
+        panel.services.probe(s.window);
+        panel.connectivity.probe(s.window);
+    }
 }
 fn measured(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     if (s.bar) |bar| bar.painted();

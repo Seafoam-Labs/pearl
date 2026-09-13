@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pearl T08 · Network and Bluetooth</title>
+<style>
+body{margin:0;padding:24px;font:16px system-ui;background:#141218;color:#e6e0e9}h1{font-size:24px}p{max-width:90ch;line-height:1.6;color:#cac4d0}select{font:inherit;padding:8px;border-radius:10px;background:#2b2930;color:inherit;border:1px solid #79747e}main{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}figure{margin:0}figcaption{padding:12px 0}img{display:block;width:100%;border:1px solid #79747e;border-radius:8px}a{color:#d0bcff}@media(max-width:900px){main{grid-template-columns:1fr}}
+</style>
+<h1>Pearl connectivity beside the DMS reference</h1>
+<p>Actual, unedited 1280×720 captures of Pearl on private Aqueous. NetworkManager and BlueZ are isolated fake peers; the password and pairing codes in this visual evidence are synthetic. The DMS image is the frozen T00 reference.</p>
+<label>Pearl surface <select id="surface"><option value="control-center-connectivity">Network and Bluetooth overview</option><option value="nearby-and-saved-networks">Nearby and saved networks</option><option value="wifi-rejected-credentials">Rejected Wi-Fi password</option><option value="bluetooth-device-list">Bluetooth adapters and devices</option><option value="bluetooth-passkey-confirmation">Passkey confirmation</option></select></label>
+<main><figure><figcaption>DMS · frozen control-center reference</figcaption><a href="../t00/dms/dms-dark-control-center.png"><img src="../t00/dms/dms-dark-control-center.png" alt="DMS control center reference"></a></figure><figure><figcaption>Pearl · live T08 services</figcaption><a id="full"><img id="pearl" alt="Pearl live service controls"></a></figure></main>
+<p>Pearl retains rounded tonal cards, purple focus rings, a compact live bar and native Aqueous surfaces. Network and Bluetooth details expand within the scrolling control center. Its composition remains taller than DMS's tile grid. New authentication prompts scroll their action row into view; unsupported network authentication has an explicit editor handoff.</p>
+<p><a href="latest/result.json">Connectivity results</a> · <a href="physical/result.json">Physical read-only check</a> · <a href="verification/README.md">Verification and remaining acceptance</a> · <a href="../../docs/CONNECTIVITY.md">Implementation contract</a></p>
+<script>
+const selector=document.querySelector('#surface');function update(){const path='latest/connectivity/'+selector.value+'.png';document.querySelector('#pearl').src=path;document.querySelector('#full').href=path;}selector.addEventListener('change',update);update();
+</script></html>

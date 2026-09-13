@@ -7,6 +7,7 @@ const tr = @import("text.zig").tr;
 const native = @import("../platform/wayland/layout.zig");
 const a = std.heap.c_allocator;
 pub const Control = struct {
+    connectivity: *@import("connectivity.zig").View,
     services: *@import("services.zig").View,
     layout: *native.Layout,
     label: *gtk.Label,
@@ -15,9 +16,9 @@ pub const Control = struct {
     action: *const fn (*anyopaque, ?[]const u8) void,
     rows: [native.names.len]Choice = undefined,
     const Choice = struct { owner: *Control, name: []const u8 };
-    pub fn create(host: *gtk.Box, layout: *native.Layout, context: *anyopaque, action: @FieldType(Control, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power) !*Control {
+    pub fn create(host: *gtk.Box, layout: *native.Layout, context: *anyopaque, action: @FieldType(Control, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth) !*Control {
         const self = try a.create(Control);
-        self.* = .{ .layout = layout, .context = context, .action = action, .label = undefined, .buttons = undefined, .services = undefined };
+        self.* = .{ .layout = layout, .context = context, .action = action, .label = undefined, .buttons = undefined, .services = undefined, .connectivity = undefined };
         host.append(w.label(tr("Control center", "Schnelleinstellungen"), "pearl-card-title").as(gtk.Widget));
         const scroll = gtk.ScrolledWindow.new();
         scroll.setPolicy(.never, .automatic);
@@ -25,18 +26,7 @@ pub const Control = struct {
         const content = w.column(16);
         scroll.setChild(content.as(gtk.Widget));
         host.append(scroll.as(gtk.Widget));
-        const tiles = w.flow(2);
-        content.append(tiles.as(gtk.Widget));
-        const entries = .{
-            .{ "pearl-network-wireless-symbolic", tr("Network", "Netzwerk") },
-            .{ "pearl-bluetooth-active-symbolic", tr("Bluetooth", "Bluetooth") },
-        };
-        inline for (entries) |entry| {
-            const tile = w.tile(entry[0], w.label(entry[1], null), w.label(tr("Unavailable", "Nicht verfügbar"), "pearl-secondary"), false);
-            tile.button.as(gtk.Widget).setSensitive(0);
-            tile.button.as(gtk.Widget).setTooltipText(tr("This service is not connected yet", "Dieser Dienst ist noch nicht verbunden"));
-            tiles.insert(tile.button.as(gtk.Widget), -1);
-        }
+        self.connectivity = try @import("connectivity.zig").View.create(content, network, bluetooth);
         self.services = try @import("services.zig").View.create(content, audio, power);
         const section = w.card();
         section.as(gtk.Widget).addCssClass("pearl-layout-card");
@@ -61,10 +51,12 @@ pub const Control = struct {
         return self;
     }
     pub fn destroy(self: *Control) void {
+        self.connectivity.destroy();
         self.services.destroy();
         a.destroy(self);
     }
     pub fn update(self: *Control) void {
+        self.connectivity.update();
         self.services.update();
         const layout = self.layout;
         var buffer: [100]u8 = undefined;

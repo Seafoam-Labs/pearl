@@ -1,5 +1,50 @@
 # Pearl implementation progress
 
+## T08 — Implemented; physical scan acceptance pending, September 13, 2026
+
+Implemented NetworkManager and BlueZ through the pinned Ghostty GIO bindings in
+Zig 0.16.0. The control center now has adapter, network, saved-profile and Bluetooth
+device lists, masked authentication prompts, pending/cancel/error states and a
+GIO handoff to the network editor. The default bar includes live network state;
+Bluetooth is an optional configurable group.
+
+NetworkManager supports open/WPA-personal/WPA3-SAE activation, saved Wi-Fi/wired
+profiles, disconnection, radio state and bounded explicit scans. A registered
+SecretAgent answers only matching user-initiated requests from the daemon's unique
+owner. Temporary new profiles disable autoconnect and mark passwords not saved.
+Pearl never persists credentials or accepts them through CLI arguments. Existing
+saved profiles retain NetworkManager's storage policy.
+
+BlueZ has a client-local KeyboardDisplay Agent1 with PIN/passkey entry, passkey
+confirmation/display, authorization, cancellation and release. Pairing, trust and
+connection are separate actions. Discovery has a 30-second lease, including cleanup
+when its start reply arrives after the panel closes. Owner/bus changes cancel old
+calls and rebuild agents; oversized snapshots fail closed. Authentication widgets
+clear sensitive contents and reveal their full action row after allocation.
+
+A keyboard regression exposed GTK traversing the detached ScrolledWindow child
+of a collapsed expander. Explicit child visibility now follows expansion, and
+real GTK navigation through closed/open lists and the existing power controls is
+covered. [Implementation contract](CONNECTIVITY.md) documents API ownership,
+limits, unsupported authentication, cancellation and the status/action CLI.
+
+Verification: 58 pure/adapter/binding tests; private connectivity conversations
+and existing audio/power, desktop, surface/blur and lifecycle suites. Final exact
+counts, source/binary hashes and logs are in [verification](../artifacts/t08/verification/README.md).
+[Actual captures beside DMS](../artifacts/t08/comparison.html) show the network
+list, credential rejection and Bluetooth pairing UI.
+
+Physical read-only validation found the real Wi-Fi adapter (radio off), registered
+both agents and observed the connected Bluetooth headset without changing its
+connection or the Wi-Fi radio. A concrete opt-in scan script is ready at
+`scripts/check-connectivity-hardware.py --scan`; it temporarily enables Wi-Fi,
+scans, briefly discovers Bluetooth and restores Wi-Fi. Enabling Wi-Fi can cause
+NetworkManager to autoconnect a saved profile. User approval for this host state
+change is pending, so **T08's physical scan acceptance is not marked complete**.
+Actual physical secure association/pairing has not been claimed from fake tests.
+
+T09 is the next implementation task after T08 acceptance.
+
 ## T07 — Complete, September 13, 2026
 
 Implemented libpulse audio through generated Zig declarations and the GLib main
@@ -45,7 +90,7 @@ release checks. [Visual evidence](../artifacts/t07/comparison.html),
 [service results](../artifacts/t07/latest/results.json) and
 [verification records](../artifacts/t07/verification/README.md) retain actual
 captures, fixture behavior, commands and binary identities.
-**T08 is next: NetworkManager and Bluetooth.**
+**T08 was next at this milestone; see the implementation entry above.**
 
 ## T06 — Complete, September 13, 2026
 

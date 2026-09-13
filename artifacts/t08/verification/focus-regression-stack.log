@@ -1,0 +1,42 @@
+Thread 1 (Thread 0x7ffff33a1e80 (LWP 594078) "pearl-integrati"):
+#0  0x00007ffff7e0c3ad in ?? () from /usr/lib/libglib-2.0.so.0
+#1  0x00007ffff7e0d794 in g_logv () from /usr/lib/libglib-2.0.so.0
+#2  0x00007ffff7e0db7c in g_log () from /usr/lib/libglib-2.0.so.0
+#3  0x00007ffff7393d6b in gtk_window_get_focus () from /usr/lib/libgtk-4.so.1
+#4  0x00007ffff737b132 in ?? () from /usr/lib/libgtk-4.so.1
+#5  0x00007ffff7248162 in ?? () from /usr/lib/libgtk-4.so.1
+#6  0x00007ffff713b2e0 in ?? () from /usr/lib/libgtk-4.so.1
+#7  0x00007ffff738bdaf in ?? () from /usr/lib/libgtk-4.so.1
+#8  0x00007ffff738bdaf in ?? () from /usr/lib/libgtk-4.so.1
+#9  0x00007ffff738bdaf in ?? () from /usr/lib/libgtk-4.so.1
+#10 0x00007ffff737b1ba in ?? () from /usr/lib/libgtk-4.so.1
+#11 0x00007ffff7248162 in ?? () from /usr/lib/libgtk-4.so.1
+#12 0x00007ffff738bdaf in ?? () from /usr/lib/libgtk-4.so.1
+#13 0x00007ffff738bdaf in ?? () from /usr/lib/libgtk-4.so.1
+#14 0x00007ffff737b1ba in ?? () from /usr/lib/libgtk-4.so.1
+#15 0x00007ffff739ae7a in ?? () from /usr/lib/libgtk-4.so.1
+#16 0x00007ffff739ae1e in ?? () from /usr/lib/libgtk-4.so.1
+#17 0x00007ffff6b9e02b in g_closure_invoke () from /usr/lib/libgobject-2.0.so.0
+#18 0x00007ffff6bcbaff in ?? () from /usr/lib/libgobject-2.0.so.0
+#19 0x00007ffff6bcd8b9 in g_signal_emitv () from /usr/lib/libgobject-2.0.so.0
+#20 0x00007ffff725a580 in ?? () from /usr/lib/libgtk-4.so.1
+#21 0x00007ffff725fac7 in ?? () from /usr/lib/libgtk-4.so.1
+#22 0x00007ffff737a4ca in ?? () from /usr/lib/libgtk-4.so.1
+#23 0x00007ffff71d3e53 in ?? () from /usr/lib/libgtk-4.so.1
+#24 0x00007ffff71d490b in ?? () from /usr/lib/libgtk-4.so.1
+#25 0x00007ffff75c04f7 in ?? () from /usr/lib/libgtk-4.so.1
+#26 0x00007ffff7693eba in ?? () from /usr/lib/libgtk-4.so.1
+#27 0x00007ffff6bcf27c in ?? () from /usr/lib/libgobject-2.0.so.0
+#28 0x00007ffff6bcf7c9 in g_signal_emit_valist () from /usr/lib/libgobject-2.0.so.0
+#29 0x00007ffff6bcf89c in g_signal_emit () from /usr/lib/libgobject-2.0.so.0
+#30 0x00007ffff7696901 in ?? () from /usr/lib/libgtk-4.so.1
+#31 0x00007ffff75c68ca in ?? () from /usr/lib/libgtk-4.so.1
+#32 0x00007ffff7e00af5 in ?? () from /usr/lib/libglib-2.0.so.0
+#33 0x00007ffff7e02008 in ?? () from /usr/lib/libglib-2.0.so.0
+#34 0x00007ffff7e02152 in g_main_context_iteration () from /usr/lib/libglib-2.0.so.0
+#35 0x00007ffff6cfbd1e in g_application_run () from /usr/lib/libgio-2.0.so.0
+#36 0x00000000010a5bf8 in core.application.run (mode=<optimized out>, hooks=...) at /home/zoey/Pearl/src/core/application.zig:394
+#37 0x000000000104bbfb in main.main (init=...) at main.zig:72
+#38 start.callMain () at /usr/lib/zig/std/start.zig:737
+#39 start.callMainWithArgs () at /usr/lib/zig/std/start.zig:638
+#40 start.main (c_argc=1, c_argv=0x7fffffffe588, c_envp=0x7fffffffe598) at /usr/lib/zig/std/start.zig:663

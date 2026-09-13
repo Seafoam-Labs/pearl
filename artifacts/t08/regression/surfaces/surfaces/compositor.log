@@ -1,0 +1,36 @@
+info: initializing Aqueous version aqueous 0.6.0 -xwayland
+info: gpu-pin: scanout pinned to /dev/dri/card1 (connected monitor)
+info(wlroots): [backend/backend.c:342] Loading user-specified backends due to WLR_BACKENDS: headless
+info(wlroots): [backend/headless/backend.c:60] Creating headless backend
+info(wlroots): [util/env.c:25] Loading WLR_RENDERER option: pixman
+info(wlroots): [render/pixman/renderer.c:328] Creating pixman renderer
+info(xdg): default mode=client
+info(aqueous): policy mode=internal layout=floating
+info(input): cursor theme=default size=24
+info(drm_lease): DRM leasing unavailable (no usable lease device)
+info: raised file descriptor limit of the river process to 4096
+info(wlroots): [backend/headless/backend.c:17] Starting headless backend
+info(ipc): protocol=1 listening on /tmp/pearl-dev-t2nfbh4w/run/aqueous/53cdb8173430936c7230289eb351a05e/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-t2nfbh4w/run/aqueous/outputd.sock
+info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
+info: running server
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info(output): applying output configuration
+info(wm): layer surface has no requested output, choosing the first output
+info(wm): layer surface has no requested output, choosing the first output
+info(wm): layer surface has no requested output, choosing the first output
+info(output): applying output configuration
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of layer_surface surface

@@ -1,0 +1,42 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=app-index-ready entries=0 truncated=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=2
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info(pearl): event=control-ready session=ba9849e3b2197dc77987810391391742
+info: event=popup-opened output=1
+info: event=launcher-results count=7 shown=7 publish_us=4217
+info: event=launcher-results count=7 shown=7 publish_us=327
+info: event=launcher-results count=7 shown=7 publish_us=344
+info: event=launcher-painted latency_us=6512
+info: event=launcher-results count=4 shown=4 publish_us=439
+info: event=launcher-results count=1 shown=1 publish_us=235
+info: event=launcher-results count=0 shown=0 publish_us=104
+info: event=launcher-painted latency_us=5496
+info: event=launcher-results count=0 shown=0 publish_us=276
+info: event=launcher-results count=0 shown=0 publish_us=54
+info: event=launcher-results count=0 shown=0 publish_us=50
+info: event=launcher-results count=0 shown=0 publish_us=86
+info: event=launcher-painted latency_us=4406
+info: event=launcher-results count=0 shown=0 publish_us=51
+info: event=launcher-results count=0 shown=0 publish_us=32
+info: event=launcher-results count=0 shown=0 publish_us=53
+info: event=launcher-results count=0 shown=0 publish_us=59
+info: event=launcher-painted latency_us=4389
+info: event=launcher-results count=0 shown=0 publish_us=47
+info: event=launcher-results count=0 shown=0 publish_us=31
+info: event=launcher-results count=0 shown=0 publish_us=60
+info: event=launcher-results count=0 shown=0 publish_us=32
+info: event=launcher-painted latency_us=4524
+info: event=launcher-results count=0 shown=0 publish_us=48
+info: event=launcher-results count=0 shown=0 publish_us=47
+info: event=launcher-painted latency_us=12640
+info: event=launcher-results count=0 shown=0 publish_us=688
+info: event=launcher-painted latency_us=6990
+info(pearl): event=stopping reason=control-quit pending=false
+info: event=popup-closed
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

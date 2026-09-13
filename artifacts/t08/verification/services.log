@@ -1,0 +1,13 @@
+PASS T07 audio, power, brightness and OSD services
+Build Summary: 10/10 steps succeeded
+test-services success
++- run python3 success 24s
+   +- compile exe pearl-integration ReleaseSafe native cached 865ms MaxRSS:58M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 12ms MaxRSS:57M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 11ms MaxRSS:58M
+   +- compile exe pearlctl ReleaseSafe native cached 15ms MaxRSS:58M
+

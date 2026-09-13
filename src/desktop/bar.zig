@@ -15,6 +15,10 @@ pub const Bar = struct {
     host: *gtk.Box,
     audio_service: *@import("../services/audio.zig").Audio,
     power_service: *@import("../services/power.zig").Power,
+    network_service: *@import("../services/network.zig").Network,
+    bluetooth_service: *@import("../services/bluetooth.zig").Bluetooth,
+    network_label: ?*gtk.Label = null,
+    bluetooth_label: ?*gtk.Label = null,
     audio_label: ?*gtk.Label = null,
     battery_label: ?*gtk.Label = null,
     client: *Client,
@@ -22,7 +26,7 @@ pub const Bar = struct {
     context: *anyopaque,
     action: *const fn (*anyopaque, Event) void,
     groups: [3][:0]u8,
-    widgets: [9]?*gtk.Widget = @splat(null),
+    widgets: [@typeInfo(policy.Item).@"enum".fields.len]?*gtk.Widget = @splat(null),
     handlers: std.ArrayList(*Button) = .empty,
     workspace_handlers: std.ArrayList(*Button) = .empty,
     workspace_hash: u64 = 0,
@@ -34,9 +38,9 @@ pub const Bar = struct {
     keyboard: ?*gtk.Label = null,
     vertical: bool = false,
     compact: bool = false,
-    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power) !*Bar {
+    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth) !*Bar {
         const self = try a.create(Bar);
-        self.* = .{ .host = host, .audio_service = audio, .power_service = power, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
+        self.* = .{ .host = host, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
         self.groups = .{ try a.dupeZ(u8, "launcher,workspaces,title"), try a.dupeZ(u8, "clock"), try a.dupeZ(u8, (policy.Groups{}).right) };
         try self.build();
         return self;
@@ -64,6 +68,8 @@ pub const Bar = struct {
         self.keyboard = null;
         self.audio_label = null;
         self.battery_label = null;
+        self.network_label = null;
+        self.bluetooth_label = null;
         self.workspace_hash = 0;
         self.workspace_view = null;
         self.active_workspace = null;
@@ -128,13 +134,25 @@ pub const Bar = struct {
                         button.setChild(self.clock.?.as(gtk.Widget));
                         break :blk button.as(gtk.Widget);
                     },
-                    .audio, .battery => blk: {
+                    .audio, .battery, .network, .bluetooth => blk: {
                         const button = try self.makeButton(.{ .pane = .control }, null, "", false);
                         const content = w.row(4);
-                        content.append(w.icon(if (item == .audio) "pearl-audio-volume-high-symbolic" else "pearl-battery-symbolic").as(gtk.Widget));
+                        content.append(w.icon(switch (item) {
+                            .audio => "pearl-audio-volume-high-symbolic",
+                            .battery => "pearl-battery-symbolic",
+                            .network => "pearl-network-wireless-symbolic",
+                            .bluetooth => "pearl-bluetooth-active-symbolic",
+                            else => unreachable,
+                        }).as(gtk.Widget));
                         const label = gtk.Label.new("");
                         content.append(label.as(gtk.Widget));
-                        if (item == .audio) self.audio_label = label else self.battery_label = label;
+                        switch (item) {
+                            .audio => self.audio_label = label,
+                            .battery => self.battery_label = label,
+                            .network => self.network_label = label,
+                            .bluetooth => self.bluetooth_label = label,
+                            else => unreachable,
+                        }
                         button.setChild(content.as(gtk.Widget));
                         break :blk button.as(gtk.Widget);
                     },
@@ -210,6 +228,28 @@ pub const Bar = struct {
             widget.setVisible(@intFromBool(self.power_service.battery_present));
             widget.setTooltipText(if (self.power_service.battery_state == 1) tr("Battery charging", "Akku lädt") else tr("Battery and power", "Akku und Energie"));
             w.name(widget, tr("Battery and power", "Akku und Energie"));
+        }
+        if (self.network_label) |label| {
+            const n = self.network_service;
+            var connected = false;
+            for (n.devices[0..n.device_count]) |dev| if (dev.state == 100) {
+                connected = true;
+            };
+            label.setText(if (n.peer.snapshot == null) "—" else if (n.pending) "…" else if (connected) "On" else if (n.enabled) "Wi-Fi" else "Off");
+            const widget = self.widgets[@intFromEnum(policy.Item.network)].?;
+            widget.setTooltipText(if (n.peer.snapshot == null) "Network unavailable" else if (connected) "Network connected · open network controls" else "Open network controls");
+            w.name(widget, "Network controls");
+        }
+        if (self.bluetooth_label) |label| {
+            const b = self.bluetooth_service;
+            var connected: usize = 0;
+            for (b.devices[0..b.device_count]) |dev| if (dev.connected) {
+                connected += 1;
+            };
+            label.setText(if (b.peer.snapshot == null) "—" else std.fmt.bufPrintZ(&service_buffer, "{d}", .{connected}) catch "");
+            const widget = self.widgets[@intFromEnum(policy.Item.bluetooth)].?;
+            widget.setTooltipText("Bluetooth controls");
+            w.name(widget, "Bluetooth controls");
         }
         const focus = self.client.model.focus(null) catch null;
         if (self.title) |label| {
