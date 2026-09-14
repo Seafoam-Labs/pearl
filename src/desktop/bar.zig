@@ -40,6 +40,8 @@ pub const Bar = struct {
     title: ?*gtk.Label = null,
     clock: ?*gtk.Label = null,
     keyboard: ?*gtk.Label = null,
+    islands: bool = true,
+    sections: [3]?*gtk.Widget = @splat(null),
     vertical: bool = false,
     compact: bool = false,
     pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session) !*Bar {
@@ -63,6 +65,7 @@ pub const Bar = struct {
         list.* = .empty;
     }
     fn clear(self: *Bar) void {
+        self.sections = @splat(null);
         if (self.tray) |tray| tray.destroy();
         self.tray = null;
         self.notification_label = null;
@@ -96,6 +99,29 @@ pub const Bar = struct {
         self.groups = next;
         try self.build();
     }
+    pub fn setIslands(self: *Bar, enabled: bool) void {
+        if (self.islands != enabled) {
+            self.islands = enabled;
+            self.build() catch {};
+        }
+        self.styleIslands();
+    }
+    pub fn styleIslands(self: *Bar) void {
+        const host = self.host.as(gtk.Widget);
+        if (self.islands) {
+            host.addCssClass("pearl-islands");
+            host.removeCssClass("background");
+        } else host.removeCssClass("pearl-islands");
+        for (self.sections) |maybe| if (maybe) |section| {
+            if (self.islands) {
+                section.addCssClass("pearl-island");
+                section.addCssClass("background");
+            } else {
+                section.removeCssClass("pearl-island");
+                section.removeCssClass("background");
+            }
+        };
+    }
     fn makeButton(self: *Bar, event: Event, icon: ?[*:0]const u8, text: [*:0]const u8, workspace: bool) !*gtk.Button {
         const b = try a.create(Button);
         errdefer a.destroy(b);
@@ -120,7 +146,8 @@ pub const Bar = struct {
         self.host.append(center.as(gtk.Widget));
         for (self.groups, 0..) |group, section| {
             const box = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 4);
-            if (self.vertical) box.as(gtk.Widget).setVexpand(@intFromBool(section != 1)) else box.as(gtk.Widget).setHexpand(@intFromBool(section != 1));
+            self.sections[section] = if (group.len != 0) box.as(gtk.Widget) else null;
+            if (self.vertical) box.as(gtk.Widget).setVexpand(@intFromBool(!self.islands and section != 1)) else box.as(gtk.Widget).setHexpand(@intFromBool(!self.islands and section != 1));
             box.as(gtk.Widget).setHalign(if (self.vertical) .fill else if (section == 2) .end else .fill);
             box.as(gtk.Widget).setValign(if (self.vertical and section == 2) .end else .fill);
             switch (section) {
@@ -197,7 +224,7 @@ pub const Bar = struct {
                         title.setXalign(0);
                         title.setEllipsize(.end);
                         title.setMaxWidthChars(28);
-                        title.as(gtk.Widget).setHexpand(1);
+                        title.as(gtk.Widget).setHexpand(@intFromBool(!self.islands));
                         title.as(gtk.Widget).setMarginStart(8);
                         self.title = title;
                         break :blk title.as(gtk.Widget);
@@ -221,6 +248,7 @@ pub const Bar = struct {
         }
         self.update();
         self.tick();
+        self.styleIslands();
         self.fit();
     }
     pub fn geometry(self: *Bar, vertical: bool, length: i32) void {

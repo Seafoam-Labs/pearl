@@ -27,6 +27,12 @@ pub const View = struct {
     entries: [7]*gtk.Entry,
     font_size: *gtk.SpinButton,
     bar_size: *gtk.SpinButton,
+    islands: *gtk.CheckButton = undefined,
+    dock_enabled: *gtk.CheckButton = undefined,
+    dock_edge: *gtk.DropDown = undefined,
+    dock_mode: *gtk.DropDown = undefined,
+    dock_size: *gtk.SpinButton = undefined,
+    dock_margin: *gtk.SpinButton = undefined,
     motion: *gtk.CheckButton,
     outside: *gtk.CheckButton,
     raw: *gtk.TextBuffer,
@@ -69,6 +75,15 @@ pub const View = struct {
         bar.append(w.label("The center group, per-output layouts and export templates can be edited in Advanced. Widget names are comma-separated; launcher is required.", "pearl-secondary").as(gtk.Widget));
         self.edge = dropdown(bar, "Bar edge", &.{ "Top", "Right", "Bottom", "Left" });
         self.bar_size = spin(bar, "Bar minimum size", 32, 160);
+        self.islands = gtk.CheckButton.newWithLabel("Separate rounded bar islands");
+        bar.append(self.islands.as(gtk.Widget));
+        self.dock_enabled = gtk.CheckButton.newWithLabel("Show applications dock");
+        bar.append(self.dock_enabled.as(gtk.Widget));
+        self.dock_edge = dropdown(bar, "Dock edge (moves opposite if shared with bar)", &.{ "Top", "Right", "Bottom", "Left" });
+        self.dock_mode = dropdown(bar, "Dock visibility", &.{ "Always", "Hide when a window overlaps", "Auto-hide" });
+        self.dock_size = spin(bar, "Dock icon size", 24, 64);
+        self.dock_margin = spin(bar, "Dock distance from edge", 4, 32);
+        bar.append(w.label("Pin applications using their dock action menu. Per-output dock overrides and pinned desktop IDs are available in Advanced.", "pearl-secondary").as(gtk.Widget));
         self.placement = dropdown(bar, "Popup placement", &.{ "Follow bar edge", "Centered" });
         self.outside = gtk.CheckButton.newWithLabel("Dismiss popups when clicking outside");
         bar.append(self.outside.as(gtk.Widget));
@@ -96,9 +111,9 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(discard, *View, discarded, self, .{});
         _ = gtk.Button.signals.clicked.connect(self.apply_button, *View, applied, self, .{});
         for (self.entries) |e| _ = gtk.Editable.signals.changed.connect(e.as(gtk.Editable), *View, edited, self, .{});
-        for ([_]*gtk.DropDown{ self.mode, self.variant, self.source, self.fit, self.density, self.edge, self.placement }) |d| _ = object.Object.signals.notify.connect(d.as(object.Object), *View, selected, self, .{ .detail = "selected" });
-        for ([_]*gtk.SpinButton{ self.font_size, self.bar_size }) |s| _ = gtk.SpinButton.signals.value_changed.connect(s, *View, spun, self, .{});
-        for ([_]*gtk.CheckButton{ self.motion, self.outside }) |c| _ = gtk.CheckButton.signals.toggled.connect(c, *View, toggled, self, .{});
+        for ([_]*gtk.DropDown{ self.mode, self.variant, self.source, self.fit, self.density, self.edge, self.placement, self.dock_edge, self.dock_mode }) |d| _ = object.Object.signals.notify.connect(d.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        for ([_]*gtk.SpinButton{ self.font_size, self.bar_size, self.dock_size, self.dock_margin }) |s| _ = gtk.SpinButton.signals.value_changed.connect(s, *View, spun, self, .{});
+        for ([_]*gtk.CheckButton{ self.motion, self.outside, self.islands, self.dock_enabled }) |c| _ = gtk.CheckButton.signals.toggled.connect(c, *View, toggled, self, .{});
         _ = gtk.TextBuffer.signals.insert_text.connect(self.raw, *View, inserting, self, .{});
         _ = gtk.TextBuffer.signals.changed.connect(self.raw, *View, rawEdited, self, .{});
         _ = gtk.Notebook.signals.switch_page.connect(notebook, *View, switched, self, .{});
@@ -133,6 +148,12 @@ pub const View = struct {
         self.source.setSelected(@intFromEnum(p.theme.source));
         self.fit.setSelected(@intFromEnum(p.wallpaper.mode));
         self.density.setSelected(@intFromEnum(p.density));
+        self.islands.setActive(@intFromBool(p.bar.islands));
+        self.dock_enabled.setActive(@intFromBool(p.dock.enabled));
+        self.dock_edge.setSelected(@intFromEnum(p.dock.edge));
+        self.dock_mode.setSelected(@intFromEnum(p.dock.mode));
+        self.dock_size.setValue(@floatFromInt(p.dock.icon_size));
+        self.dock_margin.setValue(@floatFromInt(p.dock.margin));
         self.edge.setSelected(@intFromEnum(p.bar.edge));
         self.placement.setSelected(@intFromEnum(p.popup.placement));
         for (self.idle_spins, [_]u32{ p.idle.ac.lock_seconds, p.idle.ac.suspend_seconds, p.idle.battery.lock_seconds, p.idle.battery.suspend_seconds }) |control, value| control.setValue(@floatFromInt(value));
@@ -150,6 +171,8 @@ pub const View = struct {
         p.theme.source = @enumFromInt(self.source.getSelected());
         p.wallpaper.mode = @enumFromInt(self.fit.getSelected());
         p.density = @enumFromInt(self.density.getSelected());
+        p.bar.islands = self.islands.getActive() != 0;
+        p.dock = .{ .enabled = self.dock_enabled.getActive() != 0, .edge = @enumFromInt(self.dock_edge.getSelected()), .mode = @enumFromInt(self.dock_mode.getSelected()), .icon_size = @intCast(self.dock_size.getValueAsInt()), .margin = @intCast(self.dock_margin.getValueAsInt()) };
         p.bar.edge = @enumFromInt(self.edge.getSelected());
         p.popup.placement = @enumFromInt(self.placement.getSelected());
         p.theme.gtk_name = text(self.entries[0]);

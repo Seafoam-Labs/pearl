@@ -88,3 +88,14 @@
 .pearl-root.$scope textview { padding: 12px; border-radius: 12px; }
 .pearl-root.$scope spinbutton { background: $high$; color: $text$; border-radius: 12px; }
 .pearl-root.$scope spinbutton text { background: transparent; color: $text$; }
+
+/* T15: detached islands share a single edge reservation. */
+.pearl-root.$scope.pearl-shell .pearl-islands { background: transparent; padding: 0; }
+.pearl-root.$scope .pearl-island { border-radius: 14px; padding: 0 6px; }
+.pearl-root.$scope .pearl-dock { padding: 6px; border-radius: 14px; }
+.pearl-root.$scope .pearl-dock button { padding: 3px; min-height: 24px; }
+.pearl-root.$scope .pearl-island { background: $container$; }
+.pearl-root.$scope.pearl-blur .pearl-island { background: alpha($container$, 0.86); }
+.pearl-root.$scope .pearl-dock .focused { background: $high$; }
+
+.pearl-root.$scope popover > contents { background: $container$; color: $text$; border: 1px solid alpha($outline$, 0.3); border-radius: 14px; padding: 8px; }

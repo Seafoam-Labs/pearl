@@ -9,3 +9,9 @@
 .pearl-root.pearl-gtk.pearl-compact .pearl-card { padding: 12px; }
 .pearl-root.pearl-gtk .pearl-launcher-row { padding: 10px 12px; min-height: 38px; }
 .pearl-root.pearl-gtk.pearl-reduced-motion * { transition: none; animation: none; }
+
+/* T15: detached islands share a single edge reservation. */
+.pearl-root.pearl-gtk.pearl-shell .pearl-islands { background: transparent; padding: 0; }
+.pearl-root.pearl-gtk .pearl-island { border-radius: 14px; padding: 0 6px; }
+.pearl-root.pearl-gtk .pearl-dock { padding: 6px; border-radius: 14px; }
+.pearl-root.pearl-gtk .pearl-dock button { padding: 3px; min-height: 24px; }

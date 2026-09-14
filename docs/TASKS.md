@@ -246,15 +246,15 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 
 **Done when:** selection owner disappears safely; large/invalid MIME payloads are rejected; sensitive/locked state is handled; capture output sizes/crops are correct under scale/rotation and target removal. Output cropping is not mislabeled isolated capture.
 
-## T15 — Dock, frame and final visual coverage
+## T15 — Dock, islands and final visual coverage
 
-**Depends on:** T03, T06. **Primary files:** dock/frame surfaces and per-output preferences.
+**Depends on:** T03, T06. **Primary files:** dock/island surfaces and per-output preferences.
 
 - Add pinned/running app grouping, indicators, context actions and visibility-aware intelligent hiding.
-- Add optional DMS-like connected/frame treatment with transparent input regions and one reservation owner per edge.
+- Add detached, rounded bar islands (user revision replacing the connected/frame treatment), with transparent gaps, matching native blur regions and one reservation owner per edge.
 - Complete screenshot reference coverage, accessibility roles, keyboard flows and enlarged-text layouts across every shipped surface.
 
-**Done when:** dock behavior follows Aqueous authoritative flags/geometry, frame reservations disappear on exit, empty desktop regions remain clickable, and dark/light/mixed-scale comparisons show the intended DMS-like density and hierarchy.
+**Done when:** dock behavior follows Aqueous authoritative flags/geometry, bar reservations disappear on exit, empty desktop regions remain clickable, and dark/light/mixed-scale comparisons show the intended DMS-like density and hierarchy.
 
 ## T16 — Packaging, migration and release validation
 

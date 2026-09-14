@@ -75,10 +75,12 @@ const Output = struct {
     reservations: policy.Reservation = .{},
     wallpaper: ?*Surface = null,
     bar: ?*Surface = null,
+    dock: ?*@import("../../desktop/dock.zig").Dock = null,
     frames: [4]?*Surface = .{ null, null, null, null },
     seen: bool = false,
     preferences_revision: u64 = 0,
     fn destroy(self: *Output) void {
+        if (self.dock) |dock| dock.destroy();
         if (self.wallpaper) |s| s.destroy();
         if (self.bar) |s| s.destroy();
         for (self.frames) |s| if (s) |v| v.destroy();
@@ -288,6 +290,7 @@ pub const Manager = struct {
         surface.appearance_revision = self.preferences.appearance;
         self.preferences.style(surface.window.as(gtk.Widget), surface.panel);
         if (surface.kind == .wallpaper or surface.kind == .frame) surface.panel.removeCssClass("background");
+        if (surface.bar) |bar| bar.styleIslands();
         if (surface.wallpaper_picture) |picture| {
             const prefs = self.preferences.prefs();
             const image = if (self.preferences.live) |live| live.texture else null;
@@ -343,6 +346,7 @@ pub const Manager = struct {
     }
     fn appsChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
+        self.schedule();
         if (self.running) if (self.popup) |p| if (p.launcher) |launcher| launcher.refresh();
     }
     fn armClock(self: *Manager) void {
@@ -469,6 +473,8 @@ pub const Manager = struct {
                 errdefer o.wallpaper.?.destroy();
                 o.bar = try self.create(o, .bar);
                 errdefer o.bar.?.destroy();
+                o.dock = try @import("../../desktop/dock.zig").Dock.create(self.app, o.monitor, &self.effects, self.client, &self.index, &self.preferences, o.id, self, appsChanged);
+                errdefer o.dock.?.destroy();
                 try self.outputs.append(a, o);
                 output = o;
                 std.log.info("event=output-mapped id={s} connector={s} scale={d}", .{ o.id, o.connector, o.scale });
@@ -480,7 +486,11 @@ pub const Manager = struct {
                 try o.reservations.bar(pref.edge, pref.size);
                 o.bar.?.edge = pref.edge;
                 sizeEdge(o.bar.?, pref.edge, pref.size);
+                o.bar.?.bar.?.setIslands(pref.islands);
                 try o.bar.?.bar.?.configure(pref.groups);
+                self.preferences.style(o.bar.?.window.as(gtk.Widget), o.bar.?.panel);
+                o.bar.?.bar.?.styleIslands();
+                o.bar.?.effects.islands = if (pref.islands) &o.bar.?.bar.?.sections else null;
                 o.preferences_revision = self.preferences.appearance;
             }
             const changed = !std.meta.eql(o.bounds, bounds) or !std.meta.eql(o.usable, usable);
@@ -493,6 +503,9 @@ pub const Manager = struct {
                 bar.geometry(vertical, if (vertical) bounds.height else bounds.width);
                 bar.update();
             };
+            const gate = self.lifecycle.gate;
+            const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active));
+            if (o.dock) |dock| try dock.update(self.preferences.prefs().dockForOutput(o.connector), o.reservations.bar_edge, bounds, dock_locked);
             if (changed and self.popup != null and self.popup.?.output == o) self.positionPopup();
         }
         var i: usize = 0;
@@ -682,6 +695,7 @@ pub const Manager = struct {
         }
         self.styleSurface(s);
         try s.effects.init(&self.effects, window, panel_widget, kind == .bar or kind == .popup or kind == .osd or kind == .notification, if (kind == .popup) .full else if (kind == .bar or kind == .notification) .panel else .empty);
+        if (s.bar) |bar| s.effects.islands = if (bar.islands) &bar.sections else null;
         if (kind != .popup and kind != .osd and kind != .frame and kind != .notification) window.present();
         if (kind == .bar) {
             if (window.as(gtk.Widget).getFrameClock()) |clock| {
@@ -710,6 +724,9 @@ pub const Manager = struct {
             if (self.clipboard.locked) return error.Locked;
         }
         if (self.client.model.get(.session, "session").?.locked) return error.Locked;
+        for (self.outputs.items) |o| if (o.dock) |dock| {
+            if (dock.keyboard) dock.reveal(false);
+        };
         self.hidePopup();
         self.pane = pane;
         self.popup = try self.create(output, .popup);
@@ -845,6 +862,17 @@ pub const Manager = struct {
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         switch (request.op) {
             .clipboard_status, .capture_status, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .dock_show, .dock_hide, .dock_pin, .dock_unpin => {
+                const dock = (try self.selected(request.output)).dock orelse return error.Unavailable;
+                if (dock.locked) return error.Locked;
+                if (request.op == .dock_show) {
+                    self.hidePopup();
+                    for (self.outputs.items) |o| if (o.dock) |other| {
+                        if (other != dock and other.keyboard) other.reveal(false);
+                    };
+                }
+                if (request.op == .dock_pin or request.op == .dock_unpin) try dock.pin(request.text.?, request.op == .dock_pin) else dock.reveal(request.op == .dock_show);
+            },
             .clipboard_show, .capture_show => {
                 try self.showPane(try self.selected(request.output), .clipboard_capture);
                 if (request.op == .capture_show) self.popup.?.clipboard_capture.?.showCapture();
@@ -1055,9 +1083,9 @@ pub const Manager = struct {
         return value[0..end];
     }
     fn status(self: *Manager, alloc: std.mem.Allocator) ![]const u8 {
-        const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, frames: [4]u16 };
+        const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, frames: [4]u16, islands: bool, island_rects: [3]?Rect, dock: struct { reason: @import("../../desktop/dock_policy.zig").Reason, groups: usize, truncated: bool, rect: Rect, edge: Edge } };
         var items: std.ArrayList(Item) = .empty;
-        for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .frames = o.reservations.frames });
+        for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .frames = o.reservations.frames, .islands = o.bar.?.bar.?.islands, .island_rects = o.bar.?.effects.last_shapes, .dock = .{ .reason = o.dock.?.reason, .groups = o.dock.?.count, .truncated = o.dock.?.truncated, .rect = o.dock.?.rect, .edge = o.dock.?.config.edge } });
         return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .osd = self.osd != null, .osd_text = if (self.osd_label) |label| std.mem.span(label.getText()) else "" }, .{});
     }
 };

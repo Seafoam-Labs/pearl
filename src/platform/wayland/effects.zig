@@ -104,6 +104,10 @@ pub const Surface = struct {
     effect: ?*ext.BackgroundEffectSurfaceV1 = null,
     last: ?Rect = null,
     last_available: bool = false,
+    islands: ?*const [3]?*gtk.Widget = null,
+    last_shapes: [3]?Rect = @splat(null),
+    geometry_context: ?*anyopaque = null,
+    geometry_changed: ?*const fn (*anyopaque) void = null,
     pub fn init(self: *Surface, owner: *Effects, window: *gtk.Window, panel: ?*gtk.Widget, blur: bool, input: @FieldType(Surface, "input")) !void {
         self.* = .{ .owner = owner, .window = window, .panel = panel, .blur = blur, .input = input };
         try owner.surfaces.append(a, self);
@@ -166,12 +170,24 @@ pub const Surface = struct {
         if (self.panel) |panel| panel.getAllocation(&allocation) else allocation = .{ .f_x = 0, .f_y = 0, .f_width = native.getWidth(), .f_height = native.getHeight() };
         const rect: Rect = .{ .x = allocation.f_x, .y = allocation.f_y, .width = allocation.f_width, .height = allocation.f_height };
         if (rect.width <= 0 or rect.height <= 0) return;
-        if (self.last) |last| if (std.meta.eql(last, rect) and available == self.last_available) return;
+        var shapes: [3]?Rect = @splat(null);
+        if (self.islands) |widgets| {
+            for (widgets.*, 0..) |maybe, i| if (maybe) |widget| {
+                var x: f64 = 0;
+                var y: f64 = 0;
+                if (widget.getVisible() != 0 and widget.translateCoordinates(self.window.as(gtk.Widget), 0, 0, &x, &y) != 0 and widget.getWidth() > 0 and widget.getHeight() > 0)
+                    shapes[i] = .{ .x = @intFromFloat(x), .y = @intFromFloat(y), .width = widget.getWidth(), .height = widget.getHeight() };
+            };
+        } else shapes[0] = rect;
+        if (self.last) |last| if (std.meta.eql(last, rect) and std.meta.eql(shapes, self.last_shapes) and available == self.last_available) return;
+        self.last_shapes = shapes;
         self.last = rect;
         self.last_available = available;
         const region = cairo.Region.create();
         defer region.destroy();
-        if (self.input == .panel) rounded(region, rect, 14);
+        if (self.input == .panel) for (shapes) |maybe| {
+            if (maybe) |r| rounded(region, r, 14);
+        };
         if (self.input == .full) native.setInputRegion(null) else native.setInputRegion(region);
         if (available) {
             if (self.effect == null) {
@@ -183,7 +199,7 @@ pub const Surface = struct {
             defer blur_region.destroy();
             const shape = cairo.Region.create();
             defer shape.destroy();
-            rounded(shape, rect, 14);
+            for (shapes) |maybe| if (maybe) |r| rounded(shape, r, 14);
             for (0..@intCast(shape.numRectangles())) |i| {
                 var r: cairo.RectangleInt = undefined;
                 shape.getRectangle(@intCast(i), &r);
@@ -195,6 +211,7 @@ pub const Surface = struct {
         // commit/attach GTK's wl_surface ourselves or read its display socket.
         self.window.as(gtk.Widget).queueDraw();
         self.owner.display.flush();
+        if (self.geometry_changed) |notify| notify(self.geometry_context.?);
     }
 };
 fn rounded(region: *cairo.Region, rect: Rect, radius: i32) void {

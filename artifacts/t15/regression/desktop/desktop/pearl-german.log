@@ -1,0 +1,30 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=2
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info(pearl): event=control-ready session=6d606fe790105fda84f57641e0a4b6ae
+info: event=app-index-ready entries=2009 truncated=false
+info: event=popup-opened output=1
+info: event=launcher-results count=2015 shown=200 publish_us=8688
+info: event=launcher-painted latency_us=23346
+info: event=launcher-results count=2015 shown=200 publish_us=8665
+info: event=launcher-painted latency_us=26907
+info: event=launcher-results count=2015 shown=200 publish_us=9633
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=launcher-painted latency_us=24303
+info: event=launcher-results count=1 shown=1 publish_us=4445
+info: event=launcher-results count=1 shown=1 publish_us=348
+info: event=launcher-results count=1 shown=1 publish_us=396
+info: event=launcher-results count=1 shown=1 publish_us=368
+info: event=launcher-painted latency_us=4857
+info: event=launcher-results count=1 shown=1 publish_us=843
+info: event=launcher-painted latency_us=13098
+info: event=popup-closed
+info: event=popup-opened output=1
+info(pearl): event=stopping reason=control-quit pending=false
+info: event=popup-closed
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

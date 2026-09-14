@@ -174,6 +174,13 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| surfaces.addArgs(args);
     b.step("test-surfaces", "Verify surfaces, CLI isolation and native blur in private Aqueous").dependOn(&surfaces.step);
 
+    const dock = b.addSystemCommand(&.{ "python3", "tests/integration/test_dock_islands.py", "--pearl" });
+    dock.addArtifactArg(app);
+    dock.addArg("--ctl");
+    dock.addArtifactArg(ctl);
+    if (b.args) |args| dock.addArgs(args);
+    b.step("test-dock-islands", "Verify T15 dock and island layouts in private Aqueous").dependOn(&dock.step);
+
     const desktop = b.addSystemCommand(&.{ "python3", "tests/integration/test_desktop.py", "--pearl" });
     desktop.addArtifactArg(app);
     desktop.addArg("--ctl");

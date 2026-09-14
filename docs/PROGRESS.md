@@ -1,5 +1,38 @@
 # Pearl implementation progress
 
+## T15 — Implemented, September 14, 2026
+
+Replaced the planned connected desktop frame with detached rounded bar islands,
+per the user's revision. The three populated sections share one measured edge
+reservation; their native input and Aqueous blur regions exclude the gaps and
+rounded corners. A continuous bar remains configurable, and the old frame CLI
+is retained only for compatibility.
+
+Added a per-output floating dock with persistent global pins, running-app
+matching through GIO IDs/StartupWMClass, focused/running/minimized indicators,
+window and desktop actions, keyboard navigation, right-click action menus,
+intelligent geometry-based hiding and a bounded edge reveal strip. It follows
+Aqueous taskbar flags independently of switcher flags, retains minimized/hidden
+windows, resolves bar/dock edge conflicts, and releases surfaces and keyboard
+input during output/session/privacy lifecycle changes. Settings expose islands,
+dock edge, size, margin and hiding, with per-connector JSON overrides. Native GTK
+themes remain supported.
+
+Validation: **99 core/adapter/binding tests**, **16 T15 scenarios**, **17 surface
+checks**, **21 preference scenarios**, the existing desktop suite and **20
+security scenarios** pass. Private captures cover dark/light, arbitrary GTK
+themes, mixed scale, vertical layouts, enlarged ordinary panels and 16-pin
+keyboard scrolling. An independent bottom-layer application receives clicks
+through the visible islands' gaps. Native blur, reservations, hotplug, GIO
+activation and private lock/PAM regressions also pass.
+
+[Dock/island documentation](DOCK_ISLANDS.md), [evidence and coverage](../artifacts/t15/README.md)
+and the [DMS comparison page](../artifacts/t15/comparison.html) record behavior,
+limits, captures and exact test binaries. Earlier populated service-state and
+large-lock evidence is explicitly linked rather than presented as new T15
+captures. Hardware presentation, full AT-SPI speech validation and soak remain
+T16 release gates. The next implementation task is **T16**.
+
 ## T14 — Implemented, September 13, 2026
 
 Added native ext-data-control clipboard history and wlr-screencopy screenshots

@@ -1,5 +1,8 @@
 # First desktop slice (T06)
 
+[T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
+dock behavior, split bar sections and matching native input/blur regions.
+
 Pearl session mode now provides a live bar, application/window launcher,
 clock/calendar and control center on Aqueous. It uses the existing T04 state
 adapter and T05 surface/control machinery. All desktop discovery and launch

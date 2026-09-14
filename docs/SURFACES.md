@@ -1,5 +1,8 @@
 # Output surfaces and control (T05)
 
+[T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
+dock behavior, split bar sections and matching native input/blur regions.
+
 Session mode owns desktop surfaces on the verified Aqueous display.
 T06 now supplies their live desktop content; see [DESKTOP.md](DESKTOP.md).
 The primitive descriptions below record the T05 milestone. The

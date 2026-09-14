@@ -1,5 +1,8 @@
 # Preferences, wallpaper and themes
 
+[T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
+dock behavior, split bar sections and matching native input/blur regions.
+
 Pearl settings are available from **Control center → Pearl settings**, or
 `pearlctl settings show`. They apply across all output surfaces without restarting
 Pearl. The implementation uses Zig 0.16.0 and the pinned Ghostty GTK/GIO bindings.

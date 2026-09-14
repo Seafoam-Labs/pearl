@@ -16,8 +16,9 @@ pub const Wallpaper = struct {
     path: []const u8 = "",
     color: []const u8 = "#141218",
 };
-pub const Bar = struct { edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
-pub const Output = struct { connector: []const u8, bar: Bar = .{} };
+pub const Dock = @import("../desktop/dock_policy.zig").Config;
+pub const Bar = struct { islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
+pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
@@ -29,6 +30,8 @@ pub const Preferences = struct {
     density: enum { normal, compact } = .normal,
     reduced_motion: bool = false,
     bar: Bar = .{},
+    dock: Dock = .{},
+    pinned_apps: []const []const u8 = &.{},
     outputs: []const Output = &.{},
     popup: struct { dismiss_outside: bool = true, placement: enum { anchored, centered } = .anchored, max_width: u16 = 720, max_height: u16 = 800 } = .{},
     // Only explicitly listed files in Pearl's export directory are managed.
@@ -37,7 +40,17 @@ pub const Preferences = struct {
         for (self.outputs) |o| if (std.mem.eql(u8, o.connector, connector)) return o.bar;
         return self.bar;
     }
+    pub fn dockForOutput(self: Preferences, connector: []const u8) Dock {
+        for (self.outputs) |o| if (std.mem.eql(u8, o.connector, connector)) return o.dock orelse self.dock;
+        return self.dock;
+    }
     pub fn validate(self: Preferences) !void {
+        try @import("../desktop/dock_policy.zig").validate(self.dock);
+        if (self.pinned_apps.len > 16) return error.TooManyPins;
+        for (self.pinned_apps, 0..) |id, i| {
+            if (!@import("../desktop/dock_policy.zig").desktopId(id)) return error.InvalidDesktopId;
+            for (self.pinned_apps[0..i]) |previous| if (std.mem.eql(u8, id, previous)) return error.DuplicatePin;
+        }
         try self.idle.validate();
         if (self.version != 1) return error.UnsupportedVersion;
         try safeText(self.font, 96);
@@ -56,6 +69,7 @@ pub const Preferences = struct {
             if (o.connector.len == 0) return error.InvalidConnector;
             for (self.outputs[0..i]) |previous| if (std.mem.eql(u8, previous.connector, o.connector)) return error.DuplicateOutput;
             try barValid(o.bar);
+            if (o.dock) |dock| try @import("../desktop/dock_policy.zig").validate(dock);
         }
         if (self.popup.max_width < 320 or self.popup.max_width > 1280 or self.popup.max_height < 320 or self.popup.max_height > 1600) return error.InvalidPopupSize;
         if (self.exports.len > 8) return error.TooManyExports;
@@ -143,4 +157,18 @@ test "preferences enforce JSON bounds and own parsed strings" {
     try std.testing.expectError(error.InvalidConfig, parse(a, "[" ** 9));
     try std.testing.expectError(error.InvalidConfig, parse(a, " " ** (max_bytes + 1)));
     try std.testing.expectError(error.DuplicateField, parse(a, "{\"version\":1,\"version\":1}"));
+}
+
+test "dock preferences preserve inherited settings and reject duplicate or unsafe pins" {
+    const t = std.testing;
+    var p: Preferences = .{ .dock = .{ .mode = .autohide }, .outputs = &.{ .{ .connector = "DP-1" }, .{ .connector = "DP-2", .dock = .{ .edge = .left, .icon_size = 64 } } } };
+    try p.validate();
+    try t.expectEqual(@import("../desktop/dock_policy.zig").Mode.autohide, p.dockForOutput("DP-1").mode);
+    try t.expectEqual(Edge.left, p.dockForOutput("DP-2").edge);
+    p.pinned_apps = &.{ "App.desktop", "App.desktop" };
+    try t.expectError(error.DuplicatePin, p.validate());
+    p.pinned_apps = &.{"/tmp/App.desktop"};
+    try t.expectError(error.InvalidDesktopId, p.validate());
+    p.pinned_apps = &.{"org.example.App.desktop"};
+    try p.validate();
 }
