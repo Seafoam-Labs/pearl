@@ -1,0 +1,4 @@
+# Reviewed root-owned home; only state/cache are writable by the greeter.
+d /var/empty/pearl-greeter 0755 root root -
+d /var/lib/pearl-greeter 0700 pearl-greeter pearl-greeter -
+d /var/cache/pearl-greeter 0700 pearl-greeter pearl-greeter -

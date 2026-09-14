@@ -77,6 +77,44 @@ pub fn build(b: *std.Build) void {
     resource_command.addArg("--dependency-file");
     _ = resource_command.addDepFileOutputArg("pearl.gresource.d");
 
+    const greeter_unit = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/greeter_tests.zig"), .target = target, .optimize = optimize }) });
+    b.step("test-greeter-unit", "Test bounded greetd framing, authority state and desktop parsing").dependOn(&b.addRunArtifact(greeter_unit).step);
+    const greeter_versions = b.addSystemCommand(&.{ "pkg-config", "--exists", "gtk4 >= 4.22.5", "glib-2.0 >= 2.88.3", "gtk4-layer-shell-0 >= 1.3.0" });
+    const greeter_build = b.step("build-greeter", "Build optional greeter artifacts without installing or activating a display manager");
+    var greeter_test_executable: *std.Build.Step.Compile = undefined;
+    for ([_]bool{ false, true }) |instrumented| {
+        for ([_][]const u8{ "greeter", "greeter_session", "greeter_host" }) |component| {
+            const gm = greeterModule(b, bindings, target, optimize, b.fmt("src/{s}_main.zig", .{component}), instrumented);
+            gm.strip = release and !instrumented;
+            const name = std.mem.replaceOwned(u8, b.allocator, component, "_", "-") catch @panic("OOM");
+            const exe = b.addExecutable(.{ .name = b.fmt("pearl-{s}{s}", .{ name, if (instrumented) "-test" else "" }), .root_module = gm });
+            const install = b.addInstallArtifact(exe, .{ .dest_dir = .{ .override = .{ .custom = if (instrumented) "test" else "greeter/bin" } } });
+            exe.step.dependOn(&greeter_versions.step);
+            greeter_build.dependOn(&install.step);
+            if (instrumented and std.mem.eql(u8, component, "greeter")) {
+                greeter_test_executable = exe;
+                for ([_][]const u8{ "ipc", "ui", "catalog", "services", "soak" }) |suite| {
+                    const check = b.addSystemCommand(&.{ "python3", b.fmt("tests/integration/test_greeter_{s}.py", .{suite}), "--greeter" });
+                    check.addArtifactArg(exe);
+                    if (b.args) |args| check.addArgs(args);
+                    b.step(b.fmt("test-greeter-{s}", .{suite}), b.fmt("Private greeter {s} validation", .{suite})).dependOn(&check.step);
+                }
+            }
+            if (instrumented and std.mem.eql(u8, component, "greeter_session")) {
+                const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_greeter_session.py", "--greeter" });
+                check.addArtifactArg(greeter_test_executable);
+                check.addArg("--launcher");
+                check.addArtifactArg(exe);
+                b.step("test-greeter-session", "Verify authenticated session argv, identity and revalidation with harmless commands").dependOn(&check.step);
+            }
+            if (instrumented and std.mem.eql(u8, component, "greeter_host")) {
+                const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_greeter_host.py", "--host" });
+                check.addArtifactArg(exe);
+                b.step("test-greeter-host", "Verify owned process teardown with private fixtures").dependOn(&check.step);
+            }
+        }
+    }
+
     const module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
     configureApp(b, module, resources, false);
     module.addImport("wayland", native);
@@ -330,4 +368,21 @@ fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.R
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "giounix2", "glib2", "glibunix2", "gobject2", "pango1", "gdkpixbuf2", "gdkwayland4", "cairo1", "giounix2" }) |name|
         module.addImport(name, bindings.module(name));
     return module;
+}
+
+fn greeterModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, source: []const u8, instrumented: bool) *std.Build.Module {
+    const m = b.createModule(.{ .root_source_file = b.path(source), .target = target, .optimize = optimize, .link_libc = true });
+    m.addAnonymousImport("greeter_style", .{ .root_source_file = b.path("resources/style.css") });
+    const options = b.addOptions();
+    options.addOption(bool, "test_hooks", instrumented);
+    m.addOptions("build_options", options);
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "giounix2", "glib2", "glibunix2", "gobject2", "gdkpixbuf2" }) |name| m.addImport(name, bindings.module(name));
+    m.linkSystemLibrary("gtk4-layer-shell-0", .{ .use_pkg_config = .force });
+    m.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    const layer = b.createModule(.{ .root_source_file = b.path("bindings/generated/gtk4layershell1/gtk4layershell1.zig"), .target = target, .optimize = optimize });
+    layer.addImport("gtk4", bindings.module("gtk4"));
+    var imports = bindings.module("gtk4").import_table.iterator();
+    while (imports.next()) |entry| layer.addImport(entry.key_ptr.*, entry.value_ptr.*);
+    m.addImport("gtk4layershell1", layer);
+    return m;
 }

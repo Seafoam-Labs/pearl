@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "theme": "material_dark",
+  "font_size": 16,
+  "reduced_motion": true,
+  "default_session": "wayland:pearl-aqueous.desktop",
+  "roots": [
+    {"path": "/usr/local/share/wayland-sessions", "type": "wayland"},
+    {"path": "/usr/local/share/xsessions", "type": "x11"},
+    {"path": "/usr/share/wayland-sessions", "type": "wayland"},
+    {"path": "/usr/share/xsessions", "type": "x11"}
+  ],
+  "accounts": true,
+  "power": true,
+  "remember_session": false,
+  "allow_uwsm": false,
+  "x11": false
+}

@@ -1,0 +1,5 @@
+Build Summary: 3/3 steps succeeded; 8/8 tests passed
+test-greeter-unit success
++- run test 8 pass (8 total) 2ms MaxRSS:4M
+   +- compile test ReleaseSafe native cached 8ms MaxRSS:59M
+

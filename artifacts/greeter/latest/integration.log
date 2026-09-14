@@ -1,0 +1,36 @@
+Owned descendants reaped; unrelated process survived. Restricted Aqueous policy remains gated.
+Catalog: precedence, masking, type identity, metadata, dependencies, Exec rejection, symlinks, fingerprint and policy passed
+Selected non-Pearl identity, PAM runtime preservation, greeter environment removal and changed/malicious selections passed; no real desktop was launched.
+{"status": "passed", "evidence": "private mock daemon only", "checks": ["conversation", "cancel", "denied", "huge", "truncated", "duplicate", "alias", "bad_utf8", "unsolicited", "lost_start", "blocked", "cancel_blocked"]}
+{"status": "passed", "cycles": 1000, "evidence": "mock authentication only", "before": {"pss_bytes": 17468416, "fds": 5, "cpu_ticks": 1, "rss_bytes": 66166784}, "after": {"pss_bytes": 17468416, "fds": 5, "cpu_ticks": 19, "rss_bytes": 66166784}}
+Accounts filter and yes/no/challenge power capability passed on private D-Bus; requests were noninteractive.
+Build Summary: 22/22 steps succeeded; 8/8 tests passed
+test-greeter-unit success
++- run test 8 pass (8 total) 3ms MaxRSS:10M
+   +- compile test ReleaseSafe native cached 10ms MaxRSS:58M
+test-greeter-ipc success
++- run python3 success 6s
+   +- compile exe pearl-greeter-test ReleaseSafe native cached 15ms MaxRSS:55M
+      +- run pkg-config success 1ms
+      +- options cached
+test-greeter-services success
++- run python3 success 611ms
+   +- compile exe pearl-greeter-test ReleaseSafe native (+2 more reused dependencies)
+test-greeter-soak success
++- run python3 success 274ms
+   +- compile exe pearl-greeter-test ReleaseSafe native (+2 more reused dependencies)
+test-greeter-catalog success
++- run python3 success 123ms
+   +- compile exe pearl-greeter-test ReleaseSafe native (+2 more reused dependencies)
+test-greeter-session success
++- run python3 success 55ms
+   +- compile exe pearl-greeter-test ReleaseSafe native (+2 more reused dependencies)
+   +- compile exe pearl-greeter-session-test ReleaseSafe native cached 15ms MaxRSS:55M
+      +- run pkg-config (reused)
+      +- options cached
+test-greeter-host success
++- run python3 success 54ms
+   +- compile exe pearl-greeter-host-test ReleaseSafe native cached 14ms MaxRSS:56M
+      +- run pkg-config (reused)
+      +- options cached
+

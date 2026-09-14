@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Pearl (Aqueous)
+Comment=Pearl desktop shell on Aqueous
+Exec=/usr/lib/pearl/pearl-aqueous-session
+TryExec=/usr/bin/pearl
+DesktopNames=Aqueous;

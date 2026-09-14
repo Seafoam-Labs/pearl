@@ -1,0 +1,7 @@
+#!/bin/sh
+# Authenticated X11 adapter only. Requires distribution/VM validation before enabling.
+set -eu
+: "${PEARL_SESSION_ID:?Missing selected session}"
+: "${PEARL_SESSION_FINGERPRINT:?Missing selected fingerprint}"
+# startx manages user X authorization and server teardown. Client revalidates its entry.
+exec /usr/bin/startx /usr/lib/pearl/pearl-greeter-session --x11-client -- -nolisten tcp -keeptty

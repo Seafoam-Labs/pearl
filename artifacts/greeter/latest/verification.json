@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-09-14T16:49:24.664475+00:00",
+  "status": "private_validation_passed",
+  "production_accepted": false,
+  "source_baseline": "5fcc60db0e61365a2d78e56c4f734f0cb478606a",
+  "source_manifest": "source-sha256.txt",
+  "source_manifest_sha256": "287983995cf9208510436aa585e82e7ebff6e139d93f869f3e1d514d3ceabd7a",
+  "source_file_count": 251,
+  "production_binaries": {
+    "pearl-greeter": "220142424c0c58d1413ddf63de5066208f70558bfc4f7ab97c567f650963c882",
+    "pearl-greeter-session": "2f31fecf0cadbd74b196626a1372e3a2c98919696ce7a12325547b5dcd5d47b4",
+    "pearl-greeter-host": "63fc0c514e1d88953c2f61bec36ef91f8b64bade9b6c3d2e566c3eec8f956f21"
+  },
+  "test_greeter_sha256": "705bc1ed1c9e6db030b20551d499be817ca91b958f3ccc19644f0e88266d9b27",
+  "build": "ZIG_GLOBAL_CACHE_DIR=.cache/zig zig build build-greeter -Doptimize=ReleaseSafe -Drelease=true",
+  "private_checks": "ZIG_GLOBAL_CACHE_DIR=.cache/zig zig build test-greeter-unit test-greeter-ipc test-greeter-services test-greeter-soak test-greeter-catalog test-greeter-session test-greeter-host test-greeter-ui -Doptimize=ReleaseSafe",
+  "packaging_check": "python3 tests/test_greeter_package.py",
+  "reproducibility_check": "python3 scripts/greeter-reproduce.py",
+  "staged_payload": ".cache/greeter-stage/220142424c0c58d1-review2",
+  "package_files": {
+    "greeter-release-gate.json": {
+      "sha256": "e808c662d96f10d936d4f10d21ebc44ba04ed2ee550b6d4118e51eb12fe2c5c3",
+      "mode": "0o644"
+    },
+    "usr/bin/pearl-greeter": {
+      "sha256": "220142424c0c58d1413ddf63de5066208f70558bfc4f7ab97c567f650963c882",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-aqueous-init": {
+      "sha256": "0dde70883c1a912fe64706b01617ff8dbb7363ba6c648d7be247c415dcd41c2d",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-aqueous-session": {
+      "sha256": "48344c5752cd2fe778caef33fbe1dc1ff1ab5d6d5044809bb869b2c5d44c3492",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-greeter-host": {
+      "sha256": "63fc0c514e1d88953c2f61bec36ef91f8b64bade9b6c3d2e566c3eec8f956f21",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-greeter-session": {
+      "sha256": "2f31fecf0cadbd74b196626a1372e3a2c98919696ce7a12325547b5dcd5d47b4",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-greeter-x11": {
+      "sha256": "a1d96442edca9d90afb4ca3ee380db09b4a4bb08cf69f5e31943e67fe77c1fd2",
+      "mode": "0o755"
+    },
+    "usr/share/doc/pearl-greeter/AQUEOUS_GREETER_REQUIREMENTS.md": {
+      "sha256": "80ed41bc20ec77c15ec50cc8256357b1aae63baf153e58ce7911696ab29d76ae",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/GREETER.md": {
+      "sha256": "40b23ba8673409405731e71b04e300c4b67e0207485abfaa1ed278f6ad6a20b7",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/GREETER_COMPATIBILITY.md": {
+      "sha256": "efc1a72ba0ab76783834d60ae27bc46018ea0de40b84efaa72ee43a10de6851b",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/greetd.toml.example": {
+      "sha256": "cbe4b2198b5973a0867cf53c6ba8a914a689c08f832f6aeaa02d7052d818ca7e",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/greeter.json": {
+      "sha256": "9e57e55af034b63ff31c7f02c23e7bb950c2e46fbf2e725d562e02b2271da1bc",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/pearl-greeter.sysusers": {
+      "sha256": "98260020dda426d2ec0f2e982a5a1c8093b19b97641d7e370ed017bc805b0108",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/pearl-greeter.tmpfiles": {
+      "sha256": "0a911746a75f7c4cf7b1b9b78ff68a2be72c3742972b6a4c9b8342496a53ce71",
+      "mode": "0o644"
+    },
+    "usr/share/wayland-sessions/pearl-aqueous.desktop": {
+      "sha256": "7b25277e6e4bdc2d1e25237c09041a53949cfde5f606ba0e20f071c88be89a66",
+      "mode": "0o644"
+    }
+  },
+  "idle": {
+    "greeter_pss_mib": 33.7255859375,
+    "compositor_pss_mib": 21.935546875,
+    "greeter_cpu_percent_one_core": 0.015384615384615385,
+    "interval_seconds": 65,
+    "startup_latency_measured": false
+  },
+  "soak": {
+    "cycles": 1000,
+    "retained_pss_growth_bytes": 0,
+    "file_descriptor_growth": 0
+  },
+  "regression_checks": {
+    "locker": 15,
+    "security": 20
+  },
+  "external_aqueous_at_completion": {
+    "head": "78a2d020bd93df26068408271b816f6ce6d6988a",
+    "worktree_status": " M compositor/README.md\n M compositor/aqueous/Server.zig\n M compositor/aqueous/Window.zig\n M compositor/build.zig\n M compositor/patches/wlroots/0015-ext-capture-formats-and-color.patch\n M compositor/protocol/aqueous-capture-color-v1.xml\n M compositor/scripts/capture/build.py\n M compositor/scripts/fixtures/ext-capture-formats.c\n M compositor/scripts/fixtures/xdg-shell-states.c\n M compositor/scripts/test-ext-capture-formats.sh\n?? compositor/scripts/fixtures/scene-capture.c\n?? compositor/scripts/test-scene-capture.py\n?? docs/isolated-capture-color.md\n?? docs/pearl-dependency-implementation-plan.md\n",
+    "changed_since_baseline": true,
+    "modified_by_this_task": false,
+    "candidate_compositor": {
+      "path": "/home/zoey/Pearl/.cache/aqueous/bin/aqueous",
+      "sha256": "1c612d3e503fe5b28c3af2595bac52b7b4441b808e259ba5fd303de2259eade1"
+    }
+  }
+}

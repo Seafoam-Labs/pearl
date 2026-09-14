@@ -1,0 +1,2 @@
+# Proposed account only; package staging does not run systemd-sysusers.
+u pearl-greeter - "Pearl login screen" /var/empty/pearl-greeter /usr/bin/nologin

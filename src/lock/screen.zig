@@ -11,6 +11,7 @@ const lock = @import("gtk4sessionlock1");
 const w = @import("../ui/components/widgets.zig");
 const wire = @import("conversation.zig");
 const options = @import("build_options");
+const presentation = @import("../ui/auth/prompt_view.zig");
 const View = struct { window: *gtk.Window, monitor: *gdk.Monitor, panel: *gtk.Box, picture: *gtk.Picture, clock: *gtk.Label, date: *gtk.Label, message: *gtk.Label, entry: *gtk.Entry, button: *gtk.Button, caps: *gtk.Label, viewport: *gtk.Viewport, avatar: *gtk.Image, footer: *gtk.Label, monitor_signal: c_ulong };
 const Screen = struct {
     loop: *glib.MainLoop,
@@ -62,16 +63,9 @@ const Screen = struct {
     }
     fn updateClock(self: *Screen) void {
         self.clock_updates += 1;
-        const now = glib.DateTime.newNowLocal() orelse return;
-        defer now.unref();
-        const time = now.format("%H:%M") orelse return;
-        defer glib.free(time);
-        const date = now.format("%A, %B %e") orelse return;
-        defer glib.free(date);
         for (&self.views) |*slot| if (slot.*) |*v| {
             if (v.monitor.isValid() == 0) continue;
-            v.clock.setText(time);
-            v.date.setText(date);
+            presentation.updateClock(v.clock, v.date);
         };
     }
     fn update(self: *Screen) void {
@@ -412,19 +406,7 @@ const Screen = struct {
         message.setWrap(1);
         message.setMaxWidthChars(36);
         panel.append(message.as(gtk.Widget));
-        const entry = gtk.Entry.new();
-        const buffer = gtk.PasswordEntryBuffer.new();
-        entry.setBuffer(buffer.as(gtk.EntryBuffer));
-        buffer.unref();
-        entry.setVisibility(0);
-        // Retain one character beyond the byte limit so a long ASCII paste is
-        // rejected on submit instead of authenticating its truncated prefix.
-        entry.setMaxLength(1024);
-        entry.as(gtk.Editable).setWidthChars(10);
-        entry.as(gtk.Editable).setMaxWidthChars(24);
-        entry.setInputPurpose(.password);
-        entry.setPlaceholderText("Password");
-        entry.setInputHints(.{ .private = true, .no_spellcheck = true, .no_emoji = true });
+        const entry = presentation.secureEntry(1024);
         w.name(entry.as(gtk.Widget), "Authentication response");
         panel.append(entry.as(gtk.Widget));
         const caps = w.label("Caps Lock is on", "pearl-secondary");
@@ -512,7 +494,7 @@ pub fn run(ready_fd: bool) !void {
     const app = gio.Application.new("org.aqueous.Pearl.Lock", .{ .non_unique = true });
     var screen: Screen = .{ .loop = glib.MainLoop.new(null, 0), .instance = lock.Instance.new(), .display = display, .ready_fd = ready_fd };
     const css = gtk.CssProvider.new();
-    css.loadFromString(".pearl-lock-clock { font-size: 6em; font-weight: 300; letter-spacing: -0.04em; } .pearl-lock-date { font-size: 1.3em; } .pearl-lock-card { padding: 28px; border-radius: 28px; } .pearl-lock-small .pearl-lock-clock { font-size: 3em; } .pearl-lock-small .pearl-lock-card { padding: 16px; } .pearl-lock entry { min-height: 40px; } .pearl-lock button { min-height: 40px; }");
+    css.loadFromString(presentation.css);
     gtk.StyleContext.addProviderForDisplay(display, css.as(gtk.StyleProvider), 601);
     screen.preferences = .{ .app = app, .display = display, .context = &screen, .changed = Screen.changed };
     try screen.preferences.start();

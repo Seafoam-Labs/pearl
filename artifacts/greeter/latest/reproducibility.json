@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "fresh_build_roots": 2,
+  "compiler": "0.16.0",
+  "optimize": "ReleaseSafe",
+  "stripped": true,
+  "binaries": {
+    "pearl-greeter": "220142424c0c58d1413ddf63de5066208f70558bfc4f7ab97c567f650963c882",
+    "pearl-greeter-session": "2f31fecf0cadbd74b196626a1372e3a2c98919696ce7a12325547b5dcd5d47b4",
+    "pearl-greeter-host": "63fc0c514e1d88953c2f61bec36ef91f8b64bade9b6c3d2e566c3eec8f956f21"
+  },
+  "production_accepted": false
+}

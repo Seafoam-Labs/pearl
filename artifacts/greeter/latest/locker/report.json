@@ -1,0 +1,88 @@
+{
+  "status": "passed",
+  "checks": {
+    "invalid-readiness-fd-rejected-before-opening-display": true,
+    "gtk-accessible-prompt-labels-and-mixed-scale-large-text": true,
+    "caps-lock-indicator-follows-keyboard-state": true,
+    "repeated-output-return-preserves-lock-and-current-prompt-focus": true,
+    "small-logical-output-remains-usable-with-large-text": true,
+    "oversize-utf8-response-rejected-without-truncation-and-retry-works": true,
+    "helper-crash-stays-locked-and-recovers": true,
+    "helper-malformed-stays-locked-and-recovers": true,
+    "helper-hang-stays-locked-and-recovers": true,
+    "helper-missing-stays-locked-and-recovers": true,
+    "duplicate-lock-and-broken-readiness-do-not-release-original": true,
+    "escape-clears-conversation-and-enter-retries-without-pointer": true,
+    "output-soak-reuses-view-slots-and-file-descriptors": true,
+    "all-outputs-removed-return-to-usable-authentication": true,
+    "idle-clock-updates-are-bounded-with-no-auth-ui-churn": true
+  },
+  "binaries": {
+    "locker": "54670893441f603c49aa8eb2ed0341c8f024d6d0591b1cb63a7614252e7c1e4f",
+    "pam_module": "bd1e872fd51877d4e1aaa5213f55819f2e03601ef68da525b5ceb4762ea78b82"
+  },
+  "outputs": {
+    "cycles": 100,
+    "before": {
+      "pss_bytes": 32701440,
+      "fds": 8,
+      "cpu_ticks": 23,
+      "rss_bytes": 66990080
+    },
+    "samples": [
+      {
+        "cycles": 25,
+        "pss_bytes": 29018112,
+        "fds": 8,
+        "cpu_ticks": 50,
+        "rss_bytes": 66015232
+      },
+      {
+        "cycles": 50,
+        "pss_bytes": 29068288,
+        "fds": 8,
+        "cpu_ticks": 79,
+        "rss_bytes": 65626112
+      },
+      {
+        "cycles": 75,
+        "pss_bytes": 28280832,
+        "fds": 8,
+        "cpu_ticks": 107,
+        "rss_bytes": 65695744
+      },
+      {
+        "cycles": 100,
+        "pss_bytes": 29967360,
+        "fds": 8,
+        "cpu_ticks": 136,
+        "rss_bytes": 65626112
+      }
+    ],
+    "after": {
+      "pss_bytes": 29967360,
+      "fds": 8,
+      "cpu_ticks": 136,
+      "rss_bytes": 65626112
+    }
+  },
+  "idle": {
+    "state": "locked, authentication cancelled",
+    "seconds": 65.0000661539998,
+    "before": {
+      "pss_bytes": 33616896,
+      "fds": 8,
+      "cpu_ticks": 23,
+      "rss_bytes": 66383872
+    },
+    "after": {
+      "pss_bytes": 35542016,
+      "fds": 8,
+      "cpu_ticks": 25,
+      "rss_bytes": 66383872
+    },
+    "cpu_seconds": 0.02,
+    "clock_events": 2,
+    "ui_updates": 0
+  }
+}

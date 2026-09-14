@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "production_accepted": false,
+  "host_activation_performed": false,
+  "private_validation": "passed",
+  "completed_tasks": [
+    "GR00",
+    "GR02",
+    "GR03",
+    "GR04",
+    "GR05"
+  ],
+  "partial_tasks": [
+    "GR01",
+    "GR06",
+    "GR07",
+    "GR08",
+    "GR09"
+  ],
+  "remaining_requirements": [
+    "Restricted Aqueous host enforcement, effective-policy negotiation, owned lifecycle and keyboard-layout API",
+    "Match installed greetd source/distribution patches; prove real PAM lifecycle, blocked-factor cancellation and lost-start recovery",
+    "Pinned disposable VM logins: Pearl/Aqueous, GNOME Wayland, Plasma Wayland, standalone Sway/Hyprland/niri and Xfce/Plasma X11; cross-desktop logout and isolation",
+    "Verify each enabled UWSM profile; none is accepted by this candidate",
+    "Compositor escape/foreign-client tests, real Orca speech and credential privacy, physical outputs/login/logout/VT recovery",
+    "Measure UI startup target and distribution activation/rollback recovery",
+    "Owner license selection and third-party binding provenance/notices"
+  ]
+}

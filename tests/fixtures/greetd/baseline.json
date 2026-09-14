@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "evidence": "inspection-only",
+  "real_login": false,
+  "zig": {
+    "status": 0,
+    "stdout": "0.16.0",
+    "stderr": ""
+  },
+  "pearl": {
+    "status": 0,
+    "stdout": "5fcc60db0e61365a2d78e56c4f734f0cb478606a",
+    "stderr": ""
+  },
+  "packages": {
+    "status": 0,
+    "stdout": "greetd 0.10.3-2.1\ngtk4 1:4.22.5-1.1\ngtk4-layer-shell 1.3.0-1.1\nglib2 2.88.3-1.1\nsystemd 261.3-1\npam 1.7.2-2.1\nzig 0.16.0-1.1",
+    "stderr": ""
+  },
+  "kvm_available": false,
+  "binaries": {
+    "greetd": {
+      "path": "/usr/bin/greetd",
+      "sha256": "bbe05340dabe85956beeb6e2c430cf48d9f39e85573678979d33e997a7e0e97c"
+    },
+    "aqueous": {
+      "path": "/usr/bin/aqueous",
+      "sha256": "6d18da34ed290ebe44e8f019c68c2fe5955aa722aa314b1ab19ee741eda1746f"
+    },
+    "zig": {
+      "path": "/usr/bin/zig",
+      "sha256": "22449e99a0717f8420c2f1de544f6620b4e14a500916cf1bdbfd252b4293c574"
+    }
+  },
+  "sources": {
+    "greetd": {
+      "revision": {
+        "status": 0,
+        "stdout": "08efe60feceea8c81f9571c666880ff1e1c2e3ff",
+        "stderr": ""
+      },
+      "worktree": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "files": {
+        "greetd/src/server.rs": "3ba5b64b8b3dd14bbce962b7d14db38eaba2bd3b9e75af1a85dccee95c22b13f",
+        "greetd/src/context.rs": "f2f715115310779316bfae5a3ee2a688724d834186f62f6b82a3fe88f25ee3df",
+        "greetd/src/session/worker.rs": "70919bbe902b5fdae698f0fee1b6462be8d174f8fe9f3618b0046644eb555fa1",
+        "greetd_ipc/src/lib.rs": "e1142571998189a7ed06a05b453f06a642b2a65c73d79fa3fe3d42e2fd0951ef"
+      }
+    },
+    "aqueous": {
+      "revision": {
+        "status": 0,
+        "stdout": "d63ecd716e3eb30ef064e4e6b3bc630649378b4e",
+        "stderr": ""
+      },
+      "worktree": {
+        "status": 0,
+        "stdout": "M compositor/scripts/test-display-preview.py\n M settingsApplication/docs/HELPER.md\n M settingsApplication/docs/aqueous-config-additions-v1.schema.json\n M settingsApplication/packaging/install-config.sh\n M settingsApplication/src/backend/operations.zig\n M settingsApplication/src/backend/schema.zig\n M settingsApplication/src/config_main.zig\n M settingsApplication/tests/backend/test-config.sh\n M settingsApplication/tests/backend/test-dms.py\n M settingsApplication/tests/backend/test-equivalence.py\n M settingsApplication/tests/backend/test-t11.py\n M settingsApplication/tests/test-backend.sh\n M settingsApplication/tests/test-packaging.sh\n?? docs/pearl-dependency-implementation-plan.md\n?? settingsApplication/docs/PROTECTED_COLLECTIONS.md\n?? settingsApplication/src/backend/collection_transaction.zig\n?? settingsApplication/tests/backend/test-protected-collections.py",
+        "stderr": ""
+      }
+    }
+  },
+  "sessions": {
+    "wayland-sessions/aqueous.desktop": {
+      "sha256": "0e72e82f41f5152b7c96b944cab805260b9325a3d220eaa80d20fdc49bb8db7f",
+      "metadata": "[Desktop Entry]\nName=Aqueous\nComment=Aqueous Wayland window manager\n# Launched under uwsm (Universal Wayland Session Manager): uwsm wraps aqueous-wm\n# as a proper systemd user unit, exports/cleans the Wayland environment, activates\n# graphical-session.target, and tears the whole session down cleanly on exit. The\n# compositor itself still finalizes the live env via `uwsm finalize` from\n# /usr/bin/aqueous-init. Falls back to running aqueous-wm directly if uwsm is\n# unavailable (see aqueous-init's non-uwsm branch).\nExec=uwsm start -- aqueous-wm\nTryExec=uwsm\nType=Application\nDesktopNames=Aqueous\nKeywords=wm;wayland;aqueous;\n"
+    },
+    "wayland-sessions/cosmic.desktop": {
+      "sha256": "6e84593f3dd68d964ad1c306d1dfa092703c27269807a15b122bfef91b5d0a2d",
+      "metadata": "[Desktop Entry]\nName=COSMIC\nComment=This session logs you into the COSMIC desktop\nComment[sv]=Denna session loggar in dig till skrivbordsmilj\u00f6n COSMIC\nExec=/usr/bin/start-cosmic\nType=Application\nDesktopNames=COSMIC\n"
+    },
+    "wayland-sessions/river.desktop": {
+      "sha256": "1d22fd2e8510d579d9d2866e4e00890bf2c5070532145f0ebdc362e73d9ad5db",
+      "metadata": "# SPDX-FileCopyrightText: \u00a9 2022 The River Developers\n# SPDX-License-Identifier: 0BSD\n\n[Desktop Entry]\nName=River\nComment=A non-monolithic Wayland compositor\nExec=river\nType=Application\n"
+    }
+  },
+  "gates": [
+    "Aqueous restricted host enforcement unavailable at inspected revision",
+    "greetd cancellation while get_question holds context write lock requires VM proof/upstream fix",
+    "installed greetd distribution patches not verified against source",
+    "required GNOME/Plasma/standalone/X11 VM login matrix not run"
+  ]
+}

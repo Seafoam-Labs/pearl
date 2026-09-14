@@ -1,0 +1,2620 @@
+info: initializing Aqueous version aqueous 0.6.0 -xwayland
+info: gpu-pin: scanout pinned to /dev/dri/card1 (connected monitor)
+info(wlroots): [backend/backend.c:342] Loading user-specified backends due to WLR_BACKENDS: headless
+info(wlroots): [backend/headless/backend.c:60] Creating headless backend
+info(wlroots): [util/env.c:25] Loading WLR_RENDERER option: pixman
+info(wlroots): [render/pixman/renderer.c:328] Creating pixman renderer
+info(xdg): default mode=client
+info(aqueous): policy mode=internal layout=floating
+info(input): cursor theme=default size=24
+info(drm_lease): DRM leasing unavailable (no usable lease device)
+info: raised file descriptor limit of the river process to 4096
+info(wlroots): [backend/headless/backend.c:17] Starting headless backend
+info(ipc): protocol=1 listening on /tmp/pearl-dev-8d58mpc3/run/aqueous/7ddedaea920bd68baa7879fb634a50fe/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-8d58mpc3/run/aqueous/outputd.sock
+info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
+info: running server
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session locked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked
+info(output): applying output configuration
+info(output): applying output configuration
+info(lock): session locked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session locked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session locked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session locked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session locked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session locked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session locked
+info(lock): denying new session lock client, an active one already exists
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session locked
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(output): applying output configuration
+info(output): applying output configuration
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of lock_surface surface
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session locked
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info(lock): session unlocked

@@ -1,0 +1,27 @@
+{
+  "binary_sha256": "705bc1ed1c9e6db030b20551d499be817ca91b958f3ccc19644f0e88266d9b27",
+  "evidence": "private Aqueous and fake greetd only",
+  "checks": [
+    "material_dark keyboard login, info acknowledgement and single handoff",
+    "material_light keyboard login, info acknowledgement and single handoff",
+    "gtk keyboard login, info acknowledgement and single handoff",
+    "contrast keyboard login, info acknowledgement and single handoff",
+    "small keyboard login, info acknowledgement and single handoff",
+    "changed selection cancels without a start"
+  ],
+  "aqueous": {
+    "path": "/home/zoey/Pearl/.cache/aqueous/bin/aqueous",
+    "sha256": "1c612d3e503fe5b28c3af2595bac52b7b4441b808e259ba5fd303de2259eade1"
+  },
+  "compositor_idle": {
+    "pss_bytes": 23001088,
+    "cpu_ticks": 1,
+    "interval_seconds": 65
+  },
+  "idle": {
+    "pss_bytes": 35363840,
+    "cpu_ticks": 1,
+    "interval_seconds": 65
+  },
+  "status": "passed"
+}

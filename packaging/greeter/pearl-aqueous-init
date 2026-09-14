@@ -1,0 +1,6 @@
+#!/bin/sh
+# Aqueous publishes its user-session endpoints before executing this init.
+set -eu
+: "${WAYLAND_DISPLAY:?Missing authenticated Wayland display}"
+: "${AQUEOUS_SOCKET:?Missing authenticated Aqueous endpoint}"
+exec /usr/bin/pearl

@@ -1,0 +1,10 @@
+# GATED: do not activate until GREETER_COMPATIBILITY.md production gates pass.
+# This example is never installed over /etc/greetd/config.toml by package hooks.
+[terminal]
+vt = 1
+switch = true
+[general]
+source_profile = false
+[default_session]
+command = "/usr/lib/pearl/pearl-greeter-host"
+user = "pearl-greeter"

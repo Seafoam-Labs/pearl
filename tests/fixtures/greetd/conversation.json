@@ -1,0 +1,13 @@
+{
+  "source_revision": "08efe60feceea8c81f9571c666880ff1e1c2e3ff",
+  "provenance": "Synthetic protocol fixtures, not captured credentials or PAM evidence",
+  "responses": [
+    {"type":"auth_message","auth_message_type":"visible","auth_message":"Login name:"},
+    {"type":"auth_message","auth_message_type":"secret","auth_message":"Password:"},
+    {"type":"auth_message","auth_message_type":"info","auth_message":"Touch your security key"},
+    {"type":"auth_message","auth_message_type":"error","auth_message":"Please try the factor again"},
+    {"type":"success"},
+    {"type":"error","error_type":"auth_error","description":"Authentication failed"},
+    {"type":"error","error_type":"error","description":"Service unavailable"}
+  ]
+}

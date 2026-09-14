@@ -1,5 +1,11 @@
 # Native lock screen — T13
 
+The separate [greeter implementation plan](GREETER_IMPLEMENTATION_PLAN.md)
+tracks the separate login screen sharing this presentation. Its production
+hosting remains gated. The existing locker
+continues to unlock an already running session; login authentication and session
+creation belong to greetd.
+
 `pearl-lock` is Pearl's independent Zig 0.16 / GTK locker for Aqueous. T12
 introduced the session-lock and PAM foundation; T13 completes the responsive
 interface, accessible prompt handling, output lifecycle and dedicated failure

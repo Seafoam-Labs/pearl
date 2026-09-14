@@ -1,0 +1,7 @@
+#!/bin/sh
+# Authenticated Pearl desktop only. Never used by the pre-login compositor.
+set -eu
+export XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=Aqueous
+export XDG_SESSION_DESKTOP=pearl-aqueous DESKTOP_SESSION=pearl-aqueous
+# Aqueous -c is a fixed shell startup command, never login data.
+exec /usr/bin/aqueous -c /usr/lib/pearl/pearl-aqueous-init
