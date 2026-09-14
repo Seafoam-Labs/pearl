@@ -24,6 +24,7 @@ pub const Config = struct {
     accounts: bool = true,
     power: bool = true,
     screen_reader: bool = false,
+    fingerprint_hint: bool = false,
     auth_timeout_seconds: u16 = 120,
     pub fn validate(self: Config) !void {
         if (self.version != 1 or self.font_size < 12 or self.font_size > 32 or self.auth_timeout_seconds < 30 or self.auth_timeout_seconds > 300 or self.roots.len > 16 or self.roots.len == 0 or self.allow.len > 256 or self.deny.len > 256) return error.InvalidConfig;

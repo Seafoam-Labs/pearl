@@ -1,0 +1,3 @@
+# Fixed current-UID locker service. No login session is opened by pearl-lock.
+auth       substack     pearl-fingerprint-auth
+account    include      system-auth

@@ -1,0 +1,29 @@
+{
+  "binary_sha256": "3ab0e78ebc123c92c367fad435cbb91629afc593cd6bae914f11beb13c800578",
+  "evidence": "private Aqueous and fake greetd only",
+  "checks": [
+    "material_dark passive scan, password fallback and single handoff",
+    "material_light passive scan, password fallback and single handoff",
+    "gtk passive scan, password fallback and single handoff",
+    "contrast passive scan, password fallback and single handoff",
+    "small passive scan, password fallback and single handoff",
+    "changed selection cancels without a start",
+    "fingerprint passive scan, no password input and single handoff",
+    "cancel in-flight scan returns to daemon recovery without start"
+  ],
+  "aqueous": {
+    "path": "/home/zoey/Pearl/.cache/aqueous/bin/aqueous",
+    "sha256": "1c612d3e503fe5b28c3af2595bac52b7b4441b808e259ba5fd303de2259eade1"
+  },
+  "compositor_idle": {
+    "pss_bytes": 22972416,
+    "cpu_ticks": 1,
+    "interval_seconds": 65
+  },
+  "idle": {
+    "pss_bytes": 35690496,
+    "cpu_ticks": 2,
+    "interval_seconds": 65
+  },
+  "status": "passed"
+}

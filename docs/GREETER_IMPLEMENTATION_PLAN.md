@@ -148,7 +148,9 @@ Never silently substitute Pearl/Aqueous for a selected desktop that is unavailab
 
 After username submission, render the daemon's actual prompt. A password is not
 assumed to be the first or only question. Enter answers the current prompt once;
-Tab/Shift+Tab navigate; Escape cancels. Informational messages remain readable,
+Tab/Shift+Tab navigate; Escape cancels. Informational messages remain readable
+and advance through automatic null acknowledgements without Enter, as specified
+by the [fingerprint integration](FINGERPRINT_LOGIN_IMPLEMENTATION_PLAN.md),
 and errors distinguish incorrect credentials from unavailable login services.
 Do not reveal whether an arbitrary username exists through Pearl-generated
 authentication errors. Selected usernames/session choices remain fixed until
@@ -304,7 +306,7 @@ Implementation limits are explicit Pearl limits, not claims about greetd limits:
 | Session launch data | 256-byte ID, 256 arguments, 32 KiB expanded argv; reject overlength entries, never truncate commands |
 | Outputs | 64; additional outputs receive compositor background coverage, never extra authentication controllers |
 | Greeter config / wallpaper | 64 KiB JSON; 16 MiB input image and 16 megapixels decoded; bounded worker decoding |
-| Deadlines | 5 s connect/cancel/frame-progress, 30 s start acknowledgement, 120 s authentication-response wait and user inactivity by default; administrator-configurable authentication timeout up to 300 s |
+| Deadlines | 5 s connect/cancel/frame-progress, 30 s start acknowledgement, 120 s absolute attempt and input inactivity by default; administrator-configurable authentication timeout up to 300 s |
 | Handoff cleanup | Supervisor requests graceful compositor exit, waits at most 5 s, then terminates/reaps only its tracked children |
 
 Timers apply to the relevant state, do not run permanent polling loops, and do

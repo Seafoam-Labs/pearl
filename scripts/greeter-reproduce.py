@@ -6,7 +6,7 @@ import shutil,subprocess,tempfile
 ROOT=Path(__file__).resolve().parents[1]
 def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/greeter/latest/reproducibility.json');args=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/greeter/latest/reproducibility.json');p.add_argument('--include-locker',action='store_true');args=p.parse_args()
     results=[]
     with tempfile.TemporaryDirectory(prefix='pearl-reproduce-') as tmp:
         for i in range(2):
@@ -17,8 +17,9 @@ def main():
             # Pinned dependency sources are reused; compiler outputs/build caches are fresh.
             (work/'zig-pkg').symlink_to(ROOT/'zig-pkg',target_is_directory=True)
             with (work/'build.log').open('w') as log:
-                subprocess.run(['zig','build','build-greeter','-Doptimize=ReleaseSafe','-Drelease=true','--global-cache-dir',str(work/'global-cache')],cwd=work,env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(work/'global-cache')),stdout=log,stderr=subprocess.STDOUT,check=True)
+                subprocess.run(['zig','build','build-greeter',*(['build-locker'] if args.include_locker else []),'-Doptimize=ReleaseSafe','-Drelease=true','--global-cache-dir',str(work/'global-cache')],cwd=work,env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(work/'global-cache')),stdout=log,stderr=subprocess.STDOUT,check=True)
             binaries={name:sha(work/'zig-out/greeter/bin'/name) for name in ('pearl-greeter','pearl-greeter-session','pearl-greeter-host')}
+            if args.include_locker:binaries['pearl-lock']=sha(work/'zig-out/bin/pearl-lock')
             results.append(binaries)
         assert results[0]==results[1],results
     args.output.parent.mkdir(parents=True,exist_ok=True)

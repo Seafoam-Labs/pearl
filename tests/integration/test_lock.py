@@ -188,6 +188,28 @@ def main():
             checks["duplicate-lock-and-broken-readiness-do-not-release-original"] = True
             checks["escape-clears-conversation-and-enter-retries-without-pointer"] = True
 
+            for mode in ("fingerprint", "fingerprint-fallback", "fingerprint-input-status", "fingerprint-wait", "fingerprint-denied"):
+                stack("fingerprint" if mode == "fingerprint-denied" else mode,
+                      account="deny" if mode == "fingerprint-denied" else "fixture")
+                child = start(mode)
+                if mode == "fingerprint-input-status":
+                    waiting(child, False)
+                    key("fixture-secret", "-k", "Return")
+                wait_for(lambda: ui(child).get("auth") == "true" and ui(child).get("waiting") == "false")
+                assert locked()
+                if mode == "fingerprint":capture(session, "lock-fingerprint-scan", primary)
+                if mode == "fingerprint-wait":key("-k", "Escape")
+                if mode in ("fingerprint-wait", "fingerprint-denied"):
+                    failed(child)
+                    stack();time.sleep(2.1);key("-k", "Return");unlock(child)
+                else:
+                    if mode == "fingerprint-fallback":
+                        waiting(child, False);key("fixture-secret", "-k", "Return")
+                    assert child.wait() == 0
+                    wait_for(lambda: not locked())
+                checks[mode + "-preserves-lock-authority"] = True
+            stack()
+
             child = start("output-soak")
             waiting(child, True)
             key("-k", "Escape")

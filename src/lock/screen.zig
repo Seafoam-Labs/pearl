@@ -248,6 +248,9 @@ const Screen = struct {
                 };
             },
             3, 4 => {
+                self.waiting = false;
+                self.echo = false;
+                self.clearSecrets();
                 self.message.set(self.packet.bytes[0..self.packet.length]);
                 self.update();
             },

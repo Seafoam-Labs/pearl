@@ -4,6 +4,7 @@ const glib = @import("glib2");
 const p = @import("protocol.zig");
 const wire = @import("ipc.zig");
 const Controller = @import("controller.zig").Controller;
+const PassiveToken = @import("controller.zig").PassiveToken;
 pub const Client = struct {
     transport: wire.Transport = undefined,
     controller: Controller = .{},
@@ -11,6 +12,11 @@ pub const Client = struct {
     username: [257:0]u8 = @splat(0),
     path: [:0]const u8,
     deadline: c_uint = 0,
+    attempt_deadline: c_uint = 0,
+    attempt_ends_us: i64 = 0,
+    ack_source: c_uint = 0,
+    ack_token: ?PassiveToken = null,
+    history: @import("status_history.zig").History = .{},
     timeout_ms: c_uint = 120000,
     accepted: bool = false,
     recover_after_cancel: bool = false,
@@ -21,8 +27,42 @@ pub const Client = struct {
     }
     pub fn deinit(self: *Client) void {
         self.clearTimer();
+        self.clearAttempt();
+        self.clearAck();
+        self.history.clear();
         self.transport.deinit();
         std.crypto.secureZero(u8, std.mem.asBytes(&self.response));
+    }
+    fn clearAck(self: *Client) void {
+        if (self.ack_source != 0) _ = glib.Source.remove(self.ack_source);
+        self.ack_source = 0;
+        self.ack_token = null;
+    }
+    fn clearAttempt(self: *Client) void {
+        if (self.attempt_deadline != 0) _ = glib.Source.remove(self.attempt_deadline);
+        self.attempt_deadline = 0;
+        self.attempt_ends_us = 0;
+    }
+    fn attemptExpired(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Client = @ptrCast(@alignCast(data.?));
+        self.attempt_deadline = 0;
+        self.cancel() catch self.fail();
+        return 0;
+    }
+    fn expiredAttempt(self: *Client) bool {
+        if (self.attempt_ends_us == 0 or glib.getMonotonicTime() < self.attempt_ends_us) return false;
+        self.cancel() catch self.fail();
+        return true;
+    }
+    fn acknowledge(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Client = @ptrCast(@alignCast(data.?));
+        self.ack_source = 0;
+        const token = self.ack_token orelse return 0;
+        self.ack_token = null;
+        if (self.expiredAttempt()) return 0;
+        self.controller.acknowledge(token) catch return 0;
+        self.sendAnswer(null) catch self.fail();
+        return 0;
     }
     fn clearTimer(self: *Client) void {
         if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
@@ -41,6 +81,11 @@ pub const Client = struct {
     pub fn begin(self: *Client, username: []const u8) !void {
         if (username.len == 0 or !p.validText(username, 256)) return error.InvalidUsername;
         try self.controller.begin();
+        self.clearAck();
+        self.clearAttempt();
+        self.history.clear();
+        self.attempt_ends_us = glib.getMonotonicTime() + @as(i64, self.timeout_ms) * 1000;
+        self.attempt_deadline = glib.timeoutAdd(self.timeout_ms, attemptExpired, self);
         self.accepted = false;
         self.recover_after_cancel = false;
         self.username = @splat(0);
@@ -58,6 +103,9 @@ pub const Client = struct {
         // Never begin another login in that ambiguous daemon generation.
         const uncertain = self.controller.pending != null or self.controller.state == .connecting;
         try self.controller.cancel();
+        self.clearAck();
+        self.clearAttempt();
+        self.history.clear();
         self.recover_after_cancel = uncertain;
         // Replace the blocked conversation socket. EOF alone is not cancellation.
         self.transport.open(self.path) catch {
@@ -68,13 +116,20 @@ pub const Client = struct {
         self.changed(self.context);
     }
     pub fn activity(self: *Client) void {
-        if (self.controller.state == .prompt) self.timer(self.timeout_ms);
+        if (self.controller.needsInput() and !self.expiredAttempt()) self.timer(self.timeout_ms);
     }
     pub fn answer(self: *Client, generation: u64, response: ?[]const u8) !void {
+        // Only the queued client callback may acknowledge passive messages.
+        if (!self.controller.needsInput() or response == null) return error.NoInputQuestion;
+        if (self.expiredAttempt()) return error.AttemptExpired;
+        if (!p.validText(response.?, 4096)) return error.InvalidResponse;
+        try self.controller.answer(generation, false);
+        try self.sendAnswer(response);
+    }
+    fn sendAnswer(self: *Client, response: ?[]const u8) !void {
         var frame: p.Frame = .{};
         defer frame.wipe();
         try frame.answer(response);
-        try self.controller.answer(generation, response == null);
         self.transport.send(frame.slice()) catch {
             self.fail();
             return error.Write;
@@ -83,10 +138,14 @@ pub const Client = struct {
         self.changed(self.context);
     }
     pub fn start(self: *Client, env: []const []const u8) !void {
+        if (self.expiredAttempt()) return error.AttemptExpired;
         var frame: p.Frame = .{};
         defer frame.wipe();
         try frame.start(env);
         try self.controller.start();
+        self.clearAttempt();
+        self.clearAck();
+        self.history.clear();
         self.transport.send(frame.slice()) catch {
             self.fail();
             return error.Write;
@@ -96,6 +155,9 @@ pub const Client = struct {
     }
     fn fail(self: *Client) void {
         self.clearTimer();
+        self.clearAttempt();
+        self.clearAck();
+        self.history.clear();
         self.controller.lost();
         self.transport.close();
         self.changed(self.context);
@@ -124,6 +186,7 @@ pub const Client = struct {
         self.changed(self.context);
     }
     fn receive(self: *Client, bytes: []const u8) !void {
+        if (self.expiredAttempt()) return;
         self.response = try p.decode(bytes);
         try self.controller.receive(self.controller.connection, self.response);
         self.accepted = self.controller.state == .handoff and self.response.kind == .success;
@@ -131,8 +194,18 @@ pub const Client = struct {
         self.clearTimer();
         switch (self.controller.state) {
             .prompt, .authenticated, .failed => self.timer(self.timeout_ms),
-            .idle, .handoff, .unavailable => self.transport.close(),
+            .idle, .handoff, .unavailable => {
+                self.clearAttempt();
+                self.clearAck();
+                self.history.clear();
+                self.transport.close();
+            },
             else => {},
+        }
+        if (self.controller.passiveToken()) |token| {
+            try self.history.append(self.response.text[0..self.response.len]);
+            self.ack_token = token;
+            self.ack_source = glib.idleAdd(acknowledge, self);
         }
         self.changed(self.context);
     }

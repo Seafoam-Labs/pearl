@@ -83,6 +83,13 @@ const Screen = struct {
         if (!std.mem.eql(u8, std.mem.span(self.message.getText()), std.mem.span(text))) self.message.as(gtk.Accessible).announce(text, .medium);
         self.message.setText(text);
     }
+    fn passiveMessage(self: *Screen) void {
+        const text = self.client.history.latest() orelse return;
+        if (std.mem.eql(u8, std.mem.span(self.message.getText()), text)) return;
+        // Coalesce identical statuses only: every changed instruction gets an
+        // announcement even when another message follows in the same frame.
+        self.setMessage(text);
+    }
     fn clear(self: *Screen) void {
         self.entry.as(gtk.Editable).setText("");
     }
@@ -96,9 +103,12 @@ const Screen = struct {
                 self.setMessage(if (self.selection_error) "The selected desktop changed. Refresh and choose it again." else if (self.auth_error) "Authentication failed. Try again." else if (self.service_error) "Login service rejected the request. Try again later." else "Choose your account and desktop.");
                 if (self.confirmed_power) self.performPower();
             },
-            .connecting, .authenticating => self.setMessage("Authenticating…"),
+            .connecting => self.setMessage("Authenticating…"),
+            .authenticating => {
+                if ((c.kind == .info or c.kind == .@"error") and self.client.history.latest() != null) self.passiveMessage() else self.setMessage("Authenticating…");
+            },
             .prompt => {
-                self.setMessage(self.client.response.z());
+                if (c.needsInput()) self.setMessage(self.client.response.z()) else self.passiveMessage();
                 self.entry.setVisibility(@intFromBool(c.kind == .visible));
             },
             .cancelling => self.setMessage("Cancelling authentication…"),
@@ -130,7 +140,7 @@ const Screen = struct {
         const c = &self.client.controller;
         const idle = c.state == .idle and self.job == null and self.pending_power == null and !self.power.pending and !self.power.completed;
         const prompt = c.state == .prompt;
-        const secret = prompt and (c.kind == .visible or c.kind == .secret);
+        const secret = c.needsInput();
         self.username.as(gtk.Editable).setEditable(@intFromBool(idle));
         self.chooser.as(gtk.Widget).setSensitive(@intFromBool(idle and self.config.force_session == null));
         self.account_chooser.as(gtk.Widget).setSensitive(@intFromBool(idle));
@@ -141,16 +151,23 @@ const Screen = struct {
         self.entry.setPlaceholderText(if (c.kind == .visible) "Response" else "Password");
         w.name(self.entry.as(gtk.Widget), if (prompt) self.client.response.z() else "Authentication response");
         self.button.setLabel(if (prompt) "Continue" else "Sign in");
-        self.button.as(gtk.Widget).setSensitive(@intFromBool((idle and self.selected_id[0] != 0) or prompt));
+        self.button.as(gtk.Widget).setVisible(@intFromBool(c.state == .idle or secret));
+        self.button.as(gtk.Widget).setSensitive(@intFromBool((idle and self.selected_id[0] != 0) or secret));
         self.cancel_button.as(gtk.Widget).setVisible(@intFromBool(c.state != .idle or self.job != null));
         self.cancel_button.as(gtk.Widget).setSensitive(@intFromBool((c.state != .idle or self.job != null) and c.state != .cancelling and !c.start_submitted));
         self.reboot_button.as(gtk.Widget).setSensitive(@intFromBool(self.power.reboot and !c.start_submitted and self.pending_power == null));
         self.off_button.as(gtk.Widget).setSensitive(@intFromBool(self.power.off and !c.start_submitted and self.pending_power == null));
         self.confirm.as(gtk.Widget).setVisible(@intFromBool(self.pending_power != null));
         self.cancel_power.as(gtk.Widget).setVisible(@intFromBool(self.pending_power != null));
-        if (secret) _ = self.entry.as(gtk.Widget).grabFocus() else if (prompt) _ = self.button.as(gtk.Widget).grabFocus();
+        if (secret) _ = self.entry.as(gtk.Widget).grabFocus();
         if (options.test_hooks) {
             std.debug.assert(object.ext.cast(gtk.PasswordEntryBuffer, self.entry.getBuffer()) != null);
+            if (c.passiveToken() != null or (c.state == .authenticating and (c.kind == .info or c.kind == .@"error") and self.client.history.latest() != null)) {
+                std.debug.assert(self.entry.as(gtk.Widget).getVisible() == 0);
+                std.debug.assert(self.button.as(gtk.Widget).getVisible() == 0);
+                std.debug.assert(std.mem.span(self.entry.as(gtk.Editable).getText()).len == 0);
+                std.debug.assert(std.mem.eql(u8, std.mem.span(self.message.getText()), self.client.history.latest().?));
+            }
             if (glib.getenv("GTK_A11Y")) |backend| if (std.mem.eql(u8, std.mem.span(backend), "test")) {
                 const fail = gtk.testAccessibleCheckProperty(self.entry.as(gtk.Accessible), .label, if (prompt) self.client.response.z() else @as([*:0]const u8, "Authentication response"));
                 std.debug.assert(@intFromPtr(fail) == 0);
@@ -227,8 +244,8 @@ const Screen = struct {
             self.service_error = false;
             self.selection_error = false;
             self.refresh(.begin);
-        } else if (c.state == .prompt) {
-            const answer = if (c.kind == .info or c.kind == .@"error") null else std.mem.span(self.entry.as(gtk.Editable).getText());
+        } else if (c.needsInput()) {
+            const answer = std.mem.span(self.entry.as(gtk.Editable).getText());
             self.client.answer(c.prompt_generation, answer) catch {
                 self.clear();
                 self.setMessage("Response is too long or no longer current.");
@@ -799,6 +816,12 @@ pub fn run() !void {
     const cancel = gtk.Button.newWithLabel("Cancel authentication");
     panel.append(cancel.as(gtk.Widget));
     const footer = w.column(8);
+    if (config.fingerprint_hint) {
+        const hint = w.label("Fingerprint login is available when configured", "pearl-secondary");
+        hint.setWrap(1);
+        hint.setMaxWidthChars(36);
+        footer.append(hint.as(gtk.Widget));
+    }
     const controls = w.row(8);
     footer.append(controls.as(gtk.Widget));
     column.append(footer.as(gtk.Widget));

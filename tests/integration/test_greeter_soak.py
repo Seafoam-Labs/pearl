@@ -7,7 +7,7 @@ from test_greeter_ipc import receive,send
 from test_lock import metrics
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--greeter',type=Path,required=True);p.add_argument('--output',type=Path,default=Path('artifacts/greeter/latest/soak.json'));args=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--greeter',type=Path,required=True);p.add_argument('--output',type=Path,default=Path('artifacts/greeter/latest/soak.json'));p.add_argument('--passive',action='store_true');args=p.parse_args()
     with tempfile.TemporaryDirectory(prefix='pearl-soak-') as tmp:
         server=socket.socket(socket.AF_UNIX);server.bind(tmp+'/greetd.sock');server.listen();server.settimeout(15)
         ready=[threading.Event(),threading.Event()];release=[threading.Event(),threading.Event()];errors=[]
@@ -17,6 +17,9 @@ def main():
                     conn,_=server.accept()
                     with conn:
                         assert receive(conn)['type']=='create_session'
+                        if args.passive:
+                            send(conn,{'type':'auth_message','auth_message_type':'info','auth_message':'Touch the reader'})
+                            assert receive(conn)=={'type':'post_auth_message_response','response':None}
                         send(conn,{'type':'auth_message','auth_message_type':'secret','auth_message':'Fixture prompt'})
                         cancel,_=server.accept()
                         with cancel:
@@ -37,7 +40,7 @@ def main():
                 assert after['pss_bytes']-before['pss_bytes']<32*1024*1024
                 assert after['fds']<=before['fds']+1
                 log.seek(0);assert 'fixture-secret' not in log.read()
-                report={'status':'passed','cycles':1000,'evidence':'mock authentication only','before':before,'after':after}
+                report={'status':'passed','cycles':1000,'passive_ack_each_cycle':args.passive,'evidence':'mock authentication only','before':before,'after':after}
                 args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
             finally:
                 release[0].set();release[1].set()

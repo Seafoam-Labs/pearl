@@ -1,0 +1,34 @@
+Build Summary: 27/27 steps succeeded
+build-greeter success
++- install pearl-greeter success
+|  +- compile exe pearl-greeter ReleaseSafe native success 4s MaxRSS:238M
+|     +- run pkg-config success 1ms
+|     +- options cached
++- install pearl-greeter-session cached
+|  +- compile exe pearl-greeter-session ReleaseSafe native cached 17ms MaxRSS:58M
+|     +- run pkg-config (reused)
+|     +- options cached
++- install pearl-greeter-host cached
+|  +- compile exe pearl-greeter-host ReleaseSafe native cached 14ms MaxRSS:56M
+|     +- run pkg-config (reused)
+|     +- options cached
++- install pearl-greeter-test success
+|  +- compile exe pearl-greeter-test ReleaseSafe native cached 15ms MaxRSS:55M
+|     +- run pkg-config (reused)
+|     +- options cached
++- install pearl-greeter-session-test cached
+|  +- compile exe pearl-greeter-session-test ReleaseSafe native cached 15ms MaxRSS:55M
+|     +- run pkg-config (reused)
+|     +- options cached
++- install pearl-greeter-host-test cached
+   +- compile exe pearl-greeter-host-test ReleaseSafe native cached 16ms MaxRSS:56M
+      +- run pkg-config (reused)
+      +- options cached
+build-locker cached
++- install pearl-lock cached
+   +- compile exe pearl-lock ReleaseSafe native cached 17ms MaxRSS:59M
+      +- translate-c cached 14ms MaxRSS:57M
+      +- run glib-compile-resources (pearl.gresource) cached
+      +- options cached
+      +- translate-c cached 15ms MaxRSS:56M
+

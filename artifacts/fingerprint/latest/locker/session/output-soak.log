@@ -1,0 +1,226 @@
+info: event=lock-ui views=1 waiting=false echo=false caps=false auth=false acquired=false updates=1 clocks=1
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=false caps=false auth=false acquired=false updates=2 clocks=2
+info: event=lock-monitor
+info: event=lock-acquired
+info: event=lock-ui views=2 waiting=false echo=false caps=false auth=true acquired=true updates=3 clocks=2
+info: event=lock-ui views=2 waiting=false echo=false caps=false auth=true acquired=true updates=4 clocks=2
+info: event=lock-ui views=2 waiting=false echo=false caps=false auth=true acquired=true updates=5 clocks=2
+info: event=lock-ui views=2 waiting=true echo=true caps=false auth=true acquired=true updates=6 clocks=2
+info: event=lock-ui views=2 waiting=true echo=true caps=false auth=true acquired=true updates=7 clocks=2
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=lock-ui views=2 waiting=true echo=true caps=false auth=true acquired=true updates=8 clocks=2
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=9 clocks=2
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=10 clocks=3
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=11 clocks=4
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=12 clocks=5
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=13 clocks=6
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=14 clocks=7
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=15 clocks=8
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=16 clocks=9
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=17 clocks=10
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=18 clocks=11
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=19 clocks=12
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=20 clocks=13
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=21 clocks=14
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=22 clocks=15
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=23 clocks=16
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=24 clocks=17
+info: event=lock-monitor
+info: event=lock-clock updates=24 clocks=18
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=25 clocks=19
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=26 clocks=20
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=27 clocks=21
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=28 clocks=22
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=29 clocks=23
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=30 clocks=24
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=31 clocks=25
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=32 clocks=26
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=33 clocks=27
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=34 clocks=28
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=35 clocks=29
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=36 clocks=30
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=37 clocks=31
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=38 clocks=32
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=39 clocks=33
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=40 clocks=34
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=41 clocks=35
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=42 clocks=36
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=43 clocks=37
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=44 clocks=38
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=45 clocks=39
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=46 clocks=40
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=47 clocks=41
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=48 clocks=42
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=49 clocks=43
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=50 clocks=44
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=51 clocks=45
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=52 clocks=46
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=53 clocks=47
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=54 clocks=48
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=55 clocks=49
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=56 clocks=50
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=57 clocks=51
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=58 clocks=52
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=59 clocks=53
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=60 clocks=54
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=61 clocks=55
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=62 clocks=56
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=63 clocks=57
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=64 clocks=58
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=65 clocks=59
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=66 clocks=60
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=67 clocks=61
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=68 clocks=62
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=69 clocks=63
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=70 clocks=64
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=71 clocks=65
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=72 clocks=66
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=73 clocks=67
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=74 clocks=68
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=75 clocks=69
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=76 clocks=70
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=77 clocks=71
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=78 clocks=72
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=79 clocks=73
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=80 clocks=74
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=81 clocks=75
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=82 clocks=76
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=83 clocks=77
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=84 clocks=78
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=85 clocks=79
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=86 clocks=80
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=87 clocks=81
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=88 clocks=82
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=89 clocks=83
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=90 clocks=84
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=91 clocks=85
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=92 clocks=86
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=93 clocks=87
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=94 clocks=88
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=95 clocks=89
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=96 clocks=90
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=97 clocks=91
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=98 clocks=92
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=99 clocks=93
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=100 clocks=94
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=101 clocks=95
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=102 clocks=96
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=103 clocks=97
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=104 clocks=98
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=105 clocks=99
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=106 clocks=100
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=107 clocks=101
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=108 clocks=102
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=109 clocks=103
+info: event=lock-monitor
+info: event=lock-ui views=1 waiting=false echo=true caps=false auth=false acquired=true updates=110 clocks=104
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=false acquired=true updates=111 clocks=105
+info: event=lock-monitor
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=true acquired=true updates=112 clocks=105
+info: event=lock-ui views=2 waiting=false echo=false caps=false auth=true acquired=true updates=113 clocks=105
+info: event=lock-ui views=2 waiting=false echo=false caps=false auth=true acquired=true updates=114 clocks=105
+info: event=lock-ui views=2 waiting=true echo=true caps=false auth=true acquired=true updates=115 clocks=105
+info: event=lock-ui views=2 waiting=false echo=true caps=false auth=true acquired=true updates=116 clocks=105
+info: event=lock-ui views=2 waiting=true echo=false caps=false auth=true acquired=true updates=117 clocks=105
+info: event=lock-ui views=2 waiting=false echo=false caps=false auth=true acquired=true updates=118 clocks=105
+info: event=lock-released

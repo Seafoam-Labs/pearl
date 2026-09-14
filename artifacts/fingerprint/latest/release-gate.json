@@ -1,0 +1,92 @@
+{
+  "schema": 1,
+  "production_accepted": false,
+  "completed_tasks": [
+    "FP00",
+    "FP01",
+    "FP02",
+    "FP03",
+    "FP04",
+    "FP05"
+  ],
+  "open_tasks": [
+    "FP06",
+    "FP07"
+  ],
+  "private_validation": "passed",
+  "host_pam_changed": false,
+  "reader_claimed_by_this_task": false,
+  "parent_greeter_host_gate": "restricted Aqueous contract not accepted",
+  "cases": [
+    {
+      "case": "real_fprintd_polkit_and_supported_reader",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "scan_match_retry_timeout_and_release_on_hardware",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "real_greetd_PAM_account_and_session_lifecycle",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "cancel_match_race_and_daemon_recovery",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "Pearl_Aqueous_login_lock_logout",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "GNOME_Wayland_login_lock_logout",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "Plasma_Wayland_login_lock_logout",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "standalone_Wayland_login_lock_logout",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "X11_login_authorization_lock_logout",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "enabled_UWSM_profiles",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "wallet_keyring_encrypted_home_behavior",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "physical_locker_fingerprint_unlock",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "Orca_and_physical_outputs",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    },
+    {
+      "case": "guest_activation_and_exact_rollback",
+      "status": "not_run",
+      "reason": "Requires selected real-reader/guest environment and parent greeter acceptance; private tests are insufficient"
+    }
+  ]
+}

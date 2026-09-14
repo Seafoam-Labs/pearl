@@ -1,0 +1,121 @@
+{
+  "status": "passed",
+  "real_device": false,
+  "real_login": false,
+  "evidence": "upstream pam_fprintd 1.94.5 with private mock fprintd; no polkit or hardware acceptance",
+  "module_sha256": "25f361d368420c5b06561eb330a436499852fc2bedefdf6204739143e6dc3993",
+  "checks": [
+    {
+      "case": "success",
+      "status": "passed",
+      "seconds": 0.10855724399880273,
+      "device_fixture": {
+        "ready": true,
+        "claimed": false,
+        "claims": 1,
+        "starts": 1,
+        "stops": 0,
+        "releases": 0,
+        "disconnect_cleanup": 1
+      }
+    },
+    {
+      "case": "no_match",
+      "status": "passed",
+      "seconds": 1.2701940939987253,
+      "device_fixture": {
+        "ready": true,
+        "claimed": false,
+        "claims": 1,
+        "starts": 3,
+        "stops": 3,
+        "releases": 1,
+        "disconnect_cleanup": 0
+      }
+    },
+    {
+      "case": "no_scan",
+      "status": "passed",
+      "seconds": 2.028194356000313,
+      "device_fixture": {
+        "ready": true,
+        "claimed": false,
+        "claims": 1,
+        "starts": 1,
+        "stops": 1,
+        "releases": 1,
+        "disconnect_cleanup": 0
+      }
+    },
+    {
+      "case": "no_device",
+      "status": "passed",
+      "seconds": 1.0268345980002778,
+      "device_fixture": {
+        "ready": true,
+        "claimed": false,
+        "claims": 0,
+        "starts": 0,
+        "stops": 0,
+        "releases": 0,
+        "disconnect_cleanup": 0
+      }
+    },
+    {
+      "case": "unenrolled",
+      "status": "passed",
+      "seconds": 1.0277176279996638,
+      "device_fixture": {
+        "ready": true,
+        "claimed": false,
+        "claims": 0,
+        "starts": 0,
+        "stops": 0,
+        "releases": 0,
+        "disconnect_cleanup": 0
+      }
+    },
+    {
+      "case": "busy",
+      "status": "passed",
+      "seconds": 1.0274355849978747,
+      "device_fixture": {
+        "ready": true,
+        "claimed": false,
+        "claims": 0,
+        "starts": 0,
+        "stops": 0,
+        "releases": 0,
+        "disconnect_cleanup": 0
+      }
+    },
+    {
+      "case": "cancel",
+      "status": "passed",
+      "seconds": 0.04734462899796199,
+      "device_fixture": {
+        "ready": true,
+        "claimed": false,
+        "claims": 1,
+        "starts": 1,
+        "stops": 0,
+        "releases": 0,
+        "disconnect_cleanup": 1
+      }
+    },
+    {
+      "case": "account_denied",
+      "status": "passed",
+      "seconds": 0.1074832839985902,
+      "device_fixture": {
+        "ready": true,
+        "claimed": false,
+        "claims": 1,
+        "starts": 1,
+        "stops": 0,
+        "releases": 0,
+        "disconnect_cleanup": 1
+      }
+    }
+  ]
+}

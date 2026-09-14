@@ -1,0 +1,262 @@
+{
+  "status": "passed",
+  "evidence": "fake greetd and synthetic modules in real Linux-PAM only",
+  "real_device": false,
+  "real_login": false,
+  "binaries": {
+    "greeter": "3ab0e78ebc123c92c367fad435cbb91629afc593cd6bae914f11beb13c800578",
+    "locker": "c0e372c1d64d6e1e4dc51773a98b79b07339d7a79b7a373dc8bd9d76a3ad3193",
+    "pam_module": "30871abe38f133a72f40fe396dfd8bfa89f797fd078cff01237e4a7113330fed"
+  },
+  "protocol": [
+    {
+      "case": "passive_success",
+      "status": "passed",
+      "passive_acknowledgements": 3,
+      "starts": 1
+    },
+    {
+      "case": "fallback",
+      "status": "passed",
+      "passive_acknowledgements": 3,
+      "starts": 1
+    },
+    {
+      "case": "additional_factor",
+      "status": "passed",
+      "passive_acknowledgements": 3,
+      "starts": 1
+    },
+    {
+      "case": "immediate_success",
+      "status": "passed",
+      "passive_acknowledgements": 0,
+      "starts": 1
+    },
+    {
+      "case": "long_status",
+      "status": "passed",
+      "passive_acknowledgements": 1,
+      "starts": 1
+    },
+    {
+      "case": "account_denied",
+      "status": "passed",
+      "passive_acknowledgements": 3,
+      "starts": 0
+    },
+    {
+      "case": "queued_cancel",
+      "status": "passed",
+      "passive_acknowledgements": 0,
+      "starts": 0
+    },
+    {
+      "case": "flood",
+      "status": "passed",
+      "passive_acknowledgements": 128,
+      "starts": 0
+    },
+    {
+      "case": "absolute_deadline",
+      "status": "passed",
+      "passive_acknowledgements": 4,
+      "starts": 0
+    }
+  ],
+  "pam": [
+    {
+      "case": "fingerprint",
+      "status": "passed",
+      "message_kinds": [
+        4,
+        3,
+        100
+      ]
+    },
+    {
+      "case": "fingerprint-denied",
+      "status": "passed",
+      "message_kinds": [
+        4,
+        3,
+        100
+      ]
+    },
+    {
+      "case": "fingerprint-fallback",
+      "status": "passed",
+      "message_kinds": [
+        4,
+        3,
+        1,
+        100
+      ]
+    },
+    {
+      "case": "fingerprint-factor",
+      "status": "passed",
+      "message_kinds": [
+        4,
+        3,
+        1,
+        100
+      ]
+    },
+    {
+      "case": "fingerprint-fallback-wrong",
+      "status": "passed",
+      "message_kinds": [
+        4,
+        3,
+        1,
+        100
+      ]
+    },
+    {
+      "case": "fingerprint-input-status",
+      "status": "passed",
+      "message_kinds": [
+        1,
+        4,
+        3,
+        100
+      ]
+    },
+    {
+      "case": "fingerprint-wait",
+      "status": "passed",
+      "message_kinds": [
+        4
+      ]
+    },
+    {
+      "case": "policy-fingerprint",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "fprintd",
+        "permit",
+        "env",
+        "authsucc"
+      ]
+    },
+    {
+      "case": "policy-password",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "fprintd",
+        "systemd_home",
+        "unix",
+        "permit",
+        "env",
+        "authsucc"
+      ]
+    },
+    {
+      "case": "policy-both_wrong",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "fprintd",
+        "systemd_home",
+        "unix",
+        "authfail"
+      ]
+    },
+    {
+      "case": "policy-missing",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "systemd_home",
+        "unix",
+        "permit",
+        "env",
+        "authsucc"
+      ]
+    },
+    {
+      "case": "policy-busy",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "fprintd",
+        "systemd_home",
+        "unix",
+        "permit",
+        "env",
+        "authsucc"
+      ]
+    },
+    {
+      "case": "policy-maxtries",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "fprintd",
+        "systemd_home",
+        "unix",
+        "permit",
+        "env",
+        "authsucc"
+      ]
+    },
+    {
+      "case": "policy-module_error",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "fprintd",
+        "systemd_home",
+        "unix",
+        "permit",
+        "env",
+        "authsucc"
+      ]
+    },
+    {
+      "case": "policy-precheck_denied",
+      "status": "passed",
+      "module_trace": [
+        "preauth"
+      ]
+    },
+    {
+      "case": "policy-account_denied",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "fprintd",
+        "permit",
+        "env",
+        "authsucc"
+      ]
+    },
+    {
+      "case": "policy-extra_factor_denied",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "fprintd",
+        "permit",
+        "env",
+        "authsucc",
+        "factor"
+      ]
+    },
+    {
+      "case": "policy-homed",
+      "status": "passed",
+      "module_trace": [
+        "preauth",
+        "fprintd",
+        "systemd_home",
+        "permit",
+        "env",
+        "authsucc"
+      ]
+    }
+  ]
+}

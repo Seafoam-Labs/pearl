@@ -12,6 +12,11 @@ The greeter shares presentation with `pearl-lock`. Login authentication belongs
 to greetd; the existing locker still unlocks an already running Aqueous session.
 Other selected desktops own their shells, services and lockers.
 
+The [fingerprint integration](FINGERPRINT_LOGIN.md) supports automatic passive
+scan-message acknowledgement, retained instructions and PAM-controlled password
+fallback. Private protocol, GTK, PAM-policy and upstream-module tests are available;
+real-reader login remains unaccepted. See its [checklist](FINGERPRINT_LOGIN_IMPLEMENTATION_PLAN.md).
+
 ## Build and private verification
 
 ```sh
@@ -57,7 +62,8 @@ adapters and unapproved UWSM profiles remain unavailable in the chooser.
 | `allow_uwsm` | Defaults false; enable only after validating every exposed managed profile, using `allow` to constrain the catalog |
 | `x11` | Defaults false; enabling also requires startx and the packaged X11 adapter, plus distribution/VM verification |
 | `accounts`, `power`, `screen_reader` | Optional AccountsService labels, permitted logind controls and fixed Orca launcher |
-| `auth_timeout_seconds` | 30–300 seconds; transport/cancellation and handoff deadlines are separately bounded |
+| `fingerprint_hint` | Optional generic fingerprint guidance; defaults off and does not enable authentication or inspect enrollment |
+| `auth_timeout_seconds` | 30–300 seconds for the absolute attempt deadline and input inactivity; transport/cancellation and handoff deadlines are separately bounded |
 
 IDs look like `wayland:gnome.desktop` or `x11:xfce.desktop`; display labels use
 localized desktop names and distinguish identical names. Selection memory contains

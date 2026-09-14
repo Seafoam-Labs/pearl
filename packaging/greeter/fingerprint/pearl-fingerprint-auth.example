@@ -1,0 +1,11 @@
+# Arch pambase 20260616-1 candidate. REVIEW ONLY; not installed by Pearl.
+# Local password-capable accounts; homed/encrypted-home acceptance remains gated.
+# Unlike system-auth, preauth is requisite and nullok is deliberately omitted.
+auth       requisite                  pam_faillock.so preauth
+-auth      [success=3 default=ignore]  pam_fprintd.so max-tries=3 timeout=15 debug=off
+-auth      [success=2 default=ignore]  pam_systemd_home.so
+auth       [success=1 default=bad]     pam_unix.so try_first_pass
+auth       [default=die]               pam_faillock.so authfail
+auth       optional                    pam_permit.so
+auth       required                    pam_env.so
+auth       required                    pam_faillock.so authsucc

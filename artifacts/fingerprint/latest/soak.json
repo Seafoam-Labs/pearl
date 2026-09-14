@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "cycles": 1000,
+  "passive_ack_each_cycle": true,
+  "evidence": "mock authentication only",
+  "before": {
+    "pss_bytes": 18126848,
+    "fds": 5,
+    "cpu_ticks": 2,
+    "rss_bytes": 65597440
+  },
+  "after": {
+    "pss_bytes": 18126848,
+    "fds": 5,
+    "cpu_ticks": 34,
+    "rss_bytes": 65597440
+  }
+}

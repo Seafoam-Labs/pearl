@@ -6,6 +6,11 @@ hosting remains gated. The existing locker
 continues to unlock an already running session; login authentication and session
 creation belong to greetd.
 
+[Fingerprint integration](FINGERPRINT_LOGIN.md) validates passive scan/retry
+messages and PAM-controlled password fallback through the fixed locker helper.
+Passive messages clear input/waiting state; cancellation and account denial
+remain locked. Real-reader unlock acceptance is separate from private tests.
+
 `pearl-lock` is Pearl's independent Zig 0.16 / GTK locker for Aqueous. T12
 introduced the session-lock and PAM foundation; T13 completes the responsive
 interface, accessible prompt handling, output lifecycle and dedicated failure

@@ -43,11 +43,11 @@ def main():
         (root/'other.desktop').write_text('[Desktop Entry]\nType=Application\nName=Other desktop\nExec=/usr/bin/true\nDesktopNames=Other;\n')
         config=session.base/'greeter.json'
         def key(*keys):session.run(['wtype','-s','120',*keys,'-s','120'])
-        for theme in ('material_dark','material_light','gtk','contrast','small','stale'):
-            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':False,'power':False,'remember_session':theme=='material_light','wallpaper':str(wallpaper) if theme=='material_light' else None}))
+        for theme in ('material_dark','material_light','gtk','contrast','small','stale','fingerprint','fingerprint_cancel'):
+            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':False,'power':False,'remember_session':theme=='material_light','fingerprint_hint':theme=='fingerprint','font_size':24 if theme=='fingerprint' else 16,'wallpaper':str(wallpaper) if theme=='material_light' else None}))
             if theme=='small':session.run(['wlr-randr','--output',primary,'--scale','2'])
             server=socket.socket(socket.AF_UNIX);path=str(session.base/f'greetd-{theme}.sock');server.bind(path);server.listen();server.settimeout(args.idle_seconds+30)
-            errors=[];requests=[]
+            errors=[];requests=[];info_ack=threading.Event();allow_success=threading.Event();scan_ready=threading.Event();continue_scan=threading.Event()
             def daemon():
                 try:
                     conn,_=server.accept()
@@ -55,11 +55,25 @@ def main():
                         conn.settimeout(args.idle_seconds+30)
                         create=receive(conn);requests.append(create)
                         assert create=={'type':'create_session','username':'fixture-user'},create
-                        send(conn,{'type':'auth_message','auth_message_type':'secret','auth_message':'Fixture password:'})
-                        answer=receive(conn)
-                        assert answer=={'type':'post_auth_message_response','response':'fixture-secret'},answer
+                        for kind,text in [('info','Touch the fingerprint reader'),('error','Remove finger and retry'),('info','指をセンサーに置いてください · Touch the reader')]:
+                            send(conn,{'type':'auth_message','auth_message_type':kind,'auth_message':text})
+                            assert receive(conn)=={'type':'post_auth_message_response','response':None}
+                        scan_ready.set()
+                        assert continue_scan.wait(10)
+                        if theme=='fingerprint_cancel':
+                            cancel,_=server.accept()
+                            with cancel:
+                                assert receive(cancel)=={'type':'cancel_session'}
+                                send(cancel,{'type':'success'})
+                            return
+                        if theme!='fingerprint':
+                            send(conn,{'type':'auth_message','auth_message_type':'secret','auth_message':'Fixture password:'})
+                            answer=receive(conn)
+                            assert answer=={'type':'post_auth_message_response','response':'fixture-secret'},answer
                         send(conn,{'type':'auth_message','auth_message_type':'info','auth_message':'Fixture authentication complete'})
                         assert receive(conn)=={'type':'post_auth_message_response','response':None}
+                        info_ack.set()
+                        assert allow_success.wait(10),'test did not release authentication result'
                         send(conn,{'type':'success'})
                         if theme=='stale':
                             second,_=server.accept()
@@ -96,7 +110,17 @@ def main():
                 from PIL import Image
                 assert Image.open(session.output/'greeter-wallpaper-hotplug.png').convert('RGB').getpixel((0,0))==(28,26,34)
             time.sleep(.3);capture(session,'greeter-'+theme,primary)
-            key('fixture-user','-k','Return');child.expect('event=greeter-state state=prompt')
+            key('fixture-user','-k','Return')
+            assert scan_ready.wait(5),'scan messages did not advance automatically'
+            time.sleep(.3);capture(session,'greeter-scan-'+theme,primary)
+            if theme=='fingerprint_cancel':
+                key('-k','Escape');continue_scan.set()
+                assert child.wait()!=0
+                thread.join(3);server.close();assert not errors and len(requests)==1,(errors,requests)
+                report['checks'].append('cancel in-flight scan returns to daemon recovery without start');continue
+            continue_scan.set()
+            if theme!='fingerprint':
+                wait_for(lambda:sum('event=greeter-state state=prompt' in line for line in child.lines)>=4)
             if theme=='material_dark':
                 # Secondary monitor changes cannot create another prompt controller.
                 key('discard-on-output-loss')
@@ -105,11 +129,11 @@ def main():
                 session.run(['wlr-randr','--output',primary,'--on'])
                 time.sleep(.3)
                 capture(session,'greeter-secret-prompt',primary)
-            key('fixture-secret','-k','Return')
-            wait_for(lambda:sum('event=greeter-state state=prompt' in line for line in child.lines)>=2)
+            if theme!='fingerprint':key('fixture-secret','-k','Return')
+            assert info_ack.wait(5),'passive message required user input'
             if theme=='stale':
                 with (root/'pearl.desktop').open('a') as f:f.write('Comment=changed during authentication\n')
-            key('-k','Return')
+            allow_success.set()
             if theme=='stale':
                 child.expect('event=greeter-state state=idle');child.stop()
                 thread.join(3);server.close();assert not errors and len(requests)==1,(errors,requests)
@@ -121,7 +145,7 @@ def main():
                 state=json.loads((session.base/'selections.json').read_text());assert state==[{'username':'fixture-user','session':'wayland:pearl.desktop'}]
             if theme=='small':session.run(['wlr-randr','--output',primary,'--scale','1'])
             assert not any('fixture-secret' in line for line in child.lines)
-            report['checks'].append(theme+' keyboard login, info acknowledgement and single handoff')
+            report['checks'].append(theme+' passive scan, '+('no password input' if theme=='fingerprint' else 'password fallback')+' and single handoff')
     report['status']='passed';(args.output/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
 
 

@@ -5,6 +5,11 @@ Implementation baseline: Zig 0.16.0; see
 This records source/binary hashes, installed session metadata and unrelated
 worktree changes. It is not a real-login certificate.
 
+Subsequent [fingerprint integration](FINGERPRINT_LOGIN.md) adds automatic passive
+message acknowledgement and an absolute attempt deadline. Its evidence is kept
+separately under `artifacts/fingerprint/`; original greeter evidence below is not
+relabelled as fingerprint or real-reader acceptance.
+
 greetd tag 0.10.3 resolves to `08efe60feceea8c81f9571c666880ff1e1c2e3ff`.
 Source was fetched into a private `/tmp` checkout; no upstream working tree or
 host configuration was changed. Installed package 0.10.3-2.1 distribution patches

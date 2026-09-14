@@ -133,7 +133,13 @@ pub fn build(b: *std.Build) void {
         lock_module.strip = release and !instrumented;
         const locker = b.addExecutable(.{ .name = if (instrumented) "pearl-lock-test" else "pearl-lock", .root_module = lock_module });
         if (instrumented) test_locker = locker else production_locker = locker;
-        if (instrumented) b.step("build-lock-test", "Build isolated PAM test locker (never installed)").dependOn(&b.addInstallArtifact(locker, .{ .dest_dir = .{ .override = .{ .custom = "test" } } }).step) else b.installArtifact(locker);
+        if (instrumented) {
+            b.step("build-lock-test", "Build isolated PAM test locker (never installed)").dependOn(&b.addInstallArtifact(locker, .{ .dest_dir = .{ .override = .{ .custom = "test" } } }).step);
+        } else {
+            const install_locker = b.addInstallArtifact(locker, .{});
+            b.getInstallStep().dependOn(&install_locker.step);
+            b.step("build-locker", "Stage the production locker in zig-out for independent reproduction").dependOn(&install_locker.step);
+        }
     }
 
     const spike_module = gtkModule(b, bindings, target, optimize, "spikes/t00/main.zig", pulse_module);
@@ -195,6 +201,25 @@ pub fn build(b: *std.Build) void {
     pam_fixture_module.addImport("pam", pam_module);
     pam_fixture_module.linkSystemLibrary("pam", .{});
     const pam_fixture = b.addLibrary(.{ .name = "pearl-pam-fixture", .linkage = .dynamic, .root_module = pam_fixture_module });
+    const fingerprint = b.addSystemCommand(&.{ "python3", "tests/integration/test_fingerprint.py", "--greeter" });
+    fingerprint.addArtifactArg(greeter_test_executable);
+    fingerprint.addArg("--locker");
+    fingerprint.addArtifactArg(test_locker);
+    fingerprint.addArg("--pam-module");
+    fingerprint.addArtifactArg(pam_fixture);
+    if (b.args) |args| fingerprint.addArgs(args);
+    const fingerprint_step = b.step("test-fingerprint", "Test passive fingerprint conversations, PAM policy branches and cancellation without hardware");
+    fingerprint_step.dependOn(&fingerprint.step);
+    fingerprint_step.dependOn(&b.addRunArtifact(greeter_unit).step);
+    if (b.option([]const u8, "fingerprint-pam", "Path to non-installed pinned pam_fprintd test module")) |module_path| {
+        const upstream = b.addSystemCommand(&.{ "python3", "tests/integration/test_fingerprint_upstream.py", "--locker" });
+        upstream.addArtifactArg(test_locker);
+        upstream.addArg("--pam-module");
+        upstream.addArtifactArg(pam_fixture);
+        upstream.addArgs(&.{ "--fprintd-module", module_path });
+        if (b.args) |args| upstream.addArgs(args);
+        b.step("test-fingerprint-upstream", "Test upstream pam_fprintd against a private fake reader service").dependOn(&upstream.step);
+    }
     const security = b.addSystemCommand(&.{ "python3", "tests/integration/test_security.py", "--pearl" });
     security.addArtifactArg(integration_app);
     security.addArg("--ctl");

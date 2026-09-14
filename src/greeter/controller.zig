@@ -3,6 +3,7 @@ const std = @import("std");
 const p = @import("protocol.zig");
 pub const State = enum { idle, connecting, authenticating, prompt, cancelling, authenticated, starting, handoff, failed, unavailable };
 pub const Pending = enum { create, answer, cancel, start };
+pub const PassiveToken = struct { attempt: u64, connection: u64, prompt: u64 };
 pub const Controller = struct {
     state: State = .idle,
     pending: ?Pending = null,
@@ -12,6 +13,18 @@ pub const Controller = struct {
     exchanges: usize = 0,
     kind: p.Prompt = .info,
     start_submitted: bool = false,
+    pub fn needsInput(self: *const Controller) bool {
+        return self.state == .prompt and (self.kind == .secret or self.kind == .visible);
+    }
+    pub fn passiveToken(self: *const Controller) ?PassiveToken {
+        if (self.state != .prompt or self.needsInput() or self.pending != null) return null;
+        return .{ .attempt = self.attempt, .connection = self.connection, .prompt = self.prompt_generation };
+    }
+    pub fn acknowledge(self: *Controller, token: PassiveToken) !void {
+        const current = self.passiveToken() orelse return error.StalePrompt;
+        if (!std.meta.eql(token, current)) return error.StalePrompt;
+        try self.answer(token.prompt, true);
+    }
     pub fn begin(self: *Controller) !void {
         if (self.state != .idle) return error.Busy;
         self.attempt +%= 1;
@@ -82,6 +95,32 @@ pub const Controller = struct {
         self.state = if (self.start_submitted) .handoff else .unavailable;
     }
 };
+test "passive acknowledgements are bound to attempt connection and prompt" {
+    var c: Controller = .{};
+    try c.begin();
+    try c.connected();
+    try c.receive(c.connection, .{ .kind = .auth_message, .prompt = .info });
+    const first = c.passiveToken().?;
+    try std.testing.expect(!c.needsInput());
+    try c.acknowledge(first);
+    try std.testing.expectError(error.StalePrompt, c.acknowledge(first));
+    try c.receive(c.connection, .{ .kind = .auth_message, .prompt = .@"error" });
+    try std.testing.expectError(error.StalePrompt, c.acknowledge(first));
+    const cancelled = c.passiveToken().?;
+    try c.cancel();
+    try std.testing.expectError(error.StalePrompt, c.acknowledge(cancelled));
+    try c.receive(c.connection, .{ .kind = .success });
+    try c.begin();
+    try c.connected();
+    try c.receive(c.connection, .{ .kind = .auth_message, .prompt = .secret });
+    try std.testing.expect(c.needsInput());
+    try std.testing.expect(c.passiveToken() == null);
+    try std.testing.expectError(error.StalePrompt, c.acknowledge(cancelled));
+    try c.answer(c.prompt_generation, false);
+    try c.receive(c.connection, .{ .kind = .@"error", .authentication_error = true });
+    try std.testing.expect(c.passiveToken() == null);
+    try std.testing.expectError(error.UnauthorizedStart, c.start());
+}
 test "stale replies cannot authorize changed selection and start never replays" {
     var c: Controller = .{};
     try std.testing.expectError(error.UnauthorizedStart, c.start());

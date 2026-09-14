@@ -30,13 +30,15 @@ def main():
     files['usr/share/wayland-sessions/pearl-aqueous.desktop']=(ROOT/'packaging/greeter/pearl-aqueous.desktop',0o644)
     for name in ('greeter.json','greetd.toml.example','pearl-greeter.sysusers','pearl-greeter.tmpfiles'):
         files['usr/share/doc/pearl-greeter/examples/'+name]=(ROOT/'packaging/greeter'/name,0o644)
-    for name in ('GREETER.md','GREETER_COMPATIBILITY.md','AQUEOUS_GREETER_REQUIREMENTS.md'):
+    for name in ('GREETER.md','GREETER_COMPATIBILITY.md','AQUEOUS_GREETER_REQUIREMENTS.md','FINGERPRINT_LOGIN.md','FINGERPRINT_LOGIN_IMPLEMENTATION_PLAN.md'):
         files['usr/share/doc/pearl-greeter/'+name]=(ROOT/'docs'/name,0o644)
+    for name in ('greetd.example','pearl.example','pearl-fingerprint-auth.example'):
+        files['usr/share/doc/pearl-greeter/examples/fingerprint/'+name]=(ROOT/'packaging/greeter/fingerprint'/name,0o644)
     for name in ('LICENSE','COPYING'):
         if (ROOT/name).is_file():files['usr/share/licenses/pearl-greeter/'+name]=(ROOT/name,0o644)
     for target,(source,mode) in files.items():
         path=dest/target;path.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(source,path);path.chmod(mode)
-    gate={'schema':1,'production_accepted':False,'reason':'Restricted Aqueous host and real desktop VM matrix remain gated','activated_services':[]}
+    gate={'schema':1,'production_accepted':False,'reason':'Restricted Aqueous host and real desktop VM matrix remain gated','activated_services':[], 'fingerprint':{'production_accepted':False,'reason':'Real reader, installed PAM policy, desktop and accessibility acceptance remain gated','pam_policy_installed':False}}
     (dest/'greeter-release-gate.json').write_text(json.dumps(gate,indent=2)+'\n')
     print(f'Staged {len(files)} files at {dest}; no service activation or host PAM changes.')
 

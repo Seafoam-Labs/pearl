@@ -13,16 +13,21 @@ const Probe = struct {
         std.log.info("event=greeter-state state={s}", .{@tagName(self.client.controller.state)});
         switch (self.client.controller.state) {
             .prompt => {
-                if ((glib.getenv("PEARL_TEST_GREETER_CANCEL") != null and !self.cancelled) or self.remaining > 0) {
+                if ((glib.getenv("PEARL_TEST_GREETER_CANCEL") != null and !self.cancelled) or (self.remaining > 0 and self.client.controller.needsInput())) {
                     self.cancelled = true;
                     self.client.cancel() catch {};
                     return;
                 }
                 const c = &self.client.controller;
+                if (!c.needsInput()) {
+                    // Simulate duplicate Enter while the client's passive ack is queued.
+                    std.debug.assert(self.client.answer(c.prompt_generation, null) == error.NoInputQuestion);
+                    return;
+                }
                 self.client.answer(c.prompt_generation, switch (c.kind) {
                     .visible => "fixture-user",
                     .secret => "fixture-secret",
-                    .info, .@"error" => null,
+                    .info, .@"error" => unreachable,
                 }) catch self.loop.quit();
             },
             .authenticated => self.client.start(&.{"PEARL_SESSION_ID=wayland:fixture.desktop"}) catch self.loop.quit(),

@@ -1,0 +1,10 @@
+{
+  "version": "1.94.5",
+  "source_url": "https://gitlab.freedesktop.org/libfprint/fprintd/-/archive/v1.94.5/fprintd-v1.94.5.tar.gz",
+  "archive_sha256": "a026ef34c31b25975275cc29a5e4eba2b54524769672095a5228098a08acd82c",
+  "source_sha256": "480d336b4ff022ac39f7d680888135f5fb0af8103f90cea8c4b84bffd2252d1c",
+  "binary_sha256": "25f361d368420c5b06561eb330a436499852fc2bedefdf6204739143e6dc3993",
+  "use": "non-installed upstream test dependency; not a Pearl C bridge",
+  "compiler": "cc (GCC) 16.2.1 20260810",
+  "libsystemd": "261"
+}

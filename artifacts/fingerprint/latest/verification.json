@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-09-14T18:05:10.733139+00:00",
+  "status": "private_validation_passed",
+  "production_accepted": false,
+  "source_baseline": "1530c6b7aecbdc2cab8b43983b372816ce7b672a",
+  "source_manifest": "source-sha256.txt",
+  "source_manifest_sha256": "d66bcbf74bb50e9a64c1aee696ef60afb34c87e27d356ee53b76076668c2302b",
+  "source_file_count": 395,
+  "production_binaries": {
+    "pearl-greeter": "dfbece05021c6116f6bb7731c16e99241bec5393b3cdb34f5fead528595ff1d2",
+    "pearl-greeter-session": "2877a5421b8cc07a09fbfe5e7904f87cad7491aa41fc5900901778627f8447c5",
+    "pearl-greeter-host": "63fc0c514e1d88953c2f61bec36ef91f8b64bade9b6c3d2e566c3eec8f956f21",
+    "pearl-lock": "ca96156c13b4e8e0c2fed96b77a8989e105ed16d56a16380a83a8c4267629d75"
+  },
+  "test_binaries": {
+    "greeter": "3ab0e78ebc123c92c367fad435cbb91629afc593cd6bae914f11beb13c800578",
+    "locker": "c0e372c1d64d6e1e4dc51773a98b79b07339d7a79b7a373dc8bd9d76a3ad3193",
+    "pam_module": "30871abe38f133a72f40fe396dfd8bfa89f797fd078cff01237e4a7113330fed"
+  },
+  "recorded_host_pam_files_unchanged": true,
+  "staged_payload": ".cache/fingerprint-stage/dfbece05021c6116",
+  "package_files": {
+    "greeter-release-gate.json": {
+      "sha256": "3f22868f2c834b125895f63851db5cefec5233767cb19fd960c4b109889d3898",
+      "mode": "0o644"
+    },
+    "usr/bin/pearl-greeter": {
+      "sha256": "dfbece05021c6116f6bb7731c16e99241bec5393b3cdb34f5fead528595ff1d2",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-aqueous-init": {
+      "sha256": "0dde70883c1a912fe64706b01617ff8dbb7363ba6c648d7be247c415dcd41c2d",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-aqueous-session": {
+      "sha256": "48344c5752cd2fe778caef33fbe1dc1ff1ab5d6d5044809bb869b2c5d44c3492",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-greeter-host": {
+      "sha256": "63fc0c514e1d88953c2f61bec36ef91f8b64bade9b6c3d2e566c3eec8f956f21",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-greeter-session": {
+      "sha256": "2877a5421b8cc07a09fbfe5e7904f87cad7491aa41fc5900901778627f8447c5",
+      "mode": "0o755"
+    },
+    "usr/lib/pearl/pearl-greeter-x11": {
+      "sha256": "a1d96442edca9d90afb4ca3ee380db09b4a4bb08cf69f5e31943e67fe77c1fd2",
+      "mode": "0o755"
+    },
+    "usr/share/doc/pearl-greeter/AQUEOUS_GREETER_REQUIREMENTS.md": {
+      "sha256": "80ed41bc20ec77c15ec50cc8256357b1aae63baf153e58ce7911696ab29d76ae",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/FINGERPRINT_LOGIN.md": {
+      "sha256": "72b4eca89ea326c2470d2b6ef8c8121fe5bdcf764853643abf121dd3217225d7",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/FINGERPRINT_LOGIN_IMPLEMENTATION_PLAN.md": {
+      "sha256": "97c3d924c1bd5ae055e869e343c8816d7b2bce218eeb191a39d64eda2ba72f24",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/GREETER.md": {
+      "sha256": "595a9e71d79eb94ace3ae5672b807e9ac6d279d63cff9e7d5a4b005aa661caed",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/GREETER_COMPATIBILITY.md": {
+      "sha256": "5d440b163c6c35c2e42e2d41bf7e5203bcfc11cface3db4065c267b369b33309",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/fingerprint/greetd.example": {
+      "sha256": "42039eea5ea9fdfc074118dff8fdd051db12759ee46e7a801b0828bf0a9fd0ab",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/fingerprint/pearl-fingerprint-auth.example": {
+      "sha256": "eeb670839b11f4a7d74893f48cf83ebabc19efb6c7d6745721f2f3690e23f6b0",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/fingerprint/pearl.example": {
+      "sha256": "e189170f192551a23f61bb68d4d387ee35705bc53bd322fbf3de49c4562b9c20",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/greetd.toml.example": {
+      "sha256": "cbe4b2198b5973a0867cf53c6ba8a914a689c08f832f6aeaa02d7052d818ca7e",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/greeter.json": {
+      "sha256": "920f35753d37198c194987c3041f4d368ece2dc5cece1c461ff6d0a1638bae0c",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/pearl-greeter.sysusers": {
+      "sha256": "98260020dda426d2ec0f2e982a5a1c8093b19b97641d7e370ed017bc805b0108",
+      "mode": "0o644"
+    },
+    "usr/share/doc/pearl-greeter/examples/pearl-greeter.tmpfiles": {
+      "sha256": "0a911746a75f7c4cf7b1b9b78ff68a2be72c3742972b6a4c9b8342496a53ce71",
+      "mode": "0o644"
+    },
+    "usr/share/wayland-sessions/pearl-aqueous.desktop": {
+      "sha256": "7b25277e6e4bdc2d1e25237c09041a53949cfde5f606ba0e20f071c88be89a66",
+      "mode": "0o644"
+    }
+  },
+  "tests": {
+    "general_unit": 79,
+    "greeter_unit": 10,
+    "fingerprint_protocol": 9,
+    "synthetic_PAM_policy": 18,
+    "upstream_module_private_bus": 8,
+    "GTK_scenarios": 8,
+    "locker": 20,
+    "session_security": 20,
+    "existing_IPC": 12
+  },
+  "idle": {
+    "seconds": 65,
+    "greeter_pss_mib": 34.037109375,
+    "compositor_pss_mib": 21.908203125,
+    "greeter_cpu_percent_one_core": 0.03076923076923077
+  },
+  "soak": {
+    "cycles": 1000,
+    "passive_ack_each_cycle": true,
+    "retained_pss_growth_bytes": 0,
+    "fd_growth": 0
+  }
+}

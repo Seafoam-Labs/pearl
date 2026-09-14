@@ -1,0 +1,14 @@
+info: event=lock-ui views=1 waiting=false echo=false caps=false auth=false acquired=false updates=1 clocks=1
+info: event=lock-monitor
+info: event=lock-acquired
+info: event=lock-ui views=1 waiting=false echo=false caps=false auth=true acquired=true updates=2 clocks=1
+info: event=lock-ui views=1 waiting=false echo=false caps=false auth=true acquired=true updates=3 clocks=1
+info: event=lock-ui views=1 waiting=false echo=false caps=false auth=true acquired=true updates=4 clocks=1
+info: event=lock-ui views=1 waiting=true echo=true caps=false auth=true acquired=true updates=5 clocks=1
+info: event=lock-ui views=1 waiting=true echo=true caps=false auth=true acquired=true updates=6 clocks=1
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=lock-ui views=1 waiting=true echo=true caps=false auth=true acquired=true updates=7 clocks=1
+info: event=lock-ui views=1 waiting=false echo=true caps=false auth=true acquired=true updates=8 clocks=1
+info: event=lock-ui views=1 waiting=true echo=false caps=false auth=true acquired=true updates=9 clocks=1
+info: event=lock-ui views=1 waiting=false echo=false caps=false auth=true acquired=true updates=10 clocks=1
+info: event=lock-released

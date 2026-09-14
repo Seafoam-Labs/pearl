@@ -19,6 +19,12 @@ def main():
         assert not any(p.startswith(('etc/pam.d/','etc/greetd/','usr/lib/systemd/system/')) for p in paths)
         assert not any('test' in Path(p).name for p in paths)
         assert json.loads((stage/'greeter-release-gate.json').read_text())['production_accepted'] is False
+        assert json.loads((stage/'greeter-release-gate.json').read_text())['fingerprint']['pam_policy_installed'] is False
+        for name in ('greetd','pearl','pearl-fingerprint-auth'):
+            assert 'usr/share/doc/pearl-greeter/examples/fingerprint/'+name+'.example' in paths
+        assert not any(p.endswith('pam_fprintd.so') or p.startswith('etc/pam.d/') for p in paths)
+        policy=(stage/'usr/share/doc/pearl-greeter/examples/fingerprint/pearl-fingerprint-auth.example').read_text()
+        assert 'max-tries=3 timeout=15 debug=off' in policy and 'nullok' not in '\n'.join(line for line in policy.splitlines() if not line.startswith('#'))
         run('python3','packaging/greeter/stage.py','--build',str(args.build),'--dest',str(stage),ok=False)
         for name in ('pearl-greeter','pearl-greeter-host','pearl-greeter-session'):
             run(str(args.build/name),'--version')

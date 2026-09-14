@@ -13,6 +13,7 @@
   "accounts": true,
   "power": true,
   "remember_session": false,
+  "fingerprint_hint": false,
   "allow_uwsm": false,
   "x11": false
 }
