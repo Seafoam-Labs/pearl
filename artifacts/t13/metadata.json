@@ -1,0 +1,55 @@
+{
+  "recorded_utc": "2026-09-14T02:32:24.873234+00:00",
+  "zig": "0.16.0",
+  "optimization": "ReleaseSafe",
+  "base_revision": "94b11e5617f3a37f7003743d477743941621e676",
+  "aqueous_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480",
+  "aqueous_binary_sha256": "1c612d3e503fe5b28c3af2595bac52b7b4441b808e259ba5fd303de2259eade1",
+  "libraries": {
+    "gtk4": "4.22.5",
+    "glib-2.0": "2.88.3",
+    "gtk4-layer-shell-0": "1.3.0",
+    "polkit-agent-1": "127"
+  },
+  "renderer": {
+    "compositor": "pixman",
+    "gtk": "cairo",
+    "displays": "two private headless outputs; tests change scale, rotation and resolution"
+  },
+  "source_sha256": {
+    ".zigversion": "aa037454b5e8320521a32b278a3f4aff05fc79009ab5503f5d4a1b9a33b38c47",
+    "README.md": "80d78e2fb52cf6a0e7fafa38f90fd99ac546345cab2d613c3e6c2b60e12a1a36",
+    "bindings/gir-inputs.json": "80f986566e4adefa7f562d52147a894dd1e0be36f73e57daafea0a11c24dc507",
+    "bindings/headers/pam-inputs.json": "38bee654c98fe33a80eba241637f621a827c3cb9de915d3a5eac7a4acf00a7f3",
+    "bindings/protocols/inputs.json": "30419430ac5b54baa8e54ca1c09771d9409de58ae6411d8b8188ee2f95efd503",
+    "build.zig": "02213a09f5de6f09440cf3c4400b63942cb7b2dc4cb67dbabb1481ad892cea89",
+    "build.zig.zon": "b63cc184cec5338bfafae957b008bb2a1bdb19eb676064b3f785aac9c6a992ba",
+    "docs/DEVELOPMENT.md": "5a7d5b5bc5b4dcd44033851dcd3e3c0bb70c62d55d234d6b61809d65b5bb3035",
+    "docs/LOCK_SCREEN.md": "a91ea7443088d44ca784b010616595cdf954b6d6ed973f0d0f7d7cdbc6e385db",
+    "docs/PROGRESS.md": "c4d7ce02e85e0d3480b07a9d5e791476c6bfa0cda0cc2d4abde0f902f8778641",
+    "docs/SESSION_SECURITY.md": "907bf28ba40c2d7c76eafcd5ff70ebb0da7f31a86475d26000d828e6629b88b0",
+    "docs/TASKS.md": "08a8cefc886ee675f923b64aa9eaec1baf1b7f7acd4a23269c1c570909a5c3c4",
+    "src/lock/conversation.zig": "16a079a315aee643d547f68af9fcebf0011fe03a54adc52ffe52e78b1c94c1ed",
+    "src/lock/pam.zig": "ae126ec55f37a81c143432b84bde9db8265d147ba2b187b4b12b3154933be3c7",
+    "src/lock/screen.zig": "776a267210f5872abb52e9338785a3a4b5087760cd75d03b7dc9580951c05686",
+    "src/lock_main.zig": "998fe75517b2fb6dfd881e14357f042dcda5b0e91eb41f508c9616917d61cd90",
+    "tests/fixtures/pam.zig": "86c6aef1ebe2daba19dcbaf1789d0813dfe3643ae73a5d8cd3190a9f98ad6882",
+    "tests/integration/test_lock.py": "450973ff0ed85192de22db5cc245f5dbb7b696ed7cd0efba635b5681aec5c487",
+    "tests/integration/test_security.py": "7ebbabe7a10b151e58e25a1502a960c5e13b2707fed11530767bc6664cbfde85"
+  },
+  "production_binaries": {
+    "pearlctl": "b52942ec037ce5bc51c2dd37c0a493c4ed7e61d0f504bae1aba8704453f1c8ec",
+    "pearl": "9d93a951356ea3062565d8934cc2279c90a7e918d65d28ad2914bc6a8234a3d8",
+    "pearl-lock": "9d62167c58688ce73cae43e6dd5ace02d270bfaeeb2963ed7b119ffb05a931a2"
+  },
+  "validation": {
+    "unit_adapter_binding_tests": 92,
+    "native_lock_groups": 15,
+    "session_security_groups": 20,
+    "settled_output_cycles": 100,
+    "burst_output_cycles": 12,
+    "idle_seconds": 65.00006514300185
+  },
+  "physical_acceptance": "pending; see docs/LOCK_SCREEN.md",
+  "host_session_modified": false
+}

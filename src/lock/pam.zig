@@ -21,7 +21,7 @@ fn conversation(count: c_int, messages: [*c][*c]const pam.pam_message, responses
         if (msg.msg_style < 1 or msg.msg_style > 4) return pam.PAM_CONV_ERR;
         var packet: wire.Packet = .{ .kind = @intCast(msg.msg_style) };
         defer packet.wipe();
-        packet.set(std.mem.span(msg.msg));
+        if (!packet.set(std.mem.span(msg.msg))) return pam.PAM_CONV_ERR;
         if (!wire.write(1, &packet)) return pam.PAM_CONV_ERR;
         if (msg.msg_style == pam.PAM_PROMPT_ECHO_OFF or msg.msg_style == pam.PAM_PROMPT_ECHO_ON) {
             if (!wire.read(0, &packet) or packet.kind != 101) return pam.PAM_CONV_ERR;

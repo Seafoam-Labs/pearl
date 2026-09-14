@@ -1,5 +1,40 @@
 # Pearl implementation progress
 
+## T13 — Implemented, September 13, 2026
+
+Completed the native lock interface and lifecycle work built on T12. The locker
+now scales with Pearl’s text setting, scrolls on small outputs, prioritizes the
+account card on short displays, labels each PAM prompt for accessibility,
+announces status/Caps Lock changes and supports keyboard cancellation/retry.
+It uses GTK’s secure entry buffer and rejects oversized UTF-8 or ASCII responses
+instead of authenticating a truncated prefix.
+
+Queued, coalesced monitor assignment avoids the reentrant mapping sequence found
+in the pinned GTK session-lock library during burst hotplug. Removed views clear
+their response and release their references; returned outputs focus the current
+prompt. Readiness descriptors are validated before GTK can reuse their number
+for a display socket. Helper failure, timeout, cancellation and malformed frames
+remain locked. The clock updates independently at minute boundaries, with a
+one-shot retry cooldown instead of full UI updates every second.
+
+Checks: 92 pure/adapter/binding tests; 15 dedicated native-lock scenario groups;
+20 session-security regression groups, including SIGKILL of Pearl while its
+locker remains usable. The dedicated suite records 100 settled reconnects,
+12 burst reconnects, all-output removal/return, mixed-scale/rotated and sole
+small-display input, GTK accessible-label and secure-buffer checks, PAM helper
+failure recovery, and a 65-second idle CPU/memory/descriptor sample.
+
+[T13 evidence](../artifacts/t13/README.md) records binaries, sources, screenshots,
+resource measurements and validation logs. [LOCK_SCREEN.md](LOCK_SCREEN.md)
+describes implementation details and the pinned library mitigation. Production
+build/staging, test-hook exclusion, formatting and syntax checks pass. No host
+PAM policy or service was changed.
+
+Implementation is complete with physical acceptance pending: real hardware
+DPMS/lid/suspend/resume, mixed-DPI hotplug timing, screen-reader speech/AT-SPI,
+and installed distribution PAM/fingerprint/smart-card policy. The recorded
+bounded soak is not a claim about an indefinite run. T14 is next.
+
 ## T12 — Implemented, September 13, 2026
 
 Implemented Aqueous session actions, AC/battery idle policy, logind inhibitor and

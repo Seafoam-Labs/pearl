@@ -12,6 +12,8 @@ restart policy, private fixtures and physical checks.
 
 [SESSION_SECURITY.md](SESSION_SECURITY.md) covers T12 session actions, native idle,
 polkit, PAM locking, packaging and the isolated security suite.
+[LOCK_SCREEN.md](LOCK_SCREEN.md) covers T13 input, output lifecycle and the
+private accessibility, helper-failure and resource tests.
 
 ## Build and run
 
@@ -30,6 +32,7 @@ zig build test-connectivity -Doptimize=ReleaseSafe
 zig build test-session-services -Doptimize=ReleaseSafe
 zig build test-preferences -Doptimize=ReleaseSafe
 zig build test-security -Doptimize=ReleaseSafe
+zig build test-lock -Doptimize=ReleaseSafe
 zig build integration -Doptimize=ReleaseSafe
 ```
 

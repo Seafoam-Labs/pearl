@@ -159,6 +159,13 @@ def main():
             os.kill(int(live['locker_pid']),signal.SIGKILL);wait(lambda v:v['locker_pid'] is None and v['lock']['failed']);assert locked()
             ctl(s,args.ctl,'lock');wait(lambda v:v['lock']['locked'] and v['lock']['ready']);unlock();wait_for(lambda:not locked())
             checks['locker-crash-fails-closed-and-aqueous-allows-authenticated-recovery']=True
+            ctl(s,args.ctl,'lock');wait(lambda v:v['lock']['locked'] and v['lock']['ready'])
+            os.kill(recovery.proc.pid,signal.SIGKILL);assert recovery.wait()==-signal.SIGKILL
+            assert locked();unlock();wait_for(lambda:not locked())
+            checks['shell-sigkill-preserves-owned-locker-and-authentication']=True
+            command(restart='org.freedesktop.PolicyKit1')
+            recovery=s.child('pearl-after-crash',[args.pearl],G_DEBUG='fatal-warnings');recovery.expect('event=control-ready')
+            wait(lambda v:v['active'] and v['delay_inhibitor'])
             action('logout');generation=state()['confirmation'];ctl(s,args.ctl,'lifecycle','action','--text','confirm','--generation',str(generation))
             assert recovery.wait()==0,recovery.lines[-20:]
             assert any('reason=aqueous-logout' in line for line in recovery.lines),recovery.lines[-20:]

@@ -1,7 +1,7 @@
 # Pearl AI implementation tasks
 
 Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T07 are complete**;
-T08 is implemented with physical scan acceptance pending; T09–T10 are complete; T11 is implemented with explicit gates; T12 is implemented with physical acceptance pending. T13 native-lock implementation was brought forward into T12; its remaining acceptance is listed below. T14–T16 are not started. Follow their dependency order and record evidence in
+T08 is implemented with physical scan acceptance pending; T09–T10 are complete; T11 is implemented with explicit gates; T12 is implemented with physical acceptance pending. T13 is implemented with physical acceptance pending. T14–T16 are not started. Follow their dependency order and record evidence in
 [PROGRESS.md](PROGRESS.md). Task IDs are stable and may be split into smaller
 changes without changing their acceptance criteria.
 
@@ -225,7 +225,7 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 
 ## T13 — Native GTK lock screen
 
-**Status:** native GTK surfaces, separate PAM conversation process, theme/wallpaper integration, failure/cancellation, monitor return and crash recovery implemented alongside T12 at the user’s request. Hardware resume/mixed-DPI, accessibility, production PAM distribution coverage and long-run performance remain acceptance work; see [SESSION_SECURITY.md](SESSION_SECURITY.md).
+**Status:** implemented. T13 adds responsive/accessible input, secure GTK entry buffers, strict credential framing, validated readiness descriptors, serialized output lifecycle and dedicated fault/resource tests to T12’s native foundation. See [LOCK_SCREEN.md](LOCK_SCREEN.md). Physical hardware, screen-reader and installed PAM acceptance remain explicit.
 
 **Depends on:** T10, T12. **Primary files:** `src/lock/`, lock resources and PAM packaging.
 

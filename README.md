@@ -38,6 +38,7 @@ acceptance remains pending. The full shell remains in progress.
 - [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.
 - [Aqueous settings replacement](docs/AQUEOUS_SETTINGS.md), [field coverage](docs/AQUEOUS_FIELD_INVENTORY.md) and [T11 verification](artifacts/t11/verification/README.md). Open it with `pearlctl aqueous show`.
 - [Session security and native lock](docs/SESSION_SECURITY.md): T12 idle/sleep, polkit, native GTK/PAM locker, packaging and physical acceptance.
+- [Native lock screen](docs/LOCK_SCREEN.md): T13 responsive input, accessibility, output lifecycle and resource verification.
 - [Preferences, wallpaper and themes](docs/PREFERENCES.md) and [T10 visual evidence](artifacts/t10/comparison.html): settings, dynamic Material colors, native GTK themes, draft recovery and opt-in exports.
 - [Notifications, tray and media](docs/SESSION_SERVICES.md) and [T09 visual evidence](artifacts/t09/comparison.html): protocol contracts, bounds, keyboard controls, ownership and session-bus recovery.
 - [Network and Bluetooth](docs/CONNECTIVITY.md) and [T08 visual evidence](artifacts/t08/comparison.html): connection/pairing agents, bounded discovery, credential handling and hardware acceptance.

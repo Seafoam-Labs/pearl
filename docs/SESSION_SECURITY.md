@@ -6,6 +6,8 @@ Per the user's clarification, it also brings forward T13's native locker:
 separate Zig/GTK executable with a Noctalia-like clock, date, account card and
 unlock conversation. It follows Pearl's Material or installed GTK theme and
 wallpaper. The shell and locker have separate lifetimes.
+[T13 native lock details](LOCK_SCREEN.md) cover responsive layout, accessibility,
+output churn, protected entry buffers and dedicated resource/failure tests.
 
 The implementation uses Zig 0.16.0, Ghostty's shared GTK/GIO types, generated
 Polkit/PolkitAgent GIR namespaces, generated ext-idle-notify declarations and
@@ -92,7 +94,7 @@ commands. Responses are bounded, temporary owned buffers are cleared, core dumps
 are disabled, and authentication data is omitted from diagnostics. GTK and PAM
 may maintain their own internal copies; buffer clearing is not a claim that all
 library memory is scrubbed. Escape cancels the conversation, clears entries and
-leaves the session locked. An attempt has a 90-second deadline; failure permits
+leaves the session locked. Enter retries after cancellation or failure. An attempt has a 90-second deadline; failure permits
 a retry after a short cooldown. A hung/crashed authentication helper cannot
 unlock the screen.
 
@@ -206,9 +208,10 @@ working production PAM stack, perform these checks deliberately:
 | Lid close/external sleep and resume, with and without active inhibitors | Validate actual logind delay limit, lid policy, hardware wake and lock coverage |
 | Confirm Log out in a dedicated UWSM session | Compositor/session stop; Pearl's services disappear; no duplicate/restarted shell remains |
 
-Native-lock behavior is implemented, but this is not a claim that all T13
-hardware, accessibility, PAM-distribution, fingerprint/smart-card and long-run
-performance acceptance is complete. No image-by-image Noctalia visual parity is
+T13 implements responsive input, GTK accessibility labels/announcements and
+bounded resource verification. Hardware, actual screen-reader, PAM-distribution,
+fingerprint/smart-card and broader long-run acceptance still need installation
+validation. No image-by-image Noctalia visual parity is
 claimed. The UI follows its integrated clock/account/conversation approach while
 using Pearl's existing theme and Aqueous-only protocols.
 

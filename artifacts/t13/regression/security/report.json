@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "checks": {
+    "logind-session-native-idle-and-authority-registration": true,
+    "authority-identities-cancellation-and-unsupported-identity": true,
+    "authority-restart-and-escape-cleanup": true,
+    "confirmation-generation-and-sleep-inhibitor": true,
+    "native-lock-acquisition-acknowledgement": true,
+    "output-removal-return-remains-locked": true,
+    "pam-multi-message-failure-cancellation-and-success": true,
+    "native-lock-material-light-and-gtk-theme": true,
+    "suspend-lock-before-call-delay-release-and-resume-rearm": true,
+    "external-sleep-preparation": true,
+    "ac-battery-policy-selection": true,
+    "actual-idle-policy-pause-and-automatic-suspend": true,
+    "logind-restart": true,
+    "inactive-session-actions-gated": true,
+    "account-policy-denial-never-unlocks": true,
+    "shell-exit-preserves-independent-lock": true,
+    "false-ready-times-out-no-suspend-and-failed-preparation-retains-delay": true,
+    "locker-crash-fails-closed-and-aqueous-allows-authenticated-recovery": true,
+    "shell-sigkill-preserves-owned-locker-and-authentication": true,
+    "acknowledged-aqueous-logout-stops-shell": true
+  },
+  "binaries": {
+    "pearl": "fe6369d7d479c00d284f56d7e40ad39aad2a7c76375d8564163e4677bcd80e0b",
+    "ctl": "b52942ec037ce5bc51c2dd37c0a493c4ed7e61d0f504bae1aba8704453f1c8ec",
+    "locker": "1933f63c170637ab294977e3549c89cf3b1c0a66919535fbe57ff3272d118792",
+    "pam_module": "0155b279724a62798876cecedfce987ed2bae276f1628f461aebcf3dcd4ae95b"
+  },
+  "locked_capture_allowed": true
+}

@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "files": [
+    "etc/pam.d/pearl",
+    "usr/bin/pearl",
+    "usr/bin/pearl-lock",
+    "usr/bin/pearlctl",
+    "usr/lib/systemd/user/pearl.service",
+    "usr/share/licenses/pearl/aqueous-protocol-MIT.txt",
+    "usr/share/licenses/pearl/ghostty-gobject-MIT.txt",
+    "usr/share/licenses/pearl/gtk4-layer-shell-MIT.txt",
+    "usr/share/licenses/pearl/libpulse-LGPL-2.1.txt",
+    "usr/share/licenses/pearl/pam-notice.txt",
+    "usr/share/licenses/pearl/polkit-LGPL-2.1.txt",
+    "usr/share/licenses/pearl/polkit-notice.txt",
+    "usr/share/licenses/pearl/zig-gobject-0BSD.txt",
+    "usr/share/licenses/pearl/zig-wayland-MIT.txt"
+  ],
+  "production_test_hooks_absent": true,
+  "binaries": {
+    "pearl-lock": "9d62167c58688ce73cae43e6dd5ace02d270bfaeeb2963ed7b119ffb05a931a2",
+    "pearlctl": "b52942ec037ce5bc51c2dd37c0a493c4ed7e61d0f504bae1aba8704453f1c8ec",
+    "pearl": "9d93a951356ea3062565d8934cc2279c90a7e918d65d28ad2914bc6a8234a3d8"
+  }
+}

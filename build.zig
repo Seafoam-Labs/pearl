@@ -127,6 +127,12 @@ pub fn build(b: *std.Build) void {
     security.addArtifactArg(pam_fixture);
     if (b.args) |args| security.addArgs(args);
     b.step("test-security", "Verify native lock, PAM, polkit and idle/sleep sequencing on private services").dependOn(&security.step);
+    const lock_tests = b.addSystemCommand(&.{ "python3", "tests/integration/test_lock.py", "--locker" });
+    lock_tests.addArtifactArg(test_locker);
+    lock_tests.addArg("--pam-module");
+    lock_tests.addArtifactArg(pam_fixture);
+    if (b.args) |args| lock_tests.addArgs(args);
+    b.step("test-lock", "Verify native lock accessibility, output lifecycle, PAM failures and idle cost").dependOn(&lock_tests.step);
     const integration = b.addSystemCommand(&.{ "python3", "tests/integration/test_lifecycle.py", "--pearl" });
     integration.addArtifactArg(integration_app);
     integration.addArg("--production-pearl");
