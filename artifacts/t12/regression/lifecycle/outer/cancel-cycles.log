@@ -1,0 +1,65 @@
+info(gallery): event=search results=518
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(pearl): event=work-started generation=1
+info(pearl): event=ready mode=demo
+info(gallery): event=search results=518
+info(pearl): event=stopping reason=window-close pending=true
+info(pearl): event=work-finished applied=false canceled=true
+info(pearl): event=cleanup pending=false watched_objects=0
+info(gallery): event=search results=518
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(pearl): event=work-started generation=1
+info(pearl): event=ready mode=demo
+info(gallery): event=search results=518
+info(pearl): event=stopping reason=window-close pending=true
+info(pearl): event=work-finished applied=false canceled=true
+info(pearl): event=cleanup pending=false watched_objects=0
+info(gallery): event=search results=518
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(pearl): event=work-started generation=1
+info(pearl): event=ready mode=demo
+info(gallery): event=search results=518
+info(pearl): event=stopping reason=window-close pending=true
+info(pearl): event=work-finished applied=false canceled=true
+info(pearl): event=cleanup pending=false watched_objects=0
+info(gallery): event=search results=518
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(pearl): event=work-started generation=1
+info(pearl): event=ready mode=demo
+info(gallery): event=search results=518
+info(pearl): event=stopping reason=window-close pending=true
+info(pearl): event=work-finished applied=false canceled=true
+info(pearl): event=cleanup pending=false watched_objects=0
+info(gallery): event=search results=518
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(pearl): event=work-started generation=1
+info(pearl): event=ready mode=demo
+info(gallery): event=search results=518
+info(pearl): event=stopping reason=window-close pending=true
+info(pearl): event=work-finished applied=false canceled=true
+info(pearl): event=cleanup pending=false watched_objects=0
+info(gallery): event=search results=518
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(pearl): event=work-started generation=1
+info(pearl): event=ready mode=demo
+info(gallery): event=search results=518
+info(pearl): event=stopping reason=window-close pending=true
+info(pearl): event=work-finished applied=false canceled=true
+info(pearl): event=cleanup pending=false watched_objects=0
+info(gallery): event=search results=518
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(pearl): event=work-started generation=1
+info(pearl): event=ready mode=demo
+info(gallery): event=search results=518
+info(pearl): event=stopping reason=window-close pending=true
+info(pearl): event=work-finished applied=false canceled=true
+info(pearl): event=cleanup pending=false watched_objects=0
+info(gallery): event=search results=518
+info(gallery): event=appearance light=false compact=false large=false reduced=false
+info(pearl): event=work-started generation=1
+info(pearl): event=ready mode=demo
+info(gallery): event=search results=518
+info(pearl): event=stopping reason=window-close pending=true
+info(pearl): event=work-finished applied=false canceled=true
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

@@ -21,6 +21,7 @@ pub const Output = struct { connector: []const u8, bar: Bar = .{} };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
+    idle: @import("../services/idle_policy.zig").Config = .{},
     theme: Theme = .{},
     wallpaper: Wallpaper = .{},
     font: []const u8 = "",
@@ -37,6 +38,7 @@ pub const Preferences = struct {
         return self.bar;
     }
     pub fn validate(self: Preferences) !void {
+        try self.idle.validate();
         if (self.version != 1) return error.UnsupportedVersion;
         try safeText(self.font, 96);
         try safeText(self.theme.gtk_name, 96);

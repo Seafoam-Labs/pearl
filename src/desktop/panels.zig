@@ -7,6 +7,7 @@ const tr = @import("text.zig").tr;
 const native = @import("../platform/wayland/layout.zig");
 const a = std.heap.c_allocator;
 pub const Control = struct {
+    lifecycle: *@import("lifecycle.zig").View,
     media: *@import("media.zig").View,
     connectivity: *@import("connectivity.zig").View,
     services: *@import("services.zig").View,
@@ -17,9 +18,9 @@ pub const Control = struct {
     action: *const fn (*anyopaque, ?[]const u8) void,
     rows: [native.names.len]Choice = undefined,
     const Choice = struct { owner: *Control, name: []const u8 };
-    pub fn create(host: *gtk.Box, layout: *native.Layout, context: *anyopaque, action: @FieldType(Control, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, media: *@import("../services/mpris.zig").Media) !*Control {
+    pub fn create(host: *gtk.Box, layout: *native.Layout, context: *anyopaque, action: @FieldType(Control, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, media: *@import("../services/mpris.zig").Media, lifecycle: *@import("../services/lifecycle.zig").Lifecycle, auth: *@import("../services/polkit.zig").Agent) !*Control {
         const self = try a.create(Control);
-        self.* = .{ .layout = layout, .context = context, .action = action, .label = undefined, .buttons = undefined, .services = undefined, .connectivity = undefined, .media = undefined };
+        self.* = .{ .lifecycle = undefined, .layout = layout, .context = context, .action = action, .label = undefined, .buttons = undefined, .services = undefined, .connectivity = undefined, .media = undefined };
         host.append(w.label(tr("Control center", "Schnelleinstellungen"), "pearl-card-title").as(gtk.Widget));
         const scroll = gtk.ScrolledWindow.new();
         scroll.setPolicy(.never, .automatic);
@@ -27,6 +28,7 @@ pub const Control = struct {
         const content = w.column(16);
         scroll.setChild(content.as(gtk.Widget));
         host.append(scroll.as(gtk.Widget));
+        self.lifecycle = try @import("lifecycle.zig").View.create(content, lifecycle, auth);
         self.media = try @import("media.zig").View.create(content, media);
         self.connectivity = try @import("connectivity.zig").View.create(content, network, bluetooth);
         self.services = try @import("services.zig").View.create(content, audio, power);
@@ -52,12 +54,14 @@ pub const Control = struct {
         return self;
     }
     pub fn destroy(self: *Control) void {
+        self.lifecycle.destroy();
         self.media.destroy();
         self.connectivity.destroy();
         self.services.destroy();
         a.destroy(self);
     }
     pub fn update(self: *Control) void {
+        self.lifecycle.update();
         self.media.update();
         self.connectivity.update();
         self.services.update();

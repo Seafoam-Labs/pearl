@@ -11,7 +11,8 @@ const a = std.heap.c_allocator;
 pub const View = struct {
     service: *Service,
     host: *gtk.Box,
-    forms: [2]*gtk.Box,
+    forms: [3]*gtk.Box,
+    idle_spins: [4]*gtk.SpinButton = undefined,
     arena: std.heap.ArenaAllocator,
     base: model.Preferences = .{},
     revision: u64 = 0,
@@ -43,7 +44,13 @@ pub const View = struct {
         const appearance = page(notebook, "Appearance");
         const bar = page(notebook, "Bar & behavior");
         const advanced = page(notebook, "Advanced");
-        self.* = .{ .service = service, .host = host, .forms = .{ appearance, bar }, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme" }), .variant = dropdown(appearance, "Color variant", &.{ "Dark", "Light" }), .source = dropdown(appearance, "Dynamic colors from", &.{ "Seed color", "Wallpaper" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
+        const session = page(notebook, "Session");
+        self.* = .{ .service = service, .host = host, .forms = .{ appearance, bar, session }, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme" }), .variant = dropdown(appearance, "Color variant", &.{ "Dark", "Light" }), .source = dropdown(appearance, "Dynamic colors from", &.{ "Seed color", "Wallpaper" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
+        session.append(w.label("Pearl's native lock screen uses your shell theme. Zero disables an automatic timeout. Suspend must follow the lock timeout; Pearl waits for verified lock acquisition.", "pearl-secondary").as(gtk.Widget));
+        for ([_][:0]const u8{ "AC · lock after seconds", "AC · suspend after seconds", "Battery · lock after seconds", "Battery · suspend after seconds" }, 0..) |label, i| {
+            self.idle_spins[i] = spin(session, label, 0, 86400);
+            _ = gtk.SpinButton.signals.value_changed.connect(self.idle_spins[i], *View, spun, self, .{});
+        }
         const hints = w.label("GTK theme: leave the name empty to follow the system. Installed themes must support GTK4. Dynamic colors use optional matugen 4.x.", "pearl-secondary");
         appearance.append(hints.as(gtk.Widget));
         self.entries[0] = entry(appearance, "GTK theme name", "System default");
@@ -128,6 +135,7 @@ pub const View = struct {
         self.density.setSelected(@intFromEnum(p.density));
         self.edge.setSelected(@intFromEnum(p.bar.edge));
         self.placement.setSelected(@intFromEnum(p.popup.placement));
+        for (self.idle_spins, [_]u32{ p.idle.ac.lock_seconds, p.idle.ac.suspend_seconds, p.idle.battery.lock_seconds, p.idle.battery.suspend_seconds }) |control, value| control.setValue(@floatFromInt(value));
         self.font_size.setValue(@floatFromInt(p.font_size));
         self.bar_size.setValue(@floatFromInt(p.bar.size));
         self.motion.setActive(@intFromBool(p.reduced_motion));
@@ -151,6 +159,8 @@ pub const View = struct {
         p.font = text(self.entries[4]);
         p.bar.groups.left = text(self.entries[5]);
         p.bar.groups.right = text(self.entries[6]);
+        p.idle.ac = .{ .lock_seconds = @intCast(self.idle_spins[0].getValueAsInt()), .suspend_seconds = @intCast(self.idle_spins[1].getValueAsInt()) };
+        p.idle.battery = .{ .lock_seconds = @intCast(self.idle_spins[2].getValueAsInt()), .suspend_seconds = @intCast(self.idle_spins[3].getValueAsInt()) };
         p.font_size = @intCast(self.font_size.getValueAsInt());
         p.bar.size = @intCast(self.bar_size.getValueAsInt());
         p.reduced_motion = self.motion.getActive() != 0;

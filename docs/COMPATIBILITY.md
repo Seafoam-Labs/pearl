@@ -52,7 +52,7 @@ does not depend on those UI frameworks.
 | Idle, data-control and capture protocols | Generate Zig protocol bindings from pinned XML when their tasks begin; no handwritten wire marshalling |
 | libpulse | **Implemented in T07:** translate pinned 17.0-98-gb096 headers with Zig 0.16.0; GLib main-loop adapter, no C bridge |
 | PAM | Generate direct Zig ABI declarations from pinned headers when its task begins; no custom C bridge |
-| Polkit agent | Generate its missing GIR namespace using the same workflow; authentication behavior remains T12 work |
+| Polkit agent | Implemented in T12 with generated Polkit/PolkitAgent 127 namespaces; see SESSION_SECURITY.md for private and physical acceptance |
 | Native background blur | **Implemented in T05:** generated `ext-background-effect-v1` on GTK’s existing display/surfaces. Private Vulkan tests verify native blur, namespace veto, capability changes, resizing and remap; see [SURFACES.md](SURFACES.md) |
 
 [Binding instructions](../bindings/README.md) describe regeneration and notices.

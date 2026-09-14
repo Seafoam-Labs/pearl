@@ -10,6 +10,9 @@ control center, runtime groups and native layout requests.
 [SERVICES.md](SERVICES.md) covers T07 audio/power adapters, CLI actions, service
 restart policy, private fixtures and physical checks.
 
+[SESSION_SECURITY.md](SESSION_SECURITY.md) covers T12 session actions, native idle,
+polkit, PAM locking, packaging and the isolated security suite.
+
 ## Build and run
 
 Use **Zig 0.16.0** and the packages in [COMPATIBILITY.md](COMPATIBILITY.md).
@@ -25,10 +28,12 @@ zig build test-desktop -Doptimize=ReleaseSafe
 zig build test-services -Doptimize=ReleaseSafe
 zig build test-connectivity -Doptimize=ReleaseSafe
 zig build test-session-services -Doptimize=ReleaseSafe
+zig build test-preferences -Doptimize=ReleaseSafe
+zig build test-security -Doptimize=ReleaseSafe
 zig build integration -Doptimize=ReleaseSafe
 ```
 
-`zig build` installs `zig-out/bin/pearl`, `pearlctl` and the retained `pearl-t00`. The `test` target
+`zig build` installs `zig-out/bin/pearl`, `pearlctl`, the native `pearl-lock` and the retained `pearl-t00`. The `test` target
 now runs pure startup/lifecycle, Aqueous codec/model, palette-contrast and translation tests without linking or initializing GTK. The
 original T00 binding test has its own `test-bindings` target. Integration builds
 a separate instrumented executable in the Zig cache and tests it on private

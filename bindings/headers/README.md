@@ -27,3 +27,12 @@ The export is `zig-out/share/pearl/bindings/pulse.zig`. The checker regenerates 
 a fresh local cache and validates inputs/output. Use `--update` only after
 reviewing an intentional header/compiler change. Headers are pinned; installed
 runtime libraries remain system packages, as with GTK.
+
+## T12 PAM ABI
+
+`pam.h` translates the pinned Linux-PAM application headers under `security/`,
+plus system libc identity declarations. Input hashes are in `pam-inputs.json`.
+`zig build generate-pam` exports declarations and
+`python3 scripts/check-pam-bindings.py` checks reproducibility. The implementation
+lives in system libpam; no custom C bridge or privileged Pearl helper is used.
+Header copyright/permission notices remain intact and are included in packaging.

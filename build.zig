@@ -16,6 +16,11 @@ pub fn build(b: *std.Build) void {
         }
         return;
     }
+    const pam = b.addTranslateC(.{ .root_source_file = b.path("bindings/headers/pam.h"), .target = target, .optimize = optimize });
+    pam.addIncludePath(b.path("bindings/headers"));
+    const pam_module = pam.createModule();
+    const pam_export = b.addInstallFile(pam.getOutput(), "share/pearl/bindings/pam.zig");
+    b.step("generate-pam", "Export the pinned PAM ABI").dependOn(&pam_export.step);
     const pulse = b.addTranslateC(.{ .root_source_file = b.path("bindings/headers/pulse.h"), .target = target, .optimize = optimize });
     pulse.addIncludePath(b.path("bindings/headers"));
     const pulse_module = pulse.createModule();
@@ -31,6 +36,9 @@ pub fn build(b: *std.Build) void {
     scanner.generate("aqueous_shell_manager_v1", 2);
     scanner.addCustomProtocol(b.path("bindings/protocols/wlr-output-management-unstable-v1.xml"));
     scanner.generate("zwlr_output_manager_v1", 4);
+    scanner.addCustomProtocol(b.path("bindings/protocols/ext-idle-notify-v1.xml"));
+    scanner.generate("ext_idle_notifier_v1", 1);
+    scanner.generate("wl_seat", 9);
     scanner.generate("wl_compositor", 6);
     scanner.generate("wl_output", 4);
     scanner.generate("ext_background_effect_manager_v1", 1);
@@ -41,7 +49,7 @@ pub fn build(b: *std.Build) void {
     const system_versions = b.addSystemCommand(&.{
         "pkg-config",       "--print-errors",                 "--exists",
         "gtk4 >= 4.22.5",   "glib-2.0 >= 2.88.3",             "gtk4-layer-shell-0 >= 1.3.0",
-        "libpulse >= 17.0", "libpulse-mainloop-glib >= 17.0",
+        "libpulse >= 17.0", "libpulse-mainloop-glib >= 17.0", "polkit-agent-1 >= 127",
     });
     const resource_command = b.addSystemCommand(&.{"glib-compile-resources"});
     resource_command.addFileArg(b.path("resources/pearl.gresource.xml"));
@@ -58,6 +66,17 @@ pub fn build(b: *std.Build) void {
     const app = b.addExecutable(.{ .name = "pearl", .root_module = module });
     app.step.dependOn(&system_versions.step);
     b.installArtifact(app);
+
+    var test_locker: *std.Build.Step.Compile = undefined;
+    for ([_]bool{ false, true }) |instrumented| {
+        const lock_module = gtkModule(b, bindings, target, optimize, "src/lock_main.zig", pulse_module);
+        configureApp(b, lock_module, resources, instrumented);
+        lock_module.addImport("pam", pam_module);
+        lock_module.linkSystemLibrary("pam", .{});
+        const locker = b.addExecutable(.{ .name = if (instrumented) "pearl-lock-test" else "pearl-lock", .root_module = lock_module });
+        if (instrumented) test_locker = locker;
+        if (instrumented) b.step("build-lock-test", "Build isolated PAM test locker (never installed)").dependOn(&b.addInstallArtifact(locker, .{ .dest_dir = .{ .override = .{ .custom = "test" } } }).step) else b.installArtifact(locker);
+    }
 
     const spike_module = gtkModule(b, bindings, target, optimize, "spikes/t00/main.zig", pulse_module);
     const spike = b.addExecutable(.{ .name = "pearl-t00", .root_module = spike_module });
@@ -94,6 +113,20 @@ pub fn build(b: *std.Build) void {
     test_module.addImport("wayland", native);
     const integration_app = b.addExecutable(.{ .name = "pearl-integration", .root_module = test_module });
     integration_app.step.dependOn(&system_versions.step);
+    const pam_fixture_module = b.createModule(.{ .root_source_file = b.path("tests/fixtures/pam.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    pam_fixture_module.addImport("pam", pam_module);
+    pam_fixture_module.linkSystemLibrary("pam", .{});
+    const pam_fixture = b.addLibrary(.{ .name = "pearl-pam-fixture", .linkage = .dynamic, .root_module = pam_fixture_module });
+    const security = b.addSystemCommand(&.{ "python3", "tests/integration/test_security.py", "--pearl" });
+    security.addArtifactArg(integration_app);
+    security.addArg("--ctl");
+    security.addArtifactArg(ctl);
+    security.addArg("--locker");
+    security.addArtifactArg(test_locker);
+    security.addArg("--pam-module");
+    security.addArtifactArg(pam_fixture);
+    if (b.args) |args| security.addArgs(args);
+    b.step("test-security", "Verify native lock, PAM, polkit and idle/sleep sequencing on private services").dependOn(&security.step);
     const integration = b.addSystemCommand(&.{ "python3", "tests/integration/test_lifecycle.py", "--pearl" });
     integration.addArtifactArg(integration_app);
     integration.addArg("--production-pearl");
@@ -187,12 +220,18 @@ fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.R
     module.linkSystemLibrary("gtk4-layer-shell-0", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("wayland-client", .{});
-    for ([_][]const u8{ "gtk4layershell1", "gtk4sessionlock1" }) |name| {
+    const polkit = b.createModule(.{ .root_source_file = b.path("bindings/generated/polkit1/polkit1.zig"), .target = target, .optimize = optimize });
+    var polkit_imports = bindings.module("gtk4").import_table.iterator();
+    while (polkit_imports.next()) |entry| polkit.addImport(entry.key_ptr.*, entry.value_ptr.*);
+    module.addImport("polkit1", polkit);
+    module.linkSystemLibrary("polkit-agent-1", .{ .use_pkg_config = .force });
+    for ([_][]const u8{ "gtk4layershell1", "gtk4sessionlock1", "polkitagent1" }) |name| {
         const generated = b.createModule(.{
             .root_source_file = b.path(b.fmt("bindings/generated/{s}/{s}.zig", .{ name, name })),
             .target = target,
             .optimize = optimize,
         });
+        generated.addImport("polkit1", polkit);
         generated.addImport("gtk4", bindings.module("gtk4"));
         var imports = bindings.module("gtk4").import_table.iterator();
         while (imports.next()) |entry| generated.addImport(entry.key_ptr.*, entry.value_ptr.*);

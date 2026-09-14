@@ -14,6 +14,8 @@ pub const Peer = struct {
     invalidated: ?*const fn (*anyopaque, []const u8, []const u8, []const u8) void = null,
     name: [:0]const u8,
     root: [:0]const u8,
+    managed: bool = true,
+    signal_received: ?*const fn (*anyopaque, []const u8, []const u8, []const u8, *glib.Variant) void = null,
     proxy: ?*gio.DBusProxy = null,
     owner: Text(256) = .{},
     epoch: u64 = 0,
@@ -111,13 +113,14 @@ pub const Peer = struct {
         if (name.len != 0) {
             self.subscription = self.connection().?.signalSubscribe(self.owner.z(), null, null, null, null, .{}, signal, self, null);
             self.changed(self.context, true);
-            self.refresh();
+            if (self.managed) self.refresh();
         }
     }
-    fn signal(_: *gio.DBusConnection, _: ?[*:0]const u8, object_path: [*:0]const u8, iface: [*:0]const u8, method: [*:0]const u8, _: *glib.Variant, data: ?*anyopaque) callconv(.c) void {
+    fn signal(_: *gio.DBusConnection, _: ?[*:0]const u8, object_path: [*:0]const u8, iface: [*:0]const u8, method: [*:0]const u8, params: *glib.Variant, data: ?*anyopaque) callconv(.c) void {
         const self: *Peer = @ptrCast(@alignCast(data.?));
         if (self.invalidated) |notify| notify(self.context, std.mem.span(object_path), std.mem.span(iface), std.mem.span(method));
-        self.refresh();
+        if (self.signal_received) |notify| notify(self.context, std.mem.span(object_path), std.mem.span(iface), std.mem.span(method), params);
+        if (self.managed) self.refresh();
     }
     pub fn refresh(self: *Peer) void {
         self.dirty = true;

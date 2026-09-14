@@ -22,7 +22,7 @@ The intended result is a daily-use DMS equivalent for an Aqueous desktop. Delive
 | 1.0 | A complete, tested Aqueous shell | Native GTK lock UI, clipboard, screenshots, dock/taskbar, desktop frame option, integrated GTK Aqueous settings, display preview/revert, accessibility, migration, packaging and performance gates |
 | Later | Optional DMS-adjacent conveniences | File indexing, weather, online calendar accounts, emoji/calculator providers, richer system monitoring, third-party extensions, greeter integration |
 
-Beta may use an established external locker as an explicitly configured interim dependency. It is not complete lock-screen parity. Aqueous settings are implemented directly in Pearl GTK through the canonical `aqueous-config` backend; the existing settings frontend is replaced.
+User clarification during T12 requires Pearl’s own Noctalia-like native locker, not swaylock. Native lock/PAM work was brought forward from T13; physical and accessibility acceptance remain explicit. Aqueous settings are implemented directly in Pearl GTK through the canonical `aqueous-config` backend; the existing settings frontend is replaced.
 
 Exclude a login greeter, compositor/window manager, portal backend, package manager, network daemon, and calendar sync service from the shell implementation. Retain Aqueous's portal integration. Do not promise DMS plugin or configuration compatibility: provide a small documented importer for supported appearance and bar preferences.
 
@@ -302,7 +302,7 @@ Use gtk4-layer-shell's session-lock support with `ext-session-lock-v1`. It suppl
 
 `pearl-lock` connects failure/locked/monitor handlers before requesting the lock, covers every output immediately, and authenticates using the distribution's PAM policy. Handle complete PAM conversations, failure, cancellation and retry without exposing secrets. Keep sensitive buffers short-lived and clear them where possible. Do not log credentials or include them in diagnostics.
 
-Only successful authentication can request unlock. Killing/restarting `pearl` must not affect the locker. Test locker crashes as well: the compositor must remain locked, and document what recovery the pinned Aqueous build actually supports. Do not assume a replacement locker can take over an abandoned lock. Keep an established external locker option until lock failure and recovery gates pass.
+Only successful authentication can request unlock. Killing/restarting `pearl` must not affect the locker. Test locker crashes as well: the compositor must remain locked, and document what recovery the pinned Aqueous build actually supports. Do not assume a replacement locker can take over an abandoned lock. Use the native Pearl locker per the T12 user clarification; its fail-closed behavior and Aqueous recovery are tested in private sessions.
 
 Install a session-scoped user service that starts after Aqueous has exported `WAYLAND_DISPLAY`, `AQUEOUS_SOCKET` and the live desktop environment. Follow the existing Aqueous/UWSM startup conventions and shutdown semantics; do not change the user's current session during development. On exit, cancel workers, release D-Bus names and layer surfaces, and leave `pearl-lock` independent until it ends correctly.
 

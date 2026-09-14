@@ -1,5 +1,39 @@
 # Pearl implementation progress
 
+## T12 — Implemented, September 13, 2026
+
+Implemented Aqueous session actions, AC/battery idle policy, logind inhibitor and
+resume coordination, and a session-scoped polkit authentication agent. The user’s
+Noctalia clarification brings the native `pearl-lock` foundation forward from
+T13: a separate Zig/GTK process owns real session-lock surfaces, with clock/date,
+account card, shared Material or GTK theme, and a separate Linux-PAM conversation
+helper. There is no swaylock or other external-locker production path.
+
+Pearl requires both the native protocol acknowledgement and current Aqueous
+locked state before requesting sleep. Failure, cancellation and false readiness
+remain locked or prevent Pearl-initiated sleep. Confirmed logout drains GTK and
+services before closing Wayland and requesting exit over verified Aqueous IPC.
+The polkit panel checks the authority sender, supports multiple Unix identities,
+and cancels on authority/session loss, lock, Escape or timeout.
+
+Full Polkit/PolkitAgent namespaces share Ghostty GTK/GIO types; idle protocol
+bindings and pinned PAM header translation extend the existing generated stack.
+The staged package includes the native locker, user unit and Arch-style PAM
+policy; no host unit or PAM configuration was changed.
+
+Verification: 91 unit/adapter/binding tests; 19 private security scenarios;
+21 preferences, 15 audio/power and 12 application-lifecycle regression groups.
+Builds use Zig 0.16.0 ReleaseSafe. GIR, Wayland and PAM regeneration checks,
+production test-hook exclusion, staging, formatting and whitespace checks pass.
+Material dark/light and GTK lock captures were inspected. Evidence and exact
+limits: [T12 verification](../artifacts/t12/README.md).
+
+[SESSION_SECURITY.md](SESSION_SECURITY.md) documents controls, policy, packaging,
+recovery and physical acceptance. Actual hardware suspend/lid/resume, mixed-DPI
+hotplug, distribution PAM policies and real system polkit authorization still
+need installation-specific validation. This completes T12 implementation; T13’s
+remaining hardware, accessibility and long-run acceptance is explicitly pending.
+
 ## T11 — Implemented, September 13, 2026
 
 Replaced the old Aqueous settings frontend directly with Pearl GTK pages over

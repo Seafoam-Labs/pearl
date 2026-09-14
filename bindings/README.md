@@ -2,11 +2,11 @@
 
 Pearl uses Ghostty's generated GObject package for GTK, GDK, GLib, GIO,
 GObject and Pango. The package does not contain gtk4-layer-shell or
-gtk4-session-lock. Both missing namespaces are now generated in this directory.
+gtk4-session-lock. Those missing namespaces and the Polkit/PolkitAgent namespaces are generated in this directory. T12 uses polkit 127 GIR inputs for a real authentication agent.
 There is no Pearl C bridge. T05/T06 additionally generate native core, background-effect, Aqueous shell
 and window-info/layout declarations using pinned zig-wayland/XML inputs; see
 [protocols/README.md](protocols/README.md). T07 adds the translated libpulse/GLib
-main-loop ABI from [pinned headers](headers/README.md).
+main-loop ABI from [pinned headers](headers/README.md). T12 adds pinned Linux-PAM application headers (`generate-pam`, `scripts/check-pam-bindings.py`) and ext-idle-notify. PAM libc identity declarations use system libc headers. Polkit/PAM notices are preserved under `licenses/`.
 
 ## Pinned inputs
 
@@ -48,7 +48,7 @@ python3 scripts/generate-bindings.py
 
 The script builds the pinned generator, applies its shipped fixes/overrides,
 verifies every GIR input and checks the resulting file set and bytes. It copies
-only `gtk4layershell1` and `gtk4sessionlock1`. Package downloads require network
+`gtk4layershell1`, `gtk4sessionlock1`, `polkit1` and `polkitagent1`. Package downloads require network
 access on the first build; Zig verifies their hashes.
 
 For an intentional dependency update, replace the root GIRs if needed, review

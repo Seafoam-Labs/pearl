@@ -1,0 +1,3 @@
+# Arch-style Linux-PAM stack. Distributions must adapt to their system policy.
+auth       include      system-auth
+account    include      system-auth

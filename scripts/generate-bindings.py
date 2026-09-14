@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate the two missing namespaces using Ghostty's pinned GIR generator."""
+"""Regenerate missing GTK layer/lock and polkit namespaces using Ghostty's pinned GIR generator."""
 import argparse
 import hashlib
 import json
@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-NAMES = ("gtk4layershell1", "gtk4sessionlock1")
+NAMES = ("gtk4layershell1", "gtk4sessionlock1", "polkit1", "polkitagent1")
 
 
 def digest(path):
@@ -48,7 +48,7 @@ def main():
             f"--bindings-dir={codegen / 'binding-overrides'}",
             f"--extensions-dir={codegen / 'extensions'}",
             f"--output-dir={output}", f"--dependency-file={base / 'inputs.d'}",
-            "Gtk4LayerShell-1.0", "Gtk4SessionLock-1.0",
+            "Gtk4LayerShell-1.0", "Gtk4SessionLock-1.0", "Polkit-1.0", "PolkitAgent-1.0",
         ], check=True)
         inputs = {}
         for filename in re.findall(r"(?:/[^\s:]+)\.gir", (base / "inputs.d").read_text()):
@@ -69,7 +69,7 @@ def main():
                 else:
                     target.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(file, target / file.name)
-        print("PASS: layer-shell and session-lock bindings match pinned generation" if args.check else "Generated layer-shell and session-lock bindings")
+        print("PASS: layer-shell, session-lock and polkit bindings match pinned generation" if args.check else "Generated layer-shell, session-lock and polkit bindings")
 
 
 if __name__ == "__main__":

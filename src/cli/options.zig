@@ -7,15 +7,17 @@ pub fn parse(args: []const []const u8) !Options {
     if (args.len == 0) return error.Usage;
     var index: usize = 1;
     const op: protocol.Op = blk: {
+        if (std.mem.eql(u8, args[0], "lock")) break :blk .lifecycle_action;
         if (std.mem.eql(u8, args[0], "status")) break :blk .status;
         if (std.mem.eql(u8, args[0], "quit")) break :blk .quit;
         if (args.len < 2) return error.Usage;
         index = 2;
-        const pairs = .{ .{ "aqueous", "reload", protocol.Op.aqueous_reload }, .{ "aqueous", "keep", protocol.Op.aqueous_keep }, .{ "aqueous", "revert", protocol.Op.aqueous_revert }, .{ "aqueous", "rebase", protocol.Op.aqueous_rebase }, .{ "aqueous", "record", protocol.Op.aqueous_record }, .{ "aqueous", "show", protocol.Op.aqueous_show }, .{ "aqueous", "status", protocol.Op.aqueous_status }, .{ "aqueous", "refresh", protocol.Op.aqueous_refresh }, .{ "aqueous", "draft", protocol.Op.aqueous_draft }, .{ "aqueous", "validate", protocol.Op.aqueous_validate }, .{ "aqueous", "apply", protocol.Op.aqueous_apply }, .{ "aqueous", "discard", protocol.Op.aqueous_discard }, .{ "settings", "show", protocol.Op.settings_show }, .{ "preferences", "status", protocol.Op.preferences_status }, .{ "preferences", "apply", protocol.Op.preferences_apply }, .{ "preferences", "reload", protocol.Op.preferences_reload }, .{ "session", "status", protocol.Op.session_status }, .{ "session", "action", protocol.Op.session_action }, .{ "notifications", "toggle", protocol.Op.notifications_toggle }, .{ "media", "toggle", protocol.Op.media_toggle }, .{ "tray", "toggle", protocol.Op.tray_toggle }, .{ "connectivity", "status", protocol.Op.connectivity_status }, .{ "connectivity", "action", protocol.Op.connectivity_action }, .{ "services", "status", protocol.Op.services_status }, .{ "audio", "set", protocol.Op.audio_set }, .{ "brightness", "set", protocol.Op.brightness_set }, .{ "profile", "set", protocol.Op.profile_set }, .{ "popup", "show", protocol.Op.popup_show }, .{ "popup", "hide", protocol.Op.popup_hide }, .{ "popup", "toggle", protocol.Op.popup_toggle }, .{ "bar", "set", protocol.Op.bar_set }, .{ "frame", "set", protocol.Op.frame_set }, .{ "osd", "show", protocol.Op.osd_show }, .{ "launcher", "show", protocol.Op.launcher_show }, .{ "launcher", "hide", protocol.Op.launcher_hide }, .{ "launcher", "toggle", protocol.Op.launcher_toggle }, .{ "control-center", "show", protocol.Op.control_show }, .{ "control-center", "toggle", protocol.Op.control_toggle }, .{ "calendar", "toggle", protocol.Op.calendar_toggle }, .{ "bar", "groups", protocol.Op.bar_groups }, .{ "layout", "get", protocol.Op.layout_get }, .{ "layout", "set", protocol.Op.layout_set }, .{ "overview", "toggle", protocol.Op.overview_toggle } };
+        const pairs = .{ .{ "lifecycle", "status", protocol.Op.lifecycle_status }, .{ "lifecycle", "action", protocol.Op.lifecycle_action }, .{ "aqueous", "reload", protocol.Op.aqueous_reload }, .{ "aqueous", "keep", protocol.Op.aqueous_keep }, .{ "aqueous", "revert", protocol.Op.aqueous_revert }, .{ "aqueous", "rebase", protocol.Op.aqueous_rebase }, .{ "aqueous", "record", protocol.Op.aqueous_record }, .{ "aqueous", "show", protocol.Op.aqueous_show }, .{ "aqueous", "status", protocol.Op.aqueous_status }, .{ "aqueous", "refresh", protocol.Op.aqueous_refresh }, .{ "aqueous", "draft", protocol.Op.aqueous_draft }, .{ "aqueous", "validate", protocol.Op.aqueous_validate }, .{ "aqueous", "apply", protocol.Op.aqueous_apply }, .{ "aqueous", "discard", protocol.Op.aqueous_discard }, .{ "settings", "show", protocol.Op.settings_show }, .{ "preferences", "status", protocol.Op.preferences_status }, .{ "preferences", "apply", protocol.Op.preferences_apply }, .{ "preferences", "reload", protocol.Op.preferences_reload }, .{ "session", "status", protocol.Op.session_status }, .{ "session", "action", protocol.Op.session_action }, .{ "notifications", "toggle", protocol.Op.notifications_toggle }, .{ "media", "toggle", protocol.Op.media_toggle }, .{ "tray", "toggle", protocol.Op.tray_toggle }, .{ "connectivity", "status", protocol.Op.connectivity_status }, .{ "connectivity", "action", protocol.Op.connectivity_action }, .{ "services", "status", protocol.Op.services_status }, .{ "audio", "set", protocol.Op.audio_set }, .{ "brightness", "set", protocol.Op.brightness_set }, .{ "profile", "set", protocol.Op.profile_set }, .{ "popup", "show", protocol.Op.popup_show }, .{ "popup", "hide", protocol.Op.popup_hide }, .{ "popup", "toggle", protocol.Op.popup_toggle }, .{ "bar", "set", protocol.Op.bar_set }, .{ "frame", "set", protocol.Op.frame_set }, .{ "osd", "show", protocol.Op.osd_show }, .{ "launcher", "show", protocol.Op.launcher_show }, .{ "launcher", "hide", protocol.Op.launcher_hide }, .{ "launcher", "toggle", protocol.Op.launcher_toggle }, .{ "control-center", "show", protocol.Op.control_show }, .{ "control-center", "toggle", protocol.Op.control_toggle }, .{ "calendar", "toggle", protocol.Op.calendar_toggle }, .{ "bar", "groups", protocol.Op.bar_groups }, .{ "layout", "get", protocol.Op.layout_get }, .{ "layout", "set", protocol.Op.layout_set }, .{ "overview", "toggle", protocol.Op.overview_toggle } };
         inline for (pairs) |p| if (std.mem.eql(u8, args[0], p[0]) and std.mem.eql(u8, args[1], p[1])) break :blk p[2];
         return error.Usage;
     };
     var r: protocol.Request = .{ .op = op };
+    if (std.mem.eql(u8, args[0], "lock")) r.text = "lock";
     while (index < args.len) : (index += 2) {
         if (index + 1 >= args.len) return error.Usage;
         const flag = args[index];
@@ -88,7 +90,10 @@ pub fn parse(args: []const []const u8) !Options {
     return .{ .request = r };
 }
 pub const usage =
-    \\Usage: pearlctl status | quit
+    \\Usage: pearlctl status | quit | lock
+    \\       pearlctl lifecycle status
+    \\       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit
+    \\       pearlctl lifecycle action --text confirm --generation N
     \\       pearlctl aqueous show|status|refresh|validate|apply|discard|rebase|reload
     \\       pearlctl aqueous keep|revert
     \\       pearlctl aqueous record --text FIELD_ID

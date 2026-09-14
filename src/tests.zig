@@ -1,4 +1,6 @@
 test {
+    _ = @import("lock/conversation.zig");
+    _ = @import("services/idle_policy.zig");
     _ = @import("config/aqueous_model.zig");
     _ = @import("config/preferences.zig");
     _ = @import("config/merge.zig");

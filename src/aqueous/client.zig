@@ -93,6 +93,16 @@ pub const Client = struct {
         self.queue.deinit(a);
         a.free(self.path);
     }
+    /// Terminal action after the shell has relinquished GTK surfaces. Stop the
+    /// event stream so its EOF cannot discard the command stream's exit reply.
+    /// Callers must stop this client after completion; do not resume desktop work.
+    pub fn exitSession(self: *Client) !u64 {
+        const ticket = try self.enqueue(.session_exit);
+        self.events.wire.close();
+        self.events.pending = null;
+        self.events.connect_deadline = 0;
+        return ticket;
+    }
     pub fn enqueue(self: *Client, action: Action) !u64 {
         if (self.availability != .ready) return error.Unavailable;
         try commands.validate(action, &self.model, self.capabilities);

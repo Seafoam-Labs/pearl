@@ -248,3 +248,11 @@ test "generated APIs share Ghostty GTK types and expose complete lock signals" {
     std.testing.refAllDecls(session_lock.Instance);
     std.testing.refAllDecls(session_lock.Instance.signals);
 }
+
+test "generated polkit session shares Ghostty GObject identity types" {
+    const polkit = @import("polkit1");
+    const agent = @import("polkitagent1");
+    try std.testing.expect(@typeInfo(@TypeOf(agent.Session.new)).@"fn".params[0].type.? == *polkit.Identity);
+    try std.testing.expect(agent.Session.Parent == gobject.Object);
+    std.testing.refAllDecls(agent.Session.signals);
+}

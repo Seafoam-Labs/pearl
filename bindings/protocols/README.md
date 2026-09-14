@@ -36,3 +36,7 @@ network access. For an intentional protocol update, review the XML and notices,
 update its source/hash in the manifest and the requested versions in `build.zig`,
 then run `--update` to record the generated hash. Run the normal check again and
 repeat surface/blur validation. Do not edit generated declarations.
+
+T12 adds `ext-idle-notify-v1.xml` from wayland-protocols 1.49, generating notifier
+version 1 and core seat version 9. Pearl binds seat version 5 and uses the
+inhibitor-respecting `get_idle_notification` request on GTK's Wayland connection.

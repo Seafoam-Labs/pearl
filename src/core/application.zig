@@ -44,6 +44,11 @@ const State = struct {
     control_server: ?control.Server = null,
     session_source: c_uint = 0,
     identity_source: c_uint = 0,
+    logout_source: c_uint = 0,
+    logout_requested: bool = false,
+    logout_ticket: ?u64 = null,
+    cleaned: bool = false,
+    logout_loop: ?*glib.MainLoop = null,
 
     fn checkThread(self: *State) void {
         std.debug.assert(glib.Thread.self() == self.main_thread);
@@ -87,6 +92,8 @@ const State = struct {
         log.info("event=stopping reason={s} pending={}", .{ reason, self.life.pending });
         if (self.session_source != 0) _ = glib.Source.remove(self.session_source);
         self.session_source = 0;
+        if (self.logout_source != 0) _ = glib.Source.remove(self.logout_source);
+        self.logout_source = 0;
         if (self.identity_source != 0) _ = glib.Source.remove(self.identity_source);
         self.identity_source = 0;
         if (self.control_server) |*server| {
@@ -94,7 +101,9 @@ const State = struct {
             self.control_server = null;
         }
         if (self.surfaces) |*surfaces| surfaces.deinit();
-        if (self.aqueous) |*client| client.stop();
+        if (!self.logout_requested) {
+            if (self.aqueous) |*client| client.stop();
+        }
         self.cancel.cancel();
         if (self.window) |window| window.destroy();
         // The task's hold keeps the main context alive until completion drains.
@@ -200,6 +209,7 @@ fn activateSession(self: *State) !void {
     self.surfaces = SurfaceManager.init(self.app, self.display, &self.aqueous.?);
     self.surfaces.?.context = self;
     self.surfaces.?.changed = nativeSessionChanged;
+    self.surfaces.?.logout = queueLogout;
     try self.surfaces.?.start();
     self.identity_source = glib.timeoutAdd(5000, identityExpired, self);
     self.aqueous.?.start();
@@ -210,9 +220,21 @@ fn aqueousChanged(context: *anyopaque, event: adapter.Event) void {
     const self: *State = @ptrCast(@alignCast(context));
     self.checkThread();
     if (event == .availability) log.info("event=aqueous-availability state={s}", .{@tagName(event.availability)});
-    if (event == .fault) log.warn("event=aqueous-disconnected reason={s}", .{event.fault});
+    if (event == .fault and !self.logout_requested) log.warn("event=aqueous-disconnected reason={s}", .{event.fault});
+    if (self.logout_requested) {
+        if (event == .completion and self.logout_ticket == event.completion.ticket) {
+            self.logout_ticket = null;
+            self.failed = event.completion.status != .accepted and event.completion.status != .applied;
+            log.info("event=logout-result status={s}", .{@tagName(event.completion.status)});
+            if (self.logout_loop) |loop| loop.quit();
+        }
+        return;
+    }
     if (self.life.phase == .stopping) return;
-    if (event == .completion) if (self.surfaces) |*surfaces| surfaces.completion(event.completion);
+    if (event == .completion) {
+        if (self.surfaces) |*surfaces| surfaces.completion(event.completion);
+    }
+    if (self.logout_requested) return;
     if (event == .availability or event == .state) {
         if (self.surfaces) |*surfaces| surfaces.schedule();
         if (self.session_source == 0) self.session_source = glib.idleAdd(sessionChanged, self);
@@ -220,7 +242,7 @@ fn aqueousChanged(context: *anyopaque, event: adapter.Event) void {
 }
 fn nativeSessionChanged(context: *anyopaque) void {
     const self: *State = @ptrCast(@alignCast(context));
-    if (self.life.phase != .stopping and self.session_source == 0) self.session_source = glib.idleAdd(sessionChanged, self);
+    if (!self.logout_requested and self.life.phase != .stopping and self.session_source == 0) self.session_source = glib.idleAdd(sessionChanged, self);
 }
 fn identityExpired(data: ?*anyopaque) callconv(.c) c_int {
     const self = state(data);
@@ -231,6 +253,7 @@ fn identityExpired(data: ?*anyopaque) callconv(.c) c_int {
 fn sessionChanged(data: ?*anyopaque) callconv(.c) c_int {
     const self = state(data);
     self.session_source = 0;
+    if (self.logout_requested) return 0;
     const client = &self.aqueous.?;
     if (self.control_server) |*server| {
         if (client.availability != .ready or !std.mem.eql(u8, &server.session, client.model.session)) {
@@ -266,6 +289,38 @@ fn sessionFailed(self: *State, err: anyerror) void {
 fn controlRequest(context: *anyopaque, request: control_protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
     const self: *State = @ptrCast(@alignCast(context));
     return self.surfaces.?.control(request, alloc);
+}
+fn queueLogout(context: *anyopaque) void {
+    const self: *State = @ptrCast(@alignCast(context));
+    if (self.logout_requested) return;
+    self.logout_requested = true;
+    // Allow the local confirmation reply to flush before stopping its server.
+    self.logout_source = glib.timeoutAdd(100, beginLogout, self);
+}
+fn beginLogout(context: ?*anyopaque) callconv(.c) c_int {
+    const self = state(context);
+    self.logout_source = 0;
+    // Drain GTK and service workers while the compositor is still alive.
+    self.stop("aqueous-logout");
+    return 0;
+}
+fn finishLogout(self: *State) void {
+    // GtkApplication shutdown still needs its display. Only after its objects
+    // have been disposed may we close Wayland and send the terminal IPC command.
+    self.display.ref();
+    cleanup(self);
+    self.display.close();
+    self.display.unref();
+    const loop = glib.MainLoop.new(null, 0);
+    defer loop.unref();
+    self.logout_loop = loop;
+    defer self.logout_loop = null;
+    self.logout_ticket = self.aqueous.?.exitSession() catch {
+        self.failed = true;
+        log.err("event=logout-result status=unavailable", .{});
+        return;
+    };
+    loop.run();
 }
 fn controlQuit(context: *anyopaque) void {
     const self: *State = @ptrCast(@alignCast(context));
@@ -317,6 +372,32 @@ fn workFinished(_: ?*gobject.Object, result: *gio.AsyncResult, data: ?*anyopaque
     self.app.as(gio.Application).release();
 }
 
+fn cleanup(self: *State) void {
+    if (self.cleaned) return;
+    self.cleaned = true;
+    for (self.sources) |id| if (id != 0) {
+        _ = glib.Source.remove(id);
+    };
+    for (self.connections[0..self.connection_count]) |connection|
+        gobject.signalHandlerDisconnect(connection.object, connection.id);
+    if (self.session_source != 0) _ = glib.Source.remove(self.session_source);
+    if (self.identity_source != 0) _ = glib.Source.remove(self.identity_source);
+    if (self.control_server) |*server| server.deinit();
+    if (self.surfaces) |*surfaces| surfaces.deinit();
+    if (self.gallery) |*gallery| gallery.deinit();
+    if (self.window) |window| {
+        window.destroy();
+        window.unref();
+    }
+    gtk.StyleContext.removeProviderForDisplay(self.display, self.css.as(gtk.StyleProvider));
+    self.builder.unref();
+    self.css.unref();
+    self.cancel.unref();
+    self.app.unref();
+    if (options.test_hooks) std.debug.assert(self.watched_objects == 0);
+    log.info("event=cleanup pending={} watched_objects={d}", .{ self.life.pending, self.watched_objects });
+}
+
 pub fn run(mode: Mode, hooks: TestHooks) !u8 {
     const raw = @embedFile("pearl_resources");
     const bytes = glib.Bytes.newStatic(raw.ptr, raw.len);
@@ -349,30 +430,8 @@ pub fn run(mode: Mode, hooks: TestHooks) !u8 {
         .work = .{ .delay_ms = hooks.worker_delay_ms },
     };
     for ([_]*gobject.Object{ app.as(gobject.Object), builder.as(gobject.Object), css.as(gobject.Object), cancel.as(gobject.Object) }) |object| self.watch(object);
-    defer {
-        for (self.sources) |id| if (id != 0) {
-            _ = glib.Source.remove(id);
-        };
-        for (self.connections[0..self.connection_count]) |connection|
-            gobject.signalHandlerDisconnect(connection.object, connection.id);
-        if (self.session_source != 0) _ = glib.Source.remove(self.session_source);
-        if (self.identity_source != 0) _ = glib.Source.remove(self.identity_source);
-        if (self.control_server) |*server| server.deinit();
-        if (self.surfaces) |*surfaces| surfaces.deinit();
-        if (self.aqueous) |*client| client.deinit();
-        if (self.gallery) |*gallery| gallery.deinit();
-        if (self.window) |window| {
-            window.destroy();
-            window.unref();
-        }
-        gtk.StyleContext.removeProviderForDisplay(self.display, css.as(gtk.StyleProvider));
-        builder.unref();
-        css.unref();
-        cancel.unref();
-        app.unref();
-        if (options.test_hooks) std.debug.assert(self.watched_objects == 0);
-        log.info("event=cleanup pending={} watched_objects={d}", .{ self.life.pending, self.watched_objects });
-    }
+    defer if (self.aqueous) |*client| client.deinit();
+    defer cleanup(&self);
     if (builder.addFromResource(if (mode == .demo) "/org/aqueous/Pearl/gallery.ui" else "/org/aqueous/Pearl/session.ui", &err) == 0) {
         defer err.?.free();
         log.err("event=resource-error message={s}", .{err.?.f_message orelse "Unknown GTK error"});
@@ -394,5 +453,6 @@ pub fn run(mode: Mode, hooks: TestHooks) !u8 {
     const status = app.as(gio.Application).run(0, null);
     if (self.life.phase == .stopping) self.life.finish();
     std.debug.assert(!self.life.pending);
+    if (self.logout_requested) finishLogout(&self);
     return if (status != 0 or self.failed) 1 else 0;
 }

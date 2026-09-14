@@ -1,0 +1,20 @@
+[Unit]
+Description=Pearl desktop shell for Aqueous
+PartOf=graphical-session.target
+After=graphical-session.target
+ConditionEnvironment=WAYLAND_DISPLAY
+ConditionEnvironment=AQUEOUS_SOCKET
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pearl
+Restart=on-failure
+RestartSec=2
+# pearl-lock must survive a normal shell restart. Session termination is owned
+# by the compositor/UWSM. Do not change this to control-group without giving the
+# locker its own independent unit first.
+KillMode=process
+TimeoutStopSec=10
+
+[Install]
+WantedBy=graphical-session.target

@@ -1,0 +1,87 @@
+{
+  "audio": {
+    "ready": true,
+    "generation": 1,
+    "count": 4,
+    "truncated": false,
+    "pending": false,
+    "in_flight": false,
+    "err": null,
+    "default_sink": 22,
+    "default_source": 22,
+    "devices": [
+      {
+        "kind": "sink",
+        "index": 22,
+        "name": "test_output_a",
+        "label": "test_output_a",
+        "volume": 100,
+        "mute": false,
+        "target": 0,
+        "writable": true
+      },
+      {
+        "kind": "sink",
+        "index": 25,
+        "name": "test_output_b",
+        "label": "test_output_b",
+        "volume": 100,
+        "mute": false,
+        "target": 0,
+        "writable": true
+      },
+      {
+        "kind": "source",
+        "index": 22,
+        "name": "test_output_a.monitor",
+        "label": "Monitor of test_output_a",
+        "volume": 100,
+        "mute": false,
+        "target": 0,
+        "writable": true
+      },
+      {
+        "kind": "source",
+        "index": 25,
+        "name": "test_output_b.monitor",
+        "label": "Monitor of test_output_b",
+        "volume": 100,
+        "mute": false,
+        "target": 0,
+        "writable": true
+      }
+    ],
+    "next_offset": null
+  },
+  "power": {
+    "battery_present": true,
+    "percentage": 72.5,
+    "state": 2,
+    "on_battery": true,
+    "time_to_empty": 7200,
+    "time_to_full": 0,
+    "profile": "balanced",
+    "profiles": [
+      true,
+      true,
+      true
+    ],
+    "degraded": "",
+    "can_power_off": true,
+    "can_reboot": true,
+    "session_active": true,
+    "preparing": false,
+    "pending": false,
+    "profile_in_flight": false,
+    "err": null
+  },
+  "brightness": {
+    "available": true,
+    "device": "test_panel",
+    "maximum": 1000,
+    "value": 420,
+    "percent": 42,
+    "pending": false,
+    "in_flight": false
+  }
+}

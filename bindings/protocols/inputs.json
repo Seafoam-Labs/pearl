@@ -7,7 +7,9 @@
     "aqueous_shell_manager_v1": 2,
     "aqueous_window_info_manager_v1": 3,
     "zwlr_output_manager_v1": 4,
-    "wl_output": 4
+    "wl_output": 4,
+    "ext_idle_notifier_v1": 1,
+    "wl_seat": 9
   },
   "inputs": {
     "wayland.xml": {
@@ -37,7 +39,11 @@
     "wlr-output-management-unstable-v1.xml": {
       "source": "Aqueous compositor/protocol/upstream/wlr-output-management-unstable-v1.xml (vendored protocol v4)",
       "sha256": "65b0f82a6cf129bf1a1c31a2428795abd33886c15ddd5f3ad97e5922d7bdc3a7"
+    },
+    "ext-idle-notify-v1.xml": {
+      "source": "wayland-protocols 1.49: staging/ext-idle-notify/ext-idle-notify-v1.xml",
+      "sha256": "e56a9c22684e6b46655f7221b798328e304c1efc8f63f01241a1cf8c070f4c30"
     }
   },
-  "generated_sha256": "db2a4ab0ddea82244f815597961253840f1601573d2e752ed3e757db03e5d70d"
+  "generated_sha256": "81dbd56b770013873da0710d4380bf1620ded5a3ccba907fb894e319c7001339"
 }

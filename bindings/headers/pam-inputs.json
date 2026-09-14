@@ -1,0 +1,10 @@
+{
+  "source": "Linux-PAM 1.7 application headers, inspected on 2026-09-13; libc headers are system inputs",
+  "headers": {
+    "pam.h": "81d47a683982aa05aab831044819f0f93a65cf97266893de8c98888494b81fa5",
+    "security/pam_appl.h": "b17abd539c885e10dea23145ebfbd98be60e1bc52cf16166cad00edb18d0d588",
+    "security/_pam_types.h": "44600b6b087dd93b850c418a397c0b837573ceb863de127265fbf74a2a2b6e16",
+    "security/_pam_compat.h": "675a39fb8e51edceb66de0d6399f4a027a49ce0e47d2d14fad519019efdede0f"
+  },
+  "generated_sha256": "44df2f0e32032b8e4938ace39456eb2a7dc7e85b5ccd73a1bb45dd8568296cf9"
+}

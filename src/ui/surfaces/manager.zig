@@ -96,6 +96,8 @@ pub const Manager = struct {
     popup_rect: ?Rect = null,
     pane: Bar.Pane = .launcher,
     audio: @import("../../services/audio.zig").Audio = undefined,
+    lifecycle: @import("../../services/lifecycle.zig").Lifecycle = undefined,
+    auth: @import("../../services/polkit.zig").Agent = undefined,
     power: @import("../../services/power.zig").Power = undefined,
     network: @import("../../services/network.zig").Network = undefined,
     bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
@@ -120,6 +122,7 @@ pub const Manager = struct {
     running: bool = false,
     context: ?*anyopaque = null,
     changed: ?*const fn (*anyopaque) void = null,
+    logout: ?*const fn (*anyopaque) void = null,
     pub fn init(app: *gtk.Application, display: *gdk.Display, client: *adapter.Client) Manager {
         return .{ .app = app, .display = display, .client = client };
     }
@@ -146,6 +149,10 @@ pub const Manager = struct {
         self.aqueous_settings.start();
         self.services_started = true;
         self.audio.start();
+        self.lifecycle = .{ .app = self.app.as(gio.Application), .display = self.display, .client = self.client, .context = self, .changed = lifecycleChanged, .request_logout = logoutRequested };
+        self.auth = .{ .app = self.app.as(gio.Application), .context = self, .changed = authChanged };
+        self.auth.start();
+        try self.lifecycle.start();
         self.power.start();
         self.network.start();
         self.bluetooth.start();
@@ -172,6 +179,8 @@ pub const Manager = struct {
             self.aqueous_settings.stop();
             self.preferences.stop();
             self.audio.stop();
+            self.lifecycle.stop();
+            self.auth.stop();
             self.power.stop();
             self.network.stop();
             self.bluetooth.stop();
@@ -220,6 +229,22 @@ pub const Manager = struct {
             try reservations.bar(bar.edge, bar.size);
         }
     }
+    fn logoutRequested(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (self.logout) |callback| callback(self.context.?);
+    }
+    fn lifecycleChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
+        self.schedule();
+    }
+    fn authChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        if (self.auth.window) |window| self.preferences.style(window.as(gtk.Widget), self.auth.panel.?.as(gtk.Widget));
+        self.schedule();
+    }
     fn preferencesChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
@@ -229,8 +254,13 @@ pub const Manager = struct {
         }
         for ([_]?*Surface{ self.popup, self.osd, self.notification }) |maybe| if (maybe) |surface| self.styleSurface(surface);
         if (self.popup) |surface| if (surface.settings) |view| view.update();
+        self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
+        self.authChangedSelf();
         self.positionPopup();
         self.schedule();
+    }
+    fn authChangedSelf(self: *Manager) void {
+        authChanged(self);
     }
     fn styleSurface(self: *Manager, surface: *Surface) void {
         if (surface.appearance_revision == self.preferences.appearance) return;
@@ -350,6 +380,9 @@ pub const Manager = struct {
         return 0;
     }
     fn sync(self: *Manager) !void {
+        self.lifecycle.sync();
+        self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
+        self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
         if (self.client.availability != .ready) {
             self.session_services.notifications.setLocked(true);
             self.clear();
@@ -569,7 +602,7 @@ pub const Manager = struct {
                     },
                     .tray => s.tray = try @import("../../desktop/tray.zig").View.create(panel, &self.session_services.tray),
                     .control => {
-                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services.media);
+                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services.media, &self.lifecycle, &self.auth);
                         const overview = gtk.Button.newWithLabel(tr("Window overview", "Fensterübersicht"));
                         _ = gtk.Button.signals.clicked.connect(overview, *Surface, overviewClicked, s, .{});
                         panel.append(overview.as(gtk.Widget));
@@ -747,6 +780,11 @@ pub const Manager = struct {
         }
     }
     pub fn control(self: *Manager, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
+        if (request.op == .lifecycle_status) return self.lifecycle.status(alloc, &self.auth);
+        if (request.op == .lifecycle_action) {
+            try self.lifecycle.act(request.text.?, request.generation);
+            return "{\"queued\":true}";
+        }
         if (request.op == .session_status) {
             self.session_services.notifications.setLocked(self.client.availability != .ready or (if (self.client.model.get(.session, "session")) |session| session.locked else true));
             return self.session_services.status(alloc, request.offset orelse 0);
@@ -759,7 +797,7 @@ pub const Manager = struct {
         if (self.client.availability != .ready) return error.Unavailable;
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         switch (request.op) {
-            .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
             .preferences_apply => {
                 try self.preferences.apply(request.text.?, request.revision.?);
                 return "{\"queued\":true}";

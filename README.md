@@ -25,7 +25,9 @@ native system/installed GTK4 themes now update the shell live. Settings drafts
 survive external edits, with conflict-aware merging and atomic persistence.
 Pearl now replaces the Aqueous settings frontend, with schema-driven GTK pages,
 retained drafts, shortcut recording and an independent display-preview guardian.
-The full shell remains in progress.
+Session actions, a real polkit agent, AC/battery idle policies and a native
+Noctalia-like GTK/PAM lock screen are now implemented. Physical security/session
+acceptance remains pending. The full shell remains in progress.
 
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
 - [AI implementation tasks](docs/TASKS.md): ordered work packages with dependencies, concrete deliverables, and acceptance criteria.
@@ -35,6 +37,7 @@ The full shell remains in progress.
 - [Aqueous adapter](docs/AQUEOUS_ADAPTER.md): persistent connections, command completion, recovery and icon caching.
 - [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.
 - [Aqueous settings replacement](docs/AQUEOUS_SETTINGS.md), [field coverage](docs/AQUEOUS_FIELD_INVENTORY.md) and [T11 verification](artifacts/t11/verification/README.md). Open it with `pearlctl aqueous show`.
+- [Session security and native lock](docs/SESSION_SECURITY.md): T12 idle/sleep, polkit, native GTK/PAM locker, packaging and physical acceptance.
 - [Preferences, wallpaper and themes](docs/PREFERENCES.md) and [T10 visual evidence](artifacts/t10/comparison.html): settings, dynamic Material colors, native GTK themes, draft recovery and opt-in exports.
 - [Notifications, tray and media](docs/SESSION_SERVICES.md) and [T09 visual evidence](artifacts/t09/comparison.html): protocol contracts, bounds, keyboard controls, ownership and session-bus recovery.
 - [Network and Bluetooth](docs/CONNECTIVITY.md) and [T08 visual evidence](artifacts/t08/comparison.html): connection/pairing agents, bounded discovery, credential handling and hardware acceptance.

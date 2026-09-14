@@ -62,8 +62,9 @@ logind's `CanPowerOff`/`CanReboot` replies determine availability. They are quer
 on owner acquisition and panel opening, with at most one pending query each.
 `GetSessionByPID` identifies Pearl's session; its `Active` property gates
 brightness. PrepareForSleep/PrepareForShutdown invalidate relevant availability.
-Suspend/hibernate and lock/inhibitor orchestration remain T12: Pearl does not
-suspend before that work supplies a verified lock acknowledgement.
+T12 now implements suspend/hibernate and native lock/inhibitor orchestration;
+see [SESSION_SECURITY.md](SESSION_SECURITY.md). Pearl waits for verified lock
+acquisition before requesting suspend.
 
 Power off and restart require **two activations of the same button within ten
 seconds**. Cancel, popup closure, expiration or a service generation change

@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "checks": {
+    "defaults-atomic-save-and-live-popup-theme": true,
+    "one-theme-updates-bars-popup-wallpaper-and-second-output-osd": true,
+    "corrupt-external-config-and-stale-revision": true,
+    "bounded-images-fifo-rejection-and-dynamic-palette-cache": true,
+    "missing-font-falls-back": true,
+    "broken-gtk-css-cannot-replace-working-theme-or-config": true,
+    "installed-gtk-theme-and-system-follow-without-material-css": true,
+    "bar-reservation-conflict-is-rejected-before-saving": true,
+    "per-connector-bar-and-popup-policies": true,
+    "gtk-draft-survives-close-external-edit-and-three-way-merge": true,
+    "opt-in-exports-ownership-backup-and-disable": true,
+    "failed-save-retains-working-file": true,
+    "legacy-migration-is-validated-and-only-written-on-apply": true,
+    "large-preferences-preserved-with-bounded-control-status": true,
+    "no-theme-work-at-idle": true,
+    "restart-uses-last-good-without-overwriting-corruption": true,
+    "generator-failure-malformed-output-bounds-and-deadline": true,
+    "rapid-edits-cancel-obsolete-generator-and-coalesce-latest": true,
+    "concurrent-disk-edit-blocks-save-before-atomic-replacement": true,
+    "shutdown-cancels-worker-and-reaps-generator": true,
+    "static-theme-and-last-good-recovery-without-matugen": true
+  },
+  "pearl_sha256": "fe6369d7d479c00d284f56d7e40ad39aad2a7c76375d8564163e4677bcd80e0b",
+  "ctl_sha256": "b52942ec037ce5bc51c2dd37c0a493c4ed7e61d0f504bae1aba8704453f1c8ec"
+}
+Build Summary: 10/10 steps succeeded
+test-preferences success
++- run python3 success 51s
+   +- compile exe pearl-integration ReleaseSafe native cached 16ms MaxRSS:58M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 14ms MaxRSS:54M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 11ms MaxRSS:54M
+   +- compile exe pearlctl ReleaseSafe native cached 15ms MaxRSS:57M
+

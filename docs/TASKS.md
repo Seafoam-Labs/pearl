@@ -1,7 +1,7 @@
 # Pearl AI implementation tasks
 
 Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T07 are complete**;
-T08 is implemented with physical scan acceptance pending; T09–T10 are complete; T11–T16 are not started. Follow their dependency order and record evidence in
+T08 is implemented with physical scan acceptance pending; T09–T10 are complete; T11 is implemented with explicit gates; T12 is implemented with physical acceptance pending. T13 native-lock implementation was brought forward into T12; its remaining acceptance is listed below. T14–T16 are not started. Follow their dependency order and record evidence in
 [PROGRESS.md](PROGRESS.md). Task IDs are stable and may be split into smaller
 changes without changing their acceptance criteria.
 
@@ -213,15 +213,19 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 
 ## T12 — Session actions, idle policy and polkit
 
+**Status:** implemented. See [SESSION_SECURITY.md](SESSION_SECURITY.md) for native lock/PAM, polkit, idle/sleep contracts, private verification and pending physical acceptance.
+
 **Depends on:** T06, T07. **Primary files:** session/idle/polkit services, power/authentication panels.
 
 - Implement Aqueous/UWSM-aware logout and session-service lifecycle; capability-gate every action.
 - Implement a real polkit agent with complete cancellation and identity handling.
-- Add idle state machine, AC/battery policies, inhibitors and resume handling. Initially integrate a configured established locker; propagate actual acquisition status.
+- Add idle state machine, AC/battery policies, inhibitors and resume handling. Use Pearl's native Noctalia-like lock screen and propagate actual acquisition status (user clarification supersedes the external-locker plan).
 
 **Done when:** private-bus tests cover authority restart, authentication cancellation, idle inhibitors, lock failure and suspend preparation sequencing. No automatic suspend proceeds on a falsely reported successful lock. Document explicit physical validation commands and expected outcomes.
 
 ## T13 — Native GTK lock screen
+
+**Status:** native GTK surfaces, separate PAM conversation process, theme/wallpaper integration, failure/cancellation, monitor return and crash recovery implemented alongside T12 at the user’s request. Hardware resume/mixed-DPI, accessibility, production PAM distribution coverage and long-run performance remain acceptance work; see [SESSION_SECURITY.md](SESSION_SECURITY.md).
 
 **Depends on:** T10, T12. **Primary files:** `src/lock/`, lock resources and PAM packaging.
 
@@ -229,7 +233,7 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 - Implement output lifecycle, acquisition acknowledgement, PAM conversation worker/helper, retry and secure unlock.
 - Integrate acknowledgement with idle/logind orchestration and publish privacy-safe status to Pearl.
 
-**Done when:** all outputs remain covered on hotplug; failed/cancelled authentication never unlocks; normal shell crash leaves lock intact; locker crash behavior is verified against Aqueous and documented; resume/input focus are validated physically. Retain external-locker option until these checks pass.
+**Done when:** all outputs remain covered on hotplug; failed/cancelled authentication never unlocks; normal shell crash leaves lock intact; locker crash behavior is verified against Aqueous and documented; resume/input focus are validated physically. Per the user clarification, use the native Pearl locker; do not add a swaylock handoff.
 
 ## T14 — Clipboard and capture
 
