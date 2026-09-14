@@ -34,9 +34,6 @@ pub const Bar = struct {
     handlers: std.ArrayList(*Button) = .empty,
     workspace_handlers: std.ArrayList(*Button) = .empty,
     workspace_hash: u64 = 0,
-    workspace_view: ?*gtk.ScrolledWindow = null,
-    active_workspace: ?*gtk.Widget = null,
-    reveal_workspace: bool = false,
     title: ?*gtk.Label = null,
     clock: ?*gtk.Label = null,
     keyboard: ?*gtk.Label = null,
@@ -44,6 +41,7 @@ pub const Bar = struct {
     sections: [3]?*gtk.Widget = @splat(null),
     vertical: bool = false,
     compact: bool = false,
+    length: i32 = 1280,
     pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session) !*Bar {
         const self = try a.create(Bar);
         self.* = .{ .host = host, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
@@ -82,9 +80,6 @@ pub const Bar = struct {
         self.network_label = null;
         self.bluetooth_label = null;
         self.workspace_hash = 0;
-        self.workspace_view = null;
-        self.active_workspace = null;
-        self.reveal_workspace = false;
     }
     pub fn configure(self: *Bar, groups: policy.Groups) !void {
         try groups.validate();
@@ -229,21 +224,18 @@ pub const Bar = struct {
                         self.title = title;
                         break :blk title.as(gtk.Widget);
                     },
-                    .workspaces => gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2).as(gtk.Widget),
+                    .workspaces => blk: {
+                        const grid = gtk.Grid.new();
+                        grid.setColumnSpacing(2);
+                        grid.setRowSpacing(2);
+                        grid.setColumnHomogeneous(1);
+                        grid.setRowHomogeneous(1);
+                        break :blk grid.as(gtk.Widget);
+                    },
                 };
                 widget.addCssClass("pearl-bar-item");
                 self.widgets[@intFromEnum(item)] = widget;
-                if (item == .workspaces) {
-                    const scroll = gtk.ScrolledWindow.new();
-                    self.workspace_view = scroll;
-                    scroll.setPolicy(if (self.vertical) .never else .external, if (self.vertical) .external else .never);
-                    scroll.setPropagateNaturalWidth(1);
-                    scroll.setPropagateNaturalHeight(1);
-                    scroll.setMaxContentWidth(if (self.vertical) 120 else 280);
-                    scroll.setMaxContentHeight(if (self.vertical) 280 else 40);
-                    scroll.setChild(widget);
-                    box.append(scroll.as(gtk.Widget));
-                } else box.append(widget);
+                box.append(widget);
             }
         }
         self.update();
@@ -252,6 +244,7 @@ pub const Bar = struct {
         self.fit();
     }
     pub fn geometry(self: *Bar, vertical: bool, length: i32) void {
+        self.length = length;
         const compact = length < 1000;
         if (self.vertical != vertical) {
             self.vertical = vertical;
@@ -262,12 +255,14 @@ pub const Bar = struct {
             self.compact = compact;
             self.fit();
         }
+        self.layoutWorkspaces();
     }
     fn fit(self: *Bar) void {
         if (self.tray) |tray| tray.setLimit(if (self.compact or self.vertical) 2 else 4);
         if (self.media_label) |label| label.as(gtk.Widget).setVisible(@intFromBool(!self.compact and !self.vertical));
         if (self.widgets[@intFromEnum(policy.Item.title)]) |v| v.setVisible(@intFromBool(!self.compact and !self.vertical));
         if (self.widgets[@intFromEnum(policy.Item.overview)]) |v| v.setVisible(@intFromBool(!self.compact));
+        self.layoutWorkspaces();
         // Primary controls survive; overview also lives in the control center.
     }
     fn openTray(data: *anyopaque) void {
@@ -353,12 +348,10 @@ pub const Bar = struct {
             const value = hash.final();
             if (value != self.workspace_hash) {
                 self.workspace_hash = value;
-                const box = object.ext.cast(gtk.Box, host).?;
+                const box = object.ext.cast(gtk.Grid, host).?;
                 while (host.getFirstChild()) |child| box.remove(child);
                 freeHandlers(&self.workspace_handlers);
-                self.active_workspace = null;
-                self.reveal_workspace = false;
-                for (list[0..@min(list.len, 128)]) |ws| {
+                for (list, 0..) |ws, i| {
                     var buffer: [20]u8 = undefined;
                     const number = std.fmt.bufPrintZ(&buffer, "{d}", .{ws.number}) catch unreachable;
                     const button = self.makeButton(.{ .workspace = ws.id }, null, number, true) catch continue;
@@ -368,29 +361,44 @@ pub const Bar = struct {
                     w.name(button.as(gtk.Widget), tooltip);
                     button.as(gtk.Widget).addCssClass(if (ws.active) "pearl-workspace-active" else "pearl-workspace");
                     if (ws.urgent) button.as(gtk.Widget).addCssClass("pearl-urgent");
-                    if (ws.active) {
-                        self.active_workspace = button.as(gtk.Widget);
-                        self.reveal_workspace = true;
-                    }
-                    box.append(button.as(gtk.Widget));
+                    box.attach(button.as(gtk.Widget), @intCast(i), 0, 1, 1);
                 }
             }
         }
+        self.layoutWorkspaces();
     }
-    pub fn painted(self: *Bar) void {
-        if (!self.reveal_workspace) return;
-        const active = self.active_workspace orelse return;
-        const scroll = self.workspace_view orelse return;
-        const adjustment = if (self.vertical) scroll.getVadjustment() else scroll.getHadjustment();
-        const page = adjustment.getPageSize();
-        var rect: gtk.Allocation = undefined;
-        active.getAllocation(&rect);
-        const start: f64 = @floatFromInt(if (self.vertical) rect.f_y else rect.f_x);
-        const length: f64 = @floatFromInt(if (self.vertical) rect.f_height else rect.f_width);
-        if (page <= 0 or length <= 0) return;
-        self.reveal_workspace = false;
-        const position = adjustment.getValue();
-        if (start < position) adjustment.setValue(start) else if (start + length > position + page) adjustment.setValue(start + length - page);
+    fn layoutWorkspaces(self: *Bar) void {
+        const host = self.widgets[@intFromEnum(policy.Item.workspaces)] orelse return;
+        const orientation: gtk.Orientation = if (self.vertical) .vertical else .horizontal;
+        // Account for the host margins, island padding, group gaps and sibling
+        // controls. The optional window title can ellipsize to leave room.
+        var available = self.length - 64;
+        for (self.widgets, 0..) |maybe, i| if (maybe) |widget| {
+            if (widget == host or widget.getVisible() == 0) continue;
+            var minimum: c_int = 0;
+            var natural: c_int = 0;
+            widget.measure(orientation, -1, &minimum, &natural, null, null);
+            available -= (if (i == @intFromEnum(policy.Item.title)) minimum else natural) + 4;
+        };
+        var cell: c_int = 1;
+        var child = host.getFirstChild();
+        while (child) |widget| : (child = widget.getNextSibling()) {
+            var natural: c_int = 0;
+            widget.measure(orientation, -1, null, &natural, null, null);
+            cell = @max(cell, natural);
+        }
+        const per_line = @max(1, @divTrunc(available + 2, cell + 2));
+        const layout = host.getLayoutManager().?;
+        child = host.getFirstChild();
+        var i: c_int = 0;
+        while (child) |widget| : ({
+            child = widget.getNextSibling();
+            i += 1;
+        }) {
+            const item = object.ext.cast(gtk.GridLayoutChild, layout.getLayoutChild(widget)).?;
+            item.setColumn(if (self.vertical) @divTrunc(i, per_line) else @mod(i, per_line));
+            item.setRow(if (self.vertical) @mod(i, per_line) else @divTrunc(i, per_line));
+        }
     }
     pub fn tick(self: *Bar) void {
         if (self.clock) |label| {

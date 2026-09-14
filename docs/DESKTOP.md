@@ -24,8 +24,9 @@ Backdrop clicks dismiss without activating an application underneath.
 Workspaces are identified by their Aqueous runtime IDs. Number/name is only the
 label: the same number on another output remains a different target. The active
 workspace has a purple pill, and urgent workspaces have an outline. The workspace
-strip scrolls when its buttons exceed available space and reveals a newly active
-workspace once, preserving manual scrolling afterward. Focused window titles
+strip shows every available workspace on its output without a scrolling viewport.
+When space is tight, buttons wrap into rows (columns on vertical bars), and the
+bar grows to reserve the space they need. Focused window titles
 ellipsize and have a full-text tooltip. The title becomes “Pearl” for layer focus,
 rather than presenting a previously focused application as current. Keyboard
 controls show the active seat's **effective layout name**, and clicking cycles

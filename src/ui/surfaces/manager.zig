@@ -1131,7 +1131,6 @@ fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     }
 }
 fn measured(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
-    if (s.bar) |bar| bar.painted();
     const horizontal = s.edge == .top or s.edge == .bottom;
     const size = if (horizontal) s.window.as(gtk.Widget).getHeight() else s.window.as(gtk.Widget).getWidth();
     if (size > 0 and size <= 65535 and layer.getExclusiveZone(s.window) != size) {
