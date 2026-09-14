@@ -108,7 +108,29 @@ def main():
             ctl(s,args.ctl,'popup','hide')
             checks['popup-dock-keyboard-arbitration']=True
             # Context menu has native GTK keyboard traversal and releases exclusive input.
-            ctl(s,args.ctl,'dock','show','--output',oid);keys(s,'Tab','space');capture(s,'dock-actions',first['connector']);keys(s,'Escape','Escape')
+            for trigger in ('Menu', 'Shift+F10', 'right-click'):
+                time.sleep(.3)
+                ctl(s,args.ctl,'dock','show','--output',oid)
+                time.sleep(.15)
+                before=len(entries(s))
+                before_windows=sum(e['kind']=='window' and e.get('app_id')=='org.pearl.Alpha' for e in ipc.state())
+                if trigger=='right-click':
+                    rect=out()['dock']['rect'];outputs=ipc.outputs()
+                    left=min(o['bounds']['x'] for o in outputs.values())
+                    top=min(o['bounds']['y'] for o in outputs.values())
+                    s.run(['wlrctl','pointer','move','-100000','-100000'])
+                    s.run(['wlrctl','pointer','move',str(rect['x']+rect['width']//2-left),str(rect['y']+rect['height']//2-top)])
+                    s.run(['wlrctl','pointer','click','right']);time.sleep(.2)
+                elif trigger=='Shift+F10':
+                    s.run(['wtype','-s','100','-M','shift','-k','F10','-m','shift','-s','100'])
+                else:keys(s,'Menu')
+                capture(s,'dock-actions-'+trigger,first['connector'])
+                # The first action launches a new process, proving the menu opened.
+                keys(s,'space')
+                wait_for(lambda:len(entries(s))>before)
+                wait_for(lambda:sum(e['kind']=='window' and e.get('app_id')=='org.pearl.Alpha' for e in ipc.state())>before_windows)
+                keys(s,'Escape','Escape')
+            checks['context-actions-via-right-click-menu-key-and-shift-f10']=True
             ctl(s,args.ctl,'dock','pin','--output',oid,'--text','Beta.desktop');settled(s,args.ctl)
             p=settled(s,args.ctl)['preferences'];p['dock']['mode']='always';apply(s,args.ctl,p)
             for variant in ('dark','light'):

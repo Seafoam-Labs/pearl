@@ -1,0 +1,87 @@
+# Build the latest upstream Git revision. Nothing is enabled or started during
+# installation.
+pkgname=pearl-git
+pkgver=1.0.0rc2.r22.ga002d24
+pkgrel=2
+pkgdesc='GTK desktop shell exclusively for Aqueous (Git version)'
+arch=('x86_64')
+url='https://github.com/Seafoam-Labs/pearl'
+license=('LicenseRef-Pearl-Unlicensed')
+depends=('gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
+         'libpulse>=17.0' 'pam>=1.7.2' 'polkit>=127' 'glibc>=2.44'
+         'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
+         'cairo>=1.18.4' 'systemd>=261.3' 'aqueous' 'uwsm>=0.26.7')
+# Aqueous packages currently provide an unversioned virtual 'aqueous'.
+# aqueous-config >=0.8.0 with receipt/impact/preview capabilities is required.
+# Upstream packaging still pulls in DMS; use a shell-neutral build for Pearl.
+# Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
+makedepends=('git' 'zig=0.16.0' 'pkgconf' 'python>=3.14')
+optdepends=('matugen>=4.2.0: dynamic Material colors'
+            'networkmanager>=1.58.1: network controls'
+            'bluez>=5.87: Bluetooth controls'
+            'upower>=1.91.4: battery status'
+            'power-profiles-daemon>=0.30: power profiles')
+backup=('etc/pam.d/pearl-git')
+options=('!strip' '!debug')
+source=("pearl::git+$url.git")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "$srcdir/pearl"
+    # Use release metadata as the base, including before upstream has any tags.
+    local version
+    version=$(python3 -c 'import json; print(json.load(open("packaging/release.json"))["arch_pkgver"])')
+    printf '%s.r%s.g%s' "$version" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+    cd "$srcdir/pearl"
+    # Keep the Git shell's locker and production PAM policy independent of pearl.
+    # The instrumented locker continues to use its private test PAM fixture.
+    sed -i 's/pearl-lock"/pearl-lock-git"/g' src/services/lifecycle.zig
+    sed -i 's/pam_start("pearl",/pam_start("pearl-git",/' src/lock/pam.zig
+}
+
+build() {
+    cd "$srcdir/pearl"
+    export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
+    zig build -Doptimize=ReleaseSafe -Drelease=true
+}
+
+check() {
+    cd "$srcdir/pearl"
+    export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
+    zig build test test-adapter-unit test-bindings test-release-tools -Doptimize=ReleaseSafe
+}
+
+package() {
+    cd "$srcdir/pearl"
+    DESTDIR="$pkgdir" bash packaging/install.sh
+
+    local binary directory
+    for binary in pearl pearlctl pearl-lock; do
+        mv "$pkgdir/usr/bin/$binary" "$pkgdir/usr/bin/$binary-git"
+    done
+    mv "$pkgdir/etc/pam.d/pearl" "$pkgdir/etc/pam.d/pearl-git"
+    for directory in share/pearl share/doc/pearl share/licenses/pearl; do
+        mv "$pkgdir/usr/$directory" "$pkgdir/usr/$directory-git"
+    done
+
+    mv "$pkgdir/usr/lib/systemd/user/pearl.service" \
+       "$pkgdir/usr/lib/systemd/user/pearl-git.service"
+    sed -i -e 's|/usr/bin/pearl|/usr/bin/pearl-git|g' \
+           -e 's/^Description=Pearl /Description=Pearl Git /' \
+           -e 's/pearl-lock /pearl-lock-git /g' \
+        "$pkgdir/usr/lib/systemd/user/pearl-git.service"
+
+    mv "$pkgdir/usr/share/applications/org.aqueous.Pearl.Settings.desktop" \
+       "$pkgdir/usr/share/applications/org.aqueous.Pearl.Git.Settings.desktop"
+    sed -i -e 's/^Name=Pearl Settings$/Name=Pearl Git Settings/' \
+           -e 's/^Exec=pearlctl /Exec=pearlctl-git /' \
+        "$pkgdir/usr/share/applications/org.aqueous.Pearl.Git.Settings.desktop"
+
+    mv "$pkgdir/usr/share/doc/pearl-git/examples/aqueous-init-pearl" \
+       "$pkgdir/usr/share/doc/pearl-git/examples/aqueous-init-pearl-git"
+    sed -i 's|/usr/bin/pearl$|/usr/bin/pearl-git|' \
+        "$pkgdir/usr/share/doc/pearl-git/examples/aqueous-init-pearl-git"
+}

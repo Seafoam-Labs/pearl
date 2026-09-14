@@ -31,16 +31,16 @@ match associates running windows with installed applications. Ambiguous matches
 remain separate running groups. No command line is guessed from a window title.
 
 Click an icon to activate its window or cycle through the group's windows. An
-installed pin with no windows launches through GIO. Right-click the icon or use
-the adjacent action menu, which provides new-window launch, desktop actions, pin/unpin, and per-window activate,
+installed pin with no windows launches through GIO. Right-click the icon to open
+its action menu, which provides new-window launch, desktop actions, pin/unpin, and per-window activate,
 minimize/restore, maximize/restore and close. Actions retain copied opaque IDs
 and validate against current Aqueous state or the current GIO desktop entry.
 Unavailable or removed pinned applications can still be unpinned.
 
 Dots indicate running windows; a filled dot and highlighted button indicate
 focus. Accessible button labels and tooltips include the application name,
-running count, focus, minimized state and pin status. Native GTK buttons,
-menu buttons and popovers supply roles and standard keyboard interaction.
+running count, focus, minimized state and pin status. Native GTK buttons
+and popovers supply roles and standard keyboard interaction.
 
 The dock supports these visibility modes:
 
@@ -95,7 +95,8 @@ pearlctl status
 ```
 
 `dock show` gives the first icon keyboard focus. Use Tab/Shift-Tab or arrow keys,
-Space/Enter to activate controls, and Escape to dismiss menus and release the
+Space/Enter to activate controls, Menu or Shift+F10 to open the focused icon's
+action menu, and Escape to dismiss menus and release the
 dock's keyboard mode. `dock hide` ends forced interaction; an unobscured `always`
 or `intelligent` dock can remain visible. Bind `pearlctl dock show` using the
 Aqueous settings application's keybinding editor.

@@ -27,6 +27,31 @@ recipe, or use the private package script. Neither path installs the package or
 enables services. Do not use the template PKGBUILD before replacing its hash via
 the source generator.
 
+For the latest upstream Git revision, use the standalone
+[`pearl-git` recipe](../packaging/arch-git/PKGBUILD):
+
+```sh
+cd packaging/arch-git
+makepkg
+```
+
+This fetches the upstream repository's default branch and generates a version
+from its release metadata, commit count and abbreviated commit hash (for example,
+`1.0.0rc2.r22.ga002d24`). It uses the same dependencies, ReleaseSafe build and
+checks as the release recipe. The moving Git source uses `SKIP` for its checksum;
+the release archive recipe remains checksum-locked. Install the resulting package
+with `pacman -U`; `makepkg` alone only builds it.
+
+`pearl-git` can be installed alongside `pearl`. Its commands are `pearl-git`,
+`pearlctl-git` and `pearl-lock-git`; its user unit is `pearl-git.service` and its
+desktop launcher is **Pearl Git Settings**. The Git shell launches its own locker,
+which uses `/etc/pam.d/pearl-git`. Package metadata, documentation and licenses live
+under `/usr/share/pearl-git`, `/usr/share/doc/pearl-git` and
+`/usr/share/licenses/pearl-git`. The Git direct-start example is
+`/usr/share/doc/pearl-git/examples/aqueous-init-pearl-git`.
+Both builds use the same user preferences and session control socket, so run one
+shell per session and use the matching startup command or service.
+
 The reproduction script builds in two fresh extraction roots and compares all
 three production binary hashes. It can copy the already downloaded `zig-pkg`
 cache; otherwise Zig fetches its hash-pinned dependencies. This proves identical

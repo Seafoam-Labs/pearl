@@ -122,7 +122,10 @@ pub const Dock = struct {
         a.destroy(self);
     }
     fn clear(self: *Dock) void {
-        for (self.menus.items) |menu| menu.popdown();
+        for (self.menus.items) |menu| {
+            menu.popdown();
+            menu.as(gtk.Widget).unparent();
+        }
         self.menus.clearRetainingCapacity();
         while (self.panel.as(gtk.Widget).getFirstChild()) |child| self.panel.remove(child);
         _ = self.arena.reset(.free_all);
@@ -366,7 +369,7 @@ pub const Dock = struct {
             const box = gtk.Box.new(.horizontal, 0);
             const primary = try self.button(description, if (target != null) .activate else .launch, if (target) |win| win.id else group.desktop.?, false, null);
             primary.as(gtk.Widget).setTooltipText(description);
-            primary.as(gtk.Widget).setSensitive(@intFromBool(if (target) |win| win.can_activate else entry != null));
+            // Keep the icon reachable so unavailable pins can still be unpinned.
             if (focused) primary.as(gtk.Widget).addCssClass("focused");
             const content = gtk.Box.new(.vertical, 0);
             const icon = if (entry != null and entry.?.info.getIcon() != null and gtk.IconTheme.getForDisplay(self.window.as(gtk.Widget).getDisplay()).hasGicon(entry.?.info.getIcon().?) != 0) gtk.Image.newFromGicon(entry.?.info.getIcon().?) else gtk.Image.newFromIconName("pearl-application-x-executable-symbolic");
@@ -376,10 +379,8 @@ pub const Dock = struct {
             content.append(gtk.Label.new(indicator).as(gtk.Widget));
             primary.setChild(content.as(gtk.Widget));
             box.append(primary.as(gtk.Widget));
-            const menu_button = gtk.MenuButton.new();
-            menu_button.setIconName("pan-down-symbolic");
-            w.name(menu_button.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Actions for {s}", .{title}, 0));
             const menu = gtk.Popover.new();
+            w.name(menu.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Actions for {s}", .{title}, 0));
             _ = gtk.Popover.signals.closed.connect(menu, *Dock, menuClosed, self, .{});
             const items = gtk.Box.new(.vertical, 4);
             const scroller = gtk.ScrolledWindow.new();
@@ -390,12 +391,22 @@ pub const Dock = struct {
             scroller.setPropagateNaturalWidth(1);
             scroller.setChild(items.as(gtk.Widget));
             menu.setChild(scroller.as(gtk.Widget));
-            menu_button.setPopover(menu);
             try self.menus.append(a, menu);
+            menu.as(gtk.Widget).setParent(primary.as(gtk.Widget));
+            menu.setPosition(switch (self.config.edge) {
+                .top => .bottom,
+                .bottom => .top,
+                .left => .right,
+                .right => .left,
+            });
             const context_click = gtk.GestureClick.new();
             context_click.as(gtk.GestureSingle).setButton(3);
             _ = gtk.GestureClick.signals.pressed.connect(context_click, *gtk.Popover, contextMenu, menu, .{});
             primary.as(gtk.Widget).addController(context_click.as(gtk.EventController));
+            const context_keys = gtk.EventControllerKey.new();
+            context_keys.as(gtk.EventController).setPropagationPhase(.capture);
+            _ = gtk.EventControllerKey.signals.key_pressed.connect(context_keys, *gtk.Popover, contextKey, menu, .{});
+            primary.as(gtk.Widget).addController(context_keys.as(gtk.EventController));
             if (group.desktop) |id| {
                 if (entry != null) items.append((try self.button("Open new window", .launch, id, false, null)).as(gtk.Widget));
                 if (p.desktopId(id)) items.append((try self.button(if (group.pinned) "Unpin" else "Pin to dock", if (group.pinned) .unpin else .pin, id, false, null)).as(gtk.Widget));
@@ -417,13 +428,19 @@ pub const Dock = struct {
                 if (win.can_maximize) items.append((try self.button(if (win.maximized) "Unmaximize" else "Maximize", .maximize, win.id, !win.maximized, null)).as(gtk.Widget));
                 items.append((try self.button("Close window", .close, win.id, false, null)).as(gtk.Widget));
             }
-            box.append(menu_button.as(gtk.Widget));
             self.panel.append(box.as(gtk.Widget));
         }
     }
     fn contextMenu(gesture: *gtk.GestureClick, _: c_int, _: f64, _: f64, menu: *gtk.Popover) callconv(.c) void {
         _ = gesture.as(gtk.Gesture).setState(.claimed);
         menu.popup();
+    }
+    fn contextKey(_: *gtk.EventControllerKey, keyval: c_uint, _: c_uint, modifiers: gdk.ModifierType, menu: *gtk.Popover) callconv(.c) c_int {
+        if (keyval == 0xff67 or (keyval == 0xffc7 and modifiers.shift_mask)) { // Menu or Shift+F10
+            menu.popup();
+            return 1;
+        }
+        return 0;
     }
     fn clicked(_: *gtk.Button, cb: *Callback) callconv(.c) void {
         const self = cb.dock;
