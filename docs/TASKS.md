@@ -272,4 +272,10 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 
 ## Suggested first implementation prompt
 
+For the next Aqueous integration update, use
+[AQUEOUS_MASTER_UPDATE_PLAN.md](AQUEOUS_MASTER_UPDATE_PLAN.md), beginning with
+AM00. It pins the current upstream contracts and defines the dependent work for
+display transactions, recovery, editors, capture and release validation. The
+original implementation prompt below is retained for historical context.
+
 > Implement T00 from docs/TASKS.md using docs/IMPLEMENTATION_PLAN.md as the specification. Inspect the referenced Aqueous and DMS sources without modifying them. Use Zig 0.16, pin an exact 0.16.x release, and prove the compatible Ghostty GTK binding/layer-shell stack in a private nested Aqueous session. Record actual APIs/capabilities and visual references, and add reproducible commands and evidence to docs/COMPATIBILITY.md and docs/PROGRESS.md. Keep all tests isolated from the host desktop. Stop at the T00 acceptance boundary and report unresolved build or capability gaps accurately.

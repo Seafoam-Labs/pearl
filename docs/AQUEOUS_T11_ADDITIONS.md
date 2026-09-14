@@ -1,6 +1,10 @@
 # Aqueous additions for Pearl T11
 
-Status: implementation handoff; the additions below are **proposed, not shipped**.
+Status: **historical upstream handoff**. Aqueous master
+`1d038dc3bafa0044d9599f8f51f84105a6a85bb3` now implements additive helper/display
+contracts addressing these requests, with explicit hardware gates. Pearl has not
+yet adopted them. Follow [the current integration update plan](AQUEOUS_MASTER_UPDATE_PLAN.md)
+for implementation; the proposal and baseline below are retained as history.
 Baseline inspected September 13, 2026: Aqueous revision
 `7611e23c653a72b24d6dd4d8b6404d1d1feb7480`, `aqueous-config` 0.7.2, helper
 protocol 1. Pearl uses Zig 0.16.0 and generated GTK/Wayland bindings.

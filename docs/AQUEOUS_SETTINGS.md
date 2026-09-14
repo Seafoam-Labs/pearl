@@ -6,9 +6,11 @@ that application. The standalone `aqueous-config` helper remains the canonical
 TOML backend; install that helper alongside Pearl. Shell appearance, including
 system/installed GTK themes, remains under **Pearl settings**.
 
-Proposed backend/compositor work to lift the remaining limits is tracked in
-[Aqueous additions for T11](AQUEOUS_T11_ADDITIONS.md), with implementation tasks,
-protocol contracts and acceptance tests.
+Aqueous master now provides additive backend/display contracts that Pearl has not
+yet adopted. [The integration update plan](AQUEOUS_MASTER_UPDATE_PLAN.md) defines
+that work and its acceptance tests. The original
+[upstream additions request](AQUEOUS_T11_ADDITIONS.md) remains historical context.
+The behavior described below is Pearl's current integration.
 
 Pearl discovers `aqueous-config` through PATH, checks protocol 1 and the required
 capabilities, and always passes `--shell none`. The tested helper is 0.7.2. Neither

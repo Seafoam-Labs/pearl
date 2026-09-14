@@ -35,6 +35,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 
 - [Release and packaging](docs/RELEASE.md) and [DMS migration / switch-back](docs/MIGRATION.md).
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
+- [Aqueous integration update plan](docs/AQUEOUS_MASTER_UPDATE_PLAN.md): adopting the current master display, configuration recovery, collection and capture capabilities.
 - [Development specification](docs/TASKS.md): implementation scope, dependencies, concrete deliverables, and acceptance criteria.
 - [Compatibility and reproduction](docs/COMPATIBILITY.md): verified dependencies, commands, capability gaps and baseline results.
 - [Development guide](docs/DEVELOPMENT.md): run the gallery, use isolated sessions, and follow lifecycle/ownership conventions.
