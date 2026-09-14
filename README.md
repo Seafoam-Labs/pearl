@@ -23,6 +23,8 @@ are now connected, with owner-safe session-bus recovery and bounded local artwor
 Preferences, per-output bar policies, wallpaper, dynamic Material palettes, and
 native system/installed GTK4 themes now update the shell live. Settings drafts
 survive external edits, with conflict-aware merging and atomic persistence.
+Pearl now replaces the Aqueous settings frontend, with schema-driven GTK pages,
+retained drafts, shortcut recording and an independent display-preview guardian.
 The full shell remains in progress.
 
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
@@ -32,6 +34,7 @@ The full shell remains in progress.
 - [Aqueous model](docs/AQUEOUS_MODEL.md): decoder limits, atomic updates, derived views and ownership contracts.
 - [Aqueous adapter](docs/AQUEOUS_ADAPTER.md): persistent connections, command completion, recovery and icon caching.
 - [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.
+- [Aqueous settings replacement](docs/AQUEOUS_SETTINGS.md), [field coverage](docs/AQUEOUS_FIELD_INVENTORY.md) and [T11 verification](artifacts/t11/verification/README.md). Open it with `pearlctl aqueous show`.
 - [Preferences, wallpaper and themes](docs/PREFERENCES.md) and [T10 visual evidence](artifacts/t10/comparison.html): settings, dynamic Material colors, native GTK themes, draft recovery and opt-in exports.
 - [Notifications, tray and media](docs/SESSION_SERVICES.md) and [T09 visual evidence](artifacts/t09/comparison.html): protocol contracts, bounds, keyboard controls, ownership and session-bus recovery.
 - [Network and Bluetooth](docs/CONNECTIVITY.md) and [T08 visual evidence](artifacts/t08/comparison.html): connection/pairing agents, bounded discovery, credential handling and hardware acceptance.

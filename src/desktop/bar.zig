@@ -8,7 +8,7 @@ const policy = @import("policy.zig");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
-pub const Pane = enum { settings, launcher, calendar, control, notifications, media, tray };
+pub const Pane = enum { aqueous_settings, settings, launcher, calendar, control, notifications, media, tray };
 pub const Event = union(enum) { pane: Pane, workspace: []const u8, keyboard, overview };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {

@@ -16,6 +16,11 @@ the `ext-foreign-toplevel-list-v1` XML type dependency; it does not use that
 protocol for duplicate window enumeration. Core XML is also pinned, so system protocol upgrades do not silently
 change generated declarations.
 
+T11 adds `zwlr_output_manager_v1` v4 and `wl_output` v4 for the independent
+display-preview guardian. The guardian uses its own connection, tests before
+apply, and restores only unchanged candidate heads under a current serial.
+The vendored output-management XML retains its upstream permission notice.
+
 Ordinary builds generate into Zig's cache and import that module. To export the
 single generated source for inspection:
 

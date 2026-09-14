@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "checks": {
+    "helper-discovery-schema-and-replacement-ui": true,
+    "replacement-pages-follow-material-and-native-gtk-themes": true,
+    "validate-retains-generation-and-apply-acknowledges-reload": true,
+    "invalid-values-retain-draft-and-disk": true,
+    "raw-structured-overlap-rejected": true,
+    "raw-unprojected-display-fields-cannot-bypass-preview": true,
+    "external-refresh-preserves-stale-draft": true,
+    "independent-draft-rebase": true,
+    "shortcut-recording-inhibition-and-popup-cleanup": true,
+    "rejected-save-reconciles-with-unchanged-files": true,
+    "lost-apply-reply-readback-without-blind-retry": true,
+    "reload-failure-does-not-undo-confirmed-save": true,
+    "concurrent-edit-retained-and-independent-rebase": true,
+    "uncertain-external-race-requires-refresh-and-explicit-review": true,
+    "toolkit-sync-failure-separated-from-save": true,
+    "raw-edit-preserves-unknown-settings-and-comments": true,
+    "multi-file-apply-backs-up-original-generation": true,
+    "display-test-preview-explicit-revert": true,
+    "display-timeout-restores-without-canonical-save": true,
+    "output-removal-invalidates-lease-preserves-other-head-state": true,
+    "competing-canonical-edit-before-keep-reverts-without-overwrite": true,
+    "display-keep-persists-after-confirmation": true,
+    "competing-live-display-edit-survives-rollback": true,
+    "ui-sigkill-independent-rollback": true
+  },
+  "pearl_sha256": "1e68d80bc0481065d8cdc4cc1343f99bddcb03571943b9f565bf8cf8fcd24b87",
+  "ctl_sha256": "4c134343dbadeacc784d29fbd17762e58c7e03f7d7d1c5e8c8e200bf70ed9d4e"
+}
+Build Summary: 10/10 steps succeeded
+test-aqueous-settings success
++- run python3 success 33s
+   +- compile exe pearl ReleaseSafe native cached 12ms MaxRSS:59M
+   |  +- run pkg-config success 995us
+   |  +- translate-c cached 12ms MaxRSS:53M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 9ms MaxRSS:54M
+   +- compile exe pearlctl ReleaseSafe native cached 12ms MaxRSS:59M
+

@@ -1,0 +1,57 @@
+{
+  "recorded_utc": "2026-09-13T22:49:57.865915+00:00",
+  "zig": "0.16.0",
+  "gtk": "4.22.5",
+  "glib": "2.88.3",
+  "optimize": "ReleaseSafe",
+  "aqueous_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480",
+  "helper_version": "0.7.2",
+  "helper_sha256": "6623f7952cfa78b5c07e3a9f07d682338846049dfbc62c5cac9036c03dbc8327",
+  "schema_fields": 221,
+  "production_sha256": "1e68d80bc0481065d8cdc4cc1343f99bddcb03571943b9f565bf8cf8fcd24b87",
+  "instrumented_sha256": "d7ad18117b735085ae3dbf6c199c10aa2cc7e9f42048732c3e7dc1f6dcaa2a12",
+  "ctl_sha256": "4c134343dbadeacc784d29fbd17762e58c7e03f7d7d1c5e8c8e200bf70ed9d4e",
+  "all_suite_binaries_match": true,
+  "unit_counts": {
+    "pure": 62,
+    "adapter_services": 24,
+    "bindings": 1
+  },
+  "unit_total": 87,
+  "integration_total": 74,
+  "suites": {
+    "aqueous-settings": {
+      "path": "verification/report.json",
+      "checks": 24,
+      "status": "passed",
+      "binary": "production",
+      "binary_sha256": "1e68d80bc0481065d8cdc4cc1343f99bddcb03571943b9f565bf8cf8fcd24b87",
+      "result_sha256": "08276943d4aed5add70a0f5c8ebe81ed86570f5034c51147b2315c5dfbec37d2"
+    },
+    "preferences": {
+      "path": "regression/preferences/metadata.json",
+      "checks": 21,
+      "status": "passed",
+      "binary": "instrumented",
+      "binary_sha256": "d7ad18117b735085ae3dbf6c199c10aa2cc7e9f42048732c3e7dc1f6dcaa2a12",
+      "result_sha256": "6264bf79b529c71b72dcae3b649775ed8208b2679c781636d8dd825cba424aeb"
+    },
+    "surfaces": {
+      "path": "regression/surfaces/results.json",
+      "checks": 17,
+      "status": "passed",
+      "binary": "production",
+      "binary_sha256": "1e68d80bc0481065d8cdc4cc1343f99bddcb03571943b9f565bf8cf8fcd24b87",
+      "result_sha256": "20c11b24b31f255080f298cc7f0c9cf5c4b57c57f76985bd53029f5ec66ac9f8"
+    },
+    "lifecycle": {
+      "path": "regression/lifecycle/results.json",
+      "checks": 12,
+      "status": "pass",
+      "binary": "instrumented",
+      "binary_sha256": "d7ad18117b735085ae3dbf6c199c10aa2cc7e9f42048732c3e7dc1f6dcaa2a12",
+      "result_sha256": "2f54431528073f2ffb20e8c55aa3db8a498314c9bb4322ba8e172a2a712894ec"
+    }
+  },
+  "source_manifest_sha256": "f55ec2200c20139845857a948598272d5af17cbce05bc4dc137bd175be9c4f02"
+}

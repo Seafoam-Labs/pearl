@@ -195,3 +195,17 @@ changes and the calendar/control center. It needs Python/PyGObject GTK4 and the
 T00 input fixture compiler dependencies in addition to the normal integration
 tools. Its 2,000-app test records search-to-frame and warm opening latency.
 See [DESKTOP.md](DESKTOP.md) for limits, ownership, the full CLI and reproduction.
+
+
+## Aqueous settings replacement (T11)
+
+`pearlctl aqueous show` opens the GTK replacement; `--text displays` selects a
+page. `aqueous status`, `draft --text JSON`, `validate`, `apply`, `refresh`,
+`rebase`, `discard`, `reload`, `keep` and `revert` expose the retained-draft
+workflow. The canonical helper is required; the old settings frontend is not.
+See [AQUEOUS_SETTINGS.md](AQUEOUS_SETTINGS.md) for request examples and gates.
+
+Run `zig build test-aqueous-settings -Doptimize=ReleaseSafe` with the workspace
+`ZIG_GLOBAL_CACHE_DIR`. The suite only modifies private HOME/configuration,
+synthetic keyboard bindings and headless outputs, including a deliberate Pearl
+SIGKILL to verify independent rollback. It does not reconfigure host displays.

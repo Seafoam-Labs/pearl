@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "checks": {
+    "defaults-atomic-save-and-live-popup-theme": true,
+    "one-theme-updates-bars-popup-wallpaper-and-second-output-osd": true,
+    "corrupt-external-config-and-stale-revision": true,
+    "bounded-images-fifo-rejection-and-dynamic-palette-cache": true,
+    "missing-font-falls-back": true,
+    "broken-gtk-css-cannot-replace-working-theme-or-config": true,
+    "installed-gtk-theme-and-system-follow-without-material-css": true,
+    "bar-reservation-conflict-is-rejected-before-saving": true,
+    "per-connector-bar-and-popup-policies": true,
+    "gtk-draft-survives-close-external-edit-and-three-way-merge": true,
+    "opt-in-exports-ownership-backup-and-disable": true,
+    "failed-save-retains-working-file": true,
+    "legacy-migration-is-validated-and-only-written-on-apply": true,
+    "large-preferences-preserved-with-bounded-control-status": true,
+    "no-theme-work-at-idle": true,
+    "restart-uses-last-good-without-overwriting-corruption": true,
+    "generator-failure-malformed-output-bounds-and-deadline": true,
+    "rapid-edits-cancel-obsolete-generator-and-coalesce-latest": true,
+    "concurrent-disk-edit-blocks-save-before-atomic-replacement": true,
+    "shutdown-cancels-worker-and-reaps-generator": true,
+    "static-theme-and-last-good-recovery-without-matugen": true
+  },
+  "pearl_sha256": "d7ad18117b735085ae3dbf6c199c10aa2cc7e9f42048732c3e7dc1f6dcaa2a12",
+  "ctl_sha256": "4c134343dbadeacc784d29fbd17762e58c7e03f7d7d1c5e8c8e200bf70ed9d4e"
+}

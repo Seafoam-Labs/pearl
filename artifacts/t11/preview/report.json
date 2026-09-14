@@ -1,0 +1,13 @@
+{
+  "status": "running",
+  "checks": {
+    "helper-discovery-schema-and-replacement-ui": true,
+    "validate-retains-generation-and-apply-acknowledges-reload": true,
+    "invalid-values-retain-draft-and-disk": true,
+    "raw-structured-overlap-rejected": true,
+    "external-refresh-preserves-stale-draft": true,
+    "independent-draft-rebase": true
+  },
+  "pearl_sha256": "5f1c364d38c17b0d9bfefd95910bbffc9b1245c5519171431568acb66cab013d",
+  "ctl_sha256": "a22eaa6ebbc0e2780a484e86dad404a6af0c66faec66b2b92bc80450c6b3df5d"
+}

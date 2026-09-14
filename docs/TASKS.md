@@ -197,9 +197,11 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 
 ## T11 — Aqueous settings backend and GTK frontend
 
+**Status:** implemented with explicit capability gates and editor deferrals. See [AQUEOUS_SETTINGS.md](AQUEOUS_SETTINGS.md), the [221-field inventory](AQUEOUS_FIELD_INVENTORY.md), and [T11 verification](../artifacts/t11/verification/README.md). The old settings frontend is replaced; the canonical helper remains.
+
 **Depends on:** T06. **Primary files:** `src/config/aqueous_client.zig`, GTK settings pages.
 
-- First expose neutral-mode links into the existing Aqueous Settings application.
+- Replace the existing settings frontend directly in Pearl GTK, using the canonical helper in neutral mode (user clarification; no handoff to the old application).
 - Implement helper discovery/snapshot/validate/apply with bounded stdin/stdout, expected-generation retention and operation deadlines.
 - Build GTK pages from current helper schema and Aqueous's field/editor inventory; include layouts, rules, input, keybindings, appearance, displays and advanced/raw edits.
 - Implement capability-gated reload acknowledgement and separate toolkit-sync reporting. Shortcut recording must use tested inhibition and cleanup.
@@ -207,7 +209,7 @@ and [visual evidence](../artifacts/t07/comparison.html). Physical checks remain 
 
 **Done when:** structured/raw conflicts, stale generation, invalid input, uncertain save, reload failure and concurrent editing retain drafts and report accurate outcomes. All intended Aqueous fields are mapped or explicitly deferred. Display apply/revert survives UI crash, hotplug and competing configuration changes without overwriting unrelated state.
 
-**Cross-repository follow-up:** a Pearl appearance adapter/export consumer in Aqueous Settings may be added separately. Do not send `--shell pearl` until that capability exists and is tested.
+**Cross-repository follow-up:** a neutral Pearl appearance adapter/export consumer in the canonical backend may be added separately. Do not send `--shell pearl` until that capability exists and is tested.
 
 ## T12 — Session actions, idle policy and polkit
 

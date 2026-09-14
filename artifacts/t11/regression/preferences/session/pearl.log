@@ -1,0 +1,65 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=control-ready session=1cf287480ed8727ab899e26c817f29bc
+info: event=app-index-ready entries=158 truncated=false
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=popup-opened output=1
+info: event=session-focus target=settings-other
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=preferences-applied revision=2 mode=static cache=false
+info: event=preferences-applied revision=3 mode=static cache=false
+info: event=preferences-error detail=SyntaxError
+info: event=preferences-applied revision=5 mode=static cache=false
+info: event=preferences-error detail=InvalidImage
+info: event=preferences-error detail=InvalidFile
+info: event=preferences-applied revision=6 mode=dynamic cache=false
+info: event=preferences-applied revision=7 mode=dynamic cache=true
+info: event=preferences-applied revision=8 mode=static cache=false
+info: event=preferences-error detail=GtkThemeNotInstalled
+info: event=preferences-error detail=InvalidGtkTheme
+info: event=preferences-applied revision=9 mode=gtk cache=false
+info: event=preferences-applied revision=10 mode=gtk cache=false
+info: event=preferences-error detail=EdgeOccupied
+info: event=preferences-applied revision=11 mode=static cache=false
+info: event=session-focus target=settings-gtk-name
+info: event=popup-closed
+info: event=preferences-applied revision=12 mode=static cache=false
+info: event=popup-opened output=1
+info: event=session-focus target=settings-other
+info: event=session-focus target=settings-gtk-name
+info: event=session-focus target=settings-seed
+info: event=session-focus target=settings-wallpaper
+info: event=session-focus target=settings-other
+info: event=session-focus target=settings-color
+info: event=session-focus target=settings-font
+info: event=session-focus target=settings-other
+info: event=session-focus target=settings-merge
+info: event=session-focus target=settings-other
+info: event=session-focus target=settings-gtk-name
+info: event=session-focus target=settings-seed
+info: event=session-focus target=settings-wallpaper
+info: event=session-focus target=settings-other
+info: event=session-focus target=settings-color
+info: event=session-focus target=settings-font
+info: event=session-focus target=settings-other
+info: event=session-focus target=settings-apply
+info: event=preferences-applied revision=13 mode=static cache=false
+info: event=preferences-applied revision=14 mode=static cache=false
+info: event=preferences-applied revision=15 mode=static cache=false
+info: event=preferences-applied revision=16 mode=static cache=false
+info: event=preferences-applied revision=17 mode=static cache=false
+info: event=preferences-error detail=SaveFailed
+info: event=app-index-ready entries=158 truncated=false
+info: event=preferences-applied revision=18 mode=static cache=false
+info: event=preferences-applied revision=19 mode=static cache=false
+info: event=preferences-applied revision=20 mode=static cache=false
+info: event=preferences-applied revision=21 mode=static cache=false
+info(pearl): event=stopping reason=control-quit pending=false
+info: event=popup-closed
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

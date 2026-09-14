@@ -29,7 +29,10 @@ pub fn build(b: *std.Build) void {
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-foreign-toplevel-list-v1.xml"));
     scanner.generate("aqueous_window_info_manager_v1", 3);
     scanner.generate("aqueous_shell_manager_v1", 2);
+    scanner.addCustomProtocol(b.path("bindings/protocols/wlr-output-management-unstable-v1.xml"));
+    scanner.generate("zwlr_output_manager_v1", 4);
     scanner.generate("wl_compositor", 6);
+    scanner.generate("wl_output", 4);
     scanner.generate("ext_background_effect_manager_v1", 1);
     const native = b.createModule(.{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
     const native_export = b.addInstallFile(scanner.result, "share/pearl/bindings/wayland.zig");
@@ -75,7 +78,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(ctl);
 
     const adapter_module = b.createModule(.{ .root_source_file = b.path("src/adapter_probe.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gio2", "glib2", "glibunix2", "gobject2", "gdkpixbuf2" }) |name| adapter_module.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gio2", "giounix2", "glib2", "glibunix2", "gobject2", "gdkpixbuf2" }) |name| adapter_module.addImport(name, bindings.module(name));
     const adapter_probe = b.addExecutable(.{ .name = "pearl-adapter-probe", .root_module = adapter_module });
     b.step("adapter-probe", "Build the private IPC test driver").dependOn(&b.addInstallArtifact(adapter_probe, .{}).step);
 
@@ -132,6 +135,13 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| connectivity.addArgs(args);
     b.step("test-connectivity", "Verify NetworkManager and BlueZ on private services").dependOn(&connectivity.step);
 
+    const aqueous_settings = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_settings.py", "--pearl" });
+    aqueous_settings.addArtifactArg(app);
+    aqueous_settings.addArg("--ctl");
+    aqueous_settings.addArtifactArg(ctl);
+    if (b.args) |args| aqueous_settings.addArgs(args);
+    b.step("test-aqueous-settings", "Verify canonical settings and independent display rollback on private Aqueous").dependOn(&aqueous_settings.step);
+
     const preferences = b.addSystemCommand(&.{ "python3", "tests/integration/test_preferences.py", "--pearl" });
     preferences.addArtifactArg(integration_app);
     preferences.addArg("--ctl");
@@ -170,6 +180,7 @@ fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.L
 fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, source: []const u8, pulse: *std.Build.Module) *std.Build.Module {
     const module = b.createModule(.{ .root_source_file = b.path(source), .target = target, .optimize = optimize, .link_libc = true });
     module.addImport("pulse", pulse);
+    module.addImport("giounix2", bindings.module("giounix2"));
     module.linkSystemLibrary("libpulse", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("libpulse-mainloop-glib", .{ .use_pkg_config = .force });
     // Interposition requires layer-shell to load before GTK's Wayland dependency.
@@ -187,7 +198,7 @@ fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.R
         while (imports.next()) |entry| generated.addImport(entry.key_ptr.*, entry.value_ptr.*);
         module.addImport(name, generated);
     }
-    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "glibunix2", "gobject2", "pango1", "gdkpixbuf2", "gdkwayland4", "cairo1", "giounix2" }) |name|
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "giounix2", "glib2", "glibunix2", "gobject2", "pango1", "gdkpixbuf2", "gdkwayland4", "cairo1", "giounix2" }) |name|
         module.addImport(name, bindings.module(name));
     return module;
 }

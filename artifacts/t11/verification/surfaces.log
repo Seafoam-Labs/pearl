@@ -1,0 +1,18 @@
+PASS surfaces, reservations, input and hotplug
+PASS CLI isolation
+PASS native GTK blur
+Build Summary: 11/11 steps succeeded
+test-surfaces success
++- run python3 success 16s
+   +- compile exe pearl ReleaseSafe native cached 13ms MaxRSS:54M
+   |  +- run pkg-config success 958us
+   |  +- translate-c cached 11ms MaxRSS:54M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 8ms MaxRSS:55M
+   +- compile exe pearlctl ReleaseSafe native cached 13ms MaxRSS:59M
+   +- compile exe pearl-t00 ReleaseSafe native cached 14ms MaxRSS:55M
+      +- run pkg-config (reused)
+      +- translate-c (reused)
+

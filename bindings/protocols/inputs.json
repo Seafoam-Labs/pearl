@@ -5,7 +5,9 @@
     "wl_compositor": 6,
     "ext_background_effect_manager_v1": 1,
     "aqueous_shell_manager_v1": 2,
-    "aqueous_window_info_manager_v1": 3
+    "aqueous_window_info_manager_v1": 3,
+    "zwlr_output_manager_v1": 4,
+    "wl_output": 4
   },
   "inputs": {
     "wayland.xml": {
@@ -31,7 +33,11 @@
     "ext-foreign-toplevel-list-v1.xml": {
       "source": "wayland-protocols 1.49: staging/ext-foreign-toplevel-list/ext-foreign-toplevel-list-v1.xml",
       "sha256": "6b2ffb3a07d679d1c4170263adfefb9a7c37dd34ed3db5180bf58cb8ff8fbd0b"
+    },
+    "wlr-output-management-unstable-v1.xml": {
+      "source": "Aqueous compositor/protocol/upstream/wlr-output-management-unstable-v1.xml (vendored protocol v4)",
+      "sha256": "65b0f82a6cf129bf1a1c31a2428795abd33886c15ddd5f3ad97e5922d7bdc3a7"
     }
   },
-  "generated_sha256": "c1cfb6bbd6ff33e83e18ca9f73e095fe9f6c1f10e5825f2f38ef92bc0ac16fdf"
+  "generated_sha256": "db2a4ab0ddea82244f815597961253840f1601573d2e752ed3e757db03e5d70d"
 }

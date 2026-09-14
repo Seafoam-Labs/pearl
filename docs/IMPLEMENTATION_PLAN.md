@@ -22,7 +22,7 @@ The intended result is a daily-use DMS equivalent for an Aqueous desktop. Delive
 | 1.0 | A complete, tested Aqueous shell | Native GTK lock UI, clipboard, screenshots, dock/taskbar, desktop frame option, integrated GTK Aqueous settings, display preview/revert, accessibility, migration, packaging and performance gates |
 | Later | Optional DMS-adjacent conveniences | File indexing, weather, online calendar accounts, emoji/calculator providers, richer system monitoring, third-party extensions, greeter integration |
 
-Beta may use an established external locker as an explicitly configured interim dependency. It is not complete lock-screen parity. Advanced desktop settings may initially open the existing `aqueous-settings`; 1.0 exposes those controls in GTK through the existing configuration backend.
+Beta may use an established external locker as an explicitly configured interim dependency. It is not complete lock-screen parity. Aqueous settings are implemented directly in Pearl GTK through the canonical `aqueous-config` backend; the existing settings frontend is replaced.
 
 Exclude a login greeter, compositor/window manager, portal backend, package manager, network daemon, and calendar sync service from the shell implementation. Retain Aqueous's portal integration. Do not promise DMS plugin or configuration compatibility: provide a small documented importer for supported appearance and bar preferences.
 
@@ -269,15 +269,15 @@ Night light needs an explicit capability/ownership check and coordination with a
 
 Use `aqueous-config version` and `snapshot` to discover protocol/capabilities. Explicitly select the neutral shell mode (`--shell none`, present in the inspected `toolkit_sync.Shell` enum; verify the installed helper in T00), since the current CLI has a shell-specific default. No accidental DMS/Noctalia synchronization. Send bounded JSON requests over stdin for validate/apply, retaining `expected_generation` from the original draft.
 
-Preserve unknown fields and offline display entries according to the helper contract. Report validation, canonical save, compositor reload and optional toolkit synchronization separately. Request capability-gated `session.reload` after save; file watching alone is not an acknowledgement. A timeout after a write requires inspecting state, not repeating the operation blindly. A stale generation retains the draft for reconciliation.
+Preserve unknown fields and offline display entries according to the helper contract. Report validation, canonical save, compositor reload and optional toolkit synchronization separately. Gate apply on `config_reload` and read the helper’s own `session.reload` acknowledgement after save; file watching alone is not an acknowledgement. A timeout after a write requires inspecting state, not repeating the operation blindly. A stale generation retains the draft for reconciliation.
 
-Initially offer “Aqueous settings” links that launch the existing settings app with explicit neutral mode and supported `--page`. Later build GTK pages over the same helper schema: overview, appearance, layouts, input, displays, rules, keybindings and advanced/raw editing. Stage edits with Apply/Discard; preserve drafts on live updates. Shortcut recording requires a tested shortcut-inhibition integration and must release inhibition on every exit path.
+Replace the old settings frontend directly (user clarification for T11), with GTK pages over the same helper schema: overview, appearance, layouts, input, displays, rules, keybindings and advanced/raw editing. Stage edits with Apply/Discard; preserve drafts on live updates. Shortcut recording requires a tested shortcut-inhibition integration and must release inhibition on every exit path.
 
 ### Display preview
 
 Capture live output configuration, test the proposed configuration, apply it asynchronously, then display a **15-second proposed Keep/Revert countdown**. Persist through the helper only after Keep. Hotplug, service loss and competing changes invalidate the draft/preview. Revert only if current state still matches Pearl's candidate; never restore an obsolete configuration over another tool's changes.
 
-An in-process timer alone cannot recover after Pearl crashes during a bad display preview. Before shipping this feature, implement a bounded separate watchdog or a compositor-owned rollback lease, with explicit conflict semantics and crash tests. If that gate is not met, retain the established settings entry point and do not advertise safe preview/revert.
+An in-process timer alone cannot recover after Pearl crashes during a bad display preview. Before shipping this feature, implement a bounded separate watchdog or a compositor-owned rollback lease, with explicit conflict semantics and crash tests. Unsupported preview cases stay explicitly gated in Pearl; do not launch the replaced settings application or advertise unprotected behavior. T11 implements a separate guardian with generated output-management bindings; see [AQUEOUS_SETTINGS.md](AQUEOUS_SETTINGS.md) for current limits.
 
 ### Theme pipeline
 
@@ -294,7 +294,7 @@ Coalesce requests, cancel obsolete work, key caches by input/mode/generator vers
 
 Wallpaper rendering uses per-output background surfaces with cover/contain/solid modes and bounded decoding. Stop animations when hidden and make crossfades optional. External GTK/Qt/terminal theme exports are explicit opt-in templates with backups and ownership rules; opening Settings never rewrites other applications.
 
-Add a Pearl palette export/consumer adapter to Aqueous Settings as a separate cross-repository integration task. It is proposed work, not an existing `--shell pearl` capability. Until it exists, use neutral mode and built-in appearance rather than pretending the DMS adapter understands Pearl.
+A future neutral Pearl palette export/consumer contract can be added to the canonical backend as a separate cross-repository integration task. It is proposed work, not an existing `--shell pearl` capability. Until it exists, use neutral mode and built-in appearance rather than pretending the DMS adapter understands Pearl.
 
 ## 8. Locking and session lifecycle
 

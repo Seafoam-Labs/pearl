@@ -1,5 +1,41 @@
 # Pearl implementation progress
 
+## T11 — Implemented, September 13, 2026
+
+Replaced the old Aqueous settings frontend directly with Pearl GTK pages over
+`aqueous-config --shell none`, using Zig 0.16.0 and the pinned Ghostty bindings.
+All 221 helper fields are mapped; the six raw files and collection requests are
+available in Advanced. Dedicated visual rule/custom-binding/snap editors and
+unsupported display properties are explicitly deferred in the
+[field inventory](AQUEOUS_FIELD_INVENTORY.md).
+
+One worker owns immutable request/snapshot copies. Helper calls have bounded
+stdin/stdout/stderr, process-group cleanup and deadlines. Validation retains the
+original generation; drafts survive popup destruction, invalid input, external
+changes and edits during active jobs. Conservative rebasing preserves conflicts.
+Uncertain saves trigger read-back without replay. Canonical save, acknowledged
+reload and toolkit target synchronization have separate outcomes. Reload can be
+retried independently of saving. Raw display changes cannot bypass protection.
+
+The separate display guardian uses generated output-management v4 bindings. It
+tests before applying, holds a 15-second Keep/Revert lease, and persists only after
+Keep revalidates the helper generation and live state. Parent death and timeout
+revert only unchanged candidate heads. Competing edits and output removal preserve
+unrelated live state. Mirror/HDR/profile/enable-disable/custom-mode and raw display
+policy edits remain gated where the helper/protocol cannot prove safe preview.
+Physical monitor validation is not claimed by virtual-output tests.
+
+Shortcut recording waits for acknowledged GDK inhibition and releases it on
+cleanup/revocation/deadline. Private tests verify a compositor binding is
+suppressed while recording and restored afterward. All GTK signal handlers are
+disconnected before releasing their callback data, including notebook/focus
+objects retained during teardown.
+
+Verification: **87 unit/binding tests and 74 integration checks/groups** covering
+T11 (24), T10 preferences/themes (21), surfaces/blur/control (17), and lifecycle
+(12). See [the evidence report](../artifacts/t11/verification/README.md) and
+[actual dark/light/native GTK captures](../artifacts/t11/comparison.html).
+
 ## T10 — Complete, September 13, 2026
 
 Implemented versioned Pearl preferences, settings pages, wallpaper, dynamic

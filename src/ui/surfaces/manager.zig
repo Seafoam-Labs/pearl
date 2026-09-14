@@ -35,12 +35,14 @@ const Surface = struct {
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
     media: ?*@import("../../desktop/media.zig").View = null,
     tray: ?*@import("../../desktop/tray.zig").View = null,
+    aqueous_settings: ?*@import("../../desktop/aqueous_settings.zig").View = null,
     settings: ?*@import("../../desktop/settings.zig").View = null,
     wallpaper_picture: ?*gtk.Picture = null,
     appearance_revision: u64 = std.math.maxInt(u64),
     measure_signal: c_ulong = 0,
     measure_clock: ?*gdk.FrameClock = null,
     fn destroy(self: *Surface) void {
+        if (self.aqueous_settings) |view| view.destroy();
         if (self.settings) |view| view.destroy();
         if (self.notifications) |view| view.destroy();
         if (self.media) |view| view.destroy();
@@ -99,6 +101,7 @@ pub const Manager = struct {
     bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
     session_services: @import("../../services/session.zig").Session = undefined,
     services_started: bool = false,
+    aqueous_settings: @import("../../config/aqueous_client.zig").Client = undefined,
     preferences: @import("../../config/service.zig").Service = undefined,
     osd_label: ?*gtk.Label = null,
     osd_pending: @import("../../services/policy.zig").Text(512) = .{},
@@ -139,6 +142,8 @@ pub const Manager = struct {
         self.session_services = .{ .app = self.app.as(gio.Application), .context = self, .changed = sessionChanged };
         self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged, .validate = validatePreferences };
         try self.preferences.start();
+        self.aqueous_settings = .{ .app = self.app.as(gio.Application), .context = self, .changed = aqueousSettingsChanged, .reload = aqueousReload, .can_reload = aqueousCanReload, .can_record = aqueousCanRecord };
+        self.aqueous_settings.start();
         self.services_started = true;
         self.audio.start();
         self.power.start();
@@ -164,6 +169,7 @@ pub const Manager = struct {
         self.monitor_watches.deinit(a);
         self.clear();
         if (self.services_started) {
+            self.aqueous_settings.stop();
             self.preferences.stop();
             self.audio.stop();
             self.power.stop();
@@ -188,6 +194,23 @@ pub const Manager = struct {
         self.hideNotifications();
         for (self.outputs.items) |o| o.destroy();
         self.outputs.clearRetainingCapacity();
+    }
+    fn aqueousSettingsChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (self.popup) |surface| if (surface.aqueous_settings) |view| view.update();
+    }
+    fn aqueousCanRecord(context: *anyopaque) bool {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        return aqueousCanReload(context) and self.client.capabilities.shortcut_inhibition;
+    }
+    fn aqueousCanReload(context: *anyopaque) bool {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        @import("../../aqueous/commands.zig").validate(.session_reload, &self.client.model, self.client.capabilities) catch return false;
+        return true;
+    }
+    fn aqueousReload(context: *anyopaque) !u64 {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        return self.client.enqueue(.session_reload);
     }
     fn validatePreferences(context: *anyopaque, prefs: @import("../../config/preferences.zig").Preferences) !void {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -484,6 +507,7 @@ pub const Manager = struct {
             if (s.notifications) |view| view.destroy();
             if (s.media) |view| view.destroy();
             if (s.tray) |view| view.destroy();
+            if (s.aqueous_settings) |view| view.destroy();
             if (s.settings) |view| view.destroy();
         }
         switch (kind) {
@@ -529,6 +553,7 @@ pub const Manager = struct {
                 window.setChild(fixed.as(gtk.Widget));
                 panel_widget.addCssClass("pearl-popup-panel");
                 switch (self.pane) {
+                    .aqueous_settings => s.aqueous_settings = try @import("../../desktop/aqueous_settings.zig").View.create(panel, &self.aqueous_settings, window),
                     .settings => s.settings = try @import("../../desktop/settings.zig").View.create(panel, &self.preferences),
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
                     .calendar => Panels.calendar(panel),
@@ -551,6 +576,9 @@ pub const Manager = struct {
                         const settings = gtk.Button.newWithLabel("Pearl settings");
                         _ = gtk.Button.signals.clicked.connect(settings, *Surface, settingsClicked, s, .{});
                         panel.append(settings.as(gtk.Widget));
+                        const aqueous_settings = gtk.Button.newWithLabel("Aqueous settings");
+                        _ = gtk.Button.signals.clicked.connect(aqueous_settings, *Surface, aqueousSettingsClicked, s, .{});
+                        panel.append(aqueous_settings.as(gtk.Widget));
                     },
                 }
                 const keys = gtk.EventControllerKey.new();
@@ -629,7 +657,7 @@ pub const Manager = struct {
         const s = self.popup orelse return;
         const o = s.output;
         const prefs = self.preferences.prefs().popup;
-        var rect = if (self.pane == .launcher) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if (self.pane == .settings) 700 else if (self.pane == .control) 600 else 440, if (self.pane == .settings) 720 else if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
+        var rect = if (self.pane == .launcher) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if ((self.pane == .settings or self.pane == .aqueous_settings)) 700 else if (self.pane == .control) 600 else 440, if ((self.pane == .settings or self.pane == .aqueous_settings)) 720 else if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
         const width = @min(rect.width, prefs.max_width);
         const height = @min(rect.height, prefs.max_height);
         rect = if (prefs.placement == .centered or self.pane == .launcher) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, o.usable, width, height, o.reservations.bar_edge, self.pane != .calendar);
@@ -711,6 +739,7 @@ pub const Manager = struct {
         };
     }
     pub fn completion(self: *Manager, result: adapter.Completion) void {
+        if (self.aqueous_settings.completion(result)) return;
         if (result.status == .rejected or result.status == .unknown or result.status == .dropped) {
             self.error_pending = true;
             self.schedule();
@@ -722,6 +751,7 @@ pub const Manager = struct {
             self.session_services.notifications.setLocked(self.client.availability != .ready or (if (self.client.model.get(.session, "session")) |session| session.locked else true));
             return self.session_services.status(alloc, request.offset orelse 0);
         }
+        if (request.op == .aqueous_status) return self.aqueous_settings.status(alloc, request.text);
         if (request.op == .preferences_status) return self.preferences.status(alloc);
         if (request.op == .status) return self.status(alloc);
         if (request.op == .connectivity_status) return @import("../../services/connectivity_status.zig").encode(alloc, &self.network, &self.bluetooth, request.offset orelse 0);
@@ -729,7 +759,7 @@ pub const Manager = struct {
         if (self.client.availability != .ready) return error.Unavailable;
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         switch (request.op) {
-            .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
             .preferences_apply => {
                 try self.preferences.apply(request.text.?, request.revision.?);
                 return "{\"queued\":true}";
@@ -737,6 +767,29 @@ pub const Manager = struct {
             .preferences_reload => {
                 self.preferences.reload();
                 return "{\"queued\":true}";
+            },
+            .aqueous_show => {
+                try self.showPane(try self.selected(request.output), .aqueous_settings);
+                if (request.text) |page| try self.popup.?.aqueous_settings.?.showPage(page);
+            },
+            .aqueous_reload => try self.aqueous_settings.requestReload(),
+            .aqueous_keep => try self.aqueous_settings.choose(true),
+            .aqueous_revert => try self.aqueous_settings.choose(false),
+            .aqueous_rebase => try self.aqueous_settings.rebase(),
+            .aqueous_record => {
+                const view = if (self.popup) |p| p.aqueous_settings else null;
+                try (view orelse return error.Unavailable).record(request.text.?);
+            },
+            .aqueous_refresh => try self.aqueous_settings.begin(.refresh),
+            .aqueous_validate => try self.aqueous_settings.begin(.validate),
+            .aqueous_apply => try self.aqueous_settings.begin(.apply),
+            .aqueous_draft => {
+                try self.aqueous_settings.keepDraft(request.text.?);
+                aqueousSettingsChanged(self);
+            },
+            .aqueous_discard => {
+                self.aqueous_settings.discard();
+                aqueousSettingsChanged(self);
             },
             .settings_show => try self.showPane(try self.selected(request.output), .settings),
             .session_action => {
@@ -989,6 +1042,9 @@ fn layoutAction(context: *anyopaque, value: ?[]const u8) void {
     s.manager.queryLayout(s.output, value) catch {
         s.control.?.label.setText(tr("Layout change unavailable", "Anordnung kann nicht geändert werden"));
     };
+}
+fn aqueousSettingsClicked(_: *gtk.Button, s: *Surface) callconv(.c) void {
+    barAction(s, .{ .pane = .aqueous_settings });
 }
 fn settingsClicked(_: *gtk.Button, s: *Surface) callconv(.c) void {
     barAction(s, .{ .pane = .settings });

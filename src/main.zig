@@ -34,6 +34,10 @@ pub fn main(init: std.process.Init) void {
         log.err("Unable to read arguments.", .{});
         std.process.exit(2);
     };
+    if (args.len == 2 and std.mem.eql(u8, args[1], "--display-guard")) {
+        @import("config/display_guard.zig").main();
+        return;
+    }
     const parsed = startup.Options.parse(args[1..]) catch |err| {
         log.err("{s}", .{startup.diagnostic(err)});
         std.process.exit(2);

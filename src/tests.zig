@@ -1,4 +1,5 @@
 test {
+    _ = @import("config/aqueous_model.zig");
     _ = @import("config/preferences.zig");
     _ = @import("config/merge.zig");
     _ = @import("services/notification_policy.zig");
