@@ -36,6 +36,7 @@ pub const Bar = struct {
     workspace_hash: u64 = 0,
     title: ?*gtk.Label = null,
     clock: ?*gtk.Label = null,
+    clock_date: ?*gtk.Label = null,
     keyboard: ?*gtk.Label = null,
     islands: bool = true,
     sections: [3]?*gtk.Widget = @splat(null),
@@ -74,6 +75,7 @@ pub const Bar = struct {
         self.widgets = @splat(null);
         self.title = null;
         self.clock = null;
+        self.clock_date = null;
         self.keyboard = null;
         self.audio_label = null;
         self.battery_label = null;
@@ -132,6 +134,7 @@ pub const Bar = struct {
     }
     fn build(self: *Bar) !void {
         self.clear();
+        if (self.vertical) self.host.as(gtk.Widget).addCssClass("pearl-bar-vertical") else self.host.as(gtk.Widget).removeCssClass("pearl-bar-vertical");
         self.host.as(gtk.Orientable).setOrientation(if (self.vertical) .vertical else .horizontal);
         self.host.setSpacing(8);
         const center = gtk.CenterBox.new();
@@ -162,11 +165,12 @@ pub const Bar = struct {
                     },
                     .notifications, .media => blk: {
                         const button = try self.makeButton(.{ .pane = if (item == .media) .media else .notifications }, null, "", false);
-                        const content = w.row(4);
+                        const content = gtk.Box.new(if (self.vertical) .vertical else .horizontal, if (self.vertical) 0 else 4);
                         content.append(w.icon(if (item == .media) "pearl-media-symbolic" else "pearl-notifications-symbolic").as(gtk.Widget));
                         const label = gtk.Label.new("");
                         label.setEllipsize(.end);
-                        label.setMaxWidthChars(if (item == .media) 16 else 4);
+                        label.setMaxWidthChars(if (self.vertical) 2 else if (item == .media) 16 else 4);
+                        if (self.vertical) label.as(gtk.Widget).addCssClass("pearl-bar-value");
                         content.append(label.as(gtk.Widget));
                         button.setChild(content.as(gtk.Widget));
                         if (item == .media) self.media_label = label else self.notification_label = label;
@@ -180,12 +184,23 @@ pub const Bar = struct {
                     .clock => blk: {
                         const button = try self.makeButton(.{ .pane = .calendar }, null, "", false);
                         self.clock = gtk.Label.new("");
-                        button.setChild(self.clock.?.as(gtk.Widget));
+                        self.clock.?.setJustify(.center);
+                        if (self.vertical) {
+                            const content = gtk.Box.new(.vertical, 4);
+                            self.clock_date = gtk.Label.new("");
+                            self.clock_date.?.setJustify(.center);
+                            self.clock_date.?.setEllipsize(.end);
+                            self.clock_date.?.setMaxWidthChars(3);
+                            self.clock_date.?.as(gtk.Widget).addCssClass("pearl-bar-value");
+                            content.append(self.clock_date.?.as(gtk.Widget));
+                            content.append(self.clock.?.as(gtk.Widget));
+                            button.setChild(content.as(gtk.Widget));
+                        } else button.setChild(self.clock.?.as(gtk.Widget));
                         break :blk button.as(gtk.Widget);
                     },
                     .audio, .battery, .network, .bluetooth => blk: {
                         const button = try self.makeButton(.{ .pane = .control }, null, "", false);
-                        const content = w.row(4);
+                        const content = gtk.Box.new(if (self.vertical) .vertical else .horizontal, if (self.vertical) 0 else 4);
                         content.append(w.icon(switch (item) {
                             .audio => "pearl-audio-volume-high-symbolic",
                             .battery => "pearl-battery-symbolic",
@@ -194,6 +209,11 @@ pub const Bar = struct {
                             else => unreachable,
                         }).as(gtk.Widget));
                         const label = gtk.Label.new("");
+                        if (self.vertical) {
+                            label.setEllipsize(.end);
+                            label.setMaxWidthChars(3);
+                            label.as(gtk.Widget).addCssClass("pearl-bar-value");
+                        }
                         content.append(label.as(gtk.Widget));
                         switch (item) {
                             .audio => self.audio_label = label,
@@ -210,7 +230,7 @@ pub const Bar = struct {
                         button.as(gtk.Widget).setTooltipText(tr("Switch keyboard layout", "Tastaturbelegung wechseln"));
                         self.keyboard = gtk.Label.new("");
                         self.keyboard.?.setEllipsize(.end);
-                        self.keyboard.?.setMaxWidthChars(14);
+                        self.keyboard.?.setMaxWidthChars(if (self.vertical) 2 else 14);
                         button.setChild(self.keyboard.?.as(gtk.Widget));
                         break :blk button.as(gtk.Widget);
                     },
@@ -333,7 +353,17 @@ pub const Bar = struct {
             const text = if (keyboard) |k| (if (k.layouts.len > 0) k.layouts[k.index] else "—") else "—";
             const value = a.dupeZ(u8, text) catch return;
             defer a.free(value);
-            label.setText(value);
+            if (self.vertical) {
+                // Keep a compact language indicator; the full layout stays in
+                // the tooltip and accessible name, including non-Latin names.
+                var short: [9:0]u8 = @splat(0);
+                var utf8 = (std.unicode.Utf8View.init(text) catch return).iterator();
+                const prefix = utf8.peek(2);
+                for (prefix, 0..) |byte, i| short[i] = std.ascii.toUpper(byte);
+                label.setText(&short);
+            } else label.setText(value);
+            self.widgets[@intFromEnum(policy.Item.keyboard)].?.setTooltipText(value);
+            w.name(self.widgets[@intFromEnum(policy.Item.keyboard)].?, value);
             self.widgets[@intFromEnum(policy.Item.keyboard)].?.setSensitive(@intFromBool(keyboard != null and self.client.capabilities.keyboard));
         }
         if (self.widgets[@intFromEnum(policy.Item.workspaces)]) |host| {
@@ -396,21 +426,55 @@ pub const Bar = struct {
             i += 1;
         }) {
             const item = object.ext.cast(gtk.GridLayoutChild, layout.getLayoutChild(widget)).?;
-            item.setColumn(if (self.vertical) @divTrunc(i, per_line) else @mod(i, per_line));
-            item.setRow(if (self.vertical) @mod(i, per_line) else @divTrunc(i, per_line));
+            // A side bar keeps its thickness. Overflow scrolls along the edge
+            // instead of adding another workspace column.
+            item.setColumn(if (self.vertical) 0 else @mod(i, per_line));
+            item.setRow(if (self.vertical) i else @divTrunc(i, per_line));
         }
     }
     pub fn tick(self: *Bar) void {
         if (self.clock) |label| {
             const now = glib.DateTime.newNowLocal() orelse return;
             defer now.unref();
-            const text = now.format(if (self.vertical) "%H\n%M" else "%a %d · %H:%M") orelse return;
+            const text = now.format(if (self.vertical) "%H\n%M" else "%a %d %b · %H:%M") orelse return;
             defer glib.free(text);
             label.setText(text);
-            const detail = now.format("%A, %d %B %Y") orelse return;
+            if (self.clock_date) |date| {
+                const day_month = now.format("%a\n%d\n%b") orelse return;
+                defer glib.free(day_month);
+                date.setText(day_month);
+            }
+            const detail = now.format("%A, %d %B %Y · %H:%M") orelse return;
             defer glib.free(detail);
-            label.as(gtk.Widget).setTooltipText(detail);
+            const widget = self.widgets[@intFromEnum(policy.Item.clock)].?;
+            widget.setTooltipText(detail);
+            w.name(widget, detail);
         }
+    }
+    // Compiled only by the integration hook: measure actual allocated children.
+    pub fn layoutReport(self: *Bar, alloc: std.mem.Allocator) ![]const u8 {
+        const Rect = struct { x: f64, y: f64, width: i32, height: i32 };
+        const allocation = struct {
+            fn read(widget: *gtk.Widget, host: *gtk.Widget) Rect {
+                var x: f64 = 0;
+                var y: f64 = 0;
+                _ = widget.translateCoordinates(host, 0, 0, &x, &y);
+                return .{ .x = x, .y = y, .width = widget.getWidth(), .height = widget.getHeight() };
+            }
+        };
+        const Item = struct { name: []const u8, rect: Rect, parts: []const Rect };
+        var items: std.ArrayList(Item) = .empty;
+        for (self.widgets, 0..) |maybe, i| if (maybe) |widget| {
+            if (widget.getVisible() == 0) continue;
+            var parts: std.ArrayList(Rect) = .empty;
+            const parent = if (object.ext.cast(gtk.Button, widget)) |button| button.getChild() orelse widget else widget;
+            var child = parent.getFirstChild();
+            while (child) |v| : (child = v.getNextSibling()) {
+                if (v.getVisible() != 0) try parts.append(alloc, allocation.read(v, self.host.as(gtk.Widget)));
+            }
+            try items.append(alloc, .{ .name = @tagName(@as(policy.Item, @enumFromInt(i))), .rect = allocation.read(widget, self.host.as(gtk.Widget)), .parts = try parts.toOwnedSlice(alloc) });
+        };
+        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items }, .{});
     }
     fn clicked(_: *gtk.Button, button: *Button) callconv(.c) void {
         button.owner.action(button.owner.context, button.event);

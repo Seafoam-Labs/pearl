@@ -1,0 +1,3 @@
+{"id": "org.pearl.Alpha", "title": "Alpha Editor", "mark": "Alpha", "argv": [], "cwd": "/tmp/pearl-dev-biupoz7g", "display": "wayland-1", "endpoint": "/tmp/pearl-dev-biupoz7g/run/aqueous/5852ac9882a618093542c9511d33e042/ipc.sock"}
+{"id": "org.pearl.Alpha", "title": "Second Alpha", "mark": "window", "argv": [], "cwd": "/tmp/pearl-dev-biupoz7g", "display": "wayland-1", "endpoint": "/tmp/pearl-dev-biupoz7g/run/aqueous/5852ac9882a618093542c9511d33e042/ipc.sock"}
+{"id": "org.pearl.Beta", "title": "Beta Browser", "mark": "window", "argv": [], "cwd": "/tmp/pearl-dev-biupoz7g", "display": "wayland-1", "endpoint": "/tmp/pearl-dev-biupoz7g/run/aqueous/5852ac9882a618093542c9511d33e042/ipc.sock"}

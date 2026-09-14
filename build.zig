@@ -215,6 +215,12 @@ pub fn build(b: *std.Build) void {
     dock.addArtifactArg(ctl);
     if (b.args) |args| dock.addArgs(args);
     b.step("test-dock-islands", "Verify T15 dock and island layouts in private Aqueous").dependOn(&dock.step);
+    const bar_layout = b.addSystemCommand(&.{ "python3", "tests/integration/test_bar_layout.py", "--pearl" });
+    bar_layout.addArtifactArg(integration_app);
+    bar_layout.addArg("--ctl");
+    bar_layout.addArtifactArg(ctl);
+    if (b.args) |args| bar_layout.addArgs(args);
+    b.step("test-bar-layout", "Verify bar thickness and stacked widgets on every edge").dependOn(&bar_layout.step);
 
     const desktop = b.addSystemCommand(&.{ "python3", "tests/integration/test_desktop.py", "--pearl" });
     desktop.addArtifactArg(app);

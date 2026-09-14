@@ -13,6 +13,14 @@ receive no blur. Layout changes update that union from actual GTK allocations.
 The dock uses the same native background-effect integration and rounded input
 region. GTK themes retain their own colors; Material themes supply Pearl colors.
 
+Left/right bars retain the configured thickness. Icons and status values stack,
+the clock stacks weekday, day and month above separate hour/minute lines, and
+workspaces stay in one column. Horizontal clocks include the day and month inline.
+Overflow scrolls vertically instead of creating more columns. Returning to a
+top/bottom edge restores horizontal widgets and full keyboard-layout labels.
+`zig build test-bar-layout -Drelease=true -Doptimize=ReleaseSafe` checks actual GTK
+allocations across edges, themes, text sizes and mixed-scale output changes.
+
 ## Dock behavior
 
 Each output has its own running application groups and the same ordered list of

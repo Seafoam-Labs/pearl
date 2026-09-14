@@ -1,0 +1,4505 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "name": "static-True-14-48-left",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 611,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 9,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 40,
+            "width": 40,
+            "height": 286
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 43,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 75,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 107,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 139,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 171,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 203,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 235,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 267,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 299,
+              "width": 38,
+              "height": 24
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 341,
+            "width": 38,
+            "height": 39
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 645,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 679,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 473,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 473,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 493,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 519,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 519,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 539,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 565,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 565,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 585,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 435,
+            "width": 38,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 435,
+              "width": 38,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 466,
+            "width": 40,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-True-14-48-right",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 611,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 9,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 40,
+            "width": 40,
+            "height": 286
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 43,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 75,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 107,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 139,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 171,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 203,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 235,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 267,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 299,
+              "width": 38,
+              "height": 24
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 341,
+            "width": 38,
+            "height": 39
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 645,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 679,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 473,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 473,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 493,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 519,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 519,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 539,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 565,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 565,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 585,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 435,
+            "width": 38,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 435,
+              "width": 38,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 466,
+            "width": 40,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-True-14-48-top",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1079,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 15,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 52,
+            "y": 0,
+            "width": 430,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 65,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 109,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 157,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 205,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 253,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 301,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 349,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 397,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 445,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 494,
+            "y": 0,
+            "width": 55,
+            "height": 40
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 588,
+            "y": 3,
+            "width": 97,
+            "height": 34
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1129,
+            "y": 3,
+            "width": 78,
+            "height": 34
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1233,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 884,
+            "y": 3,
+            "width": 38,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 884,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 908,
+              "y": 3,
+              "width": 14,
+              "height": 34
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 952,
+            "y": 3,
+            "width": 38,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 952,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 976,
+              "y": 3,
+              "width": 14,
+              "height": 34
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1020,
+            "y": 3,
+            "width": 33,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 1020,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 1044,
+              "y": 3,
+              "width": 9,
+              "height": 34
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 826,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 826,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 850,
+              "y": 3,
+              "width": 0,
+              "height": 34
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 867,
+            "y": 0,
+            "width": 0,
+            "height": 40
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-True-14-48-bottom",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1079,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 15,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 52,
+            "y": 0,
+            "width": 430,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 65,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 109,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 157,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 205,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 253,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 301,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 349,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 397,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 445,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 494,
+            "y": 0,
+            "width": 55,
+            "height": 40
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 588,
+            "y": 3,
+            "width": 97,
+            "height": 34
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1129,
+            "y": 3,
+            "width": 78,
+            "height": 34
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1233,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 884,
+            "y": 3,
+            "width": 38,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 884,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 908,
+              "y": 3,
+              "width": 14,
+              "height": 34
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 952,
+            "y": 3,
+            "width": 38,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 952,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 976,
+              "y": 3,
+              "width": 14,
+              "height": 34
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1020,
+            "y": 3,
+            "width": 33,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 1020,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 1044,
+              "y": 3,
+              "width": 9,
+              "height": 34
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 826,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 826,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 850,
+              "y": 3,
+              "width": 0,
+              "height": 34
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 867,
+            "y": 0,
+            "width": 0,
+            "height": 40
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-False-14-48-left",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 605,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 3,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 34,
+            "width": 40,
+            "height": 286
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 37,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 69,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 101,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 133,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 165,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 197,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 229,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 261,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 293,
+              "width": 38,
+              "height": 24
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 331,
+            "width": 38,
+            "height": 39
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 639,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 673,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 467,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 467,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 487,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 513,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 513,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 533,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 559,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 559,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 579,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 429,
+            "width": 38,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 429,
+              "width": 38,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 460,
+            "width": 40,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-False-14-48-right",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 605,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 3,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 34,
+            "width": 40,
+            "height": 286
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 37,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 69,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 101,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 133,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 165,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 197,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 229,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 261,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 293,
+              "width": 38,
+              "height": 24
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 331,
+            "width": 38,
+            "height": 39
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 639,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 673,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 467,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 467,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 487,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 513,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 513,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 533,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 559,
+            "width": 38,
+            "height": 36
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 559,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 579,
+              "width": 38,
+              "height": 16
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 429,
+            "width": 38,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 429,
+              "width": 38,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 460,
+            "width": 40,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-False-14-48-top",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1073,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 9,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 46,
+            "y": 0,
+            "width": 430,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 59,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 103,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 151,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 199,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 247,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 295,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 343,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 391,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 439,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 488,
+            "y": 0,
+            "width": 81,
+            "height": 40
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 582,
+            "y": 3,
+            "width": 97,
+            "height": 34
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1123,
+            "y": 3,
+            "width": 78,
+            "height": 34
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1227,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 878,
+            "y": 3,
+            "width": 38,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 878,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 902,
+              "y": 3,
+              "width": 14,
+              "height": 34
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 946,
+            "y": 3,
+            "width": 38,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 946,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 970,
+              "y": 3,
+              "width": 14,
+              "height": 34
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1014,
+            "y": 3,
+            "width": 33,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 1014,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 1038,
+              "y": 3,
+              "width": 9,
+              "height": 34
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 820,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 820,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 844,
+              "y": 3,
+              "width": 0,
+              "height": 34
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 861,
+            "y": 0,
+            "width": 0,
+            "height": 40
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-False-14-48-bottom",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1073,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 9,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 46,
+            "y": 0,
+            "width": 430,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 59,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 103,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 151,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 199,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 247,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 295,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 343,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 391,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 439,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 488,
+            "y": 0,
+            "width": 81,
+            "height": 40
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 582,
+            "y": 3,
+            "width": 97,
+            "height": 34
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1123,
+            "y": 3,
+            "width": 78,
+            "height": 34
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1227,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 878,
+            "y": 3,
+            "width": 38,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 878,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 902,
+              "y": 3,
+              "width": 14,
+              "height": 34
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 946,
+            "y": 3,
+            "width": 38,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 946,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 970,
+              "y": 3,
+              "width": 14,
+              "height": 34
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1014,
+            "y": 3,
+            "width": 33,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 1014,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 1038,
+              "y": 3,
+              "width": 9,
+              "height": 34
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 820,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 820,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 844,
+              "y": 3,
+              "width": 0,
+              "height": 34
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 861,
+            "y": 0,
+            "width": 0,
+            "height": 40
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "gtk-True-14-48-left",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 611,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 9,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 40,
+            "width": 40,
+            "height": 286
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 43,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 75,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 107,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 139,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 171,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 203,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 235,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 267,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 299,
+              "width": 38,
+              "height": 24
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 341,
+            "width": 38,
+            "height": 36
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 645,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 679,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 476,
+            "width": 38,
+            "height": 35
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 476,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 496,
+              "width": 38,
+              "height": 15
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 521,
+            "width": 38,
+            "height": 35
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 521,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 541,
+              "width": 38,
+              "height": 15
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 566,
+            "width": 38,
+            "height": 35
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 566,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 586,
+              "width": 38,
+              "height": 15
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 438,
+            "width": 38,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 438,
+              "width": 38,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 469,
+            "width": 40,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "gtk-True-14-48-right",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 611,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 9,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 40,
+            "width": 40,
+            "height": 286
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 43,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 75,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 107,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 139,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 171,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 203,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 235,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 267,
+              "width": 38,
+              "height": 24
+            },
+            {
+              "x": 1,
+              "y": 299,
+              "width": 38,
+              "height": 24
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 341,
+            "width": 38,
+            "height": 36
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 645,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 679,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 476,
+            "width": 38,
+            "height": 35
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 476,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 496,
+              "width": 38,
+              "height": 15
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 521,
+            "width": 38,
+            "height": 35
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 521,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 541,
+              "width": 38,
+              "height": 15
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 566,
+            "width": 38,
+            "height": 35
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 566,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 586,
+              "width": 38,
+              "height": 15
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 438,
+            "width": 38,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 438,
+              "width": 38,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 469,
+            "width": 40,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "gtk-True-14-48-top",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1079,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 15,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 52,
+            "y": 0,
+            "width": 322,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 61,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 97,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 133,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 169,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 205,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 241,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 277,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 313,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 349,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 386,
+            "y": 0,
+            "width": 58,
+            "height": 40
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 586,
+            "y": 3,
+            "width": 101,
+            "height": 34
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1125,
+            "y": 3,
+            "width": 86,
+            "height": 34
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1233,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 901,
+            "y": 3,
+            "width": 39,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 901,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 925,
+              "y": 3,
+              "width": 15,
+              "height": 34
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 962,
+            "y": 3,
+            "width": 39,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 962,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 986,
+              "y": 3,
+              "width": 15,
+              "height": 34
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1023,
+            "y": 3,
+            "width": 34,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 1023,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 1047,
+              "y": 3,
+              "width": 10,
+              "height": 34
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 851,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 851,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 875,
+              "y": 3,
+              "width": 0,
+              "height": 34
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 888,
+            "y": 0,
+            "width": 0,
+            "height": 40
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "gtk-True-14-48-bottom",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1079,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 15,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 52,
+            "y": 0,
+            "width": 322,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 61,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 97,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 133,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 169,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 205,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 241,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 277,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 313,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            },
+            {
+              "x": 349,
+              "y": 3,
+              "width": 16,
+              "height": 34
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 386,
+            "y": 0,
+            "width": 58,
+            "height": 40
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 586,
+            "y": 3,
+            "width": 101,
+            "height": 34
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1125,
+            "y": 3,
+            "width": 86,
+            "height": 34
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1233,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 901,
+            "y": 3,
+            "width": 39,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 901,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 925,
+              "y": 3,
+              "width": 15,
+              "height": 34
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 962,
+            "y": 3,
+            "width": 39,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 962,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 986,
+              "y": 3,
+              "width": 15,
+              "height": 34
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1023,
+            "y": 3,
+            "width": 34,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 1023,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 1047,
+              "y": 3,
+              "width": 10,
+              "height": 34
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 851,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 851,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 875,
+              "y": 3,
+              "width": 0,
+              "height": 34
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 888,
+            "y": 0,
+            "width": 0,
+            "height": 40
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-True-20-48-left",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 644,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 9,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 40,
+            "width": 40,
+            "height": 322
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 43,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 79,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 115,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 151,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 187,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 223,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 259,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 295,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 331,
+              "width": 38,
+              "height": 28
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 377,
+            "width": 38,
+            "height": 55
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 678,
+            "width": 38,
+            "height": 28
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 716,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 488,
+            "width": 38,
+            "height": 42
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 488,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 508,
+              "width": 38,
+              "height": 22
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 540,
+            "width": 38,
+            "height": 42
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 540,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 560,
+              "width": 38,
+              "height": 22
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 592,
+            "width": 38,
+            "height": 42
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 592,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 612,
+              "width": 38,
+              "height": 22
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 450,
+            "width": 38,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 450,
+              "width": 38,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 481,
+            "width": 40,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-True-20-48-right",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 644,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 9,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 40,
+            "width": 40,
+            "height": 322
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 43,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 79,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 115,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 151,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 187,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 223,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 259,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 295,
+              "width": 38,
+              "height": 28
+            },
+            {
+              "x": 1,
+              "y": 331,
+              "width": 38,
+              "height": 28
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 377,
+            "width": 38,
+            "height": 55
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 678,
+            "width": 38,
+            "height": 28
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 716,
+            "width": 38,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 488,
+            "width": 38,
+            "height": 42
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 488,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 508,
+              "width": 38,
+              "height": 22
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 540,
+            "width": 38,
+            "height": 42
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 540,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 560,
+              "width": 38,
+              "height": 22
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 592,
+            "width": 38,
+            "height": 42
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 592,
+              "width": 38,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 612,
+              "width": 38,
+              "height": 22
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 450,
+            "width": 38,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 450,
+              "width": 38,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 481,
+            "width": 40,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-True-20-48-top",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1046,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 15,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 52,
+            "y": 0,
+            "width": 430,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 65,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 109,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 157,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 205,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 253,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 301,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 349,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 397,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 445,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 494,
+            "y": 0,
+            "width": 78,
+            "height": 40
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 597,
+            "y": 3,
+            "width": 138,
+            "height": 34
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1096,
+            "y": 3,
+            "width": 111,
+            "height": 34
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1233,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 836,
+            "y": 3,
+            "width": 44,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 836,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 860,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 910,
+            "y": 3,
+            "width": 44,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 910,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 934,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 984,
+            "y": 3,
+            "width": 36,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 984,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 1008,
+              "y": 3,
+              "width": 12,
+              "height": 34
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 778,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 778,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 802,
+              "y": 3,
+              "width": 0,
+              "height": 34
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 819,
+            "y": 0,
+            "width": 0,
+            "height": 40
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "static-True-20-48-bottom",
+      "bar_size": 48,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1046,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 15,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 52,
+            "y": 0,
+            "width": 430,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 65,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 109,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 157,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 205,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 253,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 301,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 349,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 397,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            },
+            {
+              "x": 445,
+              "y": 3,
+              "width": 28,
+              "height": 34
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 494,
+            "y": 0,
+            "width": 78,
+            "height": 40
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 597,
+            "y": 3,
+            "width": 138,
+            "height": 34
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1096,
+            "y": 3,
+            "width": 111,
+            "height": 34
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1233,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 836,
+            "y": 3,
+            "width": 44,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 836,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 860,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 910,
+            "y": 3,
+            "width": 44,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 910,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 934,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 984,
+            "y": 3,
+            "width": 36,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 984,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 1008,
+              "y": 3,
+              "width": 12,
+              "height": 34
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 778,
+            "y": 3,
+            "width": 24,
+            "height": 34
+          },
+          "parts": [
+            {
+              "x": 778,
+              "y": 3,
+              "width": 20,
+              "height": 34
+            },
+            {
+              "x": 802,
+              "y": 3,
+              "width": 0,
+              "height": 34
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 819,
+            "y": 0,
+            "width": 0,
+            "height": 40
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "gtk-False-20-64-left",
+      "bar_size": 64,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 604,
+            "width": 54,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 3,
+            "width": 54,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 34,
+            "width": 56,
+            "height": 295
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 37,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 70,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 103,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 136,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 169,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 202,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 235,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 268,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 301,
+              "width": 54,
+              "height": 25
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 332,
+            "width": 54,
+            "height": 49
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 638,
+            "width": 54,
+            "height": 25
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 673,
+            "width": 54,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 454,
+            "width": 54,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 454,
+              "width": 54,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 474,
+              "width": 54,
+              "height": 20
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 504,
+            "width": 54,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 504,
+              "width": 54,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 524,
+              "width": 54,
+              "height": 20
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 554,
+            "width": 54,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 554,
+              "width": 54,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 574,
+              "width": 54,
+              "height": 20
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 416,
+            "width": 54,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 416,
+              "width": 54,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 447,
+            "width": 56,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "gtk-False-20-64-right",
+      "bar_size": 64,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1,
+            "y": 604,
+            "width": 54,
+            "height": 24
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 1,
+            "y": 3,
+            "width": 54,
+            "height": 24
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 0,
+            "y": 34,
+            "width": 56,
+            "height": 295
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 37,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 70,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 103,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 136,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 169,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 202,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 235,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 268,
+              "width": 54,
+              "height": 25
+            },
+            {
+              "x": 1,
+              "y": 301,
+              "width": 54,
+              "height": 25
+            }
+          ]
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 1,
+            "y": 332,
+            "width": 54,
+            "height": 49
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1,
+            "y": 638,
+            "width": 54,
+            "height": 25
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1,
+            "y": 673,
+            "width": 54,
+            "height": 24
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 1,
+            "y": 454,
+            "width": 54,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 454,
+              "width": 54,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 474,
+              "width": 54,
+              "height": 20
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 1,
+            "y": 504,
+            "width": 54,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 504,
+              "width": 54,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 524,
+              "width": 54,
+              "height": 20
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 1,
+            "y": 554,
+            "width": 54,
+            "height": 40
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 554,
+              "width": 54,
+              "height": 20
+            },
+            {
+              "x": 1,
+              "y": 574,
+              "width": 54,
+              "height": 20
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 1,
+            "y": 416,
+            "width": 54,
+            "height": 24
+          },
+          "parts": [
+            {
+              "x": 1,
+              "y": 416,
+              "width": 54,
+              "height": 20
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 0,
+            "y": 447,
+            "width": 56,
+            "height": 0
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "gtk-False-20-64-top",
+      "bar_size": 64,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1042,
+            "y": 3,
+            "width": 24,
+            "height": 50
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 9,
+            "y": 3,
+            "width": 24,
+            "height": 50
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 46,
+            "y": 0,
+            "width": 322,
+            "height": 56
+          },
+          "parts": [
+            {
+              "x": 55,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 91,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 127,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 163,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 199,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 235,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 271,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 307,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 343,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 380,
+            "y": 0,
+            "width": 173,
+            "height": 56
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 562,
+            "y": 3,
+            "width": 137,
+            "height": 50
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1088,
+            "y": 3,
+            "width": 117,
+            "height": 50
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1227,
+            "y": 3,
+            "width": 24,
+            "height": 50
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 851,
+            "y": 3,
+            "width": 44,
+            "height": 50
+          },
+          "parts": [
+            {
+              "x": 851,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            },
+            {
+              "x": 875,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 917,
+            "y": 3,
+            "width": 44,
+            "height": 50
+          },
+          "parts": [
+            {
+              "x": 917,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            },
+            {
+              "x": 941,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 983,
+            "y": 3,
+            "width": 37,
+            "height": 50
+          },
+          "parts": [
+            {
+              "x": 983,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            },
+            {
+              "x": 1007,
+              "y": 3,
+              "width": 13,
+              "height": 50
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 801,
+            "y": 3,
+            "width": 24,
+            "height": 50
+          },
+          "parts": [
+            {
+              "x": 801,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            },
+            {
+              "x": 825,
+              "y": 3,
+              "width": 0,
+              "height": 50
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 838,
+            "y": 0,
+            "width": 0,
+            "height": 56
+          },
+          "parts": []
+        }
+      }
+    },
+    {
+      "name": "gtk-False-20-64-bottom",
+      "bar_size": 64,
+      "widgets": {
+        "clipboard": {
+          "name": "clipboard",
+          "rect": {
+            "x": 1042,
+            "y": 3,
+            "width": 24,
+            "height": 50
+          },
+          "parts": []
+        },
+        "launcher": {
+          "name": "launcher",
+          "rect": {
+            "x": 9,
+            "y": 3,
+            "width": 24,
+            "height": 50
+          },
+          "parts": []
+        },
+        "workspaces": {
+          "name": "workspaces",
+          "rect": {
+            "x": 46,
+            "y": 0,
+            "width": 322,
+            "height": 56
+          },
+          "parts": [
+            {
+              "x": 55,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 91,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 127,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 163,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 199,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 235,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 271,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 307,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            },
+            {
+              "x": 343,
+              "y": 3,
+              "width": 16,
+              "height": 50
+            }
+          ]
+        },
+        "title": {
+          "name": "title",
+          "rect": {
+            "x": 380,
+            "y": 0,
+            "width": 173,
+            "height": 56
+          },
+          "parts": []
+        },
+        "clock": {
+          "name": "clock",
+          "rect": {
+            "x": 562,
+            "y": 3,
+            "width": 137,
+            "height": 50
+          },
+          "parts": []
+        },
+        "keyboard": {
+          "name": "keyboard",
+          "rect": {
+            "x": 1088,
+            "y": 3,
+            "width": 117,
+            "height": 50
+          },
+          "parts": []
+        },
+        "control": {
+          "name": "control",
+          "rect": {
+            "x": 1227,
+            "y": 3,
+            "width": 24,
+            "height": 50
+          },
+          "parts": []
+        },
+        "audio": {
+          "name": "audio",
+          "rect": {
+            "x": 851,
+            "y": 3,
+            "width": 44,
+            "height": 50
+          },
+          "parts": [
+            {
+              "x": 851,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            },
+            {
+              "x": 875,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            }
+          ]
+        },
+        "network": {
+          "name": "network",
+          "rect": {
+            "x": 917,
+            "y": 3,
+            "width": 44,
+            "height": 50
+          },
+          "parts": [
+            {
+              "x": 917,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            },
+            {
+              "x": 941,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            }
+          ]
+        },
+        "notifications": {
+          "name": "notifications",
+          "rect": {
+            "x": 983,
+            "y": 3,
+            "width": 37,
+            "height": 50
+          },
+          "parts": [
+            {
+              "x": 983,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            },
+            {
+              "x": 1007,
+              "y": 3,
+              "width": 13,
+              "height": 50
+            }
+          ]
+        },
+        "media": {
+          "name": "media",
+          "rect": {
+            "x": 801,
+            "y": 3,
+            "width": 24,
+            "height": 50
+          },
+          "parts": [
+            {
+              "x": 801,
+              "y": 3,
+              "width": 20,
+              "height": 50
+            },
+            {
+              "x": 825,
+              "y": 3,
+              "width": 0,
+              "height": 50
+            }
+          ]
+        },
+        "tray": {
+          "name": "tray",
+          "rect": {
+            "x": 838,
+            "y": 0,
+            "width": 0,
+            "height": 56
+          },
+          "parts": []
+        }
+      }
+    }
+  ]
+}

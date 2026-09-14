@@ -34,7 +34,7 @@ restarts. The current integration pins Aqueous master `1d038dc3` and aqueous-con
 0.8.0; unsupported operations show their [upstream dependency](docs/AQUEOUS_MASTER_DEPENDENCIES.md).
 Session actions, a real polkit agent, AC/battery idle policies and a native
 Noctalia-like GTK/PAM lock screen are now implemented. Physical security/session
-acceptance remains pending. Clipboard history, SDR output/region capture, floating bar islands and a configurable dock are implemented. All available workspaces stay visible and wrap when needed.
+acceptance remains pending. Clipboard history, SDR output/region capture, floating bar islands and a configurable dock are implemented. All available workspaces appear on the bar: horizontal bars wrap when needed; vertical bars keep a single column and scroll overflow while retaining their thickness.
 
 - [Current master evidence and UI gallery](artifacts/aqueous-master/README.md).
 - [Release and packaging](docs/RELEASE.md) and [DMS migration / switch-back](docs/MIGRATION.md).

@@ -92,6 +92,12 @@
 /* T15: detached islands share a single edge reservation. */
 .pearl-root.$scope.pearl-shell .pearl-islands { background: transparent; padding: 0; }
 .pearl-root.$scope .pearl-island { border-radius: 14px; padding: 0 6px; }
+/* Side bars rotate spacing and stack each widget without widening the edge. */
+.pearl-root.$scope.pearl-shell .pearl-bar-vertical { padding: 6px 0; }
+.pearl-root.$scope.pearl-shell .pearl-bar-vertical.pearl-islands { padding: 0; }
+.pearl-root.$scope.pearl-shell .pearl-bar-vertical .pearl-island { padding: 6px 0; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel.pearl-bar-vertical button { padding: 2px 0; min-width: 0; }
+.pearl-root.$scope.pearl-shell .pearl-bar-vertical .pearl-bar-value { font-size: 0.8em; }
 .pearl-root.$scope .pearl-dock { padding: 6px; border-radius: 14px; }
 .pearl-root.$scope .pearl-dock button { padding: 3px; min-height: 24px; }
 .pearl-root.$scope .pearl-island { background: $container$; }

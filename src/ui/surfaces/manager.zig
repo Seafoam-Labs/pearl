@@ -705,7 +705,8 @@ pub const Manager = struct {
             },
         }
         self.styleSurface(s);
-        try s.effects.init(&self.effects, window, if (s.viewport) |viewport| viewport.as(gtk.Widget) else panel_widget, kind == .bar or kind == .popup or kind == .osd or kind == .notification, if (kind == .popup) .full else if (kind == .bar or kind == .notification) .panel else .empty);
+        const effect_panel = if (kind == .popup and s.viewport != null) s.viewport.?.as(gtk.Widget) else panel_widget;
+        try s.effects.init(&self.effects, window, effect_panel, kind == .bar or kind == .popup or kind == .osd or kind == .notification, if (kind == .popup) .full else if (kind == .bar or kind == .notification) .panel else .empty);
         if (s.bar) |bar| s.effects.islands = if (bar.islands) &bar.sections else null;
         if (kind != .popup and kind != .osd and kind != .frame and kind != .notification) window.present();
         if (kind == .bar) {
@@ -870,6 +871,10 @@ pub const Manager = struct {
             const popup = self.popup orelse return error.Unavailable;
             const viewport = if (popup.viewport) |v| v.as(gtk.Widget) else popup.panel;
             return std.json.Stringify.valueAlloc(alloc, .{ .focus = @import("../../desktop/aqueous_settings.zig").View.focusName(popup.window), .width = viewport.getWidth(), .height = viewport.getHeight(), .content_width = popup.panel.getWidth(), .limit = self.popup_rect }, .{});
+        }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-bar-layout")) {
+            if (self.outputs.items.len == 0) return error.Unavailable;
+            return self.outputs.items[0].bar.?.bar.?.layoutReport(alloc);
         }
         if (request.op == .aqueous_status) return self.aqueous_settings.status(alloc, request.text);
         if (request.op == .preferences_status) return self.preferences.status(alloc);
@@ -1138,6 +1143,26 @@ fn opposite(edge: Edge) Edge {
 fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     anchors(s.window, edge);
     const horizontal = edge == .top or edge == .bottom;
+    if (s.bar) |bar| {
+        bar.geometry(!horizontal, if (horizontal) s.output.bounds.width else s.output.bounds.height);
+        if (!horizontal and s.viewport == null) {
+            // Retain the panel's existing reference while changing parents.
+            // A short output scrolls vertically instead of widening the bar.
+            s.window.setChild(null);
+            const scroll = gtk.ScrolledWindow.new();
+            scroll.setPolicy(.never, .automatic);
+            scroll.setPropagateNaturalHeight(0);
+            scroll.setChild(s.panel);
+            s.window.setChild(scroll.as(gtk.Widget));
+            s.viewport = scroll;
+        } else if (horizontal) {
+            if (s.viewport) |scroll| {
+                scroll.setChild(null);
+                s.window.setChild(s.panel);
+                s.viewport = null;
+            }
+        }
+    }
     s.window.setDefaultSize(if (horizontal) 1 else size, if (horizontal) size else 1);
     const content = if (s.kind == .frame) size else size -| 8;
     s.panel.setSizeRequest(if (horizontal) -1 else content, if (horizontal) content else -1);
