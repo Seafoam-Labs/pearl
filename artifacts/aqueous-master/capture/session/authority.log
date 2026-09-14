@@ -1,0 +1,7 @@
+/home/zoey/Pearl/tests/fixtures/session_security.py:53: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
+  for iface in Gio.DBusNodeInfo.new_for_xml(xml).interfaces: bus.register_object(path,iface,method,None,None)
+event=ready
+event=delay-acquired
+event=registered
+event=delay-released
+event=unregistered

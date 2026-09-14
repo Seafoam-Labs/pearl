@@ -1,0 +1,26 @@
+{
+  "session": "af53118204b3b58bf3c1468b82ca9657",
+  "schema": 1,
+  "max_request_bytes": 65536,
+  "max_frame_bytes": 4259840,
+  "max_batch_bytes": 4194304,
+  "max_pending_requests": 1,
+  "max_clients": 16,
+  "max_state_bytes": 2097152,
+  "max_depth": 16,
+  "capabilities": {
+    "state": true,
+    "commands": true,
+    "keyboard": true,
+    "overview": true,
+    "config_reload": true,
+    "shortcut_inhibition": true,
+    "icon_metadata": true,
+    "icon_fetch": true,
+    "display_observation_v1": true,
+    "candidate_impact_v1": true,
+    "display_preview_v1": true,
+    "display_preview_commit_v1": true,
+    "display_preview_hardware": false
+  }
+}

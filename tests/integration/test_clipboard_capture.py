@@ -107,6 +107,9 @@ def main():
                 s.run(['wlr-randr','--output',connector,'--scale','1','--transform',transform]); time.sleep(.4)
                 v=take(); img=save(v,'native-'+transform); ref=capture(s,'reference-'+transform,connector)
                 assert img.size == ref.size,(transform,img.size,ref.size)
+                if v.get('color_metadata_required'):
+                    gamma=[round(255*(12.92*(i/255)**2.2 if (i/255)**2.2<=.0031308 else 1.055*((i/255)**2.2)**(1/2.4)-.055)) for i in range(256)]
+                    ref=ref.point(gamma*3)
                 mean=ImageStat.Stat(ImageChops.difference(img,ref)).mean
                 assert max(mean)<2,(transform,mean)
                 orientations[transform]={'size':img.size,'mean_error':mean}
@@ -126,7 +129,7 @@ def main():
             assert Path(path).read_bytes()==b'existing'; assert shot()['ready']
             ctl(s,args.ctl,'capture','copy','--generation',str(v['generation']))
             data=subprocess.run(['wl-paste','--type','image/png'],env=s.env,stdout=subprocess.PIPE,check=True,timeout=8).stdout
-            assert data.startswith(b'\x89PNG'); assert not shot()['isolated_window']
+            assert data.startswith(b'\x89PNG'); assert not shot()['image_isolated']
             checks['save-conflict-recovery-and-screenshot-copy'] = True
             # Authentication dialogs also pause private data collection, without depending on their MIME hints.
             def authority_command(**data):

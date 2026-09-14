@@ -1,7 +1,10 @@
 # Updating Pearl to current Aqueous capabilities
 
-Status: **planned; implementation has not started**. Created September 14, 2026.
-This is the implementation specification for the next integration update, following
+Status: **AM00–AM09 implemented; automated acceptance passed; public release acceptance pending**.
+Updated September 14, 2026. The pinned source exposes several non-composable or
+hardware-gated contracts; their exact remaining work is recorded in
+[AQUEOUS_MASTER_DEPENDENCIES.md](AQUEOUS_MASTER_DEPENDENCIES.md).
+This is the implementation specification for the integration update following
 Pearl's initial release-candidate implementation. It supersedes the pending-upstream
 assumptions in [AQUEOUS_T11_ADDITIONS.md](AQUEOUS_T11_ADDITIONS.md).
 
@@ -28,13 +31,14 @@ master changes during implementation. A newer target requires a recorded source
 comparison and refreshed acceptance inventory. Preserve the upstream checkout;
 use a private source archive/worktree and build prefix for matching test binaries.
 
-This plan is based on source inspection, not a claim that Pearl has been tested
-against this master build. Existing release evidence uses older baseline and
-Vulkan-effects compositor builds. They cannot certify the new contracts.
+The original plan was based on source inspection. Implementation evidence now
+uses matching pinned tools under [artifacts/aqueous-master](../artifacts/aqueous-master/README.md).
+The older baseline and Vulkan-effects evidence remains historical; it does not
+certify these new contracts.
 
 ## What changes for users
 
-| Area | Current Pearl | Intended result |
+| Area | Pearl before this update | Implemented result, subject to the gates below |
 | --- | --- | --- |
 | Standard settings | Controls for 221 helper fields; five display-policy fields are apply-gated | Preserve coverage; field definitions are unchanged in the inspected master |
 | Display information | Legacy monitor projection | Show configured declarations, effective/live state, profile, identity, rejection reasons and per-feature support |
@@ -399,28 +403,42 @@ where license, physical, visual or assistive-technology signoffs are still pendi
 
 ## Review and acceptance checklist
 
-- [ ] AM00: complete inventory and matching pinned private test environment.
-- [ ] AM01: bounded additive models and capability negotiation.
-- [ ] AM02: structured results and restart-safe operation reconciliation.
-- [ ] AM03: authoritative display observation and candidate routing.
-- [ ] AM04: native lease/commit replaces the old guardian for this target.
-- [ ] AM05: complete display controls with faithful capability gating.
-- [ ] AM06: structured collection editors and correct concurrency semantics.
-- [ ] AM07: native capture and remaining inventoried shell gaps resolved.
-- [ ] AM08: automated regression, adversarial, visual and performance evidence.
-- [ ] AM09: updated package, provenance, documentation and honest release gate.
+- [x] AM00: complete inventory and matching pinned private test environment.
+- [x] AM01: bounded additive models and capability negotiation.
+- [x] AM02: structured results and restart-safe operation reconciliation.
+- [x] AM03: authoritative display observation and candidate routing.
+- [x] AM04: native lease/commit replaces the old guardian for this target.
+- [x] AM05: complete display controls with faithful capability gating.
+- [x] AM06: structured collection editors and correct concurrency semantics.
+- [x] AM07: native capture and remaining inventoried shell gaps resolved.
+- [x] AM08: automated regression, adversarial, visual and performance evidence.
+- [x] AM09: updated package, provenance, documentation and honest release gate.
 
-## Prompt for an implementation agent
+The checked implementation slices include explicitly gated operations, not claims
+that upstream can persist every valid draft. AM05 retains read-only controls for
+missing structured display mutations; AM06 blocks unclassified collection saves;
+AM07 withholds undescribed isolated-window PNGs. These satisfy the specified
+capability gates and preserve the canonical helper as the only configuration writer.
+All automated gates pass for Pearl 1.0.0-rc.2. The 17-target regression matrix
+includes 107 Zig tests and four release-tooling tests; separate suites cover
+canonical journal/lease failures, nine GTK validation checks, and a 1,000-cycle
+production soak. Idle PSS was 30.1 MiB, idle CPU 0.017%, warm-start p95 81 ms,
+and retained soak growth 7.8 MiB. Two fresh build roots and the staged Arch package
+agree on all three production binaries. See the
+[evidence index](../artifacts/aqueous-master/README.md) and
+[machine-readable gate](../artifacts/aqueous-master/gate.json).
 
-> Implement AM00 from docs/AQUEOUS_MASTER_UPDATE_PLAN.md. Pin Aqueous master
-> 1d038dc3bafa0044d9599f8f51f84105a6a85bb3 and use Zig 0.16.0. Inspect the local
-> upstream source without modifying it; build matching tools in an isolated prefix.
-> Produce the complete capability/consumer/UI/test inventory and private fixtures.
-> Verify a real private session against that build. Preserve the host desktop and
-> all existing Pearl behavior. Record evidence and unresolved upstream gates. Do not
-> implement later work packages or mark hardware-only features accepted.
+Human/hardware/public release acceptance remains separate: project license,
+direct/UWSM login, visual review, physical displays/security/services,
+accessibility and presentation performance are still pending. AT-SPI names/roles
+and real keyboard editing passed; direct AT-SPI focus returned an error on this
+GTK stack, so these tests do not constitute screen-reader acceptance.
 
-For subsequent packages, replace AM00 with the selected ID, read its dependencies'
-evidence first, implement that package completely, and update this checklist only
-when its stated acceptance checks pass. Treat a missing upstream capability as a
-recorded dependency, not permission to bypass a transaction or write raw configuration.
+## Continuing from this implementation
+
+This pinned update is implemented. For a newer Aqueous commit, compare source and
+contracts first, refresh the capability inventory and private fixtures, and rerun
+the dependent acceptance suites against matching tools. Address the precise
+contracts in [AQUEOUS_MASTER_DEPENDENCIES.md](AQUEOUS_MASTER_DEPENDENCIES.md) before
+enabling currently gated operations. A missing upstream capability is a recorded
+dependency, not permission to bypass a transaction or write raw configuration.

@@ -117,7 +117,7 @@ pub fn request(a: std.mem.Allocator, base: Value, bytes: []const u8, backups: []
     if (!equal(get(v, "expected_generation"), get(base, "generation"))) return error.StaleDraft;
     if (!equal(get(v, "protocol"), .{ .integer = 1 })) return error.UnsupportedHelper;
     // Never let advanced edits redirect backups or silently opt into system overrides.
-    const allowed = [_][]const u8{ "protocol", "expected_generation", "changes", "raw_files", "monitor_changes", "custom_keybind_changes", "window_rule_changes", "snap_zone_changes", "snap_layouts", "default_snap_layout", "normalize_stacking", "sync_cursor", "sync_typography", "create_user_override" };
+    const allowed = [_][]const u8{ "protocol", "expected_generation", "changes", "raw_files", "monitor_changes", "custom_keybind_changes", "window_rule_changes", "snap_zone_changes", "snap_layouts", "default_snap_layout", "normalize_stacking", "sync_cursor", "sync_typography", "create_user_override", "collection_preconditions" };
     var it = v.object.iterator();
     while (it.next()) |e| {
         var found = false;
@@ -213,6 +213,7 @@ pub fn rebase(a: std.mem.Allocator, base: Value, live: Value, bytes: []const u8)
     inline for (.{ .{ "custom_keybind_changes", "wm" }, .{ "window_rule_changes", "rules" }, .{ "snap_zone_changes", "layout" }, .{ "normalize_stacking", "layout" } }) |pair| {
         if (get(v, pair[0]) != .null and !equal(get(get(base, "raw_files"), pair[1]), get(get(live, "raw_files"), pair[1]))) return error.MergeConflict;
     }
+    if (get(v, "collection_preconditions") != .null) try v.object.put(a, "collection_preconditions", get(live, "collection_preconditions"));
     try v.object.put(a, "expected_generation", get(live, "generation"));
     return std.json.Stringify.valueAlloc(a, v, .{ .whitespace = .indent_2 });
 }

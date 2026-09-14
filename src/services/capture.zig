@@ -13,12 +13,14 @@ const policy = clipboard.policy;
 const Text = @import("policy.zig").Text;
 const a = std.heap.c_allocator;
 const Output = struct { owner: *Capture, proxy: *wl.Output, id: u32, name: Text(128) = .{}, transform: u32 = 0 };
-const Job = struct { owner: *Capture, cancel: *gio.Cancellable, pixels: []u8, width: u32, height: u32, stride: u32, format: u32, transform: u32, inverted: bool, region: ?policy.Region, connector: Text(128), logical_width: i32, logical_height: i32, png: ?[]u8 = null, out_width: i32 = 0, out_height: i32 = 0 };
+const Job = struct { owner: *Capture, cancel: *gio.Cancellable, pixels: []u8, width: u32, height: u32, stride: u32, format: u32, transform: u32, gamma22: bool = false, isolated: bool = false, inverted: bool, region: ?policy.Region, connector: Text(128), logical_width: i32, logical_height: i32, png: ?[]u8 = null, out_width: i32 = 0, out_height: i32 = 0 };
 pub const Capture = struct {
     app: *gio.Application,
     display: *gdk.Display,
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
+    native: @import("image_copy.zig").Copy = .{},
+    image_isolated: bool = false,
     registry: ?*wl.Registry = null,
     manager: ?*zwlr.ScreencopyManagerV1 = null,
     manager_id: u32 = 0,
@@ -50,6 +52,7 @@ pub const Capture = struct {
     message: [:0]const u8 = "Capture paused",
     saved: Text(1024) = .{},
     pub fn start(self: *Capture) !void {
+        self.native.owner = self;
         const display = object.ext.cast(backend.WaylandDisplay, self.display) orelse return error.Unavailable;
         const connection: *wl.Display = @ptrCast(display.getWlDisplay().?);
         self.registry = try connection.getRegistry();
@@ -60,6 +63,7 @@ pub const Capture = struct {
         self.setLocked(true);
         self.cancel();
         self.clearImage();
+        self.native.stop();
         for (self.outputs.items) |o| {
             o.proxy.release();
             a.destroy(o);
@@ -80,12 +84,13 @@ pub const Capture = struct {
         } else self.message = "Capture an output or a region of its visible contents";
         self.changed(self.context);
     }
-    fn clearImage(self: *Capture) void {
+    pub fn clearImage(self: *Capture) void {
         if (self.image) |bytes| {
             std.crypto.secureZero(u8, bytes);
             a.free(bytes);
         }
         self.image = null;
+        self.image_isolated = false;
         self.image_crop = null;
         self.image_output.set("");
         self.image_width = 0;
@@ -94,7 +99,7 @@ pub const Capture = struct {
     pub fn cancel(self: *Capture) void {
         self.fail("Capture cancelled");
     }
-    fn fail(self: *Capture, message: [:0]const u8) void {
+    pub fn fail(self: *Capture, message: [:0]const u8) void {
         if (self.start_delay != 0) _ = glib.Source.remove(self.start_delay);
         self.start_delay = 0;
         if (self.job) |j| j.cancel.cancel();
@@ -104,6 +109,7 @@ pub const Capture = struct {
         self.changed(self.context);
     }
     fn releaseFrame(self: *Capture) void {
+        self.native.release();
         if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
         self.deadline = 0;
         if (self.frame) |f| f.destroy();
@@ -117,7 +123,7 @@ pub const Capture = struct {
         self.mapping = null;
     }
     pub fn pending(self: *Capture) bool {
-        return self.start_delay != 0 or self.frame != null or self.job != null;
+        return self.start_delay != 0 or self.frame != null or self.native.session != null or self.job != null;
     }
     pub fn take(self: *Capture, connector: []const u8, width: i32, height: i32, crop: ?policy.Region) !void {
         if (self.locked) return error.Locked;
@@ -130,6 +136,8 @@ pub const Capture = struct {
             target = o;
         };
         const output = target orelse return error.OutputUnavailable;
+        self.clearImage();
+        self.saved.set("");
         self.target = output;
         self.crop = crop;
         self.logical_width = width;
@@ -143,6 +151,10 @@ pub const Capture = struct {
     fn beginFrame(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Capture = @ptrCast(@alignCast(data.?));
         self.start_delay = 0;
+        if (self.native.available() and self.native.output != null) {
+            self.native.takeOutput(self.target.?.proxy) catch self.fail("Native output source unavailable");
+            return 0;
+        }
         self.frame = self.manager.?.captureOutput(0, self.target.?.proxy) catch {
             self.cancel();
             return 0;
@@ -155,13 +167,14 @@ pub const Capture = struct {
     pub fn validateTarget(self: *Capture, connector: []const u8, width: i32, height: i32) void {
         if (self.target) |o| if (std.mem.eql(u8, connector, o.name.slice()) and (width != self.logical_width or height != self.logical_height)) self.cancel();
     }
-    fn expired(data: ?*anyopaque) callconv(.c) c_int {
+    pub fn expired(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Capture = @ptrCast(@alignCast(data.?));
         self.deadline = 0;
         self.fail("Capture timed out — try again");
         return 0;
     }
     fn registryEvent(_: *wl.Registry, event: wl.Registry.Event, self: *Capture) void {
+        self.native.registry(event);
         switch (event) {
             .global => |g| {
                 const name = std.mem.span(g.interface);
@@ -242,7 +255,7 @@ pub const Capture = struct {
         }
         self.changed(self.context);
     }
-    fn allocate(self: *Capture) !void {
+    pub fn allocate(self: *Capture) !void {
         if (self.buffer != null or self.width == 0 or self.height == 0 or self.width > 8192 or self.height > 8192 or @as(u64, self.width) * self.height > 8 * 1024 * 1024 or self.stride < self.width * 4 or self.stride > self.width * 4 + 4096) return error.InvalidBuffer;
         if (self.format != 0 and self.format != 1 and self.format != 0x34324241 and self.format != 0x34324258) return error.Unsupported;
         const size: usize = @as(usize, self.stride) * self.height;
@@ -259,15 +272,19 @@ pub const Capture = struct {
         defer pool.destroy();
         self.buffer = try pool.createBuffer(0, @intCast(self.width), @intCast(self.height), @intCast(self.stride), @enumFromInt(self.format));
         self.buffer.?.setListener(*Capture, bufferEvent, self);
-        self.frame.?.copy(self.buffer.?);
+        if (self.native.frame) |frame| {
+            frame.attachBuffer(self.buffer.?);
+            frame.damageBuffer(0, 0, @intCast(self.width), @intCast(self.height));
+            frame.capture();
+        } else self.frame.?.copy(self.buffer.?);
         self.display.flush();
     }
     fn bufferEvent(_: *wl.Buffer, _: wl.Buffer.Event, _: *Capture) void {}
-    fn convert(self: *Capture) !void {
+    pub fn convert(self: *Capture) !void {
         const pixels = try a.dupe(u8, self.mapping orelse return error.InvalidBuffer);
         errdefer a.free(pixels);
         const job = try a.create(Job);
-        job.* = .{ .owner = self, .cancel = gio.Cancellable.new(), .pixels = pixels, .width = self.width, .height = self.height, .stride = self.stride, .format = self.format, .transform = self.target.?.transform, .inverted = self.inverted, .region = self.crop, .connector = self.target.?.name, .logical_width = self.logical_width, .logical_height = self.logical_height };
+        job.* = .{ .owner = self, .cancel = gio.Cancellable.new(), .pixels = pixels, .width = self.width, .height = self.height, .stride = self.stride, .format = self.format, .transform = if (self.native.frame != null) self.native.transform else self.target.?.transform, .gamma22 = self.native.frame != null and self.native.transfer == 1, .isolated = self.native.target != null, .inverted = self.inverted, .region = self.crop, .connector = if (self.native.target) |window| window.id else self.target.?.name, .logical_width = self.logical_width, .logical_height = self.logical_height };
         self.job = job;
         self.releaseFrame();
         self.app.hold();
@@ -284,6 +301,12 @@ pub const Capture = struct {
         task.returnBoolean(1);
     }
     fn render(j: *Job) !void {
+        var gamma: [256]u8 = undefined;
+        for (&gamma, 0..) |*v, i| {
+            const linear = std.math.pow(f64, @as(f64, @floatFromInt(i)) / 255, 2.2);
+            const srgb = if (linear <= 0.0031308) 12.92 * linear else 1.055 * std.math.pow(f64, linear, 1.0 / 2.4) - 0.055;
+            v.* = @intFromFloat(@round(@min(255, @max(0, srgb * 255))));
+        }
         const rotated = j.transform & 1 != 0;
         const width = if (rotated) j.height else j.width;
         const height = if (rotated) j.width else j.height;
@@ -324,6 +347,9 @@ pub const Capture = struct {
                 rgb[dst] = j.pixels[src + @as(usize, if (bgr) 2 else 0)];
                 rgb[dst + 1] = j.pixels[src + 1];
                 rgb[dst + 2] = j.pixels[src + @as(usize, if (bgr) 0 else 2)];
+                if (j.gamma22) for (rgb[dst..][0..3]) |*value| {
+                    value.* = gamma[value.*];
+                };
             }
         }
         const image = pixbuf.Pixbuf.newFromData(rgb.ptr, .rgb, 0, 8, @intCast(width), @intCast(height), @intCast(width * 3), null, null);
@@ -358,6 +384,7 @@ pub const Capture = struct {
                 j.png = null;
                 self.image_crop = j.region;
                 self.image_output = j.connector;
+                self.image_isolated = j.isolated;
                 self.image_width = j.out_width;
                 self.image_height = j.out_height;
                 self.generation += 1;
@@ -408,6 +435,6 @@ pub const Capture = struct {
         self.changed(self.context);
     }
     pub fn status(self: *Capture, alloc: std.mem.Allocator) ![]const u8 {
-        return std.json.Stringify.valueAlloc(alloc, .{ .available = self.manager != null and self.shm != null, .locked = self.locked, .pending = self.pending(), .ready = self.image != null, .generation = self.generation, .width = self.image_width, .height = self.image_height, .isolated_window = false, .output_crop = self.image_crop != null, .region = self.image_crop, .output_connector = self.image_output.slice(), .message = self.message, .saved = self.saved.slice() }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .available = self.manager != null and self.shm != null, .locked = self.locked, .pending = self.pending(), .ready = self.image != null, .generation = self.generation, .width = self.image_width, .height = self.image_height, .isolated_window = self.native.windowAvailable(), .image_isolated = self.image_isolated, .color_metadata_required = self.native.available(), .output_crop = self.image_crop != null, .region = self.image_crop, .output_connector = self.image_output.slice(), .message = self.message, .saved = self.saved.slice() }, .{});
     }
 };

@@ -1,0 +1,16 @@
+{
+  "status": "failed",
+  "checks": {
+    "theme-dark": true,
+    "native-accessibility-names-and-roles": true,
+    "keyboard-rule-entry-and-shared-advanced-draft": true
+  },
+  "pearl_sha256": "bce407f71576ec379730bc1648fac3c71e6e0877ccb58d08e62fe0486d38679f",
+  "manual_acceptance": false,
+  "quick": true,
+  "keyboard_fixture_sha256": "767a236e15c8a0d610e55490cec185f249a696fe8fb30b0619a866ed155d0880",
+  "accessibility_limitations": [
+    "Private AT-SPI names/roles verified; direct focus requests fail on this GTK stack. Keyboard focus is measured independently using the existing test-only frame probe; Orca acceptance remains pending."
+  ],
+  "error": "('Keyboard focus never reached', 'Record custom shortcut', ['info: event=session-focus target=Stage item', 'info: event=session-focus target=aqueous-other', 'info: event=popup-closed', 'info: event=popup-opened output=1', 'info: event=session-focus target=aqueous-other', 'info: event=session-focus target=aqueous-other', 'info: event=popup-closed', 'info: event=popup-opened output=1', 'info: event=session-focus target=aqueous-other', 'info: event=session-focus target=aqueous-other', 'info: event=session-focus target=aqueous-other', 'info: event=session-focus target=aqueous-other'])"
+}

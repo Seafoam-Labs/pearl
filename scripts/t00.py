@@ -128,7 +128,7 @@ class Session:
         assert 'pearl-t00-' in str(self.runtime) and self.runtime.stat().st_mode & 0o777 == 0o700
         self.results = {}
 
-    def child(self, name, argv, **environment):
+    def child(self, name, argv, *, input_pipe=True, **environment):
         child = Child(argv, dict(self.env, **environment), self.output / f'{name}.log')
         self.children.append(child)
         return child
@@ -273,7 +273,7 @@ class Session:
         executable = build / 'input'
         self.run(['cc', '-Wall', '-Wextra', '-Werror', '-I' + str(build), source / 'scripts/fixtures/shell-client.c',
                   *generated, '-lwayland-client', '-lxkbcommon', '-o', executable])
-        child = self.child('input', [str(executable), 'input'])
+        child = self.child('input', [str(executable), 'input'], input_pipe=True)
         child.expect('ready')
         return child
 
@@ -356,8 +356,8 @@ class Session:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--aqueous', default=str(ROOT / '.cache/aqueous/bin/aqueous'))
-    parser.add_argument('--ctl', default=str(ROOT / '.cache/aqueous/bin/aqueousctl'))
+    parser.add_argument('--aqueous', default=str(Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX',str(ROOT/'.cache/aqueous')))/'bin/aqueous'))
+    parser.add_argument('--ctl', default=str(Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX',str(ROOT/'.cache/aqueous')))/'bin/aqueousctl'))
     parser.add_argument('--aqueous-source', default='/home/zoey/RiderProjects/Aqueous')
     parser.add_argument('--dms-source', default='/home/zoey/DankMaterialShell')
     parser.add_argument('--references-only', action='store_true')

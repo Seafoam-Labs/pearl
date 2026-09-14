@@ -1,0 +1,18 @@
+PASS: T01 lifecycle, resources, cancellation and session isolation
+Build Summary: 11/11 steps succeeded
+integration success
++- run python3 success 6s
+   +- compile exe pearl-integration ReleaseSafe native cached 16ms MaxRSS:55M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 15ms MaxRSS:53M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:54M
+   +- compile exe pearl ReleaseSafe native cached 16ms MaxRSS:55M
+      +- run pkg-config (reused)
+      +- translate-c (reused)
+      +- run glib-compile-resources (pearl.gresource) (reused)
+      +- options cached
+      +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+

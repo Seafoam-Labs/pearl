@@ -1,10 +1,22 @@
 # Pearl compatibility record
 
-The current T16 release candidate pins Zig **0.16.0** and uses the conservative
-runtime floors and native Aqueous contract in [RELEASE.md](RELEASE.md). Production
-package/build evidence is in `artifacts/t16`; physical and real-login acceptance
-remain gated. The dependency and spike observations below are historical T00
-evidence, followed by later task updates.
+The current `1.0.0-rc.2` candidate pins Zig **0.16.0**, Aqueous master
+`1d038dc3bafa0044d9599f8f51f84105a6a85bb3` and aqueous-config **0.8.0**.
+Matching compositor/helper/aqueousctl and patched wlroots hashes are recorded in
+[release metadata](../packaging/release.json). Both headless/pixman and native
+Vulkan blur tests use this matching compositor. Current evidence is separate in
+`artifacts/aqueous-master`; `artifacts/t16` remains the previous candidate.
+
+Modern writes require negotiated structured results, receipts, candidate impact
+and recoverable commits. Display writes additionally require model v2, observation
+v1 and preview-commit v1; missing capabilities leave inspection available and
+writes unavailable. No legacy display guardian runs. Native image-copy sources
+require usable per-frame color metadata before exporting SDR PNG. See
+[settings](AQUEOUS_SETTINGS.md), [coverage](AQUEOUS_CAPABILITY_COVERAGE.md) and
+[upstream dependencies](AQUEOUS_MASTER_DEPENDENCIES.md) for exact gates. The helper
+can be built without the retired GUI, but upstream packaging is still DMS-coupled.
+
+The observations below are historical; they do not describe the new binaries.
 
 ## Historical T00 compatibility record
 

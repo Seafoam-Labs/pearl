@@ -1,0 +1,12 @@
+PASS: T03 components, keyboard, translation, virtualization, idle and captures
+Build Summary: 9/9 steps succeeded
+test-components success
++- run python3 success 42s
+   +- compile exe pearl-integration ReleaseSafe native cached 18ms MaxRSS:59M
+      +- run pkg-config success 1ms
+      +- translate-c cached 15ms MaxRSS:56M
+      +- run glib-compile-resources (pearl.gresource) cached
+      +- options cached
+      +- run exe zig-wayland-scanner (wayland.zig) cached
+         +- compile exe zig-wayland-scanner Debug native cached 11ms MaxRSS:58M
+

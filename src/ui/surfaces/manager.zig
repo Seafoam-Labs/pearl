@@ -27,6 +27,7 @@ const Surface = struct {
     kind: Kind,
     window: *gtk.Window,
     panel: *gtk.Widget,
+    viewport: ?*gtk.ScrolledWindow = null,
     effects: native.Surface = undefined,
     edge: Edge = .top,
     bar: ?*Bar.Bar = null,
@@ -634,7 +635,17 @@ pub const Manager = struct {
             .popup => {
                 anchors(window, null);
                 const fixed = gtk.Fixed.new();
-                fixed.put(panel_widget, 0, 0);
+                if (self.pane == .aqueous_settings) {
+                    // GtkFixed otherwise allocates the child's natural width,
+                    // which can exceed the popup rectangle with enlarged text.
+                    const viewport = gtk.ScrolledWindow.new();
+                    viewport.setPolicy(.never, .automatic);
+                    viewport.setPropagateNaturalWidth(0);
+                    viewport.setPropagateNaturalHeight(0);
+                    viewport.setChild(panel_widget);
+                    s.viewport = viewport;
+                    fixed.put(viewport.as(gtk.Widget), 0, 0);
+                } else fixed.put(panel_widget, 0, 0);
                 window.setChild(fixed.as(gtk.Widget));
                 panel_widget.addCssClass("pearl-popup-panel");
                 switch (self.pane) {
@@ -694,7 +705,7 @@ pub const Manager = struct {
             },
         }
         self.styleSurface(s);
-        try s.effects.init(&self.effects, window, panel_widget, kind == .bar or kind == .popup or kind == .osd or kind == .notification, if (kind == .popup) .full else if (kind == .bar or kind == .notification) .panel else .empty);
+        try s.effects.init(&self.effects, window, if (s.viewport) |viewport| viewport.as(gtk.Widget) else panel_widget, kind == .bar or kind == .popup or kind == .osd or kind == .notification, if (kind == .popup) .full else if (kind == .bar or kind == .notification) .panel else .empty);
         if (s.bar) |bar| s.effects.islands = if (bar.islands) &bar.sections else null;
         if (kind != .popup and kind != .osd and kind != .frame and kind != .notification) window.present();
         if (kind == .bar) {
@@ -757,8 +768,9 @@ pub const Manager = struct {
         rect = if (prefs.placement == .centered or self.pane == .launcher) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, o.usable, width, height, o.reservations.bar_edge, self.pane != .calendar);
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;
-        fixed.move(s.panel, @floatFromInt(rect.x - (o.usable.x - o.bounds.x)), @floatFromInt(rect.y - (o.usable.y - o.bounds.y)));
-        s.panel.setSizeRequest(rect.width, rect.height);
+        const positioned = if (s.viewport) |viewport| viewport.as(gtk.Widget) else s.panel;
+        fixed.move(positioned, @floatFromInt(rect.x - (o.usable.x - o.bounds.x)), @floatFromInt(rect.y - (o.usable.y - o.bounds.y)));
+        positioned.setSizeRequest(rect.width, rect.height);
         self.positionNotifications();
     }
     pub fn hidePopup(self: *Manager) void {
@@ -844,6 +856,7 @@ pub const Manager = struct {
         self.syncClipboardPrivacy();
         if (request.op == .clipboard_status) return self.clipboard.status(alloc);
         if (request.op == .capture_status) return self.capture.status(alloc);
+        if (request.op == .capture_windows) return self.capture.native.status(alloc, request.offset orelse 0);
         if (request.op == .lifecycle_status) return self.lifecycle.status(alloc, &self.auth);
         if (request.op == .lifecycle_action) {
             try self.lifecycle.act(request.text.?, request.generation);
@@ -853,6 +866,11 @@ pub const Manager = struct {
             self.session_services.notifications.setLocked(self.client.availability != .ready or (if (self.client.model.get(.session, "session")) |session| session.locked else true));
             return self.session_services.status(alloc, request.offset orelse 0);
         }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-focus")) {
+            const popup = self.popup orelse return error.Unavailable;
+            const viewport = if (popup.viewport) |v| v.as(gtk.Widget) else popup.panel;
+            return std.json.Stringify.valueAlloc(alloc, .{ .focus = @import("../../desktop/aqueous_settings.zig").View.focusName(popup.window), .width = viewport.getWidth(), .height = viewport.getHeight(), .content_width = popup.panel.getWidth(), .limit = self.popup_rect }, .{});
+        }
         if (request.op == .aqueous_status) return self.aqueous_settings.status(alloc, request.text);
         if (request.op == .preferences_status) return self.preferences.status(alloc);
         if (request.op == .status) return self.status(alloc);
@@ -861,7 +879,7 @@ pub const Manager = struct {
         if (self.client.availability != .ready) return error.Unavailable;
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         switch (request.op) {
-            .clipboard_status, .capture_status, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
             .dock_show, .dock_hide, .dock_pin, .dock_unpin => {
                 const dock = (try self.selected(request.output)).dock orelse return error.Unavailable;
                 if (dock.locked) return error.Locked;
@@ -880,6 +898,12 @@ pub const Manager = struct {
             .clipboard_clear => self.clipboard.clear(),
             .clipboard_select => try self.clipboard.select(request.generation.?),
             .clipboard_delete => try self.clipboard.delete(request.generation.?),
+            .wm_action => {
+                const action = try std.json.parseFromSliceLeaky(@import("../../aqueous/commands.zig").Action, alloc, request.text.?, .{ .allocate = .alloc_always });
+                if (action == .session_exit) return error.UseLifecycleLogout;
+                if (action == .session_reload) try self.aqueous_settings.requestReload() else _ = try self.client.enqueue(action);
+            },
+            .capture_window => try self.capture.native.takeWindow(request.text.?),
             .capture_cancel => self.capture.cancel(),
             .capture_copy => try self.capture.copy(&self.clipboard, request.generation.?),
             .capture_save => try self.capture.save(request.generation.?, request.path),
@@ -1182,6 +1206,9 @@ fn overviewClicked(_: *gtk.Button, s: *Surface) callconv(.c) void {
 }
 fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.ModifierType, self: *Manager) callconv(.c) c_int {
     if (key != 0xff1b) return 0;
+    if (self.popup) |popup| if (popup.aqueous_settings) |view| {
+        if (view.recording != null) return 0; // The recorder owns Escape and restores entry focus.
+    };
     self.hidePopup();
     return 1;
 }
@@ -1189,7 +1216,8 @@ fn outsideReleased(_: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Manage
     if (!self.preferences.prefs().popup.dismiss_outside) return;
     const s = self.popup orelse return;
     const picked = s.window.as(gtk.Widget).pick(x, y, .{});
-    if (picked) |widget| if (widget == s.panel or widget.isAncestor(s.panel) != 0) return;
+    const inside = if (s.viewport) |viewport| viewport.as(gtk.Widget) else s.panel;
+    if (picked) |widget| if (widget == inside or widget.isAncestor(inside) != 0) return;
     self.hidePopup();
 }
 fn osdExpired(data: ?*anyopaque) callconv(.c) c_int {

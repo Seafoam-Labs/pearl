@@ -4,6 +4,9 @@ const gio = @import("gio2");
 const glib = @import("glib2");
 const object = @import("gobject2");
 pub const model = @import("aqueous_model.zig");
+const contract = @import("aqueous_contract.zig");
+const operations = @import("aqueous_operations.zig");
+const display_ipc = @import("aqueous_display_ipc.zig");
 const process = @import("helper_process.zig");
 const a = std.heap.c_allocator;
 const Document = struct {
@@ -15,6 +18,7 @@ const Document = struct {
         errdefer self.destroy();
         self.value = try model.parse(self.arena.allocator(), bytes, model.max_response);
         try model.snapshot(self.value);
+        try contract.snapshot(self.value);
         return self;
     }
     fn destroy(self: *Document) void {
@@ -34,6 +38,12 @@ const Job = struct {
     response: ?*Document = null,
     failure: ?anyerror = null,
     detail: []const u8 = "",
+    result: ?contract.Result = null,
+    operation_resolved: bool = false,
+    route: contract.Route = .unknown,
+    report: ?[]const u8 = null,
+    review: ?[]const u8 = null,
+    operation_id: []const u8 = "",
     saved: bool = false,
     uncertain: bool = false,
     reconciled: bool = false,
@@ -75,6 +85,13 @@ pub const Client = struct {
     toolkit: enum { not_requested, synced, partial, unknown } = .not_requested,
     unresolved: bool = false,
     uncertain_version: u64 = 0,
+    save_state: ?contract.Save = null,
+    receipt: ?contract.Receipt = null,
+    display_state: contract.Display = .not_requested,
+    impact_route: contract.Route = .unknown,
+    report: ?[]u8 = null,
+    review: ?[]u8 = null,
+    operation_id: [64:0]u8 = @splat(0),
     recording: bool = false,
     poll: c_uint = 0,
     pub fn rebase(self: *Client) !void {
@@ -90,7 +107,6 @@ pub const Client = struct {
         self.discard();
         self.base = base;
         self.draft = copy;
-        self.unresolved = false;
         self.changed(self.context);
     }
     pub fn previewing(self: *const Client) bool {
@@ -119,6 +135,10 @@ pub const Client = struct {
     }
     fn free(self: *Client) void {
         self.discard();
+        if (self.report) |v| a.free(v);
+        if (self.review) |v| a.free(v);
+        self.report = null;
+        self.review = null;
         if (self.live) |v| v.destroy();
         self.live = null;
         if (self.helper) |v| a.free(v);
@@ -147,6 +167,7 @@ pub const Client = struct {
         // Discard is not permission to retry an uncertain save.
     }
     pub fn keepDraft(self: *Client, bytes: []const u8) !void {
+        if (self.job) |j| j.choice.store(2, .release);
         if (bytes.len > model.max_request) return error.RequestTooLarge;
         const copy = try a.dupe(u8, bytes);
         errdefer a.free(copy);
@@ -231,104 +252,186 @@ pub const Client = struct {
         return 1;
     }
     fn call(j: *Job, op: [:0]const u8, input: ?[]const u8) ![]const u8 {
+        std.debug.assert(std.mem.eql(u8, op, "version") or std.mem.eql(u8, op, "snapshot") or std.mem.eql(u8, op, "validate"));
         const alloc = j.arena.allocator();
-        const argv: []const [:0]const u8 = if (input == null) &.{ j.owner.helper.?, op, "--shell", "none" } else &.{ j.owner.helper.?, op, "--shell", "none", "--request", "-", "--report-reload", "true" };
-        const result = try process.run(alloc, argv, input, j.cancel, 35000);
-        if (std.mem.eql(u8, op, "apply")) {
-            const report = model.reloadReport(result.stderr);
-            j.reload_applied = report == .applied;
-            j.reload_reported = report != .unknown;
+        const argv: []const [:0]const u8 = if (input == null) &.{ j.owner.helper.?, op, "--shell", "none" } else &.{ j.owner.helper.?, op, "--shell", "none", "--request", "-" };
+        const deadline = glib.getMonotonicTime() + 8000000;
+        while (true) {
+            var scratch = std.heap.ArenaAllocator.init(a);
+            defer scratch.deinit();
+            const time_left = @divTrunc(deadline - glib.getMonotonicTime(), 1000);
+            if (time_left <= 0) return error.HelperTimedOut;
+            const result = try process.run(scratch.allocator(), argv, input, j.cancel, time_left);
+            const v = try model.parse(scratch.allocator(), result.stdout, model.max_response);
+            model.check(v) catch |err| {
+                const code = model.str(model.get(v, "code"));
+                if (std.mem.eql(u8, code, "config_writer_busy") and glib.getMonotonicTime() + 150000 < deadline) {
+                    if (j.cancel.isCancelled() != 0) return error.Cancelled;
+                    glib.usleep(100000);
+                    continue;
+                }
+                j.detail = try alloc.dupe(u8, code);
+                return err;
+            };
+            if (!result.success) return error.HelperFailed;
+            return alloc.dupe(u8, result.stdout);
         }
-        const v = try model.parse(alloc, result.stdout, model.max_response);
-        model.check(v) catch |err| {
-            j.detail = model.str(model.get(v, "code"));
-            return err;
-        };
-        if (!result.success) return error.HelperFailed;
-        return result.stdout;
+    }
+    fn structured(j: *Job, id: []const u8, input: ?[]const u8) !contract.Result {
+        const alloc = j.arena.allocator();
+        const operation = try alloc.dupeZ(u8, id);
+        const argv: []const [:0]const u8 = if (input != null)
+            &.{ j.owner.helper.?, "apply", "--shell", "none", "--request", "-", "--result", "v1", "--operation-id", operation }
+        else
+            &.{ j.owner.helper.?, "operation-status", "--shell", "none", "--operation-id", operation };
+        const reply = try process.run(alloc, argv, input, j.cancel, 35000);
+        // Even a nonzero exit may describe an already persisted save.
+        return contract.Result.read(try model.parse(alloc, reply.stdout, model.max_response), id);
+    }
+    fn acceptResult(j: *Job, store: operations.Store, pending: model.Value, result: contract.Result) !void {
+        const alloc = j.arena.allocator();
+        j.result = result;
+        var summary = result.value;
+        summary.object = try result.value.object.clone(alloc);
+        _ = summary.object.swapRemove("snapshot");
+        var toolkit = model.get(summary, "toolkit");
+        if (toolkit == .object) {
+            toolkit.object = try toolkit.object.clone(alloc);
+            var typography = model.get(toolkit, "typography");
+            if (typography == .object) {
+                typography.object = try typography.object.clone(alloc);
+                _ = typography.object.swapRemove("faces");
+                _ = typography.object.swapRemove("families");
+                try toolkit.object.put(alloc, "typography", typography);
+            }
+            try summary.object.put(alloc, "toolkit", toolkit);
+        }
+        j.report = try std.json.Stringify.valueAlloc(alloc, summary, .{});
+        // Early rejection precedes candidate preparation, so the canonical
+        // helper can prove no write without supplying candidate bindings.
+        const rejected_before_write = !result.ok and result.save == .failed and
+            result.reload == .not_requested and result.display == .not_requested;
+        for ([_][2][]const u8{ .{ "before_generation", "generation" }, .{ "candidate_digest", "candidate_digest" } }) |pair| {
+            const received = model.get(result.value, pair[0]);
+            if (received != .null and !model.equal(received, model.get(pending, pair[1]))) return error.OperationMismatch;
+            if (result.certain() and received == .null and !rejected_before_write) return error.InvalidContract;
+        }
+        j.uncertain = !result.certain();
+        j.saved = result.save == .saved or result.save == .unchanged;
+        j.reload_applied = result.reload == .applied;
+        j.reload_reported = result.reload == .applied or result.reload == .failed;
+        j.reconciled = result.receipt == .recovered;
+        if (!result.ok) {
+            j.failure = error.HelperRejected;
+            j.detail = model.str(model.get(model.get(result.value, "failure"), "code"));
+        }
+        if (j.uncertain) return error.SaveUncertain;
+        try store.resolved(model.str(model.get(pending, "operation_id")));
+        j.operation_resolved = true;
+        const snapshot = model.get(result.value, "snapshot");
+        if (snapshot != .null) j.response = try Document.create(try std.json.Stringify.valueAlloc(alloc, snapshot, .{}));
+    }
+    fn recover(j: *Job, store: operations.Store, pending: model.Value) !void {
+        j.uncertain = true;
+        if (!std.mem.eql(u8, try contract.text(pending, "helper", 4096), j.owner.helper.?)) return error.OperationHelperChanged;
+        const id = model.str(model.get(pending, "operation_id"));
+        j.operation_id = id;
+        try acceptResult(j, store, pending, try structured(j, id, null));
     }
     fn perform(j: *Job) !void {
         const alloc = j.arena.allocator();
         const version = try model.parse(alloc, try call(j, "version", null), model.max_response);
-        for ([_][]const u8{ "shell_none", "schema_fields", "validate", "generation_check", "stdin_requests", "atomic_file_replace" }) |cap| if (!model.has(version, cap)) return error.UnsupportedHelper;
+        for ([_][]const u8{ "shell_none", "schema_fields", "validate", "generation_check", "stdin_requests" }) |cap| if (!model.has(version, cap)) return error.UnsupportedHelper;
+        const caps = contract.Capabilities.read(version);
+        const store = try operations.Store.open(alloc);
+        defer store.close();
+        if (store.pending() catch {
+            j.uncertain = true;
+            return error.InvalidOperationRecord;
+        }) |pending| {
+            try recover(j, store, pending);
+            // Recovery never replays the requested action or its side effects.
+            if (j.response == null) j.response = try Document.create(try call(j, "snapshot", null));
+            return;
+        }
         if (j.op == .refresh) {
             j.response = try Document.create(try call(j, "snapshot", null));
             return;
         }
-        const req = try model.request(alloc, j.base, j.draft.?, j.owner.backups.?);
-        const encoded = try std.json.Stringify.valueAlloc(alloc, req, .{});
-        const candidate = try Document.create(try call(j, "validate", encoded));
+        if (!caps.apply) return error.HelperUpgradeRequired;
+        var req = try model.request(alloc, j.base, j.draft.?, j.owner.backups.?);
+        const candidate = try Document.create(try call(j, "validate", try std.json.Stringify.valueAlloc(alloc, req, .{})));
         defer candidate.destroy();
+        const impact = try contract.Impact.read(candidate.value, model.str(model.get(j.base, "generation")));
+        j.route = impact.route;
+        j.review = try std.json.Stringify.valueAlloc(alloc, model.get(candidate.value, "candidate_impact"), .{});
         if (j.op == .validate) return;
-        if (model.rawDisplayRisk(j.base, req)) return error.ProtectedDisplayPreviewRequired;
-        // Gate every route, including raw wm/outputs, until independent rollback
-        // has been established. A compatibility rollback_seconds field is not a lease.
-        if (model.displayChanged(j.base, candidate.value)) {
-            // Only explicit monitor edits can be translated into a live preview.
-            // Raw output changes, policies and mirroring remain safely gated.
-            if (model.list(model.get(req, "monitor_changes")).len == 0 or model.get(model.get(req, "raw_files"), "outputs") != .null or model.get(model.get(req, "raw_files"), "wm") != .null) return error.ProtectedDisplayPreviewRequired;
-            for (model.list(model.get(req, "changes"))) |change| {
-                const f = model.field(j.base, model.str(model.get(change, "id"))) orelse return error.UnknownField;
-                if (std.mem.eql(u8, model.str(model.get(f, "category")), "displays")) return error.DisplayPolicyPreviewUnsupported;
-            }
-            try @import("io.zig").mkdir(j.owner.backups.?);
-            j.uncertain = true;
-            const response = process.preview(alloc, try std.json.Stringify.valueAlloc(alloc, .{ .request = req, .helper = j.owner.helper.? }, .{}), j.cancel, &j.phase, &j.choice, &j.expires) catch |err| {
-                if (j.choice.load(.acquire) != 1) j.uncertain = false;
+        if (impact.route == .unknown) {
+            j.detail = impact.reason;
+            return error.UnclassifiedCandidate;
+        }
+        var native: ?display_ipc.Client = null;
+        defer if (native) |*client| client.close();
+        if (impact.route == .display) {
+            if (!caps.display) return error.DisplayCapabilityUnavailable;
+            native = try display_ipc.Client.open(alloc, j.cancel);
+            const client = &native.?;
+            if (!std.mem.eql(u8, &client.session, model.str(model.get(impact.projection, "session")))) return error.DisplaySessionChanged;
+            const lease = client.call(alloc, "display.preview.begin", .{
+                .display_revision = model.get(impact.projection, "display_revision"),
+                .candidate_digest = impact.digest,
+                .expected_generation = impact.generation,
+                .wm_source = model.get(model.get(candidate.value, "raw_files"), "wm"),
+                .outputs_source = model.get(model.get(candidate.value, "raw_files"), "outputs"),
+            }) catch |err| {
+                j.detail = try alloc.dupe(u8, std.mem.sliceTo(&client.detail, 0));
                 return err;
             };
-            const result = try model.parse(alloc, response, model.max_response);
-            if (model.get(result, "ok") != .bool or !model.get(result, "ok").bool) {
-                j.detail = model.str(model.get(result, "err"));
-                const unknown = model.get(result, "save_uncertain");
-                j.uncertain = unknown != .bool or unknown.bool;
-                if (j.uncertain) {
-                    j.failure = error.DisplayPreviewFailed;
-                    j.response = try Document.create(try call(j, "snapshot", null));
-                    if (model.equal(model.get(j.response.?.value, "raw_files"), model.get(candidate.value, "raw_files"))) {
-                        j.saved = true;
-                        j.reconciled = true;
-                        j.uncertain = false;
-                        return;
-                    }
-                    if (model.equal(model.get(j.response.?.value, "raw_files"), model.get(j.base, "raw_files"))) j.uncertain = false;
+            const token = try contract.hex(lease, "token", 64);
+            const deadline = glib.getMonotonicTime() + 25000000;
+            while (true) {
+                if (j.cancel.isCancelled() != 0) return error.Cancelled;
+                var scratch = std.heap.ArenaAllocator.init(a);
+                defer scratch.deinit();
+                const status_ = try client.call(scratch.allocator(), "display.preview.status", .{ .token = token });
+                const state = try contract.text(status_, "state", 64);
+                if (std.mem.eql(u8, state, "previewing")) {
+                    const ms = model.get(status_, "remaining_ms");
+                    if (ms != .integer or ms.integer < 0 or ms.integer > 15000) return error.InvalidContract;
+                    j.expires.store(glib.getMonotonicTime() + ms.integer * 1000, .release);
+                    j.phase.store(1, .release);
+                    if (j.choice.load(.acquire) == 1 and ms.integer > 0) break;
+                } else if (!std.mem.eql(u8, state, "applying")) {
+                    j.reverted = true;
+                    j.invalidated = std.mem.eql(u8, state, "invalidated");
+                    j.detail = try alloc.dupe(u8, state);
+                    if (!std.mem.eql(u8, state, "reverted") and !j.invalidated) return error.DisplayPreviewFailed;
+                    return;
                 }
-                return error.DisplayPreviewFailed;
+                if (j.choice.load(.acquire) == 2 or glib.getMonotonicTime() >= deadline) {
+                    _ = try client.call(scratch.allocator(), "display.preview.revert", .{ .token = token });
+                    j.reverted = true;
+                    return;
+                }
+                glib.usleep(100000);
             }
-            const preview_state = model.str(model.get(result, "preview"));
-            if (std.mem.eql(u8, preview_state, "reverted") or std.mem.eql(u8, preview_state, "invalidated")) {
-                j.reverted = true;
-                j.invalidated = std.mem.eql(u8, preview_state, "invalidated");
-                j.uncertain = false;
-                return;
-            }
-            j.response = try Document.create(try std.json.Stringify.valueAlloc(alloc, model.get(result, "result"), .{}));
-            j.reload_applied = std.mem.eql(u8, model.str(model.get(result, "reload")), "applied");
-            j.reload_reported = j.reload_applied or std.mem.eql(u8, model.str(model.get(result, "reload")), "failed");
-            j.saved = true;
-            j.uncertain = false;
-            return;
+            j.phase.store(2, .release);
+            try req.object.put(alloc, "preview_token", .{ .string = token });
         }
+        try req.object.put(alloc, "protected_apply", .{ .bool = true });
+        try req.object.put(alloc, "candidate_digest", .{ .string = impact.digest });
+        const encoded = try std.json.Stringify.valueAlloc(alloc, req, .{});
         try @import("io.zig").mkdir(j.owner.backups.?);
-        const applied = call(j, "apply", encoded) catch |err| {
-            // A failed/late response says nothing reliable about the write phase.
-            j.uncertain = true;
-            j.failure = err;
-            j.response = Document.create(try call(j, "snapshot", null)) catch return error.SaveUncertain;
-            if (model.equal(model.get(j.response.?.value, "raw_files"), model.get(candidate.value, "raw_files"))) {
-                j.saved = true;
-                j.reconciled = true;
-                j.uncertain = false;
-            } else if (model.equal(model.get(j.response.?.value, "raw_files"), model.get(j.base, "raw_files"))) {
-                j.uncertain = false;
-            }
+        // Durable before launching: a timeout/crash can only lead to a receipt query.
+        const id = try store.begin(j.owner.helper.?, try contract.text(version, "version", 64), encoded, impact);
+        j.operation_id = id;
+        j.uncertain = true;
+        const pending = (try store.pending()).?;
+        const result = structured(j, id, encoded) catch {
+            try recover(j, store, pending);
             return;
         };
-        j.uncertain = true;
-        j.response = try Document.create(applied);
-        if (!model.equal(model.get(j.response.?.value, "raw_files"), model.get(candidate.value, "raw_files"))) return error.SaveUncertain;
-        j.saved = true;
-        j.uncertain = false;
+        try acceptResult(j, store, pending, result);
     }
     fn work(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
         const j: *Job = @ptrCast(@alignCast(data.?));
@@ -350,8 +453,28 @@ pub const Client = struct {
             return;
         }
         self.err = j.failure;
+        if (j.review != null) self.impact_route = j.route;
+        if (j.operation_resolved) self.unresolved = false;
+        if (j.result) |result| {
+            self.save_state = result.save;
+            self.receipt = result.receipt;
+            self.display_state = result.display;
+        }
+        if (j.report) |v| {
+            if (self.report) |old| a.free(old);
+            self.report = a.dupe(u8, v) catch null;
+        }
+        if (j.review) |v| {
+            if (self.review) |old| a.free(old);
+            self.review = a.dupe(u8, v) catch null;
+        }
+        if (j.operation_id.len > 0) {
+            self.operation_id = @splat(0);
+            @memcpy(self.operation_id[0..j.operation_id.len], j.operation_id);
+        }
         const n = @min(j.detail.len, self.detail.len);
         @memcpy(self.detail[0..n], j.detail[0..n]);
+        const refreshed = j.response != null;
         if (j.response) |v| {
             if (self.live) |old| old.destroy();
             self.live = v;
@@ -376,13 +499,14 @@ pub const Client = struct {
                     if (failed == .integer and failed.integer > 0) self.toolkit = .partial;
                 }
             }
-            if (self.revision == j.revision and !j.reconciled) self.discard();
+            if (self.revision == j.revision and !j.reconciled and refreshed and j.operation_resolved) self.discard();
             self.reload_state = if (j.reconciled or !j.reload_reported) .unknown else if (j.reload_applied) .applied else .failed;
         } else if (j.reverted) self.outcome = if (j.invalidated) .invalidated else .reverted else if (j.failure != null) self.outcome = .failed else if (j.op == .refresh) self.outcome = .loaded else self.outcome = .validated;
         j.destroy();
         self.changed(self.context);
     }
     pub fn requestReload(self: *Client) !void {
+        if (self.unresolved) return error.SaveUncertain;
         if (self.job != null or self.reload_ticket != null) return error.Busy;
         self.reload_ticket = self.reload(self.context) catch |err| {
             self.reload_state = if (err == error.Unsupported or err == error.Unavailable) .unavailable else .failed;
@@ -405,6 +529,8 @@ pub const Client = struct {
     pub fn status(self: *const Client, alloc: std.mem.Allocator, query: ?[]const u8) ![]u8 {
         const v = self.value();
         const result = if (query) |id| blk: {
+            if (std.mem.eql(u8, id, "operation")) break :blk try model.parse(alloc, self.report orelse "null", model.max_response);
+            if (std.mem.eql(u8, id, "review")) break :blk try model.parse(alloc, self.review orelse "null", model.max_response);
             if (std.mem.eql(u8, id, "draft")) break :blk try model.parse(alloc, self.draft orelse "null", model.max_request);
             if (std.mem.startsWith(u8, id, "raw:")) break :blk model.get(model.get(v, "raw_files"), id[4..]);
             break :blk if (model.field(v, id)) |f| model.get(f, "value") else model.get(v, id);
@@ -427,6 +553,12 @@ pub const Client = struct {
             .display_preview = if (self.previewing()) "pending" else "idle",
             .preview_seconds = self.remaining(),
             .helper = self.helper,
+            .capabilities = contract.Capabilities.read(v),
+            .operation_id = std.mem.sliceTo(&self.operation_id, 0),
+            .save = if (self.save_state) |v_| @tagName(v_) else null,
+            .receipt = if (self.receipt) |v_| @tagName(v_) else null,
+            .display = @tagName(self.display_state),
+            .impact = @tagName(self.impact_route),
         }, .{});
     }
 };

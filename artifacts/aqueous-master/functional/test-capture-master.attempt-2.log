@@ -1,0 +1,81 @@
+{
+  "status": "passed",
+  "checks": {
+    "native-output-sdr-conversion-and-eight-transforms": true,
+    "native-isolated-source-withholds-undescribed-png": true,
+    "closed-source-identity-cannot-be-reused": true,
+    "native-source-and-per-frame-color-protocol-used": true
+  },
+  "pearl_sha256": "8a3be8c63f4d88aa643a1176e20bb0d07b12f9499fa2b30d2b9604ff37485b9a",
+  "orientation_error": {
+    "normal": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "90": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "180": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "270": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "flipped": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "flipped-90": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "flipped-180": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "flipped-270": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "isolated_source_result": {
+    "available": true,
+    "locked": false,
+    "pending": false,
+    "ready": false,
+    "generation": 8,
+    "width": 0,
+    "height": 0,
+    "isolated_window": true,
+    "image_isolated": false,
+    "color_metadata_required": true,
+    "output_crop": false,
+    "region": null,
+    "output_connector": "",
+    "message": "Source color metadata unavailable; PNG export withheld",
+    "saved": ""
+  }
+}
+Build Summary: 10/10 steps succeeded
+test-capture-master success
++- run python3 success 7s
+   +- compile exe pearl ReleaseSafe native cached 15ms MaxRSS:59M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 15ms MaxRSS:51M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:54M
+   +- compile exe pearlctl ReleaseSafe native cached 14ms MaxRSS:59M
+

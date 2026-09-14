@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """T03 keyboard, layout, virtualization and idle checks on a private display."""
 import argparse
+import os
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -17,8 +18,8 @@ from pearl_session import PrivateSession, wait_for
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pearl', type=Path, required=True)
-    parser.add_argument('--aqueous', type=Path, default=ROOT / '.cache/aqueous/bin/aqueous')
-    parser.add_argument('--ctl', type=Path, default=ROOT / '.cache/aqueous/bin/aqueousctl')
+    parser.add_argument('--aqueous', type=Path, default=Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', ROOT / '.cache/aqueous')) / 'bin/aqueous')
+    parser.add_argument('--ctl', type=Path, default=Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', ROOT / '.cache/aqueous')) / 'bin/aqueousctl')
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/t03/latest')
     args = parser.parse_args()
     args.output = args.output.resolve()

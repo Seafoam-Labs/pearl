@@ -1,0 +1,46 @@
+{
+  "status": "passed",
+  "checks": {
+    "object-manager-enumeration-and-agent-registration": true,
+    "agent-calls-reject-unrelated-bus-senders": true,
+    "keyboard-traversal-collapsed-and-expanded-connectivity-lists": true,
+    "bounded-explicit-wifi-scan": true,
+    "saved-profile-updated-signal-refreshes-settings": true,
+    "secure-wifi-real-password-entry-rejection-and-retry": true,
+    "unrelated-property-update-preserves-typed-password": true,
+    "saved-network-secret-agent-and-activation": true,
+    "wpa3-sae-secret-agent": true,
+    "panel-close-cancels-wifi-and-clears-secret-entry": true,
+    "late-activation-after-cancel-is-deactivated": true,
+    "hardware-radio-block-prevents-writes": true,
+    "enterprise-handoff": true,
+    "bluetooth-discovery-lease": true,
+    "bluetooth-discovery-automatically-expires-after-30-seconds": true,
+    "late-discovery-start-after-panel-close-releases-lease": true,
+    "passkey-confirmation-explicit-trust-and-connect": true,
+    "bluetooth-pair-cancellation": true,
+    "bluetooth-pin-and-passkey-input": true,
+    "bluetooth-authentication-rejected": true,
+    "removed-device-cancels-conversation": true,
+    "network-owner-replacement-drops-prompts-and-stale-actions": true,
+    "bluez-owner-replacement-registers-new-agent": true,
+    "oversized-object-snapshot-fails-closed": true,
+    "system-bus-reconnect-recreates-agents-and-state": true,
+    "shutdown-drains-pending-agent-and-discovery-callbacks": true,
+    "secrets-excluded-from-status-logs-and-persistent-shell-config": true
+  },
+  "pearl_sha256": "c21a54111b32f605836646eb39e890be1aeada071c718fd749049ca3eb928245",
+  "ctl_sha256": "135cd06d632c616c9ca9657967c491397d61483de1a805d80f325b2e04e02b09"
+}
+Build Summary: 10/10 steps succeeded
+test-connectivity success
++- run python3 success 55s
+   +- compile exe pearl-integration ReleaseSafe native cached 15ms MaxRSS:59M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 13ms MaxRSS:56M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:57M
+   +- compile exe pearlctl ReleaseSafe native cached 16ms MaxRSS:58M
+

@@ -12,7 +12,12 @@
     "wl_seat": 9,
     "ext_data_control_manager_v1": 1,
     "zwlr_screencopy_manager_v1": 3,
-    "wl_shm": 1
+    "wl_shm": 1,
+    "ext_image_copy_capture_manager_v1": 1,
+    "ext_output_image_capture_source_manager_v1": 1,
+    "ext_foreign_toplevel_image_capture_source_manager_v1": 1,
+    "aqueous_capture_color_manager_v1": 1,
+    "ext_foreign_toplevel_list_v1": 1
   },
   "inputs": {
     "wayland.xml": {
@@ -54,7 +59,19 @@
     "wlr-screencopy-unstable-v1.xml": {
       "source": "Aqueous 7611e23c653a72b24d6dd4d8b6404d1d1feb7480: compositor/protocol/upstream/wlr-screencopy-unstable-v1.xml",
       "sha256": "a10348b173a56af5dd2e1534782d8517c84213b0c99663a9cc1d4ec08a0cb2e3"
+    },
+    "ext-image-copy-capture-v1.xml": {
+      "source": "wayland-protocols 1.49: staging/ext-image-copy-capture/ext-image-copy-capture-v1.xml",
+      "sha256": "41a446653f788fabb404cab3168c0bd667c1ff4b54f1f0bb1e18810a1f47d73f"
+    },
+    "ext-image-capture-source-v1.xml": {
+      "source": "wayland-protocols 1.49: staging/ext-image-capture-source/ext-image-capture-source-v1.xml",
+      "sha256": "4ef41d15e4cdb9f550158391358ceec724a6708b43b7efedec03121a6bb8458d"
+    },
+    "aqueous-capture-color-v1.xml": {
+      "source": "Aqueous 1d038dc3bafa0044d9599f8f51f84105a6a85bb3: compositor/protocol/aqueous-capture-color-v1.xml",
+      "sha256": "84e329bda57764a00c0cba365ee5973296907f382aebf90faef2cc0a1b476ee9"
     }
   },
-  "generated_sha256": "e52d9ef337ead6588b3b2fa1618b0976136d2ea0f1dddbdc1e420472e8e86a5a"
+  "generated_sha256": "35578f79ed93b5b6bbfd5357a0e7abe2a6e7c7a5bc43b7c4a0e6900a8d586273"
 }

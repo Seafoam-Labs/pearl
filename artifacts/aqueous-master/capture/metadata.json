@@ -1,0 +1,69 @@
+{
+  "status": "passed",
+  "checks": {
+    "native-output-sdr-conversion-and-eight-transforms": true,
+    "native-isolated-source-withholds-undescribed-png": true,
+    "closed-source-identity-cannot-be-reused": true,
+    "native-source-and-per-frame-color-protocol-used": true
+  },
+  "pearl_sha256": "ef75cb1cf489d7fdb58c0711f185e83a5d5b026db5192e24783ac17c35cbaaf6",
+  "orientation_error": {
+    "normal": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "90": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "180": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "270": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "flipped": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "flipped-90": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "flipped-180": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "flipped-270": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "isolated_source_result": {
+    "available": true,
+    "locked": false,
+    "pending": false,
+    "ready": true,
+    "generation": 8,
+    "width": 720,
+    "height": 1280,
+    "isolated_window": true,
+    "image_isolated": false,
+    "color_metadata_required": true,
+    "output_crop": false,
+    "region": null,
+    "output_connector": "HEADLESS-2",
+    "message": "Source color metadata unavailable; PNG export withheld",
+    "saved": "/home/zoey/Pearl/artifacts/aqueous-master/capture/session/native-flipped-270.png"
+  }
+}

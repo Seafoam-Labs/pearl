@@ -349,7 +349,7 @@ def main():
     parser.add_argument('--pearl', type=Path, required=True)
     parser.add_argument('--ctl', type=Path, required=True)
     parser.add_argument('--spike', type=Path, required=True)
-    parser.add_argument('--effects-aqueous', type=Path, default=ROOT / '.cache/aqueous-effects/bin/aqueous')
+    parser.add_argument('--effects-aqueous', type=Path, default=Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', ROOT / '.cache/aqueous-effects')) / 'bin/aqueous')
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/t05/latest')
     args = parser.parse_args()
     for name in ('pearl','ctl','spike','effects_aqueous','output'):

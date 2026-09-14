@@ -1,0 +1,6360 @@
+{
+  "displays": {
+    "nodes": [
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Aqueous settings",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layouts, windows, input and your desktop appearance",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Settings loaded \u00b7 save: saved \u00b7 receipt: complete \u00b7 display: not_requested \u00b7 reload: applied \u00b7 toolkit sync: not requested",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Applications",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Clipboard & capture",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Control center",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Applications",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Clipboard & capture",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Control center",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Refresh",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Discard draft",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Rebase draft",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Validate",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Apply & save",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Mon 14 \u00b7 09:39",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "English (US)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Mon 14 \u00b7 09:39",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "English (US)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Refresh",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Discard draft",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Rebase draft",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Validate",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Apply & save",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2212 1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2212 1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Page 2",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 3",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 4",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 5",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 6",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 7",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Previous tab",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Appearance",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Layouts",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Input",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Keybindings",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Rules",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Displays",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Next tab",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Appearance",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layouts",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Input",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Keybindings",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Rules",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Displays",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Aqueous owns the preview deadline and rollback. Keep authorizes one durable save. Hardware preview is unavailable in this master build; headless previews can be tested.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "All declarations: configured offline displays, profiles, policy and precedence",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Configured displays (including offline outputs)",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Connected displays and modes",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Placement preview \u00b7 current mode sizes; staged position, scale and rotation",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "HEADLESS-2: origin 0, 0 \u00b7 logical size 1280 \u00d7 720",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "HEADLESS-1: origin 1280, 0 \u00b7 logical size 1280 \u00d7 720",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "HEADLESS-2 \u00b7 connected, enabled \u00b7 instance 1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Actual mode, geometry and color",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Explicit and inherited values, declarations and precedence",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Monitor identity and ambiguous matching",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Advertised modes",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "placement: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "mode: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "enable: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "hdr: store yes, test no, preview no \u00b7 hdr_unsupported",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "vrr: store yes, test no, preview no \u00b7 hardware_test_required",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "mirroring: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "profiles: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "policies: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "primary: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "custom_mode: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "HEADLESS-1 \u00b7 connected, enabled \u00b7 instance 2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Actual mode, geometry and color",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Explicit and inherited values, declarations and precedence",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Monitor identity and ambiguous matching",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Advertised modes",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "placement: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "mode: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "enable: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "hdr: store yes, test no, preview no \u00b7 hdr_unsupported",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "vrr: store yes, test no, preview no \u00b7 hardware_test_required",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "mirroring: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "profiles: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "policies: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "primary: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "custom_mode: store yes, test yes, preview yes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Enable / disable",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Enablement: structured editing requires an Aqueous helper addition. Advanced retains the canonical raw editor; all display saves still require a native lease.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Primary output",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Primary selection: structured editing requires an Aqueous helper addition. Advanced retains the canonical raw editor; all display saves still require a native lease.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Profiles and fallback",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Profile CRUD and membership: structured editing requires an Aqueous helper addition. Advanced retains the canonical raw editor; all display saves still require a native lease.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Identity matching",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Connector patterns and monitor identity: structured editing requires an Aqueous helper addition. Advanced retains the canonical raw editor; all display saves still require a native lease.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "HDR / VRR",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "HDR, SDR white level, auto HDR and adaptive sync: structured editing requires an Aqueous helper addition. Advanced retains the canonical raw editor; all display saves still require a native lease.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "HEADLESS-2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Horizontal position",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Horizontal position",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Vertical position",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Vertical position",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Scale",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Scale",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Rotation",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "normal",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Mode",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Mode",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Mirror of (empty for independent)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Mirror target connector",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "HEADLESS-1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Horizontal position",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Horizontal position",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Vertical position",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Vertical position",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Scale",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Scale",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Rotation",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "normal",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Mode",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Mode",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Mirror of (empty for independent)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Mirror target connector",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Apply displays at startup",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Apply displays at startup",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Apply displays on reload",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Apply displays on reload",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Fallback profile",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Fallback profile",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Display identity",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "edid",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Rollback seconds",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Rollback seconds",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "HEADLESS-2: 0, 0; 1280 by 720",
+        "role": "grouping",
+        "focused": false
+      },
+      {
+        "name": "HEADLESS-1: 1280, 0; 1280 by 720",
+        "role": "grouping",
+        "focused": false
+      },
+      {
+        "name": "Enable / disable",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Primary output",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Profiles and fallback",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Identity matching",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "HDR / VRR",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "normal",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "normal",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "edid",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "All declarations: configured offline displays, profiles, policy and precedence",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Configured displays (including offline outputs)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Connected displays and modes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Actual mode, geometry and color",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Explicit and inherited values, declarations and precedence",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Monitor identity and ambiguous matching",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Advertised modes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Actual mode, geometry and color",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Explicit and inherited values, declarations and precedence",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Monitor identity and ambiguous matching",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Advertised modes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "normal",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "normal",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "edid",
+        "role": "label",
+        "focused": false
+      }
+    ],
+    "visited": 335,
+    "performed": false,
+    "attempts": []
+  },
+  "rules": {
+    "nodes": [
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Aqueous settings",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layouts, windows, input and your desktop appearance",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Settings loaded \u00b7 save: saved \u00b7 receipt: complete \u00b7 display: not_requested \u00b7 reload: applied \u00b7 toolkit sync: not requested",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Applications",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Clipboard & capture",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Control center",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Applications",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Clipboard & capture",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Control center",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Refresh",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Discard draft",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Rebase draft",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Validate",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Apply & save",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Mon 14 \u00b7 09:39",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "English (US)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Mon 14 \u00b7 09:39",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "English (US)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Refresh",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Discard draft",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Rebase draft",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Validate",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Apply & save",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2212 1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2212 1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Page 2",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 3",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 4",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 5",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 6",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 7",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Previous tab",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Appearance",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Layouts",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Input",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Keybindings",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Rules",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Displays",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Next tab",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Appearance",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layouts",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Input",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Keybindings",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Rules",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Displays",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Window rules",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Window rule editor",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "All matchers must match; first matching rule wins. Globs are anchored and case sensitive. Inherit removes a field; false and zero remain explicit. Save a move before other rule operations.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "New item",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Stage changes to review the canonical request here. Validate checks the complete draft.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Companion layout",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grid",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Fallback layout",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grid",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Game Mode gap",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Game Mode gap",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "New item",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "app_id",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit app_id",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "app_id",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "class",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit class",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "class",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "title",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit title",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "title",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "content_type",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit content_type",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "none",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "layout",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit layout",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "tile",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "output",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit output",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "output",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "workspace",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit workspace",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "workspace",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "floating",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit floating",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "floating",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "fullscreen",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit fullscreen",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "fullscreen",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "ignore_struts",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit ignore_struts",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "ignore_struts",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "width",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit width",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "width",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "height",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit height",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "height",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "x",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit x",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "x",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "y",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit y",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "y",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "placement_policy",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit placement_policy",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "cascade",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "anchor",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit anchor",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "center",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "size",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit size",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "size",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "scale",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit scale",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "scale",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "blur",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit blur",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "blur",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "opacity",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit opacity",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "opacity",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "buffer_scale_policy",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit buffer_scale_policy",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "native",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "hdr_expand",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit hdr_expand",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "hdr_expand",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "overlay_plane",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit overlay_plane",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "off",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "stack_layer",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit stack_layer",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "below",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "focus",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit focus",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "focus",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "fixed_position",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit fixed_position",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "fixed_position",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "skip_switcher",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit skip_switcher",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "skip_switcher",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "skip_taskbar",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit skip_taskbar",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "skip_taskbar",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "scrolling_full_width",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit scrolling_full_width",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "scrolling_full_width",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "tag",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit tag",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "tag",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Stage item",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Delete item",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Move up",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Move down",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "grid",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "grid",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "none",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "tile",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "cascade",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "center",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "native",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "off",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "below",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inherit",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Stage item",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Delete item",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Move up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Move down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Window rules",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "New item",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grid",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grid",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "none",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "tile",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "cascade",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "center",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "native",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "off",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "below",
+        "role": "label",
+        "focused": false
+      }
+    ],
+    "visited": 450,
+    "performed": false,
+    "attempts": []
+  },
+  "keybinds": {
+    "nodes": [
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Aqueous settings",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layouts, windows, input and your desktop appearance",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Settings loaded \u00b7 save: saved \u00b7 receipt: complete \u00b7 display: not_requested \u00b7 reload: applied \u00b7 toolkit sync: not requested",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Applications",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Clipboard & capture",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Control center",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Applications",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Clipboard & capture",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Control center",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Refresh",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Discard draft",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Rebase draft",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Validate",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Apply & save",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Mon 14 \u00b7 09:39",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "English (US)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Mon 14 \u00b7 09:39",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "English (US)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Refresh",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Discard draft",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Rebase draft",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Validate",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Apply & save",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2212 1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2212 1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Page 2",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 3",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 4",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 5",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 6",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 7",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Previous tab",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Appearance",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Layouts",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Input",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Keybindings",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Rules",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Displays",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Next tab",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Appearance",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layouts",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Input",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Keybindings",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Rules",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Displays",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Enter chords such as Super+Return, separated by commas. Record waits for Aqueous to inhibit shortcuts. Escape cancels. Custom bindings use the structured editor below.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Custom bindings",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Custom shortcut editor",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Commands keep Aqueous syntax: spawn:, launch:, set_layout: or builtin:. Editing does not execute a command. Validate checks chord collisions.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "New item",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Stage changes to review the canonical request here. Validate checks the complete draft.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_start_menu",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_start_menu",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "spawn_terminal",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "spawn_terminal",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "screenshot",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "screenshot",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "close_focused",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "close_focused",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_overview",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_overview",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "cycle_focus",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "cycle_focus",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_left_arrow",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_left_arrow",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_right_arrow",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_right_arrow",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "scroll_viewport_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "wheel_scroll_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "wheel_scroll_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "wheel_scroll_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "wheel_scroll_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "wheel_scroll_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "wheel_scroll_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "wheel_scroll_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "wheel_scroll_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "consume_window_into_column",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "consume_window_into_column",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "expel_window_from_column",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "expel_window_from_column",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_window_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_window_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_window_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_window_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_window_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_window_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_window_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_window_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_column_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_column_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_column_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_column_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "reload_config",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "reload_config",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "reload_rules",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "reload_rules",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "set_layout_primary",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "set_layout_primary",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "set_layout_secondary",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "set_layout_secondary",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "set_layout_tertiary",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "set_layout_tertiary",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "set_layout_quaternary",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "set_layout_quaternary",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_1",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_2",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_3",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_4",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_5",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_6",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_7",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_8",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_9",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_1",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_2",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_3",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_4",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_5",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_6",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_7",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_8",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_9",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_workspace_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_previous_workspace",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_previous_workspace",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_workspace_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_output_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_output_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "focus_output_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "focus_output_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_output_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_output_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_to_output_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_to_output_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_fullscreen",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_fullscreen",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_maximize",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_maximize",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_scrolling_full_width",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_scrolling_full_width",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_floating",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_floating",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "raise_window",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "raise_window",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "lower_window",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "lower_window",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_always_above",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_always_above",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_always_below",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_always_below",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_coarse_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_coarse_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_coarse_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_coarse_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_coarse_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_coarse_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_coarse_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "nudge_floating_coarse_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "resize_floating_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "resize_floating_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "resize_floating_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "resize_floating_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "resize_floating_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "resize_floating_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "resize_floating_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "resize_floating_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "shrink_floating_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "shrink_floating_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "shrink_floating_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "shrink_floating_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "shrink_floating_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "shrink_floating_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "shrink_floating_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "shrink_floating_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "snap_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "snap_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "snap_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "snap_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "snap_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "snap_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "snap_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "snap_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "snap_center",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "snap_center",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "snap_up_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "snap_up_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "snap_up_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "snap_up_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "snap_down_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "snap_down_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "snap_down_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "snap_down_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "unsnap",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "unsnap",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "cycle_snap_zone",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "cycle_snap_zone",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "cycle_snap_layout",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "cycle_snap_layout",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "cycle_snap_layout_reverse",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "cycle_snap_layout_reverse",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "fit_floating_to_output",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "fit_floating_to_output",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_floating_to_edge_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_floating_to_edge_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_floating_to_edge_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_floating_to_edge_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_floating_to_edge_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_floating_to_edge_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "move_floating_to_edge_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "move_floating_to_edge_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "grow_floating_to_edge_left",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grow_floating_to_edge_left",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "grow_floating_to_edge_right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grow_floating_to_edge_right",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "grow_floating_to_edge_up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grow_floating_to_edge_up",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "grow_floating_to_edge_down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grow_floating_to_edge_down",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_maximize_horizontal",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_maximize_horizontal",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_maximize_vertical",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_maximize_vertical",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "toggle_minimize",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "toggle_minimize",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "unminimize_last",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "unminimize_last",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "lock_screen",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "lock_screen",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "untrap_pointer",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "untrap_pointer",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Launcher command",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Launcher command",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Terminal command",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Terminal command",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Screenshot command",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Screenshot command",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Lock command",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Lock command",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "New item",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "chord",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "chord",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Record custom shortcut",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "command",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "command",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Stage item",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Delete item",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Custom bindings",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Record custom shortcut",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Stage item",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Delete item",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "New item",
+        "role": "label",
+        "focused": false
+      }
+    ],
+    "visited": 770,
+    "performed": false,
+    "attempts": []
+  },
+  "layouts": {
+    "nodes": [
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "frame",
+        "focused": false
+      },
+      {
+        "name": "Aqueous settings",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layouts, windows, input and your desktop appearance",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Settings loaded \u00b7 save: saved \u00b7 receipt: complete \u00b7 display: not_requested \u00b7 reload: applied \u00b7 toolkit sync: not requested",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Applications",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Clipboard & capture",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Control center",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Applications",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Pearl",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Clipboard & capture",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Control center",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Refresh",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Discard draft",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Rebase draft",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Validate",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Apply & save",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Mon 14 \u00b7 09:39",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "English (US)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Mon 14 \u00b7 09:39",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "English (US)",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Refresh",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Discard draft",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Rebase draft",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Validate",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Apply & save",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2212 1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "2",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "3",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "4",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "5",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "6",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "7",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "8",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "9",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2014",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "\u2212 1",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Page 2",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 3",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 4",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 5",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 6",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Page 7",
+        "role": "panel",
+        "focused": false
+      },
+      {
+        "name": "Previous tab",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Appearance",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Layouts",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Input",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Keybindings",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Rules",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Displays",
+        "role": "page tab",
+        "focused": false
+      },
+      {
+        "name": "Next tab",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Appearance",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layouts",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Input",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Keybindings",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Rules",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Displays",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Snap zones",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Snap layouts",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Legacy snap zones",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Geometry is a fraction of the work area. Width and height must be positive and the zone must fit inside 0\u20131.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "New item",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Stage changes to review the canonical request here. Validate checks the complete draft.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Named snap layouts",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Default: . Stage a layout, then select it to edit its zones. Changes share the Advanced draft.",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "New layout",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Layout ID",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layout ID",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Layout name",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layout name",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Padding",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Layout padding",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "New zone",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Zone ID",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Zone ID",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Zone name",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Zone name",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Zone x",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Zone x",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Zone y",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Zone y",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Zone width",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Zone width",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Zone height",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Zone height",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Stage layout",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Delete layout",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Set default layout",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Stage zone",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Delete zone",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Move zone up",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Move zone down",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Default layout",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "tile",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Outer gaps",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Outer gaps",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Inner gaps",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Inner gaps",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Master ratio",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Master ratio",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Master count",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Master count",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Border width",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Border width",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Focused border",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Focused border",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Normal border",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Normal border",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Urgent border",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Urgent border",
+        "role": "text",
+        "focused": false
+      },
+      {
+        "name": "Prefer server decorations",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Prefer server decorations",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Primary slot",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "tile",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Secondary slot",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "scrolling",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Tertiary slot",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "monocle",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Quaternary slot",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grid",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Scrolling column width",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Scrolling column width",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Center focused column",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Center focused column",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Follow new windows",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Follow new windows",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Open new windows to the right",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Open new windows to the right",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Prefer portrait stacks",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Prefer portrait stacks",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Snap viewport",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Snap viewport",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Allow overscroll",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Allow overscroll",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Scrolling pointer focus delay",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Scrolling pointer focus delay",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Dwindle split",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Dwindle split",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Dwindle start axis",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "vertical",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Reverse dwindle split",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Reverse dwindle split",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Reverse dwindle start axis",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "vertical",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Hide monocle stack",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Hide monocle stack",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Monocle border",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Monocle border",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "Stacking placement",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "cascade",
+        "role": "combo box",
+        "focused": false
+      },
+      {
+        "name": "Cascade step",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Cascade step",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Keyboard move step",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Keyboard move step",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Coarse move step",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Coarse move step",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Keyboard resize step",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Keyboard resize step",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Snap gap",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Snap gap",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Snap threshold",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Snap threshold",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Edge resistance",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Edge resistance",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Top edge maximizes",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Top edge maximizes",
+        "role": "check box",
+        "focused": false
+      },
+      {
+        "name": "New item",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "x",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "x",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "y",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "y",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "width",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "width",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "height",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "height",
+        "role": "spin button",
+        "focused": false
+      },
+      {
+        "name": "Stage item",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "Delete item",
+        "role": "button",
+        "focused": false
+      },
+      {
+        "name": "New layout",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "New zone",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Stage layout",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Delete layout",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Set default layout",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Stage zone",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Delete zone",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Move zone up",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Move zone down",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "tile",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "tile",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "scrolling",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "monocle",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "grid",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "vertical",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "vertical",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "cascade",
+        "role": "toggle button",
+        "focused": false
+      },
+      {
+        "name": "Stage item",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Delete item",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Snap zones",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "Snap layouts",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "New item",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "New layout",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "New zone",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "tile",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "tile",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "scrolling",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "monocle",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "grid",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "vertical",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "vertical",
+        "role": "label",
+        "focused": false
+      },
+      {
+        "name": "cascade",
+        "role": "label",
+        "focused": false
+      }
+    ],
+    "visited": 429,
+    "performed": false,
+    "attempts": []
+  }
+}

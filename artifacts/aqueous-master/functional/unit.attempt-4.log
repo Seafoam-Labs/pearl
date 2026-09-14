@@ -1,0 +1,20 @@
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.029s
+
+OK
+Build Summary: 13/13 steps succeeded; 107/107 tests passed
+test success
++- run test 79 pass (79 total) 77ms MaxRSS:6M
+   +- compile test ReleaseSafe native cached 10ms MaxRSS:55M
+test-adapter-unit success
++- run test 26 pass (26 total) 229ms MaxRSS:11M
+   +- compile test ReleaseSafe native cached 16ms MaxRSS:58M
+test-bindings success
++- run test 2 pass (2 total) 1ms MaxRSS:7M
+   +- compile test ReleaseSafe native cached 16ms MaxRSS:58M
+      +- run pkg-config success 1ms
+      +- translate-c cached 14ms MaxRSS:53M
+test-release-tools success
++- run python3 success 66ms
+

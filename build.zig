@@ -44,6 +44,15 @@ pub fn build(b: *std.Build) void {
     scanner.generate("ext_data_control_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/wlr-screencopy-unstable-v1.xml"));
     scanner.generate("zwlr_screencopy_manager_v1", 3);
+    scanner.addCustomProtocol(b.path("bindings/protocols/ext-image-copy-capture-v1.xml"));
+    scanner.addCustomProtocol(b.path("bindings/protocols/ext-image-capture-source-v1.xml"));
+    scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-capture-color-v1.xml"));
+    scanner.generate("ext_image_copy_capture_manager_v1", 1);
+    scanner.generate("ext_output_image_capture_source_manager_v1", 1);
+    scanner.generate("ext_foreign_toplevel_image_capture_source_manager_v1", 1);
+    scanner.generate("aqueous_capture_color_manager_v1", 1);
+    scanner.generate("ext_foreign_toplevel_list_v1", 1);
+
     scanner.generate("wl_shm", 1);
     scanner.generate("wl_seat", 9);
     scanner.generate("wl_compositor", 6);
@@ -228,12 +237,27 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| connectivity.addArgs(args);
     b.step("test-connectivity", "Verify NetworkManager and BlueZ on private services").dependOn(&connectivity.step);
 
-    const aqueous_settings = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_settings.py", "--pearl" });
+    const aqueous_settings = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_master.py", "--pearl" });
     aqueous_settings.addArtifactArg(app);
     aqueous_settings.addArg("--ctl");
     aqueous_settings.addArtifactArg(ctl);
     if (b.args) |args| aqueous_settings.addArgs(args);
-    b.step("test-aqueous-settings", "Verify canonical settings and independent display rollback on private Aqueous").dependOn(&aqueous_settings.step);
+    b.step("test-aqueous-settings", "Verify matching-master settings, receipts and native display leases").dependOn(&aqueous_settings.step);
+    b.step("test-aqueous-master", "Verify pinned Aqueous master transactions").dependOn(&aqueous_settings.step);
+    const master_ui = b.addSystemCommand(&.{ "python3", "tests/integration/test_master_ui.py", "--pearl" });
+    master_ui.addArtifactArg(app);
+    master_ui.addArg("--keyboard-pearl");
+    master_ui.addArtifactArg(integration_app);
+    master_ui.addArg("--ctl");
+    master_ui.addArtifactArg(ctl);
+    if (b.args) |args| master_ui.addArgs(args);
+    b.step("test-master-ui", "Verify master settings themes, native accessibility and keyboard workflows").dependOn(&master_ui.step);
+    const master_capture = b.addSystemCommand(&.{ "python3", "tests/integration/test_capture_master.py", "--pearl" });
+    master_capture.addArtifactArg(app);
+    master_capture.addArg("--ctl");
+    master_capture.addArtifactArg(ctl);
+    if (b.args) |args| master_capture.addArgs(args);
+    b.step("test-capture-master", "Verify matching-master image-copy sources and color negotiation").dependOn(&master_capture.step);
 
     const preferences = b.addSystemCommand(&.{ "python3", "tests/integration/test_preferences.py", "--pearl" });
     preferences.addArtifactArg(integration_app);

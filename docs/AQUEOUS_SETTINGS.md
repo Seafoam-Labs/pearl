@@ -6,15 +6,16 @@ that application. The standalone `aqueous-config` helper remains the canonical
 TOML backend; install that helper alongside Pearl. Shell appearance, including
 system/installed GTK themes, remains under **Pearl settings**.
 
-Aqueous master now provides additive backend/display contracts that Pearl has not
-yet adopted. [The integration update plan](AQUEOUS_MASTER_UPDATE_PLAN.md) defines
-that work and its acceptance tests. The original
-[upstream additions request](AQUEOUS_T11_ADDITIONS.md) remains historical context.
-The behavior described below is Pearl's current integration.
+The current target is Aqueous master
+`1d038dc3bafa0044d9599f8f51f84105a6a85bb3`, helper **0.8.0**, protocol 1.
+Pearl discovers the helper through PATH, negotiates capabilities and always uses
+`--shell none`. Older helpers can remain readable, but writes require the modern
+receipt, candidate-impact and recoverable-commit capabilities.
 
-Pearl discovers `aqueous-config` through PATH, checks protocol 1 and the required
-capabilities, and always passes `--shell none`. The tested helper is 0.7.2. Neither
-`--shell pearl` nor a DMS/Noctalia appearance adapter is used.
+See [capability coverage](AQUEOUS_CAPABILITY_COVERAGE.md), the
+[implementation plan](AQUEOUS_MASTER_UPDATE_PLAN.md), and the concrete
+[upstream dependencies](AQUEOUS_MASTER_DEPENDENCIES.md). The original
+[additions request](AQUEOUS_T11_ADDITIONS.md) is historical.
 
 ## Editing and outcomes
 
@@ -41,23 +42,38 @@ base of an older edit. A draft edited while an operation runs remains retained.
 
 The status reports these independently:
 
-- **Canonical save:** saved, failed, or uncertain. A failed/lost apply response
-  triggers a snapshot comparison with the validated candidate and original files.
-  It never triggers an automatic retry. A read-back proving the candidate was
-  saved still retains the draft and reports reload/toolkit completion as unknown.
-- **Reload:** the helper performs `session.reload` itself. Pearl gates apply on
-  the Aqueous `config_reload` capability and reads `--report-reload true` stderr;
-  only the helper's confirmed `applied` result counts. A failed reload does not
-  turn an already saved configuration into a failed save. Retry compositor reload
-  (or `pearlctl aqueous reload`) retries only that action. A file-watch event is
-  never treated as acknowledgement.
-- **Toolkit synchronization:** not requested, synced, partial or unknown. The
-  Appearance page includes the individual font/cursor target reports. Partial
-  synchronization never undoes a successful canonical save.
+- **Canonical save:** saved, unchanged, failed, uncertain or recovery conflict.
+  Pearl parses structured results even when the helper exits unsuccessfully.
+  A saved configuration can have a failed reload or partial toolkit synchronization.
+- **Receipt:** complete, recovered, unavailable, unknown or recovery conflict.
+  Before an apply, Pearl atomically records its timestamped random operation ID,
+  generation, candidate digest and exact request hash under
+  `$XDG_STATE_HOME/pearl/aqueous-operations/pending.json`. A private writer lock
+  serializes operations across instances. The record contains no raw configuration.
+- **Reload and display commit:** their own reported states. The helper owns reload,
+  display authorization, persistence and finalization. Pearl never repeats those
+  side effects merely because a response was lost.
+- **Toolkit synchronization:** not requested, synced, partial or unknown. Target
+  reports remain visible separately from file persistence.
 
-After an uncertain save, Refresh and review the current configuration before
-rebasing. Apply remains blocked until that explicit review succeeds. Discarding
-a draft alone does not authorize another uncertain write.
+A lost apply reply causes an `operation-status` query, not another apply. Refresh
+also queries a pending receipt after Pearl restarts. Unknown/conflicting outcomes
+keep writes and reload retry blocked; discarding or rebasing a draft does not
+clear that durable uncertainty. Definitive receipts resolve the record. A missing
+or expired receipt remains unresolved: do not delete the record to manufacture
+permission to replay a save. Canonical helper recovery must establish the outcome.
+An early rejection with a complete failure receipt can resolve the operation even
+before candidate bindings exist: no write, reload or display change was requested.
+Pearl retains that draft and permits an explicit retry; it does not retry the write
+automatically.
+Unsaved editor text itself is still memory-only across process restarts.
+
+`pearlctl aqueous status --text operation` shows the bounded stage report;
+`--text review` shows authoritative candidate impact. Large snapshot/font catalogs
+are omitted from the operation summary. `Validate` can report valid syntax while
+an unknown semantic impact still blocks persistence. Pure comment edits can be
+saved without a display lease when the helper classifies them as having no runtime
+effect. Unknown effects never become a runtime-only save by assumption.
 
 System configuration requires an explicit `"create_user_override": true` in the
 draft. Multi-file backups are written by the helper below
@@ -78,40 +94,56 @@ This uses Ghostty's generated GTK/GDK bindings, including
 
 ## Protected display preview
 
-Connected, enabled displays support position, scale, rotation and advertised
-modes. **Apply & save** starts an independent `pearl --display-guard` process.
-The internal entrypoint uses anonymous descriptors; it is not a command intended
-for interactive use. The guardian owns its own Wayland connection and original
-display state. No canonical configuration is written before **Keep displays**.
+The Displays page shows connected and disabled outputs, actual mode/geometry/color,
+explicit versus inherited values, declaration/source precedence, advertised modes,
+monitor identity and ambiguity, configured offline declarations, profiles and policy.
+`store`, `test`, `preview` and `reason` are kept separate.
 
-The guardian tests the candidate, applies it with the compositor's configuration
-serial, and starts a 15-second lease. Revert, timeout, parent pipe closure after
-Pearl crashes, or a changed output configuration triggers rollback. Only heads
-still exactly matching the candidate are restored; other heads keep their current
-state. A newly racing configuration cancels the serial-based rollback instead of
-overwriting that configuration. Hotplug invalidates the lease. A dead compositor
-has no surviving display state to restore; failures remain explicit.
+A placement diagram follows staged position, scale and rotation at current mode
+sizes, with numeric origins and logical dimensions for keyboard and assistive use.
+Position, scale, rotation, mode and mirroring use the helper's structured monitor
+edits. Scalar display policies use schema controls. Canonical validation determines
+whether an edit changes live or deferred output configuration. Both require a native
+lease: even `store:true` and an offline-only edit do not authorize unprotected save.
 
-Keep revalidates the original helper generation, checks the live configuration
-again, then saves through the helper and reports its reload result. A competing
-canonical edit cannot silently overwrite that generation. The guardian uses
-generated `zwlr_output_manager_v1` v4 bindings, not shell commands or a C bridge.
+**Apply & save** binds a persistent authenticated native IPC connection to the
+candidate generation/digest, compositor session and display revision. Aqueous tests
+and applies the candidate and owns its deadline. **Keep displays** sends one
+protected helper operation; the helper authorizes, journals, persists and finalizes.
+**Revert**, timeout, owner disconnect or invalidation restore the compositor-owned
+baseline under its concurrency rules. The former `--display-guard` process and
+output-management rollback implementation have been removed.
 
-Explicitly gated cases:
+Current master accepts protected previews only for headless outputs. Physical,
+HDR and VRR changes remain gated; mirroring depends on renderer support. The helper
+has no structured mutation for enabled/primary/profile/matching/HDR properties:
+those controls explain the upstream dependency and remain disabled. Advanced raw
+editing is retained, with the same classification and preview gates. Pearl does not
+add a TOML serializer or infer effective state from raw draft text.
 
-- Mirroring has no representation in this output-management protocol. Mirror
-  changes remain available for inspection/raw drafting and validation, but are
-  not applied through an unprotected path.
-- Raw outputs changes are always gated, including properties omitted from the
-  helper snapshot. Raw wm edits are also gated when either version contains
-  legacy output/display sections; raw wm without such sections remains editable.
-- Custom/unadvertised modes, enabling disabled displays, offline outputs and raw
-  output-policy changes cannot use this preview. The five display policy fields
-  can be drafted/validated; changing them at apply is gated. The helper's
-  compatibility `rollback_seconds` setting is **not** a crash-safe lease.
-- Visual drag-and-drop display placement, window-rule builders and snap-layout
-  canvases are deferred. Current collection editing uses the helper request JSON
-  below; it does not hand off to the old application.
+## Structured collection forms
+
+Rules expose all schema fields and options, numeric limits and an explicit Inherit
+checkbox. Missing/inherited, false and zero are different. All present matchers must
+match, globs are anchored and case sensitive, and first matching rule wins. Add,
+update, delete and one-at-a-time moves produce a reviewable canonical request.
+Unsaved additions remain selectable and can be edited, reordered or removed before
+persistence; their local draft indices are never sent as backend identities.
+
+Custom shortcuts expose chord and compositor command syntax plus an acknowledged
+recorder. Editing a spawn command never executes it; Validate reports collisions.
+Named snap layouts expose IDs/names/padding, default selection and ordered zones
+with numeric normalized geometry. Legacy zones are also editable. Changes are
+staged into the same Advanced request, with generation-scoped source identities.
+Rebase requires unchanged affected collection source; external reorder cannot cause
+an old index to edit a different record. The helper's stale-generation precondition
+path currently cannot be combined with protected apply.
+
+**Current upstream limitation:** collection requests validate, but master's impact
+classifier does not recognize all collection semantics. Pearl therefore blocks their
+save as `UnclassifiedCandidate`, retaining the draft. The forms are implemented;
+usability of these writes depends on the upstream classification addition. See
+[AQUEOUS_MASTER_DEPENDENCIES.md](AQUEOUS_MASTER_DEPENDENCIES.md).
 
 ## Collection request examples
 
@@ -127,7 +159,7 @@ Use the generation displayed by `pearlctl aqueous status`. Begin with:
 ```
 
 Add the relevant request member. IDs for existing records come from the
-expandable inventories on each page and must stay attached to that generation.
+selectors and expandable inventories on each page and must stay attached to that generation.
 
 | Editor | Request member and example |
 | --- | --- |
@@ -177,3 +209,28 @@ ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-aqueous-settings -Doptimiz
 Tests use private buses, temporary HOME/configuration, synthetic keyboard input
 and headless outputs. Physical monitor mode/rotation/mirroring behavior remains a
 hardware validation task; virtual-output tests do not claim that coverage.
+
+
+## Matching-master verification
+
+```sh
+python3 scripts/build-aqueous-master.py
+python3 scripts/aqueous-master-inventory.py
+zig build test-aqueous-master -Doptimize=ReleaseSafe
+python3 scripts/aqueous-master-upstream-tests.py
+```
+
+Tests use private HOME/XDG paths, buses, helper wrappers and virtual displays.
+Production master round trips cover structured results, lost stdout, restart-safe
+receipt recovery, Keep/Revert, owner crash, invalid candidates and explicit gates.
+The separately instrumented upstream suite covers journal crash points, writer
+conflicts, replay, native lease races/hotplug/deadlines and rejected tests. Production
+and instrumented compositor hashes are recorded separately. Hardware and real
+assistive-technology acceptance remain separate from these automated checks.
+
+Private UI validation uses `zig build test-master-ui -Drelease=true -Doptimize=ReleaseSafe`.
+It records production themes/accessibility separately from a test-only synchronous
+focus query used to verify actual keyboard navigation. Wrapping disclosure buttons avoid a GTK expander Tab trap. Settings actions wrap
+at larger text sizes, and a bounded viewport keeps the panel inside its output.
+Escape cancels recording and returns focus to the shortcut entry. Advanced also exposes the latest operation receipt and
+validated candidate effects. Physical screen-reader acceptance remains separate.

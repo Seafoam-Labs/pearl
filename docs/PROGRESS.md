@@ -1,5 +1,9 @@
 # Pearl implementation progress
 
+Current master integration: [migration and capability gates](AQUEOUS_MASTER_MIGRATION.md).
+New candidate evidence is separate in `artifacts/aqueous-master`.
+
+
 ## T16 — Tooling implemented; release acceptance pending, September 14, 2026
 
 Added the 1.0.0-rc.1 stripped ReleaseSafe build, deterministic source archive and

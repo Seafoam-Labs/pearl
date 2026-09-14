@@ -1,0 +1,89 @@
+{
+  "revision": "1d038dc3bafa0044d9599f8f51f84105a6a85bb3",
+  "status": "passed",
+  "commands": {
+    "compositor": [
+      "zig",
+      "build",
+      "--prefix",
+      "/home/zoey/Pearl/.cache/aqueous-master",
+      "-Dvulkan-effects=true",
+      "-Dman-pages=false",
+      "-Doptimize=ReleaseSafe",
+      "-Dllvm"
+    ],
+    "settingsApplication": [
+      "zig",
+      "build",
+      "config",
+      "--prefix",
+      "/home/zoey/Pearl/.cache/aqueous-master",
+      "-Doptimize=ReleaseSafe"
+    ]
+  },
+  "patched_wlroots_pkgconfig": "/home/zoey/RiderProjects/Aqueous/compositor/.deps/wlroots-render-hook/lib/pkgconfig",
+  "binary_sha256": {
+    "aqueous": "5028bfbd58e9275691040a1e42833f521c316c8056bfaac0862696c360e818da",
+    "aqueousctl": "b4115e25cb1c5c14ae581225c291ad22f5a39c43c783502f6873574348ee3eb9",
+    "aqueous-config": "b1247dce6db6264eca1afd822af29e45b4c92f1c57aed642856eed20ac1a2142"
+  },
+  "helper": {
+    "ok": true,
+    "protocol": 1,
+    "version": "0.8.0",
+    "capabilities": [
+      "schema_fields",
+      "validate",
+      "generation_check",
+      "stdin_requests",
+      "atomic_file_replace",
+      "monitor_modes",
+      "monitor_mirroring",
+      "live_outputs",
+      "keybinds",
+      "window_rules",
+      "cursor_sync",
+      "typography_sync",
+      "shell_dms",
+      "shell_none",
+      "monitor_scale",
+      "display_configuration_v1",
+      "candidate_review_v1",
+      "helper_writer_lock_v1",
+      "apply_result_v1",
+      "collection_identity_v1",
+      "display_model_v2",
+      "recoverable_commit_v1",
+      "operation_receipts_v1",
+      "candidate_impact_v1",
+      "display_observation_v1",
+      "display_preview_commit_v1",
+      "collection_schema_v1",
+      "collection_preconditions_v1"
+    ]
+  },
+  "wlroots_sha256": "c2233390f63aeb5a370a849e983df7b9efd69f861fd1d26a6da49c9c0dd8cd7e",
+  "fixture_sha256": {
+    "helper.schema.json": "b516aa4ec9749df2c8a4ef7fb8fc820157d99663ecf50ed929407d70a93266f4",
+    "display.schema.json": "cf43e3aaf12b37da2dac78fb22e250e0cb686d819600f4b8479ce12a51d0da5d",
+    "ipc.schema.json": "0725196078ab917cf47ade9c8f7d1c01a10aac2ff6c82f759f69d3b72a1c7faa",
+    "version.json": "3bcf9b24157e5fbeb2bffa0d92cc318693b841632f56915da6aebec81ce2fdb5",
+    "snapshot.json": "f3d43ed02a189a9644de4c524bcca487d71f10cc1d0ec748a93cd3155f721883",
+    "display.json": "313fc523dc9a3e278fc3172aa0b319530d1f43b447b112d48b5810bb5e5d1b2a",
+    "candidate-offline.json": "8d53a296f4380f7f903e35faabb39ae6140d4ee01095276a05e8f221974dade8",
+    "candidate-disabled.json": "5e0dcb41c838703f3a199f705b73b1fa1a7e175631604c979c226d6adf95626f",
+    "candidate-profile.json": "a5e173b71fddb6f99f0a50fbd411ff390cfe2faebaf744c29f304443dccf9d28",
+    "candidate-unknown.json": "9ff4171936620ec9123e5e6d9220fffdeb71c1fa9cf74c4e492147a4bf088c46",
+    "candidate-comments.json": "d8c6282526f9df3461c5bef26f297cc50863dc48c07078a810a4c94c92dbe9c2",
+    "apply-result.json": "8faef993207702c622e2808fed343dbc9179e73bc3c3a131a68ccd92e90ac2a1",
+    "receipt.json": "8faef993207702c622e2808fed343dbc9179e73bc3c3a131a68ccd92e90ac2a1",
+    "schema-test-requirements.txt": "e99394c278eed0e2ee36f7a1289c0327af0a355b1726472a8296563d5fb0fde6",
+    "GPL-3.0-only.txt": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
+    "README.md": "c5fde56fb501eb755778c7f4e0c9ce9858e4b4e9740b736c9b4a5a8b78f1d5a9",
+    "candidate-collections.json": "17819e0dc71f2b18ee6d88de1328a0037416624894c93f5d74b106f1809e116b",
+    "candidate-rejected.json": "2e1ce68080239dc7538c803888e5d5abe4b291689871e00329684e46320fad95",
+    "candidate-stale.json": "2767a3854643fa7dc093df0a4f5039c2bc07271afd93444541be57b7eb756e7c",
+    "native-capabilities.json": "036219e7dbe06d6d444d557e8c4e5834cfaa5668108dfd2995c247e406f03429",
+    "registry.txt": "c72ab0a2a4019369a8da4e6faa1477d579c08999d35ad23a799dcff37ae20693"
+  }
+}

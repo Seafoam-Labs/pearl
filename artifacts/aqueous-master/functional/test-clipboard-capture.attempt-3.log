@@ -1,0 +1,138 @@
+{
+  "status": "passed",
+  "checks": {
+    "owner-disappearance-and-reselection-with-real-paste": true,
+    "invalid-large-unsupported-sensitive-and-interrupted-payloads-rejected": true,
+    "stalled-transfer-timeout-and-selection-replacement": true,
+    "bounded-history-and-stale-entry-actions": true,
+    "png-decode-copy-truncation-and-dimension-bomb": true,
+    "aggregate-byte-budget-and-metadata-stripping": true,
+    "keyboard-capture-hides-panel-and-shows-preview": true,
+    "all-eight-output-transforms-match-reference": true,
+    "fractional-scale-output-local-crops-use-actual-buffer-extents": true,
+    "save-conflict-recovery-and-screenshot-copy": true,
+    "authentication-dialog-privacy": true,
+    "lock-cancels-purges-denies-and-does-not-import-locked-selection": true,
+    "output-removal-and-recovery": true,
+    "panel-open-close-lifetime": true,
+    "material-light-and-native-gtk-theme": true
+  },
+  "binaries": {
+    "pearl": "ee7582d9b8abdbebc89305df65aa3fe1f639e936e28994880f31b1247edaf882",
+    "ctl": "135cd06d632c616c9ca9657967c491397d61483de1a805d80f325b2e04e02b09",
+    "locker": "593315aae72006911581dd501a7c228a78a82d85de477eb841f1367ff9cb49e5",
+    "pam_module": "bd1e872fd51877d4e1aaa5213f55819f2e03601ef68da525b5ceb4762ea78b82",
+    "producer": "b904fc05f5c492c1ea88a8687ae02ce7374703717ef90039065e8f4acc2b4d37"
+  },
+  "orientations": {
+    "normal": {
+      "size": [
+        1280,
+        720
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "90": {
+      "size": [
+        720,
+        1280
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "180": {
+      "size": [
+        1280,
+        720
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "270": {
+      "size": [
+        720,
+        1280
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "flipped": {
+      "size": [
+        1280,
+        720
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "flipped-90": {
+      "size": [
+        720,
+        1280
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "flipped-180": {
+      "size": [
+        1280,
+        720
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "flipped-270": {
+      "size": [
+        720,
+        1280
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  }
+}
+Build Summary: 15/15 steps succeeded
+test-clipboard-capture success
++- run python3 success 26s
+   +- compile exe pearl-integration ReleaseSafe native cached 16ms MaxRSS:55M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 15ms MaxRSS:55M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:55M
+   +- compile exe pearlctl ReleaseSafe native cached 16ms MaxRSS:58M
+   +- compile exe pearl-lock-test ReleaseSafe native cached 13ms MaxRSS:56M
+   |  +- translate-c (reused)
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   |  +- translate-c cached 14ms MaxRSS:53M
+   +- compile lib pearl-pam-fixture ReleaseSafe native cached 13ms MaxRSS:58M
+   |  +- translate-c (reused)
+   +- compile exe pearl-clipboard-fixture ReleaseSafe native cached 15ms MaxRSS:57M
+      +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+

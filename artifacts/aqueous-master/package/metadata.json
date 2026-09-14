@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "method": "makepkg dependency check, build, check(), staging package(); no installation or service activation",
+  "source": {
+    "archive": "pearl-1.0.0rc2.tar.gz",
+    "sha256": "71dd669b7a7d0eb2d1435607e499a8df159eb4a4472c52faa677b35debd51e7d",
+    "source_date_epoch": 1789344000,
+    "version": "1.0.0-rc.2",
+    "files": 338
+  },
+  "package": "pearl-1.0.0rc2-1-x86_64.pkg.tar.zst",
+  "sha256": "5290162af5b867b2aafc48807e4707171f046bdb304d3dfc51e94e3bb692fce3",
+  "binary_sha256": {
+    "pearl": "e54bd5c886cc04e4fa8cc44ca04d2c2681c4f50269ca3769c79b462b0c5bc9a2",
+    "pearlctl": "135cd06d632c616c9ca9657967c491397d61483de1a805d80f325b2e04e02b09",
+    "pearl-lock": "1bd623f16f381fbb4df739bbbc7c93c8679200b7cfa46fa3fe0bd3134a89f8d1"
+  }
+}

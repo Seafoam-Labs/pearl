@@ -1,0 +1,51 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=control-ready session=055e7aabdbd6ee3b2ab5a9224edf8ca1
+info: event=app-index-ready entries=158 truncated=false
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=popup-opened output=1
+info: event=session-focus target=dnd
+info: event=session-focus target=other
+info: event=session-focus target=other
+info: event=session-focus target=notification-action
+info: event=session-focus target=other
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=session-focus target=other
+info: event=session-focus target=other
+info: event=session-focus target=media-position
+info: event=session-focus target=media-previous
+info: event=session-focus target=media-play_pause
+info: event=session-focus target=other
+info: event=session-focus target=other
+info: event=session-focus target=other
+info: event=session-focus target=media-position
+info: event=session-focus target=media-previous
+info: event=session-focus target=media-play_pause
+info: event=session-focus target=media-next
+info: event=session-focus target=media-stop
+info: event=session-focus target=media-seek
+info: event=session-focus target=other
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=session-focus target=other
+info: event=session-focus target=tray-1
+info: event=session-focus target=tray-2
+info: event=session-focus target=other
+info: event=session-focus target=other
+info: event=session-focus target=tray-3
+info: event=session-focus target=tray-4
+info: event=session-focus target=other
+info: event=session-focus target=other
+info: event=session-focus target=tray-5
+info: event=session-focus target=other
+info(pearl): event=stopping reason=control-quit pending=false
+info: event=popup-closed
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

@@ -1,0 +1,28 @@
+{
+  "status": "failed",
+  "checks": {
+    "theme-dark": true,
+    "native-accessibility-names-and-roles": true
+  },
+  "pearl_sha256": "a0f98472c2ca324f3b2136327eb65e11e6e9bedc8a77146f38584927ac1102b9",
+  "manual_acceptance": false,
+  "quick": true,
+  "keyboard_fixture_sha256": "a9c9757804b6010e7ecb5c363f98ca14a984f42d0bf6c2bad865cfda40360f0e",
+  "accessibility_limitations": [
+    "Private AT-SPI names/roles and direct focus outcome recorded. Keyboard focus is measured independently using the test-only synchronous focus query; Orca acceptance remains pending."
+  ],
+  "atspi_direct_focus": {
+    "exit_code": 1,
+    "attempts": [
+      {
+        "role": "check box",
+        "focusable": true,
+        "sensitive": true
+      },
+      {
+        "error": "atspi_error:  (1)"
+      }
+    ]
+  },
+  "error": "{'focus': 'GtkNotebook', 'width': 762, 'height': 632, 'limit': {'x': 576, 'y': 48, 'width': 700, 'height': 672}}"
+}

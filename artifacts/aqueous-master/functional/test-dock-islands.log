@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "checks": {
+    "default-islands-empty-dock-and-persistent-global-pin": true,
+    "keyboard-gio-launch-and-pinned-running-group": true,
+    "taskbar-flags-are-independent-from-switcher-flags": true,
+    "output-local-fullscreen-hiding-pointer-reveal-and-delay": true,
+    "minimized-windows-remain-on-dock": true,
+    "keyboard-window-activation-restores-minimized": true,
+    "intelligent-hiding-follows-visible-outer-geometry": true,
+    "inactive-session-hides-dock-and-rejects-reveal": true,
+    "popup-dock-keyboard-arbitration": true,
+    "dark-light-mixed-scale-and-enlarged-surface-captures": true,
+    "arbitrary-gtk-theme-colors-with-island-geometry": true,
+    "island-gaps-deliver-click-to-independent-underlay": true,
+    "per-output-vertical-layout-edge-conflict-and-escape": true,
+    "bounded-many-apps-scroll-and-keyboard-reveal": true,
+    "continuous-bar-and-disabled-dock-options": true,
+    "unpin-persistence-clean-exit-and-reservation-release": true
+  },
+  "pearl_sha256": "e54bd5c886cc04e4fa8cc44ca04d2c2681c4f50269ca3769c79b462b0c5bc9a2",
+  "ctl_sha256": "135cd06d632c616c9ca9657967c491397d61483de1a805d80f325b2e04e02b09"
+}
+Build Summary: 10/10 steps succeeded
+test-dock-islands success
++- run python3 success 20s
+   +- compile exe pearl ReleaseSafe native cached 17ms MaxRSS:58M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 14ms MaxRSS:54M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:55M
+   +- compile exe pearlctl ReleaseSafe native cached 17ms MaxRSS:57M
+

@@ -1,0 +1,51 @@
+{
+  "status": "passed",
+  "checks": {
+    "logind-session-native-idle-and-authority-registration": true,
+    "authority-identities-cancellation-and-unsupported-identity": true,
+    "authority-restart-and-escape-cleanup": true,
+    "confirmation-generation-and-sleep-inhibitor": true,
+    "native-lock-acquisition-acknowledgement": true,
+    "output-removal-return-remains-locked": true,
+    "pam-multi-message-failure-cancellation-and-success": true,
+    "native-lock-material-light-and-gtk-theme": true,
+    "suspend-lock-before-call-delay-release-and-resume-rearm": true,
+    "external-sleep-preparation": true,
+    "ac-battery-policy-selection": true,
+    "actual-idle-policy-pause-and-automatic-suspend": true,
+    "logind-restart": true,
+    "inactive-session-actions-gated": true,
+    "account-policy-denial-never-unlocks": true,
+    "shell-exit-preserves-independent-lock": true,
+    "false-ready-times-out-no-suspend-and-failed-preparation-retains-delay": true,
+    "locker-crash-fails-closed-and-aqueous-allows-authenticated-recovery": true,
+    "shell-sigkill-preserves-owned-locker-and-authentication": true,
+    "acknowledged-aqueous-logout-stops-shell": true
+  },
+  "binaries": {
+    "pearl": "9ff258bc8575fd10f0f410089c4654bf425c6fcf1409395f464fbfa96f1ab1a2",
+    "ctl": "135cd06d632c616c9ca9657967c491397d61483de1a805d80f325b2e04e02b09",
+    "locker": "593315aae72006911581dd501a7c228a78a82d85de477eb841f1367ff9cb49e5",
+    "pam_module": "bd1e872fd51877d4e1aaa5213f55819f2e03601ef68da525b5ceb4762ea78b82"
+  },
+  "locked_capture_allowed": true
+}
+Build Summary: 14/14 steps succeeded
+test-security success
++- run python3 success 48s
+   +- compile exe pearl-integration ReleaseSafe native cached 16ms MaxRSS:55M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 13ms MaxRSS:51M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 9ms MaxRSS:54M
+   +- compile exe pearlctl ReleaseSafe native cached 16ms MaxRSS:58M
+   +- compile exe pearl-lock-test ReleaseSafe native success 11s MaxRSS:389M
+   |  +- translate-c (reused)
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   |  +- translate-c cached 13ms MaxRSS:53M
+   +- compile lib pearl-pam-fixture ReleaseSafe native cached 15ms MaxRSS:58M
+      +- translate-c (reused)
+

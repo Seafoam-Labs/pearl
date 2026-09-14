@@ -1,5 +1,7 @@
 """Private Aqueous development sessions. No host service-manager environment import."""
 import os
+import hashlib
+import json
 from pathlib import Path
 import signal
 import subprocess
@@ -79,9 +81,16 @@ class Child:
 
 
 class PrivateSession:
-    def __init__(self, output, aqueous=None, backend='headless', parent_display=None, inherited=None, renderer='pixman', wm_extra=''):
+    def __init__(self, output, aqueous=None, backend='headless', parent_display=None, inherited=None, renderer='pixman', wm_extra='', tool_prefix=None):
         self.output = Path(output).resolve()
-        self.aqueous = Path(aqueous or ROOT / '.cache/aqueous/bin/aqueous').resolve()
+        self.tool_prefix = Path(tool_prefix or os.environ['PEARL_TEST_AQUEOUS_PREFIX']).resolve() if tool_prefix or os.environ.get('PEARL_TEST_AQUEOUS_PREFIX') else None
+        if self.tool_prefix and (self.tool_prefix/'metadata.json').is_file():
+            baseline=json.loads((self.tool_prefix/'metadata.json').read_text())
+            for name,digest in baseline.get('binary_sha256',{}).items():
+                binary=self.tool_prefix/'bin'/name
+                if hashlib.sha256(binary.read_bytes()).hexdigest()!=digest:
+                    raise ValueError('Private master binary differs from recorded provenance: '+name)
+        self.aqueous = Path(aqueous or (self.tool_prefix / 'bin/aqueous' if self.tool_prefix else ROOT / '.cache/aqueous/bin/aqueous')).resolve()
         if backend not in ('headless', 'nested'):
             raise ValueError('backend must be headless or nested')
         if renderer not in ('pixman', 'vulkan'):
@@ -132,6 +141,10 @@ class PrivateSession:
             directory.mkdir(mode=0o700)
             self.env[key] = str(directory)
         self.runtime = Path(self.env['XDG_RUNTIME_DIR'])
+        if self.tool_prefix:
+            for binary in ('aqueous', 'aqueousctl', 'aqueous-config'):
+                if not (self.tool_prefix/'bin'/binary).is_file():raise FileNotFoundError(binary)
+            self.env['PATH']=str(self.tool_prefix/'bin')+':'+self.env.get('PATH','/usr/bin')
         self.env.update(USER='pearl-demo', LOGNAME='pearl-demo', XDG_SESSION_TYPE='wayland',
                         XDG_CURRENT_DESKTOP='Aqueous', GDK_BACKEND='wayland', GTK_A11Y='none', GSK_RENDERER='cairo',
                         DBUS_SESSION_BUS_ADDRESS='unix:path=' + str(self.runtime / 'bus'),

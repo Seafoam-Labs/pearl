@@ -1,5 +1,9 @@
 # Moving from DMS to Pearl
 
+Current master integration: [migration and capability gates](AQUEOUS_MASTER_MIGRATION.md).
+New candidate evidence is separate in `artifacts/aqueous-master`.
+
+
 Pearl imports a conservative subset of Dank Material Shell appearance, bar and
 dock preferences. It never changes DMS configuration, enables a service, or
 switches the running desktop. Keep DMS installed: current Aqueous packages depend

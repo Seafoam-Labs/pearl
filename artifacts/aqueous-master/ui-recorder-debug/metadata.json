@@ -1,0 +1,28 @@
+{
+  "status": "failed",
+  "checks": {
+    "theme-dark": true,
+    "native-accessibility-names-and-roles": true
+  },
+  "pearl_sha256": "5b91195a2f95a8b2b2c2aeb14f0e5ec52177392793f7f4a7574a8bc4f1244714",
+  "manual_acceptance": false,
+  "quick": true,
+  "keyboard_fixture_sha256": "f5f485bab214c3bca84f836107c89857285a4fc90df434d1a5ddfcdd94982e26",
+  "accessibility_limitations": [
+    "Private AT-SPI names/roles and direct focus outcome recorded. Keyboard focus is measured independently using the test-only synchronous focus query; Orca acceptance remains pending."
+  ],
+  "atspi_direct_focus": {
+    "exit_code": 1,
+    "attempts": [
+      {
+        "role": "check box",
+        "focusable": true,
+        "sensitive": true
+      },
+      {
+        "error": "atspi_error:  (1)"
+      }
+    ]
+  },
+  "error": "('Keyboard focus never reached', 'Record custom shortcut', ['info(pearl): event=ready mode=session', 'info: event=blur-capability available=false', 'info(pearl): event=aqueous-availability state=subscribing', 'info(pearl): event=aqueous-availability state=ready', 'info: event=output-mapped id=1 connector=HEADLESS-2 scale=1', 'info: event=output-mapped id=2 connector=HEADLESS-1 scale=1', 'info(pearl): event=control-ready session=d51f6ec98a3682e606974de200c41970', 'info: event=app-index-ready entries=158 truncated=false', 'info: event=popup-opened output=1', 'info: event=preferences-applied revision=1 mode=static cache=false', 'info: event=popup-closed', 'info: event=popup-opened output=1'], [{'kind': 'seat', 'id': 'default', 'output': '1', 'window': None, 'focus_kind': 'layer_surface', 'keyboard': '1'}])"
+}

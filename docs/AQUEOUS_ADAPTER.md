@@ -126,3 +126,41 @@ The driver is not part of Pearl, is not installed by the default build, and its
 stdin controls/timing/socket-buffer overrides do not exist in the application.
 Private-socket tests need an environment that permits local sockets and nested
 compositors; they never mutate the host desktop, configuration or services.
+
+## Current-master command CLI
+
+`pearlctl wm action --text ACTION_JSON` exposes the adapter's typed actions through
+Pearl's session-checked control socket. JSON uses the Zig action tag as its sole
+key, with a fields object (or `null` for a void action). Requests are capped at
+4 KiB and checked against current entity IDs, seat/output availability and
+negotiated capabilities both when queued and when dispatched. A successful CLI
+reply acknowledges queueing; authoritative state and command completion arrive
+asynchronously. Do not assume an accepted request already changed the compositor.
+
+```sh
+pearlctl wm action --text '{"window_fullscreen":{"id":"WINDOW_ID","value":true}}'
+pearlctl wm action --text '{"window_move_workspace":{"id":"WINDOW_ID","workspace":"WORKSPACE_ID"}}'
+pearlctl wm action --text '{"workspace_rename":{"id":"WORKSPACE_ID","name":"Development"}}'
+pearlctl wm action --text '{"keyboard_set":{"index":0}}'
+pearlctl wm action --text '{"overview_show":{"output":"OUTPUT_ID"}}'
+pearlctl wm action --text '{"overview_hide":null}'
+```
+
+| Action tags | Fields |
+|---|---|
+| `window_activate`, `workspace_activate` | `id`, optional `seat` |
+| `window_close` | `id` |
+| `window_minimized`, `window_maximized`, `window_fullscreen` | `id`, boolean `value` |
+| `window_move_workspace` / `window_move_output` | `id`, `workspace` / `output` |
+| `workspace_rename` | `id`, `name` |
+| `keyboard_set` | `index`, optional `seat` and `group` |
+| `keyboard_next` | optional `seat` and `group` |
+| `overview_show`, `overview_toggle` | `output` |
+| `overview_hide`, `session_reload` | `null` |
+
+`session_reload` uses the settings reload owner and is blocked while a save is
+unresolved. Direct `session_exit` is rejected: the existing lifecycle logout flow
+owns confirmation. Stale, unknown, locked or unsupported targets fail instead of
+being retargeted by label. Native window capture uses a separate foreign-toplevel
+identity, documented in [CLIPBOARD_CAPTURE.md](CLIPBOARD_CAPTURE.md); those IDs
+must not be substituted for the canonical IPC window IDs above.

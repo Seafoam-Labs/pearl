@@ -1,0 +1,94 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=control-ready session=46e53807cf6e36a70eb30a9af0f2daca
+info: event=app-index-ready entries=158 truncated=false
+info: event=popup-opened output=1
+info: event=session-focus target=aqueous-other
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=session-focus target=aqueous-other
+info: event=session-focus target=aqueous-other
+info: event=session-focus target=aqueous-other
+info: event=session-focus target=aqueous-other
+info: event=session-focus target=Collection item
+info: event=session-focus target=Inherit app_id
+info: event=session-focus target=app_id
+info: event=session-focus target=Inherit class
+info: event=session-focus target=class
+info: event=session-focus target=Inherit title
+info: event=session-focus target=title
+info: event=session-focus target=Inherit content_type
+info: event=session-focus target=content_type
+info: event=session-focus target=Inherit layout
+info: event=session-focus target=layout
+info: event=session-focus target=Inherit output
+info: event=session-focus target=output
+info: event=session-focus target=Inherit workspace
+info: event=session-focus target=workspace
+info: event=session-focus target=Inherit floating
+info: event=session-focus target=floating
+info: event=session-focus target=Inherit fullscreen
+info: event=session-focus target=fullscreen
+info: event=session-focus target=Inherit ignore_struts
+info: event=session-focus target=ignore_struts
+info: event=session-focus target=Inherit width
+info: event=session-focus target=width
+info: event=session-focus target=Inherit height
+info: event=session-focus target=height
+info: event=session-focus target=Inherit x
+info: event=session-focus target=x
+info: event=session-focus target=Inherit y
+info: event=session-focus target=y
+info: event=session-focus target=Inherit placement_policy
+info: event=session-focus target=placement_policy
+info: event=session-focus target=Inherit anchor
+info: event=session-focus target=anchor
+info: event=session-focus target=Inherit size
+info: event=session-focus target=size
+info: event=session-focus target=Inherit scale
+info: event=session-focus target=scale
+info: event=session-focus target=Inherit blur
+info: event=session-focus target=blur
+info: event=session-focus target=Inherit opacity
+info: event=session-focus target=opacity
+info: event=session-focus target=Inherit buffer_scale_policy
+info: event=session-focus target=buffer_scale_policy
+info: event=session-focus target=Inherit hdr_expand
+info: event=session-focus target=hdr_expand
+info: event=session-focus target=Inherit overlay_plane
+info: event=session-focus target=overlay_plane
+info: event=session-focus target=Inherit stack_layer
+info: event=session-focus target=stack_layer
+info: event=session-focus target=Inherit focus
+info: event=session-focus target=focus
+info: event=session-focus target=Inherit fixed_position
+info: event=session-focus target=fixed_position
+info: event=session-focus target=Inherit skip_switcher
+info: event=session-focus target=skip_switcher
+info: event=session-focus target=Inherit skip_taskbar
+info: event=session-focus target=skip_taskbar
+info: event=session-focus target=Inherit scrolling_full_width
+info: event=session-focus target=scrolling_full_width
+info: event=session-focus target=Inherit tag
+info: event=session-focus target=tag
+info: event=session-focus target=Stage item
+info: event=session-focus target=aqueous-other
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=session-focus target=aqueous-other
+info: event=session-focus target=aqueous-other
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=session-focus target=aqueous-other
+info: event=session-focus target=aqueous-other
+info: event=session-focus target=aqueous-other
+info: event=session-focus target=aqueous-other
+info(pearl): event=stopping reason=signal pending=false
+info: event=popup-closed
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

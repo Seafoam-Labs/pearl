@@ -1,0 +1,26 @@
+PASS fragmentation-idle-priority
+PASS png-filters-bounds-and-negative-cache
+PASS server-rejections-and-negotiated-request-limit
+PASS bounded-queue-unknown-restart
+PASS invalid-ack
+PASS invalid-sequence
+PASS session-mismatch
+PASS reply-id-mismatch
+PASS invalid-accepted
+PASS subscribe-order
+PASS command-timeout
+PASS socket-backpressure
+PASS subscription-timeout
+PASS hello-timeout
+PASS locked-revalidation
+PASS restricted-capabilities
+PASS ambiguous-seat
+PASS target-disappearance
+PASS stale-icon
+PASS real-nested-commands-and-idle
+PASS real-exit-and-new-endpoint-isolation
+Build Summary: 3/3 steps succeeded
+test-adapter success
++- run python3 success 9s
+   +- compile exe pearl-adapter-probe ReleaseSafe native cached 16ms MaxRSS:58M
+

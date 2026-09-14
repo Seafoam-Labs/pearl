@@ -11,7 +11,7 @@ const tr = @import("text.zig").tr;
 const Clipboard = @import("../services/clipboard.zig").Clipboard;
 const Capture = @import("../services/capture.zig").Capture;
 const a = std.heap.c_allocator;
-const Action = enum { take, region, cancel, save, copy, clear, select, delete };
+const Action = enum { take, region, window, cancel, save, copy, clear, select, delete };
 const Button = struct { view: *View, widget: *gtk.Button, signal: c_ulong, action: Action, id: u64 };
 pub const View = struct {
     clipboard: *Clipboard,
@@ -24,6 +24,10 @@ pub const View = struct {
     info: *gtk.Label,
     clipboard_info: *gtk.Label,
     region: *gtk.Entry,
+    window_selector: *gtk.DropDown = undefined,
+    window_ids: [256]@import("../services/policy.zig").Text(128) = @splat(.{}),
+    window_count: usize = 0,
+    window_stamp: u64 = 0,
     picture: *gtk.Picture,
     buttons: std.ArrayList(*Button) = .empty,
     rows: std.ArrayList(*Button) = .empty,
@@ -53,6 +57,11 @@ pub const View = struct {
         try self.button(first, tr("Capture output", "Ausgabe aufnehmen"), .take, 0, false);
         try self.button(first, tr("Capture region", "Bereich aufnehmen"), .region, 0, false);
         try self.button(first, tr("Cancel", "Abbrechen"), .cancel, 0, false);
+        self.window_selector = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{"No capturable windows"}));
+        w.name(self.window_selector.as(gtk.Widget), "Isolated window source");
+        capture_card.append(self.window_selector.as(gtk.Widget));
+        try self.button(capture_card, "Capture isolated window", .window, 0, false);
+        capture_card.append(w.label("Isolated capture excludes overlapping windows. PNG export requires SDR color metadata; unsupported or undescribed sources are reported without exporting.", "pearl-secondary").as(gtk.Widget));
         self.picture.setCanShrink(1);
         self.picture.as(gtk.Widget).setSizeRequest(-1, 150);
         self.picture.setContentFit(.contain);
@@ -138,6 +147,11 @@ pub const View = struct {
         switch (action) {
             .take => try self.take(self.context, null),
             .region => try self.take(self.context, std.mem.span(self.region.as(gtk.Editable).getText())),
+            .window => {
+                const index = self.window_selector.getSelected();
+                if (index >= self.window_count) return error.WindowUnavailable;
+                try self.capture.native.takeWindow(self.window_ids[index].slice());
+            },
             .cancel => self.capture.cancel(),
             .save => try self.capture.save(self.capture.generation, null),
             .copy => try self.capture.copy(self.clipboard, self.capture.generation),
@@ -146,11 +160,42 @@ pub const View = struct {
             .delete => try self.clipboard.delete(id),
         }
     }
+    fn updateWindows(self: *View) void {
+        var hash = std.hash.Wyhash.init(@intFromBool(self.capture.locked));
+        for (self.capture.native.windows.items) |window| {
+            hash.update(window.id.slice());
+            hash.update(window.title.slice());
+        }
+        const stamp = hash.final();
+        if (stamp == self.window_stamp) return;
+        self.window_stamp = stamp;
+        const old = if (self.window_selector.getSelected() < self.window_count) self.window_ids[self.window_selector.getSelected()] else @import("../services/policy.zig").Text(128){};
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const alloc = arena.allocator();
+        const strings = gtk.StringList.new(null);
+        defer strings.unref();
+        self.window_count = 0;
+        var selected: c_uint = 0;
+        if (!self.capture.locked) for (self.capture.native.windows.items) |window| {
+            if (!window.done or window.id.len == 0 or self.window_count == self.window_ids.len) continue;
+            self.window_ids[self.window_count] = window.id;
+            if (std.mem.eql(u8, old.slice(), window.id.slice())) selected = @intCast(self.window_count);
+            const label = std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ window.title.slice(), window.app_id.slice() }, 0) catch continue;
+            strings.append(label);
+            self.window_count += 1;
+        };
+        if (self.window_count == 0) strings.append("No capturable windows");
+        self.window_selector.setModel(strings.as(gio.ListModel));
+        self.window_selector.setSelected(selected);
+    }
     pub fn update(self: *View) void {
+        self.updateWindows();
         self.info.setText(if (self.capture.saved.len > 0) self.capture.saved.z() else self.capture.message);
         self.clipboard_info.setText(self.clipboard.message);
         const busy = self.capture.pending();
         for (self.buttons.items) |b| b.widget.as(gtk.Widget).setSensitive(@intFromBool(switch (b.action) {
+            .window => !self.capture.locked and !busy and self.capture.native.windowAvailable() and self.window_count > 0,
             .take, .region => !self.capture.locked and !busy and self.capture.manager != null,
             .save, .copy => !self.capture.locked and self.capture.image != null and !busy,
             .cancel => busy,

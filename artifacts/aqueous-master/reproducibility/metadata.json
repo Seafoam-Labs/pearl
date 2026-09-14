@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "runs": [
+    {
+      "source": {
+        "archive": "pearl-1.0.0rc2.tar.gz",
+        "sha256": "71dd669b7a7d0eb2d1435607e499a8df159eb4a4472c52faa677b35debd51e7d",
+        "source_date_epoch": 1789344000,
+        "version": "1.0.0-rc.2",
+        "files": 338
+      },
+      "binary_sha256": {
+        "pearl": "e54bd5c886cc04e4fa8cc44ca04d2c2681c4f50269ca3769c79b462b0c5bc9a2",
+        "pearlctl": "135cd06d632c616c9ca9657967c491397d61483de1a805d80f325b2e04e02b09",
+        "pearl-lock": "1bd623f16f381fbb4df739bbbc7c93c8679200b7cfa46fa3fe0bd3134a89f8d1"
+      }
+    },
+    {
+      "source": {
+        "archive": "pearl-1.0.0rc2.tar.gz",
+        "sha256": "71dd669b7a7d0eb2d1435607e499a8df159eb4a4472c52faa677b35debd51e7d",
+        "source_date_epoch": 1789344000,
+        "version": "1.0.0-rc.2",
+        "files": 338
+      },
+      "binary_sha256": {
+        "pearl": "e54bd5c886cc04e4fa8cc44ca04d2c2681c4f50269ca3769c79b462b0c5bc9a2",
+        "pearlctl": "135cd06d632c616c9ca9657967c491397d61483de1a805d80f325b2e04e02b09",
+        "pearl-lock": "1bd623f16f381fbb4df739bbbc7c93c8679200b7cfa46fa3fe0bd3134a89f8d1"
+      }
+    }
+  ],
+  "method": "Two source archives and two distinct extracted roots, fresh local build caches, common content-addressed dependency cache, stripped ReleaseSafe binaries."
+}

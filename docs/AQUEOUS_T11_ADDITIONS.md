@@ -1,5 +1,12 @@
 # Aqueous additions for Pearl T11
 
+> Historical request, superseded for the pinned master by
+> [current coverage](AQUEOUS_CAPABILITY_COVERAGE.md) and
+> [remaining upstream dependencies](AQUEOUS_MASTER_DEPENDENCIES.md).
+> The current helper has structured receipts and native protected previews;
+> its hardware, collection-classification and scene-color limits remain explicit.
+
+
 Status: **historical upstream handoff**. Aqueous master
 `1d038dc3bafa0044d9599f8f51f84105a6a85bb3` now implements additive helper/display
 contracts addressing these requests, with explicit hardware gates. Pearl has not

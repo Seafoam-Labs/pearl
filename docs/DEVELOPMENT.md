@@ -1,5 +1,9 @@
 # Pearl development
 
+Current master integration: [migration and capability gates](AQUEOUS_MASTER_MIGRATION.md).
+New candidate evidence is separate in `artifacts/aqueous-master`.
+
+
 Pearl now has an application entry point, compiled GTK resources, a development
 gallery with Material components and a private Aqueous launcher. Session mode
 owns a persistent Aqueous adapter, per-output surfaces, native background blur

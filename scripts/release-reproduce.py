@@ -7,7 +7,7 @@ ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('release_source',ROOT/'scripts/release-source.py');source=importlib.util.module_from_spec(spec);spec.loader.exec_module(source)
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/t16/reproducibility');a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-master/reproducibility');a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
     report={'status':'running','runs':[],'method':'Two source archives and two distinct extracted roots, fresh local build caches, common content-addressed dependency cache, stripped ReleaseSafe binaries.'}
     try:
         with tempfile.TemporaryDirectory(prefix='pearl-reproduce-') as temp:

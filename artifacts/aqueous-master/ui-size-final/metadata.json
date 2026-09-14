@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "checks": {
+    "theme-dark": true,
+    "native-accessibility-names-and-roles": true,
+    "settings-allocation-fits-default-and-large-text": true,
+    "custom-shortcut-recorder-cancellation": true,
+    "mixed-scale-display-page": true
+  },
+  "pearl_sha256": "2ac9b686a50309f8437344c79419ee493815a1c0cf524e2a18f35e1a8c7a454e",
+  "manual_acceptance": false,
+  "quick": true,
+  "keyboard_fixture_sha256": "ee7582d9b8abdbebc89305df65aa3fe1f639e936e28994880f31b1247edaf882",
+  "accessibility_limitations": [
+    "Private AT-SPI names/roles and direct focus outcome recorded. Keyboard focus is measured independently using the test-only synchronous focus query; Orca acceptance remains pending."
+  ],
+  "atspi_direct_focus": {
+    "exit_code": 1,
+    "attempts": [
+      {
+        "role": "check box",
+        "focusable": true,
+        "sensitive": true
+      },
+      {
+        "error": "atspi_error:  (1)"
+      }
+    ]
+  }
+}

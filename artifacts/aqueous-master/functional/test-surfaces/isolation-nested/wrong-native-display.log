@@ -1,0 +1,10 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+error: event=surface-error error=SessionDisplayMismatch
+error(pearl): event=session-error error=SessionDisplayMismatch
+info(pearl): event=stopping reason=session-error pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0

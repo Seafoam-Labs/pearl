@@ -1,0 +1,98 @@
+{
+  "status": "passed",
+  "checks": {
+    "matching-toolchain-negotiation": true,
+    "typed-cli-action-and-stale-target-rejection": true,
+    "structured-runtime-save-and-review": true,
+    "durable-pending-record-resolved": true,
+    "native-preview-revert-no-persistence": true,
+    "native-keep-durable-receipt": true,
+    "incomplete-impact-blocks-raw-save": true,
+    "hardware-only-color-change-gated": true,
+    "capability-version-digest-and-additive-effect-gates": true,
+    "lost-apply-reply-queries-receipt-without-second-write": true,
+    "restart-reconciles-pending-operation": true,
+    "structured-collections-validate-but-unclassified-save-is-gated": true,
+    "invalid-snap-geometry-rejected": true,
+    "owner-crash-rolls-back-without-persistence": true
+  },
+  "pearl_sha256": "2ca0a13c5d283a300991ae4bdc1b3f3aee11f82675d3ebcebc21fbad5130546c",
+  "baseline": {
+    "revision": "1d038dc3bafa0044d9599f8f51f84105a6a85bb3",
+    "status": "passed",
+    "commands": {
+      "compositor": [
+        "zig",
+        "build",
+        "--prefix",
+        "/home/zoey/Pearl/.cache/aqueous-master",
+        "-Dvulkan-effects=true",
+        "-Dman-pages=false",
+        "-Doptimize=ReleaseSafe",
+        "-Dllvm"
+      ],
+      "settingsApplication": [
+        "zig",
+        "build",
+        "config",
+        "--prefix",
+        "/home/zoey/Pearl/.cache/aqueous-master",
+        "-Doptimize=ReleaseSafe"
+      ]
+    },
+    "patched_wlroots_pkgconfig": "/home/zoey/RiderProjects/Aqueous/compositor/.deps/wlroots-render-hook/lib/pkgconfig",
+    "binary_sha256": {
+      "aqueous": "5028bfbd58e9275691040a1e42833f521c316c8056bfaac0862696c360e818da",
+      "aqueousctl": "b4115e25cb1c5c14ae581225c291ad22f5a39c43c783502f6873574348ee3eb9",
+      "aqueous-config": "b1247dce6db6264eca1afd822af29e45b4c92f1c57aed642856eed20ac1a2142"
+    },
+    "helper": {
+      "ok": true,
+      "protocol": 1,
+      "version": "0.8.0",
+      "capabilities": [
+        "schema_fields",
+        "validate",
+        "generation_check",
+        "stdin_requests",
+        "atomic_file_replace",
+        "monitor_modes",
+        "monitor_mirroring",
+        "live_outputs",
+        "keybinds",
+        "window_rules",
+        "cursor_sync",
+        "typography_sync",
+        "shell_dms",
+        "shell_none",
+        "monitor_scale",
+        "display_configuration_v1",
+        "candidate_review_v1",
+        "helper_writer_lock_v1",
+        "apply_result_v1",
+        "collection_identity_v1",
+        "display_model_v2",
+        "recoverable_commit_v1",
+        "operation_receipts_v1",
+        "candidate_impact_v1",
+        "display_observation_v1",
+        "display_preview_commit_v1",
+        "collection_schema_v1",
+        "collection_preconditions_v1"
+      ]
+    },
+    "wlroots_sha256": "c2233390f63aeb5a370a849e983df7b9efd69f861fd1d26a6da49c9c0dd8cd7e"
+  }
+}
+Build Summary: 10/10 steps succeeded
+test-aqueous-settings success
++- run python3 success 9s
+   +- compile exe pearl ReleaseSafe native cached 17ms MaxRSS:57M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 13ms MaxRSS:55M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 11ms MaxRSS:56M
+   +- compile exe pearlctl ReleaseSafe native cached 16ms MaxRSS:58M
+

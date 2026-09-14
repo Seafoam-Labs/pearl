@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "checks": {
+    "staged-production-files-permissions-link-order-and-session-unit": true,
+    "installed-startup-dry-run-private-bundle-explicit-apply-conflict-rollback-restart-and-bounds": true
+  },
+  "binary_sha256": {
+    "pearl": "bce407f71576ec379730bc1648fac3c71e6e0877ccb58d08e62fe0486d38679f",
+    "ctl": "135cd06d632c616c9ca9657967c491397d61483de1a805d80f325b2e04e02b09",
+    "locker": "1bd623f16f381fbb4df739bbbc7c93c8679200b7cfa46fa3fe0bd3134a89f8d1"
+  }
+}
+Build Summary: 13/13 steps succeeded
+test-release success
++- run python3 success 1s
+   +- compile exe pearl ReleaseSafe native success 14s MaxRSS:365M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 14ms MaxRSS:52M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 11ms MaxRSS:54M
+   +- compile exe pearlctl ReleaseSafe native cached 16ms MaxRSS:58M
+   +- compile exe pearl-lock ReleaseSafe native cached 14ms MaxRSS:58M
+      +- translate-c (reused)
+      +- run glib-compile-resources (pearl.gresource) (reused)
+      +- options cached
+      +- translate-c cached 14ms MaxRSS:54M
+

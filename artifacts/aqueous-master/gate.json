@@ -1,0 +1,44 @@
+{
+  "release_ready": false,
+  "checks": {
+    "package": true,
+    "package-hash": true,
+    "functional": true,
+    "tested-production-binaries": true,
+    "performance-soak": true,
+    "reproducibility": true,
+    "matching-master-integration": true,
+    "matching-master-capture": true,
+    "matching-master-performance": true,
+    "upstream-adversarial": true,
+    "master-provenance": true,
+    "master-ui": true,
+    "contract-fixture-hashes": true,
+    "capability-inventory": true,
+    "project-license": false,
+    "direct-login": false,
+    "uwsm-login": false,
+    "visual-review": false,
+    "physical-displays": false,
+    "physical-security": false,
+    "hardware-services": false,
+    "accessibility": false,
+    "presentation-performance": false
+  },
+  "pending_or_failed": [
+    "project-license",
+    "direct-login",
+    "uwsm-login",
+    "visual-review",
+    "physical-displays",
+    "physical-security",
+    "hardware-services",
+    "accessibility",
+    "presentation-performance"
+  ],
+  "binary_sha256": {
+    "pearl": "e54bd5c886cc04e4fa8cc44ca04d2c2681c4f50269ca3769c79b462b0c5bc9a2",
+    "pearlctl": "135cd06d632c616c9ca9657967c491397d61483de1a805d80f325b2e04e02b09",
+    "pearl-lock": "1bd623f16f381fbb4df739bbbc7c93c8679200b7cfa46fa3fe0bd3134a89f8d1"
+  }
+}

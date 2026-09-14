@@ -4,7 +4,7 @@ Pearl is a **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with
 
 Pearl's initial design and implementation used **spec-driven development**. Written specifications defined the product's behavior, visual direction, architecture and acceptance criteria before implementation. Those specifications guided AI-assisted implementation and verification, keeping the work tied to explicit requirements and testable outcomes.
 
-Version **1.0.0-rc.1** includes floating islands, a dock, migration tooling and Arch packaging. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
+Version **1.0.0-rc.2** includes floating islands, a dock, migration tooling and Arch packaging. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
 
 The pinned Zig 0.16.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
@@ -28,23 +28,27 @@ Preferences, per-output bar policies, wallpaper, dynamic Material palettes, and
 native system/installed GTK4 themes now update the shell live. Settings drafts
 survive external edits, with conflict-aware merging and atomic persistence.
 Pearl now replaces the Aqueous settings frontend, with schema-driven GTK pages,
-retained drafts, shortcut recording and an independent display-preview guardian.
+retained drafts, structured collection editors, shortcut recording and compositor-owned
+display previews. Structured save receipts survive interrupted helper calls and Pearl
+restarts. The current integration pins Aqueous master `1d038dc3` and aqueous-config
+0.8.0; unsupported operations show their [upstream dependency](docs/AQUEOUS_MASTER_DEPENDENCIES.md).
 Session actions, a real polkit agent, AC/battery idle policies and a native
 Noctalia-like GTK/PAM lock screen are now implemented. Physical security/session
 acceptance remains pending. Clipboard history, SDR output/region capture, floating bar islands and a configurable dock are implemented. All available workspaces stay visible and wrap when needed.
 
+- [Current master evidence and UI gallery](artifacts/aqueous-master/README.md).
 - [Release and packaging](docs/RELEASE.md) and [DMS migration / switch-back](docs/MIGRATION.md).
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
-- [Aqueous integration update plan](docs/AQUEOUS_MASTER_UPDATE_PLAN.md): adopting the current master display, configuration recovery, collection and capture capabilities.
+- [Aqueous integration update plan](docs/AQUEOUS_MASTER_UPDATE_PLAN.md): implementation scope and acceptance for the pinned master contracts.
 - [Development specification](docs/TASKS.md): implementation scope, dependencies, concrete deliverables, and acceptance criteria.
 - [Compatibility and reproduction](docs/COMPATIBILITY.md): verified dependencies, commands, capability gaps and baseline results.
 - [Development guide](docs/DEVELOPMENT.md): run the gallery, use isolated sessions, and follow lifecycle/ownership conventions.
 - [Aqueous model](docs/AQUEOUS_MODEL.md): decoder limits, atomic updates, derived views and ownership contracts.
 - [Aqueous adapter](docs/AQUEOUS_ADAPTER.md): persistent connections, command completion, recovery and icon caching.
 - [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.
-- [Aqueous settings replacement](docs/AQUEOUS_SETTINGS.md), [field coverage](docs/AQUEOUS_FIELD_INVENTORY.md) and [settings verification](artifacts/t11/verification/README.md). Open it with `pearlctl aqueous show`.
+- [Aqueous settings replacement](docs/AQUEOUS_SETTINGS.md), [field coverage](docs/AQUEOUS_FIELD_INVENTORY.md) and [master capability coverage](docs/AQUEOUS_CAPABILITY_COVERAGE.md). Open it with `pearlctl aqueous show`.
 - [Session security and native lock](docs/SESSION_SECURITY.md): idle/sleep, polkit, native GTK/PAM locker, packaging and physical acceptance.
-- [Clipboard and screenshots](docs/CLIPBOARD_CAPTURE.md): private history, native output/region capture, save/copy controls and lock behavior.
+- [Clipboard and screenshots](docs/CLIPBOARD_CAPTURE.md): private history, native output/region capture, isolated-source selection with color validation, save/copy controls and lock behavior.
 - [Native lock screen](docs/LOCK_SCREEN.md): responsive input, accessibility, output lifecycle and resource verification.
 - [Preferences, wallpaper and themes](docs/PREFERENCES.md) and [theme visual evidence](artifacts/t10/comparison.html): settings, dynamic Material colors, native GTK themes, draft recovery and opt-in exports.
 - [Notifications, tray and media](docs/SESSION_SERVICES.md) and [session-service visual evidence](artifacts/t09/comparison.html): protocol contracts, bounds, keyboard controls, ownership and session-bus recovery.

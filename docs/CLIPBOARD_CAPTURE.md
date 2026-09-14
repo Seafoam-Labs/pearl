@@ -1,6 +1,6 @@
 # Clipboard and screenshots
 
-T14 adds a **Clipboard & capture** panel to Pearl's Material and native GTK
+Pearl includes a **Clipboard & capture** panel to Pearl's Material and native GTK
 appearance paths. Open it from the `clipboard` bar item or with
 `pearlctl clipboard show` / `pearlctl capture show`. New default bar groups
 include the item; existing explicitly configured groups remain authoritative.
@@ -79,13 +79,19 @@ conversion and encoding use one cancellable worker with an application hold.
 
 ## Screenshot contract
 
-The validated path is **zwlr-screencopy-v1 v3**, `wl_shm` v1 and `wl_output` v4,
-using pinned XML and generated Zig bindings. Pearl accepts the advertised
-8-bit XRGB/ARGB/XBGR/ABGR shared-memory formats. It validates dimensions, stride,
-format and allocation size before creating a memfd-backed buffer. Captures are
-bounded to 8192 per axis, 8,388,608 pixels and 40 MiB shared memory. Unsupported
-formats fail visibly. This is an SDR PNG path; HDR/wide-gamut capture is not
-claimed by the private tests.
+The current-master path uses generated **ext-image-copy-capture-v1** and
+output/foreign-toplevel source managers v1, with **aqueous-capture-color-v1**
+per-frame metadata on GTK's Wayland connection. XML and generated output hashes
+are pinned in `bindings/protocols/inputs.json`. No C bridge is used. The older
+screencopy v3 path is retained only when native output-source interfaces are absent;
+a native capture failure does not silently fall back.
+
+Pearl accepts 8-bit XRGB/ARGB/XBGR/ABGR shared-memory formats, with 8192 per axis,
+8,388,608 pixels and 40 MiB allocation limits. Current-master captures require
+sRGB primaries and described sRGB or gamma-2.2 transfer. Gamma-2.2 pixels are
+converted to sRGB before PNG encoding. Unavailable metadata, HDR transfer,
+wide-gamut encoding and unsupported formats produce an explanation without PNG
+export. Bit depth alone is not interpreted as a color space.
 
 There is one capture in flight, a 200 ms preparation delay, and a five-second
 frame deadline. The panel's capture action hides the panel before requesting a
@@ -93,8 +99,8 @@ frame and reports completion through the OSD; reopen the panel to preview, save
 or copy. A worker normalizes output rotation/reflection and the protocol's
 Y-invert flag. Output removal or geometry/mode/scale change cancels the target.
 A cancelled worker cannot publish its result after a lock or target change.
-Failure leaves the previous successful screenshot available, except when privacy
-suspension clears it. A returned output is resolved again through its current
+An accepted new capture clears the previous screenshot before requesting pixels;
+a failed source cannot leave an unrelated old image ready to save. A returned output is resolved again through its current
 Aqueous ID and connector.
 
 **Region capture is an output crop, including overlapping visible windows.**
@@ -112,17 +118,21 @@ bottom = ceil((y + height) * pixel_height / logical_height)
 
 Whole-output screenshots retain the native transformed buffer dimensions and
 exclude the pointer cursor. Status associates the retained result with its
-connector and crop rectangle, including after a later capture fails. The
+connector and crop rectangle, for that successful capture. The
 outward crop includes partially covered edge pixels. It is confined to one
 output, independent of that output's desktop origin. The current UI accepts an
 explicit rectangle; a pointer-drag region selector is not included.
 
-Aqueous also advertises ext-image capture-source protocols and has a toplevel
-capture implementation. Pearl does not expose isolated-window capture until
-that separate source/format/occlusion path has its own verified client and tests.
-`capture status` therefore reports `isolated_window: false`. Output crops are
-never presented as isolated-window images. Existing portal screenshots and
-screensharing continue to use the installed portal backend.
+The isolated-window selector uses exact current foreign-toplevel identities,
+bounded to 256 windows with paginated CLI enumeration. A closed source is removed
+and its ID cannot select a replacement window. Pearl requests the actual native
+window source even when unrelated windows overlap; it never substitutes a crop.
+`isolated_window` reports source availability; `image_isolated` describes a
+successful retained image. Source availability does not promise export: pinned
+Aqueous currently reports unavailable color metadata for scene/window sources,
+so Pearl withholds their PNG and explains why. See
+[AQUEOUS_MASTER_DEPENDENCIES.md](AQUEOUS_MASTER_DEPENDENCIES.md).
+Installed portal screenshots and screensharing retain their existing ownership.
 
 Save defaults to `$XDG_PICTURES_DIR/Pearl Screenshots/` (home fallback), with a
 unique timestamped PNG name. Files are created privately with atomic,
@@ -146,6 +156,9 @@ pearlctl clipboard clear
 
 pearlctl capture output --output OUTPUT_ID
 pearlctl capture region --output OUTPUT_ID --text 31,41,203,117
+pearlctl capture windows
+pearlctl capture windows --offset 32
+pearlctl capture window --text FOREIGN_TOPLEVEL_ID
 pearlctl capture status
 pearlctl capture show
 pearlctl capture copy --generation SCREENSHOT_GENERATION
@@ -162,7 +175,7 @@ control requests and no bulk payload in status responses.
 ## Validation and boundaries
 
 ```sh
-ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-clipboard-capture -Doptimize=ReleaseSafe
+PEARL_TEST_AQUEOUS_PREFIX="$PWD/.cache/aqueous-master" ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-clipboard-capture test-capture-master -Drelease=true -Doptimize=ReleaseSafe
 python3 scripts/check-wayland-bindings.py
 ```
 
@@ -174,8 +187,10 @@ The mathematical transform conventions were cross-checked against upstream
 [grim rendering](https://github.com/emersion/grim/blob/master/render.c) and
 [output transforms](https://github.com/emersion/grim/blob/master/output-layout.c).
 
-See [T14 evidence](../artifacts/t14/README.md) for exact tested binaries and
-results. Native hardware HDR/color, very large displays, real screen-reader
-interaction and an isolated-window capture client remain outside this validated
-slice. No host clipboard, output, PAM policy, power state or portal service is
-mutated by the tests.
+Current evidence lives in `artifacts/aqueous-master/functional/test-capture-master`
+and `test-clipboard-capture`; earlier `artifacts/t14` remains historical. The
+master suite compares eight transformed outputs against independently captured
+color-corrected references and proves that an undescribed isolated source cannot
+leave a PNG ready. Hardware HDR, isolated scene pixel/color correctness after an
+upstream metadata fix, very large displays and real screen-reader interaction
+remain unaccepted. No host clipboard, output, PAM or portal service is mutated.

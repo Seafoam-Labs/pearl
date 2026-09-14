@@ -1,0 +1,1404 @@
+{
+  "status": "passed",
+  "started": "2026-09-14T13:15:41.851804+00:00",
+  "targets": {
+    "unit": {
+      "exit_code": 0,
+      "seconds": 10.731789474000834,
+      "command": [
+        "zig",
+        "build",
+        "test",
+        "test-adapter-unit",
+        "test-bindings",
+        "test-release-tools",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all"
+      ]
+    },
+    "integration": {
+      "exit_code": 0,
+      "seconds": 28.310481350999908,
+      "command": [
+        "zig",
+        "build",
+        "integration",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/integration"
+      ]
+    },
+    "test-components": {
+      "exit_code": 0,
+      "seconds": 42.78550590299983,
+      "command": [
+        "zig",
+        "build",
+        "test-components",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-components"
+      ]
+    },
+    "test-adapter": {
+      "exit_code": 0,
+      "seconds": 23.051663784000084,
+      "command": [
+        "zig",
+        "build",
+        "test-adapter",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-adapter"
+      ]
+    },
+    "test-surfaces": {
+      "exit_code": 0,
+      "seconds": 17.342139288,
+      "command": [
+        "zig",
+        "build",
+        "test-surfaces",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-surfaces"
+      ]
+    },
+    "test-desktop": {
+      "exit_code": 0,
+      "seconds": 18.74353753699961,
+      "command": [
+        "zig",
+        "build",
+        "test-desktop",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-desktop"
+      ]
+    },
+    "test-services": {
+      "exit_code": 0,
+      "seconds": 29.20800205999967,
+      "command": [
+        "zig",
+        "build",
+        "test-services",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-services"
+      ]
+    },
+    "test-connectivity": {
+      "exit_code": 0,
+      "seconds": 55.74874490000002,
+      "command": [
+        "zig",
+        "build",
+        "test-connectivity",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-connectivity"
+      ]
+    },
+    "test-session-services": {
+      "exit_code": 0,
+      "seconds": 23.653227144000084,
+      "command": [
+        "zig",
+        "build",
+        "test-session-services",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-session-services"
+      ]
+    },
+    "test-preferences": {
+      "exit_code": 0,
+      "seconds": 52.193714697999894,
+      "command": [
+        "zig",
+        "build",
+        "test-preferences",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-preferences"
+      ]
+    },
+    "test-aqueous-settings": {
+      "exit_code": 0,
+      "seconds": 13.534856973999922,
+      "command": [
+        "zig",
+        "build",
+        "test-aqueous-settings",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-aqueous-settings"
+      ]
+    },
+    "test-capture-master": {
+      "exit_code": 0,
+      "seconds": 7.526246770999933,
+      "command": [
+        "zig",
+        "build",
+        "test-capture-master",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-capture-master"
+      ]
+    },
+    "test-security": {
+      "exit_code": 0,
+      "seconds": 48.840512535000016,
+      "command": [
+        "zig",
+        "build",
+        "test-security",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-security"
+      ]
+    },
+    "test-lock": {
+      "exit_code": 0,
+      "seconds": 123.60477172500032,
+      "command": [
+        "zig",
+        "build",
+        "test-lock",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-lock"
+      ]
+    },
+    "test-clipboard-capture": {
+      "exit_code": 0,
+      "seconds": 26.506027208999512,
+      "command": [
+        "zig",
+        "build",
+        "test-clipboard-capture",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-clipboard-capture"
+      ]
+    },
+    "test-dock-islands": {
+      "exit_code": 0,
+      "seconds": 20.39503700000023,
+      "command": [
+        "zig",
+        "build",
+        "test-dock-islands",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-dock-islands"
+      ]
+    },
+    "test-release": {
+      "exit_code": 0,
+      "seconds": 1.6660826469997119,
+      "command": [
+        "zig",
+        "build",
+        "test-release",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-release"
+      ]
+    }
+  },
+  "previous_attempts": {
+    "unit": [
+      {
+        "exit_code": 0,
+        "seconds": 15.688444691000313,
+        "command": [
+          "zig",
+          "build",
+          "test",
+          "test-adapter-unit",
+          "test-bindings",
+          "test-release-tools",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 15.839260304999698,
+        "command": [
+          "zig",
+          "build",
+          "test",
+          "test-adapter-unit",
+          "test-bindings",
+          "test-release-tools",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 0.36434948599981,
+        "command": [
+          "zig",
+          "build",
+          "test",
+          "test-adapter-unit",
+          "test-bindings",
+          "test-release-tools",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 0.3143232709999211,
+        "command": [
+          "zig",
+          "build",
+          "test",
+          "test-adapter-unit",
+          "test-bindings",
+          "test-release-tools",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all"
+        ]
+      }
+    ],
+    "integration": [
+      {
+        "exit_code": 0,
+        "seconds": 29.360565405000216,
+        "command": [
+          "zig",
+          "build",
+          "integration",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/integration"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 6.822883730000285,
+        "command": [
+          "zig",
+          "build",
+          "integration",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/integration"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 29.91055949099973,
+        "command": [
+          "zig",
+          "build",
+          "integration",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/integration"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 6.825102114999936,
+        "command": [
+          "zig",
+          "build",
+          "integration",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/integration"
+        ]
+      }
+    ],
+    "test-components": [
+      {
+        "exit_code": 0,
+        "seconds": 42.73240158899989,
+        "command": [
+          "zig",
+          "build",
+          "test-components",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-components"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 42.728905260999454,
+        "command": [
+          "zig",
+          "build",
+          "test-components",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-components"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 42.731200693000574,
+        "command": [
+          "zig",
+          "build",
+          "test-components",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-components"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 42.7851449359996,
+        "command": [
+          "zig",
+          "build",
+          "test-components",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-components"
+        ]
+      }
+    ],
+    "test-adapter": [
+      {
+        "exit_code": 0,
+        "seconds": 23.09969883299982,
+        "command": [
+          "zig",
+          "build",
+          "test-adapter",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-adapter"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 20.796988568000415,
+        "command": [
+          "zig",
+          "build",
+          "test-adapter",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-adapter"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 9.779616210000313,
+        "command": [
+          "zig",
+          "build",
+          "test-adapter",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-adapter"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 9.781042164999235,
+        "command": [
+          "zig",
+          "build",
+          "test-adapter",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-adapter"
+        ]
+      }
+    ],
+    "test-surfaces": [
+      {
+        "exit_code": 0,
+        "seconds": 17.33920239500003,
+        "command": [
+          "zig",
+          "build",
+          "test-surfaces",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-surfaces"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 17.241870934999497,
+        "command": [
+          "zig",
+          "build",
+          "test-surfaces",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-surfaces"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 17.392217222,
+        "command": [
+          "zig",
+          "build",
+          "test-surfaces",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-surfaces"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 17.391578396000114,
+        "command": [
+          "zig",
+          "build",
+          "test-surfaces",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-surfaces"
+        ]
+      }
+    ],
+    "test-desktop": [
+      {
+        "exit_code": 0,
+        "seconds": 18.74500903299986,
+        "command": [
+          "zig",
+          "build",
+          "test-desktop",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-desktop"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 18.744585464999545,
+        "command": [
+          "zig",
+          "build",
+          "test-desktop",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-desktop"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 18.792889938999906,
+        "command": [
+          "zig",
+          "build",
+          "test-desktop",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-desktop"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 18.744596359999377,
+        "command": [
+          "zig",
+          "build",
+          "test-desktop",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-desktop"
+        ]
+      }
+    ],
+    "test-services": [
+      {
+        "exit_code": 0,
+        "seconds": 29.11141090000001,
+        "command": [
+          "zig",
+          "build",
+          "test-services",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-services"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 37.1243287239995,
+        "command": [
+          "zig",
+          "build",
+          "test-services",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-services"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 40.97953333899932,
+        "command": [
+          "zig",
+          "build",
+          "test-services",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-services"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 29.1112901409997,
+        "command": [
+          "zig",
+          "build",
+          "test-services",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-services"
+        ]
+      }
+    ],
+    "test-connectivity": [
+      {
+        "exit_code": 0,
+        "seconds": 55.75249125099981,
+        "command": [
+          "zig",
+          "build",
+          "test-connectivity",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-connectivity"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 55.75291021199973,
+        "command": [
+          "zig",
+          "build",
+          "test-connectivity",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-connectivity"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 78.17762714399942,
+        "command": [
+          "zig",
+          "build",
+          "test-connectivity",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-connectivity"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 55.801203105999775,
+        "command": [
+          "zig",
+          "build",
+          "test-connectivity",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-connectivity"
+        ]
+      }
+    ],
+    "test-session-services": [
+      {
+        "exit_code": 0,
+        "seconds": 23.65147085099943,
+        "command": [
+          "zig",
+          "build",
+          "test-session-services",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-session-services"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 46.58882368100058,
+        "command": [
+          "zig",
+          "build",
+          "test-session-services",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-session-services"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 44.733783963999485,
+        "command": [
+          "zig",
+          "build",
+          "test-session-services",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-session-services"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 23.649364077000428,
+        "command": [
+          "zig",
+          "build",
+          "test-session-services",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-session-services"
+        ]
+      }
+    ],
+    "test-preferences": [
+      {
+        "exit_code": 0,
+        "seconds": 52.14376608299972,
+        "command": [
+          "zig",
+          "build",
+          "test-preferences",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-preferences"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 64.71690900200065,
+        "command": [
+          "zig",
+          "build",
+          "test-preferences",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-preferences"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 52.14770647000023,
+        "command": [
+          "zig",
+          "build",
+          "test-preferences",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-preferences"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 52.19600463500046,
+        "command": [
+          "zig",
+          "build",
+          "test-preferences",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-preferences"
+        ]
+      }
+    ],
+    "test-aqueous-settings": [
+      {
+        "exit_code": 0,
+        "seconds": 9.278329431000202,
+        "command": [
+          "zig",
+          "build",
+          "test-aqueous-settings",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-aqueous-settings"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 14.287070203999974,
+        "command": [
+          "zig",
+          "build",
+          "test-aqueous-settings",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-aqueous-settings"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 10.02959171600014,
+        "command": [
+          "zig",
+          "build",
+          "test-aqueous-settings",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-aqueous-settings"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 12.381975631999921,
+        "command": [
+          "zig",
+          "build",
+          "test-aqueous-settings",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-aqueous-settings"
+        ]
+      }
+    ],
+    "test-capture-master": [
+      {
+        "exit_code": 0,
+        "seconds": 7.275363457999447,
+        "command": [
+          "zig",
+          "build",
+          "test-capture-master",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-capture-master"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 7.376024608999614,
+        "command": [
+          "zig",
+          "build",
+          "test-capture-master",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-capture-master"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 7.374352660000113,
+        "command": [
+          "zig",
+          "build",
+          "test-capture-master",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-capture-master"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 7.37436020899986,
+        "command": [
+          "zig",
+          "build",
+          "test-capture-master",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-capture-master"
+        ]
+      }
+    ],
+    "test-security": [
+      {
+        "exit_code": 0,
+        "seconds": 60.61090596300073,
+        "command": [
+          "zig",
+          "build",
+          "test-security",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-security"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 48.837789762000284,
+        "command": [
+          "zig",
+          "build",
+          "test-security",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-security"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 48.64235101699978,
+        "command": [
+          "zig",
+          "build",
+          "test-security",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-security"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 48.7438771900006,
+        "command": [
+          "zig",
+          "build",
+          "test-security",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-security"
+        ]
+      }
+    ],
+    "test-lock": [
+      {
+        "exit_code": 0,
+        "seconds": 123.40583766800046,
+        "command": [
+          "zig",
+          "build",
+          "test-lock",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-lock"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 123.50775728099961,
+        "command": [
+          "zig",
+          "build",
+          "test-lock",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-lock"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 123.61254392200044,
+        "command": [
+          "zig",
+          "build",
+          "test-lock",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-lock"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 123.5126389750003,
+        "command": [
+          "zig",
+          "build",
+          "test-lock",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-lock"
+        ]
+      }
+    ],
+    "test-clipboard-capture": [
+      {
+        "exit_code": 0,
+        "seconds": 48.882146093999836,
+        "command": [
+          "zig",
+          "build",
+          "test-clipboard-capture",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-clipboard-capture"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 26.454068063000705,
+        "command": [
+          "zig",
+          "build",
+          "test-clipboard-capture",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-clipboard-capture"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 26.404719017999923,
+        "command": [
+          "zig",
+          "build",
+          "test-clipboard-capture",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-clipboard-capture"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 26.35531084499962,
+        "command": [
+          "zig",
+          "build",
+          "test-clipboard-capture",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-clipboard-capture"
+        ]
+      }
+    ],
+    "test-dock-islands": [
+      {
+        "exit_code": 0,
+        "seconds": 36.919176835000144,
+        "command": [
+          "zig",
+          "build",
+          "test-dock-islands",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-dock-islands"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 30.762143676999585,
+        "command": [
+          "zig",
+          "build",
+          "test-dock-islands",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-dock-islands"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 20.046518976999323,
+        "command": [
+          "zig",
+          "build",
+          "test-dock-islands",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-dock-islands"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 36.97282403200006,
+        "command": [
+          "zig",
+          "build",
+          "test-dock-islands",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-dock-islands"
+        ]
+      }
+    ],
+    "test-release": [
+      {
+        "exit_code": 0,
+        "seconds": 17.041896894000274,
+        "command": [
+          "zig",
+          "build",
+          "test-release",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-release"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 1.6155065139992075,
+        "command": [
+          "zig",
+          "build",
+          "test-release",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-release"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 1.6662803290000738,
+        "command": [
+          "zig",
+          "build",
+          "test-release",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-release"
+        ]
+      },
+      {
+        "exit_code": 0,
+        "seconds": 1.6664381709997542,
+        "command": [
+          "zig",
+          "build",
+          "test-release",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/aqueous-master/functional/test-release"
+        ]
+      }
+    ]
+  },
+  "source_fingerprint": "168f5e679bff91eda5796da483936c30d562d5a41b422afecb92362ecff61720",
+  "source_unchanged": true
+}

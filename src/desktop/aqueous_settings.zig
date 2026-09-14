@@ -10,7 +10,7 @@ const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Signals = struct {
     items: std.ArrayList(struct { instance: *object.Object, id: c_ulong }) = .empty,
-    fn add(self: *Signals, instance: *object.Object, id: c_ulong) void {
+    pub fn add(self: *Signals, instance: *object.Object, id: c_ulong) void {
         _ = instance.ref();
         self.items.append(a, .{ .instance = instance, .id = id }) catch {
             object.signalHandlerDisconnect(instance, id);
@@ -27,7 +27,7 @@ const Signals = struct {
     }
 };
 const Editor = struct { view: *View, field: m.Value, widget: *gtk.Widget, record: ?*gtk.Button = null };
-const Monitor = struct { view: *View, id: []const u8, name: []const u8, x: *gtk.SpinButton, y: *gtk.SpinButton, scale: *gtk.SpinButton, transform: *gtk.DropDown, mode: *gtk.Entry };
+const Monitor = struct { view: *View, id: []const u8, name: []const u8, x: *gtk.SpinButton, y: *gtk.SpinButton, scale: *gtk.SpinButton, transform: *gtk.DropDown, mode: *gtk.Entry, mirror: *gtk.Entry };
 pub const View = struct {
     host: *gtk.Box,
     client: *Client,
@@ -38,6 +38,7 @@ pub const View = struct {
     raw_buffer: ?*gtk.TextBuffer = null,
     raw_file: ?*gtk.DropDown = null,
     filling: bool = true,
+    forms_stale: bool = false,
     version: u64 = 0,
     revision: u64 = 0,
     buttons: [3]*gtk.Button,
@@ -50,6 +51,7 @@ pub const View = struct {
     record_deadline: i64 = 0,
     keys: *gtk.EventControllerKey = undefined,
     notebook: ?*gtk.Notebook = null,
+    placement_box: ?*gtk.Box = null,
     page_index: c_int = 0,
     reload_button: *gtk.Button,
     root_signals: Signals = .{},
@@ -63,27 +65,29 @@ pub const View = struct {
         host.append(content.as(gtk.Widget));
         const message = w.label("Loading settings…", "pearl-secondary");
         host.append(message.as(gtk.Widget));
-        const actions = w.row(8);
+        const actions = w.flow(5);
+        actions.setHomogeneous(0);
         host.append(actions.as(gtk.Widget));
         const refresh = gtk.Button.newWithLabel("Refresh");
-        actions.append(refresh.as(gtk.Widget));
+        actions.insert(refresh.as(gtk.Widget), -1);
         const discard = gtk.Button.newWithLabel("Discard draft");
-        actions.append(discard.as(gtk.Widget));
+        actions.insert(discard.as(gtk.Widget), -1);
         const rebase = gtk.Button.newWithLabel("Rebase draft");
-        actions.append(rebase.as(gtk.Widget));
+        actions.insert(rebase.as(gtk.Widget), -1);
         const validate = gtk.Button.newWithLabel("Validate");
-        actions.append(validate.as(gtk.Widget));
+        actions.insert(validate.as(gtk.Widget), -1);
         const apply = gtk.Button.newWithLabel("Apply & save");
-        actions.append(apply.as(gtk.Widget));
+        actions.insert(apply.as(gtk.Widget), -1);
         apply.as(gtk.Widget).addCssClass("pearl-primary");
-        const preview_actions = w.row(8);
+        const preview_actions = w.flow(3);
+        preview_actions.setHomogeneous(0);
         host.append(preview_actions.as(gtk.Widget));
         const keep = gtk.Button.newWithLabel("Keep displays");
         const revert = gtk.Button.newWithLabel("Revert displays");
         const reload = gtk.Button.newWithLabel("Retry compositor reload");
-        preview_actions.append(reload.as(gtk.Widget));
-        preview_actions.append(keep.as(gtk.Widget));
-        preview_actions.append(revert.as(gtk.Widget));
+        preview_actions.insert(reload.as(gtk.Widget), -1);
+        preview_actions.insert(keep.as(gtk.Widget), -1);
+        preview_actions.insert(revert.as(gtk.Widget), -1);
         self.* = .{ .host = host, .client = client, .arena = .init(a), .content = content, .message = message, .buttons = .{ refresh, validate, apply }, .preview_buttons = .{ keep, revert }, .reload_button = reload, .window = window };
         self.root_signals.add(refresh.as(object.Object), gtk.Button.signals.clicked.connect(refresh, *View, refreshed, self, .{}));
         self.root_signals.add(discard.as(object.Object), gtk.Button.signals.clicked.connect(discard, *View, discarded, self, .{}));
@@ -114,7 +118,7 @@ pub const View = struct {
         self.arena.deinit();
         a.destroy(self);
     }
-    fn z(self: *View, text: []const u8) [:0]const u8 {
+    pub fn z(self: *View, text: []const u8) [:0]const u8 {
         return self.arena.allocator().dupeZ(u8, text) catch "";
     }
     fn page(self: *View, notebook: *gtk.Notebook, title: []const u8) *gtk.Box {
@@ -127,9 +131,11 @@ pub const View = struct {
         _ = notebook.appendPage(scroll.as(gtk.Widget), gtk.Label.new(self.z(title)).as(gtk.Widget));
         return box;
     }
-    fn build(self: *View) !void {
+    pub fn build(self: *View) !void {
+        self.placement_box = null;
         self.stopRecording();
         self.filling = true;
+        self.forms_stale = false;
         defer self.filling = false;
         self.form_signals.clear();
         self.notebook = null;
@@ -161,7 +167,7 @@ pub const View = struct {
                 try self.inventory(box, self.client.value(), "desktop_cursor", "Desktop cursor synchronization");
             }
             if (std.mem.eql(u8, category, "displays")) {
-                box.append(w.label("Apply previews connected displays for 15 seconds. Keep saves; Revert, timeout or closing Pearl restores unchanged preview displays. Mirroring, custom modes and raw display policy changes cannot be previewed.", "pearl-secondary").as(gtk.Widget));
+                try @import("aqueous_displays.zig").render(self, box, snapshot);
                 try self.inventory(box, snapshot, "monitors", "Configured displays (including offline outputs)");
                 try self.inventory(box, snapshot, "live_outputs", "Connected displays and modes");
                 for (m.list(m.get(snapshot, "monitors"))) |monitor| try self.monitorEditor(box, monitor, false);
@@ -175,11 +181,13 @@ pub const View = struct {
                 }
             }
             if (std.mem.eql(u8, category, "keybinds")) {
-                box.append(w.label("Enter chords such as Super+Return, separated by commas. Record waits for Aqueous to inhibit shortcuts. Escape cancels. Custom bindings are available in Advanced.", "pearl-secondary").as(gtk.Widget));
+                box.append(w.label("Enter chords such as Super+Return, separated by commas. Record waits for Aqueous to inhibit shortcuts. Escape cancels. Custom bindings use the structured editor below.", "pearl-secondary").as(gtk.Widget));
                 try self.inventory(box, snapshot, "custom_keybinds", "Custom bindings");
             }
+            if (std.mem.eql(u8, category, "rules") or std.mem.eql(u8, category, "keybinds") or std.mem.eql(u8, category, "layouts")) try @import("aqueous_collections.zig").render(self, box, snapshot, category);
             if (std.mem.eql(u8, category, "rules")) try self.inventory(box, snapshot, "window_rules", "Window rules");
             if (std.mem.eql(u8, category, "layouts")) {
+                try @import("aqueous_snap_layouts.zig").render(self, box, snapshot);
                 try self.inventory(box, snapshot, "snap_zones", "Snap zones");
                 try self.inventory(box, snapshot, "snap_layouts", "Snap layouts");
             }
@@ -251,6 +259,14 @@ pub const View = struct {
             }
         }
         const advanced = self.page(notebook, "Advanced");
+        if (self.client.report) |report| {
+            const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .operation = try m.parse(alloc, report, m.max_response) }, .{});
+            try self.inventory(advanced, try m.parse(alloc, wrapper, m.max_response), "operation", "Latest operation receipt and recovery details");
+        }
+        if (self.client.review) |review| {
+            const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .review = try m.parse(alloc, review, m.max_response) }, .{});
+            try self.inventory(advanced, try m.parse(alloc, wrapper, m.max_response), "review", "Validated candidate effects");
+        }
         advanced.append(w.label("Raw edits are retained as you type, including invalid TOML. A file cannot have both raw and structured edits; resolve overlaps in the request below.", "pearl-secondary").as(gtk.Widget));
         self.raw_file = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "wm", "layout", "input", "outputs", "rules", "appearance" }));
         advanced.append(self.raw_file.?.as(gtk.Widget));
@@ -286,7 +302,7 @@ pub const View = struct {
         const y = gtk.SpinButton.newWithRange(-100000, 100000, 1);
         x.setValue(if (position.len == 2) number(position[0], 0) else number(m.get(value, "x"), number(m.get(m.get(value, "position"), "x"), 0)));
         y.setValue(if (position.len == 2) number(position[1], 0) else number(m.get(value, "y"), number(m.get(m.get(value, "position"), "y"), 0)));
-        const scale = gtk.SpinButton.newWithRange(0.25, 8, 0.25);
+        const scale = gtk.SpinButton.newWithRange(0.5, 3, 1.0 / 120.0);
         scale.setDigits(2);
         scale.setValue(number(m.get(value, "scale"), 1));
         const transform = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "normal", "90", "180", "270", "flipped", "flipped-90", "flipped-180", "flipped-270" }));
@@ -304,9 +320,19 @@ pub const View = struct {
             card.append(input);
             w.name(input, title);
         }
-        editor.* = .{ .view = self, .name = name, .id = if (live) try std.fmt.allocPrint(alloc, "live:{s}", .{name}) else m.str(m.get(value, "id")), .x = x, .y = y, .scale = scale, .transform = transform, .mode = mode };
+        const mirror = gtk.Entry.new();
+        mirror.setMaxLength(128);
+        mirror.as(gtk.Editable).setText(self.z(m.str(m.get(value, "mirror_of"))));
+        card.append(w.label("Mirror of (empty for independent)", null).as(gtk.Widget));
+        card.append(mirror.as(gtk.Widget));
+        w.name(mirror.as(gtk.Widget), "Mirror target connector");
+        const displays = @import("aqueous_displays.zig");
+        card.as(gtk.Widget).setSensitive(@intFromBool(displays.editable(self.client.baseValue(), name, "placement")));
+        mirror.as(gtk.Widget).setSensitive(@intFromBool(displays.editable(self.client.baseValue(), name, "mirroring")));
+        editor.* = .{ .view = self, .name = name, .id = if (live) try std.fmt.allocPrint(alloc, "live:{s}", .{name}) else m.str(m.get(value, "id")), .x = x, .y = y, .scale = scale, .transform = transform, .mode = mode, .mirror = mirror };
         for ([_]*gtk.SpinButton{ x, y, scale }) |input| self.form_signals.add(input.as(object.Object), gtk.SpinButton.signals.value_changed.connect(input, *Monitor, monitorSpun, editor, .{}));
         self.form_signals.add(transform.as(object.Object), object.Object.signals.notify.connect(transform.as(object.Object), *Monitor, monitorSelected, editor, .{ .detail = "selected" }));
+        self.form_signals.add(mirror.as(object.Object), gtk.Editable.signals.changed.connect(mirror.as(gtk.Editable), *Monitor, monitorEdited, editor, .{}));
         self.form_signals.add(mode.as(object.Object), gtk.Editable.signals.changed.connect(mode.as(gtk.Editable), *Monitor, monitorEdited, editor, .{}));
     }
     fn monitorSpun(_: *gtk.SpinButton, editor: *Monitor) callconv(.c) void {
@@ -328,7 +354,7 @@ pub const View = struct {
         if (request != .object or m.get(m.get(request, "raw_files"), "outputs") != .null) return error.ConflictingEdits;
         const names = [_][]const u8{ "normal", "90", "180", "270", "flipped", "flipped-90", "flipped-180", "flipped-270" };
         const mode = std.mem.span(editor.mode.as(gtk.Editable).getText());
-        const change = try m.parse(alloc, try std.json.Stringify.valueAlloc(alloc, .{ .id = editor.id, .name = editor.name, .x = editor.x.getValueAsInt(), .y = editor.y.getValueAsInt(), .scale = editor.scale.getValue(), .transform = names[@min(7, editor.transform.getSelected())], .mode = if (mode.len > 0) @as(?[]const u8, mode) else null }, .{ .emit_null_optional_fields = false }), 4096);
+        const change = try m.parse(alloc, try std.json.Stringify.valueAlloc(alloc, .{ .id = editor.id, .name = editor.name, .x = editor.x.getValueAsInt(), .y = editor.y.getValueAsInt(), .scale = editor.scale.getValue(), .transform = names[@min(7, editor.transform.getSelected())], .mirror_of = std.mem.span(editor.mirror.as(gtk.Editable).getText()), .mode = if (mode.len > 0) @as(?[]const u8, mode) else null }, .{ .emit_null_optional_fields = false }), 4096);
         var changes = m.get(request, "monitor_changes");
         if (changes == .null) changes = .{ .array = .init(alloc) };
         if (changes != .array) return error.InvalidRequest;
@@ -342,14 +368,24 @@ pub const View = struct {
         try request.object.put(alloc, "monitor_changes", changes);
         try self.client.keepDraft(try std.json.Stringify.valueAlloc(alloc, request, .{ .whitespace = .indent_2 }));
         self.syncRequest();
+        try @import("aqueous_displays.zig").refreshPlacement(self);
         self.update();
     }
-    fn inventory(self: *View, box: *gtk.Box, value: m.Value, key: []const u8, title: []const u8) !void {
-        const expander = gtk.Expander.new(self.z(title));
+    pub fn inventory(self: *View, box: *gtk.Box, value: m.Value, key: []const u8, title: []const u8) !void {
+        const disclosure = w.column(4);
+        const button = gtk.ToggleButton.new();
+        button.as(gtk.Button).setChild(w.label(self.z(title), null).as(gtk.Widget));
+        w.name(button.as(gtk.Widget), self.z(title));
         const label = w.label(self.z(try std.json.Stringify.valueAlloc(self.arena.allocator(), m.get(value, key), .{ .whitespace = .indent_2 })), "pearl-secondary");
         label.setSelectable(1);
-        expander.setChild(label.as(gtk.Widget));
-        box.append(expander.as(gtk.Widget));
+        label.as(gtk.Widget).setVisible(0);
+        disclosure.append(button.as(gtk.Widget));
+        disclosure.append(label.as(gtk.Widget));
+        self.form_signals.add(button.as(object.Object), gtk.ToggleButton.signals.toggled.connect(button, *gtk.Widget, inventoryToggled, label.as(gtk.Widget), .{}));
+        box.append(disclosure.as(gtk.Widget));
+    }
+    fn inventoryToggled(button: *gtk.ToggleButton, child: *gtk.Widget) callconv(.c) void {
+        child.setVisible(button.getActive());
     }
     fn loadRaw(self: *View) void {
         const filling = self.filling;
@@ -366,33 +402,39 @@ pub const View = struct {
         defer a.free(terminated);
         self.raw_buffer.?.setText(terminated, -1);
     }
-    fn fail(self: *View, err: anyerror) void {
+    pub fn fail(self: *View, err: anyerror) void {
         self.message.setText(self.z(@errorName(err)));
     }
     pub fn update(self: *View) void {
         if (self.revision != self.client.revision or (self.version != self.client.version and (self.client.draft == null or self.request_buffer == null))) self.build() catch |err| self.fail(err);
         const c = self.client;
         self.reload_button.as(gtk.Widget).setVisible(@intFromBool(c.reload_state == .failed or c.reload_state == .unknown or c.reload_state == .unavailable));
-        self.reload_button.as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.reload_ticket == null));
+        self.reload_button.as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.reload_ticket == null and !c.unresolved));
         for (self.preview_buttons) |button| button.as(gtk.Widget).setVisible(@intFromBool(c.previewing()));
+        for ([_]*gtk.Button{ self.reload_button, self.preview_buttons[0], self.preview_buttons[1] }) |button| button.as(gtk.Widget).getParent().?.setVisible(button.as(gtk.Widget).getVisible());
         self.preview_buttons[0].as(gtk.Widget).setSensitive(@intFromBool(c.remaining() > 0));
         self.content.as(gtk.Widget).setSensitive(@intFromBool(!c.previewing()));
         for (self.buttons) |b| b.as(gtk.Widget).setSensitive(@intFromBool(c.job == null));
-        self.buttons[2].as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.draft != null and !c.conflict() and !c.unresolved));
-        var buffer: [700]u8 = undefined;
+        self.buttons[2].as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.draft != null and !c.conflict() and !c.unresolved and @import("../config/aqueous_contract.zig").Capabilities.read(c.value()).apply));
+        var buffer: [1000]u8 = undefined;
         var countdown: [100]u8 = undefined;
         const outcome = if (c.previewing()) std.fmt.bufPrint(&countdown, "Keep these displays? Reverting in {d}s.", .{c.remaining()}) catch "Display preview" else if (c.job != null) "Preparing settings…" else switch (c.outcome) {
             .idle => "Open settings to load the configuration",
             .loaded => "Settings loaded",
-            .validated => "Draft is valid",
+            .validated => switch (c.impact_route) {
+                .unknown => "Draft syntax valid; unknown impact blocks save",
+                .display => "Display change: Apply starts a native preview",
+                .runtime => "Runtime change validated",
+                .no_change => "No runtime change; Apply saves file edits",
+            },
             .saved => "Settings saved",
             .reverted => "Display preview reverted",
             .invalidated => "Preview ended; competing display changes preserved",
             .failed => "Operation failed",
-            .uncertain => "Save uncertain; refresh and review before retrying",
+            .uncertain => "Outcome unresolved; Refresh queries the operation receipt. Writes remain blocked.",
         };
-        const text = std.fmt.bufPrintZ(&buffer, "{s} · reload: {s} · toolkit sync: {s}{s}{s}{s}{s}{s}{s}", .{
-            outcome,                                  if (c.reload_state == .not_requested) "not requested" else @tagName(c.reload_state), if (c.toolkit == .not_requested) "not requested" else @tagName(c.toolkit),
+        const text = std.fmt.bufPrintZ(&buffer, "{s} · save: {s} · receipt: {s} · display: {s} · reload: {s} · toolkit sync: {s}{s}{s}{s}{s}{s}{s}", .{
+            outcome,                                  if (c.save_state) |state| @tagName(state) else "not requested", if (c.receipt) |state| @tagName(state) else "not requested", @tagName(c.display_state), if (c.reload_state == .not_requested) "not requested" else @tagName(c.reload_state), if (c.toolkit == .not_requested) "not requested" else @tagName(c.toolkit),
             if (c.draft != null) " · draft retained" else "",
             if (c.conflict()) " · external change; review before rebasing" else "",
             if (c.err != null) " · " else "",
@@ -412,7 +454,7 @@ pub const View = struct {
         self.syncRequest();
         self.update();
     }
-    fn syncRequest(self: *View) void {
+    pub fn syncRequest(self: *View) void {
         self.revision = self.client.revision;
         self.filling = true;
         defer self.filling = false;
@@ -498,11 +540,20 @@ pub const View = struct {
             return;
         };
         self.revision = self.client.revision;
+        self.forms_stale = true;
         self.update();
     }
     fn inserting(buffer: *gtk.TextBuffer, _: *gtk.TextIter, _: [*:0]u8, length: c_int, self: *View) callconv(.c) void {
         if (self.filling or length < 0) return;
         if (@as(usize, @intCast(buffer.getCharCount())) * 4 + @as(usize, @intCast(length)) > m.max_request) object.signalStopEmissionByName(buffer.as(object.Object), "insert-text");
+    }
+    pub fn recordEntry(self: *View, row: *gtk.Box, input: *gtk.Widget) !void {
+        const editor = try self.arena.allocator().create(Editor);
+        const button = gtk.Button.newWithLabel("Record custom shortcut");
+        if (@import("build_options").test_hooks) button.as(gtk.Widget).setName("Record custom shortcut");
+        row.append(button.as(gtk.Widget));
+        editor.* = .{ .view = self, .field = .null, .widget = input, .record = button };
+        self.form_signals.add(button.as(object.Object), gtk.Button.signals.clicked.connect(button, *Editor, recordClicked, editor, .{}));
     }
     fn recordClicked(_: *gtk.Button, editor: *Editor) callconv(.c) void {
         editor.view.startRecording(editor) catch |err| editor.view.fail(err);
@@ -516,10 +567,22 @@ pub const View = struct {
         const names = [_][]const u8{ "appearance", "layouts", "input", "keybinds", "rules", "displays", "advanced" };
         for (names, 0..) |v, index| if (std.mem.eql(u8, v, name)) {
             self.page_index = @intCast(index);
-            if (self.notebook) |notebook| notebook.setCurrentPage(@intCast(index));
+            if (self.notebook) |notebook| {
+                notebook.setCurrentPage(@intCast(index));
+                // Opening a page places keyboard focus in its visible controls.
+                if (notebook.getNthPage(@intCast(index))) |page_widget| _ = page_widget.childFocus(.tab_forward);
+            }
             return;
         };
         return error.UnknownPage;
+    }
+    pub fn focusName(window: *gtk.Window) []const u8 {
+        var current = window.getFocus();
+        while (current) |widget| : (current = widget.getParent()) {
+            const name = std.mem.span(widget.getName());
+            if (!std.mem.startsWith(u8, name, "Gtk")) return name;
+        }
+        return if (window.getFocus()) |focus| std.mem.span(focus.getName()) else "none";
     }
     fn startRecording(self: *View, editor: *Editor) !void {
         self.stopRecording();
@@ -585,6 +648,7 @@ pub const View = struct {
     fn switched(_: *gtk.Notebook, _: *gtk.Widget, page_index: c_uint, self: *View) callconv(.c) void {
         if (!self.filling) self.page_index = @intCast(page_index);
         self.stopRecording();
+        if (!self.filling and self.forms_stale) self.build() catch |err| self.fail(err);
     }
 };
 fn number(v: m.Value, fallback: f64) f64 {

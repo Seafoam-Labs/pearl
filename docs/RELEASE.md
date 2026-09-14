@@ -1,12 +1,12 @@
 # Release candidate and acceptance
 
-Pearl `1.0.0-rc.1` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
-T16 supplies packaging, reversible migration and repeatable release validation.
+Pearl `1.0.0-rc.2` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
+This candidate adds current-master transactions, collection forms and native capture.
 This is a release candidate: physical, actual login-session, screen-reader and
 visual/presentation signoffs remain required. The project also needs its owner's
 license selection; `LicenseRef-Pearl-Unlicensed` records the current absence of a
 project grant. It is not an open-source license. Do not publish this candidate as
-an accepted 1.0 release. See `artifacts/t16/gate.json` for the current machine gate.
+an accepted 1.0 release. See `artifacts/aqueous-master/gate.json` for the current machine gate.
 
 ## Build and package
 
@@ -34,7 +34,7 @@ binaries for the recorded compiler, libraries and architecture; it does not clai
 cross-distro reproducibility. The package script runs normal dependency checks and
 `check()` with no `--nodeps`, `--nocheck` or dependency installation. Its package,
 source archive, recipe, `.BUILDINFO`, `.PKGINFO`, payload list and hashes remain in
-`artifacts/t16/package`. Package container byte reproducibility is not asserted;
+`artifacts/aqueous-master/package`. Package container byte reproducibility is not asserted;
 production ELF and source archive reproducibility are checked separately.
 
 The payload contains `pearl`, `pearlctl`, `pearl-lock`, embedded GTK resources and
@@ -53,13 +53,13 @@ instrumented lockers and fixture PAM modules are excluded from the package.
 | Optional UPower / power-profiles-daemon / UWSM | 1.91.4 / 0.30 / 0.26.7 |
 
 Arch epochs are preserved in the recipe. These are tested conservative floors,
-not evidence that every older library is incompatible. The main private compositor is the T00 baseline
-recorded at source revision `1b1e215285a764cb7e5b605515b784721d68a0a4`. The separate
-native-blur fixture uses `7611e23c653a72b24d6dd4d8b6404d1d1feb7480` with patched
-wlroots and Vulkan effects enabled. Both exact compositor binary hashes are
-recorded in `packaging/release.json`; the current upstream source checkout is
-recorded separately in the environment evidence and is not the baseline binary's
-provenance. The canonical settings helper floor is 0.7.2. Aqueous's installed package currently provides only the unversioned
+not evidence that every older library is incompatible. Matching compositor,
+aqueousctl and helper are built from `1d038dc3bafa0044d9599f8f51f84105a6a85bb3`.
+The compositor enables Vulkan effects against the recorded patched wlroots;
+private tests select pixman or Vulkan explicitly. Production tool hashes, helper
+0.8.0 and dependency hash are separate entries in `packaging/release.json`.
+Test-only crash/fault binaries are labelled separately and never packaged.
+Aqueous's installed package currently provides only the unversioned
 virtual `aqueous`, so the package depends on that name. A package version alone
 cannot certify Pearl's native protocol and settings capabilities. Startup/runtime
 handshakes and the [compatibility contract](COMPATIBILITY.md) enforce them. Review
@@ -107,7 +107,8 @@ shell or host service enablement.
 
 ```sh
 python3 scripts/release-validate.py
-ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-release-performance -Drelease=true -Doptimize=ReleaseSafe
+PEARL_TEST_AQUEOUS_PREFIX="$PWD/.cache/aqueous-master" ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-release-performance -Drelease=true -Doptimize=ReleaseSafe
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-master-ui -Drelease=true -Doptimize=ReleaseSafe
 python3 scripts/release-gate.py
 ```
 
@@ -115,13 +116,15 @@ Private integration tests require permission to create local sockets and run a
 headless compositor. They use temporary HOME/XDG paths, session buses, synthetic
 system services and test-only PAM. The regression runner records each exit code,
 command and complete log, continues after failures and returns nonzero if any
-check fails. Captures are under each target's output directory. Earlier reference
+check fails or the source fingerprint changes during the matrix. Private prefixes
+verify their recorded tool hashes before startup. Captures are under each target's output directory. Earlier reference
 comparisons remain in T06–T15 evidence; current screenshots require visual review,
 not a claim of pixel parity based on successful capture.
 
 The performance report names the machine, CPU, kernel, renderer, output geometry,
 exact production binary, every idle/PSS sample, startup measurements, popup
-acknowledgements and 100-cycle checkpoints through 1,000 cycles. PSS apportions
+acknowledgements and 100-cycle checkpoints through 1,000 cycles, including ten native preview/revert transactions and ten
+canonical helper writer-lock contentions. PSS apportions
 shared libraries across mappings and includes Pearl descendants; the compositor
 is excluded. Idle measurement uses two virtual outputs, static wallpaper, no
 active player and 60 seconds after warmup. Locker idle cost is recorded separately
@@ -130,7 +133,7 @@ finite-duration testing alone cannot establish absence of every leak. GUI frame
 presentation, cold-cache starts and real keybinding-to-visible timing are not
 substituted by CLI acknowledgements.
 
-Copy `docs/release-signoff.example.json` to `artifacts/t16/manual.json` only when
+Copy `docs/release-signoff.example.json` to `artifacts/aqueous-master/manual.json` only when
 collecting real review evidence. Each passed item needs reviewer, date, machine,
 notes, a relative evidence file and its SHA-256, plus the exact package binary
 hashes at the top level. Keep failed or unperformed items pending. The gate checks
@@ -162,7 +165,8 @@ implemented in `src/services`, `src/aqueous/icons.zig` and their policy tests.
 The existing regression matrix covers missing/replaced service owners, late
 callbacks, queue limits, malformed input, failed save/generation, conflicting
 settings edits, output rollback, lock failure and cancellation. No unconditional
-idle polling or new resident migration worker is introduced by T16. DMS import
+idle polling or new resident migration worker is introduced. Native display status
+polling exists only during an active lease. DMS import
 is a short-lived offline CLI operation. Headless GTK keyboard/role tests are
 retained; they do not replace a real assistive-technology session.
 
@@ -173,3 +177,25 @@ the package does not copy their shared objects. Original Pearl icons are embedde
 DMS reference images are excluded from release source/package assets. Choosing
 Pearl's project license remains an owner decision and blocks public release until
 recorded consistently in LICENSE, package metadata and the source archive.
+
+## Master migration and reproduction
+
+Read [AQUEOUS_MASTER_MIGRATION.md](AQUEOUS_MASTER_MIGRATION.md) before switching.
+Build the pinned tools with `python3 scripts/build-aqueous-master.py`; it archives
+source into a private prefix and never changes the original Aqueous checkout.
+Run `python3 scripts/aqueous-master-inventory.py` to capture matching contracts,
+then `python3 scripts/aqueous-coverage.py` to regenerate coverage. For upstream
+adversarial schema checks, create `.cache/aqueous-master/test-venv` with Python
+3.11 and install `tests/fixtures/aqueous-master/schema-test-requirements.txt` there;
+`python3 scripts/aqueous-master-upstream-tests.py` builds explicitly instrumented
+fixtures and exercises upstream journal and preview failure boundaries.
+
+The release gate requires matching master integration/capture, the upstream
+adversarial baseline, capability coverage and private UI evidence in addition to
+the existing regression, performance, package, reproduction and human checks.
+Current-master hardware refusals and unavailable scene color metadata are expected
+gates, not evidence that those features passed. Previous candidate evidence in
+`artifacts/t16` is preserved and is not reused to certify these binaries.
+
+Use `python3 scripts/render-master-evidence.py` after validation to refresh the
+local evidence index and screenshot gallery. It never grants manual acceptance.
