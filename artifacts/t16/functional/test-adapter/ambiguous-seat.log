@@ -1,0 +1,8 @@
+availability=connecting
+availability=subscribing
+state=1:26
+availability=ready
+enqueue-error=AmbiguousSeat
+queued=1
+completion=1:applied::1
+availability=stopped

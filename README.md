@@ -1,6 +1,6 @@
 # Pearl
 
-Pearl is the working name for a planned **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with a look and feel closely modeled on Dank Material Shell.
+Pearl is a **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with a look and feel closely modeled on Dank Material Shell. Version **1.0.0-rc.1** includes floating islands, a dock, migration tooling and Arch packaging. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
 
 T00–T07 and T09–T10 are complete; T08 and T11–T14 are implemented with their documented capability and physical-acceptance boundaries. The pinned Zig 0.16.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
@@ -27,8 +27,9 @@ Pearl now replaces the Aqueous settings frontend, with schema-driven GTK pages,
 retained drafts, shortcut recording and an independent display-preview guardian.
 Session actions, a real polkit agent, AC/battery idle policies and a native
 Noctalia-like GTK/PAM lock screen are now implemented. Physical security/session
-acceptance remains pending. The full shell remains in progress.
+acceptance remains pending. Clipboard history, SDR output/region capture, floating bar islands and a configurable dock are implemented. All available workspaces stay visible and wrap when needed.
 
+- [Release and packaging](docs/RELEASE.md) and [DMS migration / switch-back](docs/MIGRATION.md).
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
 - [AI implementation tasks](docs/TASKS.md): ordered work packages with dependencies, concrete deliverables, and acceptance criteria.
 - [Compatibility and reproduction](docs/COMPATIBILITY.md): verified dependencies, commands, capability gaps and baseline results.

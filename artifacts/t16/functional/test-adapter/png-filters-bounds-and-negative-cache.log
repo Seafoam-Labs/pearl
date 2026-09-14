@@ -1,0 +1,12 @@
+availability=connecting
+availability=subscribing
+state=1:25
+availability=ready
+icon-hit=false
+icons
+icon-hit=true
+pixel-crc=70469668
+icon-hit=false
+icons
+icon-hit=false
+availability=stopped

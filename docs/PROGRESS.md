@@ -1,5 +1,42 @@
 # Pearl implementation progress
 
+## T16 — Tooling implemented; release acceptance pending, September 14, 2026
+
+Added the 1.0.0-rc.1 stripped ReleaseSafe build, deterministic source archive and
+Arch package workflow, staged-install verification, session-scoped startup
+preflight/unit, offline DMS appearance/bar/dock import and revision-safe file apply.
+Migration defaults to a dry run, reports unsupported fields, preserves DMS inputs,
+and optionally publishes a private candidate/previous/report bundle. An installed
+production build passes apply, stale-revision rejection, restore and restart tests.
+
+The release runner consolidates the T01–T15 private regression matrix and new T16
+checks with retained commands, logs, failures and retry history. Four Python release
+tool checks supplement **101 Zig core/adapter/binding tests**. Two fresh source roots
+produce identical hashes for all three stripped production binaries. Source and
+package manifests, build info and payload lists are retained under `artifacts/t16`.
+
+The strengthened production measurement waits for the compositor's bar reservation:
+**52.2 ms warm ready p95, 0.017% of one core over 60 seconds, 33.7 MiB idle PSS** on
+two headless outputs (Ryzen 9 9950X3D, Aqueous pixman, GTK cairo). **1,000 popup
+cycles**, ten virtual output reconnects and repeated private MPRIS/tray-owner
+replacement complete without warning or crash; retained PSS growth after the
+100-cycle warmup is **1.73 MiB**. These are automated state/acknowledgement timings,
+not real presentation latency. Raw samples and exact binaries are in
+`artifacts/t16/performance/metadata.json`.
+
+Release validation corrected a stale 48-pixel test assumption for wrapping
+workspaces: reservations must follow measured bar height on narrow/mixed-scale
+outputs. The service suite's bounded diagnostic capture was expanded to retain
+its late keyboard assertions during full Wayland tracing. No host shell, service,
+PAM configuration, physical output or power state was changed.
+
+[RELEASE.md](RELEASE.md) records dependency floors, direct/UWSM contracts, PAM and
+license audit, idle/cache bounds and a concrete physical/visual/AT-SPI checklist.
+[MIGRATION.md](MIGRATION.md) documents review, apply, rollback and return to DMS.
+The machine release gate deliberately remains false until actual login, physical
+hardware/security, visual/presentation and screen-reader evidence is signed off,
+and the project owner selects a license. No public-release acceptance is claimed.
+
 ## T15 — Implemented, September 14, 2026
 
 Replaced the planned connected desktop frame with detached rounded bar islands,
@@ -31,7 +68,7 @@ and the [DMS comparison page](../artifacts/t15/comparison.html) record behavior,
 limits, captures and exact test binaries. Earlier populated service-state and
 large-lock evidence is explicitly linked rather than presented as new T15
 captures. Hardware presentation, full AT-SPI speech validation and soak remain
-T16 release gates. The next implementation task is **T16**.
+T16 release gates. T16 is recorded above.
 
 ## T14 — Implemented, September 13, 2026
 

@@ -1,0 +1,39 @@
+
+Dynamic section at offset 0x338440 contains 36 entries:
+  Tag        Type                         Name/Value
+ 0x0000000000000001 (NEEDED)             Shared library: [libpulse.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libpulse-mainloop-glib.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libglib-2.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgtk4-layer-shell.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgtk-4.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgdk_pixbuf-2.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libcairo.so.2]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgio-2.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgobject-2.0.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libwayland-client.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libpolkit-agent-1.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libpolkit-gobject-1.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]
+ 0x000000000000001e (FLAGS)              BIND_NOW
+ 0x000000006ffffffb (FLAGS_1)            Flags: NOW
+ 0x0000000000000015 (DEBUG)              0x0
+ 0x0000000000000007 (RELA)               0x100a460
+ 0x0000000000000008 (RELASZ)             72 (bytes)
+ 0x0000000000000009 (RELAENT)            24 (bytes)
+ 0x0000000000000017 (JMPREL)             0x100a4a8
+ 0x0000000000000002 (PLTRELSZ)           17112 (bytes)
+ 0x0000000000000003 (PLTGOT)             0x133a698
+ 0x0000000000000014 (PLTREL)             RELA
+ 0x0000000000000006 (SYMTAB)             0x1000320
+ 0x000000000000000b (SYMENT)             24 (bytes)
+ 0x0000000000000005 (STRTAB)             0x10063f8
+ 0x000000000000000a (STRSZ)              16488 (bytes)
+ 0x000000006ffffef5 (GNU_HASH)           0x1004d60
+ 0x0000000000000004 (HASH)               0x1004d80
+ 0x000000000000000c (INIT)               0x132f64c
+ 0x000000000000000d (FINI)               0x132f668
+ 0x000000006ffffff0 (VERSYM)             0x1004670
+ 0x000000006ffffffe (VERNEED)            0x1004c0c
+ 0x000000006fffffff (VERNEEDNUM)         4
+ 0x0000000000000000 (NULL)               0x0

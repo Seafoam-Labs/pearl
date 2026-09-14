@@ -1,0 +1,4 @@
+#!/bin/sh
+# Direct-session example. Invoke from Aqueous's own init after its socket exists.
+# First remove your previous shell startup command; this file does not do that.
+exec /usr/bin/pearl

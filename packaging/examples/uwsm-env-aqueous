@@ -1,0 +1,4 @@
+# Optional ~/.config/uwsm/env-aqueous.d/50-pearl.sh entry, if the compositor
+# integration does not already pass AQUEOUS_SOCKET to `uwsm finalize`.
+# Never put a concrete display/socket value here; it is assigned after startup.
+export UWSM_FINALIZE_VARNAMES="${UWSM_FINALIZE_VARNAMES:+$UWSM_FINALIZE_VARNAMES }AQUEOUS_SOCKET"

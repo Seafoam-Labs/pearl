@@ -1,0 +1,23 @@
+Build Summary: 17/17 steps succeeded
+install success
++- install pearl success
+|  +- compile exe pearl ReleaseSafe native success 13s MaxRSS:359M
+|     +- run pkg-config success 1ms
+|     +- translate-c success 29ms MaxRSS:55M
+|     +- run glib-compile-resources (pearl.gresource) success 1ms
+|     +- options cached
+|     +- run exe zig-wayland-scanner (wayland.zig) success 95ms
+|        +- compile exe zig-wayland-scanner Debug native success 468ms MaxRSS:204M
++- install pearl-lock success
+|  +- compile exe pearl-lock ReleaseSafe native success 4s MaxRSS:239M
+|     +- translate-c (reused)
+|     +- run glib-compile-resources (pearl.gresource) (reused)
+|     +- options success
+|     +- translate-c success 24ms MaxRSS:55M
++- install pearl-t00 success
+|  +- compile exe pearl-t00 ReleaseSafe native success 6s MaxRSS:349M
+|     +- run pkg-config (reused)
+|     +- translate-c (reused)
++- install pearlctl success
+   +- compile exe pearlctl ReleaseSafe native success 5s MaxRSS:247M
+

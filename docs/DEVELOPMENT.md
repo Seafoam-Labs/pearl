@@ -217,3 +217,19 @@ Run `zig build test-aqueous-settings -Doptimize=ReleaseSafe` with the workspace
 `ZIG_GLOBAL_CACHE_DIR`. The suite only modifies private HOME/configuration,
 synthetic keyboard bindings and headless outputs, including a deliberate Pearl
 SIGKILL to verify independent rollback. It does not reconfigure host displays.
+
+## Release validation and migration
+
+Use `-Drelease=true -Doptimize=ReleaseSafe` for stripped production builds.
+`zig build test-release-tools` checks the fail-closed gate and source archive;
+`zig build test-release` verifies staged binaries and offline migration against
+a private compositor. `zig build test-release-performance` performs the 60-second
+idle measurement and 1,000-cycle soak. Supply `-Doptimize=ReleaseSafe` to these
+commands (and `-Drelease=true` when measuring production artifacts).
+
+`python3 scripts/release-validate.py` runs the full matrix. To rerun a corrected
+failure while retaining other results and prior logs, use
+`python3 scripts/release-validate.py --resume --targets test-surfaces test-services`.
+Do not treat a partial `--targets` run as full release acceptance. See
+[RELEASE.md](RELEASE.md) for packaging, reproduction and manual gates, and
+[MIGRATION.md](MIGRATION.md) for dry-run DMS import and restoration.

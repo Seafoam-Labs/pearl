@@ -1,0 +1,15 @@
+availability=connecting
+availability=subscribing
+state=1:25
+availability=ready
+icon-hit=false
+icons
+queued=1
+completion=1:rejected:RequestTooLarge:
+queued=2
+queued=3
+completion=2:rejected:busy:
+completion=3:rejected:stale_session:
+availability=reconnecting
+fault=SessionChanged
+availability=stopped

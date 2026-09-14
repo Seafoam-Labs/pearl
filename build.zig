@@ -7,6 +7,8 @@ pub fn build(b: *std.Build) void {
         @panic("Pearl requires Zig 0.16.0; see .zigversion");
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const release = b.option(bool, "release", "Strip production artifacts for reproducible ReleaseSafe packages") orelse false;
+    if (release and optimize != .ReleaseSafe) @panic("-Drelease requires -Doptimize=ReleaseSafe");
     const bindings = b.dependency("gobject", .{ .target = target, .optimize = optimize });
     if (b.option(bool, "codegen", "Build the pinned Ghostty GIR generator") orelse false) {
         if (b.lazyDependency("gobject_codegen", .{ .target = b.graph.host, .optimize = .ReleaseSafe })) |generator| {
@@ -55,6 +57,7 @@ pub fn build(b: *std.Build) void {
         "pkg-config",       "--print-errors",                 "--exists",
         "gtk4 >= 4.22.5",   "glib-2.0 >= 2.88.3",             "gtk4-layer-shell-0 >= 1.3.0",
         "libpulse >= 17.0", "libpulse-mainloop-glib >= 17.0", "polkit-agent-1 >= 127",
+        "pam >= 1.7.2",
     });
     const resource_command = b.addSystemCommand(&.{"glib-compile-resources"});
     resource_command.addFileArg(b.path("resources/pearl.gresource.xml"));
@@ -68,18 +71,21 @@ pub fn build(b: *std.Build) void {
     const module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
     configureApp(b, module, resources, false);
     module.addImport("wayland", native);
+    module.strip = release;
     const app = b.addExecutable(.{ .name = "pearl", .root_module = module });
     app.step.dependOn(&system_versions.step);
     b.installArtifact(app);
 
     var test_locker: *std.Build.Step.Compile = undefined;
+    var production_locker: *std.Build.Step.Compile = undefined;
     for ([_]bool{ false, true }) |instrumented| {
         const lock_module = gtkModule(b, bindings, target, optimize, "src/lock_main.zig", pulse_module);
         configureApp(b, lock_module, resources, instrumented);
         lock_module.addImport("pam", pam_module);
         lock_module.linkSystemLibrary("pam", .{});
+        lock_module.strip = release and !instrumented;
         const locker = b.addExecutable(.{ .name = if (instrumented) "pearl-lock-test" else "pearl-lock", .root_module = lock_module });
-        if (instrumented) test_locker = locker;
+        if (instrumented) test_locker = locker else production_locker = locker;
         if (instrumented) b.step("build-lock-test", "Build isolated PAM test locker (never installed)").dependOn(&b.addInstallArtifact(locker, .{ .dest_dir = .{ .override = .{ .custom = "test" } } }).step) else b.installArtifact(locker);
     }
 
@@ -98,8 +104,28 @@ pub fn build(b: *std.Build) void {
 
     const ctl_module = b.createModule(.{ .root_source_file = b.path("src/pearlctl.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| ctl_module.addImport(name, bindings.module(name));
+    ctl_module.strip = release;
     const ctl = b.addExecutable(.{ .name = "pearlctl", .root_module = ctl_module });
     b.installArtifact(ctl);
+
+    const release_tools = b.addSystemCommand(&.{ "python3", "tests/test_release_tools.py" });
+    b.step("test-release-tools", "Verify release gates fail closed and source archives are deterministic").dependOn(&release_tools.step);
+
+    const release_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_release.py", "--pearl" });
+    release_test.addArtifactArg(app);
+    release_test.addArg("--ctl");
+    release_test.addArtifactArg(ctl);
+    release_test.addArg("--locker");
+    release_test.addArtifactArg(production_locker);
+    if (b.args) |args| release_test.addArgs(args);
+    b.step("test-release", "Verify staged production installation and reversible DMS migration").dependOn(&release_test.step);
+
+    const performance_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_release_performance.py", "--pearl" });
+    performance_test.addArtifactArg(app);
+    performance_test.addArg("--ctl");
+    performance_test.addArtifactArg(ctl);
+    if (b.args) |args| performance_test.addArgs(args);
+    b.step("test-release-performance", "Measure production idle cost and 1,000 popup cycles in private Aqueous").dependOn(&performance_test.step);
 
     const adapter_module = b.createModule(.{ .root_source_file = b.path("src/adapter_probe.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "giounix2", "glib2", "glibunix2", "gobject2", "gdkpixbuf2" }) |name| adapter_module.addImport(name, bindings.module(name));

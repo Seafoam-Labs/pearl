@@ -1,0 +1,81 @@
+{
+  "binary_sha256": {
+    "pearl": "",
+    "pearlctl": "",
+    "pearl-lock": ""
+  },
+  "checks": {
+    "direct-login": {
+      "status": "pending",
+      "reviewer": "",
+      "date": "",
+      "machine": "",
+      "notes": "",
+      "evidence": "",
+      "evidence_sha256": ""
+    },
+    "uwsm-login": {
+      "status": "pending",
+      "reviewer": "",
+      "date": "",
+      "machine": "",
+      "notes": "",
+      "evidence": "",
+      "evidence_sha256": ""
+    },
+    "visual-review": {
+      "status": "pending",
+      "reviewer": "",
+      "date": "",
+      "machine": "",
+      "notes": "",
+      "evidence": "",
+      "evidence_sha256": ""
+    },
+    "physical-displays": {
+      "status": "pending",
+      "reviewer": "",
+      "date": "",
+      "machine": "",
+      "notes": "",
+      "evidence": "",
+      "evidence_sha256": ""
+    },
+    "physical-security": {
+      "status": "pending",
+      "reviewer": "",
+      "date": "",
+      "machine": "",
+      "notes": "",
+      "evidence": "",
+      "evidence_sha256": ""
+    },
+    "hardware-services": {
+      "status": "pending",
+      "reviewer": "",
+      "date": "",
+      "machine": "",
+      "notes": "",
+      "evidence": "",
+      "evidence_sha256": ""
+    },
+    "accessibility": {
+      "status": "pending",
+      "reviewer": "",
+      "date": "",
+      "machine": "",
+      "notes": "",
+      "evidence": "",
+      "evidence_sha256": ""
+    },
+    "presentation-performance": {
+      "status": "pending",
+      "reviewer": "",
+      "date": "",
+      "machine": "",
+      "notes": "",
+      "evidence": "",
+      "evidence_sha256": ""
+    }
+  }
+}

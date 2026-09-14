@@ -100,7 +100,7 @@ def basic(args, checks):
             wait_for(lambda: any(o['scale'] == 1.5 for o in ipc.outputs().values()))
             app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings', WAYLAND_DEBUG='client')
             app.expect('event=control-ready')
-            live = eventually_status(s, args.ctl, lambda v: len(v['outputs']) == 2 and all(o['usable']['height'] == o['bounds']['height'] - 48 for o in v['outputs']))
+            live = eventually_status(s, args.ctl, lambda v: len(v['outputs']) == 2 and all(o['bar_size'] >= 48 and o['usable']['height'] == o['bounds']['height'] - o['bar_size'] for o in v['outputs']))
             assert {o['connector'] for o in live['outputs']} == {o['name'] for o in ipc.outputs().values()}
             assert not live['blur']
             assert sorted(o['scale'] for o in live['outputs']) == [1, 1.5]

@@ -1,0 +1,29 @@
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_services.py", line 253, in <module>
+    if __name__=='__main__': main()
+                             ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_services.py", line 241, in main
+    wait_for(lambda:any(r['kind']=='Reboot' and r.get('accepted') for r in records(s)))
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 21, in wait_for
+    raise TimeoutError('private session condition timed out')
+TimeoutError: private session condition timed out
+test-services
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_services.py --pearl ./.zig-cache/o/92cc374dc00e0c0848bae52f5fce9818/pearl-integration --ctl ./.zig-cache/o/542a9a8c1a484dbe1842a6fd4d83379e/pearlctl --output /home/zoey/Pearl/artifacts/t16/functional/test-services
+
+Build Summary: 8/10 steps succeeded (1 failed)
+test-services transitive failure
++- run python3 failure
+   +- compile exe pearl-integration ReleaseSafe native cached 11ms MaxRSS:59M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 10ms MaxRSS:54M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 7ms MaxRSS:55M
+   +- compile exe pearlctl ReleaseSafe native cached 10ms MaxRSS:59M
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/101bd3d2ed245e2a4ccaba274c0ec3b6/build /usr/bin/zig /usr/lib/zig /home/zoey/Pearl .zig-cache .cache/zig --seed 0x70a420e7 -Z993865289821d361 test-services -Doptimize=ReleaseSafe -Drelease=true --summary all -- --output /home/zoey/Pearl/artifacts/t16/functional/test-services

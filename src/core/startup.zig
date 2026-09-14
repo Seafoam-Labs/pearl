@@ -3,7 +3,7 @@ const std = @import("std");
 pub const Mode = enum { session, demo };
 pub const Options = struct {
     mode: Mode = .session,
-    action: enum { run, help, version } = .run,
+    action: enum { run, help, version, check_environment } = .run,
 
     pub fn parse(args: []const []const u8) !Options {
         var result: Options = .{};
@@ -12,6 +12,8 @@ pub const Options = struct {
                 result.mode = .demo;
             } else if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
                 result.action = .help;
+            } else if (std.mem.eql(u8, arg, "--check-environment")) {
+                result.action = .check_environment;
             } else if (std.mem.eql(u8, arg, "--version")) {
                 result.action = .version;
             } else return error.UnknownArgument;

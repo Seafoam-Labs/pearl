@@ -1,0 +1,52 @@
+{"service": "bluetooth", "kind": "agent-registered", "destination": ":1.3"}
+{"service": "network", "kind": "agent-registered", "destination": ":1.3"}
+{"service": "network", "kind": "scan"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "secret-answer", "accepted": false}
+{"service": "network", "kind": "secret-answer", "accepted": true}
+{"service": "network", "kind": "disconnect"}
+{"service": "network", "kind": "activate-saved"}
+{"service": "network", "kind": "secret-answer", "accepted": true}
+{"service": "network", "kind": "disconnect"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "secret-answer", "accepted": true}
+{"service": "network", "kind": "disconnect"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
+{"service": "network", "kind": "disconnect"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "disconnect"}
+{"service": "network", "kind": "disconnect"}
+{"service": "bluetooth", "kind": "StartDiscovery"}
+{"service": "bluetooth", "kind": "StopDiscovery"}
+{"service": "bluetooth", "kind": "StartDiscovery"}
+{"service": "bluetooth", "kind": "StopDiscovery"}
+{"service": "bluetooth", "kind": "StartDiscovery"}
+{"service": "bluetooth", "kind": "StopDiscovery"}
+{"service": "bluetooth", "kind": "pair-started"}
+{"service": "bluetooth", "kind": "pair-accepted"}
+{"service": "bluetooth", "kind": "property", "key": "Trusted", "value": true}
+{"service": "bluetooth", "kind": "Connect"}
+{"service": "bluetooth", "kind": "Disconnect"}
+{"service": "bluetooth", "kind": "pair-started"}
+{"service": "bluetooth", "kind": "pair-rejected"}
+{"service": "bluetooth", "kind": "pair-cancelled"}
+{"service": "bluetooth", "kind": "pair-started"}
+{"service": "bluetooth", "kind": "pair-accepted"}
+{"service": "bluetooth", "kind": "pair-started"}
+{"service": "bluetooth", "kind": "pair-accepted"}
+{"service": "bluetooth", "kind": "pair-started"}
+{"service": "bluetooth", "kind": "pair-rejected"}
+{"service": "bluetooth", "kind": "pair-started"}
+{"service": "bluetooth", "kind": "removed"}
+{"service": "bluetooth", "kind": "pair-rejected"}
+{"service": "bluetooth", "kind": "pair-cancelled"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
+{"service": "network", "kind": "agent-registered", "destination": ":1.3"}
+{"service": "bluetooth", "kind": "agent-registered", "destination": ":1.3"}
+{"service": "bluetooth", "kind": "agent-registered", "destination": ":1.3"}
+{"service": "network", "kind": "agent-registered", "destination": ":1.3"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
+{"service": "network", "kind": "disconnect"}

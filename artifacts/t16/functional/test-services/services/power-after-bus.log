@@ -1,0 +1,6 @@
+/home/zoey/Pearl/tests/fixtures/services/power.py:72: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
+  bus.register_object(path,info.interfaces[0],method,lambda c,s,p,i,n:properties[n],None)
+event=ready
+command={"deny": true}
+command={"deny": false}
+command={"delay": 2000}

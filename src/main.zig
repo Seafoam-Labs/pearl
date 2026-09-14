@@ -44,14 +44,14 @@ pub fn main(init: std.process.Init) void {
     };
     switch (parsed.action) {
         .help => {
-            glib.print("Usage: pearl [--demo] [--help] [--version]\n\nDefault: Aqueous session application.\n--demo: standalone gallery with sample content (Wayland required).\n");
+            glib.print("Usage: pearl [--demo] [--help] [--version] [--check-environment]\n\nDefault: Aqueous session application.\n--demo: standalone gallery with sample content (Wayland required).\n");
             return;
         },
         .version => {
-            glib.print("Pearl 0.0.0 (Zig 0.16.0)\n");
+            glib.print("Pearl " ++ @import("version.zig").string ++ " (Zig 0.16.0)\n");
             return;
         },
-        .run => {},
+        .run, .check_environment => {},
     }
     startup.validate(parsed.mode, .{ .desktop = env("XDG_CURRENT_DESKTOP"), .runtime = env("XDG_RUNTIME_DIR"), .display = env("WAYLAND_DISPLAY"), .endpoint = env("AQUEOUS_SOCKET") }) catch |err| {
         log.err("{s}", .{startup.diagnostic(err)});
@@ -60,6 +60,11 @@ pub fn main(init: std.process.Init) void {
     if (parsed.mode == .session and !endpointExists()) {
         log.err("AQUEOUS_SOCKET is missing or is not a Unix socket. Relaunch Pearl from the current Aqueous session, or use --demo.", .{});
         std.process.exit(2);
+    }
+    if (parsed.action == .check_environment) {
+        if (parsed.mode != .session) std.process.exit(2);
+        glib.print("Aqueous session environment is valid.\n");
+        return;
     }
     gdk.setAllowedBackends("wayland");
     if (gtk.initCheck() == 0) {

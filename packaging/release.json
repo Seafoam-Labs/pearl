@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0-rc.1",
+  "arch_pkgver": "1.0.0rc1",
+  "license": "LicenseRef-Pearl-Unlicensed",
+  "zig": "0.16.0",
+  "source_date_epoch": 1789344000,
+  "aqueous_revision": "1b1e215285a764cb7e5b605515b784721d68a0a4",
+  "aqueous_config_floor": "0.7.2",
+  "runtime_floors": {
+    "gtk4": "1:4.22.5",
+    "glib2": "2.88.3",
+    "gtk4-layer-shell": "1.3.0",
+    "libpulse": "17.0",
+    "pam": "1.7.2",
+    "polkit": "127",
+    "glibc": "2.44",
+    "wayland": "1.26.0",
+    "pango": "1:1.58.2",
+    "gdk-pixbuf2": "2.44.7",
+    "cairo": "1.18.4",
+    "systemd": "261.3"
+  },
+  "aqueous_binary_sha256": "1c612d3e503fe5b28c3af2595bac52b7b4441b808e259ba5fd303de2259eade1",
+  "aqueous_effects_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480",
+  "aqueous_effects_binary_sha256": "7baaa710450fb494aa0f4034e380ff4d0028ed8287f8a0462652d1b8b2d33a52"
+}

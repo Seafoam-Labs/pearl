@@ -93,7 +93,32 @@ fn env(name: [*:0]const u8) []const u8 {
 }
 pub fn main(init: std.process.Init) void {
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch std.process.exit(2);
-    const parsed = options.parse(args[1..]) catch {
+    const alloc = init.arena.allocator();
+    if (args.len > 1 and std.mem.eql(u8, args[1], "migrate")) {
+        @import("config/migration_cli.zig").run(alloc, args[2..]) catch |err| {
+            glib.printerr("Migration failed: %s\n", @errorName(err).ptr);
+            std.process.exit(2);
+        };
+        return;
+    }
+    // Read explicit preference files locally; never send filesystem paths to the server.
+    const normalized = alloc.dupe([]const u8, args[1..]) catch std.process.exit(2);
+    if (normalized.len >= 2 and std.mem.eql(u8, normalized[0], "preferences") and std.mem.eql(u8, normalized[1], "apply")) {
+        var i: usize = 2;
+        while (i + 1 < normalized.len) : (i += 2) if (std.mem.eql(u8, normalized[i], "--file")) {
+            const bytes = @import("config/migration_cli.zig").file(alloc, normalized[i + 1]) catch |err| {
+                glib.printerr("Preference file: %s\n", @errorName(err).ptr);
+                std.process.exit(2);
+            };
+            _ = @import("config/preferences.zig").parse(alloc, bytes) catch |err| {
+                glib.printerr("Invalid preferences: %s\n", @errorName(err).ptr);
+                std.process.exit(2);
+            };
+            normalized[i] = "--text";
+            normalized[i + 1] = bytes;
+        };
+    }
+    const parsed = options.parse(normalized) catch {
         glib.printerr("%s", options.usage);
         std.process.exit(2);
     };
@@ -103,7 +128,7 @@ pub fn main(init: std.process.Init) void {
             return;
         },
         .version => {
-            glib.print("pearlctl 0.0.0 (control v1, Zig 0.16.0)\n");
+            glib.print("pearlctl " ++ @import("version.zig").string ++ " (control v1, Zig 0.16.0)\n");
             return;
         },
         .request => {},

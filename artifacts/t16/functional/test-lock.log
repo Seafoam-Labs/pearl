@@ -1,0 +1,99 @@
+{
+  "status": "passed",
+  "checks": {
+    "invalid-readiness-fd-rejected-before-opening-display": true,
+    "gtk-accessible-prompt-labels-and-mixed-scale-large-text": true,
+    "caps-lock-indicator-follows-keyboard-state": true,
+    "repeated-output-return-preserves-lock-and-current-prompt-focus": true,
+    "small-logical-output-remains-usable-with-large-text": true,
+    "oversize-utf8-response-rejected-without-truncation-and-retry-works": true,
+    "helper-crash-stays-locked-and-recovers": true,
+    "helper-malformed-stays-locked-and-recovers": true,
+    "helper-hang-stays-locked-and-recovers": true,
+    "helper-missing-stays-locked-and-recovers": true,
+    "duplicate-lock-and-broken-readiness-do-not-release-original": true,
+    "escape-clears-conversation-and-enter-retries-without-pointer": true,
+    "output-soak-reuses-view-slots-and-file-descriptors": true,
+    "all-outputs-removed-return-to-usable-authentication": true,
+    "idle-clock-updates-are-bounded-with-no-auth-ui-churn": true
+  },
+  "binaries": {
+    "locker": "1fbfdf257fde0601e9ddc67d5d14b4a13bd1415963862ec52dd456f165295fb1",
+    "pam_module": "0155b279724a62798876cecedfce987ed2bae276f1628f461aebcf3dcd4ae95b"
+  },
+  "outputs": {
+    "cycles": 100,
+    "before": {
+      "pss_bytes": 35600384,
+      "fds": 8,
+      "cpu_ticks": 22,
+      "rss_bytes": 66256896
+    },
+    "samples": [
+      {
+        "cycles": 25,
+        "pss_bytes": 33835008,
+        "fds": 8,
+        "cpu_ticks": 48,
+        "rss_bytes": 65961984
+      },
+      {
+        "cycles": 50,
+        "pss_bytes": 33847296,
+        "fds": 8,
+        "cpu_ticks": 75,
+        "rss_bytes": 66240512
+      },
+      {
+        "cycles": 75,
+        "pss_bytes": 32029696,
+        "fds": 8,
+        "cpu_ticks": 102,
+        "rss_bytes": 65961984
+      },
+      {
+        "cycles": 100,
+        "pss_bytes": 32046080,
+        "fds": 8,
+        "cpu_ticks": 128,
+        "rss_bytes": 65646592
+      }
+    ],
+    "after": {
+      "pss_bytes": 32046080,
+      "fds": 8,
+      "cpu_ticks": 128,
+      "rss_bytes": 65646592
+    }
+  },
+  "idle": {
+    "state": "locked, authentication cancelled",
+    "seconds": 65.00005973599764,
+    "before": {
+      "pss_bytes": 35724288,
+      "fds": 8,
+      "cpu_ticks": 21,
+      "rss_bytes": 67231744
+    },
+    "after": {
+      "pss_bytes": 35729408,
+      "fds": 8,
+      "cpu_ticks": 21,
+      "rss_bytes": 67231744
+    },
+    "cpu_seconds": 0.0,
+    "clock_events": 1,
+    "ui_updates": 0
+  }
+}
+Build Summary: 8/8 steps succeeded
+test-lock success
++- run python3 success 2m
+   +- compile exe pearl-lock-test ReleaseSafe native cached 12ms MaxRSS:58M
+   |  +- translate-c cached 12ms MaxRSS:53M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- translate-c cached 12ms MaxRSS:52M
+   +- compile lib pearl-pam-fixture ReleaseSafe native cached 13ms MaxRSS:58M
+      +- translate-c (reused)
+

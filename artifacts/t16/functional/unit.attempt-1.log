@@ -1,0 +1,13 @@
+Build Summary: 11/11 steps succeeded; 101/101 tests passed
+test success
++- run test 75 pass (75 total) 75ms MaxRSS:7M
+   +- compile test ReleaseSafe native cached 9ms MaxRSS:56M
+test-adapter-unit success
++- run test 24 pass (24 total) 247ms MaxRSS:11M
+   +- compile test ReleaseSafe native cached 14ms MaxRSS:59M
+test-bindings success
++- run test 2 pass (2 total) 1ms MaxRSS:8M
+   +- compile test ReleaseSafe native cached 14ms MaxRSS:58M
+      +- run pkg-config success 1ms
+      +- translate-c cached 13ms MaxRSS:53M
+

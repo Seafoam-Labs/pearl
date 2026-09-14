@@ -1,4 +1,5 @@
 test {
+    _ = @import("config/dms_import.zig");
     _ = @import("desktop/dock_policy.zig");
     _ = @import("services/clipboard_policy.zig");
     _ = @import("lock/conversation.zig");

@@ -1,0 +1,41 @@
+{
+  "machine": {
+    "system": "Linux",
+    "node": "zoey-desktop",
+    "release": "7.2.4-1-cachyos",
+    "version": "#1 SMP PREEMPT_DYNAMIC Thu, 10 Sep 2026 17:19:37 +0000",
+    "machine": "x86_64",
+    "processor": ""
+  },
+  "zig": {
+    "exit_code": 0,
+    "stdout": "0.16.0",
+    "stderr": ""
+  },
+  "aqueous_test_binary_sha256": "1c612d3e503fe5b28c3af2595bac52b7b4441b808e259ba5fd303de2259eade1",
+  "dms_reference_revision": {
+    "exit_code": 0,
+    "stdout": "72ca8a6876b014f5722a00f69301a5766653764e",
+    "stderr": ""
+  },
+  "renderer": "headless Aqueous pixman / GTK cairo; native blur suite has separate Vulkan fixture evidence",
+  "packages": {
+    "exit_code": 0,
+    "stdout": "gtk4 1:4.22.5-1.1\nglib2 2.88.3-1.1\ngtk4-layer-shell 1.3.0-1.1\nlibpulse 17.0+r98+gb096704c0-1.2\npam 1.7.2-2.1\npolkit 127-3.1\nglibc 2.44+r24+g16be1518495f-1\nwayland 1.26.0-1.1\npango 1:1.58.2-1.1\ngdk-pixbuf2 2.44.7-1.1\ncairo 1.18.4-1.1\nsystemd 261.3-1\nuwsm 0.26.7-1\nzig 0.16.0-1.1\npython 3.14.7-2\naqueous-git 0.7.0.r15.g95c1673-1\nnetworkmanager 1.58.1-1\nbluez 5.87-2.1\nupower 1.91.4-1.1\npower-profiles-daemon 0.30-3\nmatugen 4.2.0-1.1",
+    "stderr": ""
+  },
+  "startup_contract": {
+    "status": "passed",
+    "log": "startup/aqueous-init-contract.log",
+    "scope": "upstream temporary HOME/config tests with mocked uwsm, dbus-update-activation-environment and systemctl; not real login signoff"
+  },
+  "aqueous_baseline_source_revision": "1b1e215285a764cb7e5b605515b784721d68a0a4",
+  "aqueous_baseline_provenance": "artifacts/t00/metadata.json source snapshot and matching binary hash",
+  "aqueous_effects_source_revision": "7611e23c653a72b24d6dd4d8b6404d1d1feb7480",
+  "aqueous_effects_binary_sha256": "7baaa710450fb494aa0f4034e380ff4d0028ed8287f8a0462652d1b8b2d33a52",
+  "aqueous_current_checkout_revision": {
+    "exit_code": 0,
+    "stdout": "1d038dc3bafa0044d9599f8f51f84105a6a85bb3",
+    "stderr": ""
+  }
+}

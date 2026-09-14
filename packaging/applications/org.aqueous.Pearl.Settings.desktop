@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Pearl Settings
+Comment=Configure the Pearl desktop shell
+Exec=pearlctl settings show
+Icon=preferences-desktop
+Terminal=false
+Categories=Settings;DesktopSettings;
+OnlyShowIn=Aqueous;

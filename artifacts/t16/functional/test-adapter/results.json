@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "executable_sha256": "2376e00710264d40f873fbc59147fb29aadfadcbe810cc7dc540015c496a9fd6",
+  "checks": {
+    "fragmentation-idle-priority": true,
+    "png-filters-bounds-and-negative-cache": true,
+    "server-rejections-and-negotiated-request-limit": true,
+    "bounded-queue-unknown-restart": true,
+    "invalid-ack": true,
+    "invalid-sequence": true,
+    "session-mismatch": true,
+    "reply-id-mismatch": true,
+    "invalid-accepted": true,
+    "subscribe-order": true,
+    "command-timeout": true,
+    "socket-backpressure": true,
+    "subscription-timeout": true,
+    "hello-timeout": true,
+    "locked-revalidation": true,
+    "restricted-capabilities": true,
+    "ambiguous-seat": true,
+    "target-disappearance": true,
+    "stale-icon": true,
+    "real-nested-commands-and-idle": true,
+    "real-exit-and-new-endpoint-isolation": true
+  }
+}

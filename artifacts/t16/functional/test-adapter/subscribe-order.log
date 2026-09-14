@@ -1,0 +1,5 @@
+availability=connecting
+availability=subscribing
+availability=reconnecting
+fault=UnexpectedEvent
+availability=stopped

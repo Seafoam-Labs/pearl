@@ -93,6 +93,8 @@ pub const usage =
     \\Usage: pearlctl status | quit | lock
     \\       pearlctl clipboard status|show|clear
     \\       pearlctl clipboard select|delete --generation ENTRY_ID
+    \\       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]
+    \\       pearlctl preferences apply --revision N --file PREFERENCES_JSON
     \\       pearlctl dock show|hide [--output ID]
     \\       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]
     \\       pearlctl capture status|show|cancel

@@ -1,0 +1,8 @@
+availability=connecting
+availability=subscribing
+state=1:25
+availability=ready
+icon-hit=false
+state=2:25
+icon-error=StaleIcon
+availability=stopped

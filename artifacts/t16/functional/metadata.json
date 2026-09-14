@@ -1,0 +1,317 @@
+{
+  "status": "passed",
+  "started": "2026-09-14T04:50:53.386933+00:00",
+  "targets": {
+    "unit": {
+      "exit_code": 0,
+      "seconds": 0.3142256310020457,
+      "command": [
+        "zig",
+        "build",
+        "test",
+        "test-adapter-unit",
+        "test-bindings",
+        "test-release-tools",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all"
+      ]
+    },
+    "integration": {
+      "exit_code": 0,
+      "seconds": 27.958107418999134,
+      "command": [
+        "zig",
+        "build",
+        "integration",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/integration"
+      ]
+    },
+    "test-components": {
+      "exit_code": 0,
+      "seconds": 42.372671648001415,
+      "command": [
+        "zig",
+        "build",
+        "test-components",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-components"
+      ]
+    },
+    "test-adapter": {
+      "exit_code": 0,
+      "seconds": 19.139197264004906,
+      "command": [
+        "zig",
+        "build",
+        "test-adapter",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-adapter"
+      ]
+    },
+    "test-surfaces": {
+      "exit_code": 0,
+      "seconds": 16.335530945994833,
+      "command": [
+        "zig",
+        "build",
+        "test-surfaces",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-surfaces"
+      ]
+    },
+    "test-desktop": {
+      "exit_code": 0,
+      "seconds": 18.443020967999473,
+      "command": [
+        "zig",
+        "build",
+        "test-desktop",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-desktop"
+      ]
+    },
+    "test-services": {
+      "exit_code": 0,
+      "seconds": 28.60561691899784,
+      "command": [
+        "zig",
+        "build",
+        "test-services",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-services"
+      ]
+    },
+    "test-connectivity": {
+      "exit_code": 0,
+      "seconds": 55.29038798699912,
+      "command": [
+        "zig",
+        "build",
+        "test-connectivity",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-connectivity"
+      ]
+    },
+    "test-session-services": {
+      "exit_code": 0,
+      "seconds": 23.047233268000127,
+      "command": [
+        "zig",
+        "build",
+        "test-session-services",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-session-services"
+      ]
+    },
+    "test-preferences": {
+      "exit_code": 0,
+      "seconds": 51.38550260500051,
+      "command": [
+        "zig",
+        "build",
+        "test-preferences",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-preferences"
+      ]
+    },
+    "test-aqueous-settings": {
+      "exit_code": 0,
+      "seconds": 34.26075944799959,
+      "command": [
+        "zig",
+        "build",
+        "test-aqueous-settings",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-aqueous-settings"
+      ]
+    },
+    "test-security": {
+      "exit_code": 0,
+      "seconds": 58.047279553997214,
+      "command": [
+        "zig",
+        "build",
+        "test-security",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-security"
+      ]
+    },
+    "test-lock": {
+      "exit_code": 0,
+      "seconds": 122.57580112099822,
+      "command": [
+        "zig",
+        "build",
+        "test-lock",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-lock"
+      ]
+    },
+    "test-clipboard-capture": {
+      "exit_code": 0,
+      "seconds": 25.94970173299953,
+      "command": [
+        "zig",
+        "build",
+        "test-clipboard-capture",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-clipboard-capture"
+      ]
+    },
+    "test-dock-islands": {
+      "exit_code": 0,
+      "seconds": 19.69008137099445,
+      "command": [
+        "zig",
+        "build",
+        "test-dock-islands",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-dock-islands"
+      ]
+    },
+    "test-release": {
+      "exit_code": 0,
+      "seconds": 1.9662722140055848,
+      "command": [
+        "zig",
+        "build",
+        "test-release",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/zoey/Pearl/artifacts/t16/functional/test-release"
+      ]
+    }
+  },
+  "previous_attempts": {
+    "unit": [
+      {
+        "exit_code": 0,
+        "seconds": 0.31408445900160586,
+        "command": [
+          "zig",
+          "build",
+          "test",
+          "test-adapter-unit",
+          "test-bindings",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all"
+        ]
+      }
+    ],
+    "test-surfaces": [
+      {
+        "exit_code": 1,
+        "seconds": 10.32799102300487,
+        "command": [
+          "zig",
+          "build",
+          "test-surfaces",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/t16/functional/test-surfaces"
+        ]
+      }
+    ],
+    "test-services": [
+      {
+        "exit_code": 1,
+        "seconds": 43.619699372997275,
+        "command": [
+          "zig",
+          "build",
+          "test-services",
+          "-Doptimize=ReleaseSafe",
+          "-Drelease=true",
+          "--summary",
+          "all",
+          "--",
+          "--output",
+          "/home/zoey/Pearl/artifacts/t16/functional/test-services"
+        ]
+      }
+    ]
+  }
+}

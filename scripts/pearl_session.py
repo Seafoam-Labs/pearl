@@ -22,7 +22,7 @@ def wait_for(check, timeout=10):
 
 
 class Child:
-    def __init__(self, argv, env, cwd, logfile, echo=False, input_pipe=False):
+    def __init__(self, argv, env, cwd, logfile, echo=False, input_pipe=False, log_limit=20000):
         self.lines = []
         self.proc = subprocess.Popen([str(x) for x in argv], env=env, cwd=cwd,
                                      stdin=subprocess.PIPE if input_pipe else subprocess.DEVNULL, stdout=subprocess.PIPE,
@@ -32,7 +32,7 @@ class Child:
         def collect():
             with self.logfile.open('w') as log:
                 for line in self.proc.stdout:
-                    if len(self.lines) < 20000:
+                    if len(self.lines) < log_limit:
                         self.lines.append(line.rstrip())
                         log.write(line)
                         log.flush()
@@ -105,8 +105,8 @@ class PrivateSession:
     def __exit__(self, *_):
         self.close()
 
-    def child(self, name, argv, *, echo=False, input_pipe=False, **overrides):
-        child = Child(argv, dict(self.env, **overrides), self.base, self.output / f'{name}.log', echo=echo, input_pipe=input_pipe)
+    def child(self, name, argv, *, echo=False, input_pipe=False, log_limit=20000, **overrides):
+        child = Child(argv, dict(self.env, **overrides), self.base, self.output / f'{name}.log', echo=echo, input_pipe=input_pipe, log_limit=log_limit)
         self.children.append(child)
         return child
 

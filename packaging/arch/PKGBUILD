@@ -1,0 +1,43 @@
+# Build from the adjacent, checksum-locked source archive produced by
+# scripts/release-source.py. Nothing is enabled or started during installation.
+pkgname=pearl
+pkgver=1.0.0rc1
+pkgrel=1
+pkgdesc='GTK desktop shell exclusively for Aqueous (release candidate)'
+arch=('x86_64')
+license=('LicenseRef-Pearl-Unlicensed')
+depends=('gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
+         'libpulse>=17.0' 'pam>=1.7.2' 'polkit>=127' 'glibc>=2.44'
+         'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
+         'cairo>=1.18.4' 'systemd>=261.3' 'aqueous')
+# Aqueous packages currently provide an unversioned virtual 'aqueous'.
+# Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
+makedepends=('zig=0.16.0' 'pkgconf' 'python>=3.14')
+optdepends=('matugen>=4.2.0: dynamic Material colors'
+            'networkmanager>=1.58.1: network controls'
+            'bluez>=5.87: Bluetooth controls'
+            'upower>=1.91.4: battery status'
+            'power-profiles-daemon>=0.30: power profiles'
+            'uwsm>=0.26.7: managed Wayland session startup')
+backup=('etc/pam.d/pearl')
+options=('!strip' '!debug')
+source=("pearl-$pkgver.tar.gz")
+# Filled with the actual archive hash by release-source.py; never SKIP.
+sha256sums=('@SOURCE_SHA256@')
+
+build() {
+    cd "$srcdir/pearl-$pkgver"
+    export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
+    zig build -Doptimize=ReleaseSafe -Drelease=true
+}
+
+check() {
+    cd "$srcdir/pearl-$pkgver"
+    export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
+    zig build test test-adapter-unit test-bindings test-release-tools -Doptimize=ReleaseSafe
+}
+
+package() {
+    cd "$srcdir/pearl-$pkgver"
+    DESTDIR="$pkgdir" bash packaging/install.sh
+}

@@ -1,4 +1,12 @@
-# T00 compatibility record
+# Pearl compatibility record
+
+The current T16 release candidate pins Zig **0.16.0** and uses the conservative
+runtime floors and native Aqueous contract in [RELEASE.md](RELEASE.md). Production
+package/build evidence is in `artifacts/t16`; physical and real-login acceptance
+remain gated. The dependency and spike observations below are historical T00
+evidence, followed by later task updates.
+
+## Historical T00 compatibility record
 
 Validated September 13, 2026. T00 proves the stack and supplies reference
 material; `pearl-t00` is a restricted test executable, not a desktop shell or

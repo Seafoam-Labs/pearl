@@ -1,0 +1,36 @@
+{
+  "release_ready": false,
+  "checks": {
+    "package": true,
+    "package-hash": true,
+    "functional": true,
+    "tested-production-binaries": true,
+    "performance-soak": true,
+    "reproducibility": true,
+    "project-license": false,
+    "direct-login": false,
+    "uwsm-login": false,
+    "visual-review": false,
+    "physical-displays": false,
+    "physical-security": false,
+    "hardware-services": false,
+    "accessibility": false,
+    "presentation-performance": false
+  },
+  "pending_or_failed": [
+    "project-license",
+    "direct-login",
+    "uwsm-login",
+    "visual-review",
+    "physical-displays",
+    "physical-security",
+    "hardware-services",
+    "accessibility",
+    "presentation-performance"
+  ],
+  "binary_sha256": {
+    "pearl": "198a4ceec0fc56c6ac84a11ced6735133f2c9bd4101b773fc021fc8148ff1811",
+    "pearlctl": "2b5e3a61c6dd9c98efbf7cc02e9c7915f00ffbc745550af13cde4c36db35ff4d",
+    "pearl-lock": "e2a915c48f261980fbbc3405183185936f753043cf6d2f19847112604af3fd6b"
+  }
+}

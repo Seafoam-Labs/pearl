@@ -69,7 +69,8 @@ def main():
             # Minimal fixture policy publishes effective defaults separately from configured defaults.
             s.run(['pw-metadata','-n','default','0','default.audio.sink','{"name":"test_output_a"}','Spa:String:JSON'])
             s.run(['pw-metadata','-n','default','0','default.audio.source','{"name":"test_output_a"}','Spa:String:JSON'])
-            pearl=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings',WAYLAND_DEBUG='client'); pearl.expect('event=control-ready')
+            # Full native traffic otherwise exhausts the default diagnostic buffer before keyboard checks.
+            pearl=s.child('pearl',[args.pearl],log_limit=100000,G_DEBUG='fatal-warnings',WAYLAND_DEBUG='client'); pearl.expect('event=control-ready')
             live=await_services(s,args.ctl,lambda v:v['audio']['ready'] and v['audio']['count']>=4 and v['power']['can_reboot'] and v['brightness']['available'] and all(v['power']['profiles']))
             assert live['power']['battery_present'] and live['power']['percentage']==72.5 and live['brightness']['percent']==42,live
             checks['initial-audio-battery-logind-profiles-and-validated-backlight']=True
@@ -237,6 +238,7 @@ def main():
             for _ in range(60):
                 if focus_name()=='reboot': break
                 s.run(['wtype','-s','100','-k','Tab','-s','35'])
+            else: raise AssertionError('Could not refocus restart after denial')
             s.run(['wtype','-s','100','-k','space','-s','400','-k','space','-s','400'])
             wait_for(lambda:any(r['kind']=='Reboot' and r.get('accepted') for r in records(s)))
             checks['real-power-button-requires-confirmation-and-reflects-denial-and-acceptance']=True

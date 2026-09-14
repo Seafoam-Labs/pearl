@@ -1,0 +1,9 @@
+availability=connecting
+availability=subscribing
+state=1:25
+availability=ready
+queued=1
+availability=reconnecting
+fault=ResponseId
+completion=1:unknown:ResponseId:
+availability=stopped
