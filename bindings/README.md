@@ -6,7 +6,7 @@ gtk4-session-lock. Those missing namespaces and the Polkit/PolkitAgent namespace
 There is no Pearl C bridge. T05/T06 additionally generate native core, background-effect, Aqueous shell
 and window-info/layout declarations using pinned zig-wayland/XML inputs; see
 [protocols/README.md](protocols/README.md). T07 adds the translated libpulse/GLib
-main-loop ABI from [pinned headers](headers/README.md). T12 adds pinned Linux-PAM application headers (`generate-pam`, `scripts/check-pam-bindings.py`) and ext-idle-notify. PAM libc identity declarations use system libc headers. Polkit/PAM notices are preserved under `licenses/`.
+main-loop ABI from [pinned headers](headers/README.md). T12 adds pinned Linux-PAM application headers (`generate-pam`, `scripts/check-pam-bindings.py`) and ext-idle-notify. T14 adds generated ext-data-control and wlr-screencopy/core shared-memory protocols, with upstream notices included in packaging. PAM libc identity declarations use system libc headers. Polkit/PAM notices are preserved under `licenses/`.
 
 ## Pinned inputs
 

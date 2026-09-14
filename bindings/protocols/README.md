@@ -40,3 +40,9 @@ repeat surface/blur validation. Do not edit generated declarations.
 T12 adds `ext-idle-notify-v1.xml` from wayland-protocols 1.49, generating notifier
 version 1 and core seat version 9. Pearl binds seat version 5 and uses the
 inhibitor-respecting `get_idle_notification` request on GTK's Wayland connection.
+
+T14 adds `ext-data-control-v1.xml` from wayland-protocols 1.49 and the pinned
+Aqueous `wlr-screencopy-unstable-v1.xml`. It generates data-control manager v1,
+screencopy manager v3 and core shared memory v1. GTK owns dispatch for both new
+services; clipboard payload pipes are separately watched by GLib. See
+[clipboard/capture contracts](../../docs/CLIPBOARD_CAPTURE.md).

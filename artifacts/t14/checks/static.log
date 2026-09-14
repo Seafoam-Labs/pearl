@@ -1,0 +1,3 @@
+PASS zig fmt --check build.zig src tests/fixtures/clipboard.zig
+PASS python3 -m py_compile tests/integration/test_clipboard_capture.py
+PASS git diff --check

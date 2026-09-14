@@ -1,0 +1,43 @@
+{
+  "recorded_utc": "2026-09-14T03:25:04.781132+00:00",
+  "base_commit": "c474708e73f5f6e7f33c8d95b110898046f8fb7d",
+  "zig": "0.16.0",
+  "sources": {
+    "README.md": "5404d319c9b071ef673af875f43d8fa73b0397d8d26b3894f5c21c2b8c429e6e",
+    "bindings/README.md": "44c815456e85e6683181ed90277c0404e25f1bb1ae087463ee76f1bf252c2f37",
+    "bindings/licenses/ext-data-control-v1-notice.txt": "a4972675991e715b314071b4cb49f9bf3b106e68fb686dcfc5a964cbb56d1ef2",
+    "bindings/licenses/wlr-screencopy-unstable-v1-notice.txt": "73dcc19b4bddf0a7b1131f457efcc3aef4f049e0158d48fab447890de2245d76",
+    "bindings/protocols/README.md": "fdde4097eac9f9bfcfaa6c7e6083879d7463ff40f8526171b4a92afa61d45fea",
+    "bindings/protocols/ext-data-control-v1.xml": "293deba5dfdb974fbcf8dcf891a30a51a36a8bba0047dc6bdf6a03194089b7fb",
+    "bindings/protocols/inputs.json": "4ffe53f22df0c8938a516fb48d9ebeac65fe5eaf91d18e73d13c91f763fd510d",
+    "bindings/protocols/wlr-screencopy-unstable-v1.xml": "a10348b173a56af5dd2e1534782d8517c84213b0c99663a9cc1d4ec08a0cb2e3",
+    "build.zig": "8504282b2d4833f44f620d7c2e41a5769e685b9c6178139dd75d2b9717354a38",
+    "docs/CLIPBOARD_CAPTURE.md": "cbff18d136036d608e2aa0c62f51e42869fb5fa313ae05e072b1be96ebd46073",
+    "docs/COMPATIBILITY.md": "d5eb13d4d3c743acf9d4b1f3d8b52747985e843ff644b95ba7a008a0ba7d7573",
+    "docs/PROGRESS.md": "fe155da07577d65edad480eae214e34bb12e5b75b85c1c8182d14b0a19a6a143",
+    "docs/TASKS.md": "ea2eea03ac3495e140ae1dc17ae587d404819c8c8f1456c8845a522fad032092",
+    "resources/icons/scalable/actions/pearl-edit-copy-symbolic.svg": "9293ff4e02ae3efa98685b0ba0fa2ac9f71d8957e61378092872815d24545e60",
+    "resources/pearl.gresource.xml": "d0ad56d61cb53aaa2761381ec901a7e861b8362bed3ae68a77f6e2d83473c4e1",
+    "src/cli/options.zig": "a264bcd8eaa4b96c442c42f5456c5e70070a0c4689ae3ee5006f00be286126dc",
+    "src/cli/protocol.zig": "a22f6ccc5eb240a7761a97aed34fcb0675bcfa833b5b1d96d22f145a2bc569e3",
+    "src/cli/server.zig": "aba8426c05a8810c15bcee4ba01b88fe69aeb3d2867c9baa148acb4efe5d3e60",
+    "src/core/application.zig": "97d17e266a2e5fe1ca32700e79056d433d334208be95bb5a9f3989288ce9fe08",
+    "src/desktop/bar.zig": "9cfdc7bb34409f628a56f9bfe19cfa2d28ed6c527eaa65badd8ad65e914437bc",
+    "src/desktop/clipboard_capture.zig": "2e51d2ff7747a270c3cb9618ab6e2e9dcf1c50e2ab0c1a66ada3687e7b76f6af",
+    "src/desktop/policy.zig": "05b7a112bffa3e85e6a723f426a7a3792f3a21dd5f589a25f92b4af308f4e182",
+    "src/services/capture.zig": "0bdd5cfa338f97d3a120f039e553fbf1f3413e210ff6cd7571c82de2dcc81533",
+    "src/services/clipboard.zig": "863fced7e982371efa9edf132f1f3725b999e1d102cae919385cfa60e1a5ef53",
+    "src/services/clipboard_policy.zig": "b2b062c1d6d6dcfb40bd7d5a7182352519ef11b5ef8278c44856c4ff313ab929",
+    "src/tests.zig": "032cc7594619eda55378e49ba922a2d76354d9dabe99e7eb964ee141bded70b7",
+    "src/ui/surfaces/manager.zig": "4c3c7074763e7657948c77983e7070f2b95ce3c2e05920937fe76d1faf3e281d",
+    "tests/fixtures/clipboard.zig": "820eed76c2b5905d77f0be969d4b5842c5cd461ebb50f11618310694609a6029",
+    "tests/integration/test_clipboard_capture.py": "38e32774664c5217b230bb76c6aba83e4ce2adae58616ded5e09240a5d4dfd19"
+  },
+  "production_binaries": {
+    "pearl": "eeddc9c077f1105f81fa3149bc32969b0d75fe37e28709890d45b697a3ae51d0",
+    "pearlctl": "f008331c1b2d7de626a1741d7d6971793b49aa7807e219d55b030bab2b8d2d52",
+    "pearl-lock": "2501a9848dfc2a90429aed21d75ef2a68535a43dcb940378f2c10ce1d3494d13"
+  },
+  "aqueous_binary_sha256": "1c612d3e503fe5b28c3af2595bac52b7b4441b808e259ba5fd303de2259eade1",
+  "generated_wayland_sha256": "e52d9ef337ead6588b3b2fa1618b0976136d2ea0f1dddbdc1e420472e8e86a5a"
+}

@@ -236,7 +236,10 @@ fn aqueousChanged(context: *anyopaque, event: adapter.Event) void {
     }
     if (self.logout_requested) return;
     if (event == .availability or event == .state) {
-        if (self.surfaces) |*surfaces| surfaces.schedule();
+        if (self.surfaces) |*surfaces| {
+            surfaces.syncClipboardPrivacy();
+            surfaces.schedule();
+        }
         if (self.session_source == 0) self.session_source = glib.idleAdd(sessionChanged, self);
     }
 }

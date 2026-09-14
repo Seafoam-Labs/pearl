@@ -12,7 +12,7 @@ pub fn parse(args: []const []const u8) !Options {
         if (std.mem.eql(u8, args[0], "quit")) break :blk .quit;
         if (args.len < 2) return error.Usage;
         index = 2;
-        const pairs = .{ .{ "lifecycle", "status", protocol.Op.lifecycle_status }, .{ "lifecycle", "action", protocol.Op.lifecycle_action }, .{ "aqueous", "reload", protocol.Op.aqueous_reload }, .{ "aqueous", "keep", protocol.Op.aqueous_keep }, .{ "aqueous", "revert", protocol.Op.aqueous_revert }, .{ "aqueous", "rebase", protocol.Op.aqueous_rebase }, .{ "aqueous", "record", protocol.Op.aqueous_record }, .{ "aqueous", "show", protocol.Op.aqueous_show }, .{ "aqueous", "status", protocol.Op.aqueous_status }, .{ "aqueous", "refresh", protocol.Op.aqueous_refresh }, .{ "aqueous", "draft", protocol.Op.aqueous_draft }, .{ "aqueous", "validate", protocol.Op.aqueous_validate }, .{ "aqueous", "apply", protocol.Op.aqueous_apply }, .{ "aqueous", "discard", protocol.Op.aqueous_discard }, .{ "settings", "show", protocol.Op.settings_show }, .{ "preferences", "status", protocol.Op.preferences_status }, .{ "preferences", "apply", protocol.Op.preferences_apply }, .{ "preferences", "reload", protocol.Op.preferences_reload }, .{ "session", "status", protocol.Op.session_status }, .{ "session", "action", protocol.Op.session_action }, .{ "notifications", "toggle", protocol.Op.notifications_toggle }, .{ "media", "toggle", protocol.Op.media_toggle }, .{ "tray", "toggle", protocol.Op.tray_toggle }, .{ "connectivity", "status", protocol.Op.connectivity_status }, .{ "connectivity", "action", protocol.Op.connectivity_action }, .{ "services", "status", protocol.Op.services_status }, .{ "audio", "set", protocol.Op.audio_set }, .{ "brightness", "set", protocol.Op.brightness_set }, .{ "profile", "set", protocol.Op.profile_set }, .{ "popup", "show", protocol.Op.popup_show }, .{ "popup", "hide", protocol.Op.popup_hide }, .{ "popup", "toggle", protocol.Op.popup_toggle }, .{ "bar", "set", protocol.Op.bar_set }, .{ "frame", "set", protocol.Op.frame_set }, .{ "osd", "show", protocol.Op.osd_show }, .{ "launcher", "show", protocol.Op.launcher_show }, .{ "launcher", "hide", protocol.Op.launcher_hide }, .{ "launcher", "toggle", protocol.Op.launcher_toggle }, .{ "control-center", "show", protocol.Op.control_show }, .{ "control-center", "toggle", protocol.Op.control_toggle }, .{ "calendar", "toggle", protocol.Op.calendar_toggle }, .{ "bar", "groups", protocol.Op.bar_groups }, .{ "layout", "get", protocol.Op.layout_get }, .{ "layout", "set", protocol.Op.layout_set }, .{ "overview", "toggle", protocol.Op.overview_toggle } };
+        const pairs = .{ .{ "clipboard", "status", protocol.Op.clipboard_status }, .{ "clipboard", "show", protocol.Op.clipboard_show }, .{ "clipboard", "clear", protocol.Op.clipboard_clear }, .{ "clipboard", "delete", protocol.Op.clipboard_delete }, .{ "clipboard", "select", protocol.Op.clipboard_select }, .{ "capture", "status", protocol.Op.capture_status }, .{ "capture", "show", protocol.Op.capture_show }, .{ "capture", "output", protocol.Op.capture_output }, .{ "capture", "region", protocol.Op.capture_region }, .{ "capture", "copy", protocol.Op.capture_copy }, .{ "capture", "save", protocol.Op.capture_save }, .{ "capture", "cancel", protocol.Op.capture_cancel }, .{ "lifecycle", "status", protocol.Op.lifecycle_status }, .{ "lifecycle", "action", protocol.Op.lifecycle_action }, .{ "aqueous", "reload", protocol.Op.aqueous_reload }, .{ "aqueous", "keep", protocol.Op.aqueous_keep }, .{ "aqueous", "revert", protocol.Op.aqueous_revert }, .{ "aqueous", "rebase", protocol.Op.aqueous_rebase }, .{ "aqueous", "record", protocol.Op.aqueous_record }, .{ "aqueous", "show", protocol.Op.aqueous_show }, .{ "aqueous", "status", protocol.Op.aqueous_status }, .{ "aqueous", "refresh", protocol.Op.aqueous_refresh }, .{ "aqueous", "draft", protocol.Op.aqueous_draft }, .{ "aqueous", "validate", protocol.Op.aqueous_validate }, .{ "aqueous", "apply", protocol.Op.aqueous_apply }, .{ "aqueous", "discard", protocol.Op.aqueous_discard }, .{ "settings", "show", protocol.Op.settings_show }, .{ "preferences", "status", protocol.Op.preferences_status }, .{ "preferences", "apply", protocol.Op.preferences_apply }, .{ "preferences", "reload", protocol.Op.preferences_reload }, .{ "session", "status", protocol.Op.session_status }, .{ "session", "action", protocol.Op.session_action }, .{ "notifications", "toggle", protocol.Op.notifications_toggle }, .{ "media", "toggle", protocol.Op.media_toggle }, .{ "tray", "toggle", protocol.Op.tray_toggle }, .{ "connectivity", "status", protocol.Op.connectivity_status }, .{ "connectivity", "action", protocol.Op.connectivity_action }, .{ "services", "status", protocol.Op.services_status }, .{ "audio", "set", protocol.Op.audio_set }, .{ "brightness", "set", protocol.Op.brightness_set }, .{ "profile", "set", protocol.Op.profile_set }, .{ "popup", "show", protocol.Op.popup_show }, .{ "popup", "hide", protocol.Op.popup_hide }, .{ "popup", "toggle", protocol.Op.popup_toggle }, .{ "bar", "set", protocol.Op.bar_set }, .{ "frame", "set", protocol.Op.frame_set }, .{ "osd", "show", protocol.Op.osd_show }, .{ "launcher", "show", protocol.Op.launcher_show }, .{ "launcher", "hide", protocol.Op.launcher_hide }, .{ "launcher", "toggle", protocol.Op.launcher_toggle }, .{ "control-center", "show", protocol.Op.control_show }, .{ "control-center", "toggle", protocol.Op.control_toggle }, .{ "calendar", "toggle", protocol.Op.calendar_toggle }, .{ "bar", "groups", protocol.Op.bar_groups }, .{ "layout", "get", protocol.Op.layout_get }, .{ "layout", "set", protocol.Op.layout_set }, .{ "overview", "toggle", protocol.Op.overview_toggle } };
         inline for (pairs) |p| if (std.mem.eql(u8, args[0], p[0]) and std.mem.eql(u8, args[1], p[1])) break :blk p[2];
         return error.Usage;
     };
@@ -91,6 +91,13 @@ pub fn parse(args: []const []const u8) !Options {
 }
 pub const usage =
     \\Usage: pearlctl status | quit | lock
+    \\       pearlctl clipboard status|show|clear
+    \\       pearlctl clipboard select|delete --generation ENTRY_ID
+    \\       pearlctl capture status|show|cancel
+    \\       pearlctl capture output [--output ID]
+    \\       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]
+    \\       pearlctl capture copy --generation N
+    \\       pearlctl capture save --generation N [--path /absolute/new.png]
     \\       pearlctl lifecycle status
     \\       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit
     \\       pearlctl lifecycle action --text confirm --generation N
@@ -113,7 +120,7 @@ pub const usage =
     \\       pearlctl overview toggle [--output ID]
     \\       pearlctl layout get|set --output ID [--layout NAME]
     \\       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS
-    \\       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray
+    \\       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard
     \\
     \\       pearlctl notifications|media|tray toggle [--output ID]
     \\       pearlctl session status [--offset N]
@@ -190,4 +197,18 @@ test "session controls bind generations and reject missing or unrelated action f
     try t.expectError(error.Usage, parse(&.{ "session", "action", "--command", "tray_click", "--generation", "1", "--menu-id", "2" }));
     try t.expectError(error.Usage, parse(&.{ "session", "action", "--command", "invoke", "--notification", "1" }));
     try t.expectError(error.Usage, parse(&.{ "session", "action", "--command", "dnd_on", "--generation", "1" }));
+}
+
+test "clipboard and capture commands validate identities, paths and region bounds" {
+    const t = std.testing;
+    _ = try parse(&.{ "clipboard", "select", "--generation", "42" });
+    _ = try parse(&.{ "capture", "region", "--output", "1", "--text", "5,7,101,99" });
+    _ = try parse(&.{ "capture", "save", "--generation", "1", "--path", "/tmp/private.png" });
+    try t.expectError(error.Usage, parse(&.{ "clipboard", "select" }));
+    try t.expectError(error.Usage, parse(&.{ "clipboard", "delete", "--generation", "0" }));
+    try t.expectError(error.Usage, parse(&.{ "capture", "region", "--text", "-1,0,1,1" }));
+    try t.expectError(error.Usage, parse(&.{ "capture", "save", "--generation", "1", "--path", "relative.png" }));
+    try t.expectError(error.Usage, parse(&.{ "capture", "copy", "--generation", "1", "--path", "/tmp/private.png" }));
+    try t.expectError(error.Usage, parse(&.{ "clipboard", "status", "--text", "secret" }));
+    try t.expectError(error.Usage, parse(&.{ "capture", "output", "--text", "1,2,3,4" }));
 }

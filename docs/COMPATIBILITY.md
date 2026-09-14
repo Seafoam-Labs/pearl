@@ -49,7 +49,7 @@ does not depend on those UI frameworks.
 | GTK layer-shell | **Implemented:** complete `Gtk4LayerShell-1.0` GIR namespace generated as `gtk4layershell1` |
 | GTK session-lock | **Implemented:** complete `Gtk4SessionLock-1.0` GIR namespace generated as `gtk4sessionlock1`; real monitor/locked/unlocked callbacks exercised |
 | Aqueous layout | **Implemented in T06:** generated window-info manager v3 query/set requests on GTK’s verified display; refresh on demand/active-workspace change, no continuous external layout observation |
-| Idle, data-control and capture protocols | Generate Zig protocol bindings from pinned XML when their tasks begin; no handwritten wire marshalling |
+| Idle, data-control and capture protocols | Generated pinned ext-idle-notify v1, ext-data-control v1, wlr-screencopy v3 and core shm/output bindings; no handwritten wire marshalling |
 | libpulse | **Implemented in T07:** translate pinned 17.0-98-gb096 headers with Zig 0.16.0; GLib main-loop adapter, no C bridge |
 | PAM | Generate direct Zig ABI declarations from pinned headers when its task begins; no custom C bridge |
 | Polkit agent | Implemented in T12 with generated Polkit/PolkitAgent 127 namespaces; see SESSION_SECURITY.md for private and physical acceptance |
@@ -254,3 +254,12 @@ machine's `/sys/class/backlight` is empty. Suspend/lock/inhibitor handling remai
 T12. [Header pins](../bindings/headers/inputs.json) and
 [verification records](../artifacts/t07/verification/README.md) retain generated
 ABI identity, binary hashes and regression evidence.
+
+## T14 clipboard and screenshot validation
+
+[Clipboard/capture contracts](CLIPBOARD_CAPTURE.md) describe the native ext-data-control
+and wlr-screencopy implementation, memory and pixel limits, lock/authentication
+privacy, and precise output-local crop rounding. Production needs no wl-clipboard,
+grim, or new portal backend; those tools are interoperability references in the
+private integration suite. The existing GTK/GIO/pixbuf and generated Zig protocol
+stack is reused. Isolated-window and HDR capture are not exposed.

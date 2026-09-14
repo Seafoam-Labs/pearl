@@ -1,0 +1,117 @@
+{
+  "status": "passed",
+  "checks": {
+    "owner-disappearance-and-reselection-with-real-paste": true,
+    "invalid-large-unsupported-sensitive-and-interrupted-payloads-rejected": true,
+    "stalled-transfer-timeout-and-selection-replacement": true,
+    "bounded-history-and-stale-entry-actions": true,
+    "png-decode-copy-truncation-and-dimension-bomb": true,
+    "aggregate-byte-budget-and-metadata-stripping": true,
+    "keyboard-capture-hides-panel-and-shows-preview": true,
+    "all-eight-output-transforms-match-reference": true,
+    "fractional-scale-output-local-crops-use-actual-buffer-extents": true,
+    "save-conflict-recovery-and-screenshot-copy": true,
+    "authentication-dialog-privacy": true,
+    "lock-cancels-purges-denies-and-does-not-import-locked-selection": true,
+    "output-removal-and-recovery": true,
+    "panel-open-close-lifetime": true,
+    "material-light-and-native-gtk-theme": true
+  },
+  "binaries": {
+    "pearl": "5373fcf38274f1d8847f856b85cf8b6c97d124dcecc29f50a4e9f1a56a03fbfc",
+    "ctl": "f008331c1b2d7de626a1741d7d6971793b49aa7807e219d55b030bab2b8d2d52",
+    "locker": "b34e17a93690222d6b9b392dbedffd4d52e530209260d3b86bf1f2ad522c0e61",
+    "pam_module": "0155b279724a62798876cecedfce987ed2bae276f1628f461aebcf3dcd4ae95b",
+    "producer": "79377dba01f34305506b6879c74c420ca5285d6753347c3e4209d9ea52ad768f"
+  },
+  "orientations": {
+    "normal": {
+      "size": [
+        1280,
+        720
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "90": {
+      "size": [
+        720,
+        1280
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "180": {
+      "size": [
+        1280,
+        720
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "270": {
+      "size": [
+        720,
+        1280
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "flipped": {
+      "size": [
+        1280,
+        720
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "flipped-90": {
+      "size": [
+        720,
+        1280
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "flipped-180": {
+      "size": [
+        1280,
+        720
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "flipped-270": {
+      "size": [
+        720,
+        1280
+      ],
+      "mean_error": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{"event": "ready"}
+{"event": "delay-acquired", "lease": 1}
+{"event": "registered", "sender": ":1.2"}
+{"event": "authentication", "outcome": "cancelled"}
+{"event": "cancel", "outcome": "completed"}
+{"event": "authentication", "outcome": "failed"}
+{"event": "authentication", "outcome": "cancelled"}
+{"event": "registered", "sender": ":1.2"}
+{"event": "authentication", "outcome": "cancelled"}
+{"event": "Suspend", "locked": true}
+{"event": "prepare", "value": true}
+{"event": "delay-released", "lease": 1, "locked": true}
+{"event": "prepare", "value": false}
+{"event": "delay-acquired", "lease": 2}
+{"event": "prepare", "value": true}
+{"event": "delay-released", "lease": 2, "locked": true}
+{"event": "prepare", "value": false}
+{"event": "delay-acquired", "lease": 3}
+{"event": "Suspend", "locked": true}
+{"event": "prepare", "value": true}
+{"event": "delay-released", "lease": 3, "locked": true}
+{"event": "prepare", "value": false}
+{"event": "delay-acquired", "lease": 4}
+{"event": "delay-released", "lease": 4, "locked": false}
+{"event": "unregistered"}
+{"event": "delay-acquired", "lease": 5}
+{"event": "registered", "sender": ":1.2"}
+{"event": "delay-released", "lease": 5, "locked": true}
+{"event": "unregistered"}
+{"event": "delay-acquired", "lease": 6}
+{"event": "registered", "sender": ":1.3"}
+{"event": "prepare", "value": true}
+{"event": "prepare", "value": false}
+{"event": "delay-released", "lease": 6, "locked": false}
+{"event": "unregistered"}
+{"event": "delay-acquired", "lease": 7}
+{"event": "registered", "sender": ":1.4"}
+{"event": "delay-released", "lease": 7, "locked": true}
+{"event": "delay-acquired", "lease": 8}
+{"event": "registered", "sender": ":1.5"}
+{"event": "delay-released", "lease": 8, "locked": false}
+{"event": "unregistered"}

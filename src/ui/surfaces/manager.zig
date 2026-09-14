@@ -36,6 +36,7 @@ const Surface = struct {
     media: ?*@import("../../desktop/media.zig").View = null,
     tray: ?*@import("../../desktop/tray.zig").View = null,
     aqueous_settings: ?*@import("../../desktop/aqueous_settings.zig").View = null,
+    clipboard_capture: ?*@import("../../desktop/clipboard_capture.zig").View = null,
     settings: ?*@import("../../desktop/settings.zig").View = null,
     wallpaper_picture: ?*gtk.Picture = null,
     appearance_revision: u64 = std.math.maxInt(u64),
@@ -49,6 +50,7 @@ const Surface = struct {
         if (self.tray) |view| view.destroy();
         if (self.bar) |bar| bar.destroy();
         if (self.launcher) |launcher| launcher.destroy();
+        if (self.clipboard_capture) |view| view.destroy();
         if (self.control) |control| control.destroy();
         if (self.measure_clock) |clock| {
             if (object.signalHandlerIsConnected(clock.as(object.Object), self.measure_signal) != 0) object.signalHandlerDisconnect(clock.as(object.Object), self.measure_signal);
@@ -102,6 +104,10 @@ pub const Manager = struct {
     network: @import("../../services/network.zig").Network = undefined,
     bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
     session_services: @import("../../services/session.zig").Session = undefined,
+    clipboard: @import("../../services/clipboard.zig").Clipboard = undefined,
+    capture: @import("../../services/capture.zig").Capture = undefined,
+    capture_hide: bool = false,
+    capture_feedback: bool = false,
     services_started: bool = false,
     aqueous_settings: @import("../../config/aqueous_client.zig").Client = undefined,
     preferences: @import("../../config/service.zig").Service = undefined,
@@ -142,6 +148,8 @@ pub const Manager = struct {
         if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_BACKLIGHT")) |root| self.power.backlight_root.set(std.mem.span(root));
         self.network = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
         self.bluetooth = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
+        self.clipboard = .{ .display = self.display, .context = self, .changed = nativeChanged };
+        self.capture = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = captureChanged };
         self.session_services = .{ .app = self.app.as(gio.Application), .context = self, .changed = sessionChanged };
         self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged, .validate = validatePreferences };
         try self.preferences.start();
@@ -157,6 +165,8 @@ pub const Manager = struct {
         self.network.start();
         self.bluetooth.start();
         self.session_services.start();
+        try self.clipboard.start();
+        try self.capture.start();
         self.armClock();
         gtk.IconTheme.getForDisplay(self.display).addResourcePath("/org/aqueous/Pearl/icons");
         self.monitor_signal = gio.ListModel.signals.items_changed.connect(self.display.getMonitors(), *Manager, monitorsChanged, self, .{});
@@ -184,6 +194,8 @@ pub const Manager = struct {
             self.power.stop();
             self.network.stop();
             self.bluetooth.stop();
+            self.clipboard.stop();
+            self.capture.stop();
             self.session_services.stop();
             self.services_started = false;
         }
@@ -233,15 +245,24 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (self.logout) |callback| callback(self.context.?);
     }
+    pub fn syncClipboardPrivacy(self: *Manager) void {
+        const gate = self.lifecycle.gate;
+        const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
+        const locked = !matched or self.client.availability != .ready or !gate.available or !gate.active or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
+        self.clipboard.setLocked(locked);
+        self.capture.setLocked(locked);
+    }
     fn lifecycleChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
+        self.syncClipboardPrivacy();
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
         self.schedule();
     }
     fn authChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
+        self.syncClipboardPrivacy();
         if (self.auth.window) |window| self.preferences.style(window.as(gtk.Widget), self.auth.panel.?.as(gtk.Widget));
         self.schedule();
     }
@@ -342,6 +363,15 @@ pub const Manager = struct {
         if (!self.running) return;
         if (self.popup) |popup| if (popup.control) |panel| panel.update();
     }
+    fn captureChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        if (self.capture_feedback and !self.capture.pending()) {
+            self.capture_feedback = false;
+            if (!self.capture.locked) self.queueOsd(self.capture.message);
+        }
+        self.schedule();
+    }
     fn nativeChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.schedule();
@@ -380,8 +410,13 @@ pub const Manager = struct {
         return 0;
     }
     fn sync(self: *Manager) !void {
+        if (self.capture_hide) {
+            self.capture_hide = false;
+            if (self.pane == .clipboard_capture) self.hidePopup();
+        }
         self.lifecycle.sync();
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
+        self.syncClipboardPrivacy();
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
         if (self.client.availability != .ready) {
             self.session_services.notifications.setLocked(true);
@@ -449,6 +484,7 @@ pub const Manager = struct {
                 o.preferences_revision = self.preferences.appearance;
             }
             const changed = !std.meta.eql(o.bounds, bounds) or !std.meta.eql(o.usable, usable);
+            self.capture.validateTarget(o.connector, bounds.width, bounds.height);
             o.bounds = bounds;
             o.usable = usable;
             o.scale = record.scale;
@@ -463,6 +499,7 @@ pub const Manager = struct {
         while (i < self.outputs.items.len) {
             const o = self.outputs.items[i];
             if (!o.seen) {
+                if (self.capture.target) |target| if (std.mem.eql(u8, target.name.slice(), o.connector)) self.capture.cancel();
                 if (self.popup != null and self.popup.?.output == o) self.hidePopup();
                 if (self.osd != null and self.osd.?.output == o) self.hideOsd();
                 if (self.notification != null and self.notification.?.output == o) self.hideNotifications();
@@ -472,6 +509,7 @@ pub const Manager = struct {
         }
         if (self.popup) |popup| {
             if (popup.launcher) |launcher| launcher.refresh();
+            if (popup.clipboard_capture) |view| view.update();
             if (popup.control) |panel| panel.update();
             if (popup.notifications) |view| view.update();
             if (popup.media) |view| view.update();
@@ -536,6 +574,7 @@ pub const Manager = struct {
         errdefer {
             if (s.bar) |bar| bar.destroy();
             if (s.launcher) |launcher| launcher.destroy();
+            if (s.clipboard_capture) |view| view.destroy();
             if (s.control) |panel_control| panel_control.destroy();
             if (s.notifications) |view| view.destroy();
             if (s.media) |view| view.destroy();
@@ -601,6 +640,7 @@ pub const Manager = struct {
                         s.media = try @import("../../desktop/media.zig").View.create(content, &self.session_services.media);
                     },
                     .tray => s.tray = try @import("../../desktop/tray.zig").View.create(panel, &self.session_services.tray),
+                    .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested),
                     .control => {
                         s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services.media, &self.lifecycle, &self.auth);
                         const overview = gtk.Button.newWithLabel(tr("Window overview", "Fensterübersicht"));
@@ -665,6 +705,10 @@ pub const Manager = struct {
         return self.showPane(output, .launcher);
     }
     pub fn showPane(self: *Manager, output: *Output, pane: Bar.Pane) !void {
+        if (pane == .clipboard_capture) {
+            self.syncClipboardPrivacy();
+            if (self.clipboard.locked) return error.Locked;
+        }
         if (self.client.model.get(.session, "session").?.locked) return error.Locked;
         self.hidePopup();
         self.pane = pane;
@@ -690,7 +734,7 @@ pub const Manager = struct {
         const s = self.popup orelse return;
         const o = s.output;
         const prefs = self.preferences.prefs().popup;
-        var rect = if (self.pane == .launcher) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if ((self.pane == .settings or self.pane == .aqueous_settings)) 700 else if (self.pane == .control) 600 else 440, if ((self.pane == .settings or self.pane == .aqueous_settings)) 720 else if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
+        var rect = if (self.pane == .launcher) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if ((self.pane == .settings or self.pane == .aqueous_settings)) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else 440, if ((self.pane == .settings or self.pane == .aqueous_settings)) 720 else if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
         const width = @min(rect.width, prefs.max_width);
         const height = @min(rect.height, prefs.max_height);
         rect = if (prefs.placement == .centered or self.pane == .launcher) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, o.usable, width, height, o.reservations.bar_edge, self.pane != .calendar);
@@ -780,6 +824,9 @@ pub const Manager = struct {
         }
     }
     pub fn control(self: *Manager, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
+        self.syncClipboardPrivacy();
+        if (request.op == .clipboard_status) return self.clipboard.status(alloc);
+        if (request.op == .capture_status) return self.capture.status(alloc);
         if (request.op == .lifecycle_status) return self.lifecycle.status(alloc, &self.auth);
         if (request.op == .lifecycle_action) {
             try self.lifecycle.act(request.text.?, request.generation);
@@ -797,7 +844,23 @@ pub const Manager = struct {
         if (self.client.availability != .ready) return error.Unavailable;
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         switch (request.op) {
-            .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .clipboard_status, .capture_status, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .clipboard_show, .capture_show => {
+                try self.showPane(try self.selected(request.output), .clipboard_capture);
+                if (request.op == .capture_show) self.popup.?.clipboard_capture.?.showCapture();
+            },
+            .clipboard_clear => self.clipboard.clear(),
+            .clipboard_select => try self.clipboard.select(request.generation.?),
+            .clipboard_delete => try self.clipboard.delete(request.generation.?),
+            .capture_cancel => self.capture.cancel(),
+            .capture_copy => try self.capture.copy(&self.clipboard, request.generation.?),
+            .capture_save => try self.capture.save(request.generation.?, request.path),
+            .capture_output, .capture_region => {
+                const output = try self.selected(request.output);
+                const crop = if (request.op == .capture_region) try @import("../../services/clipboard_policy.zig").region(request.text.?, output.bounds.width, output.bounds.height) else null;
+                try self.capture.take(output.connector, output.bounds.width, output.bounds.height, crop);
+                return "{\"queued\":true}";
+            },
             .preferences_apply => {
                 try self.preferences.apply(request.text.?, request.revision.?);
                 return "{\"queued\":true}";
@@ -1113,4 +1176,16 @@ fn titlePreview(text: []const u8) []const u8 {
     var n = @min(text.len, 128);
     while (n > 0 and n < text.len and text[n] & 0xc0 == 0x80) n -= 1;
     return text[0..n];
+}
+
+fn captureRequested(context: *anyopaque, region: ?[]const u8) !void {
+    const surface: *Surface = @ptrCast(@alignCast(context));
+    const manager = surface.manager;
+    manager.syncClipboardPrivacy();
+    const output = surface.output;
+    const crop = if (region) |text| try @import("../../services/clipboard_policy.zig").region(text, output.bounds.width, output.bounds.height) else null;
+    try manager.capture.take(output.connector, output.bounds.width, output.bounds.height, crop);
+    manager.capture_hide = true;
+    manager.capture_feedback = true;
+    manager.schedule();
 }

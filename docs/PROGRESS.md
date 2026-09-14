@@ -1,5 +1,44 @@
 # Pearl implementation progress
 
+## T14 — Implemented, September 13, 2026
+
+Added native ext-data-control clipboard history and wlr-screencopy screenshots
+through pinned XML and generated Zig bindings, using the existing Ghostty GTK
+module graph. Clipboard history stores bounded UTF-8 text and sanitized PNGs in
+memory, with thumbnails, clear/delete/reselect controls, nonblocking transfers,
+timeouts, MIME filtering, entry identities, and explicit selection ownership.
+
+The new Clipboard & capture panel has separate tabs, keyboard navigation and
+Material/native GTK styling. Output screenshots normalize all eight transforms;
+region screenshots are explicitly output crops with outward pixel rounding at
+fractional scales. One cancellable worker converts/encodes the screenshot,
+output changes invalidate the target, and save/copy actions use the retained
+screenshot generation. Save publishes a private PNG without overwriting an
+existing destination. UI capture hides the panel before the frame and provides
+completion feedback; failures retain the previous result for retry.
+
+Lock requests, sleep preparation, session inactivity/loss and Pearl authentication
+prompts cancel work and clear retained clipboard/screenshot content. Collection
+restarts without importing the selection that existed while paused. Source
+payloads and service-owned image buffers are explicitly zeroed before release.
+
+Checks: **96 pure/adapter/binding tests**, **15 T14 scenario groups**, the existing
+**20 session-security groups**, and **17 surface regression checks**. The native
+screenshots match the independent reference for all eight output transforms;
+fractional-scale crops, disappearing/stalled owners, invalid/oversized payloads,
+metadata removal, history byte/count caps, broken readers, native locking,
+authentication privacy, output removal and GTK themes pass on private sessions.
+
+[Clipboard/capture documentation](CLIPBOARD_CAPTURE.md) records commands,
+ownership, limits, crop math and remaining boundaries. [T14 evidence](../artifacts/t14/README.md)
+records exact test binaries and screenshots. Production build, binding
+reproduction, staging, formatting and syntax checks are recorded there.
+No host clipboard, display, PAM policy or portal ownership was changed.
+
+The validated capture path is SDR output/region capture. Isolated-window capture
+is not exposed; pointer-drag region selection and physical HDR/color acceptance
+are outside this slice. Existing portal screensharing remains in place. T15 is next.
+
 ## T13 — Implemented, September 13, 2026
 
 Completed the native lock interface and lifecycle work built on T12. The locker
@@ -33,7 +72,7 @@ PAM policy or service was changed.
 Implementation is complete with physical acceptance pending: real hardware
 DPMS/lid/suspend/resume, mixed-DPI hotplug timing, screen-reader speech/AT-SPI,
 and installed distribution PAM/fingerprint/smart-card policy. The recorded
-bounded soak is not a claim about an indefinite run. T14 is next.
+bounded soak is not a claim about an indefinite run.
 
 ## T12 — Implemented, September 13, 2026
 

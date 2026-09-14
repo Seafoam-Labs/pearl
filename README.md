@@ -2,7 +2,7 @@
 
 Pearl is the working name for a planned **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with a look and feel closely modeled on Dank Material Shell.
 
-T00–T07 and T09–T10 are complete; T08 is implemented with physical scan acceptance pending. The pinned Zig 0.16.0 stack has generated
+T00–T07 and T09–T10 are complete; T08 and T11–T14 are implemented with their documented capability and physical-acceptance boundaries. The pinned Zig 0.16.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
 resources and a demo gallery. Private Aqueous tests cover startup, shutdown,
 cancellation and session isolation. A bounded Aqueous decoder and atomic state
@@ -38,6 +38,7 @@ acceptance remains pending. The full shell remains in progress.
 - [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.
 - [Aqueous settings replacement](docs/AQUEOUS_SETTINGS.md), [field coverage](docs/AQUEOUS_FIELD_INVENTORY.md) and [T11 verification](artifacts/t11/verification/README.md). Open it with `pearlctl aqueous show`.
 - [Session security and native lock](docs/SESSION_SECURITY.md): T12 idle/sleep, polkit, native GTK/PAM locker, packaging and physical acceptance.
+- [Clipboard and screenshots](docs/CLIPBOARD_CAPTURE.md): T14 private history, native output/region capture, save/copy controls and lock behavior.
 - [Native lock screen](docs/LOCK_SCREEN.md): T13 responsive input, accessibility, output lifecycle and resource verification.
 - [Preferences, wallpaper and themes](docs/PREFERENCES.md) and [T10 visual evidence](artifacts/t10/comparison.html): settings, dynamic Material colors, native GTK themes, draft recovery and opt-in exports.
 - [Notifications, tray and media](docs/SESSION_SERVICES.md) and [T09 visual evidence](artifacts/t09/comparison.html): protocol contracts, bounds, keyboard controls, ownership and session-bus recovery.

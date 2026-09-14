@@ -6,7 +6,7 @@ pub const max_frame = 8192;
 pub const ConnectivityService = enum { network, bluetooth };
 pub const ConnectivityAction = enum { scan, connect, connect_saved, disconnect, enable, disable, cancel, pair, trust, untrust, discover, stop_discovery };
 pub const SessionAction = enum { dnd_on, dnd_off, clear_history, dismiss, invoke, select, play_pause, play, pause, stop, next, previous, seek, tray_activate, tray_secondary, tray_menu, tray_click };
-pub const Op = enum { lifecycle_status, lifecycle_action, aqueous_reload, aqueous_keep, aqueous_revert, aqueous_rebase, aqueous_record, aqueous_show, aqueous_status, aqueous_refresh, aqueous_draft, aqueous_validate, aqueous_apply, aqueous_discard, preferences_status, preferences_apply, preferences_reload, settings_show, session_status, session_action, notifications_toggle, media_toggle, tray_toggle, connectivity_status, connectivity_action, status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit, launcher_show, launcher_hide, launcher_toggle, control_show, control_toggle, calendar_toggle, bar_groups, layout_get, layout_set, overview_toggle, services_status, audio_set, brightness_set, profile_set };
+pub const Op = enum { clipboard_status, clipboard_show, clipboard_clear, clipboard_delete, clipboard_select, capture_status, capture_show, capture_output, capture_region, capture_copy, capture_save, capture_cancel, lifecycle_status, lifecycle_action, aqueous_reload, aqueous_keep, aqueous_revert, aqueous_rebase, aqueous_record, aqueous_show, aqueous_status, aqueous_refresh, aqueous_draft, aqueous_validate, aqueous_apply, aqueous_discard, preferences_status, preferences_apply, preferences_reload, settings_show, session_status, session_action, notifications_toggle, media_toggle, tray_toggle, connectivity_status, connectivity_action, status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit, launcher_show, launcher_hide, launcher_toggle, control_show, control_toggle, calendar_toggle, bar_groups, layout_get, layout_set, overview_toggle, services_status, audio_set, brightness_set, profile_set };
 pub const Request = struct {
     pearl: u32 = 1,
     id: []const u8 = "1",
@@ -84,6 +84,11 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
         if (std.mem.eql(u8, key, "pearl") or std.mem.eql(u8, key, "id") or std.mem.eql(u8, key, "session") or std.mem.eql(u8, key, "display") or std.mem.eql(u8, key, "op")) continue;
         const allowed = switch (r.op) {
             .lifecycle_status, .aqueous_reload, .aqueous_keep, .aqueous_revert, .aqueous_rebase, .aqueous_refresh, .aqueous_validate, .aqueous_apply, .aqueous_discard, .preferences_status, .preferences_reload, .status, .popup_hide, .launcher_hide, .quit => &[_][]const u8{},
+            .clipboard_status, .clipboard_clear, .capture_status, .capture_cancel => &[_][]const u8{},
+            .clipboard_show, .capture_show, .capture_output => &[_][]const u8{"output"},
+            .clipboard_delete, .clipboard_select, .capture_copy => &[_][]const u8{"generation"},
+            .capture_save => &[_][]const u8{ "generation", "path" },
+            .capture_region => &[_][]const u8{ "output", "text" },
             .lifecycle_action => &[_][]const u8{ "text", "generation" },
             .aqueous_show => &[_][]const u8{ "output", "text" },
             .settings_show, .notifications_toggle, .media_toggle, .tray_toggle, .popup_show, .popup_toggle, .launcher_show, .launcher_toggle, .control_show, .control_toggle, .calendar_toggle, .overview_toggle, .layout_get => &[_][]const u8{"output"},
@@ -111,6 +116,13 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     }
     if (r.output) |id| if (id.len == 0 or id.len > 1024 or std.mem.indexOfScalar(u8, id, 0) != null) return error.InvalidRequest;
     switch (r.op) {
+        .clipboard_delete, .clipboard_select, .capture_copy, .capture_save => {
+            if (r.generation == null or r.generation == 0) return error.InvalidRequest;
+            if (r.path) |path| if (path.len == 0 or path.len >= 1024 or path[0] != '/' or std.mem.indexOfScalar(u8, path, 0) != null) return error.InvalidRequest;
+        },
+        .capture_region => {
+            _ = @import("../services/clipboard_policy.zig").region(r.text orelse return error.InvalidRequest, 32768, 32768) catch return error.InvalidRequest;
+        },
         .lifecycle_action => {
             const name = r.text orelse return error.InvalidRequest;
             var known = false;

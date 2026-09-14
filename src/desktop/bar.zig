@@ -8,7 +8,7 @@ const policy = @import("policy.zig");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
-pub const Pane = enum { aqueous_settings, settings, launcher, calendar, control, notifications, media, tray };
+pub const Pane = enum { clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray };
 pub const Event = union(enum) { pane: Pane, workspace: []const u8, keyboard, overview };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
@@ -153,6 +153,7 @@ pub const Bar = struct {
                     },
                     .launcher => (try self.makeButton(.{ .pane = .launcher }, "pearl-application-x-executable-symbolic", tr("Applications", "Programme"), false)).as(gtk.Widget),
                     .overview => (try self.makeButton(.overview, "pearl-view-grid-symbolic", tr("Overview", "Übersicht"), false)).as(gtk.Widget),
+                    .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", tr("Clipboard & capture", "Zwischenablage & Bildschirmfoto"), false)).as(gtk.Widget),
                     .control => (try self.makeButton(.{ .pane = .control }, "pearl-emblem-system-symbolic", tr("Control center", "Schnelleinstellungen"), false)).as(gtk.Widget),
                     .clock => blk: {
                         const button = try self.makeButton(.{ .pane = .calendar }, null, "", false);

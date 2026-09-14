@@ -1,4 +1,5 @@
 test {
+    _ = @import("services/clipboard_policy.zig");
     _ = @import("lock/conversation.zig");
     _ = @import("services/idle_policy.zig");
     _ = @import("config/aqueous_model.zig");

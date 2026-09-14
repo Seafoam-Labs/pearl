@@ -9,7 +9,10 @@
     "zwlr_output_manager_v1": 4,
     "wl_output": 4,
     "ext_idle_notifier_v1": 1,
-    "wl_seat": 9
+    "wl_seat": 9,
+    "ext_data_control_manager_v1": 1,
+    "zwlr_screencopy_manager_v1": 3,
+    "wl_shm": 1
   },
   "inputs": {
     "wayland.xml": {
@@ -43,7 +46,15 @@
     "ext-idle-notify-v1.xml": {
       "source": "wayland-protocols 1.49: staging/ext-idle-notify/ext-idle-notify-v1.xml",
       "sha256": "e56a9c22684e6b46655f7221b798328e304c1efc8f63f01241a1cf8c070f4c30"
+    },
+    "ext-data-control-v1.xml": {
+      "source": "wayland-protocols 1.49: staging/ext-data-control/ext-data-control-v1.xml",
+      "sha256": "293deba5dfdb974fbcf8dcf891a30a51a36a8bba0047dc6bdf6a03194089b7fb"
+    },
+    "wlr-screencopy-unstable-v1.xml": {
+      "source": "Aqueous 7611e23c653a72b24d6dd4d8b6404d1d1feb7480: compositor/protocol/upstream/wlr-screencopy-unstable-v1.xml",
+      "sha256": "a10348b173a56af5dd2e1534782d8517c84213b0c99663a9cc1d4ec08a0cb2e3"
     }
   },
-  "generated_sha256": "81dbd56b770013873da0710d4380bf1620ded5a3ccba907fb894e319c7001339"
+  "generated_sha256": "e52d9ef337ead6588b3b2fa1618b0976136d2ea0f1dddbdc1e420472e8e86a5a"
 }

@@ -1,7 +1,7 @@
 # Pearl AI implementation tasks
 
 Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first. **T00–T07 are complete**;
-T08 is implemented with physical scan acceptance pending; T09–T10 are complete; T11 is implemented with explicit gates; T12 is implemented with physical acceptance pending. T13 is implemented with physical acceptance pending. T14–T16 are not started. Follow their dependency order and record evidence in
+T08 is implemented with physical scan acceptance pending; T09–T10 are complete; T11 is implemented with explicit gates; T12 is implemented with physical acceptance pending. T13 is implemented with physical acceptance pending. T14 is implemented for clipboard and SDR output/region capture; isolated-window capture remains capability-gated. T15–T16 are not started. Follow their dependency order and record evidence in
 [PROGRESS.md](PROGRESS.md). Task IDs are stable and may be split into smaller
 changes without changing their acceptance criteria.
 
