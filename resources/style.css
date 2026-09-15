@@ -60,7 +60,8 @@
 .pearl-root.$scope.pearl-shell { background: transparent; }
 .pearl-root.$scope.pearl-wallpaper { background: linear-gradient(135deg, $surface$, $primary_container$); }
 .pearl-root.$scope.pearl-shell .pearl-surface-panel { background: $container$; color: $text$; border-radius: 14px; }
-.pearl-root.$scope.pearl-shell.pearl-blur .pearl-surface-panel { background: alpha($container$, 0.86); }
+/* Island hosts stay transparent; each island supplies its own blurred background. */
+.pearl-root.$scope.pearl-shell.pearl-blur .pearl-surface-panel:not(.pearl-islands) { background: alpha($container$, 0.86); }
 .pearl-root.$scope.pearl-shell .pearl-popup-panel { padding: 20px; }
 .pearl-root.$scope.pearl-shell .pearl-osd-panel { padding: 14px; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button { padding: 2px 12px; min-height: 24px; background: transparent; }

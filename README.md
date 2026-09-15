@@ -39,6 +39,8 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Aqueous 0.8.2 integration evidence](artifacts/aqueous-082/README.md) and [previous master UI gallery](artifacts/aqueous-master/README.md).
 - [Release and packaging](docs/RELEASE.md) and [DMS migration / switch-back](docs/MIGRATION.md).
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
+- [Settings-flyout navigation plan](docs/SETTINGS_NAVIGATION_PLAN.md): proposed direct bar shortcuts and separate compact settings pages.
+- [Standalone Settings application plan](docs/STANDALONE_SETTINGS_APPLICATION_PLAN.md): a separately launchable Settings app, sidebar pages, backend integration, packaging and design mockups.
 - [Aqueous integration update plan](docs/AQUEOUS_MASTER_UPDATE_PLAN.md): implementation scope and acceptance for the pinned master contracts.
 - [Aqueous 0.8.2 update plan](docs/AQUEOUS_082_UPDATE_PLAN.md): adopt newly exposed collection transactions, display declarations and preview controls.
 - [Greeter](docs/GREETER.md): a separate greetd login screen and installed-desktop chooser, with Material/GTK themes and private tests. Production hosting remains gated on restricted Aqueous support and real-login validation; see the [implementation checklist](docs/GREETER_IMPLEMENTATION_PLAN.md).
