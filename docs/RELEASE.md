@@ -53,6 +53,21 @@ under `/usr/share/pearl-git`, `/usr/share/doc/pearl-git` and
 Both builds use the same user preferences and session control socket, so run one
 shell per session and use the matching startup command or service.
 
+Installing `pearl-git` alone does not select a shell or change UWSM arguments.
+For the **Aqueous-Git** desktop, run `aqueous-welcome-git` and choose Pearl;
+setup installs `aqueous-shell-pearl-git` and saves the choice for the next login.
+For **Aqueous-Intel-Git**, use `aqueous-welcome-intel-git` and its matching preset.
+These integrations must launch `pearl-git` and route actions through
+`pearlctl-git`. They own startup; leave the standalone `pearl-git.service`
+disabled to avoid duplicate shells.
+
+The legacy combined **`aqueous-git` package** still uses the **Aqueous** login
+entry. For that session, disable the previous shell's startup, then run
+`systemctl --user daemon-reload` and `systemctl --user enable pearl-git.service`
+as the session user. Log out and back in. No additional `uwsm start` arguments
+are required: Aqueous finalizes its environment and UWSM starts the enabled unit.
+The package prints these setup instructions on installation and upgrade.
+
 The reproduction script builds in two fresh extraction roots and compares all
 three production binary hashes. It can copy the already downloaded `zig-pkg`
 cache; otherwise Zig fetches its hash-pinned dependencies. This proves identical
@@ -95,7 +110,9 @@ controls unavailable; they do not prevent static theming or basic shell startup.
 ## Direct and UWSM startup
 
 Both paths require the live Aqueous `WAYLAND_DISPLAY`, `AQUEOUS_SOCKET`,
-`XDG_RUNTIME_DIR`, `XDG_CURRENT_DESKTOP=Aqueous` and Wayland session type. Never
+`XDG_RUNTIME_DIR`, an `Aqueous`, `Aqueous-Git` or `Aqueous-Intel-Git` desktop
+identity and Wayland session type. The corresponding IPC directories are
+`aqueous`, `aqueous-git` and `aqueous-intel-git` under `XDG_RUNTIME_DIR`. Never
 copy socket values from a prior login or a nested compositor into the host user
 manager. `pearl --check-environment` checks launch prerequisites and IPC socket
 existence, then exits before GTK. The running application additionally validates

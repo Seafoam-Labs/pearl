@@ -435,6 +435,8 @@ pub fn validateEndpoint(path: []const u8, runtime: []const u8) !void {
 test "adapter endpoint validation rejects traversal, overlap and long Unix paths" {
     const t = std.testing;
     try validateEndpoint("/tmp/runtime/aqueous/instance/ipc.sock", "/tmp/runtime");
+    try validateEndpoint("/tmp/runtime/aqueous-git/instance/ipc.sock", "/tmp/runtime");
+    try validateEndpoint("/tmp/runtime/aqueous-intel-git/instance/ipc.sock", "/tmp/runtime");
     for ([_][]const u8{ "relative", "/tmp/runtime/aqueous/ipc.sock", "/tmp/runtime/aqueous//ipc.sock", "/tmp/runtime/aqueous/../ipc.sock", "/tmp/runtime/aqueous/a/b/ipc.sock", "/tmp/runtime-other/aqueous/a/ipc.sock", "/tmp/runtime/aqueous/a/ipc.sock\x00" }) |path| try t.expectError(error.InvalidEndpoint, validateEndpoint(path, "/tmp/runtime"));
     try t.expectError(error.InvalidEndpoint, validateEndpoint("/tmp//runtime/aqueous/a/ipc.sock", "/tmp//runtime"));
     try t.expectError(error.InvalidEndpoint, validateEndpoint("/tmp/runtime/aqueous/" ++ "a" ** 90 ++ "/ipc.sock", "/tmp/runtime"));

@@ -2,7 +2,7 @@
 # installation.
 pkgname=pearl-git
 pkgver=1.0.0rc2.r22.ga002d24
-pkgrel=3
+pkgrel=4
 pkgdesc='GTK desktop shell exclusively for Aqueous (Git version)'
 arch=('x86_64')
 url='https://github.com/Seafoam-Labs/pearl'
@@ -22,6 +22,7 @@ optdepends=('matugen>=4.2.0: dynamic Material colors'
             'upower>=1.91.4: battery status'
             'power-profiles-daemon>=0.30: power profiles')
 backup=('etc/pam.d/pearl-git')
+install=pearl-git.install
 options=('!strip' '!debug')
 source=("pearl::git+$url.git")
 sha256sums=('SKIP')
