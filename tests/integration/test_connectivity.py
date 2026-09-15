@@ -9,6 +9,7 @@ from pearl_session import PrivateSession,wait_for
 from test_surfaces import ctl,status,capture,clean
 from test_services import command
 from t00 import Session as T00Session
+from settings_navigation import choose_page, show_page
 FIX=ROOT/'tests/fixtures/services/connectivity.py'
 NR='/org/freedesktop/NetworkManager'; ND=NR+'/Devices/1'; AP=NR+'/AccessPoint/1'; SP=NR+'/Settings/1'
 BA='/org/bluez/hci0'; BD=BA+'/dev_00_11_22_33_44_55'
@@ -51,19 +52,19 @@ def main():
                 assert denied.returncode!=0 and 'AccessDenied' in denied.stderr,denied
             checks['agent-calls-reject-unrelated-bus-senders']=True
             output=status(s,args.ctl)['outputs'][0]
-            def show(): ctl(s,args.ctl,'control-center','show','--output',output['id']); time.sleep(.3)
+            def show(page='network'): show_page(s,args.ctl,page,output['id']); time.sleep(.3)
             show(); capture(s,'control-center-connectivity',output['connector'])
             for _ in range(12):
                 if focus(pearl)=='net-expander': break
                 key(s,'-k','Tab')
             assert focus(pearl)=='net-expander'
-            key(s,'-k','space'); time.sleep(.3); capture(s,'nearby-and-saved-networks',output['connector'])
-            ctl(s,args.ctl,'popup','hide'); show()
+            key(s,'-k','space'); key(s,'-k','space'); time.sleep(.3); capture(s,'nearby-and-saved-networks',output['connector'])
+            ctl(s,args.ctl,'popup','hide'); show('bluetooth')
             for _ in range(12):
                 if focus(pearl)=='bt-expander': break
                 key(s,'-k','Tab')
             assert focus(pearl)=='bt-expander'
-            key(s,'-k','space'); time.sleep(.3); capture(s,'bluetooth-device-list',output['connector'])
+            key(s,'-k','space'); key(s,'-k','space'); time.sleep(.3); capture(s,'bluetooth-device-list',output['connector'])
             ctl(s,args.ctl,'popup','hide'); show()
             checks['keyboard-traversal-collapsed-and-expanded-connectivity-lists']=True
             action(s,args.ctl,'network','scan',ND); await_state(s,args.ctl,lambda v:not v['network']['scan_pending'])
@@ -111,6 +112,7 @@ def main():
             checks['hardware-radio-block-prevents-writes']=True
             action(s,args.ctl,'network','connect',NR+'/AccessPoint/4',code=4)
             assert 'editor' in state(s,args.ctl)['network']['err']; checks['enterprise-handoff']=True
+            choose_page(s,args.ctl,'bluetooth')
             action(s,args.ctl,'bluetooth','discover',BA)
             await_state(s,args.ctl,lambda v:v['bluetooth']['discovering']); action(s,args.ctl,'bluetooth','stop_discovery')
             await_state(s,args.ctl,lambda v:not v['bluetooth']['discovery_pending'] and not v['bluetooth']['discovering'])
@@ -125,7 +127,7 @@ def main():
             ctl(s,args.ctl,'popup','hide')
             await_state(s,args.ctl,lambda v:not v['bluetooth']['discovery_pending'] and not v['bluetooth']['discovering'])
             assert sum(x['kind']=='StopDiscovery' for x in records(s))==3
-            show(); command(bluetooth,delay=150)
+            show('bluetooth'); command(bluetooth,delay=150)
             checks['late-discovery-start-after-panel-close-releases-lease']=True
             action(s,args.ctl,'bluetooth','pair',BD)
             await_state(s,args.ctl,lambda v:v['bluetooth']['prompt']=='confirm'); wait_for(lambda:focus(pearl)=='bluetooth-confirm')
@@ -157,6 +159,7 @@ def main():
             action(s,args.ctl,'bluetooth','pair',BD); await_state(s,args.ctl,lambda v:v['bluetooth']['prompt']=='confirm')
             command(bluetooth,remove=BD); await_state(s,args.ctl,lambda v:not v['bluetooth']['pending'] and v['bluetooth']['prompt']=='none' and not any(i['kind']=='bluetooth_device' for i in v['items']))
             checks['removed-device-cancels-conversation']=True
+            choose_page(s,args.ctl,'network')
             old=state(s,args.ctl)['network']['generation']
             action(s,args.ctl,'network','connect',AP); await_state(s,args.ctl,lambda v:v['network']['prompt'])
             command(network,owner=False); await_state(s,args.ctl,lambda v:not v['network']['available'] and not v['network']['prompt'])
@@ -182,6 +185,7 @@ def main():
             checks['system-bus-reconnect-recreates-agents-and-state']=True
             (s.output/'final-state.json').write_text(json.dumps(state(s,args.ctl),indent=2)+'\n')
             action(s,args.ctl,'network','connect',AP); await_state(s,args.ctl,lambda v:v['network']['prompt'])
+            choose_page(s,args.ctl,'bluetooth')
             command(bluetooth,delay=2000); action(s,args.ctl,'bluetooth','discover',BA)
             ctl(s,args.ctl,'quit'); clean(pearl)
             checks['shutdown-drains-pending-agent-and-discovery-callbacks']=True

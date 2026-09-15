@@ -16,7 +16,8 @@ short outputs. Toasts move to the left while a principal popup is open. Opening
 history, media or a tray menu replaces the principal popup. Escape and outside
 click retain the existing dismissal behavior.
 
-Media cards appear in their own panel and the control center. Player selection,
+Media cards appear in their own panel, reached from the media bar item or the
+compact Overview's **Media controls** link. Player selection,
 previous/next, play/pause, stop, progress and explicit Seek are real controls.
 Unsupported controls are disabled. An edited slider position survives focus
 moving to Seek; a track change invalidates that edit. Progress is extrapolated

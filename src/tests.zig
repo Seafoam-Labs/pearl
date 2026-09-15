@@ -14,6 +14,8 @@ test {
     _ = @import("services/notification_policy.zig");
     _ = @import("services/connectivity_policy.zig");
     _ = @import("desktop/policy.zig");
+    _ = @import("desktop/settings_navigation.zig");
+    _ = @import("services/view_ownership.zig");
     _ = @import("ui/surfaces/policy.zig");
     _ = @import("cli/options.zig");
     _ = @import("cli/protocol.zig");

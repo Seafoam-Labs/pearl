@@ -11,6 +11,34 @@ later services. The bar currently has one Pearl button; the popup has a title,
 explanatory text and Close button. There is no application launcher, complete
 control center, audio service or persistent surface configuration yet.
 
+## Compact settings flyout
+
+The settings flyout uses the existing principal popup surface, usable-area limits,
+output anchoring, blur and exclusive keyboard/dismissal behavior. A typed shared
+route selects Overview, Sound, Network, Bluetooth or Power & battery. Same-output
+page changes reuse that surface; repeating an external toggle of the same page
+closes it. Route/output validation precedes visible changes. `status.popup.page`
+reports the selected settings route and is `null` for task popups.
+
+The host keeps a fixed header and one stack with five page viewports. Only the
+selected viewport has a live body. Page departure disconnects callbacks, clears
+secret entries and releases that page's service lease. Internal navigation
+restores scroll, expansion and valid focus identity; explicit links reset to the
+heading. Lock and session loss revoke interactive ownership; removing the target
+output dismisses its flyout. Other frontend owners retain their independent
+interest on ordinary flyout navigation/close. See
+[SETTINGS_SERVICE_OWNERSHIP.md](SETTINGS_SERVICE_OWNERSHIP.md).
+
+The header and service action groups wrap when the output or text size leaves
+insufficient width. The header remains outside the page viewport. This avoids
+clipping controls on narrow portrait outputs without adding a shared category
+scroller. Bar keyboard mode remains `none`, as explicitly approved during F4;
+the flyout retains exclusive keyboard input.
+
+`control-center show/toggle [--output ID] [--page PAGE]` always addresses this
+flyout. A future full Settings application has an independent window lifecycle
+and does not count as the principal popup.
+
 ## Identity and ownership
 
 `src/core/application.zig` owns the T04 adapter, surface manager and control

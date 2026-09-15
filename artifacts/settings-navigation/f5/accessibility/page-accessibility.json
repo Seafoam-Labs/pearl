@@ -1,0 +1,3916 @@
+{
+  "overview": [
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Bluetooth controls",
+      "description": "Bluetooth on \u00b7 0 connected",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Media",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Notifications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Clipboard & capture",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Overview",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Overview",
+      "description": "Choose a settings section",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "1 \u00b7 10",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "2 \u00b7 11",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "3 \u00b7 12",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "4 \u00b7 13",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "5 \u00b7 14",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "6 \u00b7 15",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "7 \u00b7 16",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "8 \u00b7 17",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "9 \u00b7 18",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Overview",
+      "description": "Choose a settings section",
+      "role": "combo box",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Overview",
+      "description": "",
+      "role": "heading",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Overview",
+      "description": "Choose a settings section",
+      "role": "toggle button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Bluetooth",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power & battery",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Media controls",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Window overview",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl settings",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Aqueous settings",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Session & security",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Suspend delay inhibitor unavailable.",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Workspace layout",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "float \u00b7 1",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Refresh layout",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Bluetooth",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power & battery",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Media controls",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Window overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl settings",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Aqueous settings",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Lock",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Suspend",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Hibernate",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Log out",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pause automatic idle",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "tile",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "monocle",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "grid",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "rows",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "dwindle",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "reverse-dwindle",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "scrolling",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "float",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "game-mode",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "composable",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Refresh layout",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Bluetooth",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power & battery",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Media controls",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Window overview",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl settings",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Aqueous settings",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Lock",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Suspend",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Hibernate",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Log out",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pause automatic idle",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "tile",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "monocle",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "grid",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "rows",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "dwindle",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "reverse-dwindle",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "scrolling",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "float",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "game-mode",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "composable",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Overview",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Lock",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Suspend",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Hibernate",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Log out",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pause automatic idle",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "tile",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "monocle",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "grid",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "rows",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "dwindle",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "reverse-dwindle",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "scrolling",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "float",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "game-mode",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "composable",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    }
+  ],
+  "network": [
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Bluetooth controls",
+      "description": "Bluetooth on \u00b7 0 connected",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Media",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Notifications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Clipboard & capture",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network",
+      "description": "Choose a settings section",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "1 \u00b7 10",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "2 \u00b7 11",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "3 \u00b7 12",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "4 \u00b7 13",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "5 \u00b7 14",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "6 \u00b7 15",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "7 \u00b7 16",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "8 \u00b7 17",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "9 \u00b7 18",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network",
+      "description": "Choose a settings section",
+      "role": "combo box",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network",
+      "description": "",
+      "role": "heading",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network",
+      "description": "Choose a settings section",
+      "role": "toggle button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi ready",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Adapters, nearby and saved networks test_wlan0 \u00b7 Disconnected Disconnect Scan Wi-Fi Fixture Secure \u00b7 78% \u00b7 psk Connect Fixture WPA3 \u00b7 78% \u00b7 sae Connect Guest Wi-Fi \u00b7 78% \u00b7 open Connect Enterprise \u00b7 78% \u00b7 advanced Use network editor\u2026 Saved secure network \u00b7 Saved Connect saved",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Turn Wi-Fi off",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network editor\u2026",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Turn Wi-Fi off",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network editor\u2026",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Network",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Adapters, nearby and saved networks",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "test_wlan0 \u00b7 Disconnected",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Fixture Secure \u00b7 78% \u00b7 psk",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Fixture WPA3 \u00b7 78% \u00b7 sae",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Guest Wi-Fi \u00b7 78% \u00b7 open",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Enterprise \u00b7 78% \u00b7 advanced",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Saved secure network \u00b7 Saved",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Disconnect",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Scan Wi-Fi",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Connect",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Connect",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Connect",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Use network editor\u2026",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Connect saved",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Disconnect",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Scan Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Connect",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Connect",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Connect",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Use network editor\u2026",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Connect saved",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    }
+  ],
+  "bluetooth": [
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Bluetooth controls",
+      "description": "Bluetooth on \u00b7 0 connected",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Media",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Notifications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Clipboard & capture",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Bluetooth",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Bluetooth",
+      "description": "Choose a settings section",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "1 \u00b7 10",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "2 \u00b7 11",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "3 \u00b7 12",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "4 \u00b7 13",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "5 \u00b7 14",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "6 \u00b7 15",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "7 \u00b7 16",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "8 \u00b7 17",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "9 \u00b7 18",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Bluetooth",
+      "description": "Choose a settings section",
+      "role": "combo box",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Bluetooth",
+      "description": "",
+      "role": "heading",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Bluetooth",
+      "description": "Choose a settings section",
+      "role": "toggle button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Ready to connect",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Adapters and devices Desktop Bluetooth \u00b7 On Turn off Discover Fixture headphones \u00b7 Not paired\n00:11:22:33:44:55 Pair\u2026 Trust device",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Bluetooth",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Adapters and devices",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Desktop Bluetooth \u00b7 On",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Fixture headphones \u00b7 Not paired\n00:11:22:33:44:55",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Turn off",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Discover",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pair\u2026",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Trust device",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Turn off",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Discover",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pair\u2026",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Trust device",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    }
+  ],
+  "sound": [
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Bluetooth controls",
+      "description": "Bluetooth on \u00b7 0 connected",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Media",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Notifications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Clipboard & capture",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "Choose a settings section",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "1 \u00b7 10",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "2 \u00b7 11",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "3 \u00b7 12",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "4 \u00b7 13",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "5 \u00b7 14",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "6 \u00b7 15",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "7 \u00b7 16",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "8 \u00b7 17",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "9 \u00b7 18",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "Choose a settings section",
+      "role": "combo box",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "",
+      "role": "heading",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "Choose a settings section",
+      "role": "toggle button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Output: Test_Speakers\nInput: \u2014",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Output, input and applications Output \u00b7 Test_Speakers 100 Mute Set default Input \u00b7 Monitor of Test_Speakers 100 Mute Set default Playback \u00b7 /dev/zero 0 Mute Move to default Recording \u00b7 /dev/null 0 Mute Move to default",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Sound",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Output, input and applications",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Output \u00b7 Test_Speakers",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Input \u00b7 Monitor of Test_Speakers",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Playback \u00b7 /dev/zero",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Recording \u00b7 /dev/null",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Set default",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Set default",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Move to default",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Move to default",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Output \u00b7 Test_Speakers",
+      "description": "",
+      "role": "slider",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Set default",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Input \u00b7 Monitor of Test_Speakers",
+      "description": "",
+      "role": "slider",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Set default",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Playback \u00b7 /dev/zero",
+      "description": "",
+      "role": "slider",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Move to default",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Recording \u00b7 /dev/null",
+      "description": "",
+      "role": "slider",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Move to default",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "100",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Set default",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Set default",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Move to default",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Mute",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Move to default",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    }
+  ],
+  "power": [
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "frame",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Bluetooth controls",
+      "description": "Bluetooth on \u00b7 0 connected",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Applications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Pearl",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tuesday, 15 September 2026 \u00b7 12:33",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Media",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Sound controls",
+      "description": "Test_Speakers \u00b7 100%",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Network controls",
+      "description": "Wi-Fi on",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Open Power controls",
+      "description": "73% \u00b7 Battery",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Notifications",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Clipboard & capture",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": false,
+      "focused": false
+    },
+    {
+      "name": "Open settings Overview",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power & battery",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power & battery",
+      "description": "Choose a settings section",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "1 \u00b7 10",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "2 \u00b7 11",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "3 \u00b7 12",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "4 \u00b7 13",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "5 \u00b7 14",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "6 \u00b7 15",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "7 \u00b7 16",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "8 \u00b7 17",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "9 \u00b7 18",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Tue 15 Sep \u00b7 12:33",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "\u2014",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power & battery",
+      "description": "Choose a settings section",
+      "role": "combo box",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "1",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "2",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "3",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "4",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "5",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "6",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "7",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "8",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "9",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "100%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Wi-Fi",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73%",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "0",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power & battery",
+      "description": "",
+      "role": "heading",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power & battery",
+      "description": "Choose a settings section",
+      "role": "toggle button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Close",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power and brightness",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "73% \u00b7 On battery",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Brightness \u00b7 test_panel",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Display brightness",
+      "description": "",
+      "role": "slider",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power profile",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "42",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power saver",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Balanced",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Performance",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power off\u2026",
+      "description": "Power off after confirmation",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Restart\u2026",
+      "description": "Restart after confirmation",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Cancel",
+      "description": "",
+      "role": "table cell",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power saver",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Balanced",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Performance",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power off\u2026",
+      "description": "Power off after confirmation",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Restart\u2026",
+      "description": "Restart after confirmation",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Cancel",
+      "description": "",
+      "role": "button",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power & battery",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power saver",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Balanced",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Performance",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Power off\u2026",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Restart\u2026",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    },
+    {
+      "name": "Cancel",
+      "description": "",
+      "role": "label",
+      "showing": true,
+      "sensitive": true,
+      "focused": false
+    }
+  ]
+}

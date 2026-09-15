@@ -17,6 +17,14 @@ pub fn column(spacing: c_int) *gtk.Box {
 pub fn row(spacing: c_int) *gtk.Box {
     return gtk.Box.new(.horizontal, spacing);
 }
+/// Compact forms can wrap button text instead of imposing a wide minimum size.
+pub fn wrappingButton(text: [*:0]const u8) *gtk.Button {
+    const button = gtk.Button.newWithLabel(text);
+    const caption = gobject.ext.cast(gtk.Label, button.getChild().?).?;
+    caption.setWrap(1);
+    caption.setWrapMode(.word_char);
+    return button;
+}
 pub fn name(widget: *gtk.Widget, text: [*:0]const u8) void {
     widget.as(gtk.Accessible).updateProperty(.label, text, @as(c_int, -1));
 }

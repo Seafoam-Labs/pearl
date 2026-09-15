@@ -1,0 +1,46 @@
+{
+  "status": "passed",
+  "suites": {
+    "pages": {
+      "status": "passed",
+      "evidence": "pages/results.json"
+    },
+    "lifecycle": {
+      "status": "passed",
+      "evidence": "lifecycle/results.json"
+    },
+    "accessibility": {
+      "status": "passed",
+      "evidence": "accessibility/results.json"
+    },
+    "desktop": {
+      "status": "passed",
+      "evidence": "desktop/results.json"
+    },
+    "surfaces": {
+      "status": "passed",
+      "evidence": "surfaces/results.json"
+    },
+    "services": {
+      "status": "passed",
+      "evidence": "services/results.json"
+    },
+    "connectivity": {
+      "status": "passed",
+      "evidence": "connectivity/result.json"
+    },
+    "session-services": {
+      "status": "passed",
+      "evidence": "session-services/result.json"
+    }
+  },
+  "binaries": {
+    "pearl": "e2db74f382cf270d9ddb6eaab594865b7f48b5702d20a148f3009b32fea4d53b",
+    "production_pearl": "a8c45119de575bad1ff9478c354e2a0abd9615f18fde403578a034da7f454d77",
+    "ctl": "4daa8c02daf08ce4b132a6f1c7a4ab13d417b63b647e4ae1598235a81530ee88",
+    "spike": "fab730785d239869a0acf18fc7a3d63a0c4586f4b4e29cb39a5eb7c48d1cd5ab"
+  },
+  "bar_keyboard_policy": "none: user-approved",
+  "handoff": "deferred: standalone application/launch contract not implemented",
+  "concurrent_frontend": "backend owner fixture; standalone process not implemented"
+}

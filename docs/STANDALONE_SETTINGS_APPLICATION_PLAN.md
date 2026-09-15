@@ -200,6 +200,11 @@ an executable around those views requires a deliberate process boundary.
 
 ### Frontend service API
 
+The flyout's F3 implementation provides the in-process
+[service-view ownership contract](SETTINGS_SERVICE_OWNERSHIP.md). Bind those
+leases to authenticated frontend connections in the endpoint below; reuse the
+existing backend operations and prompt checks.
+
 Add a versioned Settings frontend endpoint in the existing private session runtime
 directory, alongside the control endpoint. Reuse the session/display verification,
 same-UID checks, owned sockets, bounded decoding and async transport patterns in

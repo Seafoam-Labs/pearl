@@ -52,7 +52,9 @@
 .pearl-root.$scope.pearl-compact button.pearl-icon { padding: 6px; }
 .pearl-root.$scope.pearl-compact button.pearl-pill { padding: 3px 8px; }
 .pearl-root.$scope.pearl-compact .pearl-list-row { padding: 6px 10px; }
-.pearl-root.$scope.pearl-reduced *, .pearl-root.$scope.pearl-reduced { transition: none; animation: none; }
+.pearl-root.$scope.pearl-reduced *, .pearl-root.$scope.pearl-reduced,
+.pearl-root.$scope.pearl-reduced-motion *, .pearl-root.$scope.pearl-reduced-motion { transition: none; animation: none; }
+.pearl-root.$scope .pearl-settings-heading:focus-visible { outline: 2px solid $primary$; outline-offset: 2px; border-radius: 4px; }
 .pearl-root.$scope .titlebar button { padding: 4px; min-height: 20px; min-width: 20px; }
 .pearl-root.$scope label selection { background: $primary_container$; color: $on_container$; }
 

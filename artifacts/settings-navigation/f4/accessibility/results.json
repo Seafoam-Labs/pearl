@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "checks": {
+    "actual-service-icon-clicks-toggle-and-switch-on-all-four-edges": true,
+    "accessible-service-actions-retain-status-descriptions": true,
+    "selected-page-heading-announced-through-atspi-hidden-pages-absent": true,
+    "dark-light-native-large-text-reduced-motion-and-scaled-output-navigation": true
+  },
+  "pearl_sha256": "0759d15ac61e9548a058579cdc4c3025c89e1b54cd91a90e7afc8cdc28c09019",
+  "ctl_sha256": "4daa8c02daf08ce4b132a6f1c7a4ab13d417b63b647e4ae1598235a81530ee88"
+}

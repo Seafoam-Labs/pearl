@@ -1,0 +1,6 @@
+{"service": "network", "kind": "agent-registered", "destination": ":1.4"}
+{"service": "bluetooth", "kind": "agent-registered", "destination": ":1.4"}
+{"service": "network", "kind": "property", "key": "WirelessEnabled", "value": false}
+{"service": "network", "kind": "property", "key": "WirelessEnabled", "value": true}
+{"service": "bluetooth", "kind": "property", "key": "Powered", "value": false}
+{"service": "bluetooth", "kind": "property", "key": "Powered", "value": true}

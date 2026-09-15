@@ -3,7 +3,8 @@
 Pearl now connects to PulseAudio or PipeWire's PulseAudio-compatible service,
 UPower, logind and optional power-profiles-daemon. The control center has live
 sound controls, battery state, brightness, profiles and deliberate power actions.
-The bar's optional `audio` and `battery` groups open this panel; both are in the
+The bar's `audio` and `battery` groups open the compact Sound and Power & battery
+pages respectively; both are in the
 default right group, and battery hides when no battery is reported. Missing
 services leave the shell and its panels usable.
 
@@ -26,7 +27,7 @@ the initial subscription acknowledgement.
 Control-center sound rows expose output/input defaults, volume and mute for
 both devices and applications. Stream rows can move to the current default;
 the CLI can select another compatible device explicitly. The Sound expander
-keeps these detail controls together in the scrollable control center. Read-only
+keeps these detail controls together in Sound's own scrollable body. Read-only
 stream volume controls are disabled. No-device and disconnected states replace
 the rows without leaving callbacks attached to freed models.
 
@@ -104,13 +105,18 @@ hardware value to keep the panel lit. Permission denial retains observed state.
 A 40 ms source coalesces writes; a queued update survives an in-flight reply and
 is read back after success. Device removal drops pending intent for that device.
 
-Directory monitoring discovers additions/removals. While the control center is
-open and a backlight exists, a two-second worker refresh observes changes because
+Directory monitoring discovers additions/removals. While a Power page owner has
+live interest and a backlight exists, a two-second worker refresh observes changes because
 sysfs brightness attributes do not reliably emit ordinary file-monitor events.
-The poll stops with the panel. There is one scan worker, one coalesced rescan and
+The poll stops after the last Power owner leaves. There is one scan worker, one coalesced rescan and
 one brightness write at a time. No backlight means an explicit unavailable state.
 Only the instrumented integration executable accepts the private fixture root;
 the production binary always uses `/sys/class/backlight`.
+
+Open these pages with `pearlctl control-center show --page sound` or `--page power`.
+Overview and the section chooser retain access when an icon is omitted or no
+battery is present. Page-local navigation and
+[owner-scoped interest](SETTINGS_SERVICE_OWNERSHIP.md) do not duplicate service policy.
 
 ## CLI and OSD
 

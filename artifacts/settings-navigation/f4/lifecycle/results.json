@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "checks": {
+    "cli-direct-pages-same-host-switch-and-same-page-toggle": true,
+    "invalid-target-preserves-state-output-replacement-and-removal": true,
+    "internal-scroll-and-identity-focus-restore-external-heading-reset": true,
+    "stale-service-generation-focus-falls-back-to-heading": true,
+    "independent-network-prompt-ownership-and-wrong-owner-denial": true,
+    "independent-bluetooth-discovery-and-pairing-ownership": true,
+    "established-network-and-device-connections-survive-departure-and-close": true,
+    "power-polling-interest-survives-another-view-leaving": true,
+    "lock-revokes-all-owners-rejects-replay-and-escape-dismisses": true
+  },
+  "pearl_sha256": "38dbfde8c45c64b81dd48594b0378539f95702e8eef73eba9c082fc60dcf77e4",
+  "ctl_sha256": "4daa8c02daf08ce4b132a6f1c7a4ab13d417b63b647e4ae1598235a81530ee88"
+}

@@ -1,0 +1,103 @@
+{
+  "sound": {
+    "page": "sound",
+    "heading": "Sound",
+    "focus": "section-chooser",
+    "button": null,
+    "labels": [
+      "Sound",
+      "Audio service disconnected; pending changes were discarded.",
+      "Output, input and applications"
+    ],
+    "populated_pages": 1,
+    "viewports": 5,
+    "body_width": 560,
+    "body_height": 468,
+    "scroll": 0,
+    "scroll_upper": 468,
+    "scroll_page_size": 468,
+    "interest": {
+      "network": false,
+      "bluetooth": false,
+      "power": false
+    }
+  },
+  "network": {
+    "page": "network",
+    "heading": "Network",
+    "focus": "section-chooser",
+    "button": null,
+    "labels": [
+      "NetworkManager unavailable",
+      "Turn Wi-Fi on",
+      "Network editor\u2026",
+      "Adapters, nearby and saved networks"
+    ],
+    "populated_pages": 1,
+    "viewports": 5,
+    "body_width": 560,
+    "body_height": 468,
+    "scroll": 0,
+    "scroll_upper": 468,
+    "scroll_page_size": 468,
+    "interest": {
+      "network": true,
+      "bluetooth": false,
+      "power": false
+    }
+  },
+  "bluetooth": {
+    "page": "bluetooth",
+    "heading": "Bluetooth",
+    "focus": "section-chooser",
+    "button": null,
+    "labels": [
+      "BlueZ unavailable",
+      "Adapters and devices"
+    ],
+    "populated_pages": 1,
+    "viewports": 5,
+    "body_width": 560,
+    "body_height": 468,
+    "scroll": 0,
+    "scroll_upper": 468,
+    "scroll_page_size": 468,
+    "interest": {
+      "network": false,
+      "bluetooth": true,
+      "power": false
+    }
+  },
+  "power": {
+    "page": "power",
+    "heading": "Power & battery",
+    "focus": "section-chooser",
+    "button": null,
+    "labels": [
+      "Power and brightness",
+      "No battery reported",
+      "Brightness unavailable \u00b7 no supported backlight",
+      "0",
+      "Power profiles unavailable",
+      "Power saver",
+      "Balanced",
+      "Performance",
+      "Power off\u2026",
+      "Restart\u2026",
+      "Cancel",
+      ""
+    ],
+    "populated_pages": 1,
+    "viewports": 5,
+    "body_width": 560,
+    "body_height": 468,
+    "scroll": 0,
+    "scroll_upper": 468,
+    "scroll_page_size": 468,
+    "interest": {
+      "network": false,
+      "bluetooth": false,
+      "power": true
+    }
+  }
+}

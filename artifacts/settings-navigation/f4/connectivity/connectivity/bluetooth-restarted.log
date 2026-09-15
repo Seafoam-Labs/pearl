@@ -1,0 +1,4 @@
+/home/zoey/Pearl/tests/fixtures/services/connectivity.py:31: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
+  registrations.setdefault(path,[]).append(bus.register_object(path,info.interfaces[0],method,lambda c,s,p,i,n:objects[p][i][n],None))
+event=ready
+command={"delay": 2000}

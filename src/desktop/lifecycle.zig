@@ -5,8 +5,10 @@ const w = @import("../ui/components/widgets.zig");
 const Lifecycle = @import("../services/lifecycle.zig").Lifecycle;
 const Agent = @import("../services/polkit.zig").Agent;
 const a = std.heap.c_allocator;
+const focus_state = @import("focus_state.zig");
 pub const View = struct {
     service: *Lifecycle,
+    confirmation: ?u64 = null,
     auth: *Agent,
     label: *gtk.Label,
     buttons: [7]*gtk.Button,
@@ -25,7 +27,8 @@ pub const View = struct {
         const flow = w.flow(3);
         card.append(flow.as(gtk.Widget));
         for (labels, 0..) |text, i| {
-            const button = gtk.Button.newWithLabel(text);
+            const button = w.wrappingButton(text);
+            focus_state.tag(button.as(gtk.Widget), "lifecycle:{d}", .{i});
             button.ref();
             self.buttons[i] = button;
             self.rows[i] = .{ .view = self, .index = i };
@@ -38,7 +41,7 @@ pub const View = struct {
     pub fn destroy(self: *View) void {
         for (self.buttons, self.signals) |button, id| object.signalHandlerDisconnect(button.as(object.Object), id);
         for (self.buttons) |button| button.unref();
-        self.service.act("cancel", null) catch {};
+        if (self.confirmation == self.service.confirmation and self.service.pending != null) self.service.act("cancel", null) catch {};
         a.destroy(self);
     }
     pub fn update(self: *View) void {
@@ -67,7 +70,12 @@ pub const View = struct {
         };
         s.act(command, if (row.index == 5) s.confirmation else null) catch {
             s.err = "Session action unavailable.";
+            row.view.update();
+            return;
         };
+        if (row.index == 1 or row.index == 2 or row.index == 3) {
+            if (s.pending != null) row.view.confirmation = s.confirmation;
+        }
         row.view.update();
     }
 };

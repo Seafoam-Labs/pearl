@@ -8,6 +8,7 @@ sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
 from test_surfaces import IPC,ctl,status,eventually_status,capture,clean,click
 from t00 import Session as T00Session
+from settings_navigation import choose_page, show_page
 FIX=ROOT/'tests/fixtures/services'
 
 def services(s,binary):
@@ -75,7 +76,7 @@ def main():
             assert live['power']['battery_present'] and live['power']['percentage']==72.5 and live['brightness']['percent']==42,live
             checks['initial-audio-battery-logind-profiles-and-validated-backlight']=True
             ui_output=status(s,args.ctl)['outputs'][0]
-            ctl(s,args.ctl,'control-center','show','--output',ui_output['id']); time.sleep(.4); capture(s,'control-center-audio-power',ui_output['connector'])
+            show_page(s,args.ctl,'sound',ui_output['id']); time.sleep(.4); capture(s,'sound',ui_output['connector']); choose_page(s,args.ctl,'power')
             (s.output/'initial-state.json').write_text(json.dumps(services(s,args.ctl),indent=2)+'\n')
             for _ in range(40):
                 s.run(['wtype','-s','100','-k','Tab','-s','35'])
@@ -85,7 +86,7 @@ def main():
             for _ in range(5): s.run(['wtype','-s','100','-k','Tab','-s','35'])
             time.sleep(.3)
             capture(s,'battery-brightness-profiles',ui_output['connector'])
-            ctl(s,args.ctl,'popup','hide'); ctl(s,args.ctl,'control-center','show','--output',ui_output['id'])
+            ctl(s,args.ctl,'popup','hide'); show_page(s,args.ctl,'power',ui_output['id'])
             devices=live['audio']['devices']; first=next(d for d in devices if d['name']=='test_output_a'); second=next(d for d in devices if d['name']=='test_output_b')
             gen=live['audio']['generation']
             burst(s,args.ctl,'audio_set',[{'volume':n} for n in range(5,81)],kind='sink',device=first['index'],generation=gen)
@@ -200,7 +201,7 @@ def main():
             checks['system-bus-restart-does-not-exit-shell']=True
             pulse.stop()
             await_services(s,args.ctl,lambda v:not v['audio']['ready'] and v['audio']['count']==0)
-            capture(s,'audio-disconnected',ui_output['connector'])
+            choose_page(s,args.ctl,'sound'); capture(s,'audio-disconnected',ui_output['connector'])
             pulse=s.child('pulse-restarted',['pipewire-pulse','-c',FIX/'pulse.conf']); wait_for(lambda:s.run(['pactl','info'],check=False).returncode==0)
             s.run(['pactl','load-module','module-null-sink','sink_name=test_restarted'])
             await_services(s,args.ctl,lambda v:v['audio']['ready'] and v['audio']['generation']>gen and any(d['name']=='test_restarted' for d in v['audio']['devices']))
@@ -220,7 +221,7 @@ def main():
             assert sum('get_layer_surface' in line and '"pearl:osd"' in line for line in pearl.lines)==before_osd+1
             eventually_status(s,args.ctl,lambda v:not v['osd'])
             checks['rapid-osd-replacement-keeps-focus-and-expires']=True
-            ctl(s,args.ctl,'control-center','show','--output',ui_output['id'])
+            show_page(s,args.ctl,'power',ui_output['id'])
             def focus_name():
                 return next((line.rsplit('=',1)[-1] for line in reversed(pearl.lines) if 'event=services-focus target=' in line),'')
             for _ in range(60):

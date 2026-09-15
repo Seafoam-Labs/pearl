@@ -306,6 +306,42 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| connectivity.addArgs(args);
     b.step("test-connectivity", "Verify NetworkManager and BlueZ on private services").dependOn(&connectivity.step);
 
+    const settings_pages = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_pages.py", "--pearl" });
+    settings_pages.addArtifactArg(integration_app);
+    settings_pages.addArg("--ctl");
+    settings_pages.addArtifactArg(ctl);
+    if (b.args) |args| settings_pages.addArgs(args);
+    b.step("test-settings-pages", "Verify compact settings page composition and capture private service fixtures").dependOn(&settings_pages.step);
+
+    const settings_lifecycle = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_lifecycle.py", "--pearl" });
+    settings_lifecycle.addArtifactArg(integration_app);
+    settings_lifecycle.addArg("--ctl");
+    settings_lifecycle.addArtifactArg(ctl);
+    settings_lifecycle.addArg("--spike");
+    settings_lifecycle.addArtifactArg(spike);
+    if (b.args) |args| settings_lifecycle.addArgs(args);
+    b.step("test-settings-lifecycle", "Verify settings popup routing, restored state and independent service owners").dependOn(&settings_lifecycle.step);
+
+    const settings_accessibility = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_accessibility.py", "--pearl" });
+    settings_accessibility.addArtifactArg(integration_app);
+    settings_accessibility.addArg("--ctl");
+    settings_accessibility.addArtifactArg(ctl);
+    if (b.args) |args| settings_accessibility.addArgs(args);
+    b.step("test-settings-accessibility", "Verify service bar input, settings accessibility and compact presentation").dependOn(&settings_accessibility.step);
+
+    const settings_navigation = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_navigation.py", "--pearl" });
+    settings_navigation.addArtifactArg(integration_app);
+    settings_navigation.addArg("--production-pearl");
+    settings_navigation.addArtifactArg(app);
+    settings_navigation.addArg("--ctl");
+    settings_navigation.addArtifactArg(ctl);
+    settings_navigation.addArg("--spike");
+    settings_navigation.addArtifactArg(spike);
+    if (b.args) |args| settings_navigation.addArgs(args);
+    const navigation_acceptance = b.step("test-settings-navigation", "Run pure tests and complete private-session compact settings acceptance");
+    navigation_acceptance.dependOn(&b.addRunArtifact(pure).step);
+    navigation_acceptance.dependOn(&settings_navigation.step);
+
     const aqueous_settings = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_master.py", "--pearl" });
     aqueous_settings.addArtifactArg(app);
     aqueous_settings.addArg("--ctl");

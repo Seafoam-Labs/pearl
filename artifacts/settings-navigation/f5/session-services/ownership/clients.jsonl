@@ -1,0 +1,8 @@
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "call", "path": "/StatusNotifierWatcher", "interface": "org.kde.StatusNotifierWatcher", "method": "RegisterStatusNotifierHost", "args": [":1.4"]}
+{"kind": "call", "path": "/StatusNotifierWatcher", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierWatcher"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}

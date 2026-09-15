@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "checks": {
+    "actual-service-icon-clicks-toggle-and-switch-on-all-four-edges": true,
+    "bar-retains-approved-no-keyboard-focus-policy": true,
+    "pointer-routing-between-two-outputs-keeps-one-popup": true,
+    "radio-off-preserves-correct-destination": true,
+    "permitted-backdrop-and-keyboard-close-dismissal": true,
+    "accessible-service-actions-retain-status-descriptions": true,
+    "selected-page-heading-announced-through-atspi-hidden-pages-absent": true,
+    "dark-light-native-large-text-reduced-motion-and-scaled-output-navigation": true
+  },
+  "pearl_sha256": "e2db74f382cf270d9ddb6eaab594865b7f48b5702d20a148f3009b32fea4d53b",
+  "ctl_sha256": "4daa8c02daf08ce4b132a6f1c7a4ab13d417b63b647e4ae1598235a81530ee88"
+}

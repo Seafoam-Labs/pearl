@@ -1,0 +1,1 @@
+[W][12:31:56.969190] mod.access   | [ module-access.c:  334 parse_args()] access.force/allowed/rejected/restricted are deprecated and ignored but imply legacy access mode

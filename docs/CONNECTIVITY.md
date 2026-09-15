@@ -4,7 +4,15 @@ Pearl's control center now has NetworkManager and BlueZ controls implemented in
 Zig 0.16.0 using the pinned Ghostty GIO/GTK bindings. No libnm wrapper, subprocess
 service adapter, custom C bridge, or additional generated dependency is needed.
 The default bar includes `network`; optional `bluetooth` shows the connected-device
-count. Both open the control center.
+count. Each opens its corresponding compact Network or Bluetooth page directly.
+Overview links and the fixed section chooser also reach both pages. Opening a
+page does not start a scan or discovery.
+
+Radio-off controls reflect backend availability: Wi-Fi connection/scan buttons
+are disabled while its radio is off or hardware-blocked, and Bluetooth device
+actions are disabled when their adapter is off. Saved Wi-Fi activation uses the
+same device readiness check as nearby networks; the Wi-Fi gate does not disable
+wired adapters. Compact captions wrap on narrow outputs with enlarged text.
 
 ## NetworkManager
 
@@ -97,8 +105,10 @@ closing the panel never schedules another scan.
 
 One connection/device mutation is pending per service. Radio/property calls have
 short deadlines; Wi-Fi activation and pairing allow up to 90 seconds. Closing the
-panel, changing its output, losing Aqueous readiness or locking the session
-cancels owned conversations through popup destruction. Removed targets cannot be
+page, changing its output, or closing its flyout cancels only that page owner's
+conversation and discovery. Another frontend's work remains active. Losing
+Aqueous readiness or locking the session revokes all interactive leases.
+Established connections survive ordinary navigation and close. Removed targets cannot be
 reused for a pending prompt. Cancelling a Wi-Fi activation sends Disconnect and
 deactivates any active-connection path returned by a late activation reply.
 
@@ -118,7 +128,10 @@ pearlctl connectivity action --service network|bluetooth --action ACTION \
 Status returns at most four entries per page, with `next_offset`. Entries include
 network devices, access points, saved profiles, Bluetooth adapters and devices.
 The network/Bluetooth generation must come from current status. Scan/connect/pair
-operations require the open control center. Control commands remain scoped to the
+operations require the corresponding open compact Network or Bluetooth page.
+Use `pearlctl control-center show --page network` or `--page bluetooth`.
+Commands use that view's [owner lease](SETTINGS_SERVICE_OWNERSHIP.md) and cannot
+answer or cancel another frontend's prompt. Control commands remain scoped to the
 current Aqueous session/display and are rejected while the session is locked.
 Passwords and pairing confirmations are deliberately available only through GTK.
 

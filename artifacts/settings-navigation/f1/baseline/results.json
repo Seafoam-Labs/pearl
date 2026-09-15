@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "checks": {
+    "legacy-default-and-explicit-overview-toggle": true,
+    "invalid-cli-and-wire-routes-preserve-popup": true,
+    "unconnected-f1-pages-fail-without-changing-popup": true,
+    "invalid-output-preserves-popup": true,
+    "horizontal-and-vertical-baseline-captured": true,
+    "output-replacement-and-escape": true
+  },
+  "pearl_sha256": "57e5114dd3fb677cd8dfd9d9d6cbe0980001615443b06d8e61984d5569b406a6",
+  "ctl_sha256": "fd3939027147808fea673865caf1f7bc8ba382abe630732ad9c1e01bf3f3573e"
+}

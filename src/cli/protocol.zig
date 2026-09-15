@@ -1,6 +1,7 @@
 //! Pearl control v1 is independent of Aqueous IPC v1. One bounded request/reply.
 const std = @import("std");
 const e = @import("../aqueous/entities.zig");
+pub const settings_navigation = @import("../desktop/settings_navigation.zig");
 pub const Edge = @import("../ui/surfaces/policy.zig").Edge;
 pub const max_frame = 8192;
 pub const ConnectivityService = enum { network, bluetooth };
@@ -32,6 +33,7 @@ pub const Request = struct {
     profile: ?u8 = null,
     offset: ?u16 = null,
     output: ?[]const u8 = null,
+    page: ?settings_navigation.Route = null,
     edge: ?Edge = null,
     size: ?u16 = null,
     text: ?[]const u8 = null,
@@ -40,6 +42,10 @@ pub const Request = struct {
     center: ?[]const u8 = null,
     right: ?[]const u8 = null,
     layout: ?[]const u8 = null,
+
+    pub fn compactPage(self: Request) settings_navigation.Route {
+        return self.page orelse .overview;
+    }
 };
 pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     if (bytes.len == 0 or bytes.len > max_frame or !std.unicode.utf8ValidateSlice(bytes)) return error.InvalidRequest;
@@ -95,7 +101,8 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
             .capture_region => &[_][]const u8{ "output", "text" },
             .lifecycle_action => &[_][]const u8{ "text", "generation" },
             .aqueous_show => &[_][]const u8{ "output", "text" },
-            .settings_show, .notifications_toggle, .media_toggle, .tray_toggle, .popup_show, .popup_toggle, .launcher_show, .launcher_toggle, .control_show, .control_toggle, .calendar_toggle, .overview_toggle, .layout_get => &[_][]const u8{"output"},
+            .control_show, .control_toggle => &[_][]const u8{ "output", "page" },
+            .settings_show, .notifications_toggle, .media_toggle, .tray_toggle, .popup_show, .popup_toggle, .launcher_show, .launcher_toggle, .calendar_toggle, .overview_toggle, .layout_get => &[_][]const u8{"output"},
             .bar_set, .frame_set => &[_][]const u8{ "output", "edge", "size" },
             .osd_show => &[_][]const u8{ "output", "text", "duration_ms" },
             .bar_groups => &[_][]const u8{ "output", "left", "center", "right" },
@@ -119,6 +126,10 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
         if (!found) return error.InvalidRequest;
     }
     if (r.output) |id| if (id.len == 0 or id.len > 1024 or std.mem.indexOfScalar(u8, id, 0) != null) return error.InvalidRequest;
+    if (value.object.contains("page")) {
+        const page = r.page orelse return error.InvalidRequest;
+        if (!page.isCompact()) return error.InvalidRequest;
+    }
     switch (r.op) {
         .dock_pin, .dock_unpin => {
             if (!@import("../desktop/dock_policy.zig").desktopId(r.text orelse return error.InvalidRequest)) return error.InvalidRequest;
@@ -253,6 +264,43 @@ test "control schema rejects malformed, nested, unversioned and oversized reques
     try t.expectError(error.InvalidRequest, parse(a, " " ** (max_frame + 1)));
     if (parse(a, "{\"pearl\":\"1\"," ++ prefix ++ "}")) |_| return error.AcceptedWrongType else |_| {}
     if (parse(a, "{\"pearl\":1,\"pearl\":1," ++ prefix ++ "}")) |_| return error.AcceptedDuplicateField else |_| {}
+}
+
+test "wire compact pages reject malformed, duplicate, app-only and unrelated fields" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const prefix = "{\"pearl\":1,\"id\":\"7\",\"session\":\"0123456789abcdef0123456789abcdef\",\"display\":\"/private/wayland-1\",";
+    for ([_]Op{ .control_show, .control_toggle }) |op| {
+        var request: Request = .{ .op = op, .session = "0123456789abcdef0123456789abcdef", .display = "/private/wayland-1" };
+        const legacy = try parse(a, try std.json.Stringify.valueAlloc(a, request, .{ .emit_null_optional_fields = false }));
+        try t.expectEqual(settings_navigation.Route.overview, legacy.compactPage());
+        for (std.enums.values(settings_navigation.Route)) |page| {
+            request.page = page;
+            const bytes = try std.json.Stringify.valueAlloc(a, request, .{ .emit_null_optional_fields = false });
+            if (page.isCompact()) {
+                const decoded = try parse(a, bytes);
+                try t.expectEqual(page, decoded.compactPage());
+                try t.expectEqual(op, decoded.op);
+            } else try t.expectError(error.InvalidRequest, parse(a, bytes));
+        }
+    }
+    for ([_][]const u8{
+        "\"op\":\"control_show\",\"page\":\"unknown\"}",
+        "\"op\":\"control_toggle\",\"page\":\"Sound\"}",
+        "\"op\":\"control_show\",\"page\":null}",
+        "\"op\":\"control_show\",\"page\":3}",
+        "\"op\":\"control_show\",\"page\":true}",
+        "\"op\":\"control_show\",\"page\":\"sound\",\"page\":\"network\"}",
+        "\"op\":\"control_show\",\"page\":\"sound\",\"output\":\"\"}",
+        "\"op\":\"control_show\",\"page\":\"sound\",\"extra\":true}",
+        "\"op\":\"settings_show\",\"page\":\"sound\"}",
+        "\"op\":\"popup_show\",\"page\":\"overview\"}",
+        "\"op\":\"status\",\"page\":null}",
+    }) |suffix| {
+        if (parse(a, try std.mem.concat(a, u8, &.{ prefix, suffix }))) |_| return error.AcceptedInvalidPage else |_| {}
+    }
 }
 
 test "control fields have operation-specific bounds and endpoint identity is normalized" {

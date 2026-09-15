@@ -14,6 +14,8 @@ const Bar = @import("../../desktop/bar.zig");
 const Apps = @import("../../desktop/apps.zig");
 const Launcher = @import("../../desktop/launcher.zig").Launcher;
 const Panels = @import("../../desktop/panels.zig");
+const navigation = @import("../../desktop/settings_navigation.zig");
+const Owner = @import("../../services/view_ownership.zig").Owner;
 const Layout = @import("../../platform/wayland/layout.zig").Layout;
 const Groups = @import("../../desktop/policy.zig").Groups;
 const tr = @import("../../desktop/text.zig").tr;
@@ -100,6 +102,8 @@ pub const Manager = struct {
     popup: ?*Surface = null,
     popup_rect: ?Rect = null,
     pane: Bar.Pane = .launcher,
+    settings_page: ?navigation.Route = null,
+    owner_probe: if (@import("build_options").test_hooks) @import("../../desktop/settings_owner_probe.zig").Probe else void = if (@import("build_options").test_hooks) .{} else {},
     audio: @import("../../services/audio.zig").Audio = undefined,
     lifecycle: @import("../../services/lifecycle.zig").Lifecycle = undefined,
     auth: @import("../../services/polkit.zig").Agent = undefined,
@@ -423,6 +427,7 @@ pub const Manager = struct {
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
         self.syncClipboardPrivacy();
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
+        self.syncSettingsAccess();
         if (self.client.availability != .ready) {
             self.session_services.notifications.setLocked(true);
             self.clear();
@@ -545,6 +550,7 @@ pub const Manager = struct {
         self.session_services.notifications.setLocked(self.client.model.get(.session, "session").?.locked);
         try self.syncNotifications();
         if (self.client.model.get(.session, "session").?.locked) {
+            self.syncSettingsAccess();
             self.hidePopup();
             self.hideOsd();
         }
@@ -666,16 +672,7 @@ pub const Manager = struct {
                     .tray => s.tray = try @import("../../desktop/tray.zig").View.create(panel, &self.session_services.tray),
                     .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested),
                     .control => {
-                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services.media, &self.lifecycle, &self.auth);
-                        const overview = gtk.Button.newWithLabel(tr("Window overview", "Fensterübersicht"));
-                        _ = gtk.Button.signals.clicked.connect(overview, *Surface, overviewClicked, s, .{});
-                        panel.append(overview.as(gtk.Widget));
-                        const settings = gtk.Button.newWithLabel("Pearl settings");
-                        _ = gtk.Button.signals.clicked.connect(settings, *Surface, settingsClicked, s, .{});
-                        panel.append(settings.as(gtk.Widget));
-                        const aqueous_settings = gtk.Button.newWithLabel("Aqueous settings");
-                        _ = gtk.Button.signals.clicked.connect(aqueous_settings, *Surface, aqueousSettingsClicked, s, .{});
-                        panel.append(aqueous_settings.as(gtk.Widget));
+                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, controlTask, settingsNavigate, self.settings_page.?, window, .{ .audio = &self.audio, .power = &self.power, .network = &self.network, .bluetooth = &self.bluetooth, .lifecycle = &self.lifecycle, .auth = &self.auth });
                     },
                 }
                 const keys = gtk.EventControllerKey.new();
@@ -730,7 +727,42 @@ pub const Manager = struct {
     pub fn showPopup(self: *Manager, output: *Output) !void {
         return self.showPane(output, .launcher);
     }
+    fn syncSettingsAccess(self: *Manager) void {
+        const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
+        const allowed = matched and self.client.availability == .ready and if (self.client.model.get(.session, "session")) |session| !session.locked else false;
+        self.network.interest.enabled = allowed;
+        self.bluetooth.interest.enabled = allowed;
+        self.power.interest.enabled = allowed;
+        if (allowed) return;
+        if (self.network.interest.count() != 0) self.network.revokeViews();
+        if (self.bluetooth.interest.count() != 0) self.bluetooth.revokeViews();
+        if (self.power.interest.count() != 0) self.power.revokeViews();
+    }
+    fn settingsAction(self: *Manager, output_id: ?[]const u8, page: navigation.Route, intent: navigation.Intent) !void {
+        if (!page.isCompact()) return error.InvalidRequest;
+        const output = try self.selected(output_id);
+        if (self.client.model.get(.session, "session").?.locked) return error.Locked;
+        const current: ?navigation.Selection = if (self.popup) |popup| if (self.settings_page) |visible| .{ .page = visible, .output = popup.output.id } else null else null;
+        const decision = try navigation.transition(current, .{ .page = page, .output = output.id }, intent, &.{output.id});
+        switch (decision.action) {
+            .close => self.hidePopup(),
+            .select => {
+                try self.popup.?.control.?.selectPage(page, decision.position);
+                self.settings_page = page;
+            },
+            .open, .replace => try self.showPaneAt(output, .control, page),
+        }
+    }
+    fn connectivityOwner(self: *Manager, page: navigation.Route) !Owner {
+        const popup = self.popup orelse return error.Unavailable;
+        const panel = popup.control orelse return error.Unavailable;
+        if (panel.page != page) return error.Unavailable;
+        return (panel.connection orelse return error.Unavailable).owner;
+    }
     pub fn showPane(self: *Manager, output: *Output, pane: Bar.Pane) !void {
+        return self.showPaneAt(output, pane, .overview);
+    }
+    fn showPaneAt(self: *Manager, output: *Output, pane: Bar.Pane, page: navigation.Route) !void {
         if (pane == .clipboard_capture) {
             self.syncClipboardPrivacy();
             if (self.clipboard.locked) return error.Locked;
@@ -741,6 +773,8 @@ pub const Manager = struct {
         };
         self.hidePopup();
         self.pane = pane;
+        self.settings_page = if (pane == .control) page else null;
+        errdefer self.settings_page = null;
         self.popup = try self.create(output, .popup);
         self.positionPopup();
         self.popup.?.window.present();
@@ -777,6 +811,7 @@ pub const Manager = struct {
     pub fn hidePopup(self: *Manager) void {
         if (self.popup) |s| {
             self.popup = null;
+            self.settings_page = null;
             self.popup_rect = null;
             if (self.layout) |*layout| layout.cancel();
             s.destroy();
@@ -854,6 +889,7 @@ pub const Manager = struct {
         }
     }
     pub fn control(self: *Manager, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
+        self.syncSettingsAccess();
         self.syncClipboardPrivacy();
         if (request.op == .clipboard_status) return self.clipboard.status(alloc);
         if (request.op == .capture_status) return self.capture.status(alloc);
@@ -872,9 +908,16 @@ pub const Manager = struct {
             const viewport = if (popup.viewport) |v| v.as(gtk.Widget) else popup.panel;
             return std.json.Stringify.valueAlloc(alloc, .{ .focus = @import("../../desktop/aqueous_settings.zig").View.focusName(popup.window), .width = viewport.getWidth(), .height = viewport.getHeight(), .content_width = popup.panel.getWidth(), .limit = self.popup_rect }, .{});
         }
-        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-bar-layout")) {
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and (std.mem.eql(u8, request.text orelse "", "test-bar-layout") or std.mem.startsWith(u8, request.text orelse "", "test-bar-layout:"))) {
             if (self.outputs.items.len == 0) return error.Unavailable;
-            return self.outputs.items[0].bar.?.bar.?.layoutReport(alloc);
+            const output = if (request.text.?.len == "test-bar-layout".len) self.outputs.items[0] else try self.selected(request.text.?["test-bar-layout:".len..]);
+            const surface = output.bar orelse return error.Unavailable;
+            return surface.bar.?.layoutReport(alloc, @tagName(layer.getKeyboardMode(surface.window)));
+        }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-settings-page")) {
+            const popup = self.popup orelse return error.Unavailable;
+            const control_page = popup.control orelse return error.Unavailable;
+            return control_page.report(popup.window, alloc);
         }
         if (request.op == .aqueous_status) return self.aqueous_settings.status(alloc, request.text);
         if (request.op == .preferences_status) return self.preferences.status(alloc);
@@ -883,6 +926,8 @@ pub const Manager = struct {
         if (request.op == .services_status) return std.json.Stringify.valueAlloc(alloc, try self.serviceStatus(alloc, request.offset orelse 0), .{});
         if (self.client.availability != .ready) return error.Unavailable;
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
+        if (@import("build_options").test_hooks and request.op == .aqueous_draft and std.mem.startsWith(u8, request.text orelse "", "{\"test_owner\":"))
+            return self.owner_probe.command(alloc, request.text.?, &self.network, &self.bluetooth, &self.power);
         switch (request.op) {
             .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
             .dock_show, .dock_hide, .dock_pin, .dock_unpin => {
@@ -967,21 +1012,21 @@ pub const Manager = struct {
                 if (request.service.? == .network) {
                     if (request.generation.? != self.network.peer.epoch) return error.Unavailable;
                     switch (request.action.?) {
-                        .scan => try self.network.scan(request.generation.?, request.path.?),
-                        .connect => try self.network.connectAP(request.generation.?, request.path.?),
-                        .connect_saved => try self.network.connectSaved(request.generation.?, request.path.?),
+                        .scan => try self.network.scan(try self.connectivityOwner(.network), request.generation.?, request.path.?),
+                        .connect => try self.network.connectAP(try self.connectivityOwner(.network), request.generation.?, request.path.?),
+                        .connect_saved => try self.network.connectSaved(try self.connectivityOwner(.network), request.generation.?, request.path.?),
                         .disconnect => try self.network.disconnect(request.generation.?, request.path.?),
                         .enable, .disable => try self.network.setEnabled(request.action.? == .enable),
-                        .cancel => self.network.cancelOperation(),
+                        .cancel => self.network.cancelOwned(try self.connectivityOwner(.network)),
                         else => return error.InvalidRequest,
                     }
                 } else {
                     if (request.generation.? != self.bluetooth.peer.epoch) return error.Unavailable;
                     switch (request.action.?) {
-                        .discover => try self.bluetooth.discover(request.generation.?, request.path.?),
-                        .stop_discovery => self.bluetooth.stopDiscovery(),
-                        .cancel => self.bluetooth.cancelOperation(),
-                        else => try self.bluetooth.request(request.generation.?, request.path.?, switch (request.action.?) {
+                        .discover => try self.bluetooth.discover(try self.connectivityOwner(.bluetooth), request.generation.?, request.path.?),
+                        .stop_discovery => self.bluetooth.stopDiscoveryOwned(try self.connectivityOwner(.bluetooth)),
+                        .cancel => self.bluetooth.cancelOwned(try self.connectivityOwner(.bluetooth)),
+                        else => try self.bluetooth.request(try self.connectivityOwner(.bluetooth), request.generation.?, request.path.?, switch (request.action.?) {
                             .pair => .pair,
                             .connect => .connect,
                             .disconnect => .disconnect,
@@ -1012,14 +1057,14 @@ pub const Manager = struct {
             .launcher_hide => if (self.pane == .launcher) {
                 self.hidePopup();
             },
-            .launcher_show, .launcher_toggle, .control_show, .control_toggle, .calendar_toggle => {
+            .control_show, .control_toggle => try self.settingsAction(request.output, request.compactPage(), if (request.op == .control_toggle) .toggle else .show),
+            .launcher_show, .launcher_toggle, .calendar_toggle => {
                 const output = try self.selected(request.output);
                 const pane: Bar.Pane = switch (request.op) {
-                    .control_show, .control_toggle => .control,
                     .calendar_toggle => .calendar,
                     else => .launcher,
                 };
-                const toggle = request.op == .launcher_toggle or request.op == .control_toggle or request.op == .calendar_toggle;
+                const toggle = request.op == .launcher_toggle or request.op == .calendar_toggle;
                 if (toggle and self.popup != null and self.popup.?.output == output and self.pane == pane) self.hidePopup() else try self.showPane(output, pane);
             },
             .bar_groups => {
@@ -1115,7 +1160,7 @@ pub const Manager = struct {
         const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, frames: [4]u16, islands: bool, island_rects: [3]?Rect, dock: struct { reason: @import("../../desktop/dock_policy.zig").Reason, groups: usize, truncated: bool, rect: Rect, edge: Edge } };
         var items: std.ArrayList(Item) = .empty;
         for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .frames = o.reservations.frames, .islands = o.bar.?.bar.?.islands, .island_rects = o.bar.?.effects.last_shapes, .dock = .{ .reason = o.dock.?.reason, .groups = o.dock.?.count, .truncated = o.dock.?.truncated, .rect = o.dock.?.rect, .edge = o.dock.?.config.edge } });
-        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .osd = self.osd != null, .osd_text = if (self.osd_label) |label| std.mem.span(label.getText()) else "" }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .osd = self.osd != null, .osd_text = if (self.osd_label) |label| std.mem.span(label.getText()) else "" }, .{});
     }
 };
 fn rectangle(r: anytype) !Rect {
@@ -1173,11 +1218,7 @@ fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     if (s.notifications) |view| view.probe(s.window);
     if (s.media) |view| view.probe(s.window);
     if (s.tray) |view| view.probe(s.window);
-    if (s.control) |panel| {
-        panel.media.probe(s.window);
-        panel.services.probe(s.window);
-        panel.connectivity.probe(s.window);
-    }
+    if (s.control) |panel| panel.probe(s.window);
 }
 fn measured(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     const horizontal = s.edge == .top or s.edge == .bottom;
@@ -1191,7 +1232,12 @@ fn barAction(context: *anyopaque, event: Bar.Event) void {
     const s: *Surface = @ptrCast(@alignCast(context));
     const self = s.manager;
     switch (event) {
+        .settings => |page| self.settingsAction(s.output.id, page, .toggle) catch {},
         .pane => |pane| {
+            if (pane == .control) {
+                self.settingsAction(s.output.id, .overview, .toggle) catch {};
+                return;
+            }
             if (pane == .tray and self.popup != null and self.popup.?.output == s.output and self.pane == .tray) {
                 self.popup.?.tray.?.update();
                 return;
@@ -1217,17 +1263,22 @@ fn dismiss(context: *anyopaque) void {
 fn layoutAction(context: *anyopaque, value: ?[]const u8) void {
     const s: *Surface = @ptrCast(@alignCast(context));
     s.manager.queryLayout(s.output, value) catch {
-        s.control.?.label.setText(tr("Layout change unavailable", "Anordnung kann nicht geändert werden"));
+        if (s.control.?.label) |label| label.setText(tr("Layout change unavailable", "Anordnung kann nicht geändert werden"));
     };
 }
-fn aqueousSettingsClicked(_: *gtk.Button, s: *Surface) callconv(.c) void {
-    barAction(s, .{ .pane = .aqueous_settings });
+fn settingsNavigate(context: *anyopaque, page: navigation.Route) anyerror!void {
+    const s: *Surface = @ptrCast(@alignCast(context));
+    try s.manager.settingsAction(s.output.id, page, .navigate);
 }
-fn settingsClicked(_: *gtk.Button, s: *Surface) callconv(.c) void {
-    barAction(s, .{ .pane = .settings });
-}
-fn overviewClicked(_: *gtk.Button, s: *Surface) callconv(.c) void {
-    barAction(s, .overview);
+fn controlTask(context: *anyopaque, task: Panels.Control.Task) void {
+    const s: *Surface = @ptrCast(@alignCast(context));
+    switch (task) {
+        .media => barAction(s, .{ .pane = .media }),
+        .settings => barAction(s, .{ .pane = .settings }),
+        .aqueous_settings => barAction(s, .{ .pane = .aqueous_settings }),
+        .overview => barAction(s, .overview),
+        .close => s.manager.hidePopup(),
+    }
 }
 fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.ModifierType, self: *Manager) callconv(.c) c_int {
     if (key != 0xff1b) return 0;

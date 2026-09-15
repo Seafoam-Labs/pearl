@@ -1,0 +1,70 @@
+info: initializing Aqueous version aqueous 0.6.0 -xwayland
+info: gpu-pin: scanout pinned to /dev/dri/card1 (connected monitor)
+info(wlroots): [backend/backend.c:342] Loading user-specified backends due to WLR_BACKENDS: headless
+info(wlroots): [backend/headless/backend.c:60] Creating headless backend
+info(wlroots): [util/env.c:25] Loading WLR_RENDERER option: pixman
+info(wlroots): [render/pixman/renderer.c:328] Creating pixman renderer
+info(xdg): default mode=client
+info(aqueous): policy mode=internal layout=floating
+info(input): cursor theme=default size=24
+info(drm_lease): DRM leasing unavailable (no usable lease device)
+info: raised file descriptor limit of the river process to 4096
+info(wlroots): [backend/headless/backend.c:17] Starting headless backend
+info(ipc): protocol=1 listening on /tmp/pearl-dev-cifj1z_k/run/aqueous/6d96778614e566930961303d0698ac8f/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-cifj1z_k/run/aqueous/outputd.sock
+info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
+info: running server
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info(lock): session locked
+info(lock): session unlocked
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface

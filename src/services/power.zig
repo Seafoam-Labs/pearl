@@ -1,5 +1,7 @@
 //! Bounded asynchronous system-bus proxies. Mutations target a captured unique owner.
 const std = @import("std");
+const ownership = @import("view_ownership.zig");
+pub const Owner = ownership.Owner;
 const gio = @import("gio2");
 const glib = @import("glib2");
 const object = @import("gobject2");
@@ -53,6 +55,7 @@ pub const Power = struct {
     scan_again: bool = false,
     monitor: ?*gio.FileMonitor = null,
     monitor_signal: c_ulong = 0,
+    interest: ownership.Interest = .{},
     panel_open: bool = false,
     poll_source: c_uint = 0,
     brightness_wanted: ?u8 = null,
@@ -90,6 +93,8 @@ pub const Power = struct {
     }
     pub fn stop(self: *Power) void {
         self.running = false;
+        self.interest.revoke();
+        self.panel_open = false;
         self.cancel.cancel();
         for ([_]c_uint{ self.retry_source, self.poll_source, self.write_source }) |id| if (id != 0) {
             _ = glib.Source.remove(id);
@@ -452,7 +457,19 @@ pub const Power = struct {
         self.refresh();
         if (self.brightness_wanted != null or self.profile_wanted != null) self.arm();
     }
-    pub fn panel(self: *Power, open: bool) void {
+    pub fn acquireView(self: *Power) !Owner {
+        const token = try self.interest.acquire();
+        if (!self.panel_open) self.panel(true);
+        return token;
+    }
+    pub fn releaseView(self: *Power, token: Owner) void {
+        if (self.interest.release(token) and self.interest.count() == 0) self.panel(false);
+    }
+    pub fn revokeViews(self: *Power) void {
+        self.interest.revoke();
+        self.panel(false);
+    }
+    fn panel(self: *Power, open: bool) void {
         if (open and !self.panel_open) self.capabilities();
         self.panel_open = open;
         if (self.poll_source != 0) _ = glib.Source.remove(self.poll_source);

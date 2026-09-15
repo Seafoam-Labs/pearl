@@ -1,0 +1,89 @@
+{"event": "ready"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "delay-acquired", "lease": 1}
+{"event": "registered", "sender": ":1.2"}
+{"event": "delay-released", "lease": 1, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "delay-acquired", "lease": 2}
+{"event": "registered", "sender": ":1.2"}
+{"event": "delay-released", "lease": 2, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "delay-acquired", "lease": 3}
+{"event": "registered", "sender": ":1.2"}
+{"event": "delay-released", "lease": 3, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "delay-acquired", "lease": 4}
+{"event": "registered", "sender": ":1.2"}
+{"event": "authentication", "outcome": "cancelled"}
+{"event": "authentication", "outcome": "cancelled"}
+{"event": "cancel", "outcome": "completed"}
+{"event": "authentication", "outcome": "failed"}
+{"event": "authentication", "outcome": "cancelled"}
+{"event": "registered", "sender": ":1.2"}
+{"event": "authentication", "outcome": "cancelled"}
+{"event": "Suspend", "locked": true}
+{"event": "prepare", "value": true}
+{"event": "delay-released", "lease": 4, "locked": true}
+{"event": "prepare", "value": false}
+{"event": "delay-acquired", "lease": 5}
+{"event": "prepare", "value": true}
+{"event": "delay-released", "lease": 5, "locked": true}
+{"event": "prepare", "value": false}
+{"event": "delay-acquired", "lease": 6}
+{"event": "Suspend", "locked": true}
+{"event": "prepare", "value": true}
+{"event": "delay-released", "lease": 6, "locked": true}
+{"event": "prepare", "value": false}
+{"event": "delay-acquired", "lease": 7}
+{"event": "delay-released", "lease": 7, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "delay-acquired", "lease": 8}
+{"event": "registered", "sender": ":1.2"}
+{"event": "delay-released", "lease": 8, "locked": true}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "delay-acquired", "lease": 9}
+{"event": "registered", "sender": ":1.3"}
+{"event": "prepare", "value": true}
+{"event": "prepare", "value": false}
+{"event": "delay-released", "lease": 9, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "delay-acquired", "lease": 10}
+{"event": "registered", "sender": ":1.4"}
+{"event": "delay-released", "lease": 10, "locked": true}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "session-lookup", "method": "GetUser"}
+{"event": "session-lookup", "method": "GetSessionByPID"}
+{"event": "delay-acquired", "lease": 11}
+{"event": "registered", "sender": ":1.5"}
+{"event": "delay-released", "lease": 11, "locked": false}
+{"event": "unregistered"}

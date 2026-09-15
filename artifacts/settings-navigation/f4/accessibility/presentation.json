@@ -1,0 +1,1114 @@
+[
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 14,
+    "scale": 1,
+    "page": "overview",
+    "report": {
+      "page": "overview",
+      "heading": "Overview",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Network",
+        "Bluetooth",
+        "Sound",
+        "Power & battery",
+        "Media controls",
+        "Window overview",
+        "Pearl settings",
+        "Aqueous settings",
+        "Session & security",
+        "Suspend delay inhibitor unavailable.",
+        "Lock",
+        "Suspend",
+        "Hibernate",
+        "Log out",
+        "Pause automatic idle",
+        "Workspace layout",
+        "float \u00b7 1",
+        "tile",
+        "monocle",
+        "grid",
+        "rows",
+        "dwindle",
+        "reverse-dwindle",
+        "scrolling",
+        "float",
+        "game-mode",
+        "composable",
+        "Refresh layout"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 468,
+      "scroll": 0,
+      "scroll_upper": 900,
+      "scroll_page_size": 468,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 676,
+        "y": 68,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "overview",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 14,
+    "scale": 1,
+    "page": "network",
+    "report": {
+      "page": "network",
+      "heading": "Network",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Wi-Fi ready",
+        "Turn Wi-Fi off",
+        "Network editor\u2026",
+        "Adapters, nearby and saved networks",
+        "test_wlan0 \u00b7 Disconnected",
+        "Disconnect",
+        "Scan Wi-Fi",
+        "Fixture Secure \u00b7 78% \u00b7 psk",
+        "Connect",
+        "Fixture WPA3 \u00b7 78% \u00b7 sae",
+        "Connect",
+        "Guest Wi-Fi \u00b7 78% \u00b7 open",
+        "Connect",
+        "Enterprise \u00b7 78% \u00b7 advanced",
+        "Use network editor\u2026",
+        "Saved secure network \u00b7 Saved",
+        "Connect saved"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 468,
+      "scroll": 0,
+      "scroll_upper": 598,
+      "scroll_page_size": 468,
+      "interest": {
+        "network": true,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 676,
+        "y": 68,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "network",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 14,
+    "scale": 1,
+    "page": "bluetooth",
+    "report": {
+      "page": "bluetooth",
+      "heading": "Bluetooth",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Ready to connect",
+        "Adapters and devices",
+        "Desktop Bluetooth \u00b7 On",
+        "Turn off",
+        "Discover",
+        "Fixture headphones \u00b7 Not paired\n00:11:22:33:44:55",
+        "Pair\u2026",
+        "Trust device"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 468,
+      "scroll": 0,
+      "scroll_upper": 468,
+      "scroll_page_size": 468,
+      "interest": {
+        "network": false,
+        "bluetooth": true,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 676,
+        "y": 68,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "bluetooth",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 14,
+    "scale": 1,
+    "page": "sound",
+    "report": {
+      "page": "sound",
+      "heading": "Sound",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Sound",
+        "Audio service disconnected; pending changes were discarded.",
+        "Output, input and applications"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 468,
+      "scroll": 0,
+      "scroll_upper": 468,
+      "scroll_page_size": 468,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 676,
+        "y": 68,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "sound",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 14,
+    "scale": 1,
+    "page": "power",
+    "report": {
+      "page": "power",
+      "heading": "Power & battery",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Power and brightness",
+        "73% \u00b7 On battery",
+        "Brightness \u00b7 test_panel",
+        "42",
+        "Power profile",
+        "Power saver",
+        "Balanced",
+        "Performance",
+        "Power off\u2026",
+        "Restart\u2026",
+        "Cancel",
+        ""
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 468,
+      "scroll": 0,
+      "scroll_upper": 468,
+      "scroll_page_size": 468,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": true
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 676,
+        "y": 68,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "power",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "light",
+    "font": 24,
+    "scale": 1.25,
+    "page": "overview",
+    "report": {
+      "page": "overview",
+      "heading": "Overview",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Network",
+        "Bluetooth",
+        "Sound",
+        "Power & battery",
+        "Media controls",
+        "Window overview",
+        "Pearl settings",
+        "Aqueous settings",
+        "Session & security",
+        "Suspend delay inhibitor unavailable.",
+        "Lock",
+        "Suspend",
+        "Hibernate",
+        "Log out",
+        "Pause automatic idle",
+        "Workspace layout",
+        "float \u00b7 1",
+        "tile",
+        "monocle",
+        "grid",
+        "rows",
+        "dwindle",
+        "reverse-dwindle",
+        "scrolling",
+        "float",
+        "game-mode",
+        "composable",
+        "Refresh layout"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 455,
+      "scroll": 0,
+      "scroll_upper": 1387,
+      "scroll_page_size": 455,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 68,
+        "y": 12,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "overview",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "light",
+    "font": 24,
+    "scale": 1.25,
+    "page": "network",
+    "report": {
+      "page": "network",
+      "heading": "Network",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Wi-Fi ready",
+        "Turn Wi-Fi off",
+        "Network editor\u2026",
+        "Adapters, nearby and saved networks",
+        "test_wlan0 \u00b7 Disconnected",
+        "Disconnect",
+        "Scan Wi-Fi",
+        "Fixture Secure \u00b7 78% \u00b7 psk",
+        "Connect",
+        "Fixture WPA3 \u00b7 78% \u00b7 sae",
+        "Connect",
+        "Guest Wi-Fi \u00b7 78% \u00b7 open",
+        "Connect",
+        "Enterprise \u00b7 78% \u00b7 advanced",
+        "Use network editor\u2026",
+        "Saved secure network \u00b7 Saved",
+        "Connect saved"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 455,
+      "scroll": 0,
+      "scroll_upper": 793,
+      "scroll_page_size": 455,
+      "interest": {
+        "network": true,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 68,
+        "y": 12,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "network",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "light",
+    "font": 24,
+    "scale": 1.25,
+    "page": "bluetooth",
+    "report": {
+      "page": "bluetooth",
+      "heading": "Bluetooth",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Ready to connect",
+        "Adapters and devices",
+        "Desktop Bluetooth \u00b7 On",
+        "Turn off",
+        "Discover",
+        "Fixture headphones \u00b7 Not paired\n00:11:22:33:44:55",
+        "Pair\u2026",
+        "Trust device"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 455,
+      "scroll": 0,
+      "scroll_upper": 455,
+      "scroll_page_size": 455,
+      "interest": {
+        "network": false,
+        "bluetooth": true,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 68,
+        "y": 12,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "bluetooth",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "light",
+    "font": 24,
+    "scale": 1.25,
+    "page": "sound",
+    "report": {
+      "page": "sound",
+      "heading": "Sound",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Sound",
+        "Audio service disconnected; pending changes were discarded.",
+        "Output, input and applications"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 455,
+      "scroll": 0,
+      "scroll_upper": 455,
+      "scroll_page_size": 455,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 68,
+        "y": 12,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "sound",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "light",
+    "font": 24,
+    "scale": 1.25,
+    "page": "power",
+    "report": {
+      "page": "power",
+      "heading": "Power & battery",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Power and brightness",
+        "73% \u00b7 On battery",
+        "Brightness \u00b7 test_panel",
+        "42",
+        "Power profile",
+        "Power saver",
+        "Balanced",
+        "Performance",
+        "Power off\u2026",
+        "Restart\u2026",
+        "Cancel",
+        ""
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 432,
+      "scroll": 0,
+      "scroll_upper": 503,
+      "scroll_page_size": 432,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": true
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 68,
+        "y": 12,
+        "width": 600,
+        "height": 560
+      },
+      "pane": "control",
+      "page": "power",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "gtk",
+    "variant": "dark",
+    "font": 24,
+    "scale": 1.5,
+    "page": "overview",
+    "report": {
+      "page": "overview",
+      "heading": "Overview",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Network",
+        "Bluetooth",
+        "Sound",
+        "Power & battery",
+        "Media controls",
+        "Window overview",
+        "Pearl settings",
+        "Aqueous settings",
+        "Session & security",
+        "Suspend delay inhibitor unavailable.",
+        "Lock",
+        "Suspend",
+        "Hibernate",
+        "Log out",
+        "Pause automatic idle",
+        "Workspace layout",
+        "float \u00b7 1",
+        "tile",
+        "monocle",
+        "grid",
+        "rows",
+        "dwindle",
+        "reverse-dwindle",
+        "scrolling",
+        "float",
+        "game-mode",
+        "composable",
+        "Refresh layout"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 388,
+      "scroll": 0,
+      "scroll_upper": 1232,
+      "scroll_page_size": 388,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 185,
+        "y": 0,
+        "width": 600,
+        "height": 480
+      },
+      "pane": "control",
+      "page": "overview",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "gtk",
+    "variant": "dark",
+    "font": 24,
+    "scale": 1.5,
+    "page": "network",
+    "report": {
+      "page": "network",
+      "heading": "Network",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Wi-Fi ready",
+        "Turn Wi-Fi off",
+        "Network editor\u2026",
+        "Adapters, nearby and saved networks",
+        "test_wlan0 \u00b7 Disconnected",
+        "Disconnect",
+        "Scan Wi-Fi",
+        "Fixture Secure \u00b7 78% \u00b7 psk",
+        "Connect",
+        "Fixture WPA3 \u00b7 78% \u00b7 sae",
+        "Connect",
+        "Guest Wi-Fi \u00b7 78% \u00b7 open",
+        "Connect",
+        "Enterprise \u00b7 78% \u00b7 advanced",
+        "Use network editor\u2026",
+        "Saved secure network \u00b7 Saved",
+        "Connect saved"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 388,
+      "scroll": 0,
+      "scroll_upper": 668,
+      "scroll_page_size": 388,
+      "interest": {
+        "network": true,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 185,
+        "y": 0,
+        "width": 600,
+        "height": 480
+      },
+      "pane": "control",
+      "page": "network",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "gtk",
+    "variant": "dark",
+    "font": 24,
+    "scale": 1.5,
+    "page": "bluetooth",
+    "report": {
+      "page": "bluetooth",
+      "heading": "Bluetooth",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Ready to connect",
+        "Adapters and devices",
+        "Desktop Bluetooth \u00b7 On",
+        "Turn off",
+        "Discover",
+        "Fixture headphones \u00b7 Not paired\n00:11:22:33:44:55",
+        "Pair\u2026",
+        "Trust device"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 388,
+      "scroll": 0,
+      "scroll_upper": 388,
+      "scroll_page_size": 388,
+      "interest": {
+        "network": false,
+        "bluetooth": true,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 185,
+        "y": 0,
+        "width": 600,
+        "height": 480
+      },
+      "pane": "control",
+      "page": "bluetooth",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "gtk",
+    "variant": "dark",
+    "font": 24,
+    "scale": 1.5,
+    "page": "sound",
+    "report": {
+      "page": "sound",
+      "heading": "Sound",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Sound",
+        "Audio service disconnected; pending changes were discarded.",
+        "Output, input and applications"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 388,
+      "scroll": 0,
+      "scroll_upper": 388,
+      "scroll_page_size": 388,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 185,
+        "y": 0,
+        "width": 600,
+        "height": 480
+      },
+      "pane": "control",
+      "page": "sound",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "gtk",
+    "variant": "dark",
+    "font": 24,
+    "scale": 1.5,
+    "page": "power",
+    "report": {
+      "page": "power",
+      "heading": "Power & battery",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Power and brightness",
+        "73% \u00b7 On battery",
+        "Brightness \u00b7 test_panel",
+        "42",
+        "Power profile",
+        "Power saver",
+        "Balanced",
+        "Performance",
+        "Power off\u2026",
+        "Restart\u2026",
+        "Cancel",
+        ""
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 388,
+      "scroll": 0,
+      "scroll_upper": 444,
+      "scroll_page_size": 388,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": true
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 185,
+        "y": 0,
+        "width": 600,
+        "height": 480
+      },
+      "pane": "control",
+      "page": "power",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 24,
+    "scale": 2,
+    "page": "overview",
+    "report": {
+      "page": "overview",
+      "heading": "Overview",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Network",
+        "Bluetooth",
+        "Sound",
+        "Power & battery",
+        "Media controls",
+        "Window overview",
+        "Pearl settings",
+        "Aqueous settings",
+        "Session & security",
+        "Suspend delay inhibitor unavailable.",
+        "Lock",
+        "Suspend",
+        "Hibernate",
+        "Log out",
+        "Pause automatic idle",
+        "Workspace layout",
+        "float \u00b7 1",
+        "tile",
+        "monocle",
+        "grid",
+        "rows",
+        "dwindle",
+        "reverse-dwindle",
+        "scrolling",
+        "float",
+        "game-mode",
+        "composable",
+        "Refresh layout"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 191,
+      "scroll": 0,
+      "scroll_upper": 1387,
+      "scroll_page_size": 191,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 36,
+        "y": 0,
+        "width": 600,
+        "height": 296
+      },
+      "pane": "control",
+      "page": "overview",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 24,
+    "scale": 2,
+    "page": "network",
+    "report": {
+      "page": "network",
+      "heading": "Network",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Wi-Fi ready",
+        "Turn Wi-Fi off",
+        "Network editor\u2026",
+        "Adapters, nearby and saved networks",
+        "test_wlan0 \u00b7 Disconnected",
+        "Disconnect",
+        "Scan Wi-Fi",
+        "Fixture Secure \u00b7 78% \u00b7 psk",
+        "Connect",
+        "Fixture WPA3 \u00b7 78% \u00b7 sae",
+        "Connect",
+        "Guest Wi-Fi \u00b7 78% \u00b7 open",
+        "Connect",
+        "Enterprise \u00b7 78% \u00b7 advanced",
+        "Use network editor\u2026",
+        "Saved secure network \u00b7 Saved",
+        "Connect saved"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 191,
+      "scroll": 0,
+      "scroll_upper": 793,
+      "scroll_page_size": 191,
+      "interest": {
+        "network": true,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 36,
+        "y": 0,
+        "width": 600,
+        "height": 296
+      },
+      "pane": "control",
+      "page": "network",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 24,
+    "scale": 2,
+    "page": "bluetooth",
+    "report": {
+      "page": "bluetooth",
+      "heading": "Bluetooth",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Ready to connect",
+        "Adapters and devices",
+        "Desktop Bluetooth \u00b7 On",
+        "Turn off",
+        "Discover",
+        "Fixture headphones \u00b7 Not paired\n00:11:22:33:44:55",
+        "Pair\u2026",
+        "Trust device"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 191,
+      "scroll": 0,
+      "scroll_upper": 365,
+      "scroll_page_size": 191,
+      "interest": {
+        "network": false,
+        "bluetooth": true,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 36,
+        "y": 0,
+        "width": 600,
+        "height": 296
+      },
+      "pane": "control",
+      "page": "bluetooth",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 24,
+    "scale": 2,
+    "page": "sound",
+    "report": {
+      "page": "sound",
+      "heading": "Sound",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Sound",
+        "Audio service disconnected; pending changes were discarded.",
+        "Output, input and applications"
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 191,
+      "scroll": 0,
+      "scroll_upper": 211,
+      "scroll_page_size": 191,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": false
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 36,
+        "y": 0,
+        "width": 600,
+        "height": 296
+      },
+      "pane": "control",
+      "page": "sound",
+      "results": 0,
+      "latency_us": 0
+    }
+  },
+  {
+    "theme": "static",
+    "variant": "dark",
+    "font": 24,
+    "scale": 2,
+    "page": "power",
+    "report": {
+      "page": "power",
+      "heading": "Power & battery",
+      "focus": "heading",
+      "button": null,
+      "saved_focus": "",
+      "restoring": false,
+      "labels": [
+        "Power and brightness",
+        "73% \u00b7 On battery",
+        "Brightness \u00b7 test_panel",
+        "42",
+        "Power profile",
+        "Power saver",
+        "Balanced",
+        "Performance",
+        "Power off\u2026",
+        "Restart\u2026",
+        "Cancel",
+        ""
+      ],
+      "populated_pages": 1,
+      "viewports": 5,
+      "body_width": 560,
+      "body_height": 168,
+      "scroll": 0,
+      "scroll_upper": 503,
+      "scroll_page_size": 168,
+      "interest": {
+        "network": false,
+        "bluetooth": false,
+        "power": true
+      }
+    },
+    "popup": {
+      "output": "1",
+      "rect": {
+        "x": 36,
+        "y": 0,
+        "width": 600,
+        "height": 296
+      },
+      "pane": "control",
+      "page": "power",
+      "results": 0,
+      "latency_us": 0
+    }
+  }
+]

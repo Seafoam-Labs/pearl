@@ -40,6 +40,8 @@ pub fn parse(args: []const []const u8) !Options {
             r.path = value;
         } else if (std.mem.eql(u8, flag, "--output") and r.output == null) {
             r.output = value;
+        } else if (std.mem.eql(u8, flag, "--page") and r.page == null) {
+            r.page = protocol.settings_navigation.parseCompact(value) catch return error.Usage;
         } else if (std.mem.eql(u8, flag, "--edge") and r.edge == null) {
             r.edge = std.meta.stringToEnum(protocol.Edge, value) orelse return error.Usage;
         } else if (std.mem.eql(u8, flag, "--size") and r.size == null) {
@@ -122,7 +124,10 @@ pub const usage =
     \\       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]
     \\
     \\       pearlctl launcher show|hide|toggle [--output ID]
-    \\       pearlctl control-center show|toggle [--output ID]
+    \\       pearlctl control-center show|toggle [--output ID] [--page PAGE]
+    \\       PAGE: overview (default), sound, network, bluetooth, power
+    \\       Opens the compact flyout. Toggle closes the same page or switches to another.
+    \\       Status popup.page reports its route; invalid pages leave the flyout unchanged.
     \\       pearlctl calendar toggle [--output ID]
     \\       pearlctl overview toggle [--output ID]
     \\       pearlctl layout get|set --output ID [--layout NAME]
@@ -156,6 +161,32 @@ test "CLI rejects unknown options, duplicate flags and inappropriate fields" {
     try t.expectError(error.Usage, parse(&.{ "frame", "set", "--size", "8" }));
     const result = try parse(&.{ "osd", "show", "--text", "Sound muted", "--duration", "1200" });
     try t.expectEqual(protocol.Op.osd_show, result.request.op);
+}
+
+test "control-center defaults and explicit compact pages preserve strict CLI validation" {
+    const t = std.testing;
+    for ([_][]const u8{ "show", "toggle" }) |verb| {
+        const legacy = (try parse(&.{ "control-center", verb })).request;
+        try t.expect(legacy.page == null);
+        try t.expectEqual(protocol.settings_navigation.Route.overview, legacy.compactPage());
+        for (std.enums.values(protocol.settings_navigation.Route)) |page| {
+            if (page.isCompact()) {
+                const explicit = (try parse(&.{ "control-center", verb, "--page", page.id(), "--output", "output:1" })).request;
+                try t.expectEqual(page, explicit.compactPage());
+                try t.expectEqualStrings("output:1", explicit.output.?);
+                try t.expectEqual(legacy.op, explicit.op);
+            } else try t.expectError(error.Usage, parse(&.{ "control-center", verb, "--page", page.id() }));
+        }
+    }
+    for ([_][]const u8{ "", "Sound", "unknown", "sound\x00" }) |page|
+        try t.expectError(error.Usage, parse(&.{ "control-center", "show", "--page", page }));
+    try t.expectError(error.Usage, parse(&.{ "control-center", "show", "--page" }));
+    try t.expectError(error.Usage, parse(&.{ "control-center", "toggle", "--page", "sound", "--page", "network" }));
+    try t.expectError(error.Usage, parse(&.{ "control-center", "show", "--page", "sound", "--output", "" }));
+    for ([_][]const u8{ "settings", "popup", "launcher" }) |command|
+        try t.expectError(error.Usage, parse(&.{ command, "show", "--page", "sound" }));
+    try t.expectError(error.Usage, parse(&.{ "calendar", "toggle", "--page", "sound" }));
+    try t.expectError(error.Usage, parse(&.{ "status", "--page", "overview" }));
 }
 
 test "desktop commands validate group ownership and native layout names" {

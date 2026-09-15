@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "checks": {
+    "mixed-scale-negative-origin-mapping-and-single-reservation": true,
+    "instance-lock-preserves-running-server": true,
+    "bar-move-frame-exclusion-and-conflict": true,
+    "popup-clamping-keyboard-escape-and-arbitration": true,
+    "osd-does-not-steal-focus-and-is-click-through": true,
+    "outside-click-dismissal-does-not-leak-and-frame-interior-passes-input": true,
+    "hotplug-invalidates-mapping-and-dismisses-target-popup": true,
+    "rotated-output-popup-clamping": true,
+    "idle-cpu-ticks-over-1.5s": 0,
+    "kill-restores-usable-bounds": true,
+    "stale-socket-recovery-and-graceful-reservation-removal": true,
+    "native-wayland-session-matches-ipc-before-surfaces-or-control": true,
+    "control-schema-frame-limit-eight-client-bound-and-partial-request-deadline": true,
+    "private-nested-stale-session-and-cross-display-cli-isolation": true,
+    "native-blur-pixel-difference-under-rule-veto": 1.3699009324009321,
+    "rule-restored-pixel-difference": 0.0,
+    "gtk-owned-surface-native-protocol-capability-resize-remap-lifecycle": true
+  },
+  "pearl_sha256": "e81d5773915eb34eddbcccf2c57e01b04058a7c73705e40bea029a06df3aaeac",
+  "ctl_sha256": "6fb34b5811af25cfd608dd08dd9f816bf2415ff260cf1b5e35fd20547fd5a14c",
+  "effects_aqueous_sha256": "7baaa710450fb494aa0f4034e380ff4d0028ed8287f8a0462652d1b8b2d33a52"
+}

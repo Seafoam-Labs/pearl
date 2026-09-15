@@ -13,6 +13,55 @@ This page records T06. [T07 services](SERVICES.md) now supply audio, battery,
 brightness, power profiles and confirmed power actions; their bar groups and
 control-center contents supersede the unavailable T06 placeholders below.
 
+## Compact settings navigation
+
+Speaker, Network, Bluetooth and Battery open **Sound**, **Network**,
+**Bluetooth** and **Power & battery** directly. The gear opens **Overview**.
+The fixed heading and section chooser select one compact page at a time; each
+page scrolls independently. Overview links to all four pages, media controls,
+window overview and the existing Pearl/Aqueous editors, and retains session and
+workspace-layout actions.
+
+Clicking a different service icon switches the existing flyout on that output.
+Clicking the same icon again closes it. Another output replaces the flyout there.
+External links start at the heading; internal navigation restores page-local
+scroll and focus. Escape, Close and permitted backdrop clicks dismiss it.
+Clock, bell, media, tray, keyboard, launcher, workspace, overview and capture
+actions keep their task-specific behavior.
+
+```sh
+pearlctl control-center show --page sound
+pearlctl control-center toggle --page network --output OUTPUT_ID
+```
+
+Compact page IDs are `overview` (default), `sound`, `network`, `bluetooth` and
+`power`. Invalid IDs are rejected before changing the flyout.
+`pearlctl status` reports the selected route as `popup.page`; task popups use
+`null`. This command always means the shell-owned compact flyout. The standalone
+`pearl-settings` application and its launch handoff remain a separate deliverable;
+all existing compact controls work without it.
+
+Bar service buttons expose an action name and a current-status description to
+assistive technology. Selected headings are announced; inactive page controls are
+absent from focus traversal. The flyout follows Pearl's font, dark/light/native
+GTK theme and reduced-motion preferences. The bar retains layer-shell keyboard
+mode `none`; keyboard navigation occurs within the flyout, with no on-demand bar
+focus. See the
+[navigation plan](SETTINGS_NAVIGATION_PLAN.md) and
+[service-view ownership contract](SETTINGS_SERVICE_OWNERSHIP.md).
+
+Run the complete compact navigation acceptance checks with:
+
+```sh
+zig build test-settings-navigation -Doptimize=ReleaseSafe --global-cache-dir .cache/zig
+```
+
+This runs pure tests and private page, lifecycle, accessibility, desktop, surface,
+audio/power, connectivity and session-service fixtures. Evidence is written under
+`artifacts/settings-navigation/f5/`; use `-- --output DIRECTORY` to choose another
+artifact directory. Bar input is pointer-driven under the approved no-keyboard-focus
+policy; the chooser, page controls, Close and Escape use actual keyboard input.
+
 ## Use the desktop
 
 The launcher button opens a shared search surface on its output. Type to search,
@@ -61,10 +110,8 @@ are rejected. All three groups are supplied together. These are **runtime
 preferences**: restart or output removal resets them. Persistent preference
 editing/migrations belong to T13. Existing `bar set` controls edge/thickness.
 
-The control center uses the Material component system. Network, Bluetooth,
-audio, brightness and media explicitly show unavailable because their service
-adapters belong to later tasks. Its workspace-layout controls and window
-overview action are real. Calendar browsing uses `GtkCalendar` and local time;
+The original T06 control center used unavailable service placeholders; the compact
+pages above now use live service adapters. Calendar browsing uses `GtkCalendar` and local time;
 there is no account synchronization or fabricated event list. English/German
 surface labels and GIO desktop labels follow GLib's language preferences.
 
@@ -164,7 +211,8 @@ T05's bounded, same-UID, per-session socket and exit codes remain in force.
 New flat operations are `launcher_show`, `launcher_hide`, `launcher_toggle`,
 `control_show`, `control_toggle`, `calendar_toggle`, `bar_groups`, `layout_get`,
 `layout_set` and `overview_toggle`. Pane/overview operations accept optional
-`output`; `launcher_hide` accepts none. `bar_groups` requires `output`, `left`,
+`output`; `control_show/toggle` also accept validated optional `page`;
+`launcher_hide` accepts none. `bar_groups` requires `output`, `left`,
 `center`, `right`. `layout_get` requires `output`; `layout_set` additionally
 requires `layout`. Existing `popup_show/toggle` are launcher aliases;
 `popup_hide` dismisses whichever principal pane is open.

@@ -1,5 +1,7 @@
 //! NetworkManager state and a session-only SecretAgent; credentials never enter the model.
 const std = @import("std");
+const ownership = @import("view_ownership.zig");
+pub const Owner = ownership.Owner;
 const d = @import("dbus_peer.zig");
 const gio = d.gio;
 const glib = d.glib;
@@ -24,7 +26,8 @@ pub const Network = struct {
     peer: d.Peer = undefined,
     agent: d.Export = .{},
     registered: bool = false,
-    panel_open: bool = false,
+    interest: ownership.Interest = .{},
+    operation_owner: ?Owner = null,
     devices: [8]Device = undefined,
     device_count: usize = 0,
     aps: [64]AccessPoint = undefined,
@@ -53,6 +56,8 @@ pub const Network = struct {
     active: Text(512) = .{},
     deadline: c_uint = 0,
     scan_pending: bool = false,
+    scan_owner: ?Owner = null,
+    scan_sequence: u64 = 0,
     scan_last: i64 = 0,
     prompt: ?*gio.DBusMethodInvocation = null,
     prompt_path: Text(512) = .{},
@@ -62,15 +67,36 @@ pub const Network = struct {
         self.peer.start();
     }
     pub fn stop(self: *Network) void {
-        self.panel(false);
+        self.revokeViews();
         self.peer.stop();
     }
     fn emit(self: *Network) void {
         self.changed(self.context, .state);
     }
-    pub fn panel(self: *Network, open: bool) void {
-        self.panel_open = open;
-        if (!open) self.cancelOperation();
+    pub fn acquireView(self: *Network) !Owner {
+        return self.interest.acquire();
+    }
+    pub fn releaseView(self: *Network, owner: Owner) void {
+        if (!self.interest.release(owner)) return;
+        self.cancelOwned(owner);
+        if (self.scan_owner == owner) {
+            self.scan_owner = null;
+            self.scan_sequence += 1;
+            self.scan_pending = false;
+        }
+    }
+    pub fn revokeViews(self: *Network) void {
+        self.interest.revoke();
+        self.cancelOperation();
+        self.scan_owner = null;
+        self.scan_sequence += 1;
+        self.scan_pending = false;
+    }
+    pub fn cancelOwned(self: *Network, owner: Owner) void {
+        if (self.operation_owner == owner) self.cancelOperation();
+    }
+    pub fn ownsPrompt(self: *Network, owner: Owner) bool {
+        return self.interest.contains(owner) and self.operation_owner == owner;
     }
     fn clearDevices(self: *Network) void {
         for (self.devices[0..self.device_count]) |dev| if (dev.available) |v| v.unref();
@@ -320,20 +346,24 @@ pub const Network = struct {
         for (self.aps[0..self.ap_count]) |*ap| if (std.mem.eql(u8, ap.path.slice(), path)) return ap;
         return null;
     }
-    pub fn scan(self: *Network, epoch: u64, path: []const u8) !void {
-        if (!self.panel_open or epoch != self.peer.epoch or self.scan_pending or !self.enabled or !self.hardware_enabled) return error.Unavailable;
+    pub fn scan(self: *Network, owner: Owner, epoch: u64, path: []const u8) !void {
+        if (!self.interest.contains(owner) or epoch != self.peer.epoch or self.scan_pending or !self.enabled or !self.hardware_enabled) return error.Unavailable;
         const now = glib.getMonotonicTime();
         if (self.scan_last != 0 and now - self.scan_last < 15_000_000) return error.Busy;
         const dev = self.findDevice(path) orelse return error.Unavailable;
         if (dev.kind != 2 or dev.state < 30) return error.Unavailable;
-        try self.peer.call(0, dev.path.z(), wifiif, "RequestScan", d.tuple(&.{d.array("{sv}", &.{})}), "()", 15000, scanDone);
+        self.scan_sequence += 1;
+        try self.peer.call(self.scan_sequence, dev.path.z(), wifiif, "RequestScan", d.tuple(&.{d.array("{sv}", &.{})}), "()", 15000, scanDone);
+        self.scan_owner = owner;
         self.scan_last = now;
         self.scan_pending = true;
         self.err = null;
         self.emit();
     }
-    fn scanDone(data: *anyopaque, _: u64, value: ?*V, _: ?[]const u8) void {
+    fn scanDone(data: *anyopaque, token: u64, value: ?*V, _: ?[]const u8) void {
         const self: *Network = @ptrCast(@alignCast(data));
+        if (token != self.scan_sequence or !self.interest.contains(self.scan_owner)) return;
+        self.scan_owner = null;
         self.scan_pending = false;
         if (value == null) self.err = "Scan unavailable or rate limited. Try again shortly.";
         self.peer.refresh();
@@ -347,8 +377,11 @@ pub const Network = struct {
         self.err = null;
         self.emit();
     }
-    pub fn connectAP(self: *Network, epoch: u64, path: []const u8) !void {
-        if (!self.panel_open or epoch != self.peer.epoch or self.pending or !self.enabled) return error.Unavailable;
+    pub fn canConnectDevice(self: *const Network, dev: *const Device) bool {
+        return dev.state >= 30 and (dev.kind != 2 or (self.enabled and self.hardware_enabled));
+    }
+    pub fn connectAP(self: *Network, owner: Owner, epoch: u64, path: []const u8) !void {
+        if (!self.interest.contains(owner) or epoch != self.peer.epoch or self.pending or !self.enabled) return error.Unavailable;
         const ap = self.findAP(path) orelse return error.Unavailable;
         if (ap.security == .advanced) {
             self.err = "Enterprise, WEP and hidden networks require the network editor.";
@@ -357,8 +390,8 @@ pub const Network = struct {
         }
         if (ap.security != .open and !self.registered) return error.Unavailable;
         const dev = self.findDevice(ap.device.slice()) orelse return error.Unavailable;
-        if (dev.state < 30) return error.Unavailable;
-        self.begin(dev.path, ap.label.slice(), ap.security);
+        if (!self.canConnectDevice(dev)) return error.Unavailable;
+        self.begin(owner, dev.path, ap.label.slice(), ap.security);
         self.selected_ap = ap.path;
         self.selected_ssid = ap.ssid;
         self.selected_len = ap.len;
@@ -372,17 +405,19 @@ pub const Network = struct {
         };
         self.emit();
     }
-    pub fn connectSaved(self: *Network, epoch: u64, path: []const u8) !void {
-        if (!self.panel_open or epoch != self.peer.epoch or self.pending) return error.Unavailable;
+    pub fn connectSaved(self: *Network, owner: Owner, epoch: u64, path: []const u8) !void {
+        if (!self.interest.contains(owner) or epoch != self.peer.epoch or self.pending) return error.Unavailable;
         for (self.saved[0..self.saved_count]) |*saved| if (std.mem.eql(u8, saved.path.slice(), path)) {
             if (!saved.loaded or saved.device.len == 0) return error.Unavailable;
+            const dev = self.findDevice(saved.device.slice()) orelse return error.Unavailable;
+            if (!self.canConnectDevice(dev)) return error.Unavailable;
             if (saved.security == .advanced) {
                 self.err = "Advanced authentication requires the network editor.";
                 self.emit();
                 return error.Unsupported;
             }
             if (saved.security != .open and !self.registered) return error.Unavailable;
-            self.begin(saved.device, saved.label.slice(), saved.security);
+            self.begin(owner, saved.device, saved.label.slice(), saved.security);
             self.selected_profile = saved.path;
             self.peer.call(self.sequence, root, nm, "ActivateConnection", d.tuple(&.{ d.path(saved.path.z()), d.path(saved.device.z()), d.path("/") }), "(o)", 90000, activated) catch |err| {
                 self.finish();
@@ -393,7 +428,8 @@ pub const Network = struct {
         };
         return error.Unavailable;
     }
-    fn begin(self: *Network, device: Text(512), title: []const u8, security: p.Security) void {
+    fn begin(self: *Network, owner: Owner, device: Text(512), title: []const u8, security: p.Security) void {
+        self.operation_owner = owner;
         self.sequence += 1;
         self.pending = true;
         self.cancelled = false;
@@ -448,6 +484,7 @@ pub const Network = struct {
         if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
         self.deadline = 0;
         self.pending = false;
+        self.operation_owner = null;
         self.activation_waiting = false;
         self.active = .{};
         self.device = .{};
@@ -464,11 +501,12 @@ pub const Network = struct {
     fn simpleDone(data: *anyopaque, _: u64, value: ?*V, _: ?[]const u8) void {
         const self: *Network = @ptrCast(@alignCast(data));
         self.pending = false;
+        self.operation_owner = null;
         if (value == null) self.err = "Network change denied or unavailable.";
         self.peer.refresh();
         self.emit();
     }
-    pub fn cancelOperation(self: *Network) void {
+    fn cancelOperation(self: *Network) void {
         self.rejectPrompt();
         if (!self.pending or self.device.len == 0 or self.cancelled) return;
         self.cancelled = true;
@@ -491,8 +529,8 @@ pub const Network = struct {
         self.prompt_path = .{};
         self.prompt_serial += 1;
     }
-    pub fn answer(self: *Network, serial: u64, password: []const u8) !void {
-        if (serial != self.prompt_serial or !self.panel_open or !self.pending or self.cancelled) return error.Unavailable;
+    pub fn answer(self: *Network, owner: Owner, serial: u64, password: []const u8) !void {
+        if (!self.ownsPrompt(owner) or serial != self.prompt_serial or !self.pending or self.cancelled) return error.Unavailable;
         const invocation = self.prompt orelse return error.Unavailable;
         if (!p.password(password, self.selected_security)) {
             self.err = "Enter a valid Wi-Fi password.";
@@ -570,7 +608,7 @@ pub const Network = struct {
             const key = d.string(security, "key-mgmt", "s");
             matches = matches and std.mem.eql(u8, key.slice(), if (self.selected_security == .sae) "sae" else "wpa-psk");
         } else matches = false;
-        if (!self.panel_open or !self.pending or self.cancelled or self.prompt != null or !matches or rawpath.len > 512 or flags.getUint32() & 1 == 0 or !std.mem.eql(u8, std.mem.span(setting.getString(null)), security_setting)) {
+        if (!self.interest.contains(self.operation_owner) or !self.pending or self.cancelled or self.prompt != null or !matches or rawpath.len > 512 or flags.getUint32() & 1 == 0 or !std.mem.eql(u8, std.mem.span(setting.getString(null)), security_setting)) {
             invocation.returnDbusError(nm ++ ".SecretAgent.NoSecrets", "No supported interactive request");
             return;
         }

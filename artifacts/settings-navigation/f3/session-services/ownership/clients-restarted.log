@@ -1,0 +1,4 @@
+/home/zoey/Pearl/tests/fixtures/session/desktop.py:72: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
+  info=Gio.DBusNodeInfo.new_for_xml(xml);bus.register_object(path,info.interfaces[0],method,lambda c,s,p,i,k:objects[(p,i)][k],None)
+event=ready
+command={"register": true}

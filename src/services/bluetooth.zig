@@ -1,5 +1,7 @@
-//! BlueZ client-local Agent1. Discovery leases and pairing belong to the open panel.
+//! BlueZ client-local Agent1. Discovery and pairing belong to their initiating view.
 const std = @import("std");
+const ownership = @import("view_ownership.zig");
+pub const Owner = ownership.Owner;
 const d = @import("dbus_peer.zig");
 const gio = d.gio;
 const glib = d.glib;
@@ -20,7 +22,8 @@ pub const Bluetooth = struct {
     peer: d.Peer = undefined,
     agent: d.Export = .{},
     registered: bool = false,
-    panel_open: bool = false,
+    interest: ownership.Interest = .{},
+    operation_owner: ?Owner = null,
     adapters: [8]Adapter = undefined,
     adapter_count: usize = 0,
     devices: [64]Device = undefined,
@@ -38,6 +41,8 @@ pub const Bluetooth = struct {
     discovery_waiting: bool = false,
     discovery_cancelled: bool = false,
     discovery_path: Text(512) = .{},
+    discovery_owner: ?Owner = null,
+    discovery_sequence: u64 = 0,
     discovery_timer: c_uint = 0,
     prompt: ?*gio.DBusMethodInvocation = null,
     prompt_kind: PromptKind = .none,
@@ -48,18 +53,30 @@ pub const Bluetooth = struct {
         self.peer.start();
     }
     pub fn stop(self: *Bluetooth) void {
-        self.panel(false);
+        self.revokeViews();
         self.peer.stop();
     }
     fn emit(self: *Bluetooth) void {
         self.changed(self.context, .state);
     }
-    pub fn panel(self: *Bluetooth, open: bool) void {
-        self.panel_open = open;
-        if (!open) {
-            self.stopDiscovery();
-            self.cancelOperation();
-        }
+    pub fn acquireView(self: *Bluetooth) !Owner {
+        return self.interest.acquire();
+    }
+    pub fn releaseView(self: *Bluetooth, owner: Owner) void {
+        if (!self.interest.release(owner)) return;
+        self.cancelOwned(owner);
+        self.stopDiscoveryOwned(owner);
+    }
+    pub fn revokeViews(self: *Bluetooth) void {
+        self.interest.revoke();
+        self.cancelOperation();
+        self.stopDiscovery();
+    }
+    pub fn cancelOwned(self: *Bluetooth, owner: Owner) void {
+        if (self.operation_owner == owner) self.cancelOperation();
+    }
+    pub fn ownsPrompt(self: *Bluetooth, owner: Owner) bool {
+        return self.interest.contains(owner) and self.operation_owner == owner;
     }
     fn stateChanged(data: *anyopaque, reset: bool) void {
         const self: *Bluetooth = @ptrCast(@alignCast(data));
@@ -143,11 +160,13 @@ pub const Bluetooth = struct {
         for (self.adapters[0..self.adapter_count]) |*adapter| if (std.mem.eql(u8, adapter.path.slice(), path)) return adapter;
         return null;
     }
-    pub fn discover(self: *Bluetooth, epoch: u64, path: []const u8) !void {
-        if (!self.panel_open or epoch != self.peer.epoch or self.discovery_path.len != 0) return error.Unavailable;
+    pub fn discover(self: *Bluetooth, owner: Owner, epoch: u64, path: []const u8) !void {
+        if (!self.interest.contains(owner) or epoch != self.peer.epoch or self.discovery_path.len != 0) return error.Unavailable;
         const adapter = self.findAdapter(path) orelse return error.Unavailable;
         if (!adapter.powered) return error.Unavailable;
-        try self.peer.call(0, adapter.path.z(), adapterif, "StartDiscovery", null, "()", 10000, discoveryDone);
+        self.discovery_sequence += 1;
+        try self.peer.call(self.discovery_sequence, adapter.path.z(), adapterif, "StartDiscovery", null, "()", 10000, discoveryDone);
+        self.discovery_owner = owner;
         self.discovery_path = adapter.path;
         self.discovery_waiting = true;
         self.discovery_cancelled = false;
@@ -155,15 +174,16 @@ pub const Bluetooth = struct {
         self.discovery_timer = glib.timeoutAdd(30000, discoveryExpired, self);
         self.emit();
     }
-    fn discoveryDone(data: *anyopaque, _: u64, value: ?*V, _: ?[]const u8) void {
+    fn discoveryDone(data: *anyopaque, token: u64, value: ?*V, _: ?[]const u8) void {
         const self: *Bluetooth = @ptrCast(@alignCast(data));
+        if (token != self.discovery_sequence) return;
         self.discovery_waiting = false;
         if (value == null) {
             self.err = "Bluetooth discovery unavailable.";
             self.clearDiscovery();
         } else {
             self.discovering = true;
-            if (self.discovery_cancelled or !self.panel_open) self.stopDiscovery();
+            if (self.discovery_cancelled or !self.interest.contains(self.discovery_owner)) self.stopDiscovery();
         }
         self.peer.refresh();
         self.emit();
@@ -177,30 +197,35 @@ pub const Bluetooth = struct {
     fn clearDiscovery(self: *Bluetooth) void {
         if (self.discovery_timer != 0) _ = glib.Source.remove(self.discovery_timer);
         self.discovery_timer = 0;
+        self.discovery_owner = null;
         self.discovery_path = .{};
         self.discovering = false;
         self.discovery_waiting = false;
         self.discovery_cancelled = false;
     }
-    pub fn stopDiscovery(self: *Bluetooth) void {
+    pub fn stopDiscoveryOwned(self: *Bluetooth, owner: Owner) void {
+        if (self.discovery_owner == owner) self.stopDiscovery();
+    }
+    fn stopDiscovery(self: *Bluetooth) void {
         if (self.discovery_path.len == 0) return;
         self.discovery_cancelled = true;
         if (self.discovery_waiting) return;
         self.discovery_waiting = true;
-        self.peer.call(0, self.discovery_path.z(), adapterif, "StopDiscovery", null, "()", 5000, discoveryStopped) catch {
+        self.peer.call(self.discovery_sequence, self.discovery_path.z(), adapterif, "StopDiscovery", null, "()", 5000, discoveryStopped) catch {
             self.clearDiscovery();
         };
         self.emit();
     }
-    fn discoveryStopped(data: *anyopaque, _: u64, value: ?*V, _: ?[]const u8) void {
+    fn discoveryStopped(data: *anyopaque, token: u64, value: ?*V, _: ?[]const u8) void {
         const self: *Bluetooth = @ptrCast(@alignCast(data));
+        if (token != self.discovery_sequence) return;
         self.clearDiscovery();
         if (value == null) self.err = "Discovery stop was not confirmed by BlueZ.";
         self.peer.refresh();
         self.emit();
     }
-    pub fn request(self: *Bluetooth, epoch: u64, path: []const u8, action: Action) !void {
-        if (!self.panel_open or epoch != self.peer.epoch or self.pending) return error.Unavailable;
+    pub fn request(self: *Bluetooth, owner: Owner, epoch: u64, path: []const u8, action: Action) !void {
+        if (!self.interest.contains(owner) or epoch != self.peer.epoch or self.pending) return error.Unavailable;
         var target: Text(512) = .{};
         if (action == .power_on or action == .power_off) {
             const adapter = self.findAdapter(path) orelse return error.Unavailable;
@@ -214,6 +239,7 @@ pub const Bluetooth = struct {
             target = dev.path;
             self.title.set(dev.label.slice());
         }
+        self.operation_owner = owner;
         self.sequence += 1;
         self.target = target;
         self.action = action;
@@ -270,8 +296,9 @@ pub const Bluetooth = struct {
         if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
         self.deadline = 0;
         self.pending = false;
+        self.operation_owner = null;
     }
-    pub fn cancelOperation(self: *Bluetooth) void {
+    fn cancelOperation(self: *Bluetooth) void {
         self.rejectPrompt();
         if (!self.pending or self.cancelling) {
             self.emit();
@@ -296,8 +323,8 @@ pub const Bluetooth = struct {
         std.crypto.secureZero(u8, &self.prompt_text.bytes);
         self.prompt_text.len = 0;
     }
-    pub fn answer(self: *Bluetooth, serial: u64, accept: bool, text: []const u8) !void {
-        if (!self.panel_open or serial != self.prompt_serial or !self.pending or self.cancelling) return error.Unavailable;
+    pub fn answer(self: *Bluetooth, owner: Owner, serial: u64, accept: bool, text: []const u8) !void {
+        if (!self.ownsPrompt(owner) or serial != self.prompt_serial or !self.pending or self.cancelling) return error.Unavailable;
         const invocation = self.prompt orelse return error.Unavailable;
         if (!accept) {
             invocation.returnDbusError("org.bluez.Error.Rejected", "User rejected authentication");
@@ -343,7 +370,7 @@ pub const Bluetooth = struct {
         }
         const path = params.getChildValue(0);
         defer path.unref();
-        if (!self.panel_open or !self.pending or self.cancelling or (self.action != .pair and self.action != .connect) or !std.mem.eql(u8, std.mem.span(path.getString(null)), self.target.slice()) or self.findDevice(self.target.slice()) == null or self.prompt != null) {
+        if (!self.interest.contains(self.operation_owner) or !self.pending or self.cancelling or (self.action != .pair and self.action != .connect) or !std.mem.eql(u8, std.mem.span(path.getString(null)), self.target.slice()) or self.findDevice(self.target.slice()) == null or self.prompt != null) {
             invocation.returnDbusError("org.bluez.Error.Rejected", "No matching user-initiated request");
             return;
         }

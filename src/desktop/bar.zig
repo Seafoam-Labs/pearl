@@ -9,7 +9,7 @@ const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
 pub const Pane = enum { clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray };
-pub const Event = union(enum) { pane: Pane, workspace: []const u8, keyboard, overview };
+pub const Event = union(enum) { pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
     host: *gtk.Box,
@@ -128,7 +128,9 @@ pub const Bar = struct {
             b.event = .{ .workspace = b.id.? };
         }
         try (if (workspace) &self.workspace_handlers else &self.handlers).append(a, b);
-        const button = if (icon) |symbol| w.iconButton(symbol, text) else gtk.Button.newWithLabel(text);
+        // Custom contents must start without a GtkButton label. An empty label
+        // otherwise overrides the accessible name even after replacing its child.
+        const button = if (icon) |symbol| w.iconButton(symbol, text) else if (text[0] == 0) gtk.Button.new() else gtk.Button.newWithLabel(text);
         _ = gtk.Button.signals.clicked.connect(button, *Button, clicked, b, .{});
         return button;
     }
@@ -180,7 +182,7 @@ pub const Bar = struct {
                     .launcher => (try self.makeButton(.{ .pane = .launcher }, "pearl-application-x-executable-symbolic", tr("Applications", "Programme"), false)).as(gtk.Widget),
                     .overview => (try self.makeButton(.overview, "pearl-view-grid-symbolic", tr("Overview", "Übersicht"), false)).as(gtk.Widget),
                     .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", tr("Clipboard & capture", "Zwischenablage & Bildschirmfoto"), false)).as(gtk.Widget),
-                    .control => (try self.makeButton(.{ .pane = .control }, "pearl-emblem-system-symbolic", tr("Control center", "Schnelleinstellungen"), false)).as(gtk.Widget),
+                    .control => (try self.makeButton(.{ .settings = .overview }, "pearl-emblem-system-symbolic", tr("Open settings Overview", "Einstellungsübersicht öffnen"), false)).as(gtk.Widget),
                     .clock => blk: {
                         const button = try self.makeButton(.{ .pane = .calendar }, null, "", false);
                         self.clock = gtk.Label.new("");
@@ -199,7 +201,13 @@ pub const Bar = struct {
                         break :blk button.as(gtk.Widget);
                     },
                     .audio, .battery, .network, .bluetooth => blk: {
-                        const button = try self.makeButton(.{ .pane = .control }, null, "", false);
+                        const button = try self.makeButton(.{ .settings = switch (item) {
+                            .audio => .sound,
+                            .battery => .power,
+                            .network => .network,
+                            .bluetooth => .bluetooth,
+                            else => unreachable,
+                        } }, null, "", false);
                         const content = gtk.Box.new(if (self.vertical) .vertical else .horizontal, if (self.vertical) 0 else 4);
                         content.append(w.icon(switch (item) {
                             .audio => "pearl-audio-volume-high-symbolic",
@@ -305,15 +313,15 @@ pub const Bar = struct {
             const device = self.audio_service.default(.sink);
             label.setText(if (device) |d| if (d.mute) tr("Muted", "Stumm") else std.fmt.bufPrintZ(&service_buffer, "{d}%", .{d.volume}) catch "" else "—");
             const widget = self.widgets[@intFromEnum(policy.Item.audio)].?;
-            widget.setTooltipText(if (device) |d| d.label.z() else tr("Audio unavailable", "Audio nicht verfügbar"));
-            w.name(widget, if (device != null) tr("Audio controls", "Audiosteuerung") else tr("Audio unavailable", "Audio nicht verfügbar"));
+            var detail: [768]u8 = undefined;
+            serviceName(widget, tr("Open Sound controls", "Klangsteuerung öffnen"), if (device) |d| std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ d.label.slice(), std.mem.span(label.getText()) }) catch d.label.z() else tr("Audio unavailable", "Audio nicht verfügbar"));
         }
         if (self.battery_label) |label| {
             label.setText(std.fmt.bufPrintZ(&service_buffer, "{d:.0}%", .{self.power_service.percentage}) catch "");
             const widget = self.widgets[@intFromEnum(policy.Item.battery)].?;
             widget.setVisible(@intFromBool(self.power_service.battery_present));
-            widget.setTooltipText(if (self.power_service.battery_state == 1) tr("Battery charging", "Akku lädt") else tr("Battery and power", "Akku und Energie"));
-            w.name(widget, tr("Battery and power", "Akku und Energie"));
+            var detail: [128]u8 = undefined;
+            serviceName(widget, tr("Open Power controls", "Energiesteuerung öffnen"), std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ std.mem.span(label.getText()), if (self.power_service.battery_state == 1) tr("Charging", "Wird geladen") else tr("Battery", "Akku") }) catch "");
         }
         if (self.network_label) |label| {
             const n = self.network_service;
@@ -323,8 +331,7 @@ pub const Bar = struct {
             };
             label.setText(if (n.peer.snapshot == null) "—" else if (n.pending) "…" else if (connected) "On" else if (n.enabled) "Wi-Fi" else "Off");
             const widget = self.widgets[@intFromEnum(policy.Item.network)].?;
-            widget.setTooltipText(if (n.peer.snapshot == null) "Network unavailable" else if (connected) "Network connected · open network controls" else "Open network controls");
-            w.name(widget, "Network controls");
+            serviceName(widget, tr("Open Network controls", "Netzwerksteuerung öffnen"), if (n.peer.snapshot == null) tr("Network unavailable", "Netzwerk nicht verfügbar") else if (n.pending) tr("Connecting…", "Verbindung wird hergestellt…") else if (connected) tr("Connected", "Verbunden") else if (n.enabled) tr("Wi-Fi on", "WLAN an") else tr("Wi-Fi off", "WLAN aus"));
         }
         if (self.bluetooth_label) |label| {
             const b = self.bluetooth_service;
@@ -334,8 +341,10 @@ pub const Bar = struct {
             };
             label.setText(if (b.peer.snapshot == null) "—" else std.fmt.bufPrintZ(&service_buffer, "{d}", .{connected}) catch "");
             const widget = self.widgets[@intFromEnum(policy.Item.bluetooth)].?;
-            widget.setTooltipText("Bluetooth controls");
-            w.name(widget, "Bluetooth controls");
+            var powered = false;
+            for (b.adapters[0..b.adapter_count]) |adapter| powered = powered or adapter.powered;
+            var detail: [128]u8 = undefined;
+            serviceName(widget, tr("Open Bluetooth controls", "Bluetooth-Steuerung öffnen"), if (b.peer.snapshot == null) tr("Bluetooth unavailable", "Bluetooth nicht verfügbar") else if (!powered) tr("Bluetooth off", "Bluetooth aus") else std.fmt.bufPrintZ(&detail, "{s} · {d} {s}", .{ tr("Bluetooth on", "Bluetooth an"), connected, tr("connected", "verbunden") }) catch "");
         }
         const focus = self.client.model.focus(null) catch null;
         if (self.title) |label| {
@@ -451,8 +460,14 @@ pub const Bar = struct {
             w.name(widget, detail);
         }
     }
+    fn serviceName(widget: *gtk.Widget, action: [:0]const u8, detail: [:0]const u8) void {
+        w.name(widget, action);
+        widget.as(gtk.Accessible).updateProperty(.description, detail.ptr, @as(c_int, -1));
+        var buffer: [1024]u8 = undefined;
+        widget.setTooltipText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ action, detail }) catch action);
+    }
     // Compiled only by the integration hook: measure actual allocated children.
-    pub fn layoutReport(self: *Bar, alloc: std.mem.Allocator) ![]const u8 {
+    pub fn layoutReport(self: *Bar, alloc: std.mem.Allocator, keyboard_mode: []const u8) ![]const u8 {
         const Rect = struct { x: f64, y: f64, width: i32, height: i32 };
         const allocation = struct {
             fn read(widget: *gtk.Widget, host: *gtk.Widget) Rect {
@@ -474,7 +489,7 @@ pub const Bar = struct {
             }
             try items.append(alloc, .{ .name = @tagName(@as(policy.Item, @enumFromInt(i))), .rect = allocation.read(widget, self.host.as(gtk.Widget)), .parts = try parts.toOwnedSlice(alloc) });
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .keyboard_mode = keyboard_mode }, .{});
     }
     fn clicked(_: *gtk.Button, button: *Button) callconv(.c) void {
         button.owner.action(button.owner.context, button.event);

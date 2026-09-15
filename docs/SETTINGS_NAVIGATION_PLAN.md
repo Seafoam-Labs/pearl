@@ -1,8 +1,38 @@
 # Settings-flyout navigation
 
-Status: proposed design, September 15, 2026. This plan covers the bar's compact
+Status: implemented and approved, September 15, 2026. This plan covers the bar's compact
 settings flyouts. The [standalone Settings application](STANDALONE_SETTINGS_APPLICATION_PLAN.md)
 has its own implementation plan and release criteria.
+
+## Implementation review checkpoints
+
+- **F1 complete, reviewed:** shared routes, typed bar target, pure
+  navigation transitions and strict optional compact-page parsing are implemented.
+  [F1 validation and baseline screenshots](../artifacts/settings-navigation/f1/REVIEW.md).
+- **F2 complete, reviewed:** separate service bodies, Overview links,
+  fixed header/section chooser and one viewport per page.
+  [F2 validation and compact-page screenshots](../artifacts/settings-navigation/f2/REVIEW.md).
+- **F3 complete, reviewed:** route-aware popup reuse, explicit CLI
+  destinations, page-local scroll/focus restoration and owner-scoped service
+  interest, prompts and discovery.
+  [F3 validation and compact-page screenshots](../artifacts/settings-navigation/f3/REVIEW.md).
+- **F4 complete, reviewed:** service bar routing, accessibility, presentation and
+  docs are implemented and verified. The user explicitly chose to retain the
+  bar's keyboard mode `none`; no on-demand bar keyboard focus is allowed.
+  [F4 validation and screenshots](../artifacts/settings-navigation/f4/REVIEW.md).
+- **F5 complete, reviewed and approved:** the navigation acceptance target passed
+  all 90 pure tests and eight private integration suites in ReleaseSafe, including
+  35 presentation configurations and 175 page checks. Narrow-layout and radio-off
+  issues found during acceptance are fixed.
+  [F5 validation and final screenshots](../artifacts/settings-navigation/f5/REVIEW.md).
+
+At the current checkpoint `pearlctl control-center show/toggle --page PAGE` selects
+the requested compact destination; defaults still select Overview. Internal
+navigation restores page-local state, and public `status.popup.page` reports the
+selected route. The [service-view ownership contract](SETTINGS_SERVICE_OWNERSHIP.md)
+is shared with the standalone plan. Service bar icons now open their matching
+compact pages; the gear opens Overview. The standalone handoff remains deferred
+until that application's launch contract is implemented.
 
 ## Scope split
 
@@ -34,7 +64,9 @@ section and provides a section chooser. Each page owns its own scroll position;
 scrolling its body never reveals a different category. The standalone application
 is available through an explicit **Open full settings** action when installed.
 
-## Current implementation and cause
+## Original implementation and cause
+
+The following describes the implementation before F1–F4:
 
 - `src/desktop/bar.zig:201`: audio, battery, network and Bluetooth all construct
   `.pane = .control`; the clicked service is not represented in the event.
@@ -164,7 +196,9 @@ is required to complete this flyout change.
 ### F5 — Verification and acceptance
 
 Add route/parser/state unit cases and a private-session `test-settings-navigation`
-integration target. Exercise actual bar pointer/keyboard input as well as CLI.
+integration target. Exercise actual bar pointer input, flyout keyboard input and
+CLI. The user-approved F4 policy keeps the bar's keyboard mode `none`, so direct
+bar keyboard focus is intentionally excluded.
 
 | Case | Acceptance |
 | --- | --- |
