@@ -210,7 +210,7 @@ pub const View = struct {
         self.filling = true;
         self.entries[2].as(gtk.Editable).setText(path);
         const cover = @intFromEnum(@as(model.Wallpaper, .{ .mode = .cover }).mode);
-        if (self.fit.getSelected() < cover) self.fit.setSelected(cover);
+        self.fit.setSelected(cover);
         self.filling = false;
         self.saveForm();
     }

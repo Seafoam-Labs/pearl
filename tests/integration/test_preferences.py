@@ -2,6 +2,7 @@
 """T10: isolated settings, GTK themes, palettes, wallpaper and ownership."""
 import argparse, copy, hashlib, json, os, sys, time
 from pathlib import Path
+from PIL import Image
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
@@ -41,7 +42,8 @@ def main():
             capture(s,'wallpaper-picker',output['connector'])
             key(s,'-k','Escape')
             assert not state(s,args.ctl)['draft_dirty'] and status(s,args.ctl)['popup']['pane']=='settings'
-            image=s.base/'chosen wallpaper.png';png(image)
+            image=s.base/'chosen wallpaper.jpg'
+            Image.new('RGB',(7680,2160),(171,150,211)).save(image)
             key(s,'-k','space');time.sleep(.5)
             key(s,'-M','ctrl','l','-m','ctrl',str(image));key(s,'-k','Return')
             wait_for(lambda:state(s,args.ctl)['draft_dirty'])
@@ -56,6 +58,20 @@ def main():
             ctl(s,args.ctl,'settings','show');time.sleep(.3)
             focus_target(s,app,'settings-wallpaper-choose');key(s,'-k','space');time.sleep(.5);key(s,'-k','Escape')
             checks['wallpaper-picker-selection-cancel-save-and-parent-close']=True
+            # Every accepted selection switches to Cover, including when the
+            # previous image used Contain. Cancelling must preserve each mode.
+            for fit in ('solid','cover','contain'):
+                p['wallpaper']['mode']=fit;v=apply(s,args.ctl,p);before=path.read_bytes()
+                focus_target(s,app,'settings-wallpaper-choose');key(s,'-k','space');time.sleep(.5);key(s,'-k','Escape')
+                assert path.read_bytes()==before and not state(s,args.ctl)['draft_dirty']
+                key(s,'-k','space');time.sleep(.5)
+                key(s,'-M','ctrl','l','-m','ctrl',str(image));key(s,'-k','Return')
+                wait_for(lambda:state(s,args.ctl)['draft_dirty'])
+                assert path.read_bytes()==before,'Choosing an image must wait for Apply & save'
+                focus_target(s,app,'settings-apply');key(s,'-k','space');v=settled(s,args.ctl)
+                assert v['err'] is None and v['preferences']['wallpaper']['path']==str(image) and v['preferences']['wallpaper']['mode']=='cover',v
+                p=v['preferences']
+            checks['wallpaper-picker-sets-cover-from-every-fit-mode']=True
             p['theme']['variant']='light';v=apply(s,args.ctl,p)
             assert json.loads(path.read_text())==p and path.stat().st_mode&0o777==0o600
             assert status(s,args.ctl)['popup']['pane']=='settings';time.sleep(.4);capture(s,'settings-static-light',output['connector'])
@@ -74,11 +90,26 @@ def main():
             external(path,original);wait_for(lambda:state(s,args.ctl)['err'] is None and state(s,args.ctl)['revision']>v['revision']);settled(s,args.ctl)
             p=copy.deepcopy(original);p['wallpaper'].update(mode='cover',path=str(s.base/'missing.png'));v=apply(s,args.ctl,p,'InvalidImage');assert v['preferences']==original
             fifo=s.base/'fifo';os.mkfifo(fifo);p['wallpaper']['path']=str(fifo);apply(s,args.ctl,p,'InvalidFile')
+            # An uncompressed portrait PNG exceeds the former 16 MiB file cap,
+            # 4096px height cap and 8 Mi-pixel cap independently of JPEG width.
+            large=s.base/'large wallpaper.png'
+            Image.new('RGB',(2000,5000),(171,150,211)).save(large,compress_level=0)
+            assert large.stat().st_size>16*1024*1024
+            p['wallpaper']['path']=str(large);v=apply(s,args.ctl,p)
+            assert v['preferences']==p
+            ctl(s,args.ctl,'popup','hide');time.sleep(.3)
+            pixels=capture(s,'large-wallpaper',output['connector'])
+            assert pixels.getpixel((10,200))==(171,150,211)
+            ctl(s,args.ctl,'settings','show');time.sleep(.3)
+            invalid=s.base/'invalid.png';invalid.write_bytes(b'not an image')
+            bad=copy.deepcopy(p);bad['wallpaper']['path']=str(invalid)
+            v=apply(s,args.ctl,bad,'InvalidImage');assert v['preferences']==p
+            checks['wallpapers-exceed-former-dimension-pixel-and-file-size-caps']=True
             image=s.base/'wallpaper.png';png(image);p['wallpaper']['path']=str(image)
             p['theme'].update(mode='dynamic',source='wallpaper');v=apply(s,args.ctl,p)
             assert v['preferences']==p and not v['cache_hit'];time.sleep(.5);capture(s,'settings-dynamic-wallpaper',output['connector'])
             p['wallpaper']['mode']='contain';v=apply(s,args.ctl,p);assert v['cache_hit'],v
-            checks['bounded-images-fifo-rejection-and-dynamic-palette-cache']=True
+            checks['image-validation-fifo-rejection-and-dynamic-palette-cache']=True
             p['theme'].update(mode='static');p['font']='Pearl Nonexistent Font 9876';apply(s,args.ctl,p)
             checks['missing-font-falls-back']=True
             p['theme'].update(mode='gtk',gtk_name='NotInstalled9876');apply(s,args.ctl,p,'GtkThemeNotInstalled')
@@ -89,7 +120,6 @@ def main():
             checks['broken-gtk-css-cannot-replace-working-theme-or-config']=True
             p['theme'].update(mode='gtk',gtk_name='Pearl-Test');p['font']='';p['wallpaper']['mode']='solid';v=apply(s,args.ctl,p)
             time.sleep(.5);capture(s,'settings-gtk-custom',output['connector'])
-            from PIL import Image
             pixels=Image.open(s.output/'settings-gtk-custom.png').convert('RGB')
             assert sum(n for n,c in pixels.getcolors(pixels.width*pixels.height) if c==(24,74,64))>10000,'Selected GTK theme did not render'
             p['theme']['gtk_name']='';v=apply(s,args.ctl,p);time.sleep(.5);capture(s,'settings-gtk-system',output['connector'])

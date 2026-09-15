@@ -1,4 +1,4 @@
-//! Bounded regular-file I/O, optimistic replacement, private atomic snapshots.
+//! Regular-file I/O with optional bounds, optimistic replacement, private snapshots.
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
@@ -17,7 +17,7 @@ fn etag(alloc: std.mem.Allocator, path: [:0]const u8) ![:0]const u8 {
     defer info.unref();
     return alloc.dupeZ(u8, std.mem.span(info.getEtag() orelse return error.ReadFailed));
 }
-pub fn read(alloc: std.mem.Allocator, path: [:0]const u8, limit: usize, cancel: ?*gio.Cancellable) !Read {
+pub fn read(alloc: std.mem.Allocator, path: [:0]const u8, limit: ?usize, cancel: ?*gio.Cancellable) !Read {
     const fd = std.c.open(path, .{ .ACCMODE = .RDONLY, .CLOEXEC = true, .NONBLOCK = true, .NOFOLLOW = true }, @as(c_uint, 0));
     if (fd < 0) {
         if (std.posix.errno(fd) == .NOENT) return .{ .bytes = "", .missing = true, .hash = digest("missing") };
@@ -25,9 +25,13 @@ pub fn read(alloc: std.mem.Allocator, path: [:0]const u8, limit: usize, cancel: 
     }
     defer _ = std.c.close(fd);
     var stat: std.os.linux.Statx = undefined;
-    if (std.os.linux.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .TYPE = true, .SIZE = true }, &stat) != 0 or !stat.mask.TYPE or !stat.mask.SIZE or stat.mode & std.c.S.IFMT != std.c.S.IFREG or stat.size > limit) return error.InvalidFile;
+    if (std.os.linux.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .TYPE = true, .SIZE = true }, &stat) != 0 or !stat.mask.TYPE or !stat.mask.SIZE or stat.mode & std.c.S.IFMT != std.c.S.IFREG) return error.InvalidFile;
+    if (limit) |max| if (stat.size > max) return error.InvalidFile;
     const tag = try etag(alloc, path);
-    const bytes = try alloc.alloc(u8, limit + 1);
+    // Unrestricted reads allocate for the observed file size. The extra byte
+    // detects growth during the read instead of returning a partial snapshot.
+    const capacity = limit orelse (std.math.cast(usize, stat.size) orelse return error.OutOfMemory);
+    const bytes = try alloc.alloc(u8, std.math.add(usize, capacity, 1) catch return error.OutOfMemory);
     var used: usize = 0;
     while (used < bytes.len) {
         if (cancel) |c| if (c.isCancelled() != 0) return error.Cancelled;
@@ -36,7 +40,7 @@ pub fn read(alloc: std.mem.Allocator, path: [:0]const u8, limit: usize, cancel: 
         if (n == 0) break;
         used += @intCast(n);
     }
-    if (used > limit) return error.FileTooLarge;
+    if (used > capacity) return if (limit != null) error.FileTooLarge else error.Conflict;
     const after = try etag(alloc, path);
     if (!std.mem.eql(u8, tag, after)) return error.Conflict;
     return .{ .bytes = bytes[0..used], .etag = tag, .hash = digest(bytes[0..used]) };

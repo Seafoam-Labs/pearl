@@ -307,8 +307,8 @@ pub const Service = struct {
         const p = j.prefs;
         if (p.wallpaper.mode == .cover or p.wallpaper.mode == .contain or (p.theme.mode == .dynamic and p.theme.source == .wallpaper)) {
             const path = try alloc.dupeZ(u8, p.wallpaper.path);
-            const image = try io.read(alloc, path, 16 * 1024 * 1024, j.cancel);
-            if (image.missing or !@import("../services/artwork.zig").dimensions(image.bytes)) return error.InvalidImage;
+            const image = try io.read(alloc, path, null, j.cancel);
+            if (image.missing or (!std.mem.startsWith(u8, image.bytes, "\x89PNG\r\n\x1a\n") and !std.mem.startsWith(u8, image.bytes, "\xff\xd8\xff"))) return error.InvalidImage;
             image_bytes = image.bytes;
             const bytes = glib.Bytes.new(image.bytes.ptr, image.bytes.len);
             defer bytes.unref();

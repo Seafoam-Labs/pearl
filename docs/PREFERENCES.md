@@ -145,17 +145,18 @@ application restores the persisted policy.
 
 In **Appearance → Wallpaper image**, use **Choose image…** to browse for a PNG
 or JPEG. The chooser starts at the current image when one is set. Selecting an
-image changes Gradient or Solid to Cover, preserves Cover/Contain, and updates
-the draft. Click **Apply & save** to use it; cancelling the chooser keeps the
-draft unchanged. You can still edit or clear the path directly.
+image sets Wallpaper fit to Cover and updates the draft. You can choose Contain
+after selecting the image. Click **Apply & save** to use it; cancelling the chooser
+keeps the draft unchanged. You can still edit or clear the path directly.
 
 One immutable wallpaper texture is shared across output surfaces and fitted
 independently to their geometry. Input is an absolute, local, regular PNG/JPEG
-file; symlinks, FIFOs, device files and remote URLs are rejected. Input is capped
-at 16 MiB, 4096 pixels per dimension and 8 megapixels. Images are decoded off the
-GTK thread without upscaling; GPU presentation handles display scaling. A
-current texture and one prepared candidate bound memory during a swap. The
-wallpaper is global; output-specific bar settings do not select different images.
+file; symlinks, FIFOs, device files and remote URLs are rejected. Wallpaper file
+size, dimensions and pixel count have no Pearl-imposed caps. Images are decoded
+at their original resolution off the GTK thread; GPU presentation handles
+display scaling. A current texture and one prepared candidate are retained
+during a swap, with memory use depending on image size. The wallpaper is global;
+output-specific bar settings do not select different images.
 Image contents changed in place can be refreshed with `preferences reload`.
 
 There is one GTask worker at a time and a 180 ms event debounce. Obsolete external
@@ -169,7 +170,7 @@ swap. Worker application holds drain during shutdown.
 Matugen receives an argument vector, an empty Pearl-owned TOML configuration,
 `--dry-run`, `--json hex`, an explicit variant and a noninteractive source index.
 It cannot run the user's matugen templates, reload hooks or wallpaper commands.
-Wallpaper extraction reads a snapshot of the same bounded bytes that were
+Wallpaper extraction reads a snapshot of the same image bytes that were
 validated and decoded. Cache identity includes the input, variant, source,
 generator version and Pearl adapter version. Eight bounded disk slots under
 `$XDG_CACHE_HOME/pearl/themes` retain validated palettes; collisions cause a
