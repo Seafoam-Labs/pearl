@@ -38,7 +38,8 @@ makepkg
 This fetches the upstream repository's default branch and generates a version
 from its release metadata, commit count and abbreviated commit hash (for example,
 `1.0.0rc2.r22.ga002d24`). It uses the same dependencies, ReleaseSafe build and
-checks as the release recipe. The moving Git source uses `SKIP` for its checksum;
+checks as the release recipe, with `-Dcpu=baseline` for baseline x86-64 CPU
+compatibility. The moving Git source uses `SKIP` for its checksum;
 the release archive recipe remains checksum-locked. Install the resulting package
 with `pacman -U`; `makepkg` alone only builds it.
 
