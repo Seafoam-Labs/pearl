@@ -27,6 +27,10 @@ pub const Lifecycle = struct {
     idle_held: bool = false,
     session_path: db.Text(512) = .{},
     session_id: db.Text(128) = .{},
+    session_error: db.Text(256) = .{},
+    session_lookup_pending: bool = false,
+    session_from_display: bool = false,
+    user_path: db.Text(512) = .{},
     can_suspend: bool = false,
     can_hibernate: bool = false,
     pending: ?Action = null,
@@ -98,6 +102,10 @@ pub const Lifecycle = struct {
         self.fd_pending = false;
         self.session_id = .{};
         self.session_path = .{};
+        self.session_error = .{};
+        self.session_lookup_pending = false;
+        self.session_from_display = false;
+        self.user_path = .{};
         self.gate.active = false;
         self.gate.sleep_pending = false;
         self.gate.preparing = false;
@@ -109,7 +117,7 @@ pub const Lifecycle = struct {
         self.cancelConfirmation();
         self.rearm();
         if (self.peer.owner.len != 0) {
-            self.call(1, "GetSessionByPID", db.tuple(&.{glib.Variant.newUint32(@intCast(std.c.getpid()))}), "(o)") catch {};
+            self.resolveSession();
             self.call(2, "CanSuspend", null, "(s)") catch {};
             self.call(3, "CanHibernate", null, "(s)") catch {};
         }
@@ -120,25 +128,54 @@ pub const Lifecycle = struct {
     }
     fn refreshSession(self: *Lifecycle) void {
         if (self.session_path.len == 0) return;
-        self.peer.call(4, self.session_path.z(), "org.freedesktop.DBus.Properties", "GetAll", db.tuple(&.{db.str("org.freedesktop.login1.Session")}), "(a{sv})", 5000, done) catch {};
+        self.session_lookup_pending = true;
+        self.peer.call(4, self.session_path.z(), "org.freedesktop.DBus.Properties", "GetAll", db.tuple(&.{db.str("org.freedesktop.login1.Session")}), "(a{sv})", 5000, done) catch self.sessionFailed("Could not read the logind session.");
     }
-    fn done(data: *anyopaque, token: u64, result: ?*glib.Variant, _: ?[]const u8) void {
+    fn resolveSession(self: *Lifecycle) void {
+        if (self.session_lookup_pending or self.peer.owner.len == 0) return;
+        self.session_lookup_pending = true;
+        self.session_from_display = false;
+        self.call(1, "GetSessionByPID", db.tuple(&.{glib.Variant.newUint32(@intCast(std.c.getpid()))}), "(o)") catch self.sessionFailed("Could not query logind.");
+    }
+    fn resolveDisplaySession(self: *Lifecycle) void {
+        // User services need not belong to a login session. Ask logind for
+        // this UID's display session; never guess from an environment variable.
+        self.session_from_display = true;
+        self.session_lookup_pending = true;
+        self.call(7, "GetUser", db.tuple(&.{glib.Variant.newUint32(std.c.getuid())}), "(o)") catch self.sessionFailed("Could not query the logind user.");
+    }
+    fn sessionFailed(self: *Lifecycle, reason: []const u8) void {
+        self.session_lookup_pending = false;
+        self.session_id = .{};
+        self.session_path = .{};
+        self.gate.active = false;
+        self.session_error.set(reason);
+        self.closeDelay();
+        self.cancelConfirmation();
+        self.rearm();
+        std.log.warn("event=logind-session-unavailable reason={s}", .{reason});
+    }
+    fn done(data: *anyopaque, token: u64, result: ?*glib.Variant, remote_error: ?[]const u8) void {
         const self: *Lifecycle = @ptrCast(@alignCast(data));
         defer {
             self.advance();
             self.changed(self.context);
         }
         const v = result orelse {
+            if (token == 1) {
+                if (std.mem.eql(u8, remote_error orelse "", "org.freedesktop.login1.NoSessionForPID")) self.resolveDisplaySession() else self.sessionFailed(remote_error orelse "Session lookup failed.");
+                return;
+            }
+            if (token == 4 or token == 7 or token == 8) {
+                self.sessionFailed(remote_error orelse "Session lookup failed.");
+                return;
+            }
             if (token == 5) {
                 self.query_busy = false;
                 self.query_action = null;
                 self.gate.sleep_pending = false;
             }
             if (token == 6) self.action_busy = false;
-            if (token == 4) {
-                self.gate.active = false;
-                self.rearm();
-            }
             self.err = "Session service request failed.";
             return;
         };
@@ -155,7 +192,29 @@ pub const Lifecycle = struct {
                 if (token == 2) self.can_suspend = permitted else self.can_hibernate = permitted;
             },
             4 => {
+                self.session_lookup_pending = false;
+                const class = db.string(child.?, "Class", "s");
+                if (!self.session_from_display and std.mem.eql(u8, class.slice(), "manager")) {
+                    self.resolveDisplaySession();
+                    return;
+                }
+                const user = db.lookup(child.?, "User", "(uo)") orelse {
+                    self.sessionFailed("Logind session has no user identity.");
+                    return;
+                };
+                defer user.unref();
+                const uid = user.getChildValue(0);
+                defer uid.unref();
+                if (uid.getUint32() != std.c.getuid() or !(std.mem.eql(u8, class.slice(), "user") or std.mem.eql(u8, class.slice(), "user-early") or std.mem.eql(u8, class.slice(), "user-light"))) {
+                    self.sessionFailed("Logind session is not a login session owned by this user.");
+                    return;
+                }
                 self.session_id = narrow(db.string(child.?, "Id", "s"));
+                if (self.session_id.len == 0) {
+                    self.sessionFailed("Logind session has no ID.");
+                    return;
+                }
+                self.session_error = .{};
                 self.gate.active = db.boolean(child.?, "Active");
                 if (!self.gate.active) {
                     self.gate.sleep_pending = false;
@@ -163,6 +222,28 @@ pub const Lifecycle = struct {
                 }
                 self.rearm();
                 if (self.session_id.len != 0) self.inhibitDelay();
+            },
+            7 => {
+                self.user_path.set(std.mem.span(child.?.getString(null)));
+                self.peer.call(8, self.user_path.z(), "org.freedesktop.DBus.Properties", "Get", db.tuple(&.{ db.str("org.freedesktop.login1.User"), db.str("Display") }), "(v)", 5000, done) catch self.sessionFailed("Could not read the logind display session.");
+            },
+            8 => {
+                const display = child.?.getVariant();
+                defer display.unref();
+                if (!db.is(display, "(so)")) {
+                    self.sessionFailed("Logind returned an invalid display session.");
+                    return;
+                }
+                const id = display.getChildValue(0);
+                defer id.unref();
+                const session = display.getChildValue(1);
+                defer session.unref();
+                if (id.getString(null)[0] == 0 or std.mem.eql(u8, std.mem.span(session.getString(null)), "/")) {
+                    self.sessionFailed("No logind display session. Start Pearl from an authenticated desktop login.");
+                    return;
+                }
+                self.session_path.set(std.mem.span(session.getString(null)));
+                self.refreshSession();
             },
             5 => {
                 self.query_busy = false;
@@ -218,6 +299,7 @@ pub const Lifecycle = struct {
     }
     fn signal(data: *anyopaque, object_path: []const u8, interface: []const u8, member: []const u8, args: *glib.Variant) void {
         const self: *Lifecycle = @ptrCast(@alignCast(data));
+        if (self.session_id.len == 0 and ((std.mem.eql(u8, interface, iface) and std.mem.eql(u8, member, "SessionNew")) or (std.mem.eql(u8, object_path, self.user_path.slice()) and std.mem.eql(u8, member, "PropertiesChanged")))) self.resolveSession();
         if (std.mem.eql(u8, interface, iface) and std.mem.eql(u8, member, "PrepareForSleep") and db.is(args, "(b)")) {
             const value = args.getChildValue(0);
             defer value.unref();
@@ -484,7 +566,7 @@ pub const Lifecycle = struct {
         return 0;
     }
     pub fn status(self: *Lifecycle, alloc: std.mem.Allocator, auth: *@import("polkit.zig").Agent) ![]const u8 {
-        return std.json.Stringify.valueAlloc(alloc, .{ .locker_pid = if (self.locker) |process| process.getIdentifier() else null, .authentication = .{ .registered = auth.registered, .pending = auth.request != null, .identities = auth.identity_count, .waiting = auth.waiting, .err = auth.err }, .available = self.gate.available, .active = self.gate.active, .session_id = self.session_id.slice(), .lock = self.gate, .idle_available = self.idle.notifier != null and self.idle.seat != null, .idle_held = self.idle_held, .on_battery = self.on_battery, .policy = if (self.on_battery) self.config.battery else self.config.ac, .can_lock = self.lock_supported, .can_logout = self.gate.available and self.gate.active and !self.gate.locked and self.client.capabilities.commands, .can_suspend = self.can_suspend and self.delay_fd >= 0 and self.lock_supported, .can_hibernate = self.can_hibernate and self.delay_fd >= 0 and self.lock_supported, .delay_inhibitor = self.delay_fd >= 0, .pending = self.pending, .confirmation = self.confirmation, .busy = self.action_busy or self.query_busy, .err = self.err }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .locker_pid = if (self.locker) |process| process.getIdentifier() else null, .authentication = .{ .registered = auth.registered, .pending = auth.request != null, .identities = auth.identity_count, .waiting = auth.waiting, .err = auth.err }, .available = self.gate.available, .active = self.gate.active, .session_id = self.session_id.slice(), .session_error = if (self.session_error.len != 0) self.session_error.slice() else null, .lock = self.gate, .idle_available = self.idle.notifier != null and self.idle.seat != null, .idle_held = self.idle_held, .on_battery = self.on_battery, .policy = if (self.on_battery) self.config.battery else self.config.ac, .can_lock = self.lock_supported, .can_logout = self.gate.available and self.gate.active and !self.gate.locked and self.client.capabilities.commands, .can_suspend = self.can_suspend and self.delay_fd >= 0 and self.lock_supported, .can_hibernate = self.can_hibernate and self.delay_fd >= 0 and self.lock_supported, .delay_inhibitor = self.delay_fd >= 0, .pending = self.pending, .confirmation = self.confirmation, .busy = self.action_busy or self.query_busy, .err = self.err }, .{});
     }
 };
 fn narrow(value: db.Text(512)) db.Text(128) {

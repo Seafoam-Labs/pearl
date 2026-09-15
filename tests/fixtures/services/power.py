@@ -12,7 +12,7 @@ loop=GLib.MainLoop()
 denied=False; delay=180
 battery={'IsPresent':GLib.Variant('b',True),'Percentage':GLib.Variant('d',72.5),'State':GLib.Variant('u',2),'TimeToEmpty':GLib.Variant('x',7200),'TimeToFull':GLib.Variant('x',0)}
 profile={'ActiveProfile':GLib.Variant('s','balanced'),'Profiles':GLib.Variant('aa{sv}',[{'Profile':GLib.Variant('s',n)} for n in ('power-saver','balanced','performance')]),'PerformanceDegraded':GLib.Variant('s','')}
-session={'Active':GLib.Variant('b',True)}
+session={'Active':GLib.Variant('b',True),'Id':GLib.Variant('s','test'),'Class':GLib.Variant('s','user'),'User':GLib.Variant('(uo)',(os.getuid(),'/org/freedesktop/login1/user/test'))}
 upower={'OnBattery':GLib.Variant('b',True)}
 objects={}
 PROFILE_BUS = 'net.hadess.PowerProfiles' if os.environ.get('PEARL_TEST_LEGACY_PROFILES') else 'org.freedesktop.UPower.PowerProfiles'

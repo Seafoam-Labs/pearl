@@ -135,11 +135,23 @@ and requires the exported Wayland/Aqueous environment.
 
 ## Polkit agent
 
-Pearl registers `org.freedesktop.PolicyKit1.AuthenticationAgent` for the logind
-session resolved from its own PID. Calls are accepted only from the current
+Pearl registers `org.freedesktop.PolicyKit1.AuthenticationAgent` for its logind
+login session. It first resolves its own PID; when running as a systemd user
+service without a login session (or inside a manager session), it queries
+logind's `User.Display` for its UID. It verifies the returned session belongs to
+that UID and has a user login class. Greeter and manager sessions cannot receive
+Pearl authentication prompts. The session's `Active` property still controls
+whether prompts are allowed. Calls are accepted only from the current
 unique owner of the polkit authority name. Existing agent ownership is not
 forcibly replaced. Authority loss/restart cancels outstanding authentication,
 invalidates registration and re-registers against the new owner.
+
+If `pearlctl lifecycle status` reports an empty `session_id` and
+`authentication.registered: false`, inspect `session_error` for the logind
+lookup failure. An absent display session means Pearl must be launched from an
+authenticated desktop login; starting `polkitd` alone does not establish one.
+Pearl retries discovery when logind announces a new session or updates the
+user's display session. A successful lookup clears `session_error`.
 
 The GTK authentication panel shows the action, message and offered identities.
 It handles up to eight concrete Unix-user identities, lets the user select one,

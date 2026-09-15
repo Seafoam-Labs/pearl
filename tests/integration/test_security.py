@@ -24,6 +24,7 @@ def main():
             wait_for(lambda:s.run(['busctl','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS'],'list'],check=False).returncode==0)
             s.env['PEARL_SECURITY_LOG']=str(s.output/'security.jsonl');Path(s.env['PEARL_SECURITY_LOG']).write_text('')
             s.env['PEARL_TEST_LOCKER']=str(args.locker)
+            s.env['PEARL_TEST_SESSION_DISCOVERY']='no-pid'
             pam_dir=s.base/'pam';pam_dir.mkdir();s.env['PEARL_TEST_PAM_DIR']=str(pam_dir)
             pam_stack=f'auth required {args.pam_module}\naccount required {args.pam_module}\n'
             (pam_dir/'pearl').write_text(pam_stack)
@@ -45,6 +46,27 @@ def main():
             def unlock(secret='fixture-secret'):
                 key('fixture-user','-k','Return');time.sleep(.3);key(secret,'-k','Return')
             ready=wait(lambda v:v['active'] and v['authentication']['registered'] and v['delay_inhibitor'] and v['idle_available'])
+            assert ready['session_id']=='test' and ready['session_error'] is None
+            assert any(r.get('method')=='GetUser' for r in records())
+            checks['user-service-without-pid-session-registers-for-display-session']=True
+            # Manager sessions must resolve the real display session too. A
+            # missing display, foreign UID or greeter must never register.
+            for discovery in ('manager','missing','foreign','greeter','direct'):
+                command(discovery=discovery,restart='org.freedesktop.login1')
+                wait(lambda v:not v['authentication']['registered'])
+                if discovery in ('missing','foreign','greeter'):
+                    value=wait(lambda v:v['session_error'] is not None)
+                    assert not value['active'] and value['session_id']=='' and not value['authentication']['registered'],value
+                else:
+                    wait(lambda v:v['active'] and v['authentication']['registered'] and v['session_error'] is None)
+            command(discovery='missing',restart='org.freedesktop.login1')
+            wait(lambda v:v['session_error'] is not None and not v['authentication']['registered'])
+            command(discovery='no-pid',session_new=True)
+            wait(lambda v:v['active'] and v['authentication']['registered'] and v['session_error'] is None and v['delay_inhibitor'])
+            command(begin=True);wait(lambda v:v['authentication']['pending'])
+            command(active=False);wait(lambda v:not v['active'] and not v['authentication']['pending'])
+            command(active=True);wait(lambda v:v['active'])
+            checks['display-session-validation-recovery-and-inactivity-cancellation']=True
             checks['logind-session-native-idle-and-authority-registration']=True
             output=status(s,args.ctl)['outputs'][0]
             ctl(s,args.ctl,'control-center','show');time.sleep(.3);capture(s,'session-controls',output['connector']);ctl(s,args.ctl,'popup','hide')
@@ -100,10 +122,11 @@ def main():
             ctl(s,args.ctl,'preferences','apply','--revision',str(prefs['revision']),'--text',json.dumps(original))
             wait_for(lambda:not ctl(s,args.ctl,'preferences','status')['result']['busy'])
             checks['native-lock-material-light-and-gtk-theme']=True
+            suspend_start=len(records())
             action('suspend');generation=state()['confirmation'];ctl(s,args.ctl,'lifecycle','action','--text','confirm','--generation',str(generation))
             wait(lambda v:v['lock']['locked'] and v['lock']['ready'] and v['lock']['preparing'])
             wait_for(lambda:any(r['event']=='Suspend' for r in records()))
-            assert all(r['locked'] for r in records() if r['event'] in ('Suspend','delay-released'))
+            assert all(r['locked'] for r in records()[suspend_start:] if r['event'] in ('Suspend','delay-released'))
             command(prepare=False);wait(lambda v:v['delay_inhibitor'] and not v['lock']['preparing'])
             unlock();wait_for(lambda:not locked())
             checks['suspend-lock-before-call-delay-release-and-resume-rearm']=True
