@@ -4,6 +4,8 @@ const std = @import("std");
 const gtk = @import("gtk4");
 const object = @import("gobject2");
 const glib = @import("glib2");
+const gio = @import("gio2");
+const layer = @import("gtk4layershell1");
 const Service = @import("../config/service.zig").Service;
 const model = @import("../config/preferences.zig");
 const w = @import("../ui/components/widgets.zig");
@@ -25,6 +27,8 @@ pub const View = struct {
     edge: *gtk.DropDown,
     placement: *gtk.DropDown,
     entries: [7]*gtk.Entry,
+    wallpaper_button: *gtk.Button = undefined,
+    wallpaper_picker: ?*gtk.FileChooserDialog = null,
     font_size: *gtk.SpinButton,
     bar_size: *gtk.SpinButton,
     islands: *gtk.CheckButton = undefined,
@@ -61,7 +65,17 @@ pub const View = struct {
         appearance.append(hints.as(gtk.Widget));
         self.entries[0] = entry(appearance, "GTK theme name", "System default");
         self.entries[1] = entry(appearance, "Seed color", "#6750a4");
-        self.entries[2] = entry(appearance, "Wallpaper image", "Absolute PNG or JPEG path");
+        const wallpaper_row = w.row(8);
+        self.entries[2] = gtk.Entry.new();
+        self.entries[2].setMaxLength(1024);
+        self.entries[2].setPlaceholderText("No image selected");
+        self.entries[2].as(gtk.Widget).setHexpand(1);
+        w.name(self.entries[2].as(gtk.Widget), "Wallpaper image");
+        wallpaper_row.append(self.entries[2].as(gtk.Widget));
+        self.wallpaper_button = gtk.Button.newWithLabel("Choose image…");
+        wallpaper_row.append(self.wallpaper_button.as(gtk.Widget));
+        appearance.append(w.section(w.label("Wallpaper image", null), null, wallpaper_row.as(gtk.Widget)).as(gtk.Widget));
+        _ = gtk.Button.signals.clicked.connect(self.wallpaper_button, *View, chooseWallpaper, self, .{});
         self.fit = dropdown(appearance, "Wallpaper fit", &.{ "Material gradient", "Solid color", "Cover", "Contain" });
         self.entries[3] = entry(appearance, "Background color", "#141218");
         self.entries[4] = entry(appearance, "Font family", "System default / Material fallback");
@@ -123,10 +137,82 @@ pub const View = struct {
     }
     pub fn destroy(self: *View) void {
         self.filling = true;
+        self.closeWallpaperPicker();
         // Disconnect through parent destruction before freeing callback data.
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         self.arena.deinit();
         a.destroy(self);
+    }
+    fn closeWallpaperPicker(self: *View) void {
+        const picker = self.wallpaper_picker orelse return;
+        self.wallpaper_picker = null;
+        const window = picker.as(gtk.Window);
+        if (window.getTransientFor()) |parent| layer.setKeyboardMode(parent, .exclusive);
+        window.destroy();
+        window.unref();
+    }
+    fn chooseWallpaper(_: *gtk.Button, self: *View) callconv(.c) void {
+        if (self.wallpaper_picker) |picker| {
+            picker.as(gtk.Window).present();
+            return;
+        }
+        const root = self.host.as(gtk.Widget).getRoot() orelse return;
+        const parent = object.ext.cast(gtk.Window, root) orelse return;
+        // A regular native dialog would sit below Pearl's overlay and lose
+        // keyboard input to it. Own the chooser window so it can use layer-shell.
+        const picker = object.ext.newInstance(gtk.FileChooserDialog, .{ .title = "Choose wallpaper image", .action = gtk.FileChooserAction.open, .use_header_bar = @as(c_int, 0) });
+        self.wallpaper_picker = picker;
+        const window = picker.as(gtk.Window);
+        _ = window.ref();
+        window.setTransientFor(parent);
+        window.setModal(1);
+        window.setDefaultSize(680, 520);
+        layer.initForWindow(window);
+        layer.setNamespace(window, "pearl:wallpaper-picker");
+        layer.setMonitor(window, layer.getMonitor(parent));
+        layer.setLayer(window, .overlay);
+        layer.setKeyboardMode(parent, .none);
+        layer.setKeyboardMode(window, .exclusive);
+        const dialog = picker.as(gtk.Dialog);
+        _ = dialog.addButton("_Cancel", @intFromEnum(gtk.ResponseType.cancel));
+        _ = dialog.addButton("_Select", @intFromEnum(gtk.ResponseType.accept));
+        dialog.setDefaultResponse(@intFromEnum(gtk.ResponseType.accept));
+        const chooser = picker.as(gtk.FileChooser);
+        const filter = gtk.FileFilter.new();
+        filter.setName("PNG and JPEG images");
+        filter.addMimeType("image/png");
+        filter.addMimeType("image/jpeg");
+        chooser.addFilter(filter);
+        const current = self.entries[2].as(gtk.Editable).getText();
+        if (current[0] == '/') {
+            const file = gio.File.newForPath(current);
+            defer file.unref();
+            _ = chooser.setFile(file, null);
+        }
+        _ = gtk.Dialog.signals.response.connect(dialog, *View, wallpaperChosen, self, .{});
+        window.present();
+    }
+    fn wallpaperChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
+        defer self.closeWallpaperPicker();
+        if (response != @intFromEnum(gtk.ResponseType.accept)) return;
+        const chooser = object.ext.cast(gtk.FileChooser, dialog).?;
+        const file = chooser.getFile() orelse return;
+        defer file.unref();
+        const path = file.getPath() orelse {
+            self.message.setText("Choose an image stored on this computer.");
+            return;
+        };
+        defer glib.free(path);
+        if (std.mem.span(path).len > 1024 or !std.unicode.utf8ValidateSlice(std.mem.span(path))) {
+            self.message.setText("The image path must be valid UTF-8 and at most 1024 bytes.");
+            return;
+        }
+        self.filling = true;
+        self.entries[2].as(gtk.Editable).setText(path);
+        const cover = @intFromEnum(@as(model.Wallpaper, .{ .mode = .cover }).mode);
+        if (self.fit.getSelected() < cover) self.fit.setSelected(cover);
+        self.filling = false;
+        self.saveForm();
     }
     fn fill(self: *View) void {
         self.filling = true;
@@ -286,6 +372,7 @@ pub const View = struct {
             name = n;
         };
         if (focused == self.apply_button.as(gtk.Widget)) name = "settings-apply";
+        if (focused == self.wallpaper_button.as(gtk.Widget)) name = "settings-wallpaper-choose";
         if (focused == self.merge_button.as(gtk.Widget)) name = "settings-merge";
         const prior = std.mem.sliceTo(&self.last_probe, 0);
         if (!std.mem.eql(u8, prior, name)) {

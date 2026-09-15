@@ -143,6 +143,12 @@ application restores the persisted policy.
 
 ## Wallpaper and generator bounds
 
+In **Appearance → Wallpaper image**, use **Choose image…** to browse for a PNG
+or JPEG. The chooser starts at the current image when one is set. Selecting an
+image changes Gradient or Solid to Cover, preserves Cover/Contain, and updates
+the draft. Click **Apply & save** to use it; cancelling the chooser keeps the
+draft unchanged. You can still edit or clear the path directly.
+
 One immutable wallpaper texture is shared across output surfaces and fitted
 independently to their geometry. Input is an absolute, local, regular PNG/JPEG
 file; symlinks, FIFOs, device files and remote URLs are rejected. Input is capped

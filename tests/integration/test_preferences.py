@@ -29,12 +29,33 @@ def main():
     checks={};metadata={'status':'running','checks':checks,'pearl_sha256':hashlib.sha256(args.pearl.read_bytes()).hexdigest(),'ctl_sha256':hashlib.sha256(args.ctl.read_bytes()).hexdigest()}
     try:
         with PrivateSession(args.output/'session') as s:
+            # The chooser remembers its geometry without requiring a dconf service.
+            s.env['GSETTINGS_BACKEND']='memory'
             s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');keyboard=T00Session.input_fixture(s)
             app=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready')
             v=settled(s,args.ctl);assert v['appearance']==1 and v['err'] is None,v
             path=Path(v['path']);assert not path.exists();assert path.with_name('last-good.json').exists()
             p=v['preferences'];output=status(s,args.ctl)['outputs'][0]
             ctl(s,args.ctl,'settings','show');time.sleep(.5);capture(s,'settings-static-dark',output['connector'])
+            focus_target(s,app,'settings-wallpaper-choose');key(s,'-k','space');time.sleep(.5)
+            capture(s,'wallpaper-picker',output['connector'])
+            key(s,'-k','Escape')
+            assert not state(s,args.ctl)['draft_dirty'] and status(s,args.ctl)['popup']['pane']=='settings'
+            image=s.base/'chosen wallpaper.png';png(image)
+            key(s,'-k','space');time.sleep(.5)
+            key(s,'-M','ctrl','l','-m','ctrl',str(image));key(s,'-k','Return')
+            wait_for(lambda:state(s,args.ctl)['draft_dirty'])
+            assert not path.exists(),'Choosing an image must wait for Apply & save'
+            focus_target(s,app,'settings-apply');key(s,'-k','space');v=settled(s,args.ctl)
+            assert v['err'] is None and v['preferences']['wallpaper']['path']==str(image) and v['preferences']['wallpaper']['mode']=='cover',v
+            p=v['preferences'];before=path.read_bytes()
+            focus_target(s,app,'settings-wallpaper-choose');key(s,'-k','space');time.sleep(.5);key(s,'-k','Escape')
+            assert path.read_bytes()==before and not state(s,args.ctl)['draft_dirty']
+            key(s,'-k','space');time.sleep(.5);ctl(s,args.ctl,'popup','hide')
+            assert status(s,args.ctl)['popup'] is None and app.proc.poll() is None
+            ctl(s,args.ctl,'settings','show');time.sleep(.3)
+            focus_target(s,app,'settings-wallpaper-choose');key(s,'-k','space');time.sleep(.5);key(s,'-k','Escape')
+            checks['wallpaper-picker-selection-cancel-save-and-parent-close']=True
             p['theme']['variant']='light';v=apply(s,args.ctl,p)
             assert json.loads(path.read_text())==p and path.stat().st_mode&0o777==0o600
             assert status(s,args.ctl)['popup']['pane']=='settings';time.sleep(.4);capture(s,'settings-static-light',output['connector'])
