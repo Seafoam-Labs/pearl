@@ -1,0 +1,1399 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Aqueous config protocol 1 T11 additions",
+  "description": "Additive configured/live observations, candidate impact, recoverable saves and opt-in receipts. Hardware preview support is negotiated separately.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/snapshot"
+    },
+    {
+      "$ref": "#/$defs/result"
+    }
+  ],
+  "$defs": {
+    "mode": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "refresh_mhz": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "refresh_mhz"
+      ],
+      "additionalProperties": false
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "declaration": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "edid": {
+          "type": "string"
+        },
+        "mirror_of": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enabled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/mode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scale": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "transform": {
+          "enum": [
+            null,
+            "normal",
+            "rotate_90",
+            "rotate_180",
+            "rotate_270",
+            "flipped",
+            "flipped_90",
+            "flipped_180",
+            "flipped_270"
+          ]
+        },
+        "position": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "adaptive_sync": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "hdr": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "hdr_level": {
+          "enum": [
+            null,
+            "auto",
+            "l100",
+            "l400",
+            "l1000"
+          ]
+        },
+        "sdr_white_level": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "auto_hdr": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "auto_hdr_boost": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "primary": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "declaration",
+        "name",
+        "edid",
+        "mirror_of",
+        "enabled",
+        "mode",
+        "scale",
+        "transform",
+        "position",
+        "adaptive_sync",
+        "hdr",
+        "hdr_level",
+        "sdr_white_level",
+        "auto_hdr",
+        "auto_hdr_boost",
+        "primary"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "declarative": {
+          "type": "boolean"
+        },
+        "policy": {
+          "type": "object",
+          "properties": {
+            "apply_on_start": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "apply_on_reload": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "fallback_profile": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "identify_by": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "rollback_seconds": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "apply_on_start",
+            "apply_on_reload",
+            "fallback_profile",
+            "identify_by",
+            "rollback_seconds"
+          ],
+          "additionalProperties": false
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/spec"
+          }
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "declaration": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "name": {
+                "type": "string"
+              },
+              "outputs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/spec"
+                }
+              }
+            },
+            "required": [
+              "declaration",
+              "name",
+              "outputs"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "diagnostics": {
+          "type": "object",
+          "properties": {
+            "unknown_fields": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "rejected_declarations": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "unknown_fields",
+            "rejected_declarations"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "declarative",
+        "policy",
+        "outputs",
+        "profiles"
+      ],
+      "additionalProperties": false
+    },
+    "projection": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "identity_scope": {
+          "const": "generation"
+        },
+        "live_resolution": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "parsed_sources": {
+          "type": "object",
+          "properties": {
+            "wm": {
+              "$ref": "#/$defs/source"
+            },
+            "outputs": {
+              "$ref": "#/$defs/source"
+            }
+          },
+          "required": [
+            "wm",
+            "outputs"
+          ],
+          "additionalProperties": false
+        },
+        "effective_policy": {
+          "type": "object"
+        },
+        "configured_fold": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "enum": [
+                  "wm",
+                  "outputs"
+                ]
+              },
+              "fold_order": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "spec": {
+                "$ref": "#/$defs/spec"
+              }
+            },
+            "required": [
+              "source",
+              "fold_order",
+              "spec"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "limits": {
+          "type": "object"
+        },
+        "support": {
+          "type": "object",
+          "properties": {
+            "store": {
+              "const": true
+            },
+            "test": {
+              "const": false
+            },
+            "preview": {
+              "const": false
+            },
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "store",
+            "test",
+            "preview",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "version",
+        "identity_scope",
+        "live_resolution",
+        "reason",
+        "parsed_sources",
+        "effective_policy",
+        "configured_fold",
+        "limits",
+        "support"
+      ],
+      "additionalProperties": false
+    },
+    "declaration": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "enum": [
+            "wm",
+            "outputs"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "declaration": {
+          "type": "integer"
+        },
+        "section": {
+          "type": "string"
+        },
+        "repeated": {
+          "type": "boolean"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "raw": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "raw"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "source",
+        "path",
+        "declaration",
+        "section",
+        "repeated",
+        "entries"
+      ],
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "original_generation": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "candidate_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "changed_files": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "wm",
+              "layout",
+              "input",
+              "outputs",
+              "rules",
+              "appearance"
+            ]
+          }
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "none",
+              "unknown"
+            ]
+          }
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "display_revision": {
+          "type": "null"
+        },
+        "protected_apply": {
+          "const": false
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "original_generation",
+        "candidate_digest",
+        "changed_files",
+        "effects",
+        "complete",
+        "display_revision",
+        "protected_apply",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "scope": {
+          "const": "generation"
+        },
+        "generation": {
+          "type": "string"
+        },
+        "precondition": {
+          "const": "expected_generation"
+        },
+        "stale_edit": {
+          "const": "external_change"
+        },
+        "raw_and_structured_same_collection": {
+          "const": "conflicting_edits"
+        },
+        "rebase": {
+          "const": "unsupported"
+        }
+      },
+      "required": [
+        "version",
+        "scope",
+        "generation",
+        "precondition",
+        "stale_edit",
+        "raw_and_structured_same_collection",
+        "rebase"
+      ],
+      "additionalProperties": false
+    },
+    "snapshot": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "protocol": {
+          "const": 1
+        },
+        "display_configuration": {
+          "$ref": "#/$defs/projection"
+        },
+        "display_declarations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/declaration"
+          }
+        },
+        "collection_identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "candidate_review": {
+          "$ref": "#/$defs/review"
+        },
+        "display_observation": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/native_observation"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "unavailable"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "candidate_impact": {
+          "$ref": "#/$defs/impact"
+        },
+        "collection_schema": {
+          "type": "object"
+        },
+        "collection_preconditions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "display_model": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "const": 2
+            },
+            "generation": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{16}$"
+            },
+            "candidate": {
+              "type": "boolean"
+            },
+            "declarations": {
+              "type": "array"
+            },
+            "configured": {
+              "$ref": "#/$defs/projection"
+            },
+            "live": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/native_observation"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "const": "unavailable"
+                    },
+                    "reason": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "reason"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "version",
+            "generation",
+            "candidate",
+            "declarations",
+            "configured",
+            "live"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "ok",
+        "protocol",
+        "display_configuration",
+        "display_declarations",
+        "collection_identity"
+      ],
+      "additionalProperties": true
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "protocol": {
+          "const": 1
+        },
+        "result_version": {
+          "const": 1
+        },
+        "save": {
+          "enum": [
+            "unchanged",
+            "saved",
+            "failed",
+            "uncertain",
+            "recovery_conflict"
+          ]
+        },
+        "reload": {
+          "enum": [
+            "not_requested",
+            "applied",
+            "failed",
+            "unknown"
+          ]
+        },
+        "display": {
+          "enum": [
+            "not_requested",
+            "previewing",
+            "kept",
+            "reverted",
+            "invalidated",
+            "failed",
+            "unknown"
+          ]
+        },
+        "before_generation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "after_generation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "candidate_digest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "toolkit": {
+          "type": "object",
+          "properties": {
+            "typography": {
+              "type": [
+                "object",
+                "null",
+                "string"
+              ]
+            },
+            "cursor": {
+              "type": [
+                "object",
+                "null",
+                "string"
+              ]
+            }
+          },
+          "required": [
+            "typography",
+            "cursor"
+          ],
+          "additionalProperties": false
+        },
+        "snapshot": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "failure": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "retryable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "code",
+                "message",
+                "retryable"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "receipt": {
+          "enum": [
+            "unavailable",
+            "complete",
+            "recovered",
+            "unknown",
+            "recovery_conflict"
+          ]
+        },
+        "operation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{10}-[A-Za-z0-9_-]{21,53}$"
+        },
+        "files": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "maxItems": 6
+        },
+        "reload_acknowledgement": {
+          "type": "object",
+          "properties": {
+            "session": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "generation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "candidate_digest": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "sequence": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "reason": {
+          "type": "string"
+        },
+        "retry_allowed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ok",
+        "protocol",
+        "result_version",
+        "save",
+        "reload",
+        "display",
+        "receipt"
+      ],
+      "additionalProperties": false
+    },
+    "impact": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "original_generation": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{16}$"
+        },
+        "candidate_digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "changed_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "changed_fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "file",
+              "section",
+              "declaration",
+              "key"
+            ]
+          }
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "none",
+              "runtime_non_display",
+              "display_live",
+              "display_deferred",
+              "unknown"
+            ]
+          }
+        },
+        "display": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/native_candidate"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "complete": {
+                  "const": false
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "complete",
+                "reason"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "original_generation",
+        "candidate_digest",
+        "changed_files",
+        "changed_fields",
+        "complete",
+        "effects",
+        "display",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "native_observation": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "config_generation": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "session": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "display_revision": {
+          "type": "string",
+          "pattern": "^[0-9]{1,20}$"
+        },
+        "observation": {
+          "enum": [
+            "current",
+            "transitioning"
+          ]
+        },
+        "active_profile": {
+          "type": "string"
+        },
+        "preview_active": {
+          "type": "boolean"
+        },
+        "effective_profile": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "fallback_profile": {
+          "type": "string"
+        },
+        "loaded_configuration": {
+          "type": "object"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/native_output"
+          },
+          "maxItems": 64
+        }
+      },
+      "required": [
+        "version",
+        "config_generation",
+        "session",
+        "display_revision",
+        "observation",
+        "active_profile",
+        "preview_active",
+        "effective_profile",
+        "fallback_profile",
+        "loaded_configuration",
+        "outputs"
+      ],
+      "additionalProperties": false
+    },
+    "native_output": {
+      "type": "object",
+      "properties": {
+        "instance": {
+          "type": "string",
+          "pattern": "^[0-9]{1,20}$"
+        },
+        "connector": {
+          "type": "string"
+        },
+        "connected": {
+          "type": "boolean"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "make": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "serial": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "monitor_identity": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "make_model_serial_hash"
+            },
+            "raw_edid_available": {
+              "const": false
+            },
+            "ambiguous": {
+              "type": "boolean"
+            },
+            "match_count": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "value",
+            "kind",
+            "raw_edid_available",
+            "ambiguous",
+            "match_count"
+          ],
+          "additionalProperties": false
+        },
+        "actual": {
+          "$ref": "#/$defs/native_state"
+        },
+        "actual_hdr": {
+          "type": "boolean"
+        },
+        "actual_vrr": {
+          "type": "boolean"
+        },
+        "primary": {
+          "type": "boolean"
+        },
+        "configured": {
+          "type": "object"
+        },
+        "modes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              },
+              "refresh_mhz": {
+                "type": "integer"
+              },
+              "preferred": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "width",
+              "height",
+              "refresh_mhz",
+              "preferred"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 4096
+        },
+        "support": {
+          "type": "object",
+          "properties": {
+            "placement": {
+              "$ref": "#/$defs/native_support"
+            },
+            "mode": {
+              "$ref": "#/$defs/native_support"
+            },
+            "enable": {
+              "$ref": "#/$defs/native_support"
+            },
+            "hdr": {
+              "$ref": "#/$defs/native_support"
+            },
+            "vrr": {
+              "$ref": "#/$defs/native_support"
+            },
+            "mirroring": {
+              "$ref": "#/$defs/native_support"
+            },
+            "profiles": {
+              "$ref": "#/$defs/native_support"
+            },
+            "policies": {
+              "$ref": "#/$defs/native_support"
+            },
+            "primary": {
+              "$ref": "#/$defs/native_support"
+            },
+            "custom_mode": {
+              "$ref": "#/$defs/native_support"
+            }
+          },
+          "required": [
+            "placement",
+            "mode",
+            "enable",
+            "hdr",
+            "vrr",
+            "mirroring",
+            "profiles",
+            "policies",
+            "primary",
+            "custom_mode"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "instance",
+        "connector",
+        "connected",
+        "enabled",
+        "make",
+        "model",
+        "serial",
+        "monitor_identity",
+        "actual",
+        "actual_hdr",
+        "actual_vrr",
+        "primary",
+        "configured",
+        "modes",
+        "support"
+      ],
+      "additionalProperties": false
+    },
+    "native_state": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "width": {
+                  "type": "integer"
+                },
+                "height": {
+                  "type": "integer"
+                },
+                "refresh_mhz": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "width",
+                "height",
+                "refresh_mhz"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scale": {
+          "type": "number"
+        },
+        "transform": {
+          "enum": [
+            "normal",
+            "90",
+            "180",
+            "270",
+            "flipped",
+            "flipped-90",
+            "flipped-180",
+            "flipped-270"
+          ]
+        },
+        "x": {
+          "type": "integer"
+        },
+        "y": {
+          "type": "integer"
+        },
+        "mirror_of": {
+          "type": "string"
+        },
+        "adaptive_sync": {
+          "type": "boolean"
+        },
+        "hdr": {
+          "type": "boolean"
+        },
+        "hdr_level": {
+          "enum": [
+            100,
+            400,
+            1000
+          ]
+        },
+        "sdr_white_level": {
+          "type": "number"
+        },
+        "auto_hdr": {
+          "type": "boolean"
+        },
+        "auto_hdr_boost": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "enabled",
+        "mode",
+        "scale",
+        "transform",
+        "x",
+        "y",
+        "mirror_of",
+        "adaptive_sync",
+        "hdr",
+        "hdr_level",
+        "sdr_white_level",
+        "auto_hdr",
+        "auto_hdr_boost"
+      ],
+      "additionalProperties": false
+    },
+    "native_support": {
+      "type": "object",
+      "properties": {
+        "store": {
+          "type": "boolean"
+        },
+        "test": {
+          "type": "boolean"
+        },
+        "preview": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "store",
+        "test",
+        "preview",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "native_candidate": {
+      "type": "object",
+      "properties": {
+        "effective_outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "instance": {
+                "type": "string",
+                "pattern": "^[0-9]{1,20}$"
+              },
+              "resolved": {
+                "$ref": "#/$defs/native_state"
+              }
+            },
+            "required": [
+              "instance",
+              "resolved"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 64
+        },
+        "activated_profile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "session": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "display_revision": {
+          "type": "string",
+          "pattern": "^[0-9]{1,20}$"
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "display_live",
+              "display_deferred"
+            ]
+          },
+          "maxItems": 2
+        },
+        "required_action": {
+          "const": "preview"
+        },
+        "deferred_save_requires_lease": {
+          "const": true
+        },
+        "now": {
+          "type": "string"
+        },
+        "on_reload": {
+          "type": "string"
+        },
+        "at_startup": {
+          "type": "string"
+        },
+        "on_hotplug": {
+          "type": "string"
+        },
+        "policies": {
+          "type": "object"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "effective_outputs",
+        "activated_profile",
+        "complete",
+        "session",
+        "display_revision",
+        "effects",
+        "required_action",
+        "deferred_save_requires_lease",
+        "now",
+        "on_reload",
+        "at_startup",
+        "on_hotplug",
+        "policies",
+        "reason"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

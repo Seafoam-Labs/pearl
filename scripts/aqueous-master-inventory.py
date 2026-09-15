@@ -10,9 +10,9 @@ class CapturedIPC(IPC):
   value=super().call(op,**params)
   if op=='hello':self.hello=value
   return value
-REV='1d038dc3bafa0044d9599f8f51f84105a6a85bb3'
+from aqueous_target import REV
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-master');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-master/contracts');a=p.parse_args();a.prefix=a.prefix.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-082');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/contracts');a=p.parse_args();a.prefix=a.prefix.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
  meta=json.loads((a.prefix/'metadata.json').read_text());assert meta['status']=='passed' and meta['revision']==REV
  source=a.prefix/'source';fixtures=ROOT/'tests/fixtures/aqueous-master';fixtures.mkdir(parents=True,exist_ok=True)
  def save(name,v):
@@ -38,6 +38,10 @@ def main():
    save('candidate-'+name,helper('validate',req))
   rich={'protocol':1,'expected_generation':snap['generation'],'window_rule_changes':[{'op':'add','values':{'app_id':'pearl-test-*','floating':False,'opacity':0.8}}],'custom_keybind_changes':[{'op':'add','chord':'Super+F12','command':'spawn:never-executed'}],'snap_layouts':[{'id':'halves','zones':[{'id':'left','x':0,'y':0,'width':0.5,'height':1}]}],'default_snap_layout':'halves'}
   save('candidate-collections',helper('validate',rich))
+  rich.update(collection_apply_version=1,protected_apply=True,collection_preconditions_v2=snap['collection_preconditions_v2'])
+  save('candidate-protected-collections',helper('validate',rich))
+  declaration={'protocol':1,'expected_generation':snap['generation'],'protected_apply':True,'display_declaration_changes':{'version':1,'sources':{'outputs':snap['display_source_ids']['outputs']},'operations':[{'op':'add','source':'outputs','kind':'profile','ref':'desk','set':{'name':'desk'}},{'op':'add','source':'outputs','kind':'output','parent':'new:desk','set':{'name':'PEARL-OFFLINE','enabled':False}}]}}
+  save('candidate-declarations',helper('validate',declaration))
   save('candidate-rejected',helper('validate',{'protocol':1,'expected_generation':snap['generation'],'raw_files':{'outputs':'[[output]]\nname="BAD"\nscale=-10\n'}},expect_ok=False))
   save('candidate-stale',helper('validate',{'protocol':1,'expected_generation':'0'*16,'changes':[]},expect_ok=False))
   save('native-capabilities',ipc.hello)
@@ -48,7 +52,7 @@ def main():
   ipc.close()
  for name,path in {'helper.schema.json':'settingsApplication/docs/aqueous-config-additions-v1.schema.json','display.schema.json':'compositor/protocol/aqueous-display-v1.schema.json','ipc.schema.json':'compositor/protocol/aqueous-ipc-v1.schema.json'}.items():(fixtures/name).write_bytes((source/path).read_bytes())
  # Source-derived schemas and private snapshots carry exact provenance, including temporary paths.
- for name in ('version','snapshot','display','candidate-offline','candidate-disabled','candidate-profile','candidate-unknown','candidate-comments','apply-result','receipt','candidate-collections','candidate-rejected','candidate-stale','native-capabilities'):(fixtures/(name+'.json')).write_bytes((a.output/(name+'.json')).read_bytes())
+ for name in ('version','snapshot','display','candidate-offline','candidate-disabled','candidate-profile','candidate-unknown','candidate-comments','apply-result','receipt','candidate-collections','candidate-protected-collections','candidate-declarations','candidate-rejected','candidate-stale','native-capabilities'):(fixtures/(name+'.json')).write_bytes((a.output/(name+'.json')).read_bytes())
  meta['fixture_sha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in fixtures.iterdir() if p.is_file() and p.name!='provenance.json'}
  (fixtures/'provenance.json').write_text(json.dumps(meta,indent=2)+'\n');save('metadata',meta)
  print('Captured master helper/display contracts and durable apply receipt',flush=True)

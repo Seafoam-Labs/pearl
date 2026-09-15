@@ -36,6 +36,27 @@ pub const Store = struct {
         _ = try c.hex(v, "request_sha256", 64);
         return v;
     }
+    fn previewPath(self: Store) ![:0]const u8 {
+        return std.fmt.allocPrintSentinel(self.a, "{s}.preview", .{self.path}, 0);
+    }
+    pub fn preview(self: Store) !?m.Value {
+        const file = try io.read(self.a, try self.previewPath(), 4096, null);
+        if (file.missing) return null;
+        const v = try m.parse(self.a, file.bytes, 4096);
+        try c.version(v, "version", 1);
+        if (!try c.boolean(v, "pending")) return null;
+        _ = try c.hex(v, "session", 32);
+        _ = try c.hex(v, "candidate_digest", 64);
+        if (m.get(v, "token") != .null) _ = try c.hex(v, "token", 64);
+        return v;
+    }
+    pub fn previewBegin(self: Store, session: []const u8, digest: []const u8, token: ?[]const u8) !void {
+        const bytes = try std.json.Stringify.valueAlloc(self.a, .{ .version = 1, .pending = true, .session = session, .candidate_digest = digest, .token = token }, .{});
+        try io.atomic(try self.previewPath(), bytes, false);
+    }
+    pub fn previewResolved(self: Store) !void {
+        try io.atomic(try self.previewPath(), "{\"version\":1,\"pending\":false}", false);
+    }
     pub fn begin(self: Store, helper: []const u8, helper_version: []const u8, request: []const u8, impact: c.Impact) ![]const u8 {
         if (try self.pending() != null) return error.SaveUncertain;
         var random: [16]u8 = undefined;

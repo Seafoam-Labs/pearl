@@ -11,7 +11,7 @@ depends=('gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
          'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
          'cairo>=1.18.4' 'systemd>=261.3' 'aqueous' 'uwsm>=0.26.7')
 # Aqueous packages currently provide an unversioned virtual 'aqueous'.
-# aqueous-config >=0.8.0 with receipt/impact/preview capabilities is required.
+# aqueous-config >=0.8.2 with protected collections and display declaration capabilities is required.
 # Upstream packaging still pulls in DMS; use a shell-neutral build for Pearl.
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
 makedepends=('zig=0.16.0' 'pkgconf' 'python>=3.14')

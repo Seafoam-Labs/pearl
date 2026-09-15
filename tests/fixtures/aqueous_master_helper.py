@@ -22,6 +22,8 @@ if op=='apply' and fault in ('nonzero-saved','saved-no-snapshot'):
  print(json.dumps(v));sys.exit(1 if fault=='nonzero-saved' else 0)
 if op=='operation-status' and fault=='lost-recovered':
  v=json.loads(r.stdout);v['receipt']='recovered';print(json.dumps(v));sys.exit(0)
+if op=='version' and fault=='missing-display-capability':
+ v=json.loads(r.stdout);v['capabilities'].remove('display_declaration_mutations_v1');print(json.dumps(v));sys.exit(0)
 if op=='version' and fault=='missing-capability':
  v=json.loads(r.stdout);v['capabilities'].remove('operation_receipts_v1');print(json.dumps(v));sys.exit(0)
 if op=='validate' and fault in ('wrong-impact-version','wrong-digest','unknown-effect'):

@@ -7,7 +7,7 @@ def read(path):
     try:return json.loads(path.read_text())
     except (OSError,ValueError):return {}
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-master');a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082');a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
     release=read(ROOT/'packaging/release.json');gate=read(a.output/'gate.json')
     lines=['# Pinned Aqueous master evidence','',f'Pearl **{release["version"]}**, Zig **{release["zig"]}**, Aqueous `{release["aqueous_revision"]}`, helper **{release["aqueous_config_floor"]}**.','', '[UI capture gallery](gallery.html) · [capability coverage](../../docs/AQUEOUS_CAPABILITY_COVERAGE.md) · [upstream dependencies](../../docs/AQUEOUS_MASTER_DEPENDENCIES.md) · [migration](../../docs/AQUEOUS_MASTER_MIGRATION.md)','', '| Evidence | Recorded status |','|---|---|']
     for folder,label in [('functional','Full functional matrix'),('ui','Themes, allocation, accessibility names/roles and keyboard'),('upstream','Canonical journal and native lease adversarial suites'),('performance','Production idle/startup and 1,000-cycle soak'),('reproducibility','Two fresh source/build roots'),('package','Checksum-locked Arch package')]:

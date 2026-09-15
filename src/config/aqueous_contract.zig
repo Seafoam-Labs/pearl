@@ -1,4 +1,4 @@
-//! Bounded additive contracts from Aqueous 1d038dc / helper 0.8.0.
+//! Bounded additive contracts from Aqueous b3d4869 / helper 0.8.2.
 //! JSON extensions are retained in the owning document; decisions use validated fields.
 const std = @import("std");
 const m = @import("aqueous_model.zig");
@@ -8,6 +8,8 @@ pub const Capabilities = struct {
     apply: bool = false,
     display: bool = false,
     collections: bool = false,
+    protected_collections: bool = false,
+    display_mutations: bool = false,
     pub fn read(v: Value) Capabilities {
         var result: Capabilities = .{ .apply = true };
         for (required) |cap| if (!m.has(v, cap)) {
@@ -18,6 +20,8 @@ pub const Capabilities = struct {
             result.display = false;
         };
         result.collections = m.has(v, "collection_schema_v1") and m.has(v, "collection_preconditions_v1") and m.has(v, "collection_identity_v1");
+        result.protected_collections = result.apply and result.collections and m.has(v, "protected_collection_apply_v1") and m.has(v, "collection_preconditions_v2");
+        result.display_mutations = m.has(v, "display_declaration_mutations_v1");
         return result;
     }
 };
@@ -56,7 +60,33 @@ pub const Support = struct {
         return .{ .store = try boolean(v, "store"), .test_ = try boolean(v, "test"), .preview = try boolean(v, "preview"), .reason = if (reason == .string) try text(v, "reason", 1024) else null };
     }
 };
+pub fn preconditions(v: Value) !void {
+    try version(v, "version", 2);
+    const sources = m.get(v, "sources");
+    if (sources != .object or sources.object.count() > 3) return error.InvalidCollectionPreconditions;
+    var it = sources.object.iterator();
+    while (it.next()) |e| {
+        if (!std.mem.eql(u8, e.key_ptr.*, "wm") and !std.mem.eql(u8, e.key_ptr.*, "rules") and !std.mem.eql(u8, e.key_ptr.*, "layout")) return error.InvalidCollectionPreconditions;
+        _ = try text(e.value_ptr.*, "path", 4096);
+        _ = try boolean(e.value_ptr.*, "exists");
+        _ = try hex(e.value_ptr.*, "digest", 64);
+    }
+}
 pub fn snapshot(v: Value) !void {
+    if (m.get(v, "collection_preconditions_v2") != .null) try preconditions(m.get(v, "collection_preconditions_v2"));
+    if (m.get(v, "display_declaration_mutations") != .null) try version(m.get(v, "display_declaration_mutations"), "version", 1);
+    if (m.get(v, "display_source_ids") != .null) {
+        const ids = m.get(v, "display_source_ids");
+        if (ids != .object or ids.object.count() > 2) return error.InvalidContract;
+        var it = ids.object.iterator();
+        while (it.next()) |e| try displayId(e.value_ptr.*);
+        for (m.list(m.get(v, "display_declarations"))) |d| {
+            try displayId(m.get(d, "id"));
+            if (m.get(d, "parent_id") != .null) try displayId(m.get(d, "parent_id"));
+            const kind = try text(d, "kind", 16);
+            if (!std.mem.eql(u8, kind, "output") and !std.mem.eql(u8, kind, "profile") and !std.mem.eql(u8, kind, "policy") and !std.mem.eql(u8, kind, "member")) return error.InvalidContract;
+        }
+    }
     for ([_][]const u8{ "window_rules", "custom_keybinds", "monitors", "display_declarations" }) |key| {
         const items = m.get(v, key);
         if (items != .null and (items != .array or m.list(items).len > 2048)) return error.InvalidContract;
@@ -83,6 +113,11 @@ pub fn snapshot(v: Value) !void {
     const observation = m.get(v, "display_observation");
     if (m.get(observation, "outputs") != .null) try display(observation);
 }
+pub fn displayId(v: Value) !void {
+    const id = m.str(v);
+    if (id.len != 75 or !std.mem.startsWith(u8, id, "display-v1:")) return error.InvalidIdentity;
+    for (id[11..]) |ch| if (!std.ascii.isHex(ch)) return error.InvalidIdentity;
+}
 pub fn display(v: Value) !void {
     try version(v, "version", 1);
     _ = try hex(v, "session", 32);
@@ -94,6 +129,8 @@ pub fn display(v: Value) !void {
         _ = try text(o, "connector", 256);
         _ = try boolean(o, "connected");
         _ = try boolean(o, "enabled");
+        if (m.get(o, "preview_backend") != .null) _ = try text(o, "preview_backend", 32);
+        if (m.get(o, "preview_acceptance_only") != .null) _ = try boolean(o, "preview_acceptance_only");
         const support = m.get(o, "support");
         if (support != .object or support.object.count() > 64) return error.InvalidContract;
         var entries = support.object.iterator();

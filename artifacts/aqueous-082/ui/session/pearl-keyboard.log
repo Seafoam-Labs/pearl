@@ -1,0 +1,33 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=control-ready session=20de9f8cda461ea677fdbc8c0a0fe79d
+info: event=app-index-ready entries=159 truncated=false
+info: event=popup-opened output=1
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=preferences-applied revision=2 mode=static cache=false
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=preferences-applied revision=3 mode=static cache=false
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=preferences-applied revision=4 mode=static cache=false
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=popup-closed
+info: event=popup-opened output=2
+info(pearl): event=stopping reason=control-quit pending=false
+info: event=popup-closed
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

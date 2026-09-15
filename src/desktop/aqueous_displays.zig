@@ -6,7 +6,7 @@ const c = @import("../config/aqueous_contract.zig");
 const w = @import("../ui/components/widgets.zig");
 pub fn render(view: anytype, box: *gtk.Box, snapshot: m.Value) !void {
     const a = view.arena.allocator();
-    box.append(w.label("Aqueous owns the preview deadline and rollback. Keep authorizes one durable save. Hardware preview is unavailable in this master build; headless previews can be tested.", "pearl-secondary").as(gtk.Widget));
+    box.append(w.label("Aqueous owns the preview deadline and rollback. Keep authorizes one durable save. Preview availability is reported per output and feature below.", "pearl-secondary").as(gtk.Widget));
     const observation = m.get(snapshot, "display_observation");
     view.placement_box = w.column(4);
     box.append(view.placement_box.?.as(gtk.Widget));
@@ -23,6 +23,7 @@ pub fn render(view: anytype, box: *gtk.Box, snapshot: m.Value) !void {
         try view.inventory(card, output, "configured", "Explicit and inherited values, declarations and precedence");
         try view.inventory(card, output, "monitor_identity", "Monitor identity and ambiguous matching");
         try view.inventory(card, output, "modes", "Advertised modes");
+        card.append(w.label(view.z(try std.fmt.allocPrint(a, "Preview backend: {s}{s}", .{ m.str(m.get(output, "preview_backend")), if (m.equal(m.get(output, "preview_acceptance_only"), .{ .bool = true })) " · acceptance testing only" else "" })), "pearl-secondary").as(gtk.Widget));
         const support = m.get(output, "support");
         if (support == .object) {
             var entries = support.object.iterator();
@@ -34,14 +35,7 @@ pub fn render(view: anytype, box: *gtk.Box, snapshot: m.Value) !void {
     }
     // These models include disconnected declarations, profile membership and source order.
     try view.inventory(box, snapshot, "display_model", "All declarations: configured offline displays, profiles, policy and precedence");
-    for ([_][2][]const u8{ .{ "Enable / disable", "Enablement" }, .{ "Primary output", "Primary selection" }, .{ "Profiles and fallback", "Profile CRUD and membership" }, .{ "Identity matching", "Connector patterns and monitor identity" }, .{ "HDR / VRR", "HDR, SDR white level, auto HDR and adaptive sync" } }) |item| {
-        const row = w.column(4);
-        box.append(row.as(gtk.Widget));
-        const button = gtk.Button.newWithLabel(view.z(item[0]));
-        button.as(gtk.Widget).setSensitive(0);
-        row.append(button.as(gtk.Widget));
-        row.append(w.label(view.z(try std.fmt.allocPrint(a, "{s}: structured editing requires an Aqueous helper addition. Advanced retains the canonical raw editor; all display saves still require a native lease.", .{item[1]})), "pearl-secondary").as(gtk.Widget));
-    }
+    try @import("aqueous_display_editor.zig").render(view, box, snapshot);
 }
 pub fn refreshPlacement(view: anytype) !void {
     const box = view.placement_box orelse return;
@@ -51,12 +45,21 @@ pub fn refreshPlacement(view: anytype) !void {
     const Head = struct { name: []const u8, x: f64, y: f64, width: f64, height: f64 };
     var heads: std.ArrayList(Head) = .empty;
     const draft = try m.parse(a, view.client.draft orelse "{}", m.max_request);
+    var projection: m.Value = .null;
+    if (view.client.review_revision == view.client.revision and !view.client.conflict()) {
+        const review = try m.parse(a, view.client.review orelse "{}", m.max_response);
+        projection = m.get(review, "display");
+    }
+    box.append(w.label(if (projection != .null) "Validated candidate arrangement" else "Current arrangement; Validate updates the diagram from Aqueous's candidate", "pearl-secondary").as(gtk.Widget));
     var left: f64 = std.math.inf(f64);
     var top = left;
     var right: f64 = -left;
     var bottom = right;
     for (m.list(m.get(observation, "outputs"))) |output| {
-        const actual = m.get(output, "actual");
+        var actual = m.get(output, "actual");
+        for (m.list(m.get(projection, "effective_outputs"))) |candidate| {
+            if (m.equal(m.get(candidate, "instance"), m.get(output, "instance"))) actual = m.get(candidate, "resolved");
+        }
         if (!m.equal(m.get(actual, "enabled"), .{ .bool = true })) continue;
         const name = m.str(m.get(output, "connector"));
         var x = number(m.get(actual, "x"), 0);
@@ -83,7 +86,7 @@ pub fn refreshPlacement(view: anytype) !void {
         bottom = @max(bottom, y + height);
     }
     if (heads.items.len == 0) return;
-    box.append(w.label("Placement preview · current mode sizes; staged position, scale and rotation", "pearl-secondary").as(gtk.Widget));
+    box.append(w.label("Placement preview · logical output geometry", "pearl-secondary").as(gtk.Widget));
     const fixed = gtk.Fixed.new();
     fixed.as(gtk.Widget).setSizeRequest(360, 180);
     box.append(fixed.as(gtk.Widget));

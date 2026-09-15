@@ -1,0 +1,102 @@
+{
+  "enabled": {
+    "type": "boolean"
+  },
+  "primary": {
+    "type": "boolean"
+  },
+  "hdr": {
+    "type": "boolean"
+  },
+  "auto_hdr": {
+    "type": "boolean"
+  },
+  "adaptive_sync": {
+    "type": "boolean"
+  },
+  "apply_on_start": {
+    "type": "boolean"
+  },
+  "apply_on_reload": {
+    "type": "boolean"
+  },
+  "name": {
+    "type": "string",
+    "maxLength": 256,
+    "description": "Maximum 256 UTF-8 bytes; no controls. Native literal string encoding must preserve the value."
+  },
+  "edid": {
+    "type": "string",
+    "maxLength": 256,
+    "description": "Maximum 256 UTF-8 bytes; no controls. Native literal string encoding must preserve the value."
+  },
+  "mirror_of": {
+    "type": "string",
+    "maxLength": 256,
+    "description": "Maximum 256 UTF-8 bytes; no controls. Native literal string encoding must preserve the value."
+  },
+  "fallback_profile": {
+    "type": "string",
+    "maxLength": 256,
+    "description": "Maximum 256 UTF-8 bytes; no controls. Native literal string encoding must preserve the value."
+  },
+  "identify_by": {
+    "type": "string",
+    "maxLength": 256,
+    "description": "Maximum 256 UTF-8 bytes; no controls. Native literal string encoding must preserve the value."
+  },
+  "mode": {
+    "type": "string",
+    "pattern": "^[0-9]+x[0-9]+(@[0-9]+(\\.[0-9]+)?)?$"
+  },
+  "scale": {
+    "type": "number",
+    "minimum": 0.5,
+    "maximum": 3
+  },
+  "transform": {
+    "enum": [
+      "normal",
+      "90",
+      "180",
+      "270",
+      "flipped",
+      "flipped-90",
+      "flipped-180",
+      "flipped-270"
+    ]
+  },
+  "position": {
+    "type": "array",
+    "minItems": 2,
+    "maxItems": 2,
+    "items": {
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    }
+  },
+  "hdr_level": {
+    "enum": [
+      "auto",
+      "100",
+      "400",
+      "1000"
+    ]
+  },
+  "sdr_white_level": {
+    "type": "number",
+    "minimum": 80,
+    "maximum": 1000
+  },
+  "auto_hdr_boost": {
+    "type": "number",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "rollback_seconds": {
+    "type": "integer",
+    "minimum": 0,
+    "maximum": 65535
+  }
+}

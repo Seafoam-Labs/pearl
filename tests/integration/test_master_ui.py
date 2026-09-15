@@ -13,7 +13,7 @@ from test_session_services import key
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--quick',action='store_true')
- p.add_argument('--keyboard-pearl',type=Path,required=True);p.add_argument('--pearl',type=Path,default=ROOT/'zig-out/bin/pearl');p.add_argument('--ctl',type=Path,default=ROOT/'zig-out/bin/pearlctl');p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-master');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-master/ui');a=p.parse_args();a.pearl=a.pearl.resolve();a.ctl=a.ctl.resolve();a.keyboard_pearl=a.keyboard_pearl.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
+ p.add_argument('--keyboard-pearl',type=Path,required=True);p.add_argument('--pearl',type=Path,default=ROOT/'zig-out/bin/pearl');p.add_argument('--ctl',type=Path,default=ROOT/'zig-out/bin/pearlctl');p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-082');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/ui');a=p.parse_args();a.pearl=a.pearl.resolve();a.ctl=a.ctl.resolve();a.keyboard_pearl=a.keyboard_pearl.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
  report=dict(status='running',checks={},baseline=json.loads((a.prefix/'metadata.json').read_text()),pearl_sha256=hashlib.sha256(a.pearl.read_bytes()).hexdigest(),manual_acceptance=False,quick=a.quick,keyboard_fixture_sha256=hashlib.sha256(a.keyboard_pearl.read_bytes()).hexdigest(),accessibility_limitations=['Private AT-SPI names/roles and direct focus outcome recorded. Keyboard focus is measured independently using the test-only synchronous focus query; Orca acceptance remains pending.']);checks=report['checks']
  try:
   with PrivateSession(a.output/'session',tool_prefix=a.prefix) as s:
@@ -57,6 +57,8 @@ def main():
    assert 'Window rule editor' in names('rules'),names('rules')
    assert 'Custom shortcut editor' in names('keybinds'),names('keybinds')
    assert 'Named snap layouts' in names('layouts'),names('layouts')
+   assert 'Display declarations and profiles' in names('displays'),names('displays')
+   assert 'Stage declaration' in names('displays'),names('displays')
    checks['native-accessibility-names-and-roles']=True
    ctl(s,a.ctl,'aqueous','show','--text','rules');time.sleep(.3)
    direct=s.run(['python3',inspector,'--focus','Inherit app_id'],check=False)
@@ -90,6 +92,15 @@ def main():
     ctl(s,a.ctl,'aqueous','validate');v=settled(s,a.ctl);assert v['outcome']=='validated',v
     ctl(s,a.ctl,'aqueous','show','--text','advanced');time.sleep(.2);capture(s,'shared-advanced-draft',output['connector']);assert state(s,a.ctl,'draft')['value']==draft
     ctl(s,a.ctl,'aqueous','discard');checks['keyboard-rule-entry-and-shared-advanced-draft']=True
+   if not a.quick:
+    ctl(s,a.ctl,'aqueous','show','--text','displays');time.sleep(.3)
+    interact('--focus','name edit action');key(s,'-k','space');key(s,'-k','Home');key(s,'-k','Down');key(s,'-k','Return')
+    interact('--focus','name');key(s,'PEARL-UI-OFFLINE')
+    interact('--action','Stage declaration')
+    draft=state(s,a.ctl,'draft')['value'];ops=draft['display_declaration_changes']['operations']
+    assert ops[0]['set']['name']=='PEARL-UI-OFFLINE',draft
+    ctl(s,a.ctl,'aqueous','validate');v=settled(s,a.ctl);assert v['outcome']=='validated',v
+    ctl(s,a.ctl,'aqueous','discard');checks['keyboard-display-declaration-staging']=True
    ctl(s,a.ctl,'popup','hide');time.sleep(.3)
    ctl(s,a.ctl,'aqueous','show','--text','keybinds');time.sleep(.3)
    interact('--action','Record custom shortcut');wait_for(lambda:state(s,a.ctl)['recording'])

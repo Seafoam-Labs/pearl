@@ -1,0 +1,447 @@
+{
+  "version": 1,
+  "config_generation": "9dc7f7bde441945a",
+  "session": "af53118204b3b58bf3c1468b82ca9657",
+  "display_revision": "6",
+  "observation": "current",
+  "active_profile": "",
+  "preview_active": false,
+  "effective_profile": null,
+  "fallback_profile": "",
+  "loaded_configuration": {
+    "wm": {
+      "declarative": false,
+      "diagnostics": {
+        "unknown_fields": 0,
+        "rejected_declarations": 0
+      },
+      "policy": {
+        "apply_on_start": null,
+        "apply_on_reload": null,
+        "rollback_seconds": null,
+        "fallback_profile": null,
+        "identify_by": null
+      },
+      "outputs": [],
+      "profiles": []
+    },
+    "outputs": {
+      "declarative": false,
+      "diagnostics": {
+        "unknown_fields": 0,
+        "rejected_declarations": 0
+      },
+      "policy": {
+        "apply_on_start": null,
+        "apply_on_reload": null,
+        "rollback_seconds": null,
+        "fallback_profile": null,
+        "identify_by": null
+      },
+      "outputs": [],
+      "profiles": []
+    }
+  },
+  "outputs": [
+    {
+      "instance": "1",
+      "connector": "HEADLESS-2",
+      "connected": true,
+      "enabled": true,
+      "make": null,
+      "model": null,
+      "serial": null,
+      "monitor_identity": {
+        "value": null,
+        "kind": "make_model_serial_hash",
+        "raw_edid_available": false,
+        "ambiguous": false,
+        "match_count": 0
+      },
+      "actual": {
+        "enabled": true,
+        "mode": {
+          "width": 1280,
+          "height": 720,
+          "refresh_mhz": 0
+        },
+        "scale": 1,
+        "transform": "normal",
+        "x": 0,
+        "y": 0,
+        "mirror_of": "",
+        "adaptive_sync": false,
+        "hdr": false,
+        "hdr_level": 1000,
+        "sdr_white_level": 200,
+        "auto_hdr": false,
+        "auto_hdr_boost": 0.5
+      },
+      "actual_hdr": false,
+      "actual_vrr": false,
+      "primary": false,
+      "configured": {
+        "enabled": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "mode": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "scale": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "transform": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "x": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "y": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "adaptive_sync": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "hdr": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "hdr_level": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "sdr_white_level": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "auto_hdr": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "auto_hdr_boost": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "mirror_of": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "primary": {
+          "effective": false,
+          "resolver": "primaryOutput",
+          "active_profile": "",
+          "matching_declarations": []
+        }
+      },
+      "modes": [],
+      "support": {
+        "placement": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "mode": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "enable": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "hdr": {
+          "store": true,
+          "test": false,
+          "preview": false,
+          "reason": "hdr_unsupported"
+        },
+        "vrr": {
+          "store": true,
+          "test": false,
+          "preview": false,
+          "reason": "hardware_test_required"
+        },
+        "mirroring": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "profiles": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "policies": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "primary": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "custom_mode": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        }
+      }
+    },
+    {
+      "instance": "2",
+      "connector": "HEADLESS-1",
+      "connected": true,
+      "enabled": true,
+      "make": null,
+      "model": null,
+      "serial": null,
+      "monitor_identity": {
+        "value": null,
+        "kind": "make_model_serial_hash",
+        "raw_edid_available": false,
+        "ambiguous": false,
+        "match_count": 0
+      },
+      "actual": {
+        "enabled": true,
+        "mode": {
+          "width": 1280,
+          "height": 720,
+          "refresh_mhz": 0
+        },
+        "scale": 1,
+        "transform": "normal",
+        "x": 1280,
+        "y": 0,
+        "mirror_of": "",
+        "adaptive_sync": false,
+        "hdr": false,
+        "hdr_level": 1000,
+        "sdr_white_level": 200,
+        "auto_hdr": false,
+        "auto_hdr_boost": 0.5
+      },
+      "actual_hdr": false,
+      "actual_vrr": false,
+      "primary": false,
+      "configured": {
+        "enabled": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "mode": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "scale": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "transform": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "x": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "y": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "adaptive_sync": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "hdr": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "hdr_level": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "sdr_white_level": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "auto_hdr": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "auto_hdr_boost": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "mirror_of": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "primary": {
+          "effective": false,
+          "resolver": "primaryOutput",
+          "active_profile": "",
+          "matching_declarations": []
+        }
+      },
+      "modes": [],
+      "support": {
+        "placement": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "mode": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "enable": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "hdr": {
+          "store": true,
+          "test": false,
+          "preview": false,
+          "reason": "hdr_unsupported"
+        },
+        "vrr": {
+          "store": true,
+          "test": false,
+          "preview": false,
+          "reason": "hardware_test_required"
+        },
+        "mirroring": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "profiles": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "policies": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "primary": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        },
+        "custom_mode": {
+          "store": true,
+          "test": true,
+          "preview": true,
+          "reason": null
+        }
+      }
+    }
+  ]
+}

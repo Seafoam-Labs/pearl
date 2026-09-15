@@ -7,13 +7,13 @@ TOML backend; install that helper alongside Pearl. Shell appearance, including
 system/installed GTK themes, remains under **Pearl settings**.
 
 The current target is Aqueous master
-`1d038dc3bafa0044d9599f8f51f84105a6a85bb3`, helper **0.8.0**, protocol 1.
+`b3d486920c42e24d45bed0a79e68915fe11c4815`, helper **0.8.2**, protocol 1.
 Pearl discovers the helper through PATH, negotiates capabilities and always uses
 `--shell none`. Older helpers can remain readable, but writes require the modern
 receipt, candidate-impact and recoverable-commit capabilities.
 
 See [capability coverage](AQUEOUS_CAPABILITY_COVERAGE.md), the
-[implementation plan](AQUEOUS_MASTER_UPDATE_PLAN.md), and the concrete
+[implementation plan](AQUEOUS_082_UPDATE_PLAN.md), and the concrete
 [upstream dependencies](AQUEOUS_MASTER_DEPENDENCIES.md). The original
 [additions request](AQUEOUS_T11_ADDITIONS.md) is historical.
 
@@ -99,10 +99,11 @@ explicit versus inherited values, declaration/source precedence, advertised mode
 monitor identity and ambiguity, configured offline declarations, profiles and policy.
 `store`, `test`, `preview` and `reason` are kept separate.
 
-A placement diagram follows staged position, scale and rotation at current mode
-sizes, with numeric origins and logical dimensions for keyboard and assistive use.
-Position, scale, rotation, mode and mirroring use the helper's structured monitor
-edits. Scalar display policies use schema controls. Canonical validation determines
+A placement diagram shows current geometry and, after Validate, the canonical
+candidate arrangement, with numeric origins and logical dimensions for keyboard
+and assistive use.
+Position, scale, rotation, mode and mirroring use canonical declaration
+mutations when supported; older helpers retain their monitor editor. Scalar display policies use schema controls. Canonical validation determines
 whether an edit changes live or deferred output configuration. Both require a native
 lease: even `store:true` and an offline-only edit do not authorize unprotected save.
 
@@ -114,12 +115,35 @@ protected helper operation; the helper authorizes, journals, persists and finali
 baseline under its concurrency rules. The former `--display-guard` process and
 output-management rollback implementation have been removed.
 
-Current master accepts protected previews only for headless outputs. Physical,
-HDR and VRR changes remain gated; mirroring depends on renderer support. The helper
-has no structured mutation for enabled/primary/profile/matching/HDR properties:
-those controls explain the upstream dependency and remain disabled. Advanced raw
-editing is retained, with the same classification and preview gates. Pearl does not
-add a TOML serializer or infer effective state from raw draft text.
+The declaration editor supports outputs, profiles, profile members and policy in
+`wm` or `outputs`. Select a declaration or create one, then choose **Keep current**,
+**Set explicit value** or **Use inherited value** for each field. Current local
+assignments remain visible. Stage combines edits into the shared draft. Destination
+parent and insertion controls support membership and ordering; profile deletion
+explicitly deletes or reassigns members. Newly staged profiles can receive members
+in the same draft. Aqueous owns source precedence and TOML surgery.
+
+Controls cover enabled/primary, name/EDID matching, position, scale, transform,
+mode, mirroring, HDR/auto-HDR, HDR level, SDR white level, auto-HDR boost and adaptive
+sync, plus all five policy fields. `identify_by` and `rollback_seconds` retain their
+upstream compatibility semantics; the latter does not control the preview timer.
+Draft editing is available independently of permission to apply it on hardware.
+
+Production DRM previews remain unavailable. The upstream acceptance build can
+exercise explicitly selected SDR outputs; Pearl labels such outputs as acceptance
+only. HDR/VRR, DRM mirroring and custom modes remain separately gated. Headless
+mirroring requires renderer support. Every display-affecting candidate, including
+offline edits, still needs a native lease.
+
+Pearl waits for presentation before showing Keep, and waits for native terminal
+status before reporting Revert complete. Session suspension shows a waiting state;
+rollback continues on resume. A private durable preview record retains the session,
+digest and token across Pearl restarts. Refresh reconciles pending preview/receipt
+state; bounded waits leave unresolved outcomes visible and block further saves.
+If the begin reply was lost before its token arrived, upstream has no token-free
+lookup: uncertainty remains until the compositor session changes. Pearl never
+manufactures rollback success. `pearlctl aqueous status --text preview` shows the
+last observed native status, including partial rollback and presentation details.
 
 ## Structured collection forms
 
@@ -135,15 +159,18 @@ recorder. Editing a spawn command never executes it; Validate reports collisions
 Named snap layouts expose IDs/names/padding, default selection and ordered zones
 with numeric normalized geometry. Legacy zones are also editable. Changes are
 staged into the same Advanced request, with generation-scoped source identities.
-Rebase requires unchanged affected collection source; external reorder cannot cause
-an old index to edit a different record. The helper's stale-generation precondition
-path currently cannot be combined with protected apply.
+Collection-only saves copy descriptors for exactly the affected sources into the
+v2 protected contract. The helper may accept a stale global generation only if
+those source paths, existence and bytes are unchanged. Apply uses the validation
+transaction's effective baseline and full candidate digest. A changed reviewed
+digest produces `CandidateReviewChanged`; review the refreshed candidate before
+applying again. External reorder or touched-source edits require conflict resolution.
+Mixed scalar/raw/display/collection edits retain fresh-generation semantics and
+use one atomic candidate; display effects require a native preview.
 
-**Current upstream limitation:** collection requests validate, but master's impact
-classifier does not recognize all collection semantics. Pearl therefore blocks their
-save as `UnclassifiedCandidate`, retaining the draft. The forms are implemented;
-usability of these writes depends on the upstream classification addition. See
-[AQUEOUS_MASTER_DEPENDENCIES.md](AQUEOUS_MASTER_DEPENDENCIES.md).
+Rules, custom shortcuts, named layouts/default selection and legacy snap zones
+now save through canonical classification and durable receipts. Unknown semantic
+extensions still block save and preserve the draft.
 
 ## Collection request examples
 
@@ -197,9 +224,9 @@ The CLI retains its 8 KiB frame bound (draft text up to 6,500 bytes). Larger
 requests use GTK Advanced, with a 4 MiB UTF-8 bound and depth limit 32. Helper
 stdout is capped at 16 MiB and stderr at 64 KiB, drained together. Each helper
 invocation has a 35-second deadline and its own process group, killed and reaped
-on cancellation. The independent guardian has a separate 150-second overall
-parent deadline and 3-second Wayland operation deadlines; the confirmation lease
-itself is always 15 seconds. All work runs outside the GTK event thread.
+on cancellation. Native IPC calls have 3-second deadlines. Preview/recovery polling returns
+after 35 seconds with a durable unresolved record when necessary; the native
+confirmation lease remains 15 seconds. All work runs outside the GTK event thread.
 
 ```sh
 ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test test-adapter-unit test-bindings -Doptimize=ReleaseSafe
@@ -218,6 +245,7 @@ python3 scripts/build-aqueous-master.py
 python3 scripts/aqueous-master-inventory.py
 zig build test-aqueous-master -Doptimize=ReleaseSafe
 python3 scripts/aqueous-master-upstream-tests.py
+zig build test-aqueous-preview test-capture-master test-master-ui -Doptimize=ReleaseSafe
 ```
 
 Tests use private HOME/XDG paths, buses, helper wrappers and virtual displays.

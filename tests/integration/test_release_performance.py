@@ -31,8 +31,8 @@ def percentiles(values):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('pearl','ctl'):p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-master')
-    p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-master/performance');p.add_argument('--cycles',type=int,default=1000);p.add_argument('--idle-seconds',type=int,default=60);a=p.parse_args()
+    p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-082')
+    p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/performance');p.add_argument('--cycles',type=int,default=1000);p.add_argument('--idle-seconds',type=int,default=60);a=p.parse_args()
     a.prefix=a.prefix.resolve()
     assert a.cycles>=1000 and a.idle_seconds>=60
     a.pearl=a.pearl.resolve();a.ctl=a.ctl.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)

@@ -82,10 +82,14 @@ class Child:
 
 class PrivateSession:
     def __init__(self, output, aqueous=None, backend='headless', parent_display=None, inherited=None, renderer='pixman', wm_extra='', tool_prefix=None):
+        self.baseline = None
         self.output = Path(output).resolve()
         self.tool_prefix = Path(tool_prefix or os.environ['PEARL_TEST_AQUEOUS_PREFIX']).resolve() if tool_prefix or os.environ.get('PEARL_TEST_AQUEOUS_PREFIX') else None
         if self.tool_prefix and (self.tool_prefix/'metadata.json').is_file():
             baseline=json.loads((self.tool_prefix/'metadata.json').read_text())
+            self.baseline=baseline
+            library=Path(baseline['patched_wlroots_pkgconfig']).parent/'libwlroots-0.20.so'
+            if hashlib.sha256(library.read_bytes()).hexdigest()!=baseline['wlroots_sha256']:raise ValueError('Private wlroots differs from recorded provenance')
             for name,digest in baseline.get('binary_sha256',{}).items():
                 binary=self.tool_prefix/'bin'/name
                 if hashlib.sha256(binary.read_bytes()).hexdigest()!=digest:
@@ -145,6 +149,7 @@ class PrivateSession:
             for binary in ('aqueous', 'aqueousctl', 'aqueous-config'):
                 if not (self.tool_prefix/'bin'/binary).is_file():raise FileNotFoundError(binary)
             self.env['PATH']=str(self.tool_prefix/'bin')+':'+self.env.get('PATH','/usr/bin')
+            if self.baseline:self.env['LD_LIBRARY_PATH']=str(Path(self.baseline['patched_wlroots_pkgconfig']).parent)
         self.env.update(USER='pearl-demo', LOGNAME='pearl-demo', XDG_SESSION_TYPE='wayland',
                         XDG_CURRENT_DESKTOP='Aqueous', GDK_BACKEND='wayland', GTK_A11Y='none', GSK_RENDERER='cairo',
                         DBUS_SESSION_BUS_ADDRESS='unix:path=' + str(self.runtime / 'bus'),

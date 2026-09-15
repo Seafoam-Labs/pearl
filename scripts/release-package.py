@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('release_source',ROOT/'scripts/release-source.py');source=importlib.util.module_from_spec(spec);spec.loader.exec_module(source)
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-master/package');a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/package');a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
     report={'status':'running','method':'makepkg dependency check, build, check(), staging package(); no installation or service activation'}
     try:
         with tempfile.TemporaryDirectory(prefix='pearl-package-') as temp:

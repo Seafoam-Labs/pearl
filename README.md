@@ -30,16 +30,17 @@ survive external edits, with conflict-aware merging and atomic persistence.
 Pearl now replaces the Aqueous settings frontend, with schema-driven GTK pages,
 retained drafts, structured collection editors, shortcut recording and compositor-owned
 display previews. Structured save receipts survive interrupted helper calls and Pearl
-restarts. The current integration pins Aqueous master `1d038dc3` and aqueous-config
-0.8.0; unsupported operations show their [upstream dependency](docs/AQUEOUS_MASTER_DEPENDENCIES.md).
+restarts. The current integration pins Aqueous master `b3d4869` and aqueous-config
+0.8.2; structured collections now save and display declarations/profiles have typed editors; hardware-gated operations show their [upstream dependency](docs/AQUEOUS_MASTER_DEPENDENCIES.md).
 Session actions, a real polkit agent, AC/battery idle policies and a native
 Noctalia-like GTK/PAM lock screen are now implemented. Physical security/session
 acceptance remains pending. Clipboard history, SDR output/region capture, floating bar islands and a configurable dock are implemented. All available workspaces appear on the bar: horizontal bars wrap when needed; vertical bars keep a single column and scroll overflow while retaining their thickness.
 
-- [Current master evidence and UI gallery](artifacts/aqueous-master/README.md).
+- [Aqueous 0.8.2 integration evidence](artifacts/aqueous-082/README.md) and [previous master UI gallery](artifacts/aqueous-master/README.md).
 - [Release and packaging](docs/RELEASE.md) and [DMS migration / switch-back](docs/MIGRATION.md).
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
 - [Aqueous integration update plan](docs/AQUEOUS_MASTER_UPDATE_PLAN.md): implementation scope and acceptance for the pinned master contracts.
+- [Aqueous 0.8.2 update plan](docs/AQUEOUS_082_UPDATE_PLAN.md): adopt newly exposed collection transactions, display declarations and preview controls.
 - [Greeter](docs/GREETER.md): a separate greetd login screen and installed-desktop chooser, with Material/GTK themes and private tests. Production hosting remains gated on restricted Aqueous support and real-login validation; see the [implementation checklist](docs/GREETER_IMPLEMENTATION_PLAN.md).
 - [Fingerprint integration](docs/FINGERPRINT_LOGIN.md): PAM-controlled password fallback, automatic scan messages, locker compatibility and private tests; [real-device acceptance remains open](docs/FINGERPRINT_LOGIN_IMPLEMENTATION_PLAN.md).
 - [Development specification](docs/TASKS.md): implementation scope, dependencies, concrete deliverables, and acceptance criteria.

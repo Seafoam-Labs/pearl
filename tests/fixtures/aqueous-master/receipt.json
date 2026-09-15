@@ -5,18 +5,18 @@
   "save": "saved",
   "reload": "applied",
   "reload_acknowledgement": {
-    "session": "af53118204b3b58bf3c1468b82ca9657",
-    "generation": "edac6cae1fff7d48",
-    "candidate_digest": "5edc3a6fd8225a14d8d825a77157c651aef540ac625ff49576fea861ed2dd60e",
+    "session": "41bf08cf7dac85ed2be0454aa9defee7",
+    "generation": "03dc7b64b28b26c5",
+    "candidate_digest": "6ae492d4e4dd69b7fc3416efb4a992aa5df7830967a7893b09717f274d4f88b4",
     "sequence": "1"
   },
   "display": "not_requested",
-  "before_generation": "9dc7f7bde441945a",
-  "after_generation": "edac6cae1fff7d48",
-  "candidate_digest": "5edc3a6fd8225a14d8d825a77157c651aef540ac625ff49576fea861ed2dd60e",
+  "before_generation": "3b8b2b6bdbcaa630",
+  "after_generation": "03dc7b64b28b26c5",
+  "candidate_digest": "6ae492d4e4dd69b7fc3416efb4a992aa5df7830967a7893b09717f274d4f88b4",
   "files": [
     {
-      "path": "/tmp/pearl-dev-sz2j9uvj/config/aqueous/layout.toml",
+      "path": "/tmp/pearl-dev-rqff014d/config/aqueous/layout.toml",
       "existed": false,
       "before_digest": null,
       "after_digest": "6b2bad96781df31be829a15ecd13f21a5084218c1df5b89fac44a0f8740b4472",
@@ -7150,7 +7150,7 @@
   "snapshot": {
     "ok": true,
     "protocol": 1,
-    "helper_version": "0.8.0",
+    "helper_version": "0.8.2",
     "capabilities": [
       "schema_fields",
       "validate",
@@ -7179,13 +7179,16 @@
       "display_observation_v1",
       "display_preview_commit_v1",
       "collection_schema_v1",
-      "collection_preconditions_v1"
+      "collection_preconditions_v1",
+      "protected_collection_apply_v1",
+      "collection_preconditions_v2",
+      "display_declaration_mutations_v1"
     ],
-    "generation": "edac6cae1fff7d48",
+    "generation": "03dc7b64b28b26c5",
     "candidate_review": {
       "version": 1,
-      "original_generation": "9dc7f7bde441945a",
-      "candidate_digest": "5edc3a6fd8225a14d8d825a77157c651aef540ac625ff49576fea861ed2dd60e",
+      "original_generation": "3b8b2b6bdbcaa630",
+      "candidate_digest": "6ae492d4e4dd69b7fc3416efb4a992aa5df7830967a7893b09717f274d4f88b4",
       "changed_files": [
         "layout"
       ],
@@ -7199,8 +7202,8 @@
     },
     "candidate_impact": {
       "version": 1,
-      "original_generation": "9dc7f7bde441945a",
-      "candidate_digest": "5edc3a6fd8225a14d8d825a77157c651aef540ac625ff49576fea861ed2dd60e",
+      "original_generation": "3b8b2b6bdbcaa630",
+      "candidate_digest": "6ae492d4e4dd69b7fc3416efb4a992aa5df7830967a7893b09717f274d4f88b4",
       "changed_files": [
         "layout"
       ],
@@ -7221,7 +7224,7 @@
     },
     "display_model": {
       "version": 2,
-      "generation": "edac6cae1fff7d48",
+      "generation": "03dc7b64b28b26c5",
       "candidate": true,
       "declarations": [],
       "configured": {
@@ -7336,8 +7339,8 @@
       },
       "live": {
         "version": 1,
-        "config_generation": "9dc7f7bde441945a",
-        "session": "af53118204b3b58bf3c1468b82ca9657",
+        "config_generation": "3b8b2b6bdbcaa630",
+        "session": "41bf08cf7dac85ed2be0454aa9defee7",
         "display_revision": "6",
         "observation": "current",
         "active_profile": "",
@@ -7516,6 +7519,8 @@
               }
             },
             "modes": [],
+            "preview_backend": "headless",
+            "preview_acceptance_only": false,
             "support": {
               "placement": {
                 "store": true,
@@ -7545,7 +7550,7 @@
                 "store": true,
                 "test": false,
                 "preview": false,
-                "reason": "hardware_test_required"
+                "reason": "vrr_hardware_acceptance_pending"
               },
               "mirroring": {
                 "store": true,
@@ -7716,6 +7721,8 @@
               }
             },
             "modes": [],
+            "preview_backend": "headless",
+            "preview_acceptance_only": false,
             "support": {
               "placement": {
                 "store": true,
@@ -7745,7 +7752,7 @@
                 "store": true,
                 "test": false,
                 "preview": false,
-                "reason": "hardware_test_required"
+                "reason": "vrr_hardware_acceptance_pending"
               },
               "mirroring": {
                 "store": true,
@@ -7784,8 +7791,8 @@
     },
     "display_observation": {
       "version": 1,
-      "config_generation": "9dc7f7bde441945a",
-      "session": "af53118204b3b58bf3c1468b82ca9657",
+      "config_generation": "3b8b2b6bdbcaa630",
+      "session": "41bf08cf7dac85ed2be0454aa9defee7",
       "display_revision": "6",
       "observation": "current",
       "active_profile": "",
@@ -7964,6 +7971,8 @@
             }
           },
           "modes": [],
+          "preview_backend": "headless",
+          "preview_acceptance_only": false,
           "support": {
             "placement": {
               "store": true,
@@ -7993,7 +8002,7 @@
               "store": true,
               "test": false,
               "preview": false,
-              "reason": "hardware_test_required"
+              "reason": "vrr_hardware_acceptance_pending"
             },
             "mirroring": {
               "store": true,
@@ -8164,6 +8173,8 @@
             }
           },
           "modes": [],
+          "preview_backend": "headless",
+          "preview_acceptance_only": false,
           "support": {
             "placement": {
               "store": true,
@@ -8193,7 +8204,7 @@
               "store": true,
               "test": false,
               "preview": false,
-              "reason": "hardware_test_required"
+              "reason": "vrr_hardware_acceptance_pending"
             },
             "mirroring": {
               "store": true,
@@ -8340,19 +8351,60 @@
       }
     },
     "display_declarations": [],
+    "display_declaration_mutations": {
+      "version": 1,
+      "request": "display_declaration_changes",
+      "identity_scope": "generation_source_occurrence",
+      "protected_apply_required": true,
+      "operations": [
+        "add",
+        "update",
+        "delete",
+        "move"
+      ],
+      "sources": [
+        "wm",
+        "outputs"
+      ],
+      "schema": "aqueous-config-additions-v1.schema.json#/$defs/display_declaration_changes"
+    },
+    "display_source_ids": {
+      "wm": "display-v1:63f89d4ebfcf2d0e7493266d060e143d2e3d400acee980d633ff63337ab7d5c2",
+      "outputs": "display-v1:57ed929383efb4ab13dca44794c0c225c114a944a245e522b6f9491d24c5f80e"
+    },
     "collection_identity": {
       "version": 1,
       "scope": "generation",
-      "generation": "edac6cae1fff7d48",
+      "generation": "03dc7b64b28b26c5",
       "precondition": "expected_generation",
       "stale_edit": "external_change",
       "raw_and_structured_same_collection": "conflicting_edits",
       "rebase": "unsupported"
     },
     "collection_preconditions": {
-      "wm": "185e9d2829a8d188841b544b0a853ee7e9f493dedc8501541382a12c62d8b315",
-      "rules": "5c42e3ab8b8a256a25b8a5a9f3e59df5c4467856338f118377e398ee32252f91",
-      "layout": "c677866c64029fe9c52e5b6e83dbc73ba8ce34a153c23c7ea730a89151ddda51"
+      "wm": "7ef4e9a8f4197aeedd64f5d0f2e9ffd4d4e6b7d2e12cdcde7d1e9f02b29b5a63",
+      "rules": "e4bb2b163092b71fb6abc84cdfd6ecbdff41a032f9f6ef1ab178d8ddb5d818f0",
+      "layout": "350b59859acdf1bebbdd316bd44fd7598659456f86031be51163dd50dcfd806d"
+    },
+    "collection_preconditions_v2": {
+      "version": 2,
+      "sources": {
+        "wm": {
+          "path": "/tmp/pearl-dev-rqff014d/config/aqueous/wm.toml",
+          "exists": true,
+          "digest": "10a643c4b84f06ffe3765cb052f94ca5b270a18ee03a14d6abd2fc83602cf733"
+        },
+        "rules": {
+          "path": "/tmp/pearl-dev-rqff014d/config/aqueous/rules.toml",
+          "exists": false,
+          "digest": "286e723fbd5fc42c8a3d3765da8619eff2847249e46f4dccae49d4506eee9f23"
+        },
+        "layout": {
+          "path": "/tmp/pearl-dev-rqff014d/config/aqueous/layout.toml",
+          "exists": true,
+          "digest": "b87d81afe42c3bf656032e62cf632667c5e60770aaf08f0b2bde6d1a7f31d5d5"
+        }
+      }
     },
     "collection_schema": {
       "version": 1,
@@ -8806,37 +8858,37 @@
     "stacking_alias_count": 0,
     "files": {
       "wm": {
-        "path": "/tmp/pearl-dev-sz2j9uvj/config/aqueous/wm.toml",
+        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/wm.toml",
         "writable": true,
         "exists": true,
         "size": 160
       },
       "layout": {
-        "path": "/tmp/pearl-dev-sz2j9uvj/config/aqueous/layout.toml",
+        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/layout.toml",
         "writable": true,
         "exists": true,
         "size": 24
       },
       "input": {
-        "path": "/tmp/pearl-dev-sz2j9uvj/config/aqueous/input.toml",
+        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/input.toml",
         "writable": true,
         "exists": false,
         "size": 0
       },
       "outputs": {
-        "path": "/tmp/pearl-dev-sz2j9uvj/config/aqueous/outputs.toml",
+        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/outputs.toml",
         "writable": true,
         "exists": false,
         "size": 0
       },
       "rules": {
-        "path": "/tmp/pearl-dev-sz2j9uvj/config/aqueous/rules.toml",
+        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/rules.toml",
         "writable": true,
         "exists": false,
         "size": 0
       },
       "appearance": {
-        "path": "/tmp/pearl-dev-sz2j9uvj/config/aqueous/appearance.toml",
+        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/appearance.toml",
         "writable": true,
         "exists": false,
         "size": 0
@@ -20103,6 +20155,6 @@
     }
   },
   "failure": null,
-  "operation_id": "1789390932-0123456789abcdef0123456789abcdef",
+  "operation_id": "1789440581-0123456789abcdef0123456789abcdef",
   "receipt": "complete"
 }

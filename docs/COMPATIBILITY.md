@@ -1,20 +1,32 @@
 # Pearl compatibility record
 
-The current `1.0.0-rc.2` candidate pins Zig **0.16.0**, Aqueous master
-`1d038dc3bafa0044d9599f8f51f84105a6a85bb3` and aqueous-config **0.8.0**.
-Matching compositor/helper/aqueousctl and patched wlroots hashes are recorded in
-[release metadata](../packaging/release.json). Both headless/pixman and native
-Vulkan blur tests use this matching compositor. Current evidence is separate in
-`artifacts/aqueous-master`; `artifacts/t16` remains the previous candidate.
+The current integration pins Zig **0.16.0**, Aqueous
+`b3d486920c42e24d45bed0a79e68915fe11c4815` and aqueous-config **0.8.2**.
+Matching compositor/helper/aqueousctl and freshly patched wlroots hashes are in
+[release metadata](../packaging/release.json) and the private build metadata
+under `.cache/aqueous-082`. [New evidence](../artifacts/aqueous-082/README.md)
+is separate from the previous `artifacts/aqueous-master` acceptance bundle.
 
-Modern writes require negotiated structured results, receipts, candidate impact
-and recoverable commits. Display writes additionally require model v2, observation
-v1 and preview-commit v1; missing capabilities leave inspection available and
-writes unavailable. No legacy display guardian runs. Native image-copy sources
-require usable per-frame color metadata before exporting SDR PNG. See
-[settings](AQUEOUS_SETTINGS.md), [coverage](AQUEOUS_CAPABILITY_COVERAGE.md) and
-[upstream dependencies](AQUEOUS_MASTER_DEPENDENCIES.md) for exact gates. The helper
-can be built without the retired GUI, but upstream packaging is still DMS-coupled.
+Modern writes negotiate structured results, receipts, impact and recoverable commits.
+Collection-only edits additionally use `protected_collection_apply_v1` and
+`collection_preconditions_v2`; display declaration editing uses
+`display_declaration_mutations_v1`. Display saves require native preview support.
+Missing optional capabilities disable dependent operations without removing other
+settings. Production physical previews, HDR and VRR remain capability-gated.
+
+Aqueous now packages compositor, aqueousctl, aqueous-config and patched wlroots
+in its core component; session and shell integrations are separate. Pearl always
+selects `--shell none`. Use the matching installation's bin directory in the
+session PATH. `pearlctl aqueous status` identifies the resolved helper path and
+capabilities; `--text helper_version` identifies its version. Pearl retains the
+selected helper for its process lifetime, so restart Pearl after changing session
+PATH. Missing capabilities report an upgrade requirement; selecting a helper
+from a different installation cannot bypass native session/generation checks.
+Private tests verify binary and library hashes and explicitly select the matching library.
+
+Native isolated-window capture now exports described SDR scene destinations.
+Unsupported encodings still withhold PNG export. See [settings](AQUEOUS_SETTINGS.md),
+[coverage](AQUEOUS_CAPABILITY_COVERAGE.md) and [remaining upstream restrictions](AQUEOUS_MASTER_DEPENDENCIES.md).
 
 The observations below are historical; they do not describe the new binaries.
 

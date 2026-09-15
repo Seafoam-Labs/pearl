@@ -313,6 +313,12 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| aqueous_settings.addArgs(args);
     b.step("test-aqueous-settings", "Verify matching-master settings, receipts and native display leases").dependOn(&aqueous_settings.step);
     b.step("test-aqueous-master", "Verify pinned Aqueous master transactions").dependOn(&aqueous_settings.step);
+    const preview_lifecycle = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_preview.py", "--pearl" });
+    preview_lifecycle.addArtifactArg(app);
+    preview_lifecycle.addArg("--ctl");
+    preview_lifecycle.addArtifactArg(ctl);
+    if (b.args) |args| preview_lifecycle.addArgs(args);
+    b.step("test-aqueous-preview", "Verify presentation, session suspension and durable preview recovery").dependOn(&preview_lifecycle.step);
     const master_ui = b.addSystemCommand(&.{ "python3", "tests/integration/test_master_ui.py", "--pearl" });
     master_ui.addArtifactArg(app);
     master_ui.addArg("--keyboard-pearl");

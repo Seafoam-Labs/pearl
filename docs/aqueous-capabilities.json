@@ -1,8 +1,8 @@
 {
-  "revision": "1d038dc3bafa0044d9599f8f51f84105a6a85bb3",
-  "helper": "0.8.0",
+  "revision": "b3d486920c42e24d45bed0a79e68915fe11c4815",
+  "helper": "0.8.2",
   "inventory_complete": true,
-  "acceptance_evidence": "artifacts/aqueous-master/gate.json",
+  "acceptance_evidence": "artifacts/aqueous-082/README.md",
   "rows": [
     {
       "kind": "helper-capability",
@@ -108,9 +108,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Aqueous settings / pearlctl aqueous",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "helper keybinds",
-      "note": "Forms and validation implemented; unknown candidate effects block persistence. See AQUEOUS_MASTER_DEPENDENCIES.md."
+      "note": "Canonical protected collection transactions; touched-source preconditions and reviewed candidate digest."
     },
     {
       "kind": "helper-capability",
@@ -120,9 +120,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Aqueous settings / pearlctl aqueous",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "helper window_rules",
-      "note": "Forms and validation implemented; unknown candidate effects block persistence. See AQUEOUS_MASTER_DEPENDENCIES.md."
+      "note": "Canonical protected collection transactions; touched-source preconditions and reviewed candidate digest."
     },
     {
       "kind": "helper-capability",
@@ -240,9 +240,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Aqueous settings / pearlctl aqueous",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "helper collection_identity_v1",
-      "note": "Forms and validation implemented; unknown candidate effects block persistence. See AQUEOUS_MASTER_DEPENDENCIES.md."
+      "note": "Canonical protected collection transactions; touched-source preconditions and reviewed candidate digest."
     },
     {
       "kind": "helper-capability",
@@ -324,9 +324,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Aqueous settings / pearlctl aqueous",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "helper collection_schema_v1",
-      "note": "Forms and validation implemented; unknown candidate effects block persistence. See AQUEOUS_MASTER_DEPENDENCIES.md."
+      "note": "Canonical protected collection transactions; touched-source preconditions and reviewed candidate digest."
     },
     {
       "kind": "helper-capability",
@@ -336,9 +336,45 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Aqueous settings / pearlctl aqueous",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "helper collection_preconditions_v1",
-      "note": "Forms and validation implemented; unknown candidate effects block persistence. See AQUEOUS_MASTER_DEPENDENCIES.md."
+      "note": "Canonical protected collection transactions; touched-source preconditions and reviewed candidate digest."
+    },
+    {
+      "kind": "helper-capability",
+      "name": "protected_collection_apply_v1",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Aqueous settings / pearlctl aqueous",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "helper protected_collection_apply_v1",
+      "note": "Negotiated helper contract; helper owns canonical configuration."
+    },
+    {
+      "kind": "helper-capability",
+      "name": "collection_preconditions_v2",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Aqueous settings / pearlctl aqueous",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "helper collection_preconditions_v2",
+      "note": "Negotiated helper contract; helper owns canonical configuration."
+    },
+    {
+      "kind": "helper-capability",
+      "name": "display_declaration_mutations_v1",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Aqueous settings / pearlctl aqueous",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "helper display_declaration_mutations_v1",
+      "note": "Negotiated helper contract; helper owns canonical configuration."
     },
     {
       "kind": "snapshot-model",
@@ -450,6 +486,30 @@
     },
     {
       "kind": "snapshot-model",
+      "name": "display_declaration_mutations",
+      "source": "settingsApplication/src/backend/operations.zig",
+      "consumer": "src/desktop/aqueous_displays.zig",
+      "owner": "src/desktop/aqueous_displays.zig",
+      "entry": "Displays and aqueous status --text display_declaration_mutations",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "schema_fields; helper protocol 1 optional snapshot field",
+      "note": "Bounded owning JSON document; unknown additions retained. CLI responses remain bounded."
+    },
+    {
+      "kind": "snapshot-model",
+      "name": "display_source_ids",
+      "source": "settingsApplication/src/backend/operations.zig",
+      "consumer": "src/desktop/aqueous_displays.zig",
+      "owner": "src/desktop/aqueous_displays.zig",
+      "entry": "Displays and aqueous status --text display_source_ids",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "schema_fields; helper protocol 1 optional snapshot field",
+      "note": "Bounded owning JSON document; unknown additions retained. CLI responses remain bounded."
+    },
+    {
+      "kind": "snapshot-model",
       "name": "collection_identity",
       "source": "settingsApplication/src/backend/operations.zig",
       "consumer": "src/config/aqueous_client.zig",
@@ -470,6 +530,18 @@
       "test": "tests/integration/test_aqueous_master.py",
       "status": "implemented",
       "required_capability": "collection_preconditions_v1",
+      "note": "Bounded owning JSON document; unknown additions retained. CLI responses remain bounded."
+    },
+    {
+      "kind": "snapshot-model",
+      "name": "collection_preconditions_v2",
+      "source": "settingsApplication/src/backend/operations.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "aqueous status --text collection_preconditions_v2",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "schema_fields; helper protocol 1 optional snapshot field",
       "note": "Bounded owning JSON document; unknown additions retained. CLI responses remain bounded."
     },
     {
@@ -3492,9 +3564,9 @@
       "owner": "src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig",
       "entry": "Rules / Keybindings / Layouts",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1 + candidate_impact_v1",
-      "note": "Form generates the canonical request; validation succeeds but unknown impact blocks save."
+      "note": "Canonical protected collection transaction; mixed candidates use fresh-generation apply."
     },
     {
       "kind": "collection-operation",
@@ -3504,9 +3576,9 @@
       "owner": "src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig",
       "entry": "Rules / Keybindings / Layouts",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1 + candidate_impact_v1",
-      "note": "Form generates the canonical request; validation succeeds but unknown impact blocks save."
+      "note": "Canonical protected collection transaction; mixed candidates use fresh-generation apply."
     },
     {
       "kind": "collection-operation",
@@ -3516,9 +3588,9 @@
       "owner": "src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig",
       "entry": "Rules / Keybindings / Layouts",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1 + candidate_impact_v1",
-      "note": "Form generates the canonical request; validation succeeds but unknown impact blocks save."
+      "note": "Canonical protected collection transaction; mixed candidates use fresh-generation apply."
     },
     {
       "kind": "collection-operation",
@@ -3528,9 +3600,9 @@
       "owner": "src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig",
       "entry": "Rules / Keybindings / Layouts",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1 + candidate_impact_v1",
-      "note": "Form generates the canonical request; validation succeeds but unknown impact blocks save."
+      "note": "Canonical protected collection transaction; mixed candidates use fresh-generation apply."
     },
     {
       "kind": "collection-field",
@@ -3540,9 +3612,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: app_id",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3552,9 +3624,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: class",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3564,9 +3636,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: title",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3576,9 +3648,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: content_type",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3588,9 +3660,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: layout",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3600,9 +3672,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: output",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3612,9 +3684,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: workspace",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "integer; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "integer; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3624,9 +3696,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: floating",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3636,9 +3708,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: fullscreen",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3648,9 +3720,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: ignore_struts",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3660,9 +3732,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: width",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "integer; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "integer; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3672,9 +3744,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: height",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "integer; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "integer; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3684,9 +3756,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: x",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "integer; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "integer; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3696,9 +3768,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: y",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "integer; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "integer; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3708,9 +3780,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: placement_policy",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3720,9 +3792,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: anchor",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3732,9 +3804,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: size",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3744,9 +3816,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: scale",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "number; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "number; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3756,9 +3828,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: blur",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3768,9 +3840,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: opacity",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "number; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "number; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3780,9 +3852,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: buffer_scale_policy",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3792,9 +3864,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: hdr_expand",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3804,9 +3876,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: overlay_plane",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3816,9 +3888,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: stack_layer",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3828,9 +3900,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: focus",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3840,9 +3912,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: fixed_position",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3852,9 +3924,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: skip_switcher",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3864,9 +3936,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: skip_taskbar",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3876,9 +3948,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: scrolling_full_width",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "boolean; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "boolean; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-field",
@@ -3888,9 +3960,9 @@
       "owner": "src/desktop/aqueous_collections.zig",
       "entry": "Rules: tag",
       "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
-      "note": "string; inheritance distinct from false/zero; helper classifier dependency."
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
       "kind": "collection-operation",
@@ -3900,9 +3972,9 @@
       "owner": "src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig",
       "entry": "Rules / Keybindings / Layouts",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1 + candidate_impact_v1",
-      "note": "Form generates the canonical request; validation succeeds but unknown impact blocks save."
+      "note": "Canonical protected collection transaction; mixed candidates use fresh-generation apply."
     },
     {
       "kind": "collection-operation",
@@ -3912,9 +3984,9 @@
       "owner": "src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig",
       "entry": "Rules / Keybindings / Layouts",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1 + candidate_impact_v1",
-      "note": "Form generates the canonical request; validation succeeds but unknown impact blocks save."
+      "note": "Canonical protected collection transaction; mixed candidates use fresh-generation apply."
     },
     {
       "kind": "collection-operation",
@@ -3924,9 +3996,9 @@
       "owner": "src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig",
       "entry": "Rules / Keybindings / Layouts",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1 + candidate_impact_v1",
-      "note": "Form generates the canonical request; validation succeeds but unknown impact blocks save."
+      "note": "Canonical protected collection transaction; mixed candidates use fresh-generation apply."
     },
     {
       "kind": "collection-operation",
@@ -3936,9 +4008,9 @@
       "owner": "src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig",
       "entry": "Rules / Keybindings / Layouts",
       "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1 + candidate_impact_v1",
-      "note": "Form generates the canonical request; validation succeeds but unknown impact blocks save."
+      "note": "Canonical protected collection transaction; mixed candidates use fresh-generation apply."
     },
     {
       "kind": "display-observation",
@@ -4836,9 +4908,9 @@
       "owner": "src/services/image_copy.zig",
       "entry": "Capture isolated window; capture windows/window CLI",
       "test": "tests/integration/test_capture_master.py",
-      "status": "upstream-gated",
+      "status": "implemented",
       "required_capability": "ext_foreign_toplevel_image_capture_source_manager_v1",
-      "note": "Registry version 1; source selected natively; PNG export requires described SDR. Scene metadata may be unavailable."
+      "note": "Registry version 1; source selected natively; PNG export requires described SDR. Supported scene destinations export SDR; unknown encodings remain unavailable."
     },
     {
       "kind": "wayland-global",
@@ -5287,122 +5359,578 @@
     {
       "kind": "display-control",
       "name": "enabled",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_displays.zig",
-      "owner": "src/desktop/aqueous_displays.zig",
-      "entry": "Displays: observation and reason; Advanced canonical raw editor",
-      "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "No structured helper mutation; no Pearl TOML serializer. Physical preview also gated."
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
     },
     {
       "kind": "display-control",
       "name": "primary",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_displays.zig",
-      "owner": "src/desktop/aqueous_displays.zig",
-      "entry": "Displays: observation and reason; Advanced canonical raw editor",
-      "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "No structured helper mutation; no Pearl TOML serializer. Physical preview also gated."
-    },
-    {
-      "kind": "display-control",
-      "name": "identity matching",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_displays.zig",
-      "owner": "src/desktop/aqueous_displays.zig",
-      "entry": "Displays: observation and reason; Advanced canonical raw editor",
-      "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "No structured helper mutation; no Pearl TOML serializer. Physical preview also gated."
-    },
-    {
-      "kind": "display-control",
-      "name": "profiles CRUD and membership",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_displays.zig",
-      "owner": "src/desktop/aqueous_displays.zig",
-      "entry": "Displays: observation and reason; Advanced canonical raw editor",
-      "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "No structured helper mutation; no Pearl TOML serializer. Physical preview also gated."
-    },
-    {
-      "kind": "display-control",
-      "name": "HDR / VRR / SDR white / auto HDR",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_displays.zig",
-      "owner": "src/desktop/aqueous_displays.zig",
-      "entry": "Displays: observation and reason; Advanced canonical raw editor",
-      "test": "tests/integration/test_aqueous_master.py",
-      "status": "upstream-gated",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "No structured helper mutation; no Pearl TOML serializer. Physical preview also gated."
-    },
-    {
-      "kind": "display-control",
-      "name": "position",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_settings.zig",
-      "owner": "src/desktop/aqueous_settings.zig",
-      "entry": "Displays: monitor form",
-      "test": "tests/integration/test_aqueous_master.py",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
       "status": "implemented",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "Native lease required; capability checked per output. Custom mode is tested by compositor."
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
     },
     {
       "kind": "display-control",
-      "name": "scale",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_settings.zig",
-      "owner": "src/desktop/aqueous_settings.zig",
-      "entry": "Displays: monitor form",
-      "test": "tests/integration/test_aqueous_master.py",
+      "name": "hdr",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
       "status": "implemented",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "Native lease required; capability checked per output. Custom mode is tested by compositor."
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
     },
     {
       "kind": "display-control",
-      "name": "transform",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_settings.zig",
-      "owner": "src/desktop/aqueous_settings.zig",
-      "entry": "Displays: monitor form",
-      "test": "tests/integration/test_aqueous_master.py",
+      "name": "auto_hdr",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
       "status": "implemented",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "Native lease required; capability checked per output. Custom mode is tested by compositor."
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
     },
     {
       "kind": "display-control",
-      "name": "mode",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_settings.zig",
-      "owner": "src/desktop/aqueous_settings.zig",
-      "entry": "Displays: monitor form",
-      "test": "tests/integration/test_aqueous_master.py",
+      "name": "adaptive_sync",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
       "status": "implemented",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "Native lease required; capability checked per output. Custom mode is tested by compositor."
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "apply_on_start",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "apply_on_reload",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "name",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "edid",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
     },
     {
       "kind": "display-control",
       "name": "mirror_of",
-      "source": "settingsApplication/src/backend/operations.zig:applyMonitorChanges",
-      "consumer": "src/desktop/aqueous_settings.zig",
-      "owner": "src/desktop/aqueous_settings.zig",
-      "entry": "Displays: monitor form",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "fallback_profile",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "identify_by",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "mode",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "scale",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "transform",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "position",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "hdr_level",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "sdr_white_level",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "auto_hdr_boost",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "rollback_seconds",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-operation",
+      "name": "output.add",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "output.update",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "output.delete",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "output.move",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "profile.add",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "profile.update",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "profile.delete",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "profile.move",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "policy.add",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "policy.update",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "policy.delete",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "member.add",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "member.update",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "member.delete",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "display-operation",
+      "name": "member.move",
+      "source": "settingsApplication/src/backend/display_mutations.zig",
+      "consumer": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "owner": "src/config/aqueous_display_mutations.zig; src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: Stage / Move / Delete declaration; parent / before / member disposition",
+      "test": "tests/integration/test_aqueous_master.py; upstream test-display-mutations.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1",
+      "note": "Opaque source-bound IDs; same-batch new references and explicit inheritance."
+    },
+    {
+      "kind": "transaction-model",
+      "name": "collection_preconditions_v2",
+      "source": "settingsApplication/src/backend/operations.zig",
+      "consumer": "src/config/aqueous_transactions.zig; src/config/aqueous_contract.zig",
+      "owner": "src/config/aqueous_transactions.zig; src/config/aqueous_contract.zig",
+      "entry": "Aqueous settings protected apply",
       "test": "tests/integration/test_aqueous_master.py",
       "status": "implemented",
-      "required_capability": "display_model_v2 + display_observation_v1 + display_preview_commit_v1",
-      "note": "Native lease required; capability checked per output. Custom mode is tested by compositor."
+      "required_capability": "named additive helper capability",
+      "note": "Canonical baseline and digest checked before apply."
+    },
+    {
+      "kind": "transaction-model",
+      "name": "collection_transaction",
+      "source": "settingsApplication/src/backend/operations.zig",
+      "consumer": "src/config/aqueous_transactions.zig; src/config/aqueous_contract.zig",
+      "owner": "src/config/aqueous_transactions.zig; src/config/aqueous_contract.zig",
+      "entry": "Aqueous settings protected apply",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "named additive helper capability",
+      "note": "Canonical baseline and digest checked before apply."
+    },
+    {
+      "kind": "transaction-model",
+      "name": "display_source_ids",
+      "source": "settingsApplication/src/backend/operations.zig",
+      "consumer": "src/config/aqueous_transactions.zig; src/config/aqueous_contract.zig",
+      "owner": "src/config/aqueous_transactions.zig; src/config/aqueous_contract.zig",
+      "entry": "Aqueous settings protected apply",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "named additive helper capability",
+      "note": "Canonical baseline and digest checked before apply."
+    },
+    {
+      "kind": "transaction-model",
+      "name": "display_declaration_mutations",
+      "source": "settingsApplication/src/backend/operations.zig",
+      "consumer": "src/config/aqueous_transactions.zig; src/config/aqueous_contract.zig",
+      "owner": "src/config/aqueous_transactions.zig; src/config/aqueous_contract.zig",
+      "entry": "Aqueous settings protected apply",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "named additive helper capability",
+      "note": "Canonical baseline and digest checked before apply."
+    },
+    {
+      "kind": "preview-state",
+      "name": "applying",
+      "source": "compositor/aqueous/DisplayPreview.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Displays status; aqueous status --text preview",
+      "test": "tests/integration/test_aqueous_preview.py; upstream native lease suite",
+      "status": "implemented",
+      "required_capability": "display_preview_commit_v1",
+      "note": "Pending rollback remains pending; durable token and receipts reconcile restart."
+    },
+    {
+      "kind": "preview-state",
+      "name": "previewing",
+      "source": "compositor/aqueous/DisplayPreview.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Displays status; aqueous status --text preview",
+      "test": "tests/integration/test_aqueous_preview.py; upstream native lease suite",
+      "status": "implemented",
+      "required_capability": "display_preview_commit_v1",
+      "note": "Pending rollback remains pending; durable token and receipts reconcile restart."
+    },
+    {
+      "kind": "preview-state",
+      "name": "reverting",
+      "source": "compositor/aqueous/DisplayPreview.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Displays status; aqueous status --text preview",
+      "test": "tests/integration/test_aqueous_preview.py; upstream native lease suite",
+      "status": "implemented",
+      "required_capability": "display_preview_commit_v1",
+      "note": "Pending rollback remains pending; durable token and receipts reconcile restart."
+    },
+    {
+      "kind": "preview-state",
+      "name": "waiting_session",
+      "source": "compositor/aqueous/DisplayPreview.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Displays status; aqueous status --text preview",
+      "test": "tests/integration/test_aqueous_preview.py; upstream native lease suite",
+      "status": "implemented",
+      "required_capability": "display_preview_commit_v1",
+      "note": "Pending rollback remains pending; durable token and receipts reconcile restart."
+    },
+    {
+      "kind": "preview-state",
+      "name": "commit_authorized",
+      "source": "compositor/aqueous/DisplayPreview.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Displays status; aqueous status --text preview",
+      "test": "tests/integration/test_aqueous_preview.py; upstream native lease suite",
+      "status": "implemented",
+      "required_capability": "display_preview_commit_v1",
+      "note": "Pending rollback remains pending; durable token and receipts reconcile restart."
+    },
+    {
+      "kind": "preview-state",
+      "name": "reverted",
+      "source": "compositor/aqueous/DisplayPreview.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Displays status; aqueous status --text preview",
+      "test": "tests/integration/test_aqueous_preview.py; upstream native lease suite",
+      "status": "implemented",
+      "required_capability": "display_preview_commit_v1",
+      "note": "Pending rollback remains pending; durable token and receipts reconcile restart."
+    },
+    {
+      "kind": "preview-state",
+      "name": "invalidated",
+      "source": "compositor/aqueous/DisplayPreview.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Displays status; aqueous status --text preview",
+      "test": "tests/integration/test_aqueous_preview.py; upstream native lease suite",
+      "status": "implemented",
+      "required_capability": "display_preview_commit_v1",
+      "note": "Pending rollback remains pending; durable token and receipts reconcile restart."
+    },
+    {
+      "kind": "preview-state",
+      "name": "failed",
+      "source": "compositor/aqueous/DisplayPreview.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Displays status; aqueous status --text preview",
+      "test": "tests/integration/test_aqueous_preview.py; upstream native lease suite",
+      "status": "implemented",
+      "required_capability": "display_preview_commit_v1",
+      "note": "Pending rollback remains pending; durable token and receipts reconcile restart."
+    },
+    {
+      "kind": "preview-state",
+      "name": "kept",
+      "source": "compositor/aqueous/DisplayPreview.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Displays status; aqueous status --text preview",
+      "test": "tests/integration/test_aqueous_preview.py; upstream native lease suite",
+      "status": "implemented",
+      "required_capability": "display_preview_commit_v1",
+      "note": "Pending rollback remains pending; durable token and receipts reconcile restart."
     }
   ]
 }

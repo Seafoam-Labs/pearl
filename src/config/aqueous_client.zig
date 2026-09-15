@@ -5,6 +5,7 @@ const glib = @import("glib2");
 const object = @import("gobject2");
 pub const model = @import("aqueous_model.zig");
 const contract = @import("aqueous_contract.zig");
+const transactions = @import("aqueous_transactions.zig");
 const operations = @import("aqueous_operations.zig");
 const display_ipc = @import("aqueous_display_ipc.zig");
 const process = @import("helper_process.zig");
@@ -42,6 +43,8 @@ const Job = struct {
     operation_resolved: bool = false,
     route: contract.Route = .unknown,
     report: ?[]const u8 = null,
+    preview_report: ?[]const u8 = null,
+    reviewed_digest: ?[]const u8 = null,
     review: ?[]const u8 = null,
     operation_id: []const u8 = "",
     saved: bool = false,
@@ -90,7 +93,10 @@ pub const Client = struct {
     display_state: contract.Display = .not_requested,
     impact_route: contract.Route = .unknown,
     report: ?[]u8 = null,
+    preview_report: ?[]u8 = null,
     review: ?[]u8 = null,
+    review_revision: ?u64 = null,
+    review_version: u64 = 0,
     operation_id: [64:0]u8 = @splat(0),
     recording: bool = false,
     poll: c_uint = 0,
@@ -112,13 +118,23 @@ pub const Client = struct {
     pub fn previewing(self: *const Client) bool {
         return if (self.job) |j| j.phase.load(.acquire) == 1 else false;
     }
+    pub fn previewPhase(self: *const Client) u8 {
+        return if (self.job) |j| j.phase.load(.acquire) else 0;
+    }
+    pub fn canRevalidate(self: *const Client) bool {
+        if (!self.conflict()) return true;
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const req = model.parse(arena.allocator(), self.draft orelse "{}", model.max_request) catch return false;
+        return transactions.collectionOnly(req) and contract.Capabilities.read(self.value()).protected_collections;
+    }
     pub fn remaining(self: *const Client) u32 {
         const j = self.job orelse return 0;
         return @intCast(@max(0, @divTrunc(j.expires.load(.acquire) - glib.getMonotonicTime() + 999999, 1000000)));
     }
     pub fn choose(self: *Client, keep: bool) !void {
         const j = self.job orelse return error.NoPreview;
-        if (!self.previewing() or (keep and self.remaining() == 0) or j.revision != self.revision or !self.can_reload(self.context)) {
+        if ((keep and (!self.previewing() or self.remaining() == 0 or !self.can_reload(self.context))) or j.phase.load(.acquire) == 0 or j.revision != self.revision) {
             j.choice.store(2, .release);
             return error.StalePreview;
         }
@@ -136,9 +152,11 @@ pub const Client = struct {
     fn free(self: *Client) void {
         self.discard();
         if (self.report) |v| a.free(v);
+        if (self.preview_report) |v| a.free(v);
         if (self.review) |v| a.free(v);
         self.report = null;
         self.review = null;
+        self.preview_report = null;
         if (self.live) |v| v.destroy();
         self.live = null;
         if (self.helper) |v| a.free(v);
@@ -215,7 +233,12 @@ pub const Client = struct {
         if (op != .refresh and self.draft == null) return error.NoDraft;
         if (op == .apply and !self.can_reload(self.context)) return error.ReloadUnavailable;
         if (op == .apply and self.unresolved) return error.SaveUncertain;
-        if (op != .refresh and self.conflict()) return error.StaleDraft;
+        if (op != .refresh and self.conflict()) {
+            var scratch = std.heap.ArenaAllocator.init(a);
+            defer scratch.deinit();
+            const req = try model.parse(scratch.allocator(), self.draft.?, model.max_request);
+            if (!transactions.collectionOnly(req) or !contract.Capabilities.read(self.value()).protected_collections) return error.StaleDraft;
+        }
         if (self.helper == null) {
             const found = glib.findProgramInPath("aqueous-config") orelse return error.HelperUnavailable;
             defer glib.free(found);
@@ -229,6 +252,10 @@ pub const Client = struct {
         if (op != .refresh) {
             j.draft = try alloc.dupe(u8, self.draft.?);
             j.base = try model.parse(alloc, try std.json.Stringify.valueAlloc(alloc, self.baseValue(), .{}), model.max_response);
+            if (self.review_revision == self.revision and self.review != null) {
+                const prior = try model.parse(alloc, self.review.?, model.max_response);
+                j.reviewed_digest = try alloc.dupe(u8, try contract.hex(prior, "candidate_digest", 64));
+            }
         }
         self.job = j;
         self.err = null;
@@ -245,7 +272,7 @@ pub const Client = struct {
     }
     fn pollPreview(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Client = @ptrCast(@alignCast(data.?));
-        if (self.previewing()) {
+        if (self.job != null and self.job.?.phase.load(.acquire) != 0) {
             if (!self.can_reload(self.context)) self.job.?.choice.store(2, .release);
             self.changed(self.context);
         }
@@ -338,6 +365,86 @@ pub const Client = struct {
         j.operation_id = id;
         try acceptResult(j, store, pending, try structured(j, id, null));
     }
+    fn awaitPreview(j: *Job, store: operations.Store, client: *display_ipc.Client, token: []const u8, interactive: bool) !bool {
+        const expected = (try store.preview()) orelse return error.InvalidPreviewRecord;
+        const deadline = glib.getMonotonicTime() + 35000000;
+        var reverted = false;
+        while (true) {
+            if (j.cancel.isCancelled() != 0) return error.Cancelled;
+            var scratch = std.heap.ArenaAllocator.init(a);
+            defer scratch.deinit();
+            const status_ = try client.call(scratch.allocator(), "display.preview.status", .{ .token = token });
+            if (!std.mem.eql(u8, try contract.hex(status_, "session", 32), &client.session) or
+                !std.mem.eql(u8, try contract.hex(status_, "token", 64), token) or
+                !model.equal(model.get(status_, "candidate_digest"), model.get(expected, "candidate_digest"))) return error.InvalidNativeReply;
+            _ = try contract.boolean(status_, "rollback_partial");
+            const affected = model.get(status_, "affected_outputs");
+            if (affected != .array or affected.array.items.len > 128) return error.InvalidContract;
+            for (affected.array.items) |output| {
+                _ = try contract.boolean(output, "restored");
+                if (model.get(output, "hardware_matches") != .null) _ = try contract.boolean(output, "hardware_matches");
+                if (model.get(output, "presented") != .null) _ = try contract.boolean(output, "presented");
+            }
+            const state = try contract.text(status_, "state", 64);
+            const actions = model.get(status_, "supported_actions");
+            const can_revert = try contract.boolean(actions, "revert");
+            const can_commit = try contract.boolean(actions, "commit");
+            if (j.preview_report) |old| j.arena.allocator().free(old);
+            j.preview_report = try std.json.Stringify.valueAlloc(j.arena.allocator(), status_, .{});
+            if (std.mem.eql(u8, state, "reverted") or std.mem.eql(u8, state, "invalidated") or std.mem.eql(u8, state, "failed") or std.mem.eql(u8, state, "kept")) {
+                j.phase.store(0, .release);
+                j.detail = try j.arena.allocator().dupe(u8, model.str(model.get(status_, "reason")));
+                try store.previewResolved();
+                j.uncertain = false;
+                j.operation_resolved = true;
+                if (std.mem.eql(u8, state, "failed")) return error.DisplayRollbackFailed;
+                j.invalidated = !std.mem.eql(u8, state, "reverted") or model.equal(model.get(status_, "rollback_partial"), .{ .bool = true });
+                j.reverted = true;
+                return false;
+            }
+            if (std.mem.eql(u8, state, "previewing")) {
+                const ms = model.get(status_, "remaining_ms");
+                if (ms != .integer or ms.integer < 0 or ms.integer > 15000) return error.InvalidContract;
+                j.expires.store(glib.getMonotonicTime() + ms.integer * 1000, .release);
+                j.phase.store(if (interactive and can_commit and !reverted) 1 else 4, .release);
+                if (interactive and can_commit and !reverted and j.choice.load(.acquire) == 1 and ms.integer > 0) return true;
+            } else if (std.mem.eql(u8, state, "waiting_session")) j.phase.store(5, .release) else if (std.mem.eql(u8, state, "reverting")) j.phase.store(4, .release) else if (std.mem.eql(u8, state, "applying")) j.phase.store(3, .release) else if (std.mem.eql(u8, state, "commit_authorized")) j.phase.store(2, .release) else return error.InvalidContract;
+            if ((!interactive or j.choice.load(.acquire) == 2) and !reverted and can_revert) {
+                _ = try client.call(scratch.allocator(), "display.preview.revert", .{ .token = token });
+                reverted = true;
+                j.phase.store(4, .release);
+            }
+            if (glib.getMonotonicTime() >= deadline) return error.DisplayRollbackPending;
+            glib.usleep(100000);
+        }
+    }
+    fn recoverPreview(j: *Job, store: operations.Store, pending: model.Value) !void {
+        j.uncertain = true;
+        var client = try display_ipc.Client.open(j.arena.allocator(), j.cancel);
+        defer client.close();
+        if (!std.mem.eql(u8, &client.session, model.str(model.get(pending, "session")))) {
+            try store.previewResolved();
+            j.uncertain = false;
+            j.operation_resolved = true;
+            j.reverted = true;
+            j.invalidated = true;
+            j.detail = "The compositor session changed; the old preview is invalidated.";
+            return;
+        }
+        if (model.get(pending, "token") == .null) return error.DisplayPreviewBeginUncertain;
+        _ = try awaitPreview(j, store, &client, model.str(model.get(pending, "token")), false);
+    }
+    fn finishOperationPreview(j: *Job, store: operations.Store) !void {
+        if (try store.preview()) |pending| {
+            if (j.result) |result| {
+                if (result.display == .kept or result.display == .reverted or result.display == .invalidated) {
+                    try store.previewResolved();
+                    return;
+                }
+            }
+            try recoverPreview(j, store, pending);
+        }
+    }
     fn perform(j: *Job) !void {
         const alloc = j.arena.allocator();
         const version = try model.parse(alloc, try call(j, "version", null), model.max_response);
@@ -350,8 +457,17 @@ pub const Client = struct {
             return error.InvalidOperationRecord;
         }) |pending| {
             try recover(j, store, pending);
+            if (j.operation_resolved) try finishOperationPreview(j, store);
             // Recovery never replays the requested action or its side effects.
             if (j.response == null) j.response = try Document.create(try call(j, "snapshot", null));
+            return;
+        }
+        if (store.preview() catch {
+            j.uncertain = true;
+            return error.InvalidPreviewRecord;
+        }) |pending| {
+            try recoverPreview(j, store, pending);
+            j.response = try Document.create(try call(j, "snapshot", null));
             return;
         }
         if (j.op == .refresh) {
@@ -360,14 +476,18 @@ pub const Client = struct {
         }
         if (!caps.apply) return error.HelperUpgradeRequired;
         var req = try model.request(alloc, j.base, j.draft.?, j.owner.backups.?);
+        if (model.get(req, "display_declaration_changes") != .null and !caps.display_mutations) return error.DisplayMutationCapabilityUnavailable;
+        const collection_only = try transactions.prepare(alloc, j.base, &req, caps);
         const candidate = try Document.create(try call(j, "validate", try std.json.Stringify.valueAlloc(alloc, req, .{})));
         defer candidate.destroy();
-        const impact = try contract.Impact.read(candidate.value, model.str(model.get(j.base, "generation")));
+        const baseline = if (collection_only) try transactions.reviewed(alloc, &req, candidate.value) else model.str(model.get(j.base, "generation"));
+        const impact = try contract.Impact.read(candidate.value, baseline);
         j.route = impact.route;
         j.review = try std.json.Stringify.valueAlloc(alloc, model.get(candidate.value, "candidate_impact"), .{});
         if (j.op == .validate) return;
+        if (j.reviewed_digest) |digest| if (!std.mem.eql(u8, digest, impact.digest)) return error.CandidateReviewChanged;
         if (impact.route == .unknown) {
-            j.detail = impact.reason;
+            j.detail = try alloc.dupe(u8, impact.reason);
             return error.UnclassifiedCandidate;
         }
         var native: ?display_ipc.Client = null;
@@ -377,6 +497,8 @@ pub const Client = struct {
             native = try display_ipc.Client.open(alloc, j.cancel);
             const client = &native.?;
             if (!std.mem.eql(u8, &client.session, model.str(model.get(impact.projection, "session")))) return error.DisplaySessionChanged;
+            try store.previewBegin(&client.session, impact.digest, null);
+            j.uncertain = true;
             const lease = client.call(alloc, "display.preview.begin", .{
                 .display_revision = model.get(impact.projection, "display_revision"),
                 .candidate_digest = impact.digest,
@@ -385,36 +507,15 @@ pub const Client = struct {
                 .outputs_source = model.get(model.get(candidate.value, "raw_files"), "outputs"),
             }) catch |err| {
                 j.detail = try alloc.dupe(u8, std.mem.sliceTo(&client.detail, 0));
+                if (err == error.NativeRejected) {
+                    try store.previewResolved();
+                    j.uncertain = false;
+                }
                 return err;
             };
             const token = try contract.hex(lease, "token", 64);
-            const deadline = glib.getMonotonicTime() + 25000000;
-            while (true) {
-                if (j.cancel.isCancelled() != 0) return error.Cancelled;
-                var scratch = std.heap.ArenaAllocator.init(a);
-                defer scratch.deinit();
-                const status_ = try client.call(scratch.allocator(), "display.preview.status", .{ .token = token });
-                const state = try contract.text(status_, "state", 64);
-                if (std.mem.eql(u8, state, "previewing")) {
-                    const ms = model.get(status_, "remaining_ms");
-                    if (ms != .integer or ms.integer < 0 or ms.integer > 15000) return error.InvalidContract;
-                    j.expires.store(glib.getMonotonicTime() + ms.integer * 1000, .release);
-                    j.phase.store(1, .release);
-                    if (j.choice.load(.acquire) == 1 and ms.integer > 0) break;
-                } else if (!std.mem.eql(u8, state, "applying")) {
-                    j.reverted = true;
-                    j.invalidated = std.mem.eql(u8, state, "invalidated");
-                    j.detail = try alloc.dupe(u8, state);
-                    if (!std.mem.eql(u8, state, "reverted") and !j.invalidated) return error.DisplayPreviewFailed;
-                    return;
-                }
-                if (j.choice.load(.acquire) == 2 or glib.getMonotonicTime() >= deadline) {
-                    _ = try client.call(scratch.allocator(), "display.preview.revert", .{ .token = token });
-                    j.reverted = true;
-                    return;
-                }
-                glib.usleep(100000);
-            }
+            try store.previewBegin(&client.session, impact.digest, token);
+            if (!try awaitPreview(j, store, client, token, true)) return;
             j.phase.store(2, .release);
             try req.object.put(alloc, "preview_token", .{ .string = token });
         }
@@ -429,9 +530,11 @@ pub const Client = struct {
         const pending = (try store.pending()).?;
         const result = structured(j, id, encoded) catch {
             try recover(j, store, pending);
+            if (j.operation_resolved) try finishOperationPreview(j, store);
             return;
         };
         try acceptResult(j, store, pending, result);
+        if (j.operation_resolved) try finishOperationPreview(j, store);
     }
     fn work(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
         const j: *Job = @ptrCast(@alignCast(data.?));
@@ -464,7 +567,13 @@ pub const Client = struct {
             if (self.report) |old| a.free(old);
             self.report = a.dupe(u8, v) catch null;
         }
+        if (j.preview_report) |v| {
+            if (self.preview_report) |old| a.free(old);
+            self.preview_report = a.dupe(u8, v) catch null;
+        }
         if (j.review) |v| {
+            self.review_revision = j.revision;
+            self.review_version +%= 1;
             if (self.review) |old| a.free(old);
             self.review = a.dupe(u8, v) catch null;
         }
@@ -529,6 +638,7 @@ pub const Client = struct {
     pub fn status(self: *const Client, alloc: std.mem.Allocator, query: ?[]const u8) ![]u8 {
         const v = self.value();
         const result = if (query) |id| blk: {
+            if (std.mem.eql(u8, id, "preview")) break :blk try model.parse(alloc, self.preview_report orelse "null", model.max_response);
             if (std.mem.eql(u8, id, "operation")) break :blk try model.parse(alloc, self.report orelse "null", model.max_response);
             if (std.mem.eql(u8, id, "review")) break :blk try model.parse(alloc, self.review orelse "null", model.max_response);
             if (std.mem.eql(u8, id, "draft")) break :blk try model.parse(alloc, self.draft orelse "null", model.max_request);
@@ -551,6 +661,14 @@ pub const Client = struct {
             .value = result,
             .recording = self.recording,
             .display_preview = if (self.previewing()) "pending" else "idle",
+            .preview_state = if (self.job) |j| switch (j.phase.load(.acquire)) {
+                1 => "previewing",
+                2 => "committing",
+                3 => "applying",
+                4 => "reverting",
+                5 => "waiting_session",
+                else => "idle",
+            } else if (self.unresolved) "unresolved" else "idle",
             .preview_seconds = self.remaining(),
             .helper = self.helper,
             .capabilities = contract.Capabilities.read(v),

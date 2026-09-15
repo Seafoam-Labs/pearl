@@ -22,7 +22,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     report = dict(status='running', cases=[])
     try:
-        with PrivateSession(args.output / 'session', tool_prefix=ROOT / '.cache/aqueous-master') as s:
+        with PrivateSession(args.output / 'session', tool_prefix=ROOT / '.cache/aqueous-082') as s:
             s.args = SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
             T00Session.input_fixture(s)
             app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings')

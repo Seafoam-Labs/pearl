@@ -6,7 +6,9 @@ This is a release candidate: physical, actual login-session, screen-reader and
 visual/presentation signoffs remain required. The project also needs its owner's
 license selection; `LicenseRef-Pearl-Unlicensed` records the current absence of a
 project grant. It is not an open-source license. Do not publish this candidate as
-an accepted 1.0 release. See `artifacts/aqueous-master/gate.json` for the current machine gate.
+an accepted 1.0 release. The previous candidate gate is `artifacts/aqueous-master/gate.json`. The 0.8.2
+integration has separate [automated evidence](../artifacts/aqueous-082/README.md);
+that evidence does not grant public release acceptance.
 
 ## Build and package
 

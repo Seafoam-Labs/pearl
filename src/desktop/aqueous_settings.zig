@@ -41,6 +41,7 @@ pub const View = struct {
     forms_stale: bool = false,
     version: u64 = 0,
     revision: u64 = 0,
+    review_version: u64 = 0,
     buttons: [3]*gtk.Button,
     preview_buttons: [2]*gtk.Button,
     window: *gtk.Window,
@@ -147,6 +148,7 @@ pub const View = struct {
         self.raw_file = null;
         self.version = self.client.version;
         self.revision = self.client.revision;
+        self.review_version = self.client.review_version;
         if (self.client.live == null) return;
         const alloc = self.arena.allocator();
         // UI metadata must not borrow a snapshot replaced by a background refresh.
@@ -170,14 +172,16 @@ pub const View = struct {
                 try @import("aqueous_displays.zig").render(self, box, snapshot);
                 try self.inventory(box, snapshot, "monitors", "Configured displays (including offline outputs)");
                 try self.inventory(box, snapshot, "live_outputs", "Connected displays and modes");
-                for (m.list(m.get(snapshot, "monitors"))) |monitor| try self.monitorEditor(box, monitor, false);
-                for (m.list(m.get(snapshot, "live_outputs"))) |monitor| {
-                    var configured = false;
-                    for (m.list(m.get(snapshot, "monitors"))) |existing| if (std.mem.eql(u8, m.str(m.get(existing, "name")), m.str(m.get(monitor, "name")))) {
-                        configured = true;
-                        break;
-                    };
-                    if (!configured) try self.monitorEditor(box, monitor, true);
+                if (!@import("../config/aqueous_contract.zig").Capabilities.read(snapshot).display_mutations) {
+                    for (m.list(m.get(snapshot, "monitors"))) |monitor| try self.monitorEditor(box, monitor, false);
+                    for (m.list(m.get(snapshot, "live_outputs"))) |monitor| {
+                        var configured = false;
+                        for (m.list(m.get(snapshot, "monitors"))) |existing| if (std.mem.eql(u8, m.str(m.get(existing, "name")), m.str(m.get(monitor, "name")))) {
+                            configured = true;
+                            break;
+                        };
+                        if (!configured) try self.monitorEditor(box, monitor, true);
+                    }
                 }
             }
             if (std.mem.eql(u8, category, "keybinds")) {
@@ -259,6 +263,10 @@ pub const View = struct {
             }
         }
         const advanced = self.page(notebook, "Advanced");
+        if (self.client.preview_report) |report| {
+            const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .preview = try m.parse(alloc, report, m.max_response) }, .{});
+            try self.inventory(advanced, try m.parse(alloc, wrapper, m.max_response), "preview", "Latest native preview and rollback status");
+        }
         if (self.client.report) |report| {
             const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .operation = try m.parse(alloc, report, m.max_response) }, .{});
             try self.inventory(advanced, try m.parse(alloc, wrapper, m.max_response), "operation", "Latest operation receipt and recovery details");
@@ -406,19 +414,26 @@ pub const View = struct {
         self.message.setText(self.z(@errorName(err)));
     }
     pub fn update(self: *View) void {
-        if (self.revision != self.client.revision or (self.version != self.client.version and (self.client.draft == null or self.request_buffer == null))) self.build() catch |err| self.fail(err);
+        if (self.review_version != self.client.review_version or self.revision != self.client.revision or (self.version != self.client.version and (self.client.draft == null or self.request_buffer == null))) self.build() catch |err| self.fail(err);
         const c = self.client;
         self.reload_button.as(gtk.Widget).setVisible(@intFromBool(c.reload_state == .failed or c.reload_state == .unknown or c.reload_state == .unavailable));
         self.reload_button.as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.reload_ticket == null and !c.unresolved));
-        for (self.preview_buttons) |button| button.as(gtk.Widget).setVisible(@intFromBool(c.previewing()));
+        self.preview_buttons[0].as(gtk.Widget).setVisible(@intFromBool(c.previewing()));
+        self.preview_buttons[1].as(gtk.Widget).setVisible(@intFromBool(c.previewPhase() != 0 and c.previewPhase() != 2));
         for ([_]*gtk.Button{ self.reload_button, self.preview_buttons[0], self.preview_buttons[1] }) |button| button.as(gtk.Widget).getParent().?.setVisible(button.as(gtk.Widget).getVisible());
         self.preview_buttons[0].as(gtk.Widget).setSensitive(@intFromBool(c.remaining() > 0));
-        self.content.as(gtk.Widget).setSensitive(@intFromBool(!c.previewing()));
+        self.content.as(gtk.Widget).setSensitive(@intFromBool(c.previewPhase() == 0));
         for (self.buttons) |b| b.as(gtk.Widget).setSensitive(@intFromBool(c.job == null));
-        self.buttons[2].as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.draft != null and !c.conflict() and !c.unresolved and @import("../config/aqueous_contract.zig").Capabilities.read(c.value()).apply));
+        self.buttons[2].as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.draft != null and c.canRevalidate() and !c.unresolved and @import("../config/aqueous_contract.zig").Capabilities.read(c.value()).apply));
         var buffer: [1000]u8 = undefined;
         var countdown: [100]u8 = undefined;
-        const outcome = if (c.previewing()) std.fmt.bufPrint(&countdown, "Keep these displays? Reverting in {d}s.", .{c.remaining()}) catch "Display preview" else if (c.job != null) "Preparing settings…" else switch (c.outcome) {
+        const outcome = if (c.previewing()) std.fmt.bufPrint(&countdown, "Keep these displays? Reverting in {d}s.", .{c.remaining()}) catch "Display preview" else if (c.job != null) switch (c.previewPhase()) {
+            2 => "Saving confirmed display settings…",
+            3 => "Waiting for displays to present the preview…",
+            4 => "Reverting displays; waiting for completion…",
+            5 => "Session inactive; rollback will continue when it resumes…",
+            else => "Preparing settings…",
+        } else switch (c.outcome) {
             .idle => "Open settings to load the configuration",
             .loaded => "Settings loaded",
             .validated => switch (c.impact_route) {
@@ -431,7 +446,7 @@ pub const View = struct {
             .reverted => "Display preview reverted",
             .invalidated => "Preview ended; competing display changes preserved",
             .failed => "Operation failed",
-            .uncertain => "Outcome unresolved; Refresh queries the operation receipt. Writes remain blocked.",
+            .uncertain => "Outcome unresolved; Refresh reconciles the preview and operation receipt. Writes remain blocked.",
         };
         const text = std.fmt.bufPrintZ(&buffer, "{s} · save: {s} · receipt: {s} · display: {s} · reload: {s} · toolkit sync: {s}{s}{s}{s}{s}{s}{s}", .{
             outcome,                                  if (c.save_state) |state| @tagName(state) else "not requested", if (c.receipt) |state| @tagName(state) else "not requested", @tagName(c.display_state), if (c.reload_state == .not_requested) "not requested" else @tagName(c.reload_state), if (c.toolkit == .not_requested) "not requested" else @tagName(c.toolkit),

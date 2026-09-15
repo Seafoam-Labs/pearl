@@ -10,7 +10,7 @@ from test_aqueous_settings import state,settled,stage
 
 def main():
  p=argparse.ArgumentParser(description=__doc__)
- p.add_argument('--pearl',type=Path,default=ROOT/'zig-out/bin/pearl');p.add_argument('--ctl',type=Path,default=ROOT/'zig-out/bin/pearlctl');p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-master');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-master/integration');args=p.parse_args();args.pearl=args.pearl.resolve();args.ctl=args.ctl.resolve();args.prefix=args.prefix.resolve();args.output=args.output.resolve();args.output.mkdir(parents=True,exist_ok=True)
+ p.add_argument('--pearl',type=Path,default=ROOT/'zig-out/bin/pearl');p.add_argument('--ctl',type=Path,default=ROOT/'zig-out/bin/pearlctl');p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-082');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/integration');args=p.parse_args();args.pearl=args.pearl.resolve();args.ctl=args.ctl.resolve();args.prefix=args.prefix.resolve();args.output=args.output.resolve();args.output.mkdir(parents=True,exist_ok=True)
  checks={};report=dict(status='running',checks=checks,pearl_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest(),baseline=json.loads((args.prefix/'metadata.json').read_text()))
  try:
   with PrivateSession(args.output/'session',tool_prefix=args.prefix) as s:
@@ -108,17 +108,68 @@ def main():
     (dict(snap_zone_changes=[dict(id='a',x=0,y=0,width=0.5,height=1)]),'snap_zones')]:
     stage(s,args.ctl,**patch);ctl(s,args.ctl,'aqueous','validate');v=settled(s,args.ctl);assert v['outcome']=='validated', (key,v)
     ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
-    # Master's classifier has no collection schema coverage yet. Never bypass unknown.
-    assert v['err']=='UnclassifiedCandidate' and not v['unresolved'] and v['draft'],(key,v)
+    assert v['outcome']=='saved' and not v['unresolved'] and not v['draft'],(key,v)
+    assert state(s,args.ctl,key)['value'],key
     ctl(s,args.ctl,'aqueous','discard')
-   assert not (s.base/'must-not-run').exists();checks['structured-collections-validate-but-unclassified-save-is-gated']=True
+   assert not (s.base/'must-not-run').exists();checks['protected-collections-save-and-roundtrip']=True
    stage(s,args.ctl,snap_zone_changes=[dict(id='a',x=0.9,y=0,width=0.5,height=1)])
    ctl(s,args.ctl,'aqueous','validate');v=settled(s,args.ctl);assert v['err'] and v['draft'],v
    ctl(s,args.ctl,'aqueous','discard');checks['invalid-snap-geometry-rejected']=True
+   # Opaque display IDs/source tokens survive a full structured Keep round trip.
+   def display_save(operations, **mixed):
+    tokens=state(s,args.ctl,'display_source_ids')['value']
+    stage(s,args.ctl,display_declaration_changes=dict(version=1,sources={op['source']:tokens[op['source']] for op in operations},operations=operations),**mixed)
+    ctl(s,args.ctl,'aqueous','apply')
+    v=wait_for(lambda:(lambda v:v if v['display_preview']=='pending' or not v['busy'] else False)(state(s,args.ctl)),15)
+    if v['display_preview']=='pending':ctl(s,args.ctl,'aqueous','keep');v=settled(s,args.ctl)
+    assert v['outcome']=='saved' and not v['unresolved'],v
+   display_save([
+    dict(op='add',source='outputs',kind='profile',ref='desk',set=dict(name='pearl-desk')),
+    dict(op='add',source='outputs',kind='output',parent='new:desk',set=dict(name='PEARL-OFFLINE',enabled=False,scale=1.25,primary=False))],
+    window_rule_changes=[dict(op='add',values=dict(app_id='pearl-mixed-*',floating=True))])
+   def declaration(kind):return next(d for d in state(s,args.ctl,'display_declarations')['value'] if d['kind']==kind)
+   member=declaration('member')
+   display_save([dict(op='update',source='outputs',id=member['id'],set=dict(primary=False,position=[-100,20]),unset=['scale'])])
+   text=state(s,args.ctl,'raw:outputs')['value'];assert "PEARL-OFFLINE" in text and 'position' in text,text
+   member=declaration('member')
+   display_save([dict(op='move',source='outputs',id=member['id'],parent=None)])
+   profile=declaration('profile')
+   display_save([dict(op='update',source='outputs',id=profile['id'],set=dict(name='pearl-renamed'))])
+   profile=declaration('profile')
+   display_save([dict(op='delete',source='outputs',id=profile['id'],members='delete')])
+   assert not any(d['kind']=='profile' for d in state(s,args.ctl,'display_declarations')['value'])
+   checks['structured-display-profile-member-inheritance-move-delete-and-mixed-save']=True
+   tokens=state(s,args.ctl,'display_source_ids')['value']
+   stage(s,args.ctl,display_declaration_changes=dict(version=1,sources={'outputs':tokens['outputs']},operations=[dict(op='add',source='outputs',kind='output',parent=None,set=dict(name='PEARL-CAPABILITY-TEST'))]))
+   fault.write_text('missing-display-capability');ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+   assert v['err']=='DisplayMutationCapabilityUnavailable' and not v['unresolved'],v
+   fault.write_text('');ctl(s,args.ctl,'aqueous','discard');checks['display-mutations-require-fresh-negotiated-capability']=True
+   # A previously reviewed full digest cannot be silently replaced after an external edit.
+   stage(s,args.ctl,window_rule_changes=[dict(op='add',values=dict(app_id='pearl-reviewed-*',floating=True))])
+   ctl(s,args.ctl,'aqueous','validate');assert settled(s,args.ctl)['outcome']=='validated'
+   input_file=Path(s.env['XDG_CONFIG_HOME'])/'aqueous/input.toml';input_file.write_text('# new candidate baseline\n')
+   ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl);assert v['err']=='CandidateReviewChanged' and not v['unresolved'],v
+   ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl);assert v['outcome']=='saved',v
+   checks['changed-reviewed-digest-requires-explicit-second-apply']=True
+   # Unrelated source changes may rebase collection IDs; touched-source changes may not.
+   stage(s,args.ctl,window_rule_changes=[dict(op='add',values=dict(app_id='pearl-rebased-*',floating=True))])
+   input_file=Path(s.env['XDG_CONFIG_HOME'])/'aqueous/input.toml';input_file.write_text('# unrelated input source edit\n')
+   ctl(s,args.ctl,'aqueous','refresh');settled(s,args.ctl)
+   assert state(s,args.ctl)['conflict']
+   ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl);assert v['outcome']=='saved',v
+   stage(s,args.ctl,window_rule_changes=[dict(op='add',values=dict(app_id='must-conflict',floating=True))])
+   rules_file=Path(s.env['XDG_CONFIG_HOME'])/'aqueous/rules.toml';rules_file.write_text(rules_file.read_text()+'\n# competing source edit\n')
+   ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl);assert v['err'] and v['draft'] and not v['unresolved'],v
+   ctl(s,args.ctl,'aqueous','refresh');settled(s,args.ctl);ctl(s,args.ctl,'aqueous','discard')
+   checks['collection-rebase-only-for-untouched-source']=True
+   s.run(['aqueousctl','session','reload','--json'])
+   wait_for(lambda:ipc.call('display.snapshot')['config_generation']==state(s,args.ctl)['generation'])
    # Unconfirmed owner destruction must roll back without writing.
    output=ipc.call('display.snapshot')['outputs'][0];before=output['actual'];connector=output['connector'];gen=state(s,args.ctl)['generation']
-   stage(s,args.ctl,monitor_changes=[dict(id='live:'+connector,name=connector,x=250,y=40,scale=1,transform='normal')])
-   ctl(s,args.ctl,'aqueous','apply');wait_for(lambda:state(s,args.ctl)['display_preview']=='pending',15)
+   declaration=next(d for d in state(s,args.ctl,'display_declarations')['value'] if any(connector in e['raw'] for e in d['entries'] if e['key']=='name'))
+   tokens=state(s,args.ctl,'display_source_ids')['value']
+   stage(s,args.ctl,display_declaration_changes=dict(version=1,sources={declaration['source']:tokens[declaration['source']]},operations=[dict(op='update',source=declaration['source'],id=declaration['id'],set=dict(position=[250,40]))]))
+   ctl(s,args.ctl,'aqueous','apply');v=wait_for(lambda:(lambda v:v if v['display_preview']=='pending' or not v['busy'] else False)(state(s,args.ctl)),15);assert v['display_preview']=='pending',v
    app.proc.kill();app.proc.wait(timeout=10)
    wait_for(lambda:ipc.call('display.snapshot')['outputs'][0]['actual']==before)
    app=s.child('pearl-after-preview-crash',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready');ctl(s,args.ctl,'aqueous','show');v=settled(s,args.ctl);assert v['generation']==gen and not v['unresolved'],v

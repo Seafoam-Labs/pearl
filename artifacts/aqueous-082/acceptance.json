@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "target": {
+    "revision": "b3d486920c42e24d45bed0a79e68915fe11c4815",
+    "helper": "0.8.2",
+    "prefix": ".cache/aqueous-082"
+  },
+  "checks": {
+    "integration": {
+      "status": "passed",
+      "checks": 22,
+      "report": "artifacts/aqueous-082/integration/metadata.json",
+      "sha256": "9ea6eae61526bf4548f0077353686ac82bc390848040c6ef5627c3785d1aaff3"
+    },
+    "preview": {
+      "status": "passed",
+      "checks": 3,
+      "report": "artifacts/aqueous-082/preview/metadata.json",
+      "sha256": "8531d5e8fac6e9ffb16475e3281b5addf79ffb37f4ce3cbd4f34f51d6b5e8298"
+    },
+    "ui": {
+      "status": "passed",
+      "checks": 10,
+      "report": "artifacts/aqueous-082/ui/metadata.json",
+      "sha256": "91bb33fced1609e99e8aa5b8efb4fd941aedd997d51f5bb42211187a267055ba"
+    },
+    "capture": {
+      "status": "passed",
+      "checks": 4,
+      "report": "artifacts/aqueous-082/capture/metadata.json",
+      "sha256": "3e3ea223c7b70b3b3a388be2986643970e788b8005abeda7c30da27ae80d6a24"
+    },
+    "upstream": {
+      "status": "passed",
+      "checks": 6,
+      "report": "artifacts/aqueous-082/upstream/metadata.json",
+      "sha256": "6ea7332e00117d7bbd592e2154c696847443e5914797f2d25a1a0dfa574990a9"
+    },
+    "install": {
+      "status": "passed",
+      "checks": 2,
+      "report": "artifacts/aqueous-082/install/metadata.json",
+      "sha256": "1dc65375a3fc791da3337494d00aed72d5a04517eeddc721ea3ff3047210ee82"
+    },
+    "session-services": {
+      "status": "passed",
+      "report": "artifacts/aqueous-082/session-services/result.json",
+      "sha256": "4fc1d578ce7b3ad6802d90ca6b9e00314e8e6d4113bd610d468f155b14c854cb",
+      "checks": 18
+    }
+  },
+  "hardware_acceptance": false,
+  "public_release_acceptance": false,
+  "workspace_build": {
+    "status": "passed",
+    "binaries": {
+      "pearl": "bb7243fd865f9a6849a5528215430f5f78c3e6f457e0e5bb62a53fe16816d88f",
+      "pearlctl": "cfc3bf8eee097ff33ede3b56ddf872e8129a28044854d638b7809e3b99482709",
+      "pearl-lock": "dac183bf96b5cff6b434918e6691f1c73edc5707e3792c11266d73bc6f19e413"
+    }
+  }
+}

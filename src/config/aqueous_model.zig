@@ -117,7 +117,7 @@ pub fn request(a: std.mem.Allocator, base: Value, bytes: []const u8, backups: []
     if (!equal(get(v, "expected_generation"), get(base, "generation"))) return error.StaleDraft;
     if (!equal(get(v, "protocol"), .{ .integer = 1 })) return error.UnsupportedHelper;
     // Never let advanced edits redirect backups or silently opt into system overrides.
-    const allowed = [_][]const u8{ "protocol", "expected_generation", "changes", "raw_files", "monitor_changes", "custom_keybind_changes", "window_rule_changes", "snap_zone_changes", "snap_layouts", "default_snap_layout", "normalize_stacking", "sync_cursor", "sync_typography", "create_user_override", "collection_preconditions" };
+    const allowed = [_][]const u8{ "protocol", "expected_generation", "changes", "raw_files", "monitor_changes", "custom_keybind_changes", "window_rule_changes", "snap_zone_changes", "snap_layouts", "default_snap_layout", "normalize_stacking", "sync_cursor", "sync_typography", "create_user_override", "collection_preconditions", "display_declaration_changes" };
     var it = v.object.iterator();
     while (it.next()) |e| {
         var found = false;
@@ -136,6 +136,7 @@ pub fn request(a: std.mem.Allocator, base: Value, bytes: []const u8, backups: []
     inline for (.{ .{ "monitor_changes", "outputs" }, .{ "custom_keybind_changes", "wm" }, .{ "window_rule_changes", "rules" }, .{ "snap_zone_changes", "layout" }, .{ "snap_layouts", "layout" } }) |pair| {
         if (get(v, pair[0]) != .null and list(get(v, pair[0])).len > 0 and get(raw, pair[1]) != .null) return error.ConflictingEdits;
     }
+    try @import("aqueous_display_mutations.zig").check(base, v);
     try v.object.put(a, "backup_dir", .{ .string = backups });
     return v;
 }
@@ -193,6 +194,7 @@ test "raw display filter covers fields absent from helper projection" {
 pub fn rebase(a: std.mem.Allocator, base: Value, live: Value, bytes: []const u8) ![]u8 {
     var v = try request(a, base, bytes, "unused");
     _ = v.object.swapRemove("backup_dir");
+    if (get(v, "display_declaration_changes") != .null and !equal(get(base, "generation"), get(live, "generation"))) return error.DisplayDraftRequiresFreshIdentities;
     for (list(get(v, "changes"))) |change| {
         const id = str(get(change, "id"));
         const old = field(base, id) orelse return error.UnknownField;

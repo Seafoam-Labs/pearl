@@ -1,5 +1,8 @@
 # Updating Pearl to current Aqueous capabilities
 
+Follow-up: [Aqueous 0.8.2 update plan](AQUEOUS_082_UPDATE_PLAN.md) targets the
+newly exposed contracts at `b3d4869`. This document records the earlier integration.
+
 Status: **AM00–AM09 implemented; automated acceptance passed; public release acceptance pending**.
 Updated September 14, 2026. The pinned source exposes several non-composable or
 hardware-gated contracts; their exact remaining work is recorded in
