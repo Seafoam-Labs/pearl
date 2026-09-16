@@ -2,7 +2,7 @@
 # Real greetd/desktop acceptance is tracked in GREETER_COMPATIBILITY.md.
 # This example is never installed over /etc/greetd/config.toml by package hooks.
 [terminal]
-vt = 1
+vt = 7
 switch = true
 [general]
 source_profile = false

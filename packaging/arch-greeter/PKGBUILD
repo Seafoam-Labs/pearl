@@ -1,0 +1,54 @@
+# Standalone greeter from upstream Git. Installation selects Pearl for next boot;
+# it never stops or restarts the running display manager.
+pkgname=pearl-greeter-git
+pkgver=1.0.0rc2.r33.g318f9f6
+pkgrel=4
+pkgdesc='GTK greetd login screen hosted by ordinary Aqueous (Git version)'
+arch=('x86_64')
+url='https://github.com/Seafoam-Labs/pearl'
+license=('LicenseRef-Pearl-Unlicensed')
+provides=('pearl-greeter')
+conflicts=('pearl-greeter')
+depends=('greetd>=0.10.3' 'aqueous' 'uwsm>=0.26.7' 'dbus'
+         'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
+         'glibc>=2.44' 'systemd>=261.3' 'python>=3.14')
+makedepends=('git' 'zig=0.16.0' 'pkgconf')
+optdepends=('accountsservice: account names and avatars'
+            'orca: optional screen reader'
+            'xorg-xinit: optional X11 session launching')
+backup=('etc/pearl/greeter.json' 'etc/pearl/greetd.toml')
+install=pearl-greeter.install
+options=('!strip' '!debug')
+source=("pearl::git+$url.git")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "$srcdir/pearl"
+    local version
+    version=$(python3 -c 'import json; print(json.load(open("packaging/release.json"))["arch_pkgver"])')
+    printf '%s.r%s.g%s' "$version" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+    cd "$srcdir/pearl"
+    export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
+    zig build build-greeter -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline
+}
+
+check() {
+    cd "$srcdir/pearl"
+    export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
+    zig build test-greeter-unit -Doptimize=ReleaseSafe -Dcpu=baseline
+    python3 tests/test_greeter_package.py
+    python3 tests/test_greeter_install.py
+}
+
+package() {
+    cd "$srcdir/pearl"
+    # stage.py requires a new directory; makepkg already creates pkgdir.
+    local payload
+    payload=$(mktemp -d "$srcdir/pearl-greeter-package.XXXXXX")
+    python3 packaging/greeter/stage.py --system-package --dest "$payload/root"
+    cp -R --preserve=mode,timestamps "$payload/root/." "$pkgdir/"
+    rm -r "$payload"
+}

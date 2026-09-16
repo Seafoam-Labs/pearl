@@ -1,2 +1,3 @@
-# Proposed account only; package staging does not run systemd-sysusers.
+# The standalone package provisions this account during installation.
 u pearl-greeter - "Pearl login screen" /var/empty/pearl-greeter /usr/bin/nologin
+m pearl-greeter video

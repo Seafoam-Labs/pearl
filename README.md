@@ -43,7 +43,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Standalone Settings application plan](docs/STANDALONE_SETTINGS_APPLICATION_PLAN.md): a separately launchable Settings app, sidebar pages, backend integration, packaging and design mockups.
 - [Aqueous integration update plan](docs/AQUEOUS_MASTER_UPDATE_PLAN.md): implementation scope and acceptance for the pinned master contracts.
 - [Aqueous 0.8.2 update plan](docs/AQUEOUS_082_UPDATE_PLAN.md): adopt newly exposed collection transactions, display declarations and preview controls.
-- [Greeter](docs/GREETER.md): a separate greetd login screen and installed-desktop chooser, with Material/GTK themes and private tests. Production hosting remains gated on restricted Aqueous support and real-login validation; see the [implementation checklist](docs/GREETER_IMPLEMENTATION_PLAN.md).
+- [Greeter](docs/GREETER.md): a separate greetd login screen and installed-desktop chooser, with Material/GTK themes and private tests. Runs on ordinary Aqueous, with a [standalone Arch package](packaging/arch-greeter/README.md) that installs defaults and selects Pearl for the next boot. Real-login validation remains pending.
 - [Fingerprint integration](docs/FINGERPRINT_LOGIN.md): PAM-controlled password fallback, automatic scan messages, locker compatibility and private tests; [real-device acceptance remains open](docs/FINGERPRINT_LOGIN_IMPLEMENTATION_PLAN.md).
 - [Development specification](docs/TASKS.md): implementation scope, dependencies, concrete deliverables, and acceptance criteria.
 - [Compatibility and reproduction](docs/COMPATIBILITY.md): verified dependencies, commands, capability gaps and baseline results.

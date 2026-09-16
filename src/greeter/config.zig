@@ -18,7 +18,7 @@ pub const Config = struct {
     allow: []const []const u8 = &.{},
     deny: []const []const u8 = &.{},
     roots: []const Root = &.{ .{ .path = "/usr/share/wayland-sessions", .type = .wayland }, .{ .path = "/usr/share/xsessions", .type = .x11 } },
-    allow_uwsm: bool = false,
+    allow_uwsm: bool = true,
     x11: bool = false,
     remember_session: bool = false,
     accounts: bool = true,

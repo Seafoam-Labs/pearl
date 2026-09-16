@@ -38,7 +38,25 @@ administrator config. `--version` works without a display or configuration. The
 private `--probe` mode exercises the real Zig socket client against fake greetd;
 it is compiled out of production.
 
-## Running with greetd
+## Arch package installation
+
+The separate [greeter PKGBUILD](../packaging/arch-greeter/PKGBUILD) builds
+`pearl-greeter-git` independently of the desktop shell. From
+`packaging/arch-greeter`, run `makepkg -si`. Installation creates the default
+`/etc/pearl/greeter.json` (UWSM allowed) and `/etc/pearl/greetd.toml`, provisions
+the greeter account/directories, and selects `pearl-greeter.service` for the next
+boot without restarting the current desktop. Existing configuration edits survive
+upgrades through pacman's backup handling.
+
+Before installation, `/etc/greetd/config.toml` is copied to
+`/etc/greetd/config.toml.bak` if it exists and no backup exists yet. This service
+uses its own greetd config, preserving `/etc/greetd/config.toml`.
+The package saves the previous display-manager selection/default target and
+restores them on removal unless the administrator has since changed the selection.
+Run `sudo /usr/lib/pearl/pearl-greeter-setup restore` to restore it earlier.
+See [package setup and recovery](../packaging/arch-greeter/README.md) for details.
+
+## Manual setup with greetd
 
 Install the staged production binaries, launchers and runtime dependencies
 (Aqueous, dbus-run-session, GTK4 and gtk4-layer-shell). Create the dedicated
@@ -78,7 +96,7 @@ The same restrictions apply to parent directories and discovered session entries
 symlinked entries are rejected. Invalid security-critical config stops startup.
 Missing optional session directories are skipped; malformed entries contribute
 to `--catalog`'s skipped count. Unavailable executables, TryExec dependencies, X11
-adapters and unapproved UWSM profiles remain unavailable in the chooser.
+adapters and explicitly disabled UWSM profiles remain unavailable in the chooser.
 
 | Setting | Behavior |
 | --- | --- |
@@ -91,7 +109,7 @@ adapters and unapproved UWSM profiles remain unavailable in the chooser.
 | `default_session`, `force_session` | Preferred ID, or administrator-enforced ID |
 | `allow`, `deny` | Optional lists of session IDs; deny wins |
 | `remember_session` | Opt-in accepted selection memory per username; defaults off |
-| `allow_uwsm` | Defaults false; enable only after validating every exposed managed profile, using `allow` to constrain the catalog |
+| `allow_uwsm` | Defaults true; permits UWSM-managed sessions. Set false to disable entries that directly invoke `uwsm`; use `allow` to constrain the catalog |
 | `x11` | Defaults false; enabling also requires startx and the packaged X11 adapter, plus distribution/VM verification |
 | `accounts`, `power`, `screen_reader` | Optional AccountsService labels, permitted logind controls and fixed Orca launcher |
 | `fingerprint_hint` | Optional generic fingerprint guidance; defaults off and does not enable authentication or inspect enrollment |
@@ -153,7 +171,7 @@ binaries with `python3 scripts/greeter-reproduce.py`.
 
 The destination must be new. The payload contains only production binaries,
 trusted launchers, a Pearl desktop entry, documentation and configuration examples.
-It does not create system users, change PAM, enable services or replace
+The staging command does not create system users, change PAM, enable services or replace
 `/etc/greetd/config.toml`. The shipped release gate explicitly remains false.
 Ordinary Pearl installs do not depend on a display manager. Aqueous is required as
 the packaged greeter host; other desktops are installed separately as desired.

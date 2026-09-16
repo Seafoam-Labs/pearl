@@ -1,0 +1,19 @@
+[Unit]
+Description=Pearl Greeter (greetd on Aqueous)
+After=systemd-user-sessions.service plymouth-quit-wait.service getty@tty7.service
+Conflicts=getty@tty7.service greetd.service
+StartLimitIntervalSec=30
+StartLimitBurst=5
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/greetd --config /etc/pearl/greetd.toml
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+TimeoutStopSec=30s
+KeyringMode=shared
+Restart=always
+RestartSec=1
+
+[Install]
+Alias=display-manager.service

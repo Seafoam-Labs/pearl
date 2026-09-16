@@ -1,0 +1,43 @@
+_backup_greetd_configs() {
+    local root=${1:-/}
+    local config="${root%/}/etc/greetd/config.toml"
+    [[ -f "$config" ]] || return 0
+    [[ -e "$config.bak" || -L "$config.bak" ]] && return 0
+    cp -p -- "$config" "$config.bak" || {
+        rm -f -- "$config.bak"
+        return 1
+    }
+    echo "==> Previous greetd configuration backed up to $config.bak"
+}
+
+pre_install() {
+    _backup_greetd_configs
+}
+
+pre_upgrade() {
+    _backup_greetd_configs
+}
+
+_provision_pearl_greeter() {
+    systemd-sysusers /usr/lib/sysusers.d/pearl-greeter.conf || return 1
+    systemd-tmpfiles --create /usr/lib/tmpfiles.d/pearl-greeter.conf || return 1
+}
+
+post_install() {
+    _backup_greetd_configs || return 1
+    _provision_pearl_greeter || return 1
+    /usr/lib/pearl/pearl-greeter-setup enable || return 1
+    echo '==> Pearl Greeter is selected for the next boot. The running session was not restarted.'
+    echo '    Configuration: /etc/pearl/greeter.json and /etc/pearl/greetd.toml'
+    echo '    Restore the previous boot setup: sudo /usr/lib/pearl/pearl-greeter-setup restore'
+}
+
+post_upgrade() {
+    # Preserve administrator edits, disabled services and later display-manager choices.
+    _provision_pearl_greeter
+    echo '==> Pearl Greeter updated; review any /etc/pearl/*.pacnew files.'
+}
+
+pre_remove() {
+    /usr/lib/pearl/pearl-greeter-setup restore
+}
