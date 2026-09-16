@@ -1,0 +1,33 @@
+Breakpoint 1 at 0x108b9e0: file /usr/lib/zig/std/debug.zig, line 132.
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.cachyos.org>
+  <https://debuginfod.archlinux.org>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+[New inferior 2 (process 16941)]
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+[New Thread 0x7fe47bbbc6c0 (LWP 16942)]
+
+Thread 1.1 "pearl-greeter-h" hit Breakpoint 1.1, debug.FullPanic((function 'defaultPanic')).unwrapNull () at /usr/lib/zig/std/debug.zig:132
+132	        pub fn unwrapNull() noreturn {
+#0  debug.FullPanic((function 'defaultPanic')).unwrapNull () at /usr/lib/zig/std/debug.zig:132
+#1  0x0000000001051342 in Io.Threaded.Environ.scan (environ=0x10996e8 <Io.Threaded.global_single_threaded_instance+960>) at /usr/lib/zig/std/Io/Threaded.zig:314
+#2  Io.Threaded.scanEnviron (t=0x1099328 <Io.Threaded.global_single_threaded_instance>) at /usr/lib/zig/std/Io/Threaded.zig:14803
+#3  0x00000000010654e1 in Io.Threaded.initLockedStderr (t=0x1099328 <Io.Threaded.global_single_threaded_instance>, terminal_mode=...) at /usr/lib/zig/std/Io/Threaded.zig:13821
+#4  Io.Threaded.lockStderr (userdata=0x1099328 <Io.Threaded.global_single_threaded_instance>, terminal_mode=...) at /usr/lib/zig/std/Io/Threaded.zig:13798
+#5  0x0000000001022fa8 in Io.lockStderr () at /usr/lib/zig/std/Io.zig:2440
+#6  debug.lockStderr () at /usr/lib/zig/std/debug.zig:286
+#7  log.defaultLog__anon_26863 () at /usr/lib/zig/std/log.zig:106
+#8  log.log__anon_26856 () at /usr/lib/zig/std/log.zig:72
+#9  log.scoped(.default).info__anon_3678 () at /usr/lib/zig/std/log.zig:166
+#10 greeter.host.supervise (managed=255) at /home/zoey/Pearl/src/greeter/host.zig:150
+#11 greeter.host.runManaged () at /home/zoey/Pearl/src/greeter/host.zig:90
+#12 greeter_host_main.main (init=...) at greeter_host_main.zig:23
+#13 start.callMain () at /usr/lib/zig/std/start.zig:737
+#14 start.callMainWithArgs () at /usr/lib/zig/std/start.zig:638
+#15 start.main (c_argc=1, c_argv=0x7fff52b3dab8, c_envp=0x7fff52b3dac8) at /usr/lib/zig/std/start.zig:663

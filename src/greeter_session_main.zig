@@ -5,6 +5,7 @@ const cfg = @import("greeter/config.zig");
 const sessions = @import("greeter/sessions.zig");
 const a = std.heap.c_allocator;
 pub fn main(init: std.process.Init) !void {
+    @import("greeter/logging.zig").init();
     const args = try init.minimal.args.toSlice(a);
     if (args.len == 2 and std.mem.eql(u8, args[1], "--version")) {
         glib.print("pearl-greeter-session " ++ @import("version.zig").string ++ "\n");

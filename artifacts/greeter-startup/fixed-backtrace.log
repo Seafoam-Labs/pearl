@@ -1,0 +1,24 @@
+Breakpoint 1 at 0x10231f1: file /home/zoey/Pearl/src/greeter/host.zig, line 151.
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.cachyos.org>
+  <https://debuginfod.archlinux.org>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+[New inferior 2 (process 20667)]
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+[New Thread 0x7f47fe12c6c0 (LWP 20668)]
+info: event=greeter-host-started
+
+Thread 1.1 "pearl-greeter-h" hit Breakpoint 1.1, greeter.host.supervise (managed=255) at /home/zoey/Pearl/src/greeter/host.zig:151
+151	    self.loop.run();
+#0  greeter.host.supervise (managed=255) at /home/zoey/Pearl/src/greeter/host.zig:151
+#1  greeter.host.runManaged () at /home/zoey/Pearl/src/greeter/host.zig:90
+#2  greeter_host_main.main (init=...) at greeter_host_main.zig:22
+#3  start.callMain () at /usr/lib/zig/std/start.zig:737
+#4  start.callMainWithArgs () at /usr/lib/zig/std/start.zig:638
+#5  start.main (c_argc=1, c_argv=0x7ffd1e78c858, c_envp=0x7ffd1e78c868) at /usr/lib/zig/std/start.zig:663

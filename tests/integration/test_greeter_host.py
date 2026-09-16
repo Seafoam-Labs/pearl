@@ -34,11 +34,17 @@ def fixtures(host_binary, root):
     runtime = root/'fixture-runtime'
     runtime.mkdir(mode=0o700)
     env = dict(os.environ, XDG_RUNTIME_DIR=str(runtime))
+    # Reproduce greetd's inherited endpoints being removed before the first log.
+    # Zig's lazy stderr environment scan previously panicked on the shortened envp.
+    env.update(WAYLAND_DISPLAY='stale-display', WAYLAND_SOCKET='9999', DISPLAY=':99',
+               AQUEOUS_SOCKET='/stale/socket', AQUEOUS_IPC_SOCKET='/stale/ipc',
+               DBUS_SESSION_BUS_ADDRESS='unix:path=/stale/bus')
     # Model Aqueous: the init/UI and another descendant each call setsid().
     ui = root/'ui.py'
     ui.write_text('import os,sys,time\nfrom pathlib import Path\nos.write(3, (str(os.getpid())+"\\n").encode())\nos.close(3)\nopen(sys.argv[1],"w").write(str(os.getpid()))\nwhile not Path(sys.argv[1]+".exit").exists(): time.sleep(.02)\n')
     compositor = root/'compositor.py'
     compositor.write_text('''import os,signal,subprocess,sys,time
+assert all(key not in os.environ for key in ('WAYLAND_DISPLAY','WAYLAND_SOCKET','DISPLAY','AQUEOUS_SOCKET','AQUEOUS_IPC_SOCKET'))
 if sys.argv[4] == "forced-shutdown": signal.signal(signal.SIGTERM, signal.SIG_IGN)
 ui=subprocess.Popen(['/usr/bin/python3',sys.argv[1],sys.argv[2]],pass_fds=(3,),start_new_session=True)
 escaped=subprocess.Popen(['/usr/bin/sleep','120'],start_new_session=True)

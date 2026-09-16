@@ -4,6 +4,7 @@ const cfg = @import("greeter/config.zig");
 const sessions = @import("greeter/sessions.zig");
 const options = @import("build_options");
 pub fn main(init: std.process.Init) !void {
+    @import("greeter/logging.zig").init();
     var action: std.c.Sigaction = .{ .handler = .{ .handler = std.c.SIG.IGN }, .mask = std.mem.zeroes(std.c.sigset_t), .flags = 0 };
     _ = std.c.sigaction(std.c.SIG.PIPE, &action, null);
     var limits: std.c.rlimit = .{ .cur = 0, .max = 0 };
