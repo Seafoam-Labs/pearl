@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "checks": {
+    "normal-window-real-schema-221-fields": true,
+    "complete-sidebar-real-data-or-unavailable": true,
+    "network-stable-identities-and-advanced-editor-route": true,
+    "explicit-scan-and-independent-page-owners": true,
+    "network-pointer-action-and-stale-generation": true,
+    "bluetooth-discovery-stops-only-with-owner": true,
+    "network-prompts-private-and-navigation-cancels-owner": true,
+    "frontend-crash-cancels-private-credential-prompt-without-secret-replay": true,
+    "normal-transient-network-password-entry-and-answer": true,
+    "frontend-crash-stops-owned-discovery-and-preserves-network-connection": true,
+    "bluetooth-owned-pairing-confirmation-completes": true,
+    "bar-invalid-intermediate-value-remains-editable": true,
+    "bar-shares-pearl-draft-across-service-pages": true,
+    "aqueous-real-pointer-edit-and-shared-draft": true,
+    "aqueous-sublist-draft-transfer-section-restoration-and-rebuild": true,
+    "aqueous-validate-save-reload-and-receipt": true,
+    "aqueous-stale-writer-rejected-with-draft-retained": true,
+    "all-aqueous-sections-and-structured-editors-reachable": true,
+    "workspace-layout-output-generation-guard": true,
+    "aqueous-chunked-document-over-64k-and-four-mib-bound": true,
+    "normal-window-shortcut-recording-and-leave-cleanup": true,
+    "display-preview-navigation-owner-check-close-and-confirmed-rollback": true,
+    "frontend-crash-releases-display-preview-and-restores-output": true,
+    "lock-during-frontend-preview-hides-window-and-restores-display": true,
+    "aqueous-close-reopen-retains-acknowledged-draft": true,
+    "aqueous-backend-restart-no-replay-explicit-rebase-and-discard": true
+  }
+}

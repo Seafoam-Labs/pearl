@@ -13,7 +13,13 @@ const appearance = @import("appearance.zig");
 const a = std.heap.c_allocator;
 const count = std.enums.values(nav.Route).len;
 const Page = struct { scroll: *gtk.ScrolledWindow, body: *gtk.Widget, focus: ?*gtk.Widget = null };
-const Link = struct { owner: *Window, route: nav.Route, button: *gtk.ToggleButton };
+const navigation_count = count + nav.aqueous_sections.len;
+const Link = struct { owner: *Window, target: nav.Target, button: *gtk.ToggleButton };
+const SectionState = struct { scroll: f64 = 0, focus: ?*gtk.Widget = null };
+fn navigationIndex(route: nav.Route) usize {
+    const index = @intFromEnum(route);
+    return index + @as(usize, if (index > @intFromEnum(nav.Route.aqueous)) nav.aqueous_sections.len else 0);
+}
 pub const Window = struct {
     window: *gtk.Window,
     root: *gtk.Box,
@@ -48,9 +54,14 @@ pub const Window = struct {
     discard: *gtk.Button,
     retry_button: *gtk.Button,
     status: *gtk.Label,
-    section_chooser: *gtk.DropDown,
+    aqueous_context: *gtk.Label,
+    aqueous_states: [nav.aqueous_sections.len]SectionState = @splat(.{}),
+    aqueous_rebuilding: bool = false,
+    keep_sections_open: bool = false,
+    navigation_signals: [2]c_ulong = @splat(0),
+    navigation_reveal_id: c_uint = 0,
     pages: [count]Page = undefined,
-    links: [2 * count]Link = undefined,
+    links: [2 * navigation_count]Link = undefined,
     target: nav.Target = .{},
     arena: std.heap.ArenaAllocator,
     css: *gtk.CssProvider,
@@ -123,11 +134,10 @@ pub const Window = struct {
         heading.as(gtk.Accessible).updateProperty(.level, @as(c_int, 1), @as(c_int, -1));
         page_header.as(gtk.Widget).setFocusable(1);
         const subtitle = w.label("", "pearl-secondary");
+        const aqueous_context = w.label("Aqueous", "pearl-secondary");
+        page_header.append(aqueous_context.as(gtk.Widget));
         page_header.append(heading.as(gtk.Widget));
         page_header.append(subtitle.as(gtk.Widget));
-        const section_chooser = gtk.DropDown.newFromStrings(if (german) @ptrCast(&[_:null]?[*:0]const u8{ "Erscheinungsbild", "Layouts", "Eingabe", "Tastenkürzel", "Regeln", "Bildschirme", "Erweitert" }) else @ptrCast(&[_:null]?[*:0]const u8{ "Appearance", "Layouts", "Input", "Shortcuts", "Rules", "Displays", "Advanced" }));
-        w.name(section_chooser.as(gtk.Widget), if (german) "Aqueous-Bereich" else "Aqueous section");
-        page_header.append(section_chooser.as(gtk.Widget));
         const saved_button = w.wrappingButton(if (german) "Gespeichertes JSON anzeigen" else "View saved JSON");
         saved_button.as(gtk.Widget).setHalign(.start);
         saved_button.as(gtk.Widget).setVisible(0);
@@ -198,11 +208,14 @@ pub const Window = struct {
             monitor.getGeometry(&rect);
             win.setDefaultSize(@min(1040, @max(240, rect.f_width - 32)), @min(760, @max(200, rect.f_height - 64)));
         }
-        self.* = .{ .aqueous = aqueous, .aqueous_footer = aqueous_footer, .review_button = review_button, .window = win, .root = root, .sidebar = sidebar, .sections = sections, .popover = popover, .popup_scroll = popup_scroll, .heading = heading, .heading_anchor = page_header.as(gtk.Widget), .subtitle = subtitle, .stack = stack, .footer = footer, .footer_text = footer_text, .save = save, .discard = discard, .merge_button = merge_button, .actions = actions, .draft_badge = draft_badge, .editor = editor, .saved_button = saved_button, .retry_button = retry_button, .status = status, .section_chooser = section_chooser, .arena = .init(a), .context = context, .retry = retry, .close = close, .fixture = fixture, .narrow = true, .german = german, .css = gtk.CssProvider.new(), .native_css = gtk.CssProvider.new(), .font_css = gtk.CssProvider.new() };
+        self.* = .{ .aqueous = aqueous, .aqueous_footer = aqueous_footer, .review_button = review_button, .window = win, .root = root, .sidebar = sidebar, .sections = sections, .popover = popover, .popup_scroll = popup_scroll, .heading = heading, .heading_anchor = page_header.as(gtk.Widget), .subtitle = subtitle, .stack = stack, .footer = footer, .footer_text = footer_text, .save = save, .discard = discard, .merge_button = merge_button, .actions = actions, .draft_badge = draft_badge, .editor = editor, .saved_button = saved_button, .retry_button = retry_button, .status = status, .aqueous_context = aqueous_context, .arena = .init(a), .context = context, .retry = retry, .close = close, .fixture = fixture, .narrow = true, .german = german, .css = gtk.CssProvider.new(), .native_css = gtk.CssProvider.new(), .font_css = gtk.CssProvider.new() };
         errdefer self.destroy();
         const navbox = self.navigation(0);
         sidebar.setChild(navbox.as(gtk.Widget));
         popup_scroll.setChild(self.navigation(1).as(gtk.Widget));
+        for ([_]*gtk.ScrolledWindow{ sidebar, popup_scroll }, 0..) |scroll, i| {
+            self.navigation_signals[i] = gtk.Adjustment.signals.changed.connect(scroll.getVadjustment(), *Window, navigationAllocated, self, .{});
+        }
         for (std.enums.values(nav.Route)) |route| {
             const body = w.column(16);
             body.as(gtk.Widget).addCssClass("settings-body");
@@ -241,6 +254,7 @@ pub const Window = struct {
             const host = object.ext.cast(gtk.Box, self.pages[@intFromEnum(nav.Route.aqueous)].body).?;
             while (host.as(gtk.Widget).getFirstChild()) |child| host.remove(child);
             self.aqueous_view = try @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).createIn(host, aqueous, win, aqueous_footer);
+            self.aqueous_view.?.rebuild_observer = .{ .context = self, .notify = aqueousRebuilt };
         }
         _ = gtk.Button.signals.clicked.connect(review_button, *Window, reviewClicked, self, .{});
         gtk.StyleContext.addProviderForDisplay(display, self.css.as(gtk.StyleProvider), 600);
@@ -253,11 +267,14 @@ pub const Window = struct {
         _ = gtk.Button.signals.clicked.connect(discard, *Window, discardClicked, self, .{});
         _ = gtk.Button.signals.clicked.connect(merge_button, *Window, mergeClicked, self, .{});
         _ = gtk.Button.signals.clicked.connect(saved_button, *Window, savedClicked, self, .{});
-        _ = object.Object.signals.notify.connect(section_chooser.as(object.Object), *Window, sectionChanged, self, .{ .detail = "selected" });
         const keys = gtk.EventControllerKey.new();
         keys.as(gtk.EventController).setPropagationPhase(.capture);
         _ = gtk.EventControllerKey.signals.key_pressed.connect(keys, *Window, keyPressed, self, .{});
         win.as(gtk.Widget).addController(keys.as(gtk.EventController));
+        const popup_keys = gtk.EventControllerKey.new();
+        popup_keys.as(gtk.EventController).setPropagationPhase(.capture);
+        _ = gtk.EventControllerKey.signals.key_pressed.connect(popup_keys, *Window, keyPressed, self, .{});
+        popover.as(gtk.Widget).addController(popup_keys.as(gtk.EventController));
         _ = gtk.Widget.signals.realize.connect(win.as(gtk.Widget), *Window, realized, self, .{});
         try self.style(.{});
         self.connection(false, null);
@@ -265,6 +282,10 @@ pub const Window = struct {
         return self;
     }
     pub fn destroy(self: *Window) void {
+        if (self.navigation_reveal_id != 0) _ = glib.Source.remove(self.navigation_reveal_id);
+        for ([_]*gtk.ScrolledWindow{ self.sidebar, self.popup_scroll }, self.navigation_signals) |scroll, signal| {
+            if (signal != 0) object.signalHandlerDisconnect(scroll.getVadjustment().as(object.Object), signal);
+        }
         if (self.saved_dialog) |dialog| {
             dialog.as(gtk.Window).destroy();
             dialog.unref();
@@ -273,7 +294,11 @@ pub const Window = struct {
             dialog.as(gtk.Window).destroy();
             dialog.unref();
         }
-        if (self.aqueous_view) |view| view.destroy();
+        if (self.aqueous_view) |view| {
+            view.rebuild_observer = null;
+            self.aqueous_rebuilding = true;
+            view.destroy();
+        }
         for (self.live_pages) |page| if (page) |view| view.destroy();
         for (self.preference_pages) |page| if (page) |view| view.destroy();
         if (self.preferences_view) |view| view.destroy();
@@ -340,11 +365,36 @@ pub const Window = struct {
             .advanced => "pearl-emblem-system-symbolic",
         };
     }
+    fn sectionTitle(self: *Window, index: usize) [:0]const u8 {
+        const en = [_][:0]const u8{ "Appearance", "Layouts", "Input", "Shortcuts", "Rules", "Displays", "Advanced" };
+        const de = [_][:0]const u8{ "Erscheinungsbild", "Layouts", "Eingabe", "Tastenkürzel", "Regeln", "Bildschirme", "Erweitert" };
+        return if (self.german) de[index] else en[index];
+    }
+    fn navigationLink(self: *Window, box: *gtk.Box, index: usize, target: nav.Target) void {
+        const button = gtk.ToggleButton.new();
+        button.as(gtk.Widget).setSizeRequest(-1, 44);
+        button.as(gtk.Widget).addCssClass("settings-nav-item");
+        const row = w.row(10);
+        const title_ = if (target.section) |section| self.sectionTitle(nav.aqueousSectionIndex(section) catch unreachable) else self.title(target.page);
+        if (target.section != null) {
+            button.as(gtk.Widget).addCssClass("settings-nav-child");
+            const name = std.fmt.allocPrintSentinel(self.arena.allocator(), "Aqueous / {s}", .{title_}, 0) catch unreachable;
+            w.name(button.as(gtk.Widget), name);
+        } else {
+            row.append(w.icon(icon(target.page)).as(gtk.Widget));
+            w.name(button.as(gtk.Widget), title_);
+        }
+        row.append(w.label(title_, null).as(gtk.Widget));
+        button.as(gtk.Button).setChild(row.as(gtk.Widget));
+        self.links[index] = .{ .owner = self, .target = target, .button = button };
+        _ = gtk.Button.signals.clicked.connect(button.as(gtk.Button), *Link, navigated, &self.links[index], .{});
+        box.append(button.as(gtk.Widget));
+    }
     fn navigation(self: *Window, index: usize) *gtk.Box {
         const box = w.column(2);
         box.as(gtk.Widget).addCssClass("settings-nav");
         w.name(box.as(gtk.Widget), self.t("Settings sections", "Einstellungsbereiche"));
-        for (std.enums.values(nav.Route), 0..) |route, i| {
+        for (std.enums.values(nav.Route)) |route| {
             const group: ?[:0]const u8 = switch (route) {
                 .overview => self.t("GENERAL", "ALLGEMEIN"),
                 .network => self.t("CONNECTIONS", "VERBINDUNGEN"),
@@ -354,18 +404,56 @@ pub const Window = struct {
                 else => null,
             };
             if (group) |text| box.append(w.label(text, "settings-group").as(gtk.Widget));
-            const button = gtk.ToggleButton.new();
-            button.as(gtk.Widget).addCssClass("settings-nav-item");
-            const row = w.row(10);
-            row.append(w.icon(icon(route)).as(gtk.Widget));
-            row.append(w.label(self.title(route), null).as(gtk.Widget));
-            button.as(gtk.Button).setChild(row.as(gtk.Widget));
-            w.name(button.as(gtk.Widget), self.title(route));
-            self.links[index * count + i] = .{ .owner = self, .route = route, .button = button };
-            _ = gtk.Button.signals.clicked.connect(button.as(gtk.Button), *Link, navigated, &self.links[index * count + i], .{});
-            box.append(button.as(gtk.Widget));
+            const offset = index * navigation_count + navigationIndex(route);
+            self.navigationLink(box, offset, .{ .page = route });
+            if (route == .aqueous) for (nav.aqueous_sections, 0..) |section, i| {
+                self.navigationLink(box, offset + 1 + i, .{ .page = .aqueous, .section = section });
+            };
         }
         return box;
+    }
+    fn updateNavigation(self: *Window) void {
+        const changing = self.changing;
+        self.changing = true;
+        defer self.changing = changing;
+        for (&self.links) |*link| {
+            const child = link.target.section != null;
+            const selected = link.target.page == self.target.page and
+                (if (link.target.section) |section| std.mem.eql(u8, section, self.target.section orelse "") else self.target.page != .aqueous);
+            link.button.setActive(@intFromBool(selected));
+            if (child) link.button.as(gtk.Widget).setVisible(@intFromBool(self.target.page == .aqueous));
+            if (link.target.page == .aqueous and !child) {
+                if (self.target.page == .aqueous) link.button.as(gtk.Widget).addCssClass("settings-nav-parent") else link.button.as(gtk.Widget).removeCssClass("settings-nav-parent");
+                link.button.as(gtk.Accessible).updateState(.expanded, @as(c_int, @intFromBool(self.target.page == .aqueous)), @as(c_int, -1));
+            }
+        }
+    }
+    fn selectedNavigation(self: *Window) *gtk.Widget {
+        const index = navigationIndex(self.target.page) + (if (self.target.page == .aqueous) 1 + self.aqueous_section else @as(usize, 0));
+        return self.links[index].button.as(gtk.Widget);
+    }
+    fn navigationAllocated(_: *gtk.Adjustment, self: *Window) callconv(.c) void {
+        // Adjustment ranges change during layout, before rows have their final
+        // allocations. Reveal the selected destination after that layout ends.
+        if (self.navigation_reveal_id == 0) self.navigation_reveal_id = glib.idleAdd(navigationReady, self);
+    }
+    fn navigationReady(context: ?*anyopaque) callconv(.c) c_int {
+        const self: *Window = @ptrCast(@alignCast(context.?));
+        self.navigation_reveal_id = 0;
+        self.revealNavigation();
+        return 0;
+    }
+    fn revealNavigation(self: *Window) void {
+        const scroll = if (self.narrow) self.popup_scroll else self.sidebar;
+        const index = (if (self.narrow) navigation_count else @as(usize, 0)) + navigationIndex(self.target.page) +
+            (if (self.target.page == .aqueous) 1 + self.aqueous_section else @as(usize, 0));
+        const button = self.links[index].button.as(gtk.Widget);
+        var rect: @import("graphene1").Rect = undefined;
+        if (button.computeBounds(scroll.as(gtk.Widget), &rect) == 0) return;
+        const adjustment = scroll.getVadjustment();
+        const top = rect.f_origin.f_y;
+        const bottom = top + rect.f_size.f_height;
+        if (top < 0) adjustment.setValue(adjustment.getValue() + top) else if (bottom > adjustment.getPageSize()) adjustment.setValue(adjustment.getValue() + bottom - adjustment.getPageSize());
     }
     fn compose(self: *Window, route: nav.Route, body: *gtk.Box) void {
         if (route == .overview) {
@@ -381,7 +469,7 @@ pub const Window = struct {
                 row.append(texts.as(gtk.Widget));
                 button.as(gtk.Button).setChild(row.as(gtk.Widget));
                 const link = self.arena.allocator().create(Link) catch unreachable;
-                link.* = .{ .owner = self, .route = target, .button = button };
+                link.* = .{ .owner = self, .target = .{ .page = target }, .button = button };
                 _ = gtk.Button.signals.clicked.connect(button.as(gtk.Button), *Link, navigated, link, .{});
                 body.append(button.as(gtk.Widget));
             }
@@ -498,7 +586,8 @@ pub const Window = struct {
     }
     pub fn requestSelect(self: *Window, requested: nav.Target, external: bool) void {
         requested.validate() catch return;
-        const target: nav.Target = .{ .page = requested.page, .section = if (requested.section) |section| nav.aqueous_sections[nav.aqueousSectionIndex(section) catch return] else null };
+        self.keep_sections_open = !external and requested.page == .aqueous and requested.section == null and self.popover.as(gtk.Widget).getVisible() != 0;
+        const target: nav.Target = .{ .page = requested.page, .section = if (requested.section) |section| nav.aqueous_sections[nav.aqueousSectionIndex(section) catch return] else if (requested.page == .aqueous) nav.aqueous_sections[if (external) 0 else self.aqueous_section] else null };
         if (!self.fixture and self.target.page == .aqueous and self.aqueous.online and !self.aqueous.recovery and (self.aqueous.dirty or self.aqueous.sending != null)) {
             self.pending_aqueous_selection = .{ .target = target, .external = external };
             self.aqueous.flush();
@@ -515,29 +604,35 @@ pub const Window = struct {
             self.restore_id = 0;
         }
         const previous = &self.pages[@intFromEnum(self.target.page)];
+        if (self.target.page == .aqueous) self.aqueous_states[self.aqueous_section].scroll = previous.scroll.getVadjustment().getValue();
         if (self.window.getFocus()) |focus| if (focus == previous.body or focus.isAncestor(previous.body) != 0) {
-            previous.focus = focus;
+            self.pageFocus().* = focus;
         };
         self.target = .{ .page = target.page, .section = if (target.section) |section| nav.aqueous_sections[nav.aqueousSectionIndex(section) catch unreachable] else null };
         self.changing = true;
-        for (&self.links) |*link| link.button.setActive(@intFromBool(link.route == target.page));
-        self.section_chooser.as(gtk.Widget).setVisible(@intFromBool(target.page == .aqueous));
+        self.aqueous_context.as(gtk.Widget).setVisible(@intFromBool(target.page == .aqueous));
         if (target.page == .aqueous) {
             self.aqueous_section = if (target.section) |section| nav.aqueousSectionIndex(section) catch 0 else if (external) 0 else self.aqueous_section;
             self.target.section = nav.aqueous_sections[self.aqueous_section];
         }
-        self.section_chooser.setSelected(@intCast(self.aqueous_section));
+        self.updateNavigation();
         if (target.page == .aqueous) if (self.aqueous_view) |view| view.showPage(nav.aqueous_sections[self.aqueous_section]) catch {};
         self.changing = false;
-        self.heading.setText(self.title(target.page));
-        w.name(self.heading_anchor, self.title(target.page));
+        const heading = if (target.page == .aqueous) self.sectionTitle(self.aqueous_section) else self.title(target.page);
+        self.heading.setText(heading);
+        const context_title = std.fmt.allocPrintSentinel(a, "Aqueous / {s}", .{heading}, 0) catch unreachable;
+        defer a.free(context_title);
+        w.name(self.heading_anchor, if (target.page == .aqueous) context_title else heading);
         self.subtitle.setText(self.description(target.page));
         self.stack.setVisibleChildName(target.page.id());
-        self.popover.popdown();
+        const keep_open = self.keep_sections_open and !external and self.popover.as(gtk.Widget).getVisible() != 0;
+        self.keep_sections_open = false;
+        if (!keep_open) self.popover.popdown();
         const page = &self.pages[@intFromEnum(target.page)];
         if (external) {
             page.scroll.getVadjustment().setValue(0);
-            page.focus = null;
+            self.pageFocus().* = null;
+            if (target.page == .aqueous) self.aqueous_states[self.aqueous_section].scroll = 0;
         }
         self.restore_id = glib.idleAdd(restore, self);
         const preference = switch (target.page) {
@@ -548,18 +643,39 @@ pub const Window = struct {
         self.save.as(gtk.Widget).setSensitive(0);
         self.discard.as(gtk.Widget).setSensitive(0);
         self.footer_text.setText(if (self.fixture) (if (preference) self.t("Pearl preferences · Preview only", "Pearl-Einstellungen · Nur Vorschau") else self.t("Preview only · Sample devices", "Nur Vorschau · Beispielgeräte")) else self.t("Pearl preferences are managed by your session.", "Deine Sitzung verwaltet die Pearl-Einstellungen."));
-        self.heading.as(gtk.Accessible).announce(self.title(target.page), .medium);
+        self.heading.as(gtk.Accessible).announce(if (target.page == .aqueous) context_title else heading, .medium);
         if (!self.fixture) self.editingChanged();
         std.log.info("event=settings-page page={s}", .{target.page.id()});
     }
     fn restore(context: ?*anyopaque) callconv(.c) c_int {
         const self: *Window = @ptrCast(@alignCast(context.?));
         self.restore_id = 0;
+        if (self.popover.as(gtk.Widget).getVisible() != 0) {
+            self.revealNavigation();
+            return 0;
+        }
         const page = &self.pages[@intFromEnum(self.target.page)];
-        const scroll = page.scroll.getVadjustment().getValue();
-        _ = (page.focus orelse self.heading_anchor).grabFocus();
+        const scroll = if (self.target.page == .aqueous) self.aqueous_states[self.aqueous_section].scroll else page.scroll.getVadjustment().getValue();
+        const focus = self.pageFocus().*;
+        if (focus) |widget| {
+            if (widget.getMapped() == 0 or widget.isAncestor(page.body) == 0 or widget.grabFocus() == 0) _ = self.heading_anchor.grabFocus();
+        } else _ = self.heading_anchor.grabFocus();
         page.scroll.getVadjustment().setValue(scroll);
+        self.revealNavigation();
         return 0;
+    }
+    fn pageFocus(self: *Window) *?*gtk.Widget {
+        return if (self.target.page == .aqueous) &self.aqueous_states[self.aqueous_section].focus else &self.pages[@intFromEnum(self.target.page)].focus;
+    }
+    fn aqueousRebuilt(context: *anyopaque, rebuilding: bool) void {
+        const self: *Window = @ptrCast(@alignCast(context));
+        self.aqueous_rebuilding = rebuilding;
+        if (rebuilding) {
+            if (!self.changing and self.target.page == .aqueous and self.restore_id == 0) self.aqueous_states[self.aqueous_section].scroll = self.pages[@intFromEnum(nav.Route.aqueous)].scroll.getVadjustment().getValue();
+            for (&self.aqueous_states) |*state| state.focus = null;
+        } else if (!self.changing and self.target.page == .aqueous and self.restore_id == 0 and self.popover.as(gtk.Widget).getVisible() == 0) {
+            self.restore_id = glib.idleAdd(restore, self);
+        }
     }
     pub fn connection(self: *Window, connected: bool, err: ?anyerror) void {
         self.connected = connected;
@@ -608,7 +724,6 @@ pub const Window = struct {
                 self.editor.navigate(selection.target, selection.external);
             }
         }
-        self.pages[@intFromEnum(nav.Route.aqueous)].focus = null;
         if (self.aqueous_view) |view| {
             if (!self.aqueous.editing) view.update();
             view.actions.as(gtk.Widget).setVisible(@intFromBool(self.target.page == .aqueous));
@@ -805,15 +920,19 @@ pub const Window = struct {
         self.appearance_updates += 1;
     }
     fn navigated(_: *gtk.Button, link: *Link) callconv(.c) void {
-        if (!link.owner.changing) link.owner.requestSelect(.{ .page = link.route }, false);
+        if (!link.owner.changing) {
+            // A toggle changes itself before navigation has transferred the draft.
+            link.owner.updateNavigation();
+            link.owner.requestSelect(link.target, false);
+        }
     }
     fn focusChanged(_: *object.Object, _: *object.ParamSpec, self: *Window) callconv(.c) void {
-        if (self.changing or self.restore_id != 0) return;
+        if (self.changing or self.restore_id != 0 or self.aqueous_rebuilding) return;
         const page = &self.pages[@intFromEnum(self.target.page)];
         const focus = self.window.getFocus() orelse return;
         // Remember body focus before a pointer click moves it to navigation.
         // S2 page widgets remain alive for the window lifetime.
-        if (focus == page.body or focus.isAncestor(page.body) != 0) page.focus = focus;
+        if (focus == page.body or focus.isAncestor(page.body) != 0) self.pageFocus().* = focus;
     }
     fn retryClicked(_: *gtk.Button, self: *Window) callconv(.c) void {
         self.connection(false, null);
@@ -822,16 +941,6 @@ pub const Window = struct {
     fn closing(_: *gtk.Window, self: *Window) callconv(.c) c_int {
         self.close(self.context);
         return 1;
-    }
-    fn sectionChanged(_: *object.Object, _: *object.ParamSpec, self: *Window) callconv(.c) void {
-        if (self.changing) return;
-        const index = self.section_chooser.getSelected();
-        if (index < nav.aqueous_sections.len) {
-            if (!self.fixture) self.aqueous.flush();
-            self.aqueous_section = index;
-            self.target.section = nav.aqueous_sections[index];
-            if (self.aqueous_view) |view| view.showPage(nav.aqueous_sections[index]) catch {};
-        }
     }
     fn realized(_: *gtk.Widget, self: *Window) callconv(.c) void {
         self.native = self.window.as(gtk.Native).getSurface();
@@ -870,19 +979,22 @@ pub const Window = struct {
         // GtkBox's focusable heading anchor does not traverse backward out of
         // itself. Return explicitly to navigation for both reverse-Tab forms.
         if (focus == self.heading_anchor and (key == 0xfe20 or (key == 0xff09 and modifiers.shift_mask))) {
-            _ = (if (self.narrow) self.sections.as(gtk.Widget) else self.links[@intFromEnum(self.target.page)].button.as(gtk.Widget)).grabFocus();
+            _ = (if (self.narrow) self.sections.as(gtk.Widget) else self.selectedNavigation()).grabFocus();
             return 1;
         }
         for (&self.links, 0..) |*link, i| if (focus == link.button.as(gtk.Widget)) {
-            const base = i / count * count;
-            const n = i % count;
-            const next: usize = switch (key) {
-                0xff54 => (n + 1) % count,
-                0xff52 => (n + count - 1) % count,
+            const base = i / navigation_count * navigation_count;
+            const n = i % navigation_count;
+            var next: usize = switch (key) {
+                0xff54 => (n + 1) % navigation_count,
+                0xff52 => (n + navigation_count - 1) % navigation_count,
                 0xff50 => 0,
-                0xff57 => count - 1,
+                0xff57 => navigation_count - 1,
                 else => return 0,
             };
+            while (self.links[base + next].button.as(gtk.Widget).getVisible() == 0) {
+                next = (next + (if (key == 0xff52) navigation_count - 1 else @as(usize, 1))) % navigation_count;
+            }
             _ = self.links[base + next].button.as(gtk.Widget).grabFocus();
             return 1;
         };
@@ -895,10 +1007,10 @@ pub const Window = struct {
     }
     pub fn probe(self: *Window, alloc: std.mem.Allocator) ![]const u8 {
         const page = &self.pages[@intFromEnum(self.target.page)];
-        var links: [count]struct { page: nav.Route, active: bool, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) } = undefined;
+        var links: [navigation_count]struct { page: nav.Route, section: ?[]const u8, visible: bool, focused: bool, active: bool, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) } = undefined;
         for (&links, 0..) |*link, i| {
-            const item = &self.links[(if (self.narrow) @as(usize, count) else 0) + i];
-            link.* = .{ .page = item.route, .active = item.button.getActive() != 0, .bounds = self.bounds(item.button.as(gtk.Widget)) };
+            const item = &self.links[(if (self.narrow) @as(usize, navigation_count) else 0) + i];
+            link.* = .{ .page = item.target.page, .section = item.target.section, .visible = item.button.as(gtk.Widget).getVisible() != 0, .focused = self.window.getFocus() == item.button.as(gtk.Widget), .active = item.button.getActive() != 0, .bounds = self.bounds(item.button.as(gtk.Widget)) };
         }
         const ControlProbe = struct { field: []const u8, focused: bool, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
         var controls: std.ArrayList(ControlProbe) = .empty;
@@ -931,9 +1043,9 @@ pub const Window = struct {
         defer controls.deinit(alloc);
         const editor_state = .{ .ready = self.editor.ready, .online = self.editor.online, .recovery = self.editor.recovery, .state = self.editor.state, .local = self.editor.local != null, .upload = self.editor.upload, .download = self.editor.download, .error_code = self.editor.error_code.slice(), .validation = self.editor.validation.slice(), .export_error = self.editor.export_error.slice(), .bytes = self.editor.text().len, .sha256 = @import("editor_protocol.zig").digest(self.editor.text())[0..], .picker = if (self.preferences_view) |view| view.picker != null else false, .preview = if (self.preferences_view) |view| view.preview_ready else false, .close_dialog = self.close_dialog != null, .can_apply = self.save.as(gtk.Widget).getSensitive() != 0, .can_edit = self.editor.editable() };
         const focus_name = if (focus == self.heading_anchor) "heading" else blk: {
-            for (&self.links) |*link| if (focus == link.button.as(gtk.Widget)) break :blk link.route.id();
+            for (&self.links) |*link| if (focus == link.button.as(gtk.Widget)) break :blk if (link.target.section) |section| try std.fmt.allocPrint(alloc, "aqueous:{s}", .{section}) else link.target.page.id();
             break :blk "body";
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .links = links, .controls = controls.items, .editor = editor_state, .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .links = links, .controls = controls.items, .editor = editor_state, .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
     }
 };

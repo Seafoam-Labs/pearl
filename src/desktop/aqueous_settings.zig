@@ -60,6 +60,8 @@ pub fn ViewFor(comptime ClientType: type) type {
         notebook: ?*gtk.Notebook = null,
         placement_box: ?*gtk.Box = null,
         page_index: c_int = 0,
+        /// The standalone host invalidates page-local focus before widgets die.
+        rebuild_observer: ?struct { context: *anyopaque, notify: *const fn (*anyopaque, bool) void } = null,
         reload_button: *gtk.Button,
         root_signals: Signals = .{},
         form_signals: Signals = .{},
@@ -154,6 +156,8 @@ pub fn ViewFor(comptime ClientType: type) type {
             return box;
         }
         pub fn build(self: *Self) !void {
+            if (self.rebuild_observer) |observer| observer.notify(observer.context, true);
+            defer if (self.rebuild_observer) |observer| observer.notify(observer.context, false);
             self.placement_box = null;
             self.stopRecording();
             self.filling = true;
@@ -610,8 +614,10 @@ pub fn ViewFor(comptime ClientType: type) type {
                 self.page_index = @intCast(index);
                 if (self.notebook) |notebook| {
                     notebook.setCurrentPage(@intCast(index));
-                    // Opening a page places keyboard focus in its visible controls.
-                    if (notebook.getNthPage(@intCast(index))) |page_widget| _ = page_widget.childFocus(.tab_forward);
+                    // The standalone window restores its own section focus.
+                    if (!@hasDecl(ClientType, "standalone")) {
+                        if (notebook.getNthPage(@intCast(index))) |page_widget| _ = page_widget.childFocus(.tab_forward);
+                    }
                 }
                 return;
             };

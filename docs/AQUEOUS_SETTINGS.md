@@ -26,6 +26,21 @@ existing helper/receipt authority; display Keep/Revert stays available across
 page changes. Close, lock or frontend crash requests rollback through the native
 lease. Backend loss requires explicit review/rebase or local discard after Retry.
 
+## Navigation
+
+Select **Aqueous** in Pearl Settings to reveal Appearance, Layouts, Input,
+Shortcuts, Rules, Displays, and Advanced beneath it. The selected child is
+highlighted; the header shows its section title with Aqueous context. Narrow
+windows use the same sublist in **Sections**: choosing Aqueous reveals its
+children, and choosing a child closes the popover.
+
+Returning through the Aqueous parent restores the last section visited in this
+window. Each section retains its scroll position and valid control focus; if
+refreshing replaces those controls, focus falls back to the section heading.
+Explicit CLI links open at the heading, and an Aqueous launch without a section
+opens Appearance. Shortcuts retains the stable CLI section ID `keybinds`.
+Navigation transfers pending draft edits without applying or discarding them.
+
 ## Editing and outcomes
 
 Appearance, Layouts, Input, Keybindings, Rules and Displays are generated from the

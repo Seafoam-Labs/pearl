@@ -137,9 +137,13 @@ pearlctl settings show --page network
 | System | Aqueous / `aqueous` | Full current schema-driven compositor coverage, structured collections, displays, shortcut recording and workspace layout |
 | System | Advanced / `advanced` | Complete Pearl preferences JSON, including output overrides and exports; conflict resolution |
 
-Aqueous uses a second-level section selector and breadcrumb backed by its existing
-section registry. Do not flatten its entire schema into one scrolling page or
-lose access to existing fields. Advanced retains fields without dedicated forms.
+Aqueous uses an indented sublist beneath its navigation row, backed by the existing
+section registry. The same hierarchy appears in the narrow Sections popover.
+The page header identifies Aqueous and the selected section. Internal navigation
+retains drafts and restores each section's scroll position and valid focus.
+See the [Aqueous sublist navigation plan](AQUEOUS_SETTINGS_NAVIGATION_PLAN.md).
+Do not flatten its entire schema into one scrolling page or lose access to
+existing fields. Advanced retains fields without dedicated forms.
 The mockup's accent swatches are shortcuts to a seed-color value, not a replacement
 for arbitrary color entry. Wallpaper must use real file selection and preview.
 No new per-app notification policy, device service or compositor capability is

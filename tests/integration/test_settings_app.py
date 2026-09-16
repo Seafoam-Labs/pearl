@@ -51,6 +51,51 @@ def keys(s, *names):
     s.run(cmd)
 
 
+def choose_navigation(s, ipc, page, section=None, pointer=True):
+    """Activate a real navigation row with pointer or keyboard, including scrolling."""
+    v = probe(s, ipc)
+    if v['narrow']:
+        if not v['sections_open']:
+            click_widget(s, ipc, v['sections_bounds'])
+            wait_for(lambda: probe(s, ipc)['sections_open'])
+    if pointer:
+        for _ in range(40):
+            v = probe(s, ipc)
+            row = next(link for link in v['links'] if link['page'] == page and link['section'] == section)
+            assert row['visible'], row
+            rect, viewport = row['bounds'], v['navigation_bounds']
+            if rect['y'] >= viewport['y'] and rect['y'] + rect['height'] <= viewport['y'] + viewport['height']:
+                break
+            win = windows(ipc)[0]['geometry']
+            s.run(['wlrctl', 'pointer', 'move', '-100000', '-100000'])
+            s.run(['wlrctl', 'pointer', 'move', str(round(win['x'] + viewport['x'] + viewport['width']/2)), str(round(win['y'] + viewport['y'] + viewport['height']/2))])
+            below = rect['y'] > viewport['y']
+            distance = rect['y'] + rect['height'] - viewport['y'] - viewport['height'] if below else viewport['y'] - rect['y']
+            s.run(['wlrctl', 'pointer', 'scroll', str(min(180, max(10, distance + 5)) * (1 if below else -1)), '0'])
+            time.sleep(.1)
+        else:
+            raise AssertionError(('navigation row unreachable', row, viewport))
+        click_widget(s, ipc, row['bounds'])
+        wait_for(lambda: (v := probe(s, ipc))['page'] == page and (section is None or v['section'] == section))
+        return probe(s, ipc)
+    if not v['narrow']:
+        click_widget(s, ipc, v['header_bounds'])
+    for _ in range(24):
+        if any(link['focused'] for link in probe(s, ipc)['links']):
+            break
+        keys(s, 'ISO_Left_Tab')
+    else:
+        raise AssertionError(('navigation focus unreachable', probe(s, ipc)))
+    links = [link for link in probe(s, ipc)['links'] if link['visible']]
+    index = next(i for i, link in enumerate(links) if link['page'] == page and link['section'] == section)
+    keys(s, 'Home', *(['Down'] * index))
+    row = next(link for link in probe(s, ipc)['links'] if link['page'] == page and link['section'] == section)
+    assert row['focused'], row
+    keys(s, 'Return')
+    wait_for(lambda: (v := probe(s, ipc))['page'] == page and (section is None or v['section'] == section))
+    return probe(s, ipc)
+
+
 def apply_preferences(s, ctl_binary, **changes):
     current = wait_for(lambda: (v if not (v := ctl(s, ctl_binary, 'preferences', 'status')['result'])['busy'] else False))
     prefs = current['preferences']
@@ -124,6 +169,21 @@ def main():
             assert not request(s, ipc, page='sound', section='displays')['ok']
             assert probe(s, ipc)['page'] == 'aqueous'
             checks['generic-launch-strict-validation-and-aqueous-sections'] = True
+            for section, title in [('appearance', 'Appearance'), ('layouts', 'Layouts'), ('input', 'Input'), ('keybinds', 'Shortcuts'), ('rules', 'Rules'), ('displays', 'Displays'), ('advanced', 'Advanced')]:
+                v = choose_navigation(s, ipc, 'aqueous', section, pointer=section != 'keybinds')
+                assert v['heading'] == title, v
+                assert [link['section'] for link in v['links'] if link['active']] == [section]
+                assert all(link['visible'] for link in v['links'] if link['section'])
+            capture(s, 'aqueous-sublist-wide', output['name'])
+            v = choose_navigation(s, ipc, 'advanced')
+            assert not any(link['visible'] for link in v['links'] if link['section'])
+            v = choose_navigation(s, ipc, 'aqueous')
+            assert v['section'] == 'advanced'
+            v = choose_navigation(s, ipc, 'aqueous')
+            assert v['section'] == 'advanced'
+            assert s.run([args.production, '--page', 'aqueous'], check=False).returncode == 0
+            wait_for(lambda: probe(s, ipc)['section'] == 'appearance')
+            checks['aqueous-sublist-pointer-keyboard-parent-return-and-external-default'] = True
             # Parallel launches all complete through one owner.
             launches = [s.child('concurrent-' + str(i), [args.production, '--page', 'sound']) for i in range(6)]
             for child in launches: clean(child)
@@ -212,12 +272,13 @@ def main():
                     capture(s, page + '-' + label, output['name'])
             checks['committed-material-light-dark-native-gtk'] = True
             resize(s, rules, 480, 700)
+            ipc.call('command', action='session.reload', fields={})
             # Placement rules set initial geometry; this compositor preserves a
             # window's geometry after explicit maximize/restore.
             app.stop(); clean(app)
             app = s.child('settings-narrow', [args.settings, '--page', 'appearance'], G_DEBUG='fatal-warnings', PEARL_SETTINGS_FIXTURE='1')
             app.expect('event=settings-window-created')
-            wait_for(lambda: probe(s, ipc)['narrow'])
+            wait_for(lambda: (v := probe(s, ipc))['narrow'] and 0 < v['width'] <= 500)
             request(s, ipc, page='appearance'); time.sleep(.2)
             v = probe(s, ipc)
             assert v['width'] <= 500, v
@@ -229,6 +290,26 @@ def main():
             keys(s, 'Escape'); wait_for(lambda: not probe(s, ipc)['sections_open'])
             assert app.proc.poll() is None
             checks['narrow-navigation-fixed-footer-and-escape'] = True
+            v = choose_navigation(s, ipc, 'aqueous', pointer=False)
+            assert v['sections_open'] and v['section'] == 'appearance', v
+            capture(s, 'aqueous-sublist-narrow', output['name'])
+            v = choose_navigation(s, ipc, 'aqueous', 'displays', pointer=False)
+            assert not v['sections_open'] and v['heading'] == 'Displays', v
+            click_widget(s, ipc, v['sections_bounds'])
+            keys(s, 'Escape')
+            wait_for(lambda: not probe(s, ipc)['sections_open'])
+            assert probe(s, ipc)['section'] == 'displays'
+            v = choose_navigation(s, ipc, 'aqueous', 'displays', pointer=True)
+            assert not v['sections_open']
+            win_id = windows(ipc)[0]['id']
+            ipc.call('command', action='window.maximized', fields=dict(id=win_id, value=True))
+            wait_for(lambda: not probe(s, ipc)['narrow'])
+            assert probe(s, ipc)['section'] == 'displays'
+            ipc.call('command', action='window.maximized', fields=dict(id=win_id, value=False))
+            wait_for(lambda: probe(s, ipc)['narrow'])
+            assert probe(s, ipc)['section'] == 'displays'
+            checks['narrow-aqueous-parent-expands-child-selects-and-escape-retains-section'] = True
+            request(s, ipc, page='appearance')
             apply_preferences(s, args.ctl, font_size=24, reduced_motion=True)
             time.sleep(1.4); capture(s, 'appearance-large-text', output['name'])
             assert probe(s, ipc)['width'] <= 500
@@ -254,7 +335,10 @@ def main():
             click_widget(s, ipc, probe(s, ipc)['retry_bounds'])
             wait_for(lambda: probe(s, ipc)['connected'])
             checks['backend-loss-and-explicit-retry-without-shell-start'] = True
-            s.run(['wtype', '-M', 'ctrl', '-k', 'w', '-m', 'ctrl'])
+            wait_for(lambda: probe(s, ipc)['editor']['ready'])
+            ipc.call('command', action='window.activate', fields=dict(id=windows(ipc)[0]['id']))
+            # Give the newly created virtual keyboard time to deliver its enter.
+            s.run(['wtype', '-s', '200', '-M', 'ctrl', '-k', 'w', '-m', 'ctrl'])
             clean(normal); assert pearl.proc.poll() is None
             wait_for(lambda: not endpoint(s, ipc).exists())
             checks['ctrl-w-closes-only-frontend-and-removes-instance-endpoint'] = True

@@ -48,3 +48,6 @@
 .settings-window.pearl-gtk .settings-footer { border-top: 1px solid alpha(currentColor, 0.15); }
 
 .settings-window headerbar button { border-radius: 9px; min-width: 24px; min-height: 24px; padding: 5px; background: transparent; }
+
+.settings-window button.settings-nav-child { margin-left: 40px; }
+.settings-window button.settings-nav-parent label { font-weight: 600; }

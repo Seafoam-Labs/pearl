@@ -66,6 +66,15 @@ def main():
             assert header['y']+header['height']<=body['y']+1,(case,page,v)
             assert body['y']+body['height']<=footer['y']+1 and footer['y']+footer['height']<=v['height']+1,(case,page,v)
             assert sum(link['active'] for link in v['links'])==1
+            children=[link for link in v['links'] if link['section']]
+            assert len(children)==7 and all(link['visible']==(page=='aqueous') for link in children)
+            if page=='aqueous':
+                assert v['heading']=='Displays'
+                assert [link['section'] for link in children if link['active']]==['displays']
+                if not v['narrow']:
+                    active=next(link['bounds'] for link in children if link['active'])
+                    viewport=v['navigation_bounds']
+                    assert active['y']>=viewport['y']-1 and active['y']+active['height']<=viewport['y']+viewport['height']+1,(case,active,viewport)
             bounds=ipc.outputs()[win['output']]['bounds']
             assert v['width']<=bounds['width']+1 and v['height']<=bounds['height']+1,(case,page,v,bounds)
             report['layouts'].append(dict(case=case,page=page,width=v['width'],height=v['height'],body=body,footer=footer,narrow=v['narrow'],output=win['output']))
@@ -83,7 +92,18 @@ def main():
             ('static','dark','large-text',480,700,24)]:
             apply_preferences(s,args.ctl,theme=dict(mode=theme,variant=variant,gtk_name='Pearl-Acceptance' if theme=='gtk' else ''),font_size=font,reduced_motion=True)
             wait_for(lambda:probe(s,ipc)['style']==('gtk' if theme=='gtk' else variant));size(width,height)
-            for page in REFERENCE_PAGES:layout(page,label,True)
+            # Start each reference size with its placement rule, avoiding a
+            # previous wide page's minimum size constraining the next case.
+            app.stop();clean(app)
+            app=s.child('settings-'+label,[args.settings,'--page','aqueous','--section','displays'],G_DEBUG='fatal-warnings')
+            app.expect('event=settings-window-created');ready(s,ipc);aq_ready(s,ipc,peer)
+            if width<760:wait_for(lambda:probe(s,ipc)['narrow'])
+            for page in (*REFERENCE_PAGES,'aqueous'):layout(page,label,True)
+            if probe(s,ipc)['narrow']:
+                click_widget(s,ipc,probe(s,ipc)['sections_bounds'])
+                wait_for(lambda:probe(s,ipc)['sections_open'])
+                capture(s,label+'-aqueous-sublist',connector)
+                keys(s,'Escape')
         checks['five-reference-pages-dark-light-native-narrow-and-large-text']=True
         apply_preferences(s,args.ctl,theme=dict(mode='static',variant='dark',gtk_name=''),font_size=14)
         # Preserve an acknowledged draft through scale, size and monitor changes.
@@ -97,7 +117,7 @@ def main():
         checks['100-125-150-200-percent-all-pages-preserve-draft']=True
         s.run(['wlr-randr','--output',connector,'--scale','1'])
         size(480,400)
-        for page in PAGES:layout(page,'short',page in REFERENCE_PAGES)
+        for page in PAGES:layout(page,'short',page in (*REFERENCE_PAGES,'aqueous'))
         assert peer.document()==candidate
         checks['short-window-keeps-header-body-and-save-footer-reachable']=True
         # Moving to another output and disabling it must preserve the same owner.

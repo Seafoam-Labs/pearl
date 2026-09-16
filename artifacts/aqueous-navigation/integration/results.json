@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "checks": {
+    "staged-production-desktop-normal-window-identity-and-dock-pin": true,
+    "cli-default-explicit-pages-repeated-activation-and-aqueous-compatibility": true,
+    "invalid-page-section-output-do-not-change-visible-state": true,
+    "five-flyout-handoffs-carry-route-and-dismiss-after-accepted-launch": true,
+    "close-and-second-process-restart": true,
+    "absent-removed-and-invalid-executable-leave-usable-flyout-with-feedback": true,
+    "spawned-frontend-survives-backend-exit": true,
+    "git-package-matching-executable-and-window-identity": true
+  },
+  "binary_sha256": {
+    "production_pearl": "3edcdb9874be754746f0d2f55ac9cd1a2149ac219afb425a4c579aef1860a663",
+    "production_settings": "ae8231d2d064f061a6b757dd6bc9ea26ecc1055b904e38a8c845bd4f37b1c6f1",
+    "ctl": "2b0d96b6fad27f5e386709864a3a530c2c7cbaca66aac9db91a72c73512d139c"
+  }
+}

@@ -171,6 +171,35 @@ def main():
         draft=peer.aq_document('draft');assert any(c['id']=='layout.gaps_outer' and c['value']==18 for c in draft['changes']),draft
         capture(s,'aqueous-layouts-draft',output['name'])
         checks['aqueous-real-pointer-edit-and-shared-draft']=True
+        # Child navigation transfers edits and preserves independent section positions.
+        click(s,ipc,'layout.gaps_outer');type_text(s,'19')
+        choose_navigation(s,ipc,'aqueous','input')
+        aq_ready(s,ipc,peer)
+        assert any(c['id']=='layout.gaps_outer' and c['value']==19 for c in peer.aq_document('draft')['changes'])
+        choose_navigation(s,ipc,'sound')
+        assert peer.aqueous()['draft']
+        v=choose_navigation(s,ipc,'aqueous');assert v['section']=='input'
+        choose_navigation(s,ipc,'aqueous','layouts')
+        click(s,ipc,'layout.gaps_outer')
+        body=probe(s,ipc)['body_bounds'];win=windows(ipc)[0]['geometry']
+        s.run(['wlrctl','pointer','move','-100000','-100000'])
+        s.run(['wlrctl','pointer','move',str(round(win['x']+body['x']+body['width']/2)),str(round(win['y']+body['y']+body['height']/2))])
+        s.run(['wlrctl','pointer','scroll','200','0']);time.sleep(.3)
+        focused=probe(s,ipc)
+        assert focused['scroll']>0,focused['scroll']
+        assert next(c for c in focused['controls'] if c['field']=='layout.gaps_outer')['focused']
+        saved_scroll=focused['scroll']
+        assert choose_navigation(s,ipc,'aqueous','input')['scroll']==0
+        restored=choose_navigation(s,ipc,'aqueous','layouts')
+        assert abs(restored['scroll']-saved_scroll)<1,(saved_scroll,restored['scroll'])
+        assert next(c for c in restored['controls'] if c['field']=='layout.gaps_outer')['focused']
+        # Refresh rebuilds all fields; old focus references must never be reused.
+        peer.aq_action('refresh');aq_ready(s,ipc,peer)
+        choose_navigation(s,ipc,'aqueous','input')
+        choose_navigation(s,ipc,'aqueous','layouts')
+        assert peer.aqueous()['draft'] and app.proc.poll() is None
+        click(s,ipc,'layout.gaps_outer');type_text(s,'18');keys(s,'Tab');aq_ready(s,ipc,peer)
+        checks['aqueous-sublist-draft-transfer-section-restoration-and-rebuild']=True
         for action in ('validate','apply'):
             time.sleep(.3)
             click_widget(s,ipc,control(s,ipc,'aqueous.'+action))
