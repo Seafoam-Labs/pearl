@@ -1,0 +1,318 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info: event=app-index-ready entries=160 truncated=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=829b312626f4f5b1fd4f2f725fdf8b5d
+info(pearl): event=control-ready session=829b312626f4f5b1fd4f2f725fdf8b5d
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=preferences-applied revision=1 mode=static cache=false
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:39.980: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:39.981: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=6338
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.162: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-results count=113 shown=113 publish_us=4015
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.218: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=56389
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.218: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.219: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.235: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.246: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-opened output=1
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.255: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-results count=113 shown=113 publish_us=4129
+info: event=launcher-results count=113 shown=113 publish_us=3398
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.263: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.267: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.277: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=17185
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.283: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.300: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.315: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.344: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=2490
+info: event=launcher-painted latency_us=13772
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.367: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-results count=113 shown=113 publish_us=4162
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.391: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=22257
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.399: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.414: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.430: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4043
+info: event=launcher-results count=113 shown=113 publish_us=3612
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.472: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=16657
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.479: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.495: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.511: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3985
+info: event=launcher-results count=113 shown=113 publish_us=3777
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.570: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=16286
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.576: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.592: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.608: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4409
+info: event=launcher-results count=113 shown=113 publish_us=4215
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.666: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=15729
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.673: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.689: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.705: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3813
+info: event=launcher-results count=113 shown=113 publish_us=3428
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.763: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=17992
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.770: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.786: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.802: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3702
+info: event=launcher-results count=113 shown=113 publish_us=3680
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.860: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=19164
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.868: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.883: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.899: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4494
+info: event=launcher-results count=113 shown=113 publish_us=3818
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.958: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=17869
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.965: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.981: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:42.998: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4183
+info: event=launcher-results count=113 shown=113 publish_us=4017
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.056: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=17816
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.063: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.079: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.095: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4237
+info: event=launcher-results count=113 shown=113 publish_us=4023
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.154: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=18253
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.160: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.176: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.192: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4455
+info: event=launcher-results count=113 shown=113 publish_us=3886
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.251: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=15126
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.258: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.274: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.290: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4290
+info: event=launcher-results count=113 shown=113 publish_us=4005
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.349: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=14429
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.355: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.371: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.387: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4642
+info: event=launcher-results count=113 shown=113 publish_us=4312
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.448: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=15385
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.452: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.469: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.485: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4370
+info: event=launcher-results count=113 shown=113 publish_us=3938
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.546: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=15119
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.550: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.566: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.582: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4127
+info: event=launcher-results count=113 shown=113 publish_us=4690
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.642: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=15717
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.648: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.664: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.680: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4153
+info: event=launcher-results count=113 shown=113 publish_us=3817
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.739: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=15506
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.745: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.761: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.777: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4291
+info: event=launcher-results count=113 shown=113 publish_us=3839
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.836: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=14852
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.842: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.858: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.874: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4138
+info: event=launcher-results count=113 shown=113 publish_us=3827
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.933: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=14549
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.939: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.956: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:43.972: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4143
+info: event=launcher-results count=113 shown=113 publish_us=3684
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:44.035: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=launcher-painted latency_us=14168
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:44.038: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:44.054: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:44.070: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=popup-closed
+info: event=preferences-applied revision=2 mode=static cache=false
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:46.120: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:46.120: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=preferences-applied revision=3 mode=static cache=false
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:48.379: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:48.380: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=preferences-applied revision=4 mode=static cache=false
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:50.553: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+
+(pearl-git:62855): Gdk-WARNING **: 00:43:50.555: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)
+info: event=preferences-applied revision=5 mode=static cache=false
+info: event=preferences-applied revision=6 mode=static cache=false
+info: event=preferences-applied revision=7 mode=static cache=false
+info: event=preferences-applied revision=8 mode=static cache=false
+info: event=preferences-applied revision=9 mode=static cache=false
+info: event=preferences-applied revision=10 mode=static cache=false
+info: event=preferences-applied revision=11 mode=static cache=false
+info: event=preferences-applied revision=12 mode=static cache=false
+info(pearl): event=stopping reason=control-quit pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

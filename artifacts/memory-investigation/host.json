@@ -1,0 +1,1078 @@
+{
+  "time": "2026-09-16T00:46:26.709680-04:00",
+  "pid": 2695,
+  "status_kib": {
+    "VmPeak": 3375924,
+    "VmSize": 3028884,
+    "VmLck": 0,
+    "VmPin": 0,
+    "VmHWM": 871344,
+    "VmRSS": 777920,
+    "RssAnon": 298724,
+    "RssFile": 267024,
+    "RssShmem": 212172,
+    "VmData": 422660,
+    "VmStk": 2352,
+    "VmExe": 1588,
+    "VmLib": 257412,
+    "VmPTE": 1816,
+    "VmSwap": 0,
+    "HugetlbPages": 0
+  },
+  "smaps_rollup_kib": {
+    "Rss": 614360,
+    "Pss": 517682,
+    "Pss_Dirty": 427160,
+    "Pss_Anon": 298724,
+    "Pss_File": 170350,
+    "Pss_Shmem": 48608,
+    "Shared_Clean": 110616,
+    "Shared_Dirty": 4,
+    "Private_Clean": 76580,
+    "Private_Dirty": 427160,
+    "Referenced": 614360,
+    "Anonymous": 298724,
+    "KSM": 0,
+    "LazyFree": 0,
+    "AnonHugePages": 104448,
+    "ShmemPmdMapped": 0,
+    "FilePmdMapped": 0,
+    "Shared_Hugetlb": 0,
+    "Private_Hugetlb": 0,
+    "Swap": 0,
+    "SwapPss": 0,
+    "Locked": 0
+  },
+  "mapping_groups_kib": {
+    "[anonymous]": {
+      "Rss": 219648,
+      "Pss": 219648,
+      "Anonymous": 219648
+    },
+    "/dev/nvidiactl": {
+      "Rss": 155204,
+      "Pss": 155200,
+      "Anonymous": 0
+    },
+    "[heap]": {
+      "Rss": 65688,
+      "Pss": 65688,
+      "Anonymous": 65688
+    },
+    "/memfd:glycin-frame (deleted)": {
+      "Rss": 48600,
+      "Pss": 48600,
+      "Anonymous": 0
+    },
+    "/usr/lib/libnvidia-gpucomp.so.615.71.09": {
+      "Rss": 28312,
+      "Pss": 4135,
+      "Anonymous": 2832
+    },
+    "/usr/lib/libLLVM.so.22.1": {
+      "Rss": 15424,
+      "Pss": 3077,
+      "Anonymous": 2196
+    },
+    "/usr/lib/libnvidia-glcore.so.615.71.09": {
+      "Rss": 13304,
+      "Pss": 3401,
+      "Anonymous": 2000
+    },
+    "/usr/lib/libgtk-4.so.1.2200.5": {
+      "Rss": 10044,
+      "Pss": 4067,
+      "Anonymous": 232
+    },
+    "/usr/lib/libvulkan_radeon.so": {
+      "Rss": 3768,
+      "Pss": 843,
+      "Anonymous": 416
+    },
+    "/usr/bin/pearl-git": {
+      "Rss": 3748,
+      "Pss": 1976,
+      "Anonymous": 16
+    },
+    "/usr/lib/libglycin-2.so.0": {
+      "Rss": 3424,
+      "Pss": 1128,
+      "Anonymous": 124
+    },
+    "/usr/lib/libnvidia-glvkspirv.so.615.71.09": {
+      "Rss": 2944,
+      "Pss": 460,
+      "Anonymous": 152
+    },
+    "[stack]": {
+      "Rss": 2348,
+      "Pss": 2348,
+      "Anonymous": 2348
+    },
+    "/usr/lib/libc.so.6": {
+      "Rss": 2044,
+      "Pss": 40,
+      "Anonymous": 24
+    },
+    "/usr/lib/libgio-2.0.so.0.8800.3": {
+      "Rss": 1860,
+      "Pss": 112,
+      "Anonymous": 40
+    },
+    "/usr/lib/libstdc++.so.6.0.36": {
+      "Rss": 1584,
+      "Pss": 102,
+      "Anonymous": 72
+    },
+    "/usr/lib/libharfbuzz.so.0.61440.0": {
+      "Rss": 1444,
+      "Pss": 195,
+      "Anonymous": 12
+    },
+    "/usr/lib/libglib-2.0.so.0.8800.3": {
+      "Rss": 1416,
+      "Pss": 76,
+      "Anonymous": 8
+    },
+    "/var/cache/fontconfig/923e285e415b1073c8df160bee08820f-le64.cache-12": {
+      "Rss": 1128,
+      "Pss": 59,
+      "Anonymous": 0
+    },
+    "/usr/lib/libcairo.so.2.11804.4": {
+      "Rss": 1128,
+      "Pss": 185,
+      "Anonymous": 24
+    },
+    "/usr/lib/libfreetype.so.6.20.6": {
+      "Rss": 1056,
+      "Pss": 132,
+      "Anonymous": 36
+    },
+    "/usr/lib/libGLX_nvidia.so.615.71.09": {
+      "Rss": 1040,
+      "Pss": 394,
+      "Anonymous": 360
+    },
+    "/usr/lib/libpixman-1.so.0.46.4": {
+      "Rss": 888,
+      "Pss": 193,
+      "Anonymous": 36
+    },
+    "/usr/lib/libgnutls.so.30.42.0": {
+      "Rss": 784,
+      "Pss": 111,
+      "Anonymous": 80
+    },
+    "/usr/lib/libm.so.6": {
+      "Rss": 772,
+      "Pss": 25,
+      "Anonymous": 8
+    },
+    "/usr/share/fonts/noto/NotoSans-Bold.ttf": {
+      "Rss": 728,
+      "Pss": 140,
+      "Anonymous": 0
+    },
+    "/usr/share/fonts/noto/NotoSans-Regular.ttf": {
+      "Rss": 704,
+      "Pss": 70,
+      "Anonymous": 0
+    },
+    "/usr/lib/libvulkan.so.1.4.357": {
+      "Rss": 624,
+      "Pss": 103,
+      "Anonymous": 12
+    },
+    "/usr/lib/locale/locale-archive": {
+      "Rss": 564,
+      "Pss": 15,
+      "Anonymous": 0
+    },
+    "/usr/lib/libX11.so.6.4.0": {
+      "Rss": 552,
+      "Pss": 54,
+      "Anonymous": 24
+    },
+    "/usr/share/fonts/TTF/DejaVuSans.ttf": {
+      "Rss": 548,
+      "Pss": 137,
+      "Anonymous": 0
+    },
+    "/usr/lib/libnvidia-glsi.so.615.71.09": {
+      "Rss": 540,
+      "Pss": 53,
+      "Anonymous": 28
+    },
+    "/usr/lib/pulseaudio/libpulsecommon-17.0.so": {
+      "Rss": 536,
+      "Pss": 135,
+      "Anonymous": 12
+    },
+    "/usr/local/share/fonts/m/MonoLisascriptNormal.ttf": {
+      "Rss": 504,
+      "Pss": 11,
+      "Anonymous": 0
+    },
+    "/usr/share/fonts/noto/NotoColorEmoji.ttf": {
+      "Rss": 496,
+      "Pss": 90,
+      "Anonymous": 0
+    },
+    "/usr/lib/libnss_systemd.so.2": {
+      "Rss": 496,
+      "Pss": 80,
+      "Anonymous": 32
+    },
+    "/usr/lib/libpango-1.0.so.0.5800.2": {
+      "Rss": 496,
+      "Pss": 76,
+      "Anonymous": 20
+    },
+    "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf": {
+      "Rss": 472,
+      "Pss": 320,
+      "Anonymous": 0
+    },
+    "/usr/lib/libgobject-2.0.so.0.8800.3": {
+      "Rss": 464,
+      "Pss": 23,
+      "Anonymous": 16
+    },
+    "/usr/lib/libfontconfig.so.1.17.0": {
+      "Rss": 460,
+      "Pss": 56,
+      "Anonymous": 36
+    },
+    "/usr/lib/libibus-1.0.so.5.0.534": {
+      "Rss": 448,
+      "Pss": 165,
+      "Anonymous": 16
+    },
+    "/usr/lib/libicuuc.so.78.3": {
+      "Rss": 444,
+      "Pss": 87,
+      "Anonymous": 80
+    },
+    "/usr/lib/libxkbcommon.so.0.13.2": {
+      "Rss": 440,
+      "Pss": 42,
+      "Anonymous": 12
+    },
+    "/usr/lib/libepoxy.so.0.0.0": {
+      "Rss": 420,
+      "Pss": 72,
+      "Anonymous": 60
+    },
+    "/usr/lib/libp11-kit.so.0.4.11": {
+      "Rss": 400,
+      "Pss": 135,
+      "Anonymous": 124
+    },
+    "/usr/lib/libleancrypto.so.1.9.0": {
+      "Rss": 384,
+      "Pss": 47,
+      "Anonymous": 32
+    },
+    "/usr/lib/libpng16.so.16.58.0": {
+      "Rss": 356,
+      "Pss": 86,
+      "Anonymous": 8
+    },
+    "/usr/lib/libdbus-1.so.3.38.3": {
+      "Rss": 356,
+      "Pss": 21,
+      "Anonymous": 12
+    },
+    "/usr/lib/libpulse.so.0.24.3": {
+      "Rss": 344,
+      "Pss": 79,
+      "Anonymous": 12
+    },
+    "/usr/lib/libsqlite3.so.3.53.4": {
+      "Rss": 340,
+      "Pss": 39,
+      "Anonymous": 28
+    },
+    "/var/cache/fontconfig/f6b893a7224233d96cb72fd88691c0b4-le64.cache-12": {
+      "Rss": 292,
+      "Pss": 15,
+      "Anonymous": 0
+    },
+    "/usr/lib/ld-linux-x86-64.so.2": {
+      "Rss": 280,
+      "Pss": 13,
+      "Anonymous": 12
+    },
+    "/usr/lib/libsystemd.so.0.44.0": {
+      "Rss": 276,
+      "Pss": 45,
+      "Anonymous": 44
+    },
+    "/usr/lib/libnettle.so.9.0": {
+      "Rss": 272,
+      "Pss": 28,
+      "Anonymous": 16
+    },
+    "/usr/lib/libxml2.so.16.1.4": {
+      "Rss": 272,
+      "Pss": 48,
+      "Anonymous": 40
+    },
+    "/usr/lib/libgstreamer-1.0.so.0.2807.0": {
+      "Rss": 272,
+      "Pss": 95,
+      "Anonymous": 36
+    },
+    "/usr/lib/liborc-0.4.so.0.44.0": {
+      "Rss": 260,
+      "Pss": 126,
+      "Anonymous": 48
+    },
+    "/usr/lib/libGLdispatch.so.0.0.0": {
+      "Rss": 252,
+      "Pss": 120,
+      "Anonymous": 116
+    },
+    "/usr/lib/libtinysparql-3.0.so.0.1101.0": {
+      "Rss": 248,
+      "Pss": 72,
+      "Anonymous": 64
+    },
+    "/usr/lib/libgstvideo-1.0.so.0.2807.0": {
+      "Rss": 248,
+      "Pss": 125,
+      "Anonymous": 84
+    },
+    "/usr/lib/gvfs/libgvfscommon.so": {
+      "Rss": 240,
+      "Pss": 42,
+      "Anonymous": 28
+    },
+    "/usr/lib/libz.so.1.3.1.zlib-ng": {
+      "Rss": 240,
+      "Pss": 21,
+      "Anonymous": 8
+    },
+    "/usr/lib/libSPIRV-Tools.so": {
+      "Rss": 228,
+      "Pss": 33,
+      "Anonymous": 16
+    },
+    "/usr/lib/libexpat.so.1.12.4": {
+      "Rss": 224,
+      "Pss": 16,
+      "Anonymous": 12
+    },
+    "/usr/lib/libgdk_pixbuf-2.0.so.0.4400.7": {
+      "Rss": 220,
+      "Pss": 19,
+      "Anonymous": 12
+    },
+    "/usr/lib/libcups.so.2": {
+      "Rss": 204,
+      "Pss": 52,
+      "Anonymous": 44
+    },
+    "/usr/lib/gio/modules/libgvfsdbus.so": {
+      "Rss": 200,
+      "Pss": 26,
+      "Anonymous": 12
+    },
+    "/usr/lib/libudev.so.1.7.14": {
+      "Rss": 200,
+      "Pss": 27,
+      "Anonymous": 24
+    },
+    "/etc/ld.so.cache": {
+      "Rss": 200,
+      "Pss": 1,
+      "Anonymous": 0
+    },
+    "/usr/lib/libgmp.so.10.5.0": {
+      "Rss": 196,
+      "Pss": 19,
+      "Anonymous": 12
+    },
+    "/usr/lib/libgstaudio-1.0.so.0.2807.0": {
+      "Rss": 196,
+      "Pss": 79,
+      "Anonymous": 20
+    },
+    "/usr/lib/libgstpbutils-1.0.so.0.2807.0": {
+      "Rss": 196,
+      "Pss": 80,
+      "Anonymous": 20
+    },
+    "/usr/share/mime/mime.cache": {
+      "Rss": 192,
+      "Pss": 38,
+      "Anonymous": 0
+    },
+    "/usr/lib/libunistring.so.5.2.1": {
+      "Rss": 188,
+      "Pss": 24,
+      "Anonymous": 20
+    },
+    "/usr/lib/libncursesw.so.6.6": {
+      "Rss": 184,
+      "Pss": 32,
+      "Anonymous": 24
+    },
+    "/usr/lib/libgstbase-1.0.so.0.2807.0": {
+      "Rss": 184,
+      "Pss": 57,
+      "Anonymous": 12
+    },
+    "/usr/lib/libdw-0.196.so": {
+      "Rss": 180,
+      "Pss": 76,
+      "Anonymous": 40
+    },
+    "/usr/lib/libxcb.so.1.1.0": {
+      "Rss": 180,
+      "Pss": 13,
+      "Anonymous": 8
+    },
+    "/usr/lib/libseccomp.so.2.6.0": {
+      "Rss": 176,
+      "Pss": 29,
+      "Anonymous": 8
+    },
+    "/usr/lib/libgstgl-1.0.so.0.2807.0": {
+      "Rss": 176,
+      "Pss": 65,
+      "Anonymous": 28
+    },
+    "/usr/lib/liblzma.so.5.8.3": {
+      "Rss": 172,
+      "Pss": 27,
+      "Anonymous": 8
+    },
+    "/var/cache/fontconfig/f2e43df3287529323e79e7929dc44cc9-le64.cache-12": {
+      "Rss": 168,
+      "Pss": 8,
+      "Anonymous": 0
+    },
+    "/usr/lib/libgsttag-1.0.so.0.2807.0": {
+      "Rss": 168,
+      "Pss": 70,
+      "Anonymous": 12
+    },
+    "/usr/lib/libtiff.so.6.3.0": {
+      "Rss": 164,
+      "Pss": 50,
+      "Anonymous": 24
+    },
+    "/usr/lib/libhogweed.so.7.0": {
+      "Rss": 160,
+      "Pss": 19,
+      "Anonymous": 12
+    },
+    "/usr/lib/liblcms2.so.2.0.19": {
+      "Rss": 160,
+      "Pss": 27,
+      "Anonymous": 24
+    },
+    "/usr/lib/libmount.so.1.1.0": {
+      "Rss": 160,
+      "Pss": 14,
+      "Anonymous": 12
+    },
+    "/usr/lib/libblkid.so.1.1.0": {
+      "Rss": 156,
+      "Pss": 29,
+      "Anonymous": 28
+    },
+    "/usr/lib/libjpeg.so.8.3.2": {
+      "Rss": 156,
+      "Pss": 42,
+      "Anonymous": 8
+    },
+    "/usr/lib/libmp3lame.so.0.0.0": {
+      "Rss": 148,
+      "Pss": 38,
+      "Anonymous": 8
+    },
+    "/usr/lib/libvorbis.so.0.4.9": {
+      "Rss": 144,
+      "Pss": 32,
+      "Anonymous": 8
+    },
+    "/usr/lib/libvorbisenc.so.2.0.12": {
+      "Rss": 144,
+      "Pss": 118,
+      "Anonymous": 116
+    },
+    "/usr/lib/libcolord.so.2.0.5": {
+      "Rss": 144,
+      "Pss": 45,
+      "Anonymous": 12
+    },
+    "/usr/lib/libfribidi.so.0.4.0": {
+      "Rss": 140,
+      "Pss": 22,
+      "Anonymous": 8
+    },
+    "/usr/lib/libGLX.so.0.0.0": {
+      "Rss": 136,
+      "Pss": 14,
+      "Anonymous": 8
+    },
+    "/usr/lib/libgstplay-1.0.so.0.2807.0": {
+      "Rss": 136,
+      "Pss": 45,
+      "Anonymous": 8
+    },
+    "/usr/lib/libgraphene-1.0.so.0.1000.8": {
+      "Rss": 132,
+      "Pss": 40,
+      "Anonymous": 8
+    },
+    "/usr/lib/libedit.so.0.0.78": {
+      "Rss": 128,
+      "Pss": 22,
+      "Anonymous": 16
+    },
+    "/usr/lib/locale/C.utf8/LC_CTYPE": {
+      "Rss": 128,
+      "Pss": 2,
+      "Anonymous": 0
+    },
+    "/usr/lib/libpangoft2-1.0.so.0.5800.2": {
+      "Rss": 128,
+      "Pss": 11,
+      "Anonymous": 8
+    },
+    "/usr/lib/libharfbuzz-subset.so.0.61440.0": {
+      "Rss": 124,
+      "Pss": 53,
+      "Anonymous": 8
+    },
+    "/usr/lib/libmvec.so.1": {
+      "Rss": 116,
+      "Pss": 21,
+      "Anonymous": 8
+    },
+    "/usr/lib/libzstd.so.1.5.7": {
+      "Rss": 116,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/lib/libnvidia-allocator.so.615.71.09": {
+      "Rss": 112,
+      "Pss": 14,
+      "Anonymous": 8
+    },
+    "/usr/lib/libFLAC.so.14.0.0": {
+      "Rss": 108,
+      "Pss": 27,
+      "Anonymous": 8
+    },
+    "/usr/lib/libjson-glib-1.0.so.0.1000.8": {
+      "Rss": 108,
+      "Pss": 10,
+      "Anonymous": 8
+    },
+    "/usr/lib/libtasn1.so.6.6.5": {
+      "Rss": 104,
+      "Pss": 11,
+      "Anonymous": 8
+    },
+    "/usr/lib/libelf-0.196.so": {
+      "Rss": 104,
+      "Pss": 12,
+      "Anonymous": 8
+    },
+    "/usr/lib/libgraphite2.so.3.3.1": {
+      "Rss": 104,
+      "Pss": 14,
+      "Anonymous": 12
+    },
+    "/usr/lib/libgcc_s.so.1": {
+      "Rss": 104,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXext.so.6.4.0": {
+      "Rss": 104,
+      "Pss": 10,
+      "Anonymous": 8
+    },
+    "/usr/lib/libpcre2-8.so.0.16.0": {
+      "Rss": 104,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/lib/libxcb-glx.so.0.0.0": {
+      "Rss": 100,
+      "Pss": 19,
+      "Anonymous": 12
+    },
+    "/usr/lib/libmpg123.so.0.49.4": {
+      "Rss": 100,
+      "Pss": 20,
+      "Anonymous": 8
+    },
+    "/usr/lib/libdrm.so.2.134.0": {
+      "Rss": 100,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/lib/libsndfile.so.1.0.37": {
+      "Rss": 100,
+      "Pss": 32,
+      "Anonymous": 16
+    },
+    "/usr/lib/libpolkit-gobject-1.so.0.0.0": {
+      "Rss": 100,
+      "Pss": 22,
+      "Anonymous": 8
+    },
+    "/usr/lib/libVkLayer_MESA_device_select.so": {
+      "Rss": 96,
+      "Pss": 18,
+      "Anonymous": 8
+    },
+    "/usr/lib/libcairo-script-interpreter.so.2.11804.4": {
+      "Rss": 96,
+      "Pss": 33,
+      "Anonymous": 12
+    },
+    "/usr/lib/libcloudproviders.so.0.4.1": {
+      "Rss": 92,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXi.so.6.1.0": {
+      "Rss": 92,
+      "Pss": 10,
+      "Anonymous": 8
+    },
+    "/usr/lib/libdeflate.so.0": {
+      "Rss": 88,
+      "Pss": 19,
+      "Anonymous": 8
+    },
+    "/usr/lib/libdisplay-info.so.0.3.0": {
+      "Rss": 84,
+      "Pss": 15,
+      "Anonymous": 8
+    },
+    "/usr/lib/libavahi-client.so.3.2.9": {
+      "Rss": 84,
+      "Pss": 11,
+      "Anonymous": 8
+    },
+    "/usr/lib/liblzo2.so.2.0.0": {
+      "Rss": 84,
+      "Pss": 27,
+      "Anonymous": 8
+    },
+    "/usr/lib/libwebp.so.7.2.0": {
+      "Rss": 84,
+      "Pss": 18,
+      "Anonymous": 8
+    },
+    "/usr/lib/libicudata.so.78.3": {
+      "Rss": 80,
+      "Pss": 5,
+      "Anonymous": 4
+    },
+    "/usr/lib/libpangocairo-1.0.so.0.5800.2": {
+      "Rss": 80,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/lib/libbz2.so.1.0.8": {
+      "Rss": 76,
+      "Pss": 10,
+      "Anonymous": 8
+    },
+    "/usr/lib/libEGL.so.1.1.0": {
+      "Rss": 72,
+      "Pss": 12,
+      "Anonymous": 8
+    },
+    "/usr/lib/libwayland-client.so.0.26.0": {
+      "Rss": 68,
+      "Pss": 12,
+      "Anonymous": 12
+    },
+    "/var/cache/fontconfig/491f45a0a771fef1c10b9b647a97fb82-le64.cache-12": {
+      "Rss": 64,
+      "Pss": 3,
+      "Anonymous": 0
+    },
+    "/usr/lib/libavahi-common.so.3.5.4": {
+      "Rss": 64,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/share/icons/hicolor/icon-theme.cache": {
+      "Rss": 60,
+      "Pss": 15,
+      "Anonymous": 0
+    },
+    "/usr/lib/libxcb-randr.so.0.1.0": {
+      "Rss": 60,
+      "Pss": 10,
+      "Anonymous": 8
+    },
+    "/usr/lib/libjbig.so.2.1": {
+      "Rss": 60,
+      "Pss": 18,
+      "Anonymous": 12
+    },
+    "/usr/lib/libffi.so.8.5.0": {
+      "Rss": 60,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libdrm_amdgpu.so.1.134.0": {
+      "Rss": 56,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/lib/libxcb-render.so.0.0.0": {
+      "Rss": 56,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXrandr.so.2.2.0": {
+      "Rss": 56,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/lib/libgtk4-layer-shell.so.1.3.0": {
+      "Rss": 56,
+      "Pss": 21,
+      "Anonymous": 8
+    },
+    "/usr/lib/libbrotlidec.so.1.2.0": {
+      "Rss": 52,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/var/cache/fontconfig/4b31aef11cb0687b6d280d34cbe23592-le64.cache-12": {
+      "Rss": 48,
+      "Pss": 2,
+      "Anonymous": 0
+    },
+    "/usr/lib/gtk-4.0/4.0.0/immodules/libim-ibus.so": {
+      "Rss": 48,
+      "Pss": 20,
+      "Anonymous": 8
+    },
+    "/usr/lib/libsharpyuv.so.0.1.2": {
+      "Rss": 48,
+      "Pss": 13,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXrender.so.1.3.0": {
+      "Rss": 48,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXcursor.so.1.0.2": {
+      "Rss": 48,
+      "Pss": 9,
+      "Anonymous": 8
+    },
+    "/usr/lib/libgudev-1.0.so.0.3.0": {
+      "Rss": 40,
+      "Pss": 10,
+      "Anonymous": 8
+    },
+    "/usr/lib/libthai.so.0.3.2": {
+      "Rss": 40,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libgstallocators-1.0.so.0.2807.0": {
+      "Rss": 40,
+      "Pss": 16,
+      "Anonymous": 8
+    },
+    "/usr/lib/libpolkit-agent-1.so.0.0.0": {
+      "Rss": 40,
+      "Pss": 24,
+      "Anonymous": 8
+    },
+    "/usr/lib/libxcb-xfixes.so.0.0.0": {
+      "Rss": 36,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/var/cache/fontconfig/6cbc3842be4e1cc07a4cb86bf80f9309-le64.cache-12": {
+      "Rss": 36,
+      "Pss": 1,
+      "Anonymous": 0
+    },
+    "/home/zoey/.cache/fontconfig/13df9c5b2333adb0430c2203c16f9751-le64.cache-12": {
+      "Rss": 36,
+      "Pss": 2,
+      "Anonymous": 0
+    },
+    "/usr/lib/libidn2.so.0.4.0": {
+      "Rss": 36,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libopus.so.0.11.1": {
+      "Rss": 36,
+      "Pss": 21,
+      "Anonymous": 20
+    },
+    "/usr/lib/libwayland-cursor.so.0.26.0": {
+      "Rss": 36,
+      "Pss": 16,
+      "Anonymous": 16
+    },
+    "/usr/lib/libcairo-gobject.so.2.11804.4": {
+      "Rss": 36,
+      "Pss": 12,
+      "Anonymous": 12
+    },
+    "/usr/lib/libxcb-sync.so.1.0.0": {
+      "Rss": 32,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libdatrie.so.1.4.1": {
+      "Rss": 32,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libogg.so.0.8.6": {
+      "Rss": 32,
+      "Pss": 11,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXdmcp.so.6.0.0": {
+      "Rss": 32,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libxcb-dri3.so.0.1.0": {
+      "Rss": 28,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/gconv/gconv-modules.cache": {
+      "Rss": 28,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/usr/lib/libunwind.so.8.2.0": {
+      "Rss": 28,
+      "Pss": 13,
+      "Anonymous": 8
+    },
+    "/usr/lib/libasyncns.so.0.3.1": {
+      "Rss": 28,
+      "Pss": 11,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXfixes.so.3.1.0": {
+      "Rss": 28,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libgmodule-2.0.so.0.8800.3": {
+      "Rss": 28,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/var/cache/fontconfig/b67b32625a2bb51b023d3814a918f351-le64.cache-12": {
+      "Rss": 24,
+      "Pss": 1,
+      "Anonymous": 0
+    },
+    "/usr/lib/libnvidia-tls.so.615.71.09": {
+      "Rss": 24,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXau.so.6.0.0": {
+      "Rss": 24,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libgbm.so.1.0.0": {
+      "Rss": 24,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libpulse-mainloop-glib.so.0.0.6": {
+      "Rss": 24,
+      "Pss": 18,
+      "Anonymous": 8
+    },
+    "/usr/lib/libxcb-present.so.0.0.0": {
+      "Rss": 20,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/librt.so.1": {
+      "Rss": 20,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libpthread.so.0": {
+      "Rss": 20,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libdl.so.2": {
+      "Rss": 20,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libwayland-egl.so.1.26.0": {
+      "Rss": 20,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libxcb-keysyms.so.1.0.0": {
+      "Rss": 16,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libxshmfence.so.1.0.0": {
+      "Rss": 16,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libbrotlicommon.so.1.2.0": {
+      "Rss": 16,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libX11-xcb.so.1.0.0": {
+      "Rss": 16,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libxcb-shm.so.0.0.0": {
+      "Rss": 16,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXinerama.so.1.0.0": {
+      "Rss": 16,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/usr/lib/libXdamage.so.1.1.0": {
+      "Rss": 16,
+      "Pss": 8,
+      "Anonymous": 8
+    },
+    "/var/cache/fontconfig/1876b2dcf508980ebba421dbe8e808d3-le64.cache-12": {
+      "Rss": 12,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/var/cache/fontconfig/6ba42ae0000f58711b5caaf10d690066-le64.cache-12": {
+      "Rss": 12,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/var/cache/fontconfig/bfb830de4b3e0bf031b5adbbfd7ab8e8-le64.cache-12": {
+      "Rss": 8,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "[vvar]": {
+      "Rss": 8,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "[vdso]": {
+      "Rss": 8,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/home/zoey/.local/share/gvfs-metadata/root": {
+      "Rss": 4,
+      "Pss": 1,
+      "Anonymous": 0
+    },
+    "/dev/shm/wlroots-GmGgMe (deleted)": {
+      "Rss": 4,
+      "Pss": 4,
+      "Anonymous": 0
+    },
+    "/dev/shm/wlroots-eABMJe (deleted)": {
+      "Rss": 4,
+      "Pss": 4,
+      "Anonymous": 0
+    },
+    "/usr/share/locale/en/LC_MESSAGES/gtk40.mo": {
+      "Rss": 4,
+      "Pss": 2,
+      "Anonymous": 0
+    },
+    "/var/lib/flatpak/exports/share/icons/hicolor/icon-theme.cache": {
+      "Rss": 4,
+      "Pss": 1,
+      "Anonymous": 0
+    },
+    "/home/zoey/.local/share/icons/hicolor/icon-theme.cache": {
+      "Rss": 4,
+      "Pss": 4,
+      "Anonymous": 0
+    },
+    "/var/lib/flatpak/exports/share/mime/mime.cache": {
+      "Rss": 4,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/home/zoey/.local/share/mime/mime.cache": {
+      "Rss": 4,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/dev/shm/wlroots-lGjHGk (deleted)": {
+      "Rss": 4,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/var/cache/fontconfig/f349e9996a5320f6dd491cedd2b1f964-le64.cache-12": {
+      "Rss": 4,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/dev/nvidia0": {
+      "Rss": 0,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/home/zoey/.cache/radv_builtin_shaders/index": {
+      "Rss": 0,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/memfd:pulseaudio (deleted)": {
+      "Rss": 0,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "/home/zoey/.cache/mesa_shader_cache/index": {
+      "Rss": 0,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "[vvar_vclock]": {
+      "Rss": 0,
+      "Pss": 0,
+      "Anonymous": 0
+    },
+    "[vsyscall]": {
+      "Rss": 0,
+      "Pss": 0,
+      "Anonymous": 0
+    }
+  }
+}

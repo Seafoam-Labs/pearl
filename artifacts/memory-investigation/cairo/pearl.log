@@ -1,0 +1,131 @@
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=app-index-ready entries=160 truncated=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=4986169fc06fc48070b0bbc840b97e8f
+info(pearl): event=control-ready session=4986169fc06fc48070b0bbc840b97e8f
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=12129
+info: event=launcher-results count=113 shown=113 publish_us=4176
+info: event=launcher-painted latency_us=17828
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3639
+info: event=launcher-results count=113 shown=113 publish_us=3618
+info: event=launcher-painted latency_us=16562
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3844
+info: event=launcher-painted latency_us=16083
+info: event=launcher-results count=113 shown=113 publish_us=4969
+info: event=launcher-painted latency_us=16248
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3649
+info: event=launcher-results count=113 shown=113 publish_us=3666
+info: event=launcher-painted latency_us=19099
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4229
+info: event=launcher-results count=113 shown=113 publish_us=4145
+info: event=launcher-painted latency_us=17277
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3814
+info: event=launcher-results count=113 shown=113 publish_us=4047
+info: event=launcher-painted latency_us=22087
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3737
+info: event=launcher-results count=113 shown=113 publish_us=3550
+info: event=launcher-painted latency_us=14671
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3919
+info: event=launcher-painted latency_us=14402
+info: event=launcher-results count=113 shown=113 publish_us=4409
+info: event=launcher-painted latency_us=14388
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3814
+info: event=launcher-results count=113 shown=113 publish_us=4277
+info: event=launcher-painted latency_us=18644
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3741
+info: event=launcher-results count=113 shown=113 publish_us=3867
+info: event=launcher-painted latency_us=14808
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=4827
+info: event=launcher-results count=113 shown=113 publish_us=4483
+info: event=launcher-painted latency_us=19075
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3791
+info: event=launcher-results count=113 shown=113 publish_us=3879
+info: event=launcher-painted latency_us=14688
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3906
+info: event=launcher-results count=113 shown=113 publish_us=3808
+info: event=launcher-painted latency_us=21882
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3812
+info: event=launcher-results count=113 shown=113 publish_us=3873
+info: event=launcher-painted latency_us=17068
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3826
+info: event=launcher-painted latency_us=14220
+info: event=launcher-results count=113 shown=113 publish_us=4709
+info: event=launcher-painted latency_us=15836
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3816
+info: event=launcher-results count=113 shown=113 publish_us=3823
+info: event=launcher-painted latency_us=19254
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3927
+info: event=launcher-results count=113 shown=113 publish_us=3880
+info: event=launcher-painted latency_us=14680
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3727
+info: event=launcher-results count=113 shown=113 publish_us=3838
+info: event=launcher-painted latency_us=23741
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3680
+info: event=launcher-results count=113 shown=113 publish_us=3880
+info: event=launcher-painted latency_us=17579
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=launcher-results count=113 shown=113 publish_us=3793
+info: event=launcher-painted latency_us=13395
+info: event=launcher-results count=113 shown=113 publish_us=4823
+info: event=launcher-painted latency_us=15368
+info: event=popup-closed
+info: event=preferences-applied revision=2 mode=static cache=false
+info: event=preferences-applied revision=3 mode=static cache=false
+info: event=preferences-applied revision=4 mode=static cache=false
+info: event=preferences-applied revision=5 mode=static cache=false
+info: event=preferences-applied revision=6 mode=static cache=false
+info: event=preferences-applied revision=7 mode=static cache=false
+info: event=preferences-applied revision=8 mode=static cache=false
+info: event=preferences-applied revision=9 mode=static cache=false
+info: event=preferences-applied revision=10 mode=static cache=false
+info: event=preferences-applied revision=11 mode=static cache=false
+info: event=preferences-applied revision=12 mode=static cache=false
+info(pearl): event=stopping reason=control-quit pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped
