@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "checks": {
+    "helper-and-config-bound-to-compositor-despite-conflicting-pearl-environment": true,
+    "matching-toolchain-negotiation": true,
+    "typed-cli-action-and-stale-target-rejection": true,
+    "save-leaves-other-instance-config-untouched": true,
+    "structured-runtime-save-and-review": true,
+    "durable-pending-record-resolved": true,
+    "comments-only-candidate-persists-through-structured-apply": true,
+    "native-preview-revert-no-persistence": true,
+    "native-keep-durable-receipt": true,
+    "incomplete-impact-blocks-raw-save": true,
+    "hardware-only-color-change-gated": true,
+    "capability-version-digest-and-additive-effect-gates": true,
+    "lost-apply-reply-queries-receipt-without-second-write": true,
+    "restart-reconciles-pending-operation": true,
+    "nonzero-structured-save-preserves-independent-reload-failure": true,
+    "missing-snapshot-retains-draft-and-recovered-effects-remain-unknown": true,
+    "durable-early-rejection-resolves-pending-and-allows-explicit-retry": true,
+    "protected-collections-save-and-roundtrip": true,
+    "invalid-snap-geometry-rejected": true,
+    "structured-display-profile-member-inheritance-move-delete-and-mixed-save": true,
+    "display-mutations-require-fresh-negotiated-capability": true,
+    "changed-reviewed-digest-requires-explicit-second-apply": true,
+    "collection-rebase-only-for-untouched-source": true,
+    "owner-crash-rolls-back-without-persistence": true
+  },
+  "pearl_sha256": "9305065e01dc5a7d5120eff565580398facbd5a7a2ca813bbec229ac0ad63e8a",
+  "baseline": {
+    "revision": "853b3eb3da7736c8c4efe33cffd202d9072df4ea",
+    "status": "built",
+    "patched_wlroots_pkgconfig": "/home/zoey/RiderProjects/Aqueous/compositor/.deps/wlroots-render-hook/lib/pkgconfig",
+    "wlroots_sha256": "5b49d9c877bd3cd7938e714d26ccf0f8d1a23deee22dc540252156808f01dff5",
+    "binary_sha256": {
+      "aqueous": "9f088c1602c4b397025bef73938dc96253536b7dba9bda1e6637d07900aad70f",
+      "aqueousctl": "efee046b4f5eb896246de03d0273c0c8ff06fc96fc455415709a9fdb944b7554",
+      "aqueous-config": "3177a11ee3f918d0a5cf5751b29887249d5fddc49f9500f2de487f8c724e6756",
+      "aqueous-backend-test": "0a63866f2e62469a0f899175b557af97f593449f1fe6bf9213953e3c9a01c218"
+    }
+  }
+}

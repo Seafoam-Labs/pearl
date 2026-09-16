@@ -30,6 +30,7 @@ const Document = struct {
 pub const Operation = enum { refresh, validate, apply };
 const Job = struct {
     owner: *Client,
+    instance: @import("aqueous_instance.zig").Context = undefined,
     arena: std.heap.ArenaAllocator,
     cancel: *gio.Cancellable,
     op: Operation,
@@ -71,6 +72,7 @@ pub const Client = struct {
     reload: *const fn (*anyopaque) anyerror!u64,
     can_reload: *const fn (*anyopaque) bool,
     can_record: *const fn (*anyopaque) bool,
+    peer_pid: ?*const fn (*anyopaque) ?u32 = null,
     identify_outputs: ?*const fn (*anyopaque) anyerror!void = null,
     live: ?*Document = null,
     base: ?*Document = null,
@@ -238,16 +240,19 @@ pub const Client = struct {
             const req = try model.parse(scratch.allocator(), self.draft.?, model.max_request);
             if (!transactions.collectionOnly(req) or !contract.Capabilities.read(self.value()).protected_collections) return error.StaleDraft;
         }
-        if (self.helper == null) {
-            const found = glib.findProgramInPath("aqueous-config") orelse return error.HelperUnavailable;
-            defer glib.free(found);
-            self.helper = try a.dupeZ(u8, std.mem.span(found));
-        }
         if (self.backups == null) self.backups = try std.fmt.allocPrintSentinel(a, "{s}/pearl/aqueous-backups", .{std.mem.span(glib.getUserStateDir())}, 0);
         const j = try a.create(Job);
         j.* = .{ .owner = self, .op = op, .arena = .init(a), .cancel = gio.Cancellable.new(), .revision = self.revision };
         errdefer j.destroy();
         const alloc = j.arena.allocator();
+        const pid = (self.peer_pid orelse return error.AqueousInstanceUnavailable)(self.context) orelse return error.AqueousInstanceUnavailable;
+        j.instance = try @import("aqueous_instance.zig").read(alloc, pid);
+        if (self.helper) |old| {
+            if (!std.mem.eql(u8, old, j.instance.helper) and (self.draft != null or self.unresolved)) return error.OperationHelperChanged;
+        }
+        const helper = try a.dupeZ(u8, j.instance.helper);
+        if (self.helper) |old| a.free(old);
+        self.helper = helper;
         if (op != .refresh) {
             j.draft = try alloc.dupe(u8, self.draft.?);
             j.base = try model.parse(alloc, try std.json.Stringify.valueAlloc(alloc, self.baseValue(), .{}), model.max_response);
@@ -288,7 +293,7 @@ pub const Client = struct {
             defer scratch.deinit();
             const time_left = @divTrunc(deadline - glib.getMonotonicTime(), 1000);
             if (time_left <= 0) return error.HelperTimedOut;
-            const result = try process.run(scratch.allocator(), argv, input, j.cancel, time_left);
+            const result = try process.runIn(scratch.allocator(), argv, input, j.cancel, time_left, j.instance);
             const v = try model.parse(scratch.allocator(), result.stdout, model.max_response);
             model.check(v) catch |err| {
                 const code = model.str(model.get(v, "code"));
@@ -311,7 +316,7 @@ pub const Client = struct {
             &.{ j.owner.helper.?, "apply", "--shell", "none", "--request", "-", "--result", "v1", "--operation-id", operation }
         else
             &.{ j.owner.helper.?, "operation-status", "--shell", "none", "--operation-id", operation };
-        const reply = try process.run(alloc, argv, input, j.cancel, 35000);
+        const reply = try process.runIn(alloc, argv, input, j.cancel, 35000, j.instance);
         // Even a nonzero exit may describe an already persisted save.
         return contract.Result.read(try model.parse(alloc, reply.stdout, model.max_response), id);
     }

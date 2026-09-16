@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Pinned master settings transactions on private buses and virtual displays."""
-import argparse, hashlib, json, os, sys, time, shutil, signal
+import argparse, hashlib, json, os, sys, time, shutil, signal, tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
@@ -12,15 +12,24 @@ def main():
  p=argparse.ArgumentParser(description=__doc__)
  p.add_argument('--pearl',type=Path,default=ROOT/'zig-out/bin/pearl');p.add_argument('--ctl',type=Path,default=ROOT/'zig-out/bin/pearlctl');p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-082');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/integration');args=p.parse_args();args.pearl=args.pearl.resolve();args.ctl=args.ctl.resolve();args.prefix=args.prefix.resolve();args.output=args.output.resolve();args.output.mkdir(parents=True,exist_ok=True)
  checks={};report=dict(status='running',checks=checks,pearl_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest(),baseline=json.loads((args.prefix/'metadata.json').read_text()))
+ tools=tempfile.TemporaryDirectory(prefix='pearl-instance-tools-');tool_dir=Path(tools.name)
+ shutil.copy2(args.prefix/'bin/aqueous',tool_dir/'aqueous')
+ wrapper=tool_dir/'aqueous-config';shutil.copyfile(ROOT/'tests/fixtures/aqueous_master_helper.py',wrapper);wrapper.chmod(0o700)
  try:
-  with PrivateSession(args.output/'session',tool_prefix=args.prefix) as s:
+  with PrivateSession(args.output/'session',tool_prefix=args.prefix,aqueous=tool_dir/'aqueous') as s:
    fault=s.base/'helper-fault';fault.write_text('')
    calls=s.base/'helper-calls.jsonl';bin_dir=s.base/'bin';bin_dir.mkdir()
-   wrapper=bin_dir/'aqueous-config';shutil.copyfile(ROOT/'tests/fixtures/aqueous_master_helper.py',wrapper);wrapper.chmod(0o700)
+   decoy=bin_dir/'aqueous-config';decoy.write_text('#!/bin/sh\nexit 99\n');decoy.chmod(0o700)
    s.env.update(PATH=str(bin_dir)+':'+s.env['PATH'],PEARL_MASTER_HELPER=str(args.prefix.resolve()/'bin/aqueous-config'),PEARL_MASTER_FAULT=str(fault),PEARL_MASTER_CALLS=str(calls))
-   app=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready')
+   wrong=s.base/'wrong-config';wrong.mkdir();wrong_wm=wrong/'wm.toml';wrong_wm.write_text('[layout]\ngaps_outer = 97\n')
+   app=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings',XDG_CONFIG_HOME=str(wrong),AQUEOUS_CONFIG=str(wrong_wm),AQUEOUS_LAYOUT=str(wrong/'layout.toml'),AQUEOUS_OUTPUTS=str(wrong/'outputs.toml'));app.expect('event=control-ready')
    ipc=IPC(s)
    ctl(s,args.ctl,'aqueous','refresh');v=settled(s,args.ctl);assert v['err'] is None,v
+   assert v['helper']==str(wrapper),v
+   files=state(s,args.ctl,'files')['value']
+   assert files['wm']['path']==s.env['AQUEOUS_CONFIG'],files
+   assert all(str(wrong) not in f['path'] for f in files.values()),files
+   checks['helper-and-config-bound-to-compositor-despite-conflicting-pearl-environment']=True
    assert v['capabilities']['apply'] and v['capabilities']['display'],v
    checks['matching-toolchain-negotiation']=True
    # Exercise the new bounded CLI entry point against authoritative IPC state.
@@ -35,6 +44,10 @@ def main():
    review=state(s,args.ctl,'review')['value'];assert review['complete'] and review['effects']==['runtime_non_display'],review
    ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl);assert v['outcome']=='saved' and v['reload']=='applied' and not v['unresolved'],v
    result=state(s,args.ctl,'operation')['value'];assert result['receipt']=='complete' and result['save']=='saved',result
+   assert wrong_wm.read_text()=='[layout]\ngaps_outer = 97\n'
+   assert not (wrong/'layout.toml').exists() and not (wrong/'outputs.toml').exists()
+   assert state(s,args.ctl,'layout.gaps_outer')['value']==18
+   checks['save-leaves-other-instance-config-untouched']=True
    checks['structured-runtime-save-and-review']=True
    record=Path(s.env['XDG_STATE_HOME'])/'pearl/aqueous-operations/pending.json';assert json.loads(record.read_text())['pending'] is False
    checks['durable-pending-record-resolved']=True
@@ -177,6 +190,8 @@ def main():
    ipc.close();ctl(s,args.ctl,'quit');app.proc.wait(timeout=10);clean(app)
   report['status']='passed'
  except Exception as e:report.update(status='failed',error=str(e));raise
- finally:(args.output/'metadata.json').write_text(json.dumps(report,indent=2)+'\n')
+ finally:
+  tools.cleanup()
+  (args.output/'metadata.json').write_text(json.dumps(report,indent=2)+'\n')
  print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

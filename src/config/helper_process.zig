@@ -15,8 +15,12 @@ fn child(_: ?*anyopaque) callconv(.c) void {
 }
 pub const Choice = std.atomic.Value(u8); // 0 pending, 1 Keep, 2 Revert
 pub fn run(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[]const u8, cancel: *gio.Cancellable, timeout_ms: i64) !Result {
+    return runIn(a, argv, input, cancel, timeout_ms, null);
+}
+pub fn runIn(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[]const u8, cancel: *gio.Cancellable, timeout_ms: i64, instance: ?@import("aqueous_instance.zig").Context) !Result {
     const launcher = gio.SubprocessLauncher.new(.{ .stdout_pipe = true, .stderr_pipe = true });
     defer launcher.unref();
+    if (instance) |ctx| ctx.configure(launcher);
     launcher.setChildSetup(child, null, null);
     if (input) |bytes| {
         if (bytes.len > @import("aqueous_model.zig").max_request) return error.RequestTooLarge;

@@ -251,6 +251,18 @@ selectors and expandable inventories on each page and must stay attached to that
 
 ## CLI and verification
 
+Pearl selects `aqueous-config` beside the executable of the connected,
+same-user compositor, identified through Unix socket peer credentials. It runs
+the helper with that compositor's working directory and `HOME`,
+`XDG_CONFIG_HOME`, and `AQUEOUS_CONFIG`, `AQUEOUS_LAYOUT`, `AQUEOUS_INPUT`,
+`AQUEOUS_OUTPUTS`, `AQUEOUS_RULES`, and `AQUEOUS_APPEARANCE` overrides.
+Overrides absent in the compositor are removed from the helper environment.
+This keeps co-installed Aqueous packages and custom configuration paths separate
+even when Pearl's launch environment or `PATH` belongs to another installation.
+Development builds must stage the matching helper beside the compositor.
+If that helper or the compositor's process information cannot be read, editing
+reports an error instead of falling back to another installation.
+
 ```sh
 pearlctl aqueous show
 pearlctl aqueous show --text displays

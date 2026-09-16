@@ -164,7 +164,7 @@ pub const Manager = struct {
         self.session_services = .{ .app = self.app.as(gio.Application), .context = self, .changed = sessionChanged };
         self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged, .validate = validatePreferences };
         try self.preferences.start();
-        self.aqueous_settings = .{ .app = self.app.as(gio.Application), .context = self, .changed = aqueousSettingsChanged, .reload = aqueousReload, .can_reload = aqueousCanReload, .can_record = aqueousCanRecord, .identify_outputs = identifyDisplays };
+        self.aqueous_settings = .{ .app = self.app.as(gio.Application), .context = self, .changed = aqueousSettingsChanged, .reload = aqueousReload, .can_reload = aqueousCanReload, .can_record = aqueousCanRecord, .identify_outputs = identifyDisplays, .peer_pid = aqueousPeerPid };
         self.aqueous_settings.start();
         self.services_started = true;
         self.audio.start();
@@ -241,6 +241,11 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         @import("../../aqueous/commands.zig").validate(.session_reload, &self.client.model, self.client.capabilities) catch return false;
         return true;
+    }
+    fn aqueousPeerPid(context: *anyopaque) ?u32 {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (self.client.availability != .ready) return null;
+        return self.client.request.wire.peerPid();
     }
     fn aqueousReload(context: *anyopaque) !u64 {
         const self: *Manager = @ptrCast(@alignCast(context));
