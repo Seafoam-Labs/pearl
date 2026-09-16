@@ -909,6 +909,10 @@ pub const Window = struct {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .bounds = self.bounds(widget) });
             }
         }
+        if (self.preferences_view) |view| {
+            for ([_]*gtk.Widget{ view.qt_enabled.as(gtk.Widget), view.qt_retry.as(gtk.Widget), view.qt_review.as(gtk.Widget), view.qt_reapply.as(gtk.Widget), view.qt_kde.as(gtk.Widget) }, [_][]const u8{ "qt_enabled", "qt_retry", "qt_review", "qt_reapply", "qt_kde" }) |widget, name|
+                try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .bounds = self.bounds(widget) });
+        }
         for (self.preference_pages) |item| if (item) |view| for (view.fields) |field| {
             if (field.widget.getMapped() != 0) try controls.append(alloc, .{ .field = field.spec.path, .focused = if (focus) |f| f == field.widget or f.isAncestor(field.widget) != 0 else false, .bounds = self.bounds(field.widget) });
         };

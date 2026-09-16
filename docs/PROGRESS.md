@@ -1,5 +1,40 @@
 # Pearl implementation progress
 
+## QtEngine + Darkly application style — September 16, 2026
+
+Replaced qtct activation with QtEngine's shared Qt 5/6 JSON configuration and KDE
+color scheme. Per-leaf JSON ownership preserves unrelated settings and supports
+conditional restore, interrupted writes and reviewed repair. Legacy qtct records
+are restored after successful migration. Runtime switches now select compatibility
+checks for the shared configuration; QtEngine's integer point-font limit is explicit.
+
+The optional `pearl-darkly-style` package builds both application styles from a
+pinned source, excludes KWin decorations/KCM applications/Plasma assets, and avoids
+obsolete Qt 5 Kirigami hooks. The Shelly setup script builds this package, backs up
+unowned plugins before replacement, installs QtEngine and verifies both runtimes.
+Private native and Settings session evidence is in [artifacts/qtengine](../artifacts/qtengine/README.md).
+The earlier qtct evidence below remains historical. Physical login and broader
+application acceptance remain open; see [Qt theming](QT_THEMING.md).
+
+
+## Qt/Darkly — Native integration implemented, September 16, 2026
+
+Added default-off Qt 5/6 management to Appearance and the shared preferences
+workflow. Separate probes verify actual Darkly/qtct loading; committed worker
+reconciliation publishes complete palettes and selected font, icon, density,
+animation and KDE focus settings. Per-key write-ahead ledgers, a writer lease,
+conditional restore and digest-bound review/reapply protect shared configuration.
+Direct-login and UWSM hooks establish the next session's environment.
+
+Real Qt consumers pass palette/font/live-update and scaled geometry checks;
+private Aqueous Settings passes opt-in, dynamic seed/wallpaper, GTK fallback,
+reviewed repair and disable/restore. Existing preference, Appearance, backend
+boundary, staged Settings and release checks also pass. Qt Quick/Kirigami inherit
+the platform palette in tested fixtures and are classified partial. Dolphin/Kate,
+KDE-runtime Flatpak, fresh physical login and screen-reader acceptance remain
+unverified. [Usage](QT_THEMING.md), [milestones](QT_DARKLY_IMPLEMENTATION_PLAN.md)
+and [evidence](../artifacts/qt-darkly/README.md) record the precise scope.
+
 Current master integration: [migration and capability gates](AQUEOUS_MASTER_MIGRATION.md).
 New candidate evidence is separate in `artifacts/aqueous-master`.
 

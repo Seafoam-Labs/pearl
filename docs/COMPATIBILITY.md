@@ -1,5 +1,13 @@
 # Pearl compatibility record
 
+Optional **QtEngine + Darkly** integration is verified against native Qt 5.15.19
+and Qt 6.11.2 Widgets consumers with the supplied application-only Darkly package.
+KWin decorations are excluded. QtEngine uses one JSON configuration and KDE color
+scheme for both versions. Separate runtime probes keep Qt out of the Pearl shell.
+Qt Quick/Kirigami palette inheritance is partial; Dolphin/Kate, KDE-runtime Flatpak
+and physical login remain unverified. See [Qt theming](QT_THEMING.md) and
+[current evidence](../artifacts/qtengine/README.md).
+
 The current integration pins Zig **0.16.0**, Aqueous
 `b3d486920c42e24d45bed0a79e68915fe11c4815` and aqueous-config **0.8.2**.
 Matching compositor/helper/aqueousctl and freshly patched wlroots hashes are in

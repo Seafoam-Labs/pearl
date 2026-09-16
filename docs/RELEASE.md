@@ -1,5 +1,15 @@
 # Release candidate and acceptance
 
+Qt/Darkly integration is opt-in at runtime. Stable/Git packages build separate
+Qt probes, declare QtEngine/application-only Darkly optional dependencies, and install the direct-login
+and UWSM environment hooks without activating management. The shell remains a
+GTK application. [Qt release evidence](../artifacts/qtengine/README.md) covers
+private native consumers, Settings commits and staged packaging. Fresh physical
+login/activation propagation and screen-reader speech are still acceptance gates;
+no Flatpak-wide support is claimed. Before downgrade/removal, disable Qt management
+and complete conditional restoration using the [recovery procedure](QT_THEMING.md#shared-files-conflicts-and-recovery).
+Preserve user ownership records; package scripts must not remove them.
+
 Pearl `1.0.0-rc.2` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
 This candidate adds current-master transactions, collection forms and native capture.
 This is a release candidate: physical, actual login-session, screen-reader and

@@ -24,6 +24,7 @@ pub const Preferences = struct {
     version: u32 = 1,
     idle: @import("../services/idle_policy.zig").Config = .{},
     theme: Theme = .{},
+    qt: @import("../theme/qt.zig").Config = .{},
     wallpaper: Wallpaper = .{},
     font: []const u8 = "",
     font_size: u8 = 14,
@@ -45,6 +46,8 @@ pub const Preferences = struct {
         return self.dock;
     }
     pub fn validate(self: Preferences) !void {
+        try self.qt.validate();
+        if (self.qt.enabled) for (self.font) |ch| if (ch < 32 or ch == 127) return error.InvalidQtFont;
         try @import("../desktop/dock_policy.zig").validate(self.dock);
         if (self.pinned_apps.len > 16) return error.TooManyPins;
         for (self.pinned_apps, 0..) |id, i| {

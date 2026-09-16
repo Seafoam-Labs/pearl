@@ -11,6 +11,13 @@ prefix=/usr # Matches the packaged unit; distribution packages may patch both.
 for binary in pearl pearlctl pearl-lock pearl-settings; do
     install -Dm755 "$binaries/$binary" "$destination$prefix/bin/$binary"
 done
+for version in 5 6; do
+    if [[ -f "$binaries/pearl-qt${version}-probe" ]]; then
+        install -Dm755 "$binaries/pearl-qt${version}-probe" "$destination$prefix/lib/pearl/pearl-qt${version}-probe"
+    fi
+done
+install -Dm644 "$source_root/packaging/qt-environment.sh" "$destination$prefix/lib/pearl/qt-environment.sh"
+install -Dm644 "$source_root/packaging/uwsm-qt.sh" "$destination$prefix/share/uwsm/env-aqueous.d/60-pearl-qt.sh"
 install -Dm644 "$source_root/packaging/systemd/pearl.service" "$destination$prefix/lib/systemd/user/pearl.service"
 install -Dm644 "$source_root/packaging/pam.d/pearl" "$destination/etc/pam.d/pearl"
 for notice in "$source_root"/bindings/licenses/*; do

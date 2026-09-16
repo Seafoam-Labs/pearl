@@ -200,6 +200,18 @@ pub fn build(b: *std.Build) void {
     const ctl = b.addExecutable(.{ .name = "pearlctl", .root_module = ctl_module });
     b.installArtifact(ctl);
 
+    if (b.option(bool, "qt-themes", "Build isolated Qt 5/6 Darkly dependency probes") orelse false) {
+        for ([_][]const u8{ "5", "6" }) |version| {
+            const probe = b.addSystemCommand(&.{"python3"});
+            probe.addFileArg(b.path("scripts/build-qt-probe.py"));
+            probe.addArgs(&.{ "--qt", version, "--source" });
+            probe.addFileArg(b.path("src/qt_probe.cpp"));
+            probe.addArg("--output");
+            const output = probe.addOutputFileArg(b.fmt("pearl-qt{s}-probe", .{version}));
+            b.getInstallStep().dependOn(&b.addInstallFileWithDir(output, .bin, b.fmt("pearl-qt{s}-probe", .{version})).step);
+        }
+    }
+
     const settings_window_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_app.py", "--settings" });
     settings_window_test.addArtifactArg(settings_test_app);
     settings_window_test.addArg("--production");
@@ -264,6 +276,15 @@ pub fn build(b: *std.Build) void {
     const adapter_module = b.createModule(.{ .root_source_file = b.path("src/adapter_probe.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "giounix2", "glib2", "glibunix2", "gobject2", "gdkpixbuf2" }) |name| adapter_module.addImport(name, bindings.module(name));
     const adapter_probe = b.addExecutable(.{ .name = "pearl-adapter-probe", .root_module = adapter_module });
+    const qt_test_module = b.createModule(.{ .root_source_file = b.path("src/qt_theme_test_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "giounix2", "glib2", "gobject2" }) |name| qt_test_module.addImport(name, bindings.module(name));
+    const qt_driver = b.addExecutable(.{ .name = "pearl-qt-test", .root_module = qt_test_module });
+    const qt_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_qt_theme.py", "--driver" });
+    qt_test.addArtifactArg(qt_driver);
+    qt_test.step.dependOn(b.getInstallStep());
+    if (b.args) |args| qt_test.addArgs(args);
+    b.step("test-qt-theme", "Verify Qt palettes, Darkly, file ownership and restoration in private configuration").dependOn(&qt_test.step);
+    b.step("test-qt-theme-unit", "Verify Qt policy, palette and lossless INI unit contracts").dependOn(&b.addRunArtifact(pure).step);
     b.step("adapter-probe", "Build the private IPC test driver").dependOn(&b.addInstallArtifact(adapter_probe, .{}).step);
 
     const adapter_unit = b.addTest(.{ .root_module = adapter_module });
@@ -515,6 +536,15 @@ pub fn build(b: *std.Build) void {
     preferences.addArtifactArg(ctl);
     if (b.args) |args| preferences.addArgs(args);
     b.step("test-preferences", "Verify preferences, wallpaper, dynamic and native GTK themes in private Aqueous").dependOn(&preferences.step);
+    const qt_session = b.addSystemCommand(&.{ "python3", "tests/integration/test_qt_session.py", "--pearl" });
+    qt_session.addArtifactArg(integration_app);
+    qt_session.addArg("--settings");
+    qt_session.addArtifactArg(settings_test_app);
+    qt_session.addArg("--ctl");
+    qt_session.addArtifactArg(ctl);
+    qt_session.step.dependOn(b.getInstallStep());
+    if (b.args) |args| qt_session.addArgs(args);
+    b.step("test-qt-session", "Verify Qt Appearance UI, committed updates and repair in private Aqueous").dependOn(&qt_session.step);
 
     const session_services = b.addSystemCommand(&.{ "python3", "tests/integration/test_session_services.py", "--pearl" });
     session_services.addArtifactArg(integration_app);

@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "checks": [
+    "real-ui-opt-in-and-committed-apply",
+    "dynamic-seed-commit",
+    "dynamic-wallpaper-commit",
+    "gtk-static-fallback",
+    "backend-review-and-explicit-reapply",
+    "disable-restores"
+  ]
+}

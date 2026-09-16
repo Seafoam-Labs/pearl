@@ -66,6 +66,9 @@ pub const Snapshot = struct {
     busy: bool,
     error_code: ?[]const u8,
     export_error: ?[]const u8,
+    qt: @import("../theme/qt.zig").Status = .{},
+    qt_review_text: []const u8 = "",
+    qt_review_digest: ?[]const u8 = null,
     locked: bool,
 };
 

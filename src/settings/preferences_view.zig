@@ -45,6 +45,21 @@ pub const View = struct {
     picker: ?*gtk.FileChooserDialog = null,
     message: *gtk.Label,
     mode_hint: *gtk.Label,
+    qt_enabled: *gtk.Switch,
+    qt5: *gtk.Switch,
+    qt6: *gtk.Switch,
+    qt_palette: *gtk.DropDown,
+    qt_font: *gtk.Switch,
+    qt_icon: *gtk.Entry,
+    qt_radius: *gtk.SpinButton,
+    qt_motion: *gtk.Switch,
+    qt_density: *gtk.Switch,
+    qt_kde: *gtk.Switch,
+    qt_status: *gtk.Label,
+    qt_retry: *gtk.Button,
+    qt_review: *gtk.Button,
+    qt_reapply: *gtk.Button,
+    qt_comparison: *gtk.Label,
     german: bool,
     greeter_sync: *@import("greeter_sync.zig").View = undefined,
 
@@ -87,6 +102,33 @@ pub const View = struct {
         const density = dropdown(typography, if (german) "Abstände" else "Density", &.{ "Comfortable", "Compact" });
         const motion = gtk.Switch.new();
         row(typography, if (german) "Bewegungen reduzieren" else "Reduced motion", motion.as(gtk.Widget));
+        const qt_card = card(host);
+        qt_card.append(w.label(if (german) "Qt-Anwendungen · QtEngine + Darkly" else "Qt applications · QtEngine + Darkly", "settings-row-title").as(gtk.Widget));
+        qt_card.append(w.label(if (german) "QtEngine verwendet eine gemeinsame Konfiguration für Qt 5 und Qt 6. Ausgewählte Prüfungen kontrollieren die installierten Laufzeiten. GTK-Modus verwendet statische Pearl-Farben. Deaktivieren stellt unveränderte frühere Werte wieder her." else "QtEngine shares one configuration across Qt 5 and Qt 6. Selected checks verify the installed runtimes. Changes affect this user account. GTK mode uses Pearl's static colors. Disabling restores previous values that have not been edited elsewhere.", "pearl-secondary").as(gtk.Widget));
+        const qt_enabled = toggle(qt_card, if (german) "Qt-Aussehen verwalten" else "Manage Qt appearance");
+        const qt5 = toggle(qt_card, if (german) "Qt 5 prüfen" else "Check Qt 5");
+        const qt6 = toggle(qt_card, if (german) "Qt 6 prüfen" else "Check Qt 6");
+        const qt_palette = dropdown(qt_card, if (german) "Qt-Farben" else "Qt colors", if (german) &.{ "Pearl folgen", "Statisch dunkel", "Statisch hell" } else &.{ "Follow Pearl", "Static dark", "Static light" });
+        const qt_font = toggle(qt_card, if (german) "Schrift synchronisieren" else "Synchronize font");
+        const qt_icon = entry(qt_card, if (german) "Qt-Symboldesign" else "Qt icon theme", 96);
+        qt_icon.setPlaceholderText(if (german) "Vorhandene Einstellung behalten" else "Keep existing setting");
+        const qt_radius = gtk.SpinButton.newWithRange(0, 16, 1);
+        row(qt_card, if (german) "Eckenradius (0: beibehalten)" else "Corner radius (0: keep existing)", qt_radius.as(gtk.Widget));
+        const qt_motion = toggle(qt_card, if (german) "Bewegungen synchronisieren" else "Synchronize reduced motion");
+        const qt_density = toggle(qt_card, if (german) "Abstände synchronisieren" else "Synchronize density");
+        const qt_kde = toggle(qt_card, if (german) "Darkly-Fokusfarben in KDE synchronisieren" else "Synchronize Darkly focus colors in KDE");
+        const qt_status = w.label("", "pearl-secondary");
+        qt_status.setSelectable(1);
+        qt_card.append(qt_status.as(gtk.Widget));
+        const qt_retry = w.wrappingButton(if (german) "Gespeicherte Qt-Einstellungen erneut anwenden" else "Retry saved Qt settings");
+        qt_card.append(qt_retry.as(gtk.Widget));
+        const qt_review = w.wrappingButton(if (german) "Externe Qt-Änderungen prüfen" else "Review external Qt changes");
+        qt_card.append(qt_review.as(gtk.Widget));
+        const qt_comparison = w.label("", "pearl-secondary");
+        qt_comparison.setSelectable(1);
+        qt_card.append(qt_comparison.as(gtk.Widget));
+        const qt_reapply = w.wrappingButton(if (german) "Geprüfte Werte durch gespeicherte Qt-Einstellungen ersetzen" else "Replace reviewed values with saved Qt settings");
+        qt_card.append(qt_reapply.as(gtk.Widget));
         const message = w.label("", "pearl-secondary");
         host.append(message.as(gtk.Widget));
         const raw_view = gtk.TextView.new();
@@ -98,9 +140,16 @@ pub const View = struct {
         raw_view.setRightMargin(24);
         w.name(raw_view.as(gtk.Widget), if (german) "Vollständige Pearl-Einstellungen als JSON" else "Full Pearl preferences JSON");
         // The caller installs raw_view directly in Advanced's sole viewport.
-        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german };
+        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison };
         self.greeter_sync = try @import("greeter_sync.zig").View.create(host, self, syncPreferences, german);
         gtk.StyleContext.addProviderForDisplay(window.as(gtk.Widget).getDisplay(), self.preview_css.as(gtk.StyleProvider), 602);
+        _ = gtk.Button.signals.clicked.connect(qt_retry, *View, retryQt, self, .{});
+        _ = gtk.Button.signals.clicked.connect(qt_review, *View, reviewQt, self, .{});
+        _ = gtk.Button.signals.clicked.connect(qt_reapply, *View, reapplyQt, self, .{});
+        for ([_]*gtk.Switch{ qt_enabled, qt5, qt6, qt_font, qt_motion, qt_density, qt_kde }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "active" });
+        _ = object.Object.signals.notify.connect(qt_palette.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        _ = gtk.Editable.signals.changed.connect(qt_icon.as(gtk.Editable), *View, edited, self, .{});
+        _ = gtk.SpinButton.signals.value_changed.connect(qt_radius, *View, spun, self, .{});
         for (self.entries) |control| _ = gtk.Editable.signals.changed.connect(control.as(gtk.Editable), *View, edited, self, .{});
         for ([_]*gtk.DropDown{ mode, variant, source, fit, density }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
         _ = gtk.SpinButton.signals.value_changed.connect(font_size, *View, spun, self, .{});
@@ -162,6 +211,9 @@ pub const View = struct {
             }
             self.queuePreview();
         }
+        self.qt_status.setText(self.editor.qt_summary.z());
+        self.qt_comparison.setText(self.editor.qt_review_text.z());
+        self.qt_reapply.as(gtk.Widget).setVisible(@intFromBool(self.editor.qt_review_digest.len == 64 and self.editor.qt_review_text.len != 0));
         const editable = self.editor.editable();
         self.host.as(gtk.Widget).setSensitive(@intFromBool(editable and !self.raw_invalid));
         self.raw_view.setEditable(@intFromBool(self.editor.online and self.editor.ready and !self.editor.state.locked and self.editor.download == .none));
@@ -185,6 +237,16 @@ pub const View = struct {
         for (self.entries, [_][]const u8{ prefs.theme.gtk_name, prefs.theme.seed, prefs.wallpaper.path, prefs.wallpaper.color, prefs.font }) |control, value| control.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, value) catch "");
         self.font_size.setValue(@floatFromInt(prefs.font_size));
         self.motion.setActive(@intFromBool(prefs.reduced_motion));
+        self.qt_enabled.setActive(@intFromBool(prefs.qt.enabled));
+        self.qt5.setActive(@intFromBool(prefs.qt.targets.qt5));
+        self.qt6.setActive(@intFromBool(prefs.qt.targets.qt6));
+        self.qt_palette.setSelected(@intFromEnum(prefs.qt.palette));
+        self.qt_font.setActive(@intFromBool(prefs.qt.sync_font));
+        self.qt_icon.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, prefs.qt.icon_theme) catch "");
+        self.qt_radius.setValue(@floatFromInt(prefs.qt.darkly.corner_radius orelse 0));
+        self.qt_motion.setActive(@intFromBool(prefs.qt.darkly.sync_reduced_motion));
+        self.qt_kde.setActive(@intFromBool(prefs.qt.darkly.sync_kde_colors));
+        self.qt_density.setActive(@intFromBool(prefs.qt.darkly.sync_density));
     }
     fn saveForm(self: *View) void {
         if (self.filling or !self.editor.editable()) return;
@@ -199,6 +261,16 @@ pub const View = struct {
         prefs.font_size = @intCast(self.font_size.getValueAsInt());
         prefs.density = @enumFromInt(self.density.getSelected());
         prefs.reduced_motion = self.motion.getActive() != 0;
+        prefs.qt.enabled = self.qt_enabled.getActive() != 0;
+        prefs.qt.targets = .{ .qt5 = self.qt5.getActive() != 0, .qt6 = self.qt6.getActive() != 0 };
+        prefs.qt.palette = @enumFromInt(self.qt_palette.getSelected());
+        prefs.qt.sync_font = self.qt_font.getActive() != 0;
+        prefs.qt.icon_theme = text(self.qt_icon);
+        const radius = self.qt_radius.getValueAsInt();
+        prefs.qt.darkly.corner_radius = if (radius == 0) null else @intCast(radius);
+        prefs.qt.darkly.sync_reduced_motion = self.qt_motion.getActive() != 0;
+        prefs.qt.darkly.sync_kde_colors = self.qt_kde.getActive() != 0;
+        prefs.qt.darkly.sync_density = self.qt_density.getActive() != 0;
         const json = std.json.Stringify.valueAlloc(a, prefs, .{ .whitespace = .indent_2 }) catch {
             self.rejectForm();
             return;
@@ -216,6 +288,15 @@ pub const View = struct {
         self.filling = false;
         self.editor.error_code.set("OutOfMemory");
         self.editor.notify(self.editor.context, .changed);
+    }
+    fn retryQt(_: *gtk.Button, self: *View) callconv(.c) void {
+        self.editor.retryQt(.@"qt.retry");
+    }
+    fn reviewQt(_: *gtk.Button, self: *View) callconv(.c) void {
+        self.editor.retryQt(.@"qt.review");
+    }
+    fn reapplyQt(_: *gtk.Button, self: *View) callconv(.c) void {
+        self.editor.retryQt(.@"qt.reapply");
     }
     fn edited(_: *gtk.Editable, self: *View) callconv(.c) void {
         self.saveForm();
@@ -470,6 +551,12 @@ fn dropdown(host: *gtk.Box, title: [:0]const u8, choices: []const [*:0]const u8)
     var strings: [8]?[*:0]const u8 = @splat(null);
     for (choices, 0..) |choice, i| strings[i] = choice;
     const control = gtk.DropDown.newFromStrings(@ptrCast(&strings));
+    row(host, title, control.as(gtk.Widget));
+    return control;
+}
+
+fn toggle(host: *gtk.Box, title: [:0]const u8) *gtk.Switch {
+    const control = gtk.Switch.new();
     row(host, title, control.as(gtk.Widget));
     return control;
 }

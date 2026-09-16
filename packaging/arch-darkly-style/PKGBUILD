@@ -1,0 +1,41 @@
+# Pinned Darkly application styles for Pearl. No KWin decorations or Plasma theme.
+pkgname=pearl-darkly-style
+pkgver=0.5.39
+pkgrel=1
+pkgdesc='Darkly application styles for Qt 5 and Qt 6, without KWin decorations'
+arch=('x86_64')
+url='https://github.com/Bali10050/Darkly'
+license=('GPL-2.0-or-later')
+depends=('qt5-declarative' 'qt6-declarative' 'kcoreaddons5' 'kcoreaddons'
+         'kconfig5' 'kconfig' 'kconfigwidgets5' 'kcolorscheme'
+         'kguiaddons5' 'kguiaddons' 'ki18n5' 'ki18n'
+         'kiconthemes5' 'kiconthemes' 'kwindowsystem5' 'kwindowsystem'
+         'frameworkintegration5' 'frameworkintegration' 'kirigami')
+makedepends=('git' 'cmake' 'extra-cmake-modules' 'gcc' 'make' 'patch')
+provides=("darkly=$pkgver")
+conflicts=('darkly' 'darkly-bin' 'darkly-git')
+_commit=65f6fa62675e3c30986f8fc8e4fdbba053096491
+source=("darkly::git+$url.git#commit=$_commit" 'application-style.patch')
+sha256sums=('SKIP' '4d955f537ba9d04f9ca1f4007ac39f23a68bbeeeb7cbb380aa8abcc9d0627763')
+
+prepare() {
+    cd "$srcdir/darkly"
+    # Avoid legacy Qt 5 Kirigami and KCM UI dependencies; QtEngine supplies the
+    # platform integration and Pearl supplies the settings UI.
+    patch -Np1 -i "$srcdir/application-style.patch"
+}
+
+build() {
+    cmake -S "$srcdir/darkly" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_QT5=ON -DBUILD_QT6=ON -DBUILD_TESTING=OFF \
+        -DWITH_DECORATIONS=OFF -DKDE_INSTALL_USE_QT_SYS_PATHS=ON
+    cmake --build "$srcdir/build"
+}
+
+package() {
+    # Explicit payload excludes upstream's Plasma assets and decoration plugins.
+    install -Dm755 "$srcdir/build/bin/darkly5.so" "$pkgdir/usr/lib/qt/plugins/styles/darkly5.so"
+    install -Dm755 "$srcdir/build/bin/darkly6.so" "$pkgdir/usr/lib/qt6/plugins/styles/darkly6.so"
+    install -Dm644 "$srcdir/darkly/COPYING" "$pkgdir/usr/share/licenses/$pkgname/COPYING"
+}

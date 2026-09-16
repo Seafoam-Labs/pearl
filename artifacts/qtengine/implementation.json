@@ -1,0 +1,22 @@
+{
+  "sha256": {
+    "src/theme/qt.zig": "8586907196a733352844ffafa9f4266c820356e9ffb3b23f16ad34f761d13425",
+    "src/config/qt_integration.zig": "c16897276d746476aa81774fb56e0c0804b478bfd6ecd5e81260c15b0d6338e2",
+    "src/config/json_keys.zig": "36a8a1cd28139dad8b3f98b6d144fb7db42dbdc2a0c362a1b35ea5166778bbff",
+    "src/qt_probe.cpp": "ca31f4ea698a5f7109b3c95b600568c99efc463632b750936348a8141c4fb265",
+    "packaging/qt-environment.sh": "6f0997d29f0e2ca52f578960ed43f9d75a1fd54ea2a0bdd69232f505e437233c",
+    "packaging/arch-darkly-style/PKGBUILD": "04e2b9989b1e68699dec5a1ac059f4f13ed1f390b1f3ad6d1e1665c2c5b87737",
+    "packaging/arch-darkly-style/application-style.patch": "4d955f537ba9d04f9ca1f4007ac39f23a68bbeeeb7cbb380aa8abcc9d0627763",
+    "scripts/repair-darkly-deps.sh": "93325234ddf0efd46615a017b157224758fd2fcbd4ac5b9c05a10779f496c144",
+    "scripts/remove-darkly-kwin.sh": "08806eaf57abf4a87fbeccacf965e6ee2c3e10a44a27484990d02022bd5ca4a2"
+  },
+  "validation": {
+    "native_groups": 16,
+    "session_groups": 6,
+    "appearance_groups": 15,
+    "unit_and_release_tools": "passed",
+    "staged_release": "passed",
+    "darkly_payload_and_linkage": "passed",
+    "host_setup": "not executed"
+  }
+}

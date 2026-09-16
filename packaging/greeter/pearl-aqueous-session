@@ -3,5 +3,8 @@
 set -eu
 export XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=Aqueous
 export XDG_SESSION_DESKTOP=pearl-aqueous DESKTOP_SESSION=pearl-aqueous
+if [ -r /usr/lib/pearl/qt-environment.sh ]; then
+    . /usr/lib/pearl/qt-environment.sh
+fi
 # Aqueous -c is a fixed shell startup command, never login data.
 exec /usr/bin/aqueous -c /usr/lib/pearl/pearl-aqueous-init

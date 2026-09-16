@@ -31,6 +31,9 @@ pub const Editor = struct {
     error_code: Text(128) = .{},
     validation: Text(128) = .{},
     export_error: Text(128) = .{},
+    qt_summary: Text(1024) = .{},
+    qt_review_text: Text(16385) = .{},
+    qt_review_digest: Text(65) = .{},
     online: bool = false,
     ready: bool = false,
     recovery: bool = false,
@@ -276,6 +279,13 @@ pub const Editor = struct {
         self.want_close = false;
         self.notify(self.context, .close_ready);
     }
+    pub fn retryQt(self: *Editor, op: @import("client.zig").Operation) void {
+        if (!self.editable() or self.client.waiting) return;
+        if (op == .@"qt.reapply") {
+            if (self.qt_review_digest.len != 64) return;
+            self.client.request(op, .{ .revision = p.num(self.state.revision), .digest = self.qt_review_digest.slice() }) catch |err| self.error_code.set(@errorName(err));
+        } else self.client.request(op, .{ .revision = p.num(self.state.revision) }) catch |err| self.error_code.set(@errorName(err));
+    }
     pub fn act(self: *Editor, action: Action) void {
         if (!self.online or !self.ready or self.state.locked) return;
         self.error_code = .{};
@@ -512,6 +522,9 @@ pub const Editor = struct {
         }
         const v = reply_.result;
         switch (reply_.op) {
+            .@"qt.retry", .@"qt.review", .@"qt.reapply" => {
+                self.needs_snapshot = true;
+            },
             .@"page.enter", .@"page.get" => {
                 self.failed = false;
                 self.view = try count(v, "view");
@@ -530,6 +543,20 @@ pub const Editor = struct {
                 self.state = .{ .revision = revision, .draft_revision = draft_revision, .base_revision = try p.number(snapshot.base_revision), .dirty = snapshot.dirty, .valid = snapshot.valid, .conflict = snapshot.conflict, .busy = snapshot.busy, .locked = snapshot.locked };
                 self.validation.set(snapshot.validation orelse "");
                 self.export_error.set(snapshot.export_error orelse "");
+                const summary = try std.fmt.allocPrint(a, "Qt 5: {s} {s}\nQt 6: {s} {s}\nQtEngine: {s} {s}\nDarkly: {s} {s}\nKDE accents: {s} {s}\nSession: {s} {s}{s}{s}{s}", .{
+                    @tagName(snapshot.qt.qt5.state),                                                                       snapshot.qt.qt5.error_code orelse "",
+                    @tagName(snapshot.qt.qt6.state),                                                                       snapshot.qt.qt6.error_code orelse "",
+                    @tagName(snapshot.qt.engine.state),                                                                    snapshot.qt.engine.error_code orelse "",
+                    @tagName(snapshot.qt.darkly.state),                                                                    snapshot.qt.darkly.error_code orelse "",
+                    @tagName(snapshot.qt.kde.state),                                                                       snapshot.qt.kde.error_code orelse "",
+                    @tagName(snapshot.qt.environment.state),                                                               snapshot.qt.environment.error_code orelse "",
+                    if (snapshot.qt.busy) "\nApplying Qt appearance…" else "",
+                    if (snapshot.qt.restart_apps) "\nRestart applications that retain their previous appearance." else "", if (snapshot.qt.restart_session) "\nLog in again to update the application launch environment." else "",
+                });
+                defer a.free(summary);
+                self.qt_summary.set(summary);
+                self.qt_review_text.set(snapshot.qt_review_text);
+                self.qt_review_digest.set(snapshot.qt_review_digest orelse "");
                 if (snapshot.error_code) |code| self.error_code.set(code);
                 if (reply_.op == .@"page.enter") {
                     self.target = self.entering.target;

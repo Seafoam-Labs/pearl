@@ -1,0 +1,21 @@
+{
+  "qt5": "5.15.19",
+  "qt6": "6.11.2",
+  "qtct_packages": [
+    "qt5ct 1.9-2.1",
+    "qt6ct 0.11-8.1"
+  ],
+  "darkly_source_inspected": "65f6fa62675e3c30986f8fc8e4fdbba053096491",
+  "darkly_source_version": "0.5.39",
+  "darkly_binaries": {
+    "5": {
+      "path": "/usr/lib/qt/plugins/styles/darkly5.so",
+      "sha256": "749b1a8b9873f1abd45963a8fcdf7e04420056dd3c3b94eee254b37e0c9becc3"
+    },
+    "6": {
+      "path": "/usr/lib/qt6/plugins/styles/darkly6.so",
+      "sha256": "e61523775cba309b45e09bf8b33c5078a9d1e02129343ba1e1357ab8971a4f50"
+    }
+  },
+  "note": "Installed Darkly plugin files are not owned by a package; their revision is unknown. Source inspected is recorded separately. Missing runtime libraries were supplied from cached packages only through the private test LD_LIBRARY_PATH."
+}

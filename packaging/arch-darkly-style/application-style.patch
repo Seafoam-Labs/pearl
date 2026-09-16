@@ -1,0 +1,40 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -64,7 +64,7 @@
+             I18n
+             IconThemes
+             WindowSystem)
+-        if(NOT WIN32 AND NOT APPLE)
++        if(WITH_DECORATIONS AND NOT WIN32 AND NOT APPLE)
+             find_package(KF5KCMUtils ${KF5_MIN_VERSION})
+             set_package_properties(KF5KCMUtils PROPERTIES
+                 TYPE REQUIRED
+@@ -73,7 +73,8 @@
+             )
+         endif()
+ 
+-    find_package(Qt5 ${QT5_MIN_VERSION} OPTIONAL_COMPONENTS Quick)
++    # Application style: retain QtQuickWidgets support without legacy Kirigami hooks.
++    set(Qt5Quick_FOUND FALSE)
+         if(${Qt5Quick_FOUND})
+         find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS Kirigami2)
+         endif()
+@@ -116,7 +117,7 @@
+             I18n
+             IconThemes
+             WindowSystem)
+-        if(NOT WIN32 AND NOT APPLE)
++        if(WITH_DECORATIONS AND NOT WIN32 AND NOT APPLE)
+             find_package(KF6KCMUtils ${KF6_MIN_VERSION})
+             set_package_properties(KF6KCMUtils PROPERTIES
+                 TYPE REQUIRED
+--- a/kstyle/CMakeLists.txt
++++ b/kstyle/CMakeLists.txt
+@@ -73,6 +73,7 @@
+     Qt${QT_MAJOR_VERSION}::Widgets
+     Qt${QT_MAJOR_VERSION}::DBus
+     Qt${QT_MAJOR_VERSION}::Quick
++    Qt${QT_MAJOR_VERSION}::QuickWidgets
+ )
+ 
+ if( DARKLY_HAVE_QTQUICK )

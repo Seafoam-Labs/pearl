@@ -1,0 +1,119 @@
+-- The C compiler identification is GNU 16.2.1
+-- The CXX compiler identification is GNU 16.2.1
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Looking for __GLIBC__
+-- Looking for __GLIBC__ - found
+-- Performing Test _OFFT_IS_64BIT
+-- Performing Test _OFFT_IS_64BIT - Success
+-- Performing Test HAVE_DATE_TIME
+-- Performing Test HAVE_DATE_TIME - Success
+-- **** Build QT5 - On ****
+-- Found Python3: /usr/bin/python3.14 (found version "3.14.7") found components: Interpreter
+-- Found KF5CoreAddons: /usr/lib/cmake/KF5CoreAddons/KF5CoreAddonsConfig.cmake (found version "5.116.0")
+-- Found KF5Config: /usr/lib/cmake/KF5Config/KF5ConfigConfig.cmake (found version "5.116.0")
+-- Found KF5GuiAddons: /usr/lib/cmake/KF5GuiAddons/KF5GuiAddonsConfig.cmake (found version "5.116.0")
+-- Found Gettext: /usr/bin/msgmerge (found version "1.0")
+-- Found KF5I18n: /usr/lib/cmake/KF5I18n/KF5I18nConfig.cmake (found version "5.116.0")
+-- Found KF5IconThemes: /usr/lib/cmake/KF5IconThemes/KF5IconThemesConfig.cmake (found version "5.116.0")
+-- Found X11: /usr/include
+-- Looking for XOpenDisplay in /usr/lib/libX11.so;/usr/lib/libXext.so
+-- Looking for XOpenDisplay in /usr/lib/libX11.so;/usr/lib/libXext.so - found
+-- Looking for gethostbyname
+-- Looking for gethostbyname - found
+-- Looking for connect
+-- Looking for connect - found
+-- Looking for remove
+-- Looking for remove - found
+-- Looking for shmat
+-- Looking for shmat - found
+-- Looking for IceConnectionNumber in ICE
+-- Looking for IceConnectionNumber in ICE - found
+-- Found KF5WindowSystem: /usr/lib/cmake/KF5WindowSystem/KF5WindowSystemConfig.cmake (found version "5.116.0")
+-- Found KF5: success (found suitable version "5.116.0", minimum required is "5.102.0") found components: CoreAddons Config GuiAddons I18n IconThemes WindowSystem
+-- **** Build QT6 - On ****
+-- Performing Test HAVE_STDATOMIC
+-- Performing Test HAVE_STDATOMIC - Success
+-- Found WrapAtomic: TRUE
+-- Found OpenGL: /usr/lib/libOpenGL.so
+-- Found WrapOpenGL: TRUE
+-- Found WrapVulkanHeaders: /usr/include
+-- Found KF6CoreAddons: /usr/lib/cmake/KF6CoreAddons/KF6CoreAddonsConfig.cmake (found version "6.30.0")
+-- Found KF6ColorScheme: /usr/lib/cmake/KF6ColorScheme/KF6ColorSchemeConfig.cmake (found version "6.30.0")
+-- Found KF6Config: /usr/lib/cmake/KF6Config/KF6ConfigConfig.cmake (found version "6.30.0")
+-- Found KF6GuiAddons: /usr/lib/cmake/KF6GuiAddons/KF6GuiAddonsConfig.cmake (found version "6.30.0")
+-- Found KF6I18n: /usr/lib/cmake/KF6I18n/KF6I18nConfig.cmake (found version "6.30.0")
+-- Found KF6IconThemes: /usr/lib/cmake/KF6IconThemes/KF6IconThemesConfig.cmake (found version "6.30.0")
+-- Found KF6WindowSystem: /usr/lib/cmake/KF6WindowSystem/KF6WindowSystemConfig.cmake (found version "6.30.0")
+-- Found KF6: success (found suitable version "6.30.0", minimum required is "6.10.0") found components: CoreAddons ColorScheme Config GuiAddons I18n IconThemes WindowSystem
+-- The following OPTIONAL packages have been found:
+
+ * KF5FrameworkIntegration (required version >= 5.102.0), KF5 Framework Integration, <https://projects.kde.org/projects/frameworks/frameworkintegration>
+   Required to use KStyle convenience functionalities in style
+ * OpenGL
+ * Vulkan
+ * Qt6DBusTools (required version >= 6.11.2)
+ * Qt6GuiTools (required version >= 6.11.2)
+ * Qt6WidgetsTools (required version >= 6.11.2)
+ * Qt6Widgets (required version >= 6.9.0)
+ * Freetype
+ * PkgConfig
+ * Fontconfig
+ * WrapVulkanHeaders
+ * Qt6CoreTools (required version >= 6.11.2)
+ * Qt6QmlTools (required version >= 6.11.2)
+ * Qt6QuickTools (required version >= 6.11.2)
+ * KF6FrameworkIntegration (required version >= 6.10.0), KF6 Framework Integration, <https://projects.kde.org/projects/frameworks/frameworkintegration>
+   Required to use KStyle convenience functionalities in style
+ * Qt6QuickWidgets
+ * Python3
+ * Git
+
+-- The following REQUIRED packages have been found:
+
+ * ECM (required version >= 5.102.0)
+ * Qt5DBus (required version >= 5.15.2)
+ * KF5GuiAddons (required version >= 5.102.0)
+ * KF5I18n (required version >= 5.102.0)
+ * KF5WindowSystem (required version >= 5.102.0)
+ * KF5 (required version >= 5.102.0)
+ * KF5CoreAddons (required version >= 5.116.0)
+ * KF5Config (required version >= 5.116.0)
+ * KF5IconThemes (required version >= 5.116.0)
+ * Qt5Gui
+ * Qt5Widgets
+ * Qt5Network (required version >= 5.15.19)
+ * Qt5Qml (required version >= 5.15.19)
+ * Qt5QmlModels (required version >= 5.15.19)
+ * Qt5Quick
+ * Qt5QuickWidgets
+ * Qt5
+ * KF6CoreAddons (required version >= 6.10.0)
+ * KF6Config (required version >= 6.10.0)
+ * KF6GuiAddons (required version >= 6.10.0)
+ * Gettext
+ * KF6I18n (required version >= 6.10.0)
+ * KF6WindowSystem (required version >= 6.10.0)
+ * KF6 (required version >= 6.10.0)
+ * Qt6Quick (required version >= 6.9.0)
+ * KF6KirigamiPlatform (required version >= 6.10.0)
+ * KF6ColorScheme (required version >= 6.30.0)
+ * KF6IconThemes (required version >= 6.30.0)
+ * Qt6
+ * Qt5Core
+
+-- The following OPTIONAL packages have not been found:
+
+ * Qt6QmlCompilerPlusPrivateTools (required version >= 6.11.2)
+
+-- Configuring done (1.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/zoey/Pearl/.cache/qtengine/darkly-build

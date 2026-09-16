@@ -1,5 +1,18 @@
 # Pearl development
 
+For optional Qt application theming, build with `-Dqt-themes=true`; the default
+build retains no Qt build dependency. Qt 5 and Qt 6.6+ development files and a C++
+compiler build isolated probes. `zig build test-qt-theme-unit` covers pure policy
+and INI contracts. `zig build test-qt-theme -Dqt-themes=true` runs real native
+consumers against private configuration; it requires loadable Darkly application styles and QtEngine for
+both runtimes. Add `-- --quick-compatibility` to require Qt 6 Quick Controls and
+Kirigami fixtures too. `zig build test-qt-session -Dqt-themes=true` exercises the
+actual Appearance editor, committed dynamic palettes and repair in private
+Aqueous. Both integration runners accept `--libraries PATH` to supply test-only
+runtime libraries without modifying the host. `--engine-prefix PATH` loads staged
+QtEngine/Darkly plugins from `PATH/lib/{qt,qt6}/plugins` for private testing. See [Qt implementation and tests](QT_THEMING.md)
+and [retained evidence](../artifacts/qtengine/README.md).
+
 Current master integration: [migration and capability gates](AQUEOUS_MASTER_MIGRATION.md).
 New candidate evidence is separate in `artifacts/aqueous-master`.
 

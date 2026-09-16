@@ -1,4 +1,7 @@
 test {
+    _ = @import("config/ini.zig");
+    _ = @import("config/json_keys.zig");
+    _ = @import("theme/qt.zig");
     _ = @import("settings/distribution.zig");
     _ = @import("settings/editor_protocol.zig");
     _ = @import("settings/transfer.zig");

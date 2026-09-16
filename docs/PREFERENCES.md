@@ -74,6 +74,14 @@ are live settings. The gallery's independent demo controls remain available.
 
 ## Preferences and drafts
 
+**Qt applications · QtEngine + Darkly** in Appearance adds optional Qt 5/6 management to this
+same draft/Apply workflow. It follows committed Material colors, uses a labelled
+static fallback in GTK mode, and can synchronize font, icons, density and selected
+Darkly/KDE settings. Management defaults off. Changes affect shared account-wide
+Qt configuration; disabling restores only values still owned by Pearl. See
+[Qt theming](QT_THEMING.md) for the `qt` preference fields, dependencies, login
+activation, conflict review and recovery procedure.
+
 The file is `$XDG_CONFIG_HOME/pearl/preferences.json`, falling back to
 `~/.config/pearl/preferences.json`. Opening settings does not create this file.
 The validated recovery snapshot is `pearl/last-good.json` in the same directory.

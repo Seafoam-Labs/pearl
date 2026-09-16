@@ -1,0 +1,50 @@
+[  0%] Built target Qt5EngineCommon_autogen_timestamp_deps
+[  0%] Built target Qt6EngineCommon_autogen_timestamp_deps
+[  2%] Automatic MOC and UIC for target Qt5EngineCommon
+[  5%] Automatic MOC and UIC for target Qt6EngineCommon
+[  5%] Built target Qt5EngineCommon_autogen
+[  7%] Building CXX object src/qt5/common/CMakeFiles/Qt5EngineCommon.dir/config/configmanager.cpp.o
+[ 13%] Building CXX object src/qt5/common/CMakeFiles/Qt5EngineCommon.dir/Qt5EngineCommon_autogen/mocs_compilation.cpp.o
+[ 13%] Building CXX object src/qt5/common/CMakeFiles/Qt5EngineCommon.dir/common.cpp.o
+[ 15%] Building CXX object src/qt5/common/CMakeFiles/Qt5EngineCommon.dir/dbus/configwatcher.cpp.o
+[ 15%] Built target Qt6EngineCommon_autogen
+[ 23%] Building CXX object src/qt6/common/CMakeFiles/Qt6EngineCommon.dir/config/configmanager.cpp.o
+[ 23%] Building CXX object src/qt6/common/CMakeFiles/Qt6EngineCommon.dir/common.cpp.o
+[ 23%] Building CXX object src/qt6/common/CMakeFiles/Qt6EngineCommon.dir/Qt6EngineCommon_autogen/mocs_compilation.cpp.o
+[ 26%] Building CXX object src/qt6/common/CMakeFiles/Qt6EngineCommon.dir/dbus/configwatcher.cpp.o
+[ 28%] Linking CXX shared library libqt5engine-common.so
+[ 31%] Built target Qt5EngineCommon
+[ 31%] Built target Qt5EngineStyle_autogen_timestamp_deps
+[ 31%] Built target Qt5EnginePlugin_autogen_timestamp_deps
+[ 34%] Automatic MOC and UIC for target Qt5EnginePlugin
+[ 36%] Automatic MOC and UIC for target Qt5EngineStyle
+[ 36%] Built target Qt5EngineStyle_autogen
+[ 36%] Built target Qt5EnginePlugin_autogen
+[ 42%] Building CXX object src/qt5/style/CMakeFiles/Qt5EngineStyle.dir/plugin.cpp.o
+[ 42%] Building CXX object src/qt5/style/CMakeFiles/Qt5EngineStyle.dir/Qt5EngineStyle_autogen/mocs_compilation.cpp.o
+[ 44%] Building CXX object src/qt5/style/CMakeFiles/Qt5EngineStyle.dir/proxystyle.cpp.o
+[ 47%] Building CXX object src/qt5/plugin/CMakeFiles/Qt5EnginePlugin.dir/Qt5EnginePlugin_autogen/mocs_compilation.cpp.o
+[ 50%] Building CXX object src/qt5/plugin/CMakeFiles/Qt5EnginePlugin.dir/main.cpp.o
+[ 52%] Building CXX object src/qt5/plugin/CMakeFiles/Qt5EnginePlugin.dir/platformtheme.cpp.o
+[ 55%] Linking CXX shared library libqt6engine-common.so
+[ 57%] Built target Qt6EngineCommon
+[ 57%] Built target Qt6EnginePlugin_autogen_timestamp_deps
+[ 57%] Built target Qt6EngineStyle_autogen_timestamp_deps
+[ 60%] Automatic MOC and UIC for target Qt6EngineStyle
+[ 63%] Automatic MOC and UIC for target Qt6EnginePlugin
+[ 63%] Built target Qt6EnginePlugin_autogen
+[ 65%] Building CXX object src/qt6/plugin/CMakeFiles/Qt6EnginePlugin.dir/Qt6EnginePlugin_autogen/mocs_compilation.cpp.o
+[ 65%] Built target Qt6EngineStyle_autogen
+[ 68%] Building CXX object src/qt6/plugin/CMakeFiles/Qt6EnginePlugin.dir/main.cpp.o
+[ 71%] Building CXX object src/qt6/plugin/CMakeFiles/Qt6EnginePlugin.dir/platformtheme.cpp.o
+[ 73%] Building CXX object src/qt6/style/CMakeFiles/Qt6EngineStyle.dir/Qt6EngineStyle_autogen/mocs_compilation.cpp.o
+[ 76%] Building CXX object src/qt6/style/CMakeFiles/Qt6EngineStyle.dir/plugin.cpp.o
+[ 78%] Linking CXX shared module libqt5engine-style.so
+[ 81%] Building CXX object src/qt6/style/CMakeFiles/Qt6EngineStyle.dir/proxystyle.cpp.o
+[ 84%] Built target Qt5EngineStyle
+[ 86%] Linking CXX shared module libqt5engine-plugin.so
+[ 89%] Built target Qt5EnginePlugin
+[ 92%] Linking CXX shared module libqt6engine-style.so
+[ 94%] Built target Qt6EngineStyle
+[ 97%] Linking CXX shared module libqt6engine-plugin.so
+[100%] Built target Qt6EnginePlugin

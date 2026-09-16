@@ -61,7 +61,8 @@ def main():
           (Path(s.env['XDG_CONFIG_HOME'])/'aqueous/rules.toml').write_text('[[window]]\napp_id = "'+APP_ID+'"\nfloating = true\nwidth = 1040\nheight = 760\n')
           # Production desktop entry creates the matching normal xdg window.
           ctl(s,ctlbin,'launcher','show');time.sleep(.3)
-          s.run(['wtype','Pearl Settings']);time.sleep(.5);keys(s,'Return')
+          # Select the staged identity even when a host -git package shares its name.
+          s.run(['wtype',f'{APP_ID}.desktop']);time.sleep(.5);keys(s,'Return')
           wait_for(lambda:len(windows(ipc))==1,20)
           assert windows(ipc)[0]['can_minimize'] and windows(ipc)[0]['can_maximize']
           ctl(s,ctlbin,'dock','pin','--text',f'{APP_ID}.desktop')

@@ -37,7 +37,12 @@ def click(s, ipc, field):
             win = windows(ipc)[0]['geometry']
             s.run(['wlrctl','pointer','move','-100000','-100000'])
             s.run(['wlrctl','pointer','move',str(round(win['x']+body['x']+body['width']/2)),str(round(win['y']+body['y']+body['height']/2))])
-            s.run(['wlrctl','pointer','scroll','120' if rect['y'] > body['y'] else '-120','0'])
+            # Small viewports can oscillate past a partly clipped control with a
+            # fixed wheel step. Reduce the final scroll to the missing distance.
+            below = rect['y'] > body['y']
+            distance = rect['y'] + rect['height'] - body['y'] - body['height'] if below else body['y'] - rect['y']
+            step = min(120, max(10, distance + 5))
+            s.run(['wlrctl','pointer','scroll',str(step if below else -step),'0'])
             time.sleep(.1)
         else:
             raise AssertionError(('control not reachable', field, rect, body))

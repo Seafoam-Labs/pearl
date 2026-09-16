@@ -43,6 +43,7 @@ pub const View = struct {
     outside: *gtk.CheckButton,
     raw: *gtk.TextBuffer,
     message: *gtk.Label,
+    qt_status: *gtk.Label = undefined,
     apply_button: *gtk.Button,
     merge_button: *gtk.Button = undefined,
     last_probe: [48]u8 = @splat(0),
@@ -86,6 +87,11 @@ pub const View = struct {
         self.density = dropdown(appearance, "Density", &.{ "Comfortable", "Compact" });
         self.motion = gtk.CheckButton.newWithLabel("Reduce motion");
         appearance.append(self.motion.as(gtk.Widget));
+        self.qt_status = w.label("", "pearl-secondary");
+        appearance.append(self.qt_status.as(gtk.Widget));
+        const qt_settings = gtk.Button.newWithLabel("Open Qt appearance settings…");
+        appearance.append(qt_settings.as(gtk.Widget));
+        _ = gtk.Button.signals.clicked.connect(qt_settings, *View, openQtSettings, self, .{});
         self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences, false);
         bar.append(w.label("Default layout for every output. Connector overrides are available in Advanced.", "pearl-secondary").as(gtk.Widget));
         self.entries[5] = entry(bar, "Left widgets", "launcher,workspaces,title");
@@ -318,6 +324,17 @@ pub const View = struct {
         var buffer: [256]u8 = undefined;
         const message = if (busy) "Preparing settings…" else if (conflict) "Settings changed externally. Your draft is retained. Merge independent edits, or review conflicting fields in Advanced." else if (self.service.err) |err| std.fmt.bufPrintZ(&buffer, "Could not apply: {s}. Your draft and working appearance are retained.", .{@errorName(err)}) catch "Could not apply settings." else if (self.service.export_error) |err| std.fmt.bufPrintZ(&buffer, "Settings saved. Export needs attention: {s}", .{@errorName(err)}) catch "Export failed." else if (self.service.draft.text != null) "Unsaved draft" else "Settings are up to date.";
         self.message.setText(message);
+        var qt_buffer: [256]u8 = undefined;
+        const status = self.service.qt_status;
+        self.qt_status.setText(std.fmt.bufPrintZ(&qt_buffer, "Qt 5: {s} · Qt 6: {s}{s}", .{ @tagName(status.qt5.state), @tagName(status.qt6.state), if (status.restart_session) " · Sign out to update the session environment" else "" }) catch "Qt appearance status unavailable");
+    }
+    fn openQtSettings(_: *gtk.Button, self: *View) callconv(.c) void {
+        const display = self.host.as(gtk.Widget).getDisplay();
+        const context = display.getAppLaunchContext();
+        defer context.unref();
+        @import("../settings/launch.zig").open(.{ .page = .appearance }, context.as(gio.AppLaunchContext), null) catch {
+            self.message.setText("Could not open Pearl Settings. Qt preferences remain available in Advanced.");
+        };
     }
     fn edited(_: *gtk.Editable, self: *View) callconv(.c) void {
         self.saveForm();

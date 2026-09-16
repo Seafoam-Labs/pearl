@@ -10,13 +10,15 @@ const pixbuf = @import("gdkpixbuf2");
 const model = @import("preferences.zig");
 const io = @import("io.zig");
 const theme = @import("../theme/theme.zig");
+const qt = @import("../theme/qt.zig");
+const qt_integration = @import("qt_integration.zig");
 const generator = @import("../theme/generator.zig");
 const a = std.heap.c_allocator;
 pub const Job = struct {
     service: *Service,
     arena: std.heap.ArenaAllocator,
     cancel: *gio.Cancellable,
-    stage: enum { prepare, recover, persist } = .prepare,
+    stage: enum { prepare, recover, persist, integrate } = .prepare,
     requested: ?[]const u8 = null,
     draft_revision: ?u64 = null,
     expected: [64]u8,
@@ -33,12 +35,17 @@ pub const Job = struct {
     failure: ?anyerror = null,
     warning: ?anyerror = null,
     export_error: ?anyerror = null,
+    qt_result: qt.Status = .{},
+    qt_review_only: bool = false,
+    qt_review: ?qt_integration.Review = null,
+    qt_reviewed: ?[64]u8 = null,
     cache_hit: bool = false,
     recovered: bool = false,
     obsolete: bool = false,
     unchanged: bool = false,
     skip_unchanged: bool = false,
     fn destroy(self: *Job) void {
+        if (self.qt_review) |review_| a.free(review_.text);
         if (self.image) |p| p.unref();
         if (self.texture) |p| p.unref();
         if (self.provider) |p| p.unref();
@@ -75,6 +82,10 @@ pub const Service = struct {
     observed: [64]u8 = io.digest("missing"),
     err: ?anyerror = null,
     export_error: ?anyerror = null,
+    qt_status: qt.Status = .{},
+    integration_allowed: bool = false,
+    qt_review_text: @import("../services/policy.zig").Text(16385) = .{},
+    qt_review_digest: ?[64]u8 = null,
     jobs: u64 = 0,
     draft: @import("draft.zig").Draft = .{},
     pub fn notify(self: *Service) void {
@@ -143,7 +154,7 @@ pub const Service = struct {
         }
         if (self.live) |j| {
             self.removeProviders(j);
-            j.destroy();
+            if (self.job != j) j.destroy();
             self.live = null;
         }
         // Active workers keep paths alive until their application hold drains.
@@ -155,6 +166,24 @@ pub const Service = struct {
         a.free(self.good_path);
         a.free(self.cache_dir);
     }
+    pub fn retryQt(self: *Service, revision: u64, review_only: bool, reviewed: ?[64]u8) !void {
+        if (!self.running or !self.integration_allowed) return error.Unavailable;
+        if (self.job != null or self.pending_reload) return error.Busy;
+        if (revision != self.revision) return error.Conflict;
+        const j = self.live orelse return error.Unavailable;
+        if (j.recovered) return error.Unavailable;
+        j.cancel.unref();
+        j.cancel = gio.Cancellable.new();
+        j.qt_review_only = review_only;
+        j.qt_reviewed = reviewed;
+        j.qt_review = null;
+        j.stage = .integrate;
+        self.job = j;
+        self.qt_status.busy = true;
+        self.deadline = glib.timeoutAdd(15000, timedOut, self);
+        self.dispatch(j);
+        self.notify();
+    }
     pub fn reload(self: *Service) void {
         self.queueReload(true);
     }
@@ -162,7 +191,7 @@ pub const Service = struct {
         if (!self.running) return;
         self.force_reload = self.force_reload or force;
         self.pending_reload = true;
-        if (self.job) |j| if (j.requested == null) {
+        if (self.job) |j| if (j.requested == null and j.stage != .integrate) {
             j.obsolete = true;
             j.cancel.cancel();
         };
@@ -251,6 +280,25 @@ pub const Service = struct {
             } else recover(j, j.warning.?) catch |err| {
                 j.failure = err;
             };
+        } else if (j.stage == .integrate) {
+            var scratch = std.heap.ArenaAllocator.init(a);
+            defer scratch.deinit();
+            if (j.qt_review_only) {
+                j.qt_review = qt_integration.review(scratch.allocator(), std.mem.span(glib.getUserConfigDir()), j.cancel) catch |err| {
+                    j.qt_result.environment = .{ .state = .failed, .error_code = @errorName(err) };
+                    task.returnBoolean(1);
+                    return;
+                };
+                if (j.qt_review) |*review_| review_.text = a.dupe(u8, review_.text) catch {
+                    j.qt_review = null;
+                    j.qt_result.environment = .{ .state = .failed, .error_code = "OutOfMemory" };
+                    task.returnBoolean(1);
+                    return;
+                };
+            } else j.qt_result = qt_integration.reconcile(scratch.allocator(), std.mem.span(glib.getUserConfigDir()), j.prefs, j.palette, j.cancel, j.qt_reviewed) catch |err| .{
+                .qt5 = .{ .state = .failed, .error_code = @errorName(err) },
+                .qt6 = .{ .state = .failed, .error_code = @errorName(err) },
+            };
         } else persist(j) catch |err| {
             j.failure = err;
         };
@@ -324,7 +372,19 @@ pub const Service = struct {
             j.image = pixbuf.Pixbuf.newFromStream(stream.as(gio.InputStream), j.cancel, null) orelse return error.ImageDecodeFailed;
         }
         j.palette = if (p.theme.variant == .dark) theme.dark else theme.light;
-        if (p.theme.mode == .dynamic) j.palette = try generator.palette(alloc, p, image_bytes, self.cache_dir, j.cancel, &j.cache_hit);
+        if (p.theme.mode == .dynamic) {
+            const previous = self.live;
+            const same_source = if (previous) |live| j.requested != null and live.prefs.theme.mode == .dynamic and
+                p.theme.variant == live.prefs.theme.variant and p.theme.source == live.prefs.theme.source and
+                std.mem.eql(u8, p.theme.seed, live.prefs.theme.seed) and std.mem.eql(u8, p.wallpaper.path, live.prefs.wallpaper.path) else false;
+            // Wallpaper content may have changed in place: only seed palettes can
+            // bypass the generator/cache adapter based on preference equality alone.
+            if (same_source and p.theme.source == .seed) {
+                inline for (@typeInfo(theme.Palette).@"struct".fields) |field|
+                    @field(j.palette, field.name) = try alloc.dupe(u8, @field(previous.?.palette, field.name));
+                j.cache_hit = true;
+            } else j.palette = try generator.palette(alloc, p, image_bytes, self.cache_dir, j.cancel, &j.cache_hit);
+        }
         if (p.theme.mode == .gtk and p.theme.gtk_name.len > 0) {
             j.native_name = try alloc.dupeZ(u8, p.theme.gtk_name);
             try installedTheme(alloc, j.native_name);
@@ -359,6 +419,44 @@ pub const Service = struct {
         const j: *Job = @ptrCast(@alignCast(data.?));
         const self = j.service;
         defer self.app.release();
+        if (j.stage == .integrate) {
+            self.job = null;
+            if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
+            self.deadline = 0;
+            if (!self.running) {
+                j.destroy();
+                self.freePaths();
+                return;
+            }
+            if (j.qt_review_only) {
+                self.qt_status.busy = false;
+                self.qt_review_digest = null;
+                if (j.qt_review) |review_| {
+                    self.qt_review_digest = review_.digest;
+                    self.qt_review_text.set(review_.text);
+                    a.free(review_.text);
+                    j.qt_review = null;
+                } else self.qt_review_text.set(j.qt_result.environment.error_code orelse "Qt review failed");
+                self.notify();
+                if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(180, debounced, self);
+                return;
+            }
+            self.qt_review_digest = null;
+            self.qt_review_text.set("");
+            const previously_applied = self.qt_status.applied_revision;
+            self.qt_status = j.qt_result;
+            self.qt_status.applied_revision = previously_applied;
+            self.qt_status.desired_revision = self.revision;
+            const states = [_]qt.Target{ j.qt_result.qt5, j.qt_result.qt6, j.qt_result.engine, j.qt_result.darkly, j.qt_result.kde, j.qt_result.environment };
+            var success = true;
+            for (states) |target| if (target.state != .applied and target.state != .disabled) {
+                success = false;
+            };
+            if (success) self.qt_status.applied_revision = self.revision;
+            self.notify();
+            if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(180, debounced, self);
+            return;
+        }
         if (self.running and !j.obsolete and j.failure == null and !j.unchanged and j.stage != .persist) {
             validateProviders(j) catch |err| {
                 j.failure = err;
@@ -423,6 +521,14 @@ pub const Service = struct {
                 gtk.StyleContext.addProviderForDisplay(self.display, j.provider.?.as(gtk.StyleProvider), 601);
                 if (j.native_provider) |p| gtk.StyleContext.addProviderForDisplay(self.display, p.as(gtk.StyleProvider), 599);
                 self.export_error = j.export_error;
+                if (!j.recovered and self.integration_allowed) {
+                    j.stage = .integrate;
+                    self.job = j;
+                    self.qt_status.busy = true;
+                    self.qt_status.desired_revision = self.revision;
+                    self.deadline = glib.timeoutAdd(15000, timedOut, self);
+                    self.dispatch(j);
+                }
                 std.log.info("event=preferences-applied revision={d} mode={s} cache={}", .{ self.revision, @tagName(j.prefs.theme.mode), j.cache_hit });
             } else {
                 std.log.info("event=preferences-error detail={s}", .{@errorName(j.failure.?)});
@@ -445,7 +551,7 @@ pub const Service = struct {
     }
     pub fn status(self: *Service, alloc: std.mem.Allocator) ![]const u8 {
         const encoded = try std.json.Stringify.valueAlloc(alloc, self.prefs(), .{});
-        return std.json.Stringify.valueAlloc(alloc, .{ .revision = self.revision, .appearance = self.appearance, .busy = self.job != null or self.pending_reload, .jobs = self.jobs, .err = if (self.err) |e| @errorName(e) else null, .export_error = if (self.export_error) |e| @errorName(e) else null, .cache_hit = if (self.live) |j| j.cache_hit else false, .recovered = if (self.live) |j| j.recovered else false, .draft_dirty = self.draft.text != null, .draft_revision = if (self.draft.text != null) @as(?u64, self.draft.base_revision) else null, .draft_serial = self.draft.revision, .path = self.path, .preferences_truncated = encoded.len > 5500, .preferences = if (encoded.len <= 5500) @as(?model.Preferences, self.prefs()) else null }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .revision = self.revision, .appearance = self.appearance, .busy = self.job != null or self.pending_reload, .jobs = self.jobs, .err = if (self.err) |e| @errorName(e) else null, .qt = self.qt_status, .export_error = if (self.export_error) |e| @errorName(e) else null, .cache_hit = if (self.live) |j| j.cache_hit else false, .recovered = if (self.live) |j| j.recovered else false, .draft_dirty = self.draft.text != null, .draft_revision = if (self.draft.text != null) @as(?u64, self.draft.base_revision) else null, .draft_serial = self.draft.revision, .path = self.path, .preferences_truncated = encoded.len > 5500, .preferences = if (encoded.len <= 5500) @as(?model.Preferences, self.prefs()) else null }, .{});
     }
     pub fn style(self: *Service, widget: *gtk.Widget, panel: *gtk.Widget) void {
         const p = self.prefs();

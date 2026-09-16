@@ -129,6 +129,9 @@ pub const Backend = struct {
             .conflict = s.draft.text != null and s.draft.base_revision != s.revision,
             .busy = s.job != null or s.pending_reload,
             .error_code = if (s.err) |err| @errorName(err) else null,
+            .qt = s.qt_status,
+            .qt_review_text = s.qt_review_text.slice(),
+            .qt_review_digest = if (s.qt_review_digest) |*hash| @as(?[]const u8, hash) else null,
             .export_error = if (s.export_error) |err| @errorName(err) else null,
             .locked = self.locked(),
         }, .{});
@@ -145,6 +148,17 @@ pub const Backend = struct {
         const params = request.params orelse return error.InvalidRequest;
         peer.expire();
         switch (request.op) {
+            .@"qt.retry", .@"qt.review", .@"qt.reapply" => {
+                const v = try p.fields(struct { revision: []const u8, digest: ?[]const u8 = null }, alloc, params);
+                if (self.locked()) return error.Locked;
+                const digest = if (v.digest) |value| try p.hash(value) else null;
+                if (request.op == .@"qt.reapply") {
+                    const expected = self.service.qt_review_digest orelse return error.QtReviewRequired;
+                    if (digest == null or !std.mem.eql(u8, &expected, &digest.?)) return error.QtReviewChanged;
+                } else if (digest != null) return error.InvalidRequest;
+                try self.service.retryQt(try p.number(v.revision), request.op == .@"qt.review", digest);
+                return "{}";
+            },
             .@"aqueous.get" => {
                 _ = try p.fields(struct {}, alloc, params);
                 peer.subscribed = true;

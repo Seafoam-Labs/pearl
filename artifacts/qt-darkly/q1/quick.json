@@ -1,0 +1,16 @@
+[
+  {
+    "arguments": [],
+    "exit_code": 0,
+    "stdout": "{\"kirigami\":false,\"pearlHighlight\":\"#12608a\",\"pearlText\":\"#ffffff\",\"pearlWindow\":\"#222020\",\"qt\":\"6.11.2\",\"style\":\"Fusion\"}",
+    "stderr": ""
+  },
+  {
+    "arguments": [
+      "--kirigami"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"kirigami\":true,\"pearlHighlight\":\"#12608a\",\"pearlText\":\"#ffffff\",\"pearlWindow\":\"#222020\",\"qt\":\"6.11.2\",\"style\":\"Fusion\"}",
+    "stderr": ""
+  }
+]

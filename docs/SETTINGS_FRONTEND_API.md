@@ -6,6 +6,28 @@ page snapshots, shared Pearl/Aqueous drafts and live-service adapters are implem
 Capabilities are enabled only when their backend adapters are attached.
 This endpoint is independent of Pearl control v1. S5 routes CLI show commands to the installed frontend.
 
+## Qt integration extension
+
+The September 16 Qt extension adds optional snapshot fields `qt`,
+`qt_review_text` and `qt_review_digest`. `qt` contains desired/applied preference
+revisions, busy/restart/GTK-fallback flags, and separate `qt5`, `qt6`, `engine`, `darkly`,
+`kde`, `environment` results (`state`, nullable `error_code`). Frontends default
+missing Qt snapshot fields to disabled for compatibility.
+
+| Request | Parameters | Behavior |
+| --- | --- | --- |
+| `qt.retry` | `revision` decimal string | Reconcile the saved preferences; never overwrite an ownership conflict |
+| `qt.review` | `revision` decimal string | Read changed managed keys; publish a bounded comparison and digest |
+| `qt.reapply` | `revision` decimal string, `digest` 64-character SHA-256 string | Reapply saved settings only against the exact current review |
+
+These requests use the existing authenticated session envelope and unlocked
+backend gate. A busy service or stale preference revision rejects the request.
+Responses acknowledge worker dispatch with `{}`; subsequent snapshots publish
+completion. Review/reapply is bound to external-file and ownership-ledger hashes;
+a later edit yields `QtReviewChanged`. Retry does not regenerate a Material seed
+or wallpaper palette. Qt actions operate on committed preferences, independently
+of a retained unsaved draft. See [Qt file ownership](QT_THEMING.md#shared-files-conflicts-and-recovery).
+
 ## Identity, authentication and transport
 
 The backend listens at `$XDG_RUNTIME_DIR/pearl/SESSION/settings.sock`, beside

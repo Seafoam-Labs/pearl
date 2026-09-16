@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "checks": {
+    "qt_theme_and_unit": 0,
+    "qt_settings_session": 0,
+    "preferences": 0,
+    "settings_appearance": 0,
+    "settings_boundary": 0,
+    "settings_integration": 0,
+    "release_and_release_tools": 0,
+    "default_build": 0,
+    "diff_and_syntax": 0
+  },
+  "retry_history": [
+    {
+      "check": "initial staged Settings integration",
+      "result": "failed",
+      "reason": "Shared display name selected the installed host Git edition; exact staged desktop ID selection passed on rerun."
+    },
+    {
+      "check": "final parallel Qt theme runner",
+      "exit_code": 143,
+      "reason": "Runner terminated without test output; separate rerun exited 0 with all 20 checks passing."
+    }
+  ],
+  "private_library_path": ".cache/qt-darkly/deps/usr/lib",
+  "pending": [
+    "Dolphin/Kate consumers",
+    "KDE-runtime Flatpak extension integration",
+    "fresh physical direct/UWSM login propagation",
+    "GPU presentation and screen-reader speech"
+  ]
+}
