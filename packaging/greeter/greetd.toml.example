@@ -1,4 +1,5 @@
-# GATED: do not activate until GREETER_COMPATIBILITY.md production gates pass.
+# Ordinary Aqueous host; no restricted compositor mode required.
+# Real greetd/desktop acceptance is tracked in GREETER_COMPATIBILITY.md.
 # This example is never installed over /etc/greetd/config.toml by package hooks.
 [terminal]
 vt = 1

@@ -1,36 +1,34 @@
-# Aqueous requirements for Pearl's pre-login host
+# Aqueous hosting for Pearl greeter
 
-Gate: **unimplemented upstream at inspected commit
-`d63ecd716e3eb30ef064e4e6b3bc630649378b4e`**. This is a proposed contract, not an
-existing command-line option. Pearl must refuse production hosting until an
-audited implementation and real greetd lifecycle tests satisfy it.
+Pearl uses ordinary Aqueous. No restricted greeter mode, capability attestation,
+or special compositor build is required. This supersedes the earlier proposed
+restricted-host contract and its unconditional startup refusal.
 
-The ordinary loader calls `actions.initDefaults` before reading config; missing
-files can retain launch/screenshot bindings. `main.zig -c` executes a shell
-startup command. No explicit greeter mode was found. Blank configs cannot certify
-restriction. Do not modify the user's dirty Aqueous checkout to bypass this gate.
+The packaged host starts:
 
-Required upstream contract:
+```sh
+/usr/bin/dbus-run-session -- /usr/bin/aqueous -no-xwayland -c /usr/lib/pearl/pearl-greeter-init
+```
 
-1. An explicit restricted mode with a versioned capability response and a fixed
-   administrator-owned configuration root. Missing/invalid files fail startup;
-   no ordinary user/system desktop fallback or profile/init/autostart sourcing.
-2. Enforce denial at action dispatch and IPC/protocol authorization boundaries:
-   spawn/exec, terminal, overview, screenshots/capture, config reload, gestures,
-   virtual input and foreign clients. Disabling UI buttons is insufficient.
-3. Disable Xwayland. Allow only the greeter and explicitly configured trusted
-   accessibility clients. Keep the pre-login display/runtime/bus private to the
-   dedicated greeter account; never export endpoints into a user session.
-4. Expose narrowly scoped, negotiated keyboard-layout/output controls needed by
-   the greeter, without enabling ordinary settings mutation or arbitrary commands.
-5. Stop the compositor when the owned greeter UI dies/exits; ensure compositor
-   and authorized accessibility descendants are reaped on supervisor shutdown.
-   Define a bounded readiness/completion contract and safe zero-output behavior.
-6. Report effective restricted policy/version, not merely a requested mode flag.
-   Pin that contract to binaries and execute escape/failure tests before deployment.
+Required existing interfaces are Wayland layer-shell, the `-c` startup command,
+and the `WAYLAND_DISPLAY` that Aqueous passes to that command. The init script
+reports its PID over an inherited Pearl lifecycle pipe, then execs the greeter.
+The supervisor watches that process with a pidfd and tears down the compositor,
+bus and adopted descendants on exit. Aqueous does not interpret the pipe.
+Linux pidfds, subreaping and `/proc` are required by the supervisor.
 
-Acceptance uses private escape tests plus a disposable real-greetd VM: attempt
-every default/custom launch/capture/IPC path, corrupt/remove configs, crash UI and
-compositor, unplug all outputs, cancel blocked authentication, and verify complete
-teardown before the selected desktop starts. Restriction applies only before
-login; other authenticated Wayland/X11 desktops remain required.
+Run this under greetd as the dedicated unprivileged greeter account with its own
+runtime directory. Keep greeter configuration and startup files administrator
+owned. The authenticated session launcher continues to clear pre-login display
+and bus endpoints before launching the chosen desktop.
+
+Normal Aqueous capabilities remain normal: this is not a compositor sandbox.
+Administrator configuration may customize bindings and appearance, but blank
+configuration is not proof that launch, capture or IPC actions are disabled.
+Keyboard-layout selection is separate future input integration work; the current
+greeter displays GTK's active layout.
+
+Private host tests cover startup failure, greeter/compositor exit, shutdown and
+cleanup across separate process sessions. Real greetd/PAM, VT/seat handoff,
+login/logout into the supported desktops and accessibility still require VM or
+hardware acceptance. These checks no longer depend on a restricted Aqueous build.

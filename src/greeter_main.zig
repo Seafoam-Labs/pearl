@@ -10,7 +10,7 @@ pub fn main(init: std.process.Init) !void {
     _ = std.c.setrlimit(.CORE, &limits);
     const args = try init.minimal.args.toSlice(std.heap.c_allocator);
     if (args.len == 2 and std.mem.eql(u8, args[1], "--version")) {
-        glib.print("pearl-greeter " ++ @import("version.zig").string ++ " (Zig 0.16.0; production host gated)\n");
+        glib.print("pearl-greeter " ++ @import("version.zig").string ++ " (Zig 0.16.0)\n");
         return;
     }
     if (options.test_hooks and args.len == 2 and std.mem.eql(u8, args[1], "--services-probe")) return @import("greeter/services_probe.zig").run();

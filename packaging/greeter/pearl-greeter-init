@@ -1,0 +1,8 @@
+#!/bin/sh
+# Ordinary Aqueous -c entry point. FD 3 is the host's lifecycle channel.
+# No authentication data travels on this pipe.
+set -eu
+: "${WAYLAND_DISPLAY:?Missing greeter Wayland display}"
+# The host watches this PID across exec, including crashes and exec failure.
+printf '%s\n' "$$" >&3
+exec /usr/bin/pearl-greeter 3>&-

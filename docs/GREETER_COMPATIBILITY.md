@@ -57,7 +57,7 @@ not resolve those missing release notices.
 | Gate | Current evidence / required result |
 | --- | --- |
 | GR00 real daemon lifecycle | Source inspection complete; VM proof pending, including blocked-factor cancellation and lost start reply |
-| GR01 restricted host | Inspected Aqueous has default launch/capture bindings and no explicit restricted mode; [upstream requirements](AQUEOUS_GREETER_REQUIREMENTS.md) |
+| GR01 ordinary Aqueous host | Normal `-c` startup and owned lifecycle supervision implemented; real greetd seat/handoff acceptance pending; [host behavior](AQUEOUS_GREETER_REQUIREMENTS.md) |
 | Required desktops | Installed Aqueous/COSMIC/River entries recorded; GNOME Wayland, Plasma Wayland, one standalone and one X11 desktop require pinned VM packages and login tests |
 | PAM/distribution | Match package patches, real account policy, logind seat/runtime and session teardown |
 | Accessibility/hardware | Orca speech/privacy, VT recovery and physical outputs require signoff |
@@ -69,7 +69,7 @@ mock tests do not open host PAM sessions or switch VTs.
 ## Disposable VM recipe
 
 1. Provision a disposable Linux guest with its own console, test users, greetd,
-   pinned desktop packages and the eventual restricted Aqueous build. Snapshot it.
+   pinned desktop packages and ordinary Aqueous. Snapshot it.
    Record image hash, package manifest, PAM policy and all launcher metadata.
 2. Stage the optional Pearl greeter package inside the guest. Use the reviewed
    configuration example; retain a separate root console and baseline snapshot.
@@ -90,8 +90,8 @@ mock tests do not open host PAM sessions or switch VTs.
 
 GR00, GR02, GR03, GR04 and GR05 are implemented. GR01 and GR06–GR09 have
 implementation deliverables but retain the production gates above. The host
-binary deliberately refuses production startup; its process engine is exercised
-only through the non-installed fixture executable.
+binary launches ordinary Aqueous. Private process tests exercise lifecycle and
+cleanup; real greetd acceptance is separate.
 
 - Eight pure tests cover frame bounds, native-endian fragmentation, schema/Unicode,
   state transitions, cancellation generations and bounded desktop argument expansion.

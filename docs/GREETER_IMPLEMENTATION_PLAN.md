@@ -1,5 +1,10 @@
 # Pearl greeter implementation plan
 
+> Hosting update: ordinary Aqueous is now the supported pre-login compositor.
+> References below to requiring a restricted Aqueous mode are historical and
+> superseded by [the current host contract](AQUEOUS_GREETER_REQUIREMENTS.md).
+> Real greetd/PAM and desktop handoff acceptance remains required.
+
 Status: **Pearl implementation and private tests available; production integration remains gated**.
 No host login configuration has been changed. See [current status and evidence](GREETER_COMPATIBILITY.md)
 and [build/configuration instructions](GREETER.md).

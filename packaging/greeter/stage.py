@@ -25,7 +25,7 @@ def main():
     files={}
     for binary in binaries:
         files[('usr/bin/' if binary=='pearl-greeter' else 'usr/lib/pearl/')+binary]=(args.build/binary,0o755)
-    for name in ('pearl-greeter-x11','pearl-aqueous-session','pearl-aqueous-init'):
+    for name in ('pearl-greeter-x11','pearl-aqueous-session','pearl-aqueous-init','pearl-greeter-init'):
         files['usr/lib/pearl/'+name]=(ROOT/'packaging/greeter'/name,0o755)
     files['usr/share/wayland-sessions/pearl-aqueous.desktop']=(ROOT/'packaging/greeter/pearl-aqueous.desktop',0o644)
     for name in ('greeter.json','greetd.toml.example','pearl-greeter.sysusers','pearl-greeter.tmpfiles'):
@@ -38,7 +38,7 @@ def main():
         if (ROOT/name).is_file():files['usr/share/licenses/pearl-greeter/'+name]=(ROOT/name,0o644)
     for target,(source,mode) in files.items():
         path=dest/target;path.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(source,path);path.chmod(mode)
-    gate={'schema':1,'production_accepted':False,'reason':'Restricted Aqueous host and real desktop VM matrix remain gated','activated_services':[], 'fingerprint':{'production_accepted':False,'reason':'Real reader, installed PAM policy, desktop and accessibility acceptance remain gated','pam_policy_installed':False}}
+    gate={'schema':1,'production_accepted':False,'reason':'Real greetd lifecycle and desktop VM matrix remain unaccepted','activated_services':[], 'fingerprint':{'production_accepted':False,'reason':'Real reader, installed PAM policy, desktop and accessibility acceptance remain gated','pam_policy_installed':False}}
     (dest/'greeter-release-gate.json').write_text(json.dumps(gate,indent=2)+'\n')
     print(f'Staged {len(files)} files at {dest}; no service activation or host PAM changes.')
 

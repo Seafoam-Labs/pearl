@@ -29,7 +29,9 @@ def main():
         for name in ('pearl-greeter','pearl-greeter-host','pearl-greeter-session'):
             run(str(args.build/name),'--version')
         run(str(args.build/'pearl-greeter'),'--probe',ok=False)
-        run(str(args.build/'pearl-greeter-host'),ok=False)
+        run(str(args.build/'pearl-greeter-host'),'--fixture-host','/usr/bin/true',ok=False)
+        assert 'usr/lib/pearl/pearl-greeter-init' in paths
+        assert os.access(stage/'usr/lib/pearl/pearl-greeter-init', os.X_OK)
         linked=run('ldd',str(args.build/'pearl-greeter')).stdout
         assert all(lib not in linked for lib in ('libpam.so','libpulse.so','libpolkit-agent'))
         prefs=root/'preferences.json';prefs.write_text(json.dumps({'theme':{'mode':'gtk','gtk_name':'Adwaita:dark'},'font_size':18,'exports':[{'command':'must-not-export','secret':'credential-marker'}],'unrelated':'discard'}))

@@ -512,7 +512,7 @@ const Screen = struct {
         const active = self.keyboard.?.getCapsLockState() != 0;
         self.caps.as(gtk.Widget).setVisible(@intFromBool(active));
         self.caps.as(gtk.Accessible).announce(if (active) "Caps Lock is on" else "Caps Lock is off", .medium);
-        // GTK reports the actual active layout label; selection awaits restricted host API.
+        // GTK reports the actual active layout label; selection awaits compositor input integration.
         if (self.keyboard.?.getActiveLayoutIndex() >= 0) {
             const label = self.keyboard.?.getLayoutNames();
             if (label) |names| {

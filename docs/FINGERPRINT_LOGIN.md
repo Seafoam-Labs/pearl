@@ -177,7 +177,7 @@ password login before returning to fingerprint testing.
 
 Guest-specific activation/rollback commands and physical signoff remain pending
 the real test environment. These examples do not enable a display manager or
-remove the restricted-Aqueous production gate.
+establish real greetd/PAM or desktop handoff acceptance.
 
 The [fingerprint evidence](../artifacts/fingerprint/latest/README.md) records
 private results separately from each unrun physical/real-login case.

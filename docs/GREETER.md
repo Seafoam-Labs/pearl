@@ -2,9 +2,9 @@
 
 Pearl includes a separate Zig 0.16.0 / GTK4 greeter implementation for greetd,
 with generated Ghostty bindings, Material or installed GTK themes, and an installed
-Wayland/X11 desktop chooser. **Production activation remains gated.** The host
-executable refuses startup until Aqueous provides the verified restricted host
-contract described in [AQUEOUS_GREETER_REQUIREMENTS.md](AQUEOUS_GREETER_REQUIREMENTS.md).
+Wayland/X11 desktop chooser. The host uses ordinary Aqueous with its existing
+`-c` startup command; no special compositor mode or patched Aqueous build is
+required. Real greetd/PAM and desktop handoff acceptance remains pending.
 The [compatibility record](GREETER_COMPATIBILITY.md) distinguishes private tests
 from real greetd/PAM, desktop, hardware and accessibility acceptance.
 
@@ -38,9 +38,41 @@ administrator config. `--version` works without a display or configuration. The
 private `--probe` mode exercises the real Zig socket client against fake greetd;
 it is compiled out of production.
 
+## Running with greetd
+
+Install the staged production binaries, launchers and runtime dependencies
+(Aqueous, dbus-run-session, GTK4 and gtk4-layer-shell). Create the dedicated
+`pearl-greeter` account and directories using the packaged sysusers/tmpfiles
+examples, and install the example `greeter.json` as `/etc/pearl/greeter.json`,
+owned by root. Configure greetd's default session as:
+
+```toml
+[general]
+source_profile = false
+
+[default_session]
+command = "/usr/lib/pearl/pearl-greeter-host"
+user = "pearl-greeter"
+```
+
+The host requires the runtime directory and `GREETD_SOCK` supplied by the greetd
+session. It starts a private session bus and ordinary
+`aqueous -no-xwayland -c /usr/lib/pearl/pearl-greeter-init`. The init script starts
+`/usr/bin/pearl-greeter`; the host watches its lifetime, stops the compositor when
+it exits (including crashes), and reaps descendants before returning to greetd.
+Init startup is bounded to 30 seconds and graceful shutdown to 5 seconds before kill.
+This lifecycle channel is internal to Pearl; Aqueous needs no greeter API.
+
+`pearl-greeter` itself remains a standalone GTK/layer-shell greetd client and can
+be launched by another compositor wrapper that handles compositor teardown.
+Use the packaged host for automatic Aqueous startup and cleanup. Configure any
+ordinary Aqueous preferences for the dedicated greeter account separately from
+the authenticated desktop. This host does not claim to restrict Aqueous actions,
+keybindings, capture or IPC; see [host behavior](AQUEOUS_GREETER_REQUIREMENTS.md).
+
 ## Configuration and sessions
 
-Review `packaging/greeter/greeter.json` as the starting configuration. The future
+Review `packaging/greeter/greeter.json` as the starting configuration. The
 installed path is `/etc/pearl/greeter.json`, root-owned and not group/world writable.
 The same restrictions apply to parent directories and discovered session entries;
 symlinked entries are rejected. Invalid security-critical config stops startup.
@@ -92,7 +124,7 @@ The footer offers larger text, high contrast and reduced motion for the current
 greeter session. Reduced motion also disables GTK cursor/widget animation,
 keeping the idle login screen quiet on software rendering. The screen displays
 the actual GTK keyboard layout. Changing layouts is gated on
-Aqueous's restricted input API. Orca launching is optional; private AT-SPI access,
+a supported compositor input integration. Orca launching is optional; private AT-SPI access,
 speech and credential privacy still need explicit real accessibility acceptance.
 Power controls honor logind capability and require confirmation. They never ask
 for interactive privilege escalation or install permissive polkit rules.
@@ -124,15 +156,15 @@ trusted launchers, a Pearl desktop entry, documentation and configuration exampl
 It does not create system users, change PAM, enable services or replace
 `/etc/greetd/config.toml`. The shipped release gate explicitly remains false.
 Ordinary Pearl installs do not depend on a display manager. Aqueous is required as
-the eventual greeter host; other desktops are installed separately as desired.
+the packaged greeter host; other desktops are installed separately as desired.
 The package does not overwrite another desktop's session entry.
 
-Before deployment, complete GR01 and the full real-desktop VM matrix, match the
-installed greetd package to its source/patches, reproduce release artifacts in two
+Before marking a release accepted, complete the real-greetd lifecycle and
+real-desktop VM matrix, match the installed greetd package to its source/patches, reproduce release artifacts in two
 fresh roots, settle license ownership and obtain the physical/Orca signoffs. A
 build or nested UI pass cannot override these gates.
 
-A future activation procedure must first back up `/etc/greetd`, record the current
+For activation, first back up `/etc/greetd`, record the current
 `display-manager.service` target and enabled units, keep a working console login,
 and snapshot the VM. Review the greeter account/home/config ownership and the
 selected VT. Only then install the reviewed config, create the account/state paths

@@ -1,5 +1,10 @@
 # Fingerprint login implementation plan
 
+> Hosting update: ordinary Aqueous is now the supported pre-login compositor.
+> References below to requiring a restricted Aqueous mode are historical and
+> superseded by [the current host contract](AQUEOUS_GREETER_REQUIREMENTS.md).
+> Real greetd/PAM and desktop handoff acceptance remains required.
+
 Status: **Pearl implementation and private validation available; real-device/login acceptance remains gated**.
 No host PAM, enrollment, reader ownership or display-manager configuration was changed.
 See [usage and policy documentation](FINGERPRINT_LOGIN.md) and
