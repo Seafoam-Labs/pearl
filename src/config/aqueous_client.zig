@@ -71,6 +71,7 @@ pub const Client = struct {
     reload: *const fn (*anyopaque) anyerror!u64,
     can_reload: *const fn (*anyopaque) bool,
     can_record: *const fn (*anyopaque) bool,
+    identify_outputs: ?*const fn (*anyopaque) anyerror!void = null,
     live: ?*Document = null,
     base: ?*Document = null,
     draft: ?[]u8 = null,
@@ -214,6 +215,9 @@ pub const Client = struct {
         if (self.draft) |d| a.free(d);
         self.draft = copy;
         self.revision +%= 1;
+    }
+    pub fn identify(self: *Client) !void {
+        try (self.identify_outputs orelse return error.Unsupported)(self.context);
     }
     pub fn emptyDraft(self: *Client, alloc: std.mem.Allocator) ![]u8 {
         return @import("aqueous_draft.zig").empty(alloc, self.baseValue());

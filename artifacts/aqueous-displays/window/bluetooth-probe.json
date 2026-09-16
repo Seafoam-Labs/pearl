@@ -1,0 +1,346 @@
+{
+  "links": [
+    {
+      "page": "overview",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 89,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "network",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 169,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "bluetooth",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": true,
+      "bounds": {
+        "x": 12,
+        "y": 217,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "sound",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 297,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "power",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 345,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "appearance",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 425,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "bar",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 473,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "notifications",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 521,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "session",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 601,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 649,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "appearance",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "layouts",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "input",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "keybinds",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "rules",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "displays",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "advanced",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "advanced",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 697,
+        "width": 195,
+        "height": 46
+      }
+    }
+  ],
+  "controls": [],
+  "editor": {
+    "ready": true,
+    "online": true,
+    "recovery": false,
+    "state": {
+      "revision": 0,
+      "draft_revision": 0,
+      "base_revision": 0,
+      "dirty": false,
+      "valid": true,
+      "conflict": false,
+      "busy": false,
+      "locked": false
+    },
+    "local": false,
+    "upload": "none",
+    "download": "none",
+    "error_code": "",
+    "validation": "",
+    "export_error": "",
+    "bytes": 979,
+    "sha256": "202e707f1db4cfcefd56c2dcae4292170a5200ec7726afd70a2d3cd6c999c401",
+    "picker": false,
+    "preview": false,
+    "close_dialog": false,
+    "can_apply": false,
+    "can_edit": true
+  },
+  "service_prompt": false,
+  "aqueous": {
+    "online": false,
+    "ready": false,
+    "recovery": false,
+    "dirty": false,
+    "version": 0,
+    "revision": 0,
+    "backend_version": 0,
+    "mode": "idle",
+    "phase": 0,
+    "busy": true,
+    "receipt_pending": false,
+    "recording": false,
+    "shared_review": false,
+    "display_changes": 0,
+    "display_blocked": false,
+    "fields": 0,
+    "err": null,
+    "detail": ""
+  },
+  "greeter_sync_status": "",
+  "footer_text": "Preview only \u00b7 Sample devices",
+  "widget_focus": "GtkBox",
+  "focus": "heading",
+  "active": false,
+  "key_events": 0,
+  "header_bounds": {
+    "x": 250,
+    "y": 75,
+    "width": 760,
+    "height": 39
+  },
+  "footer_bounds": {
+    "x": 220,
+    "y": 718,
+    "width": 820,
+    "height": 42
+  },
+  "body_bounds": {
+    "x": 220,
+    "y": 159,
+    "width": 820,
+    "height": 559
+  },
+  "retry_bounds": {
+    "x": 203,
+    "y": 41,
+    "width": 34,
+    "height": 20
+  },
+  "navigation_bounds": {
+    "x": 0,
+    "y": 51,
+    "width": 220,
+    "height": 709
+  },
+  "sections_bounds": {
+    "x": 895,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  "pid": 521443,
+  "page": "bluetooth",
+  "section": null,
+  "connected": true,
+  "fixture": true,
+  "narrow": false,
+  "width": 1040,
+  "height": 760,
+  "visible": true,
+  "scroll": 0,
+  "heading": "Bluetooth",
+  "status": "Connected to Pearl.",
+  "style": "dark",
+  "appearance_updates": 3,
+  "activation_contexts": 0,
+  "sections_open": false
+}

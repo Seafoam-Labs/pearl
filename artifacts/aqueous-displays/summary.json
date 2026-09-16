@@ -1,0 +1,58 @@
+{
+  "status": "passed",
+  "date": "2026-09-16",
+  "checks": {
+    "native_displays": {
+      "status": "passed",
+      "checks": 14,
+      "report": "verification.json"
+    },
+    "window": {
+      "status": "passed",
+      "checks": 21,
+      "report": "window/results.json"
+    },
+    "services": {
+      "status": "passed",
+      "checks": 26,
+      "report": "services/report.json",
+      "note": "One run timed out awaiting a second preview. The subsequent isolated run passed; failure diagnostics now include the backend preview state."
+    },
+    "presentation": {
+      "status": "passed",
+      "checks": 5,
+      "report": "presentation/results.json"
+    },
+    "aqueous": {
+      "status": "passed",
+      "checks": 22,
+      "report": "aqueous/metadata.json"
+    },
+    "preview_lifecycle": {
+      "status": "passed",
+      "checks": 3,
+      "report": "preview/metadata.json"
+    },
+    "integration": {
+      "status": "passed",
+      "checks": 8,
+      "report": "integration/results.json"
+    },
+    "build": {
+      "status": "passed",
+      "report": "build.log"
+    },
+    "pure": {
+      "status": "passed",
+      "tests": 116,
+      "report": "pure-tests.log"
+    },
+    "surfaces": {
+      "status": "passed",
+      "checks": 3,
+      "report": "surfaces.log"
+    }
+  },
+  "physical_hdr_verified": false,
+  "hardware_limit": "Production DRM/HDR preview remains gated by Aqueous capabilities."
+}

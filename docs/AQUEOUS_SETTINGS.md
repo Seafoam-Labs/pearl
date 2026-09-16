@@ -118,14 +118,39 @@ This uses Ghostty's generated GTK/GDK bindings, including
 
 ## Protected display preview
 
-The Displays page shows connected and disabled outputs, actual mode/geometry/color,
-explicit versus inherited values, declaration/source precedence, advertised modes,
-monitor identity and ambiguity, configured offline declarations, profiles and policy.
-`store`, `test`, `preview` and `reason` are kept separate.
+The Displays page uses a numbered arrangement diagram and a single selected-screen
+editor. Select a diagram screen or its matching button to change resolution,
+refresh rate, scale, orientation, or enabled state. Drag screens to reposition
+them, use arrow keys (Shift for one-pixel steps), or choose a relative side and
+edge alignment. **Exact position** reveals X/Y. **Arrange side by side** stages
+a top-aligned layout; **Identify** briefly labels the physical outputs through
+Pearl's session service. Disabled connected screens remain selectable.
 
-A placement diagram shows current geometry and, after Validate, the canonical
-candidate arrangement, with numeric origins and logical dimensions for keyboard
-and assistive use.
+**Enable HDR** defaults to automatic HDR brightness with inherited/default SDR
+brightness. Existing customization is preserved when toggling HDR. **More display
+options** contains HDR/SDR brightness controls and **Use automatic settings**, plus
+mirroring, output information, profiles, declarations, custom settings, and
+preview diagnostics. Automatic SDR brightness removes a local numeric override;
+it does not write a string into the numeric field. The separate `auto_hdr`
+conversion feature remains an advanced setting and is not enabled by this checkbox.
+Unsupported HDR controls explain their availability. Preview capability remains
+separate from the ability to retain a configuration draft.
+
+The diagram immediately shows the unsaved arrangement. A revision-matched
+canonical validation result supplies authoritative candidate geometry. Edits
+merge into the selected output's source-bound declaration; a new exact-connector
+override can be added to the active output profile without modifying a shared
+wildcard declaration. Ambiguous profiles remain accessible in the advanced
+editor. Existing offline declarations and source precedence remain visible there.
+
+The normal Displays footer offers **Discard** and **Apply changes**. Validation
+and the native preview are automatic on Apply. A modal **Keep changes** / **Revert**
+confirmation uses Aqueous's actual deadline and only enables Keep after
+presentation. Escape reverts; reverting retains editable changes. Refresh,
+Validate, and Rebase remain under More display options. When a shared draft also
+contains edits from other Aqueous sections, Apply and Discard disclose them for
+review before proceeding. Pearl's own preferences remain a separate draft.
+
 Position, scale, rotation, mode and mirroring use canonical declaration
 mutations when supported; older helpers retain their monitor editor. Scalar display policies use schema controls. Canonical validation determines
 whether an edit changes live or deferred output configuration. Both require a native

@@ -196,6 +196,9 @@ pub const Editor = struct {
         if (!self.owns_preview) return error.NotOwner;
         try self.command(if (keep) .keep else .revert);
     }
+    pub fn identify(self: *Editor) !void {
+        try self.command(.identify);
+    }
     pub fn requestReload(self: *Editor) !void {
         try self.command(.reload);
     }

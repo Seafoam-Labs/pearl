@@ -5,7 +5,7 @@ pub const Action = struct {
     operation: []const u8,
     expected_draft_revision: []const u8,
     version: []const u8,
-    action: enum { refresh, validate, apply, discard, rebase, reload, keep, revert },
+    action: enum { refresh, validate, apply, discard, rebase, reload, keep, revert, identify },
 };
 pub const State = struct {
     version: []const u8,

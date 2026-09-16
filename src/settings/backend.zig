@@ -493,6 +493,7 @@ pub const Backend = struct {
                 c.discard();
             },
             .rebase => try c.rebase(),
+            .identify => try c.identify(),
             .reload => {
                 try c.requestReload();
                 entry.aqueous_reload = true;

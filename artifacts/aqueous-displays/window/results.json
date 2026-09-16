@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "checks": {
+    "direct-launch-without-shell-normal-window": true,
+    "production-excludes-samples-and-shell-agent-dependencies": true,
+    "second-launch-selects-page-and-retains-one-window": true,
+    "generic-launch-strict-validation-and-aqueous-sections": true,
+    "aqueous-sublist-pointer-keyboard-parent-return-and-external-default": true,
+    "concurrent-launches-single-owner": true,
+    "gio-launcher-token-forwards-and-restores-minimized-window": true,
+    "ordinary-minimize-maximize-reactivation-and-escape": true,
+    "pointer-sidebar-selection-and-external-heading-focus": true,
+    "keyboard-focus-distinct-from-selection": true,
+    "internal-body-focus-and-page-scroll-restoration": true,
+    "committed-material-light-dark-native-gtk": true,
+    "narrow-navigation-fixed-footer-and-escape": true,
+    "narrow-aqueous-parent-expands-child-selects-and-escape-retains-section": true,
+    "large-text-reduced-motion-no-window-width-growth": true,
+    "backend-loss-and-explicit-retry-without-shell-start": true,
+    "ctrl-w-closes-only-frontend-and-removes-instance-endpoint": true,
+    "production-rejects-test-probe": true,
+    "cold-concurrent-launch-race": true,
+    "native-identity-cross-session-denial-on-shared-dbus": true,
+    "frontend-crash-stale-instance-recovery": true
+  },
+  "binaries": {
+    "settings": "2af5ea4f3273c1947fd7d7df51999cee724f4c197a26381d43ecc2647a534e22",
+    "production": "c6ad19204e5814559669420eff16de71d6e6cc99bffcfb338ce117f3a70e3ab7",
+    "pearl": "8390d21a2ff94c00b1714b4c61b065e08a2801d6dd4e294045f23d41caf5f232",
+    "ctl": "2b0d96b6fad27f5e386709864a3a530c2c7cbaca66aac9db91a72c73512d139c"
+  }
+}

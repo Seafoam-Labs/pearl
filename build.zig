@@ -136,7 +136,7 @@ pub fn build(b: *std.Build) void {
         // Ordinary application: deliberately excludes layer-shell, PulseAudio,
         // polkit/PAM and shell service initialization dependencies.
         const sm = b.createModule(.{ .root_source_file = b.path("src/settings_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-        for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "glibunix2", "gobject2", "gdkwayland4", "graphene1", "gdkpixbuf2", "giounix2" }) |name| sm.addImport(name, bindings.module(name));
+        for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "glibunix2", "gobject2", "gdkwayland4", "cairo1", "graphene1", "gdkpixbuf2", "giounix2" }) |name| sm.addImport(name, bindings.module(name));
         sm.addImport("wayland", native);
         sm.addAnonymousImport("settings_base_style", .{ .root_source_file = b.path("resources/style.css") });
         sm.addAnonymousImport("settings_colors", .{ .root_source_file = b.path("resources/settings.css") });
@@ -244,6 +244,15 @@ pub fn build(b: *std.Build) void {
     settings_services.addArtifactArg(spike);
     if (b.args) |args| settings_services.addArgs(args);
     b.step("test-settings-services", "Verify standalone live pages and complete Aqueous editor boundary").dependOn(&settings_services.step);
+
+    const settings_displays = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_displays.py", "--settings" });
+    settings_displays.addArtifactArg(settings_test_app);
+    settings_displays.addArg("--pearl");
+    settings_displays.addArtifactArg(app);
+    settings_displays.addArg("--ctl");
+    settings_displays.addArtifactArg(ctl);
+    if (b.args) |args| settings_displays.addArgs(args);
+    b.step("test-settings-displays", "Verify selected displays, positioning, HDR controls and native previews").dependOn(&settings_displays.step);
 
     const settings_boundary = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_boundary.py", "--pearl" });
     settings_boundary.addArtifactArg(app);

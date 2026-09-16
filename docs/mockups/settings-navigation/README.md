@@ -8,6 +8,9 @@ packaging and acceptance criteria. The separate
 [flyout navigation plan](../../SETTINGS_NAVIGATION_PLAN.md) covers compact bar
 destinations. These images illustrate the standalone app.
 
+The [Aqueous Displays concept](../aqueous-displays/README.md) explores a simpler
+display arrangement, selected-screen editor, and Apply / Keep / Revert flow.
+
 ## Review
 
 - Click Sound, Network, Bluetooth or Battery in the example bar. The matching

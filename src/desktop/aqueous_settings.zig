@@ -49,7 +49,9 @@ pub fn ViewFor(comptime ClientType: type) type {
         buttons: [3]*gtk.Button,
         draft_buttons: [2]*gtk.Button,
         actions: *gtk.FlowBox,
+        footer_line: *gtk.Box,
         preview_buttons: [2]*gtk.Button,
+        preview_actions: *gtk.FlowBox,
         window: *gtk.Window,
         editors: std.ArrayList(*Editor) = .empty,
         recording: ?*Editor = null,
@@ -59,6 +61,24 @@ pub fn ViewFor(comptime ClientType: type) type {
         keys: *gtk.EventControllerKey = undefined,
         notebook: ?*gtk.Notebook = null,
         placement_box: ?*gtk.Box = null,
+        display_selected: [128:0]u8 = @splat(0),
+        display_more: bool = false,
+        display_exact: bool = false,
+        display_canvas: ?*gtk.DrawingArea = null,
+        display_refresh_source: c_uint = 0,
+        display_controls: std.ArrayList(struct { id: []const u8, widget: *gtk.Widget }) = .empty,
+        display_changes: usize = 0,
+        display_other_changes: usize = 0,
+        display_advanced_box: ?*gtk.Box = null,
+        display_blocked: bool = false,
+        preview_dialog: ?*gtk.Window = null,
+        preview_message: ?*gtk.Label = null,
+        preview_keep: ?*gtk.Button = null,
+        preview_revert: ?*gtk.Button = null,
+        preview_visible: bool = false,
+        shared_dialog: ?*gtk.Dialog = null,
+        shared_discard: bool = false,
+        shared_revision: u64 = 0,
         page_index: c_int = 0,
         /// The standalone host invalidates page-local focus before widgets die.
         rebuild_observer: ?struct { context: *anyopaque, notify: *const fn (*anyopaque, bool) void } = null,
@@ -78,10 +98,12 @@ pub fn ViewFor(comptime ClientType: type) type {
             content.as(gtk.Widget).setVexpand(1);
             host.append(content.as(gtk.Widget));
             const message = w.label("Loading settings…", "pearl-secondary");
-            footer.append(message.as(gtk.Widget));
+            const footer_line = w.column(8);
+            footer.append(footer_line.as(gtk.Widget));
+            footer_line.append(message.as(gtk.Widget));
             const actions = w.flow(5);
             actions.setHomogeneous(0);
-            footer.append(actions.as(gtk.Widget));
+            footer_line.append(actions.as(gtk.Widget));
             const refresh = gtk.Button.newWithLabel("Refresh");
             actions.insert(refresh.as(gtk.Widget), -1);
             const discard = gtk.Button.newWithLabel("Discard draft");
@@ -102,7 +124,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             preview_actions.insert(reload.as(gtk.Widget), -1);
             preview_actions.insert(keep.as(gtk.Widget), -1);
             preview_actions.insert(revert.as(gtk.Widget), -1);
-            self.* = .{ .host = host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .reload_button = reload, .window = window };
+            self.* = .{ .host = host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .footer_line = footer_line, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .preview_actions = preview_actions, .reload_button = reload, .window = window };
             self.root_signals.add(refresh.as(object.Object), gtk.Button.signals.clicked.connect(refresh, *Self, refreshed, self, .{}));
             self.root_signals.add(discard.as(object.Object), gtk.Button.signals.clicked.connect(discard, *Self, discarded, self, .{}));
             self.root_signals.add(validate.as(object.Object), gtk.Button.signals.clicked.connect(validate, *Self, validated, self, .{}));
@@ -122,7 +144,16 @@ pub fn ViewFor(comptime ClientType: type) type {
             return self;
         }
         pub fn destroy(self: *Self) void {
+            if (self.shared_dialog) |dialog| dialog.as(gtk.Window).destroy();
+            if (self.preview_dialog) |dialog| {
+                dialog.destroy();
+                self.preview_dialog = null;
+            }
             self.stopRecording();
+            if (self.display_refresh_source != 0) _ = glib.Source.remove(self.display_refresh_source);
+            self.display_refresh_source = 0;
+            if (self.display_canvas) |canvas| canvas.setDrawFunc(null, null, null);
+            self.display_canvas = null;
             self.form_signals.clear();
             self.root_signals.clear();
             self.host.as(gtk.Widget).removeController(self.keys.as(gtk.EventController));
@@ -159,15 +190,21 @@ pub fn ViewFor(comptime ClientType: type) type {
             if (self.rebuild_observer) |observer| observer.notify(observer.context, true);
             defer if (self.rebuild_observer) |observer| observer.notify(observer.context, false);
             self.placement_box = null;
+            self.display_advanced_box = null;
             self.stopRecording();
             self.filling = true;
             self.forms_stale = false;
             defer self.filling = false;
+            if (self.display_refresh_source != 0) _ = glib.Source.remove(self.display_refresh_source);
+            self.display_refresh_source = 0;
+            if (self.display_canvas) |canvas| canvas.setDrawFunc(null, null, null);
+            self.display_canvas = null;
             self.form_signals.clear();
             self.notebook = null;
             while (self.content.as(gtk.Widget).getFirstChild()) |c| self.content.remove(c);
             _ = self.arena.reset(.retain_capacity);
             self.editors = .empty;
+            self.display_controls = .empty;
             self.request_buffer = null;
             self.raw_buffer = null;
             self.raw_file = null;
@@ -189,13 +226,20 @@ pub fn ViewFor(comptime ClientType: type) type {
             const titles = [_][]const u8{ "Appearance", "Layouts", "Input", "Keybindings", "Rules", "Displays" };
             const draft = m.parse(alloc, self.client.draft orelse try self.client.emptyDraft(alloc), m.max_request) catch m.Value.null;
             for (categories, titles) |category, title| {
-                const box = self.page(notebook, title);
+                var box = self.page(notebook, title);
                 if (std.mem.eql(u8, category, "appearance")) {
                     try self.inventory(box, self.client.value(), "desktop_typography", "Desktop font synchronization");
                     try self.inventory(box, self.client.value(), "desktop_cursor", "Desktop cursor synchronization");
                 }
                 if (std.mem.eql(u8, category, "displays")) {
-                    try @import("aqueous_displays.zig").render(self, box, snapshot);
+                    if (@hasDecl(ClientType, "standalone")) inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(box.as(gtk.Widget), 0);
+                    if (@import("../config/aqueous_contract.zig").Capabilities.read(snapshot).display_mutations) {
+                        try @import("aqueous_display_setup.zig").For(Self).render(self, box, snapshot);
+                    } else try @import("aqueous_displays.zig").render(self, box, snapshot);
+                    const extra = gtk.Expander.new("Additional display configuration");
+                    (self.display_advanced_box orelse box).append(extra.as(gtk.Widget));
+                    box = w.column(12);
+                    extra.setChild(box.as(gtk.Widget));
                     try self.inventory(box, snapshot, "monitors", "Configured displays (including offline outputs)");
                     try self.inventory(box, snapshot, "live_outputs", "Connected displays and modes");
                     if (!@import("../config/aqueous_contract.zig").Capabilities.read(snapshot).display_mutations) {
@@ -442,6 +486,7 @@ pub fn ViewFor(comptime ClientType: type) type {
         pub fn update(self: *Self) void {
             if (self.review_version != self.client.review_version or self.revision != self.client.revision or (self.version != self.client.version and (self.client.draft == null or self.request_buffer == null))) self.build() catch |err| self.fail(err);
             const c = self.client;
+            self.updatePreviewDialog();
             self.reload_button.as(gtk.Widget).setVisible(@intFromBool(c.reload_state == .failed or c.reload_state == .unknown or c.reload_state == .unavailable));
             self.reload_button.as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.reload_ticket == null and !c.unresolved));
             self.preview_buttons[0].as(gtk.Widget).setVisible(@intFromBool(c.previewing()));
@@ -488,6 +533,29 @@ pub fn ViewFor(comptime ClientType: type) type {
                 std.mem.sliceTo(&c.detail, 0),
             }) catch "Settings status unavailable";
             self.message.setText(text);
+            const simple = self.page_index == 5 and self.display_canvas != null;
+            if (simple) self.footer_line.as(gtk.Widget).addCssClass("display-footer") else self.footer_line.as(gtk.Widget).removeCssClass("display-footer");
+            self.footer_line.as(gtk.Orientable).setOrientation(if (simple and self.host.as(gtk.Widget).getWidth() >= 620) .horizontal else .vertical);
+            self.actions.as(gtk.Widget).setHalign(.fill);
+            self.actions.setMinChildrenPerLine(if (simple) 2 else 1);
+            self.actions.as(gtk.Widget).setSizeRequest(if (simple) 260 else -1, -1);
+            self.message.setMaxWidthChars(if (simple) 42 else -1);
+            self.preview_actions.as(gtk.Widget).setVisible(@intFromBool(!self.preview_visible));
+            if (simple and c.previewPhase() != 0) self.message.setText(self.z(outcome));
+            self.buttons[0].as(gtk.Widget).setVisible(@intFromBool(!simple));
+            self.buttons[1].as(gtk.Widget).setVisible(@intFromBool(!simple));
+            self.draft_buttons[1].as(gtk.Widget).setVisible(@intFromBool(!simple));
+            for ([_]*gtk.Button{ self.buttons[0], self.buttons[1], self.draft_buttons[1] }) |button| button.as(gtk.Widget).getParent().?.setVisible(@intFromBool(!simple));
+            self.draft_buttons[0].as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.draft != null));
+            self.draft_buttons[0].setLabel(if (simple) "Discard" else "Discard draft");
+            self.buttons[2].setLabel(if (simple) (if (c.job != null) "Checking settings…" else "Apply changes") else "Apply & save");
+            self.preview_buttons[0].setLabel(if (simple) "Keep changes" else "Keep displays");
+            self.preview_buttons[1].setLabel(if (simple) "Revert" else "Revert displays");
+            if (simple and (self.display_blocked or self.display_changes + self.display_other_changes == 0)) self.buttons[2].as(gtk.Widget).setSensitive(0);
+            if (simple and c.previewPhase() == 0 and c.job == null and c.err == null and !c.conflict() and !c.unresolved) {
+                var message: [256]u8 = undefined;
+                self.message.setText(if (c.draft != null) (std.fmt.bufPrintZ(&message, "{d} unsaved display changes · {d} other Aqueous changes.\nApply to try this setup. Keep it only if everything looks right.", .{ self.display_changes, self.display_other_changes }) catch "Display settings") else "All display settings saved.\nChanges take effect only when you apply them.");
+            }
         }
         fn save(editor: *Editor, value: m.Value) void {
             const self = editor.view;
@@ -498,6 +566,80 @@ pub fn ViewFor(comptime ClientType: type) type {
             };
             self.syncRequest();
             self.update();
+        }
+        fn styleDialog(self: *Self, dialog: *gtk.Window) void {
+            const classes = self.window.as(gtk.Widget).getCssClasses();
+            defer glib.strfreev(@ptrCast(classes));
+            dialog.as(gtk.Widget).setCssClasses(@ptrCast(classes));
+            dialog.as(gtk.Widget).addCssClass("display-confirmation");
+        }
+        fn updatePreviewDialog(self: *Self) void {
+            const c = self.client;
+            if (!@hasDecl(ClientType, "standalone")) return;
+            if (!c.previewing() and !self.preview_visible) return;
+            if (self.preview_dialog == null) {
+                const dialog = gtk.Window.new();
+                self.styleDialog(dialog);
+                dialog.setTitle("Keep these display settings?");
+                dialog.setTransientFor(self.window);
+                dialog.setModal(1);
+                dialog.setDefaultSize(460, -1);
+                const content = w.column(18);
+                inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(content.as(gtk.Widget), 24);
+                content.append(w.label("Keep these display settings?", "pearl-title").as(gtk.Widget));
+                const message = w.label("", "pearl-secondary");
+                message.setMaxWidthChars(48);
+                content.append(message.as(gtk.Widget));
+                const actions = w.row(12);
+                actions.as(gtk.Widget).setHalign(.end);
+                const revert = gtk.Button.newWithLabel("Revert");
+                const keep = gtk.Button.newWithLabel("Keep changes");
+                keep.as(gtk.Widget).addCssClass("pearl-primary");
+                actions.append(revert.as(gtk.Widget));
+                actions.append(keep.as(gtk.Widget));
+                content.append(actions.as(gtk.Widget));
+                dialog.setChild(content.as(gtk.Widget));
+                self.preview_dialog = dialog;
+                self.preview_message = message;
+                self.preview_keep = keep;
+                self.preview_revert = revert;
+                self.root_signals.add(dialog.as(object.Object), gtk.Window.signals.close_request.connect(dialog, *Self, previewClosed, self, .{}));
+                self.root_signals.add(keep.as(object.Object), gtk.Button.signals.clicked.connect(keep, *Self, kept, self, .{}));
+                self.root_signals.add(revert.as(object.Object), gtk.Button.signals.clicked.connect(revert, *Self, reverted, self, .{}));
+                const keys = gtk.EventControllerKey.new();
+                self.root_signals.add(keys.as(object.Object), gtk.EventControllerKey.signals.key_pressed.connect(keys, *Self, previewKey, self, .{}));
+                dialog.as(gtk.Widget).addController(keys.as(gtk.EventController));
+            }
+            if (c.previewPhase() == 0) {
+                self.preview_dialog.?.as(gtk.Widget).setVisible(0);
+                self.preview_visible = false;
+                return;
+            }
+            var buffer: [512]u8 = undefined;
+            const text = if (c.previewing()) (std.fmt.bufPrintZ(&buffer, "Your displays are using the new settings. Check every screen. Reverting in {d} seconds.\n\nKeep changes saves the complete Aqueous draft. Revert restores your previous displays and retains your edits.", .{c.remaining()}) catch "Check every screen before keeping these settings.") else switch (c.previewPhase()) {
+                2 => "Saving confirmed settings…",
+                4 => "Reverting displays. Waiting for Aqueous to confirm completion…",
+                5 => "Session inactive. Rollback will continue when the session resumes.",
+                else => "Waiting for the display operation to complete…",
+            };
+            self.styleDialog(self.preview_dialog.?);
+            self.preview_message.?.setText(text);
+            const can_choose = if (@hasDecl(ClientType, "canChoose")) c.canChoose() else true;
+            self.preview_keep.?.as(gtk.Widget).setSensitive(@intFromBool(c.previewing() and c.remaining() > 0 and can_choose));
+            self.preview_revert.?.as(gtk.Widget).setSensitive(@intFromBool(c.previewing() and can_choose));
+            if (!self.preview_visible) {
+                self.preview_visible = true;
+                self.preview_dialog.?.present();
+                _ = self.preview_revert.?.as(gtk.Widget).grabFocus();
+            }
+        }
+        fn previewClosed(_: *gtk.Window, self: *Self) callconv(.c) c_int {
+            if (self.client.previewing()) self.client.choose(false) catch |err| self.fail(err);
+            return 1;
+        }
+        fn previewKey(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.ModifierType, self: *Self) callconv(.c) c_int {
+            if (key != gdk.KEY_Escape) return 0;
+            return previewClosed(self.preview_dialog.?, self);
         }
         pub fn syncRequest(self: *Self) void {
             self.revision = self.client.revision;
@@ -525,6 +667,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.client.begin(.refresh) catch |err| self.fail(err);
         }
         fn discarded(_: *gtk.Button, self: *Self) callconv(.c) void {
+            if (self.confirmShared(true)) return;
             self.client.discard();
             self.build() catch |err| self.fail(err);
             self.update();
@@ -533,7 +676,52 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.client.begin(.validate) catch |err| self.fail(err);
         }
         fn applied(_: *gtk.Button, self: *Self) callconv(.c) void {
+            if (self.confirmShared(false)) return;
             self.client.begin(.apply) catch |err| self.fail(err);
+        }
+        fn confirmShared(displays: *Self, discard: bool) bool {
+            if (displays.page_index != 5 or displays.display_other_changes == 0) return false;
+            if (displays.shared_dialog) |dialog| {
+                dialog.as(gtk.Window).present();
+                return true;
+            }
+            const self = displays;
+            const dialog = gtk.Dialog.new();
+            const win = dialog.as(gtk.Window);
+            self.styleDialog(win);
+            win.setTitle(if (discard) "Discard all Aqueous changes?" else "Apply all Aqueous changes?");
+            win.setTransientFor(self.window);
+            win.setModal(1);
+            win.setDefaultSize(460, -1);
+            self.shared_dialog = dialog;
+            self.shared_discard = discard;
+            self.shared_revision = self.client.revision;
+            const content = dialog.getContentArea();
+            inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(content.as(gtk.Widget), 20);
+            content.append(w.label("Your Aqueous draft also includes changes in these sections:", null).as(gtk.Widget));
+            const draft = m.parse(self.arena.allocator(), self.client.draft orelse "{}", m.max_request) catch .null;
+            const summary = @import("../config/aqueous_display_setup.zig").sharedSummary(self.arena.allocator(), self.client.baseValue(), draft) catch "Other Aqueous settings";
+            content.append(w.label(self.z(summary), "pearl-secondary").as(gtk.Widget));
+            content.append(w.label("This action includes those edits and your display changes.", null).as(gtk.Widget));
+            _ = dialog.addButton("Cancel", 0);
+            _ = dialog.addButton(if (discard) "Discard all Aqueous changes" else "Apply all Aqueous changes", 1);
+            self.root_signals.add(dialog.as(object.Object), gtk.Dialog.signals.response.connect(dialog, *Self, sharedResponse, self, .{}));
+            win.present();
+            return true;
+        }
+        fn sharedResponse(dialog: *gtk.Dialog, response: c_int, self: *Self) callconv(.c) void {
+            dialog.as(gtk.Window).destroy();
+            self.shared_dialog = null;
+            if (response != 1) return;
+            if (self.shared_revision != self.client.revision) {
+                self.fail(error.StaleDraft);
+                return;
+            }
+            if (self.shared_discard) {
+                self.client.discard();
+                self.build() catch |err| self.fail(err);
+                self.update();
+            } else self.client.begin(.apply) catch |err| self.fail(err);
         }
         fn rebased(_: *gtk.Button, self: *Self) callconv(.c) void {
             self.client.rebase() catch |err| {

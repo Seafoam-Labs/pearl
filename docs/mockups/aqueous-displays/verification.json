@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "checks": {
+    "saved-state-and-current-arrangement": true,
+    "hdr-checkbox-defaults-to-automatic-and-uses-confirmation": true,
+    "hdr-customization-collapsed-and-reset-to-automatic": true,
+    "hdr-per-display-support-disabled-screen-and-reset": true,
+    "display-selection-settings-edit-and-discard": true,
+    "relative-position-and-edge-alignment": true,
+    "pointer-drag-updates-selected-display-and-draft": true,
+    "keyboard-position-edit": true,
+    "exact-position-and-overlap-feedback": true,
+    "disabled-display-and-last-display-guard": true,
+    "mirror-mode-separates-position-controls": true,
+    "apply-confirm-revert-retains-edits-and-keep-saves": true,
+    "countdown-automatically-reverts-with-draft-retained": true,
+    "unavailable-preview-blocks-apply-not-editing": true,
+    "identify-and-theme-preview": true,
+    "480-and-390-pixel-layout-navigation-controls-and-preview": true,
+    "no-javascript-errors": true
+  },
+  "browser": "Local Chromium via Playwright",
+  "external_requests": "None; opened through file://",
+  "scope": "Mockup behavior only; no compositor or hardware changes."
+}

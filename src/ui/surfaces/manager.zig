@@ -120,6 +120,8 @@ pub const Manager = struct {
     settings_observer: ?*const fn (*anyopaque) void = null,
     aqueous_settings: @import("../../config/aqueous_client.zig").Client = undefined,
     preferences: @import("../../config/service.zig").Service = undefined,
+    identifiers: std.ArrayList(*Surface) = .empty,
+    identify_timer: c_uint = 0,
     osd_label: ?*gtk.Label = null,
     osd_pending: @import("../../services/policy.zig").Text(512) = .{},
     osd_flush: c_uint = 0,
@@ -162,7 +164,7 @@ pub const Manager = struct {
         self.session_services = .{ .app = self.app.as(gio.Application), .context = self, .changed = sessionChanged };
         self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged, .validate = validatePreferences };
         try self.preferences.start();
-        self.aqueous_settings = .{ .app = self.app.as(gio.Application), .context = self, .changed = aqueousSettingsChanged, .reload = aqueousReload, .can_reload = aqueousCanReload, .can_record = aqueousCanRecord };
+        self.aqueous_settings = .{ .app = self.app.as(gio.Application), .context = self, .changed = aqueousSettingsChanged, .reload = aqueousReload, .can_reload = aqueousCanReload, .can_record = aqueousCanRecord, .identify_outputs = identifyDisplays };
         self.aqueous_settings.start();
         self.services_started = true;
         self.audio.start();
@@ -219,6 +221,7 @@ pub const Manager = struct {
         if (self.running and self.sync_source == 0) self.sync_source = glib.idleAdd(syncIdle, self);
     }
     pub fn clear(self: *Manager) void {
+        self.hideIdentifiers();
         self.hidePopup();
         self.hideOsd();
         self.hideNotifications();
@@ -266,6 +269,7 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
         self.syncClipboardPrivacy();
+        if (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or (self.lifecycle.session_id.slice().len != 0 and !self.lifecycle.gate.active)) self.hideIdentifiers();
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
         self.schedule();
@@ -454,6 +458,7 @@ pub const Manager = struct {
         self.lifecycle.sync();
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
         self.syncClipboardPrivacy();
+        if (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or (self.lifecycle.session_id.slice().len != 0 and !self.lifecycle.gate.active)) self.hideIdentifiers();
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
         self.syncSettingsAccess();
@@ -549,6 +554,7 @@ pub const Manager = struct {
             if (!o.seen) {
                 if (self.capture.target) |target| if (std.mem.eql(u8, target.name.slice(), o.connector)) self.capture.cancel();
                 if (self.popup != null and self.popup.?.output == o) self.hidePopup();
+                self.hideIdentifiers();
                 if (self.osd != null and self.osd.?.output == o) self.hideOsd();
                 if (self.notification != null and self.notification.?.output == o) self.hideNotifications();
                 _ = self.outputs.orderedRemove(i);
@@ -581,6 +587,7 @@ pub const Manager = struct {
         if (self.client.model.get(.session, "session").?.locked) {
             self.syncSettingsAccess();
             self.hidePopup();
+            self.hideIdentifiers();
             self.hideOsd();
         }
     }
@@ -898,6 +905,45 @@ pub const Manager = struct {
         self.positionNotifications();
         self.notification.?.notifications.?.update();
     }
+    fn identifyDisplays(context: *anyopaque) !void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        const session = self.client.model.get(.session, "session") orelse return error.Unavailable;
+        if (session.locked or self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or (self.lifecycle.session_id.slice().len != 0 and !self.lifecycle.gate.active)) return error.SessionInactive;
+        self.hideIdentifiers();
+        errdefer self.hideIdentifiers();
+        const model = @import("../../config/aqueous_model.zig");
+        const outputs = model.list(model.get(model.get(self.aqueous_settings.baseValue(), "display_observation"), "outputs"));
+        for (outputs, 0..) |output, i| {
+            const connector = model.str(model.get(output, "connector"));
+            for (self.outputs.items) |o| {
+                if (!std.mem.eql(u8, o.connector, connector)) continue;
+                const surface = try self.create(o, .osd);
+                self.identifiers.append(a, surface) catch |err| {
+                    surface.destroy();
+                    return err;
+                };
+                var buffer: [256]u8 = undefined;
+                const label = gtk.Label.new(try std.fmt.bufPrintZ(&buffer, "{d}  ·  {s}", .{ @import("../../config/aqueous_display_setup.zig").number(output, i + 1), connector }));
+                label.as(gtk.Widget).addCssClass("pearl-title");
+                object.ext.cast(gtk.Box, surface.panel).?.append(label.as(gtk.Widget));
+                surface.window.present();
+            }
+        }
+        self.identify_timer = glib.timeoutAdd(3000, identifiersExpired, self);
+    }
+    fn identifiersExpired(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Manager = @ptrCast(@alignCast(data.?));
+        self.identify_timer = 0;
+        self.hideIdentifiers();
+        return 0;
+    }
+    fn hideIdentifiers(self: *Manager) void {
+        if (self.identify_timer != 0) _ = glib.Source.remove(self.identify_timer);
+        self.identify_timer = 0;
+        for (self.identifiers.items) |surface| surface.destroy();
+        self.identifiers.deinit(a);
+        self.identifiers = .empty;
+    }
     fn hideOsd(self: *Manager) void {
         if (self.osd_source != 0) _ = glib.Source.remove(self.osd_source);
         self.osd_source = 0;
@@ -1206,7 +1252,7 @@ pub const Manager = struct {
         const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, frames: [4]u16, islands: bool, island_rects: [3]?Rect, dock: struct { reason: @import("../../desktop/dock_policy.zig").Reason, groups: usize, truncated: bool, rect: Rect, edge: Edge } };
         var items: std.ArrayList(Item) = .empty;
         for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .frames = o.reservations.frames, .islands = o.bar.?.bar.?.islands, .island_rects = o.bar.?.effects.last_shapes, .dock = .{ .reason = o.dock.?.reason, .groups = o.dock.?.count, .truncated = o.dock.?.truncated, .rect = o.dock.?.rect, .edge = o.dock.?.config.edge } });
-        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .osd = self.osd != null, .osd_text = if (self.osd_label) |label| std.mem.span(label.getText()) else "" }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .identifying = self.identifiers.items.len, .osd = self.osd != null, .osd_text = if (self.osd_label) |label| std.mem.span(label.getText()) else "" }, .{});
     }
 };
 fn rectangle(r: anytype) !Rect {

@@ -55,8 +55,10 @@ pub const Window = struct {
     retry_button: *gtk.Button,
     status: *gtk.Label,
     aqueous_context: *gtk.Label,
+    display_count: *gtk.Label,
     aqueous_states: [nav.aqueous_sections.len]SectionState = @splat(.{}),
     aqueous_rebuilding: bool = false,
+    display_focus_id: [64]u8 = @splat(0),
     keep_sections_open: bool = false,
     navigation_signals: [2]c_ulong = @splat(0),
     navigation_reveal_id: c_uint = 0,
@@ -136,7 +138,16 @@ pub const Window = struct {
         const subtitle = w.label("", "pearl-secondary");
         const aqueous_context = w.label("Aqueous", "pearl-secondary");
         page_header.append(aqueous_context.as(gtk.Widget));
-        page_header.append(heading.as(gtk.Widget));
+        const heading_row = w.row(16);
+        const display_count = w.label("", "pearl-secondary");
+        display_count.as(gtk.Widget).setHexpand(0);
+        display_count.as(gtk.Widget).setHalign(.end);
+        display_count.as(gtk.Widget).setValign(.center);
+        display_count.as(gtk.Widget).setVisible(0);
+        display_count.setMaxWidthChars(22);
+        heading_row.append(heading.as(gtk.Widget));
+        heading_row.append(display_count.as(gtk.Widget));
+        page_header.append(heading_row.as(gtk.Widget));
         page_header.append(subtitle.as(gtk.Widget));
         const saved_button = w.wrappingButton(if (german) "Gespeichertes JSON anzeigen" else "View saved JSON");
         saved_button.as(gtk.Widget).setHalign(.start);
@@ -208,7 +219,7 @@ pub const Window = struct {
             monitor.getGeometry(&rect);
             win.setDefaultSize(@min(1040, @max(240, rect.f_width - 32)), @min(760, @max(200, rect.f_height - 64)));
         }
-        self.* = .{ .aqueous = aqueous, .aqueous_footer = aqueous_footer, .review_button = review_button, .window = win, .root = root, .sidebar = sidebar, .sections = sections, .popover = popover, .popup_scroll = popup_scroll, .heading = heading, .heading_anchor = page_header.as(gtk.Widget), .subtitle = subtitle, .stack = stack, .footer = footer, .footer_text = footer_text, .save = save, .discard = discard, .merge_button = merge_button, .actions = actions, .draft_badge = draft_badge, .editor = editor, .saved_button = saved_button, .retry_button = retry_button, .status = status, .aqueous_context = aqueous_context, .arena = .init(a), .context = context, .retry = retry, .close = close, .fixture = fixture, .narrow = true, .german = german, .css = gtk.CssProvider.new(), .native_css = gtk.CssProvider.new(), .font_css = gtk.CssProvider.new() };
+        self.* = .{ .aqueous = aqueous, .aqueous_footer = aqueous_footer, .review_button = review_button, .window = win, .root = root, .sidebar = sidebar, .sections = sections, .popover = popover, .popup_scroll = popup_scroll, .heading = heading, .heading_anchor = page_header.as(gtk.Widget), .subtitle = subtitle, .stack = stack, .footer = footer, .footer_text = footer_text, .save = save, .discard = discard, .merge_button = merge_button, .actions = actions, .draft_badge = draft_badge, .editor = editor, .saved_button = saved_button, .retry_button = retry_button, .status = status, .aqueous_context = aqueous_context, .display_count = display_count, .arena = .init(a), .context = context, .retry = retry, .close = close, .fixture = fixture, .narrow = true, .german = german, .css = gtk.CssProvider.new(), .native_css = gtk.CssProvider.new(), .font_css = gtk.CssProvider.new() };
         errdefer self.destroy();
         const navbox = self.navigation(0);
         sidebar.setChild(navbox.as(gtk.Widget));
@@ -623,7 +634,7 @@ pub const Window = struct {
         const context_title = std.fmt.allocPrintSentinel(a, "Aqueous / {s}", .{heading}, 0) catch unreachable;
         defer a.free(context_title);
         w.name(self.heading_anchor, if (target.page == .aqueous) context_title else heading);
-        self.subtitle.setText(self.description(target.page));
+        self.subtitle.setText(if (target.page == .aqueous and self.aqueous_section == 5) "Make your screens match your workspace." else self.description(target.page));
         self.stack.setVisibleChildName(target.page.id());
         const keep_open = self.keep_sections_open and !external and self.popover.as(gtk.Widget).getVisible() != 0;
         self.keep_sections_open = false;
@@ -671,10 +682,25 @@ pub const Window = struct {
         const self: *Window = @ptrCast(@alignCast(context));
         self.aqueous_rebuilding = rebuilding;
         if (rebuilding) {
+            @memset(&self.display_focus_id, 0);
+            const focused = if (self.target.page == .aqueous and self.aqueous_section == 5) self.window.getFocus() else self.aqueous_states[5].focus;
+            if (focused) |focus| if (self.aqueous_view) |view| {
+                for (view.display_controls.items) |control| if (focus == control.widget or focus.isAncestor(control.widget) != 0) {
+                    const length = @min(control.id.len, self.display_focus_id.len - 1);
+                    @memcpy(self.display_focus_id[0..length], control.id[0..length]);
+                    break;
+                };
+            };
             if (!self.changing and self.target.page == .aqueous and self.restore_id == 0) self.aqueous_states[self.aqueous_section].scroll = self.pages[@intFromEnum(nav.Route.aqueous)].scroll.getVadjustment().getValue();
             for (&self.aqueous_states) |*state| state.focus = null;
-        } else if (!self.changing and self.target.page == .aqueous and self.restore_id == 0 and self.popover.as(gtk.Widget).getVisible() == 0) {
-            self.restore_id = glib.idleAdd(restore, self);
+        } else {
+            if (self.display_focus_id[0] != 0) if (self.aqueous_view) |view| {
+                for (view.display_controls.items) |control| if (std.mem.eql(u8, control.id, std.mem.sliceTo(&self.display_focus_id, 0))) {
+                    self.aqueous_states[5].focus = control.widget;
+                    break;
+                };
+            };
+            if (!self.changing and self.target.page == .aqueous and self.restore_id == 0 and self.popover.as(gtk.Widget).getVisible() == 0) self.restore_id = glib.idleAdd(restore, self);
         }
     }
     pub fn connection(self: *Window, connected: bool, err: ?anyerror) void {
@@ -700,8 +726,8 @@ pub const Window = struct {
         for (self.live_pages) |page| if (page) |view| view.update();
         self.aqueousChanged();
         const dirty = editor.local != null or editor.state.dirty;
-        self.draft_badge.as(gtk.Widget).setVisible(@intFromBool(dirty or self.aqueous.draft != null));
-        self.review_button.as(gtk.Widget).setVisible(@intFromBool(dirty or self.aqueous.draft != null));
+        self.draft_badge.as(gtk.Widget).setVisible(@intFromBool((dirty or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
+        self.review_button.as(gtk.Widget).setVisible(@intFromBool((dirty or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
         const preference_page = self.target.page == .appearance or self.target.page == .bar or self.target.page == .session or self.target.page == .advanced;
         self.actions.as(gtk.Widget).setVisible(@intFromBool((editor.ready or dirty) and preference_page));
         self.merge_button.as(gtk.Widget).setVisible(@intFromBool(editor.state.conflict or editor.recovery));
@@ -717,6 +743,11 @@ pub const Window = struct {
         self.retry_button.as(gtk.Widget).setVisible(0);
     }
     pub fn aqueousChanged(self: *Window) void {
+        self.display_count.as(gtk.Widget).setVisible(@intFromBool(self.target.page == .aqueous and self.aqueous_section == 5));
+        var display_text: [80]u8 = undefined;
+        const connected_displays = @import("../config/aqueous_display_setup.zig").outputs(self.aqueous.value()).len;
+        self.display_count.setWidthChars(if (self.narrow) 12 else 23);
+        self.display_count.setText(if (!self.aqueous.ready) "Loading displays…" else std.fmt.bufPrintZ(&display_text, "● {d} {s}{s}", .{ connected_displays, if (connected_displays == 1) @as([]const u8, "display") else "displays", if (self.narrow) @as([]const u8, "") else " connected" }) catch "Displays");
         if (self.fixture) return;
         if (self.pending_aqueous_selection) |selection| {
             if (!self.aqueous.online or self.aqueous.recovery or (!self.aqueous.dirty and self.aqueous.sending == null)) {
@@ -733,7 +764,7 @@ pub const Window = struct {
         self.aqueous_footer.as(gtk.Widget).setVisible(@intFromBool(self.target.page == .aqueous or self.aqueous.phase != 0));
         self.footer_text.as(gtk.Widget).setVisible(@intFromBool(self.target.page != .aqueous));
         self.footer.as(gtk.Orientable).setOrientation(if (self.narrow or self.font_size > 18 or self.target.page == .aqueous or self.aqueous.phase != 0) .vertical else .horizontal);
-        self.review_button.as(gtk.Widget).setVisible(@intFromBool(self.editor.state.dirty or self.editor.local != null or self.aqueous.draft != null));
+        self.review_button.as(gtk.Widget).setVisible(@intFromBool((self.editor.state.dirty or self.editor.local != null or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
     }
     fn reviewClicked(_: *gtk.Button, self: *Window) callconv(.c) void {
         if (self.aqueous.recovery) {
@@ -1012,7 +1043,7 @@ pub const Window = struct {
             const item = &self.links[(if (self.narrow) @as(usize, navigation_count) else 0) + i];
             link.* = .{ .page = item.target.page, .section = item.target.section, .visible = item.button.as(gtk.Widget).getVisible() != 0, .focused = self.window.getFocus() == item.button.as(gtk.Widget), .active = item.button.getActive() != 0, .bounds = self.bounds(item.button.as(gtk.Widget)) };
         }
-        const ControlProbe = struct { field: []const u8, focused: bool, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
+        const ControlProbe = struct { field: []const u8, focused: bool, enabled: bool = true, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
         var controls: std.ArrayList(ControlProbe) = .empty;
         const focus = self.window.getFocus();
         if (self.preferences_view) |view| {
@@ -1037,6 +1068,9 @@ pub const Window = struct {
                 try controls.append(alloc, .{ .field = id, .focused = if (focus) |f| f == field.widget or f.isAncestor(field.widget) != 0 else false, .bounds = self.bounds(field.widget) });
                 if (field.record) |record| try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "record:{s}", .{id}), .focused = false, .bounds = self.bounds(record.as(gtk.Widget)) });
             };
+            for (view.display_controls.items) |control| if (control.widget.getMapped() != 0) {
+                try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |widget| widget == control.widget or widget.isAncestor(control.widget) != 0 else false, .enabled = control.widget.getSensitive() != 0, .bounds = self.bounds(control.widget) });
+            };
             for (view.draft_buttons, [_][]const u8{ "aqueous.discard", "aqueous.rebase" }) |button, id| try controls.append(alloc, .{ .field = id, .focused = false, .bounds = self.bounds(button.as(gtk.Widget)) });
             for (view.buttons, [_][]const u8{ "aqueous.refresh", "aqueous.validate", "aqueous.apply" }) |button, id| try controls.append(alloc, .{ .field = id, .focused = false, .bounds = self.bounds(button.as(gtk.Widget)) });
         };
@@ -1046,6 +1080,6 @@ pub const Window = struct {
             for (&self.links) |*link| if (focus == link.button.as(gtk.Widget)) break :blk if (link.target.section) |section| try std.fmt.allocPrint(alloc, "aqueous:{s}", .{section}) else link.target.page.id();
             break :blk "body";
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .links = links, .controls = controls.items, .editor = editor_state, .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .links = links, .controls = controls.items, .editor = editor_state, .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
     }
 };

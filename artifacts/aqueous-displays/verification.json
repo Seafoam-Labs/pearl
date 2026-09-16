@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "checks": {
+    "primary-layout-and-collapsed-advanced-controls": true,
+    "unsupported-hdr-checkbox-disabled": true,
+    "selected-output-exact-position-stages-canonical-draft": true,
+    "selection-draft-and-disclosures-survive-navigation": true,
+    "advanced-controls-reachable-and-discard-restores-baseline": true,
+    "identify-labels-each-output-and-cleans-up": true,
+    "side-by-side-produces-non-overlapping-draft": true,
+    "real-pointer-drag-stages-selected-display-position": true,
+    "keyboard-arrangement-stages-position": true,
+    "scale-dropdown-preserves-relative-arrangement": true,
+    "apply-preview-and-escape-revert-retain-draft": true,
+    "keep-dialog-performs-protected-save": true,
+    "shared-draft-review-cancel-retains-other-section-edits": true,
+    "narrow-selected-editor-reachable": true
+  }
+}

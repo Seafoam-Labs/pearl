@@ -48,6 +48,12 @@ class Peer(EditorPeer):
             r=self.call('document.write',transfer=transfer,offset=str(offset),text=data[offset:offset+32768].decode());assert r['ok'],r
         return self.call('document.finish',transfer=transfer,operation=uuid.uuid4().hex)
 
+def wait_preview(peer):
+    try:
+        return wait_for(lambda:peer.aqueous()['phase']==1,45)
+    except TimeoutError:
+        raise AssertionError(('display preview did not present', peer.aqueous()))
+
 def find(page,row,control):
     return next(c for r in page['live']['rows'] if r['id']==row for c in r['controls'] if c['id']==control)
 def navigate(s,ipc,page,section=None):
@@ -254,7 +260,7 @@ def main():
         assert peer.aq_keep(preview)['result']['state']=='succeeded'
         navigate(s,ipc,'aqueous','displays');aq_ready(s,ipc,peer);time.sleep(.3)
         click_widget(s,ipc,control(s,ipc,'aqueous.apply'))
-        wait_for(lambda:peer.aqueous()['phase']==1,45)
+        wait_preview(peer)
         navigate(s,ipc,'sound');wait_for(lambda:probe(s,ipc)['aqueous']['phase']==1,5)
         denied=peer.aq_action('keep');assert denied['state']=='failed' and denied['error_code']=='NotOwner',denied
         capture(s,'display-preview-during-sound',output['name'])
@@ -270,7 +276,7 @@ def main():
         current=peer.aq_document('committed');preview['expected_generation']=current['generation']
         peer.aq_keep(preview);navigate(s,ipc,'aqueous','displays');aq_ready(s,ipc,peer);time.sleep(.3)
         click_widget(s,ipc,control(s,ipc,'aqueous.apply'))
-        wait_for(lambda:peer.aqueous()['phase']==1,45)
+        wait_preview(peer)
         app.proc.kill();app.proc.wait(5)
         wait_for(lambda:not peer.aqueous()['busy'],45)
         assert next(o for o in json.loads(s.run(['wlr-randr','--json']).stdout) if o['name']==output['name'])['scale']==target['scale']
@@ -281,7 +287,7 @@ def main():
         peer.aq_action('refresh');aq_ready(s,ipc,peer)
         current=peer.aq_document('committed');preview['expected_generation']=current['generation']
         peer.aq_keep(preview);navigate(s,ipc,'aqueous','displays');aq_ready(s,ipc,peer);time.sleep(.3)
-        click_widget(s,ipc,control(s,ipc,'aqueous.apply'));wait_for(lambda:peer.aqueous()['phase']==1,45)
+        click_widget(s,ipc,control(s,ipc,'aqueous.apply'));wait_preview(peer)
         locker=s.child('preview-locker',[args.spike],input_pipe=True,PEARL_T00_ISOLATED='1',WLR_BACKENDS='headless',PEARL_T00_MODE='plain');locker.expect('T00 event=ready')
         locker.proc.stdin.write('lock\n');locker.proc.stdin.flush();locker.expect('T00 event=locked')
         wait_for(lambda:not probe(s,ipc)['visible'])

@@ -51,3 +51,32 @@
 
 .settings-window button.settings-nav-child { margin-left: 40px; }
 .settings-window button.settings-nav-parent label { font-weight: 600; }
+
+/* The display editor follows the approved arrangement / selected screen / position layout. */
+.settings-window .display-arrangement { border-radius: 16px; padding: 20px; }
+.settings-window .display-arrangement drawingarea { min-height: 190px; }
+.settings-window .display-arrangement drawingarea:focus-visible { outline: 2px solid #d0bcff; outline-offset: 3px; }
+.settings-window .display-editor { padding: 18px; border-radius: 16px; }
+.settings-window .display-editor dropdown { min-width: 0; }
+.settings-window .display-editor dropdown button { padding: 6px 10px; }
+.settings-window .display-editor spinbutton { min-width: 70px; }
+.settings-window .display-editor .pearl-title { font-size: 1em; font-weight: 600; }
+.settings-window .display-selector { border-radius: 10px; padding: 8px 12px; }
+.settings-window .display-selector:checked { background: #49366b; color: #eee8f4; outline: 1px solid #d0bcff; }
+.settings-window.pearl-light .display-selector:checked { background: #e9ddfa; color: #302045; outline-color: #70509c; }
+.settings-window expander > title { padding: 10px 0; }
+.settings-window flowboxchild { padding: 0; }
+.settings-window .display-arrangement .pearl-title { font-size: 1em; font-weight: 600; }
+.settings-window button.display-selector { border-radius: 10px; }
+.settings-window button.display-selector:checked { background: #49366b; color: #eee8f4; }
+.settings-window .display-editor .linked button { padding: 5px 8px; }
+.settings-window .display-arrangement drawingarea { min-height: 160px; }
+.settings-window .display-arrangement .pearl-row { padding: 0; }
+.settings-window.pearl-root .display-arrangement { padding: 18px; }
+.settings-window.pearl-root .display-editor { padding: 18px; }
+.settings-window.pearl-root .display-editor .pearl-row { padding: 0; }
+.settings-window.pearl-root .display-editor dropdown button { border-radius: 8px; }
+.settings-window .display-footer button { border-radius: 10px; padding: 8px 16px; }
+.settings-window.display-confirmation .pearl-title { font-size: 1.25em; }
+.settings-window.display-confirmation button { border-radius: 10px; padding: 8px 16px; }
+.settings-window .display-editor .linked button { border-radius: 6px; }

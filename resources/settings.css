@@ -10,3 +10,8 @@
 .settings-window.$scope .settings-form-row + .settings-form-row { border-top: 1px solid alpha($outline$, 0.2); }
 .settings-window.$scope button.settings-value { background: mix($high$, $outline$, 0.1); border: 1px solid alpha($outline$, 0.15); }
 .settings-window.$scope .settings-footer { background: $container$; border-top: 1px solid alpha($outline$, 0.25); }
+.settings-window.$scope button.display-alignment-selected { background: $primary_container$; color: $primary$; }
+.settings-window.$scope .display-arrangement, .settings-window.$scope .display-editor { background: $high$; }
+.settings-window.$scope button.display-selector:checked { background: $primary_container$; color: $primary$; }
+.settings-window.$scope .display-editor dropdown > button { background: mix($high$, $outline$, 0.1); border: 1px solid alpha($outline$, 0.15); }
+.settings-window.$scope .display-editor .linked { background: mix($high$, $outline$, 0.1); border-radius: 8px; padding: 3px; }

@@ -1,0 +1,13 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=WL-1 scale=1
+info(pearl): event=settings-backend-ready session=3b424f2ee51046077cb2baf89e5021a0
+info(pearl): event=control-ready session=3b424f2ee51046077cb2baf89e5021a0
+info: event=app-index-ready entries=160 truncated=false
+info: event=preferences-applied revision=0 mode=static cache=false
+info(pearl): event=stopping reason=control-quit pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped
