@@ -82,6 +82,19 @@ def main():
         draft = peer.aq_document('draft'); ops = draft['display_declaration_changes']['operations']
         assert any(op.get('set', {}).get('position', [0])[0] == 1750 for op in ops), ops
         checks['selected-output-exact-position-stages-canonical-draft'] = True
+        click(s, ipc, 'display.primary'); aq_ready(s, ipc, peer)
+        assert not next(c for c in probe(s, ipc)['controls'] if c['field'] == 'display.primary')['enabled']
+        primary_ops = peer.aq_document('draft')['display_declaration_changes']['operations']
+        assert any(op.get('set', {}).get('primary') is True and op.get('set', {}).get('position', [0])[0] == 1750 for op in primary_ops), primary_ops
+        click(s, ipc, 'display.select.0')
+        assert next(c for c in probe(s, ipc)['controls'] if c['field'] == 'display.primary')['enabled']
+        click(s, ipc, 'display.primary'); aq_ready(s, ipc, peer)
+        primary_ops = peer.aq_document('draft')['display_declaration_changes']['operations']
+        assert sum(op.get('set', {}).get('primary') is True for op in primary_ops) == 1, primary_ops
+        assert any(op.get('set', {}).get('position', [0])[0] == 1750 and op.get('set', {}).get('primary') is not True for op in primary_ops), primary_ops
+        click(s, ipc, 'display.select.1')
+        assert next(c for c in probe(s, ipc)['controls'] if c['field'] == 'display.primary')['enabled']
+        checks['primary-button-transfers-selection-and-preserves-position'] = True
         navigate(s, ipc, 'aqueous', 'appearance'); navigate(s, ipc, 'aqueous', 'displays')
         assert probe(s, ipc)['aqueous']['display_changes'] > 0
         assert 'display.x' in {c['field'] for c in probe(s, ipc)['controls']}

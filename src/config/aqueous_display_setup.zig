@@ -95,6 +95,18 @@ pub fn value(base: m.Value, draft: m.Value, output: m.Value, key: []const u8) m.
     const actual = m.get(output, "actual");
     var v = m.get(m.get(m.get(output, "configured"), key), "value");
     if (v == .null) v = m.get(actual, key);
+    if (std.mem.eql(u8, key, "primary")) {
+        const configured = m.get(m.get(output, "configured"), "primary");
+        v = m.get(output, "primary");
+        const declarations = m.get(configured, "matching_declarations");
+        if (declarations == .array) {
+            v = .{ .bool = false };
+            for (declarations.array.items) |spec| {
+                if (m.get(spec, "primary") == .bool) v = m.get(spec, "primary");
+            }
+        }
+        if (v == .null) v = .{ .bool = false };
+    }
     const d = target(base, output);
     for (m.list(m.get(m.get(draft, "display_declaration_changes"), "operations"))) |op| {
         if (!matches(base, op, d, output)) continue;
@@ -202,6 +214,17 @@ pub fn stage(a: A, base: m.Value, bytes: []const u8, output: m.Value, key: []con
     }
     try mutations.check(base, req);
     return std.json.Stringify.valueAlloc(a, req, .{ .whitespace = .indent_2 });
+}
+/// Build the complete primary transfer before publishing any part of the draft.
+pub fn stagePrimary(a: A, base: m.Value, bytes: []const u8, output: m.Value) ![]u8 {
+    var next = try a.dupe(u8, bytes);
+    errdefer a.free(next);
+    for (outputs(base)) |other| {
+        const updated = try stage(a, base, next, other, "primary", .{ .bool = std.mem.eql(u8, connector(other), connector(output)) });
+        a.free(next);
+        next = updated;
+    }
+    return next;
 }
 pub fn changeCount(draft: m.Value) usize {
     var count: usize = m.list(m.get(draft, "monitor_changes")).len;
@@ -349,4 +372,27 @@ test "canonical geometry uses fractional scale and reflected portrait transforms
     try std.testing.expectEqual(@as(f64, -100), r.x);
     try std.testing.expectEqual(@as(f64, 1152), r.width);
     try std.testing.expectEqual(@as(f64, 2048), r.height);
+}
+
+test "primary transfer clears competing declarations and preserves other display edits" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const base = try m.parse(a,
+        \\{"generation":"1111111111111111","capabilities":["display_declaration_mutations_v1"],"display_source_ids":{"outputs":"display-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"display_declarations":[],"display_observation":{"outputs":[{"connector":"DP-1","primary":true,"configured":{"primary":{"matching_declarations":[{"primary":true}]}}},{"connector":"DP-2","primary":false,"configured":{"primary":{"matching_declarations":[{"primary":true},{"primary":false}]}}}]}}
+    , 4096);
+    const heads = outputs(base);
+    const empty = try @import("aqueous_draft.zig").empty(a, base);
+    var bytes = try stage(a, base, empty, heads[1], "scale", .{ .float = 1.5 });
+    bytes = try stagePrimary(a, base, bytes, heads[1]);
+    var draft = try m.parse(a, bytes, m.max_request);
+    try std.testing.expect(m.equal(value(base, draft, heads[0], "primary"), .{ .bool = false }));
+    try std.testing.expect(m.equal(value(base, draft, heads[1], "primary"), .{ .bool = true }));
+    try std.testing.expectEqual(@as(usize, 3), changeCount(draft));
+    bytes = try stagePrimary(a, base, bytes, heads[0]);
+    draft = try m.parse(a, bytes, m.max_request);
+    try std.testing.expect(m.equal(value(base, draft, heads[0], "primary"), .{ .bool = true }));
+    try std.testing.expect(m.equal(value(base, draft, heads[1], "primary"), .{ .bool = false }));
+    try std.testing.expect(m.equal(value(base, draft, heads[1], "scale"), .{ .float = 1.5 }));
+    try std.testing.expectEqual(@as(usize, 1), changeCount(draft));
 }

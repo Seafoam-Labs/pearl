@@ -11,7 +11,7 @@ const w = @import("../ui/components/widgets.zig");
 pub fn For(comptime View: type) type {
     return struct {
         const Self = @This();
-        const Control = enum { enabled, hdr, resolution, refresh, scale, transform, x, y, side, relative, mirror, hdr_level, sdr_white };
+        const Control = enum { enabled, hdr, primary, resolution, refresh, scale, transform, x, y, side, relative, mirror, hdr_level, sdr_white };
         const Binding = struct { form: *Form, key: Control };
         const Choice = struct { form: *Form, index: usize };
         const Head = struct { output: m.Value, rect: model.Rect, enabled: bool, number: usize };
@@ -33,6 +33,7 @@ pub fn For(comptime View: type) type {
             position_help: *gtk.Label,
             enabled: *gtk.Switch,
             hdr: *gtk.CheckButton,
+            primary: *gtk.Button,
             resolution: *gtk.DropDown,
             refresh: *gtk.DropDown,
             scale: *gtk.DropDown,
@@ -146,6 +147,9 @@ pub fn For(comptime View: type) type {
                 const hdr_supported = m.equal(m.get(support, "test"), .{ .bool = true }) or m.equal(m.get(support, "preview"), .{ .bool = true }) or m.equal(m.get(m.get(out, "actual"), "hdr"), .{ .bool = true });
                 f.hdr.setActive(@intFromBool(hdr));
                 f.hdr.as(gtk.Widget).setSensitive(@intFromBool(head.enabled and hdr_supported));
+                const primary = m.equal(f.val("primary"), .{ .bool = true });
+                f.primary.setLabel(if (primary) "Primary display" else "Set as primary");
+                f.primary.as(gtk.Widget).setSensitive(@intFromBool(head.enabled and !primary));
                 const level = f.val("hdr_level");
                 const custom = (level != .null and !std.mem.eql(u8, m.str(level), "auto") and (m.get(m.get(m.get(out, "configured"), "hdr_level"), "value") != .null or staged(f, "hdr_level"))) or (f.val("sdr_white_level") != .null and (m.get(m.get(m.get(out, "configured"), "sdr_white_level"), "value") != .null or staged(f, "sdr_white_level")));
                 const white_value = f.val("sdr_white_level");
@@ -339,7 +343,7 @@ pub fn For(comptime View: type) type {
             try register(f, @tagName(key), input);
             const b = try f.alloc().create(Binding);
             b.* = .{ .form = f, .key = key };
-            if (object.ext.cast(gtk.SpinButton, input)) |spin| f.view.form_signals.add(spin.as(object.Object), gtk.SpinButton.signals.value_changed.connect(spin, *Binding, spun, b, .{})) else if (object.ext.cast(gtk.CheckButton, input)) |check| f.view.form_signals.add(check.as(object.Object), gtk.CheckButton.signals.toggled.connect(check, *Binding, toggled, b, .{})) else f.view.form_signals.add(input.as(object.Object), object.Object.signals.notify.connect(input.as(object.Object), *Binding, changed, b, .{ .detail = if (key == .enabled) "active" else "selected" }));
+            if (object.ext.cast(gtk.SpinButton, input)) |spin| f.view.form_signals.add(spin.as(object.Object), gtk.SpinButton.signals.value_changed.connect(spin, *Binding, spun, b, .{})) else if (object.ext.cast(gtk.CheckButton, input)) |check| f.view.form_signals.add(check.as(object.Object), gtk.CheckButton.signals.toggled.connect(check, *Binding, toggled, b, .{})) else if (object.ext.cast(gtk.Button, input)) |button| f.view.form_signals.add(button.as(object.Object), gtk.Button.signals.clicked.connect(button, *Binding, clicked, b, .{})) else f.view.form_signals.add(input.as(object.Object), object.Object.signals.notify.connect(input.as(object.Object), *Binding, changed, b, .{ .detail = if (key == .enabled) "active" else "selected" }));
         }
         pub fn render(view: *View, box: *gtk.Box, base: m.Value) !void {
             const a = view.arena.allocator();
@@ -403,6 +407,10 @@ pub fn For(comptime View: type) type {
             const hdr_help = w.label("Uses automatic settings.", "pearl-secondary");
             hdr_help.as(gtk.Widget).setMarginStart(24);
             hdr_row.append(hdr_help.as(gtk.Widget));
+            const primary = gtk.Button.newWithLabel("Set as primary");
+            w.name(primary.as(gtk.Widget), "Primary display");
+            primary.as(gtk.Widget).setHalign(.start);
+            settings.append(primary.as(gtk.Widget));
             const first = pair(settings);
             const resolution = dropdown();
             const refresh = dropdown();
@@ -471,8 +479,8 @@ pub fn For(comptime View: type) type {
             const reset = gtk.Button.newWithLabel("Use automatic settings");
             advanced.append(reset.as(gtk.Widget));
             advanced.append(w.label("Automatic SDR brightness uses inherited/default settings. Other color options and display profiles are below.", "pearl-secondary").as(gtk.Widget));
-            f.* = .{ .view = view, .base = base, .draft = .null, .heads = heads, .canvas = canvas, .title = title, .subtitle = subtitle, .status = status, .warning = warning, .hdr_help = hdr_help, .position_help = position_help, .enabled = enabled, .hdr = hdr, .resolution = resolution, .refresh = refresh, .scale = scale, .transform = transform, .x = x, .y = y, .side = side, .relative = relative, .mirror = mirror, .hdr_level = level, .sdr_white = white, .tabs = tabs, .align_buttons = align_buttons, .level_reset = reset };
-            inline for (.{ .{ enabled, .enabled }, .{ hdr, .hdr }, .{ resolution, .resolution }, .{ refresh, .refresh }, .{ scale, .scale }, .{ transform, .transform }, .{ x, .x }, .{ y, .y }, .{ side, .side }, .{ relative, .relative }, .{ mirror, .mirror }, .{ level, .hdr_level }, .{ white, .sdr_white } }) |entry| try bind(f, entry[0].as(gtk.Widget), entry[1]);
+            f.* = .{ .view = view, .base = base, .draft = .null, .heads = heads, .canvas = canvas, .title = title, .subtitle = subtitle, .status = status, .warning = warning, .hdr_help = hdr_help, .position_help = position_help, .enabled = enabled, .hdr = hdr, .primary = primary, .resolution = resolution, .refresh = refresh, .scale = scale, .transform = transform, .x = x, .y = y, .side = side, .relative = relative, .mirror = mirror, .hdr_level = level, .sdr_white = white, .tabs = tabs, .align_buttons = align_buttons, .level_reset = reset };
+            inline for (.{ .{ enabled, .enabled }, .{ hdr, .hdr }, .{ primary, .primary }, .{ resolution, .resolution }, .{ refresh, .refresh }, .{ scale, .scale }, .{ transform, .transform }, .{ x, .x }, .{ y, .y }, .{ side, .side }, .{ relative, .relative }, .{ mirror, .mirror }, .{ level, .hdr_level }, .{ white, .sdr_white } }) |entry| try bind(f, entry[0].as(gtk.Widget), entry[1]);
             try register(f, "arrangement", canvas.as(gtk.Widget));
             try register(f, "exact", exact.as(gtk.Widget));
             try register(f, "more", more.as(gtk.Widget));
@@ -555,6 +563,9 @@ pub fn For(comptime View: type) type {
         fn spun(_: *gtk.SpinButton, b: *Binding) callconv(.c) void {
             edit(b);
         }
+        fn clicked(_: *gtk.Button, b: *Binding) callconv(.c) void {
+            edit(b);
+        }
         fn toggled(_: *gtk.CheckButton, b: *Binding) callconv(.c) void {
             edit(b);
         }
@@ -591,6 +602,13 @@ pub fn For(comptime View: type) type {
                 .hdr => {
                     try f.stage("hdr", .{ .bool = f.hdr.getActive() != 0 });
                     if (f.hdr.getActive() != 0 and !staged(f, "hdr_level") and m.get(m.get(m.get(f.output(), "configured"), "hdr_level"), "value") == .null) try f.stage("hdr_level", .{ .string = "auto" });
+                },
+                .primary => {
+                    if (f.view.client.job != null or f.view.client.conflict()) return;
+                    const bytes = try model.stagePrimary(f.alloc(), f.base, f.view.client.draft orelse try f.view.client.emptyDraft(f.alloc()), f.output());
+                    try f.view.client.keepDraft(bytes);
+                    f.view.syncRequest();
+                    f.draft = try m.parse(f.alloc(), bytes, m.max_request);
                 },
                 .scale => try f.stage("scale", .{ .float = f.scales[@min(f.scales.len - 1, f.scale.getSelected())] / 100 }),
                 .transform => try f.stage("transform", .{ .string = ([_][]const u8{ "normal", "90", "180", "270", "flipped", "flipped-90", "flipped-180", "flipped-270" })[@min(7, f.transform.getSelected())] }),
