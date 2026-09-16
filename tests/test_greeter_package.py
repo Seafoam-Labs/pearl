@@ -26,10 +26,14 @@ def main():
         policy=(stage/'usr/share/doc/pearl-greeter/examples/fingerprint/pearl-fingerprint-auth.example').read_text()
         assert 'max-tries=3 timeout=15 debug=off' in policy and 'nullok' not in '\n'.join(line for line in policy.splitlines() if not line.startswith('#'))
         run('python3','packaging/greeter/stage.py','--build',str(args.build),'--dest',str(stage),ok=False)
-        for name in ('pearl-greeter','pearl-greeter-host','pearl-greeter-session'):
+        assert 'usr/lib/pearl/pearl-greeter-sync' in paths
+        policy=(stage/'usr/share/polkit-1/actions/org.aqueous.Pearl.Greeter.Appearance.policy').read_text()
+        assert '/usr/lib/pearl/pearl-greeter-sync' in policy and 'auth_admin' in policy
+        for name in ('pearl-greeter','pearl-greeter-host','pearl-greeter-session','pearl-greeter-sync'):
             run(str(args.build/name),'--version')
         run(str(args.build/'pearl-greeter'),'--probe',ok=False)
         run(str(args.build/'pearl-greeter-host'),'--fixture-host','/usr/bin/true',ok=False)
+        run(str(args.build/'pearl-greeter-sync'),'--fixture',str(root),ok=False)
         assert 'usr/lib/pearl/pearl-greeter-init' in paths
         assert os.access(stage/'usr/lib/pearl/pearl-greeter-init', os.X_OK)
         linked=run('ldd',str(args.build/'pearl-greeter')).stdout

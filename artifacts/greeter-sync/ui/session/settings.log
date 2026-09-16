@@ -1,0 +1,9 @@
+info: event=settings-launch activation_context=false
+info: event=settings-instance-ready session=586c9e18472c1505cdc05348a2b0dbfe
+info: event=settings-page page=overview
+info: event=settings-page page=appearance
+info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
+info: event=settings-page page=appearance
+info: event=greeter-appearance-sync success=true
+info: event=greeter-appearance-sync success=true
+info: event=greeter-appearance-sync success=false

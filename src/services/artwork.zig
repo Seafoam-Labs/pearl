@@ -93,11 +93,14 @@ pub const Art = struct {
         }
     }
 };
-fn valid(w: u32, h: u32) bool {
-    return w > 0 and h > 0 and w <= 4096 and h <= 4096 and @as(u64, w) * h <= 8 * 1024 * 1024;
+fn valid(w: u32, h: u32, max_axis: u32, max_pixels: u64) bool {
+    return w > 0 and h > 0 and w <= max_axis and h <= max_axis and @as(u64, w) * h <= max_pixels;
 }
 pub fn dimensions(bytes: []const u8) bool {
-    if (bytes.len >= 33 and std.mem.eql(u8, bytes[0..8], "\x89PNG\r\n\x1a\n")) return valid(std.mem.readInt(u32, bytes[16..20], .big), std.mem.readInt(u32, bytes[20..24], .big));
+    return dimensionsWithin(bytes, 4096, 8 * 1024 * 1024);
+}
+pub fn dimensionsWithin(bytes: []const u8, max_axis: u32, max_pixels: u64) bool {
+    if (bytes.len >= 33 and std.mem.eql(u8, bytes[0..8], "\x89PNG\r\n\x1a\n")) return valid(std.mem.readInt(u32, bytes[16..20], .big), std.mem.readInt(u32, bytes[20..24], .big), max_axis, max_pixels);
     if (bytes.len < 4 or bytes[0] != 0xff or bytes[1] != 0xd8) return false;
     var i: usize = 2;
     while (i + 4 <= bytes.len) {
@@ -112,7 +115,7 @@ pub fn dimensions(bytes: []const u8) bool {
         if (size < 2 or i + 2 + size > bytes.len) return false;
         if (marker == 0xc0 or marker == 0xc1 or marker == 0xc2) {
             if (size < 8) return false;
-            return valid(std.mem.readInt(u16, bytes[i + 7 ..][0..2], .big), std.mem.readInt(u16, bytes[i + 5 ..][0..2], .big));
+            return valid(std.mem.readInt(u16, bytes[i + 7 ..][0..2], .big), std.mem.readInt(u16, bytes[i + 5 ..][0..2], .big), max_axis, max_pixels);
         }
         i += 2 + size;
     }

@@ -46,6 +46,7 @@ pub const View = struct {
     apply_button: *gtk.Button,
     merge_button: *gtk.Button = undefined,
     last_probe: [48]u8 = @splat(0),
+    greeter_sync: *@import("../settings/greeter_sync.zig").View = undefined,
     pub fn create(host: *gtk.Box, service: *Service) !*View {
         const self = try a.create(View);
         const title = w.label("Pearl settings", "pearl-title");
@@ -85,6 +86,7 @@ pub const View = struct {
         self.density = dropdown(appearance, "Density", &.{ "Comfortable", "Compact" });
         self.motion = gtk.CheckButton.newWithLabel("Reduce motion");
         appearance.append(self.motion.as(gtk.Widget));
+        self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences, false);
         bar.append(w.label("Default layout for every output. Connector overrides are available in Advanced.", "pearl-secondary").as(gtk.Widget));
         self.entries[5] = entry(bar, "Left widgets", "launcher,workspaces,title");
         self.entries[6] = entry(bar, "Right widgets", "media,tray,audio,network,battery,notifications,keyboard,control");
@@ -139,11 +141,18 @@ pub const View = struct {
     }
     pub fn destroy(self: *View) void {
         self.filling = true;
+        self.greeter_sync.destroy();
         self.closeWallpaperPicker();
         // Disconnect through parent destruction before freeing callback data.
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         self.arena.deinit();
         a.destroy(self);
+    }
+    fn syncPreferences(context: *anyopaque, alloc: std.mem.Allocator) !model.Preferences {
+        const self: *View = @ptrCast(@alignCast(context));
+        if (self.local_error != null or self.service.job != null) return error.Unavailable;
+        const bytes = self.service.draft.text orelse try std.json.Stringify.valueAlloc(alloc, self.service.prefs(), .{});
+        return model.parse(alloc, bytes);
     }
     fn closeWallpaperPicker(self: *View) void {
         const picker = self.wallpaper_picker orelse return;
@@ -398,6 +407,7 @@ pub const View = struct {
         };
         if (focused == self.apply_button.as(gtk.Widget)) name = "settings-apply";
         if (focused == self.wallpaper_button.as(gtk.Widget)) name = "settings-wallpaper-choose";
+        if (focused == self.greeter_sync.button.as(gtk.Widget)) name = "settings-greeter-sync";
         if (focused == self.merge_button.as(gtk.Widget)) name = "settings-merge";
         const prior = std.mem.sliceTo(&self.last_probe, 0);
         if (!std.mem.eql(u8, prior, name)) {

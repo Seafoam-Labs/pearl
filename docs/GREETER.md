@@ -103,6 +103,8 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `theme` | `material_dark`, `material_light`, or `gtk` |
 | `gtk_theme` | Optional trusted installed GTK theme name; otherwise GTK's default |
 | `wallpaper` | Optional administrator-owned PNG/JPEG; at most 16 MiB input; current shared decoder restricts dimensions to 4096 per axis and 8 Mi pixels |
+| `wallpaper_fit` | `cover` (default) or `contain` |
+| `wallpaper_color` | Optional `#RRGGBB` solid background, also visible around a contained image; null retains the theme gradient |
 | `font_size`, `reduced_motion` | 12–32 px base font and animation policy; larger-text button remains available |
 | `preferred_output` | Connector preference for initial card placement; output changes never authorize authentication |
 | `roots` | Ordered session directories, each with `path` and `type` (`wayland` or `x11`); earlier entries mask later entries with the same ID |
@@ -147,7 +149,34 @@ speech and credential privacy still need explicit real accessibility acceptance.
 Power controls honor logind capability and require confirmation. They never ask
 for interactive privilege escalation or install permissive polkit rules.
 
-## Appearance export
+## Sync appearance from Settings
+
+In **Appearance → Login screen**, select **Sync to greeter**. The same button is
+available in the Pearl settings flyout. It copies the background and theme currently
+shown in the controls, including an unapplied draft, without applying that draft to
+the desktop. Administrator authentication is required. The new appearance takes
+effect the next time the greeter starts.
+
+The action is implemented in Zig in both frontends and the packaged
+`pearl-greeter-sync` helper. Settings reads and decodes the user's image before
+authorization, resizes it to fit 3840×2160, and sends PNG bytes. The helper writes
+root-owned assets under `/etc/pearl/greeter-assets` and atomically updates only the
+appearance fields in `/etc/pearl/greeter.json`. Session choices, UWSM, authentication
+and other login settings are preserved. Solid color, gradient, cover and contain
+background modes are supported; returning to solid or gradient clears the old
+wallpaper reference.
+
+GTK themes must be installed system-wide; personal theme directories are not
+copied. Dynamic themes use the selected static Material light/dark variant.
+The button is disabled when the greeter helper is absent. The greeter package
+includes the helper, polkit dependency and authorization policy.
+
+Private verification: `zig build test-greeter-sync test-greeter-sync-ui
+-Doptimize=ReleaseSafe`. The writer test checks configuration preservation and
+invalid input; the UI test drives both buttons, wallpaper resizing and authorization
+cancellation without changing the host configuration.
+
+## Manual appearance export
 
 ```sh
 python3 scripts/export-greeter-appearance.py \

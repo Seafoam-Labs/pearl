@@ -672,7 +672,7 @@ const Screen = struct {
         window.setChild(overlay.as(gtk.Widget));
         const picture = gtk.Picture.new();
         picture.setCanShrink(1);
-        picture.setContentFit(.cover);
+        picture.setContentFit(if (self.config.wallpaper_fit == .contain) .contain else .cover);
         picture.setPaintable(if (self.texture) |texture| texture.as(gdk.Paintable) else null);
         overlay.setChild(picture.as(gtk.Widget));
         const clock = w.label("", "pearl-lock-clock");
@@ -745,7 +745,9 @@ pub fn run() !void {
         gtk.StyleContext.addProviderForDisplay(display, provider.as(gtk.StyleProvider), 600);
     }
     const sizing = gtk.CssProvider.new();
-    const css = try std.fmt.allocPrintSentinel(a, "{s} .pearl-root {{font-size:{d}px;}} .pearl-greeter-form {{margin: 24px;}} .pearl-lock-card button, .pearl-lock-card entry {{min-height:26px; padding:8px 12px;}} .pearl-lock-card {{padding:20px;}} .pearl-greeter-form > box > button {{min-height:26px;}} .pearl-lock-small .pearl-greeter-form {{margin-top:24px;}} .pearl-lock .pearl-large {{font-size:24px;}} .pearl-native .pearl-lock-card {{background:@theme_bg_color; color:@theme_fg_color;}} .pearl-lock dropdown {{min-width:0;}} .pearl-reduced * {{transition:none; animation:none;}}", .{ presentation.css, config.font_size }, 0);
+    const background_css = if (config.wallpaper_color) |color| try std.fmt.allocPrintSentinel(a, ".pearl-lock.pearl-wallpaper {{ background: {s}; background-image: none; }}", .{color}, 0) else try a.dupeZ(u8, "");
+    defer a.free(background_css);
+    const css = try std.fmt.allocPrintSentinel(a, "{s} .pearl-root {{font-size:{d}px;}} .pearl-greeter-form {{margin: 24px;}} .pearl-lock-card button, .pearl-lock-card entry {{min-height:26px; padding:8px 12px;}} .pearl-lock-card {{padding:20px;}} .pearl-greeter-form > box > button {{min-height:26px;}} .pearl-lock-small .pearl-greeter-form {{margin-top:24px;}} .pearl-lock .pearl-large {{font-size:24px;}} .pearl-native .pearl-lock-card {{background:@theme_bg_color; color:@theme_fg_color;}} .pearl-lock dropdown {{min-width:0;}} .pearl-reduced * {{transition:none; animation:none;}} {s}", .{ presentation.css, config.font_size, background_css }, 0);
     defer a.free(css);
     sizing.loadFromString(css);
     gtk.StyleContext.addProviderForDisplay(display, sizing.as(gtk.StyleProvider), 601);

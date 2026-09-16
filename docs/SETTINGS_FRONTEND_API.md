@@ -223,6 +223,14 @@ The footer applies or discards **all Pearl changes**, regardless of the selected
 page. Wallpaper selection is a normal transient file chooser. Its cancellable
 asynchronous preview has no persistence side effect.
 
+Appearance's **Sync to greeter** button and the retained settings flyout share
+`settings/greeter_sync.zig`. It snapshots the current validated draft and runs an
+asynchronous native image conversion and polkit-authorized appearance update.
+This action does not commit or discard the Pearl draft. The separately packaged
+`pearl-greeter-sync` helper owns the system greeter write; it accepts only theme,
+background mode/color and PNG bytes. See [greeter appearance sync](GREETER.md#sync-appearance-from-settings)
+and `zig build test-greeter-sync-ui` for both frontend paths and cancellation tests.
+
 Backend loss moves the frontend's acknowledged candidate into local recovery
 storage without allocating or replaying it. Reconnection downloads the new state;
 Apply stays disabled until explicit review/Merge or local Discard. Closing with

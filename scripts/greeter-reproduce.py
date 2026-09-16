@@ -18,7 +18,7 @@ def main():
             (work/'zig-pkg').symlink_to(ROOT/'zig-pkg',target_is_directory=True)
             with (work/'build.log').open('w') as log:
                 subprocess.run(['zig','build','build-greeter',*(['build-locker'] if args.include_locker else []),'-Doptimize=ReleaseSafe','-Drelease=true','--global-cache-dir',str(work/'global-cache')],cwd=work,env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(work/'global-cache')),stdout=log,stderr=subprocess.STDOUT,check=True)
-            binaries={name:sha(work/'zig-out/greeter/bin'/name) for name in ('pearl-greeter','pearl-greeter-session','pearl-greeter-host')}
+            binaries={name:sha(work/'zig-out/greeter/bin'/name) for name in ('pearl-greeter','pearl-greeter-session','pearl-greeter-host','pearl-greeter-sync')}
             if args.include_locker:binaries['pearl-lock']=sha(work/'zig-out/bin/pearl-lock')
             results.append(binaries)
         assert results[0]==results[1],results

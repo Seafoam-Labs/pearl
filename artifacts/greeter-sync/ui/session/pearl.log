@@ -1,0 +1,50 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=586c9e18472c1505cdc05348a2b0dbfe
+info(pearl): event=control-ready session=586c9e18472c1505cdc05348a2b0dbfe
+info: event=app-index-ready entries=160 truncated=false
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=popup-opened output=1
+info: event=settings-focus target=body
+info: event=settings-focus target=heading
+info: event=settings-focus target=body
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=session-focus target=settings-other
+info: event=session-focus target=settings-gtk-name
+info: event=session-focus target=settings-seed
+info: event=session-focus target=settings-wallpaper
+info: event=session-focus target=settings-wallpaper-choose
+info: event=session-focus target=settings-other
+info: event=session-focus target=settings-color
+info: event=session-focus target=settings-font
+info: event=session-focus target=settings-other
+info: event=session-focus target=settings-greeter-sync
+info: event=greeter-appearance-sync success=true
+info(pearl): event=stopping reason=signal pending=false
+info: event=popup-closed
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

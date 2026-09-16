@@ -10,6 +10,8 @@ pub const Config = struct {
     theme: enum { material_dark, material_light, gtk } = .material_dark,
     gtk_theme: ?[]const u8 = null,
     wallpaper: ?[]const u8 = null,
+    wallpaper_fit: enum { cover, contain } = .cover,
+    wallpaper_color: ?[]const u8 = null,
     font_size: u8 = 16,
     reduced_motion: bool = true,
     preferred_output: ?[]const u8 = null,
@@ -27,6 +29,10 @@ pub const Config = struct {
     fingerprint_hint: bool = false,
     auth_timeout_seconds: u16 = 120,
     pub fn validate(self: Config) !void {
+        if (self.wallpaper_color) |color| {
+            if (color.len != 7 or color[0] != '#') return error.InvalidBackgroundColor;
+            for (color[1..]) |c| if (!std.ascii.isHex(c)) return error.InvalidBackgroundColor;
+        }
         if (self.version != 1 or self.font_size < 12 or self.font_size > 32 or self.auth_timeout_seconds < 30 or self.auth_timeout_seconds > 300 or self.roots.len > 16 or self.roots.len == 0 or self.allow.len > 256 or self.deny.len > 256) return error.InvalidConfig;
         for (self.roots) |root| if (root.path.len == 0 or root.path[0] != '/' or !p.validText(root.path, 4096)) return error.InvalidRoot;
         for ([_]?[]const u8{ self.gtk_theme, self.wallpaper, self.preferred_output, self.default_session, self.force_session }) |value| if (value) |v| if (!p.validText(v, 4096)) return error.InvalidConfig;

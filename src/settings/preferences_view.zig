@@ -46,6 +46,7 @@ pub const View = struct {
     message: *gtk.Label,
     mode_hint: *gtk.Label,
     german: bool,
+    greeter_sync: *@import("greeter_sync.zig").View = undefined,
 
     pub fn create(window: *gtk.Window, host: *gtk.Box, editor: *Editor, german: bool) !*View {
         const self = try a.create(View);
@@ -98,6 +99,7 @@ pub const View = struct {
         w.name(raw_view.as(gtk.Widget), if (german) "Vollständige Pearl-Einstellungen als JSON" else "Full Pearl preferences JSON");
         // The caller installs raw_view directly in Advanced's sole viewport.
         self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german };
+        self.greeter_sync = try @import("greeter_sync.zig").View.create(host, self, syncPreferences, german);
         gtk.StyleContext.addProviderForDisplay(window.as(gtk.Widget).getDisplay(), self.preview_css.as(gtk.StyleProvider), 602);
         for (self.entries) |control| _ = gtk.Editable.signals.changed.connect(control.as(gtk.Editable), *View, edited, self, .{});
         for ([_]*gtk.DropDown{ mode, variant, source, fit, density }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
@@ -111,6 +113,7 @@ pub const View = struct {
     }
     pub fn destroy(self: *View) void {
         self.filling = true;
+        self.greeter_sync.destroy();
         self.closePicker();
         if (self.preview_idle != 0) _ = glib.Source.remove(self.preview_idle);
         self.cancelPreview();
@@ -126,6 +129,11 @@ pub const View = struct {
         object.signalHandlerDisconnect(self.raw.as(object.Object), self.raw_insert_signal);
         object.signalHandlerDisconnect(self.raw.as(object.Object), self.raw_changed_signal);
         a.destroy(self);
+    }
+    fn syncPreferences(context: *anyopaque, alloc: std.mem.Allocator) !model.Preferences {
+        const self: *View = @ptrCast(@alignCast(context));
+        if (!self.editor.editable() or self.raw_invalid) return error.Unavailable;
+        return model.parse(alloc, self.editor.text());
     }
     fn t(self: *View, en: [:0]const u8, de: [:0]const u8) [:0]const u8 {
         return if (self.german) de else en;

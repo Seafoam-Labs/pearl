@@ -82,8 +82,9 @@ pub fn build(b: *std.Build) void {
     const greeter_versions = b.addSystemCommand(&.{ "pkg-config", "--exists", "gtk4 >= 4.22.5", "glib-2.0 >= 2.88.3", "gtk4-layer-shell-0 >= 1.3.0" });
     const greeter_build = b.step("build-greeter", "Build optional greeter artifacts without installing or activating a display manager");
     var greeter_test_executable: *std.Build.Step.Compile = undefined;
+    var greeter_sync_test_executable: *std.Build.Step.Compile = undefined;
     for ([_]bool{ false, true }) |instrumented| {
-        for ([_][]const u8{ "greeter", "greeter_session", "greeter_host" }) |component| {
+        for ([_][]const u8{ "greeter", "greeter_session", "greeter_host", "greeter_sync" }) |component| {
             const gm = greeterModule(b, bindings, target, optimize, b.fmt("src/{s}_main.zig", .{component}), instrumented);
             gm.strip = release and !instrumented;
             const name = std.mem.replaceOwned(u8, b.allocator, component, "_", "-") catch @panic("OOM");
@@ -111,6 +112,12 @@ pub fn build(b: *std.Build) void {
                 const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_greeter_host.py", "--host" });
                 check.addArtifactArg(exe);
                 b.step("test-greeter-host", "Verify owned process teardown with private fixtures").dependOn(&check.step);
+            }
+            if (instrumented and std.mem.eql(u8, component, "greeter_sync")) {
+                greeter_sync_test_executable = exe;
+                const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_greeter_sync.py", "--helper" });
+                check.addArtifactArg(exe);
+                b.step("test-greeter-sync", "Verify native appearance sync with private configuration").dependOn(&check.step);
             }
         }
     }
@@ -271,6 +278,15 @@ pub fn build(b: *std.Build) void {
     test_module.addImport("wayland", native);
     const integration_app = b.addExecutable(.{ .name = "pearl-integration", .root_module = test_module });
     integration_app.step.dependOn(&system_versions.step);
+    const greeter_sync_ui = b.addSystemCommand(&.{ "python3", "tests/integration/test_greeter_sync_ui.py", "--settings" });
+    greeter_sync_ui.addArtifactArg(settings_test_app);
+    greeter_sync_ui.addArg("--pearl");
+    greeter_sync_ui.addArtifactArg(integration_app);
+    greeter_sync_ui.addArg("--ctl");
+    greeter_sync_ui.addArtifactArg(ctl);
+    greeter_sync_ui.addArg("--helper");
+    greeter_sync_ui.addArtifactArg(greeter_sync_test_executable);
+    b.step("test-greeter-sync-ui", "Verify native appearance sync from Settings and the flyout").dependOn(&greeter_sync_ui.step);
     const settings_devices = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_devices.py", "--settings" });
     settings_devices.addArtifactArg(settings_test_app);
     settings_devices.addArg("--pearl");

@@ -17,7 +17,7 @@ def main():
     if dest.exists() or dest==Path('/'):
         p.error('destination must be a new staging directory')
     # Complete validation before creating any payload.
-    binaries=('pearl-greeter','pearl-greeter-session','pearl-greeter-host')
+    binaries=('pearl-greeter','pearl-greeter-session','pearl-greeter-host','pearl-greeter-sync')
     for binary in binaries:
         if not (args.build/binary).is_file():p.error('missing production binary: '+binary)
         payload=(args.build/binary).read_bytes()
@@ -26,6 +26,7 @@ def main():
     files={}
     for binary in binaries:
         files[('usr/bin/' if binary=='pearl-greeter' else 'usr/lib/pearl/')+binary]=(args.build/binary,0o755)
+    files['usr/share/polkit-1/actions/org.aqueous.Pearl.Greeter.Appearance.policy']=(ROOT/'packaging/greeter/org.aqueous.Pearl.Greeter.Appearance.policy',0o644)
     launchers=('pearl-greeter-x11','pearl-greeter-init')
     if not args.system_package:
         launchers+=('pearl-aqueous-session','pearl-aqueous-init')

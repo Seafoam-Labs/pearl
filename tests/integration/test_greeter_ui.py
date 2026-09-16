@@ -43,8 +43,8 @@ def main():
         (root/'other.desktop').write_text('[Desktop Entry]\nType=Application\nName=Other desktop\nExec=/usr/bin/true\nDesktopNames=Other;\n')
         config=session.base/'greeter.json'
         def key(*keys):session.run(['wtype','-s','120',*keys,'-s','120'])
-        for theme in ('material_dark','material_light','gtk','contrast','small','stale','fingerprint','fingerprint_cancel'):
-            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':False,'power':False,'remember_session':theme=='material_light','fingerprint_hint':theme=='fingerprint','font_size':24 if theme=='fingerprint' else 16,'wallpaper':str(wallpaper) if theme=='material_light' else None}))
+        for theme in ('material_dark','material_light','gtk','solid','contain','contrast','small','stale','fingerprint','fingerprint_cancel'):
+            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':False,'power':False,'remember_session':theme=='material_light','fingerprint_hint':theme=='fingerprint','font_size':24 if theme=='fingerprint' else 16,'wallpaper':str(wallpaper) if theme in ('material_light','contain') else None,'wallpaper_fit':'contain' if theme=='contain' else 'cover','wallpaper_color':'#123456' if theme in ('solid','contain') else None}))
             if theme=='small':session.run(['wlr-randr','--output',primary,'--scale','2'])
             server=socket.socket(socket.AF_UNIX);path=str(session.base/f'greetd-{theme}.sock');server.bind(path);server.listen();server.settimeout(args.idle_seconds+30)
             errors=[];requests=[];info_ack=threading.Event();allow_success=threading.Event();scan_ready=threading.Event();continue_scan=threading.Event()
@@ -110,6 +110,12 @@ def main():
                 from PIL import Image
                 assert Image.open(session.output/'greeter-wallpaper-hotplug.png').convert('RGB').getpixel((0,0))==(28,26,34)
             time.sleep(.3);capture(session,'greeter-'+theme,primary)
+            if theme in ('solid','contain'):
+                from PIL import Image
+                with Image.open(session.output/('greeter-'+theme+'.png')) as screenshot:
+                    pixels=screenshot.convert('RGB')
+                    assert pixels.getpixel((0,0))==(18,52,86)
+                    if theme=='contain':assert pixels.getpixel((pixels.width//2,0))==(28,26,34)
             key('fixture-user','-k','Return')
             assert scan_ready.wait(5),'scan messages did not advance automatically'
             time.sleep(.3);capture(session,'greeter-scan-'+theme,primary)
