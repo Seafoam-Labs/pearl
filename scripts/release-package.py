@@ -19,10 +19,13 @@ def main():
             package_paths=subprocess.check_output(['makepkg','--packagelist'],cwd=work,env=env,text=True).splitlines();assert len(package_paths)==1
             package=Path(package_paths[0]);report['package']=package.name;report['sha256']=hashlib.sha256(package.read_bytes()).hexdigest()
             with tarfile.open(package) as tar:
-                names=set(tar.getnames());assert {n for n in names if n.startswith('usr/bin/') and not n.endswith('/')}=={'usr/bin/pearl','usr/bin/pearlctl','usr/bin/pearl-lock'}
+                names=set(tar.getnames());assert {n for n in names if n.startswith('usr/bin/') and not n.endswith('/')}=={'usr/bin/pearl','usr/bin/pearlctl','usr/bin/pearl-lock','usr/bin/pearl-settings'}
                 assert 'etc/pam.d/pearl' in names and 'usr/lib/systemd/user/pearl.service' in names
+                for resource in ('applications/org.aqueous.Pearl.Settings.desktop','icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg','metainfo/org.aqueous.Pearl.Settings.metainfo.xml'):
+                    assert 'usr/share/'+resource in names
+                assert b'Exec=pearl-settings\n' in tar.extractfile('usr/share/applications/org.aqueous.Pearl.Settings.desktop').read()
                 assert not any('.wants/' in n or 'pam-fixture' in n or 'pearl-lock-test' in n for n in names)
-                report['binary_sha256']={n:hashlib.sha256(tar.extractfile('usr/bin/'+n).read()).hexdigest() for n in ('pearl','pearlctl','pearl-lock')}
+                report['binary_sha256']={n:hashlib.sha256(tar.extractfile('usr/bin/'+n).read()).hexdigest() for n in ('pearl','pearlctl','pearl-lock','pearl-settings')}
                 (a.output/'PKGINFO').write_bytes(tar.extractfile('.PKGINFO').read());(a.output/'BUILDINFO').write_bytes(tar.extractfile('.BUILDINFO').read())
                 (a.output/'files.txt').write_text('\n'.join(sorted(names))+'\n')
             for name in ('PKGBUILD','source.json',meta['archive']):shutil.copy2(work/name,a.output/name)

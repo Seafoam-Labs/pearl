@@ -40,5 +40,6 @@ check() {
 
 package() {
     cd "$srcdir/pearl-$pkgver"
+    # Includes the standalone Settings binary, desktop identity, icon and metadata.
     DESTDIR="$pkgdir" bash packaging/install.sh
 }

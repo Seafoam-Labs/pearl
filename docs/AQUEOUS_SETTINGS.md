@@ -1,8 +1,11 @@
 # Aqueous settings in Pearl
 
-Open **Control center → Aqueous settings**, or run `pearlctl aqueous show`.
-This replaces the existing settings application's frontend. Pearl does not launch
-that application. The standalone `aqueous-config` helper remains the canonical
+Run `pearlctl aqueous show`, `pearlctl aqueous show --section displays`, or
+`pearl-settings --page aqueous --section displays` to open Pearl Settings.
+The legacy `--text SECTION` spelling still selects the same Aqueous section.
+The compact editor remains available at **Control center → Aqueous settings**.
+Pearl's new Zig frontend replaces the old external Aqueous settings application;
+it does not launch that application. The standalone `aqueous-config` helper remains the canonical
 TOML backend; install that helper alongside Pearl. Shell appearance, including
 system/installed GTK themes, remains under **Pearl settings**.
 
@@ -16,6 +19,12 @@ See [capability coverage](AQUEOUS_CAPABILITY_COVERAGE.md), the
 [implementation plan](AQUEOUS_082_UPDATE_PLAN.md), and the concrete
 [upstream dependencies](AQUEOUS_MASTER_DEPENDENCIES.md). The original
 [additions request](AQUEOUS_T11_ADDITIONS.md) is historical.
+
+The normal window keeps Aqueous edits separate from Pearl preferences. Navigation
+and closing retain acknowledged drafts without saving. Apply uses the shell's
+existing helper/receipt authority; display Keep/Revert stays available across
+page changes. Close, lock or frontend crash requests rollback through the native
+lease. Backend loss requires explicit review/rebase or local discard after Retry.
 
 ## Editing and outcomes
 

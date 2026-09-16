@@ -22,6 +22,15 @@ class ReleaseTools(unittest.TestCase):
             write(root,'package/metadata.json',{'status':'passed','binary_sha256':binary})
             write(root,'manual.json',{'binary_sha256':binary,'checks':{n:{'status':'passed','reviewer':'Fixture','date':'2026-09-14','machine':'Fixture','notes':'Fixture','evidence':'missing','evidence_sha256':'x'} for n in gate.MANUAL}})
             self.assertTrue(all(not gate.evaluate(root)['checks'][n] for n in gate.MANUAL))
+    def test_settings_binary_is_required_in_release_manifest(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t);binary={'pearl':'a','pearlctl':'b','pearl-lock':'c'}
+            write(root,'package/metadata.json',{'status':'passed','binary_sha256':binary})
+            self.assertFalse(gate.evaluate(root)['checks']['package'])
+            binary['pearl-settings']='d'
+            write(root,'package/metadata.json',{'status':'passed','binary_sha256':binary})
+            self.assertTrue(gate.evaluate(root)['checks']['package'])
+            self.assertFalse(gate.evaluate(root)['release_ready'])
     def test_archive_is_deterministic_and_ignores_local_artifacts(self):
         with tempfile.TemporaryDirectory() as t:
             root=Path(t)/'source';root.mkdir();write(root,'packaging/release.json',{'arch_pkgver':'1','version':'1','source_date_epoch':1})

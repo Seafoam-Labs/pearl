@@ -1,0 +1,3 @@
+PASS surfaces, reservations, input and hotplug
+PASS CLI isolation
+PASS native GTK blur

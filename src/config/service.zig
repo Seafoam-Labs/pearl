@@ -18,6 +18,7 @@ pub const Job = struct {
     cancel: *gio.Cancellable,
     stage: enum { prepare, recover, persist } = .prepare,
     requested: ?[]const u8 = null,
+    draft_revision: ?u64 = null,
     expected: [64]u8,
     disk: ?io.Read = null,
     prefs: model.Preferences = .{},
@@ -52,6 +53,10 @@ pub const Service = struct {
     display: *gdk.Display,
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
+    observer_context: ?*anyopaque = null,
+    observer: ?*const fn (*anyopaque) void = null,
+    completed_job: u64 = 0,
+    completed_error: ?anyerror = null,
     validate: ?*const fn (*anyopaque, model.Preferences) anyerror!void = null,
     dir: [:0]u8 = undefined,
     cache_dir: [:0]u8 = undefined,
@@ -71,36 +76,33 @@ pub const Service = struct {
     err: ?anyerror = null,
     export_error: ?anyerror = null,
     jobs: u64 = 0,
-    draft: ?[]u8 = null,
-    draft_base: ?[]u8 = null,
-    draft_revision: u64 = 0,
-    pub fn keepDraft(self: *Service, json: []const u8, revision: u64) void {
-        const copy = a.dupe(u8, json) catch return;
-        if (self.draft_base == null) self.draft_base = std.json.Stringify.valueAlloc(a, self.prefs(), .{}) catch null;
-        if (self.draft) |old| a.free(old);
-        self.draft = copy;
-        self.draft_revision = revision;
+    draft: @import("draft.zig").Draft = .{},
+    pub fn notify(self: *Service) void {
+        self.changed(self.context);
+        if (self.observer) |observer| observer(self.observer_context.?);
     }
-    pub fn discardDraft(self: *Service) void {
-        if (self.draft) |old| a.free(old);
-        self.draft = null;
-        if (self.draft_base) |old| a.free(old);
-        self.draft_base = null;
+    pub fn keepDraft(self: *Service, json: []const u8, expected: u64, revision: u64) !u64 {
+        const current = try std.json.Stringify.valueAlloc(a, self.prefs(), .{});
+        defer a.free(current);
+        const serial = try self.draft.keep(a, json, expected, revision, self.revision, current);
+        self.notify();
+        return serial;
     }
-    pub fn mergeDraft(self: *Service) !void {
+    pub fn discardDraft(self: *Service, expected: u64) !void {
+        try self.draft.discard(a, expected);
+        self.notify();
+    }
+    pub fn mergeDraft(self: *Service, expected: u64) !void {
         if (self.job != null or self.pending_reload) return error.Busy;
-        var arena = std.heap.ArenaAllocator.init(a);
-        defer arena.deinit();
-        const alloc = arena.allocator();
-        const current = try std.json.Stringify.valueAlloc(alloc, self.prefs(), .{});
-        const merged = try @import("merge.zig").json(alloc, self.draft_base orelse return error.NoDraft, self.draft orelse return error.NoDraft, current);
-        const next = try a.dupe(u8, merged);
-        errdefer a.free(next);
-        const base = try a.dupe(u8, current);
-        self.discardDraft();
-        self.draft = next;
-        self.draft_base = base;
-        self.draft_revision = self.revision;
+        const current = try std.json.Stringify.valueAlloc(a, self.prefs(), .{});
+        defer a.free(current);
+        try self.draft.merge(a, expected, self.revision, current);
+        self.notify();
+    }
+    pub fn applyDraft(self: *Service, expected: u64, revision: u64) !void {
+        try self.draft.check(expected);
+        if (self.draft.base_revision != revision) return error.Conflict;
+        try self.apply(self.draft.text orelse return error.NoDraft, revision);
     }
 
     pub fn prefs(self: *const Service) model.Preferences {
@@ -127,7 +129,7 @@ pub const Service = struct {
     pub fn stop(self: *Service) void {
         if (!self.running) return;
         self.running = false;
-        self.discardDraft();
+        self.draft.deinit(a);
         if (self.monitor) |m| {
             _ = m.cancel();
             m.unref();
@@ -174,7 +176,7 @@ pub const Service = struct {
             self.pending_reload = false;
             self.launch(null) catch |err| {
                 self.err = err;
-                self.changed(self.context);
+                self.notify();
             };
         }
         return 0;
@@ -191,13 +193,18 @@ pub const Service = struct {
         const j = try a.create(Job);
         j.* = .{ .service = self, .arena = std.heap.ArenaAllocator.init(a), .cancel = gio.Cancellable.new(), .expected = self.observed, .skip_unchanged = !self.force_reload };
         errdefer j.destroy();
-        if (requested) |json| j.requested = try j.arena.allocator().dupe(u8, json);
+        if (requested) |json| {
+            j.requested = try j.arena.allocator().dupe(u8, json);
+            if (self.draft.text) |draft| {
+                if (std.mem.eql(u8, draft, json)) j.draft_revision = self.draft.revision;
+            }
+        }
         self.job = j;
         self.jobs += 1;
         self.force_reload = false;
         self.deadline = glib.timeoutAdd(15000, timedOut, self);
         self.dispatch(j);
-        self.changed(self.context);
+        self.notify();
     }
     fn dispatch(self: *Service, j: *Job) void {
         self.app.hold();
@@ -391,6 +398,10 @@ pub const Service = struct {
             self.freePaths();
             return;
         }
+        if (j.requested != null) {
+            self.completed_job = self.jobs;
+            self.completed_error = j.failure;
+        }
         if (!j.obsolete and !j.unchanged) {
             if (j.disk) |disk| if (!std.mem.eql(u8, &self.observed, &disk.hash)) {
                 self.observed = disk.hash;
@@ -398,7 +409,10 @@ pub const Service = struct {
             };
             self.err = j.failure orelse j.warning;
             if (j.failure == null) {
-                if (j.requested) |requested| if (self.draft) |draft| if (std.mem.eql(u8, requested, draft)) self.discardDraft();
+                if (j.draft_revision) |expected| {
+                    // Completion can clear only the exact draft captured by Apply.
+                    self.draft.discard(a, expected) catch {};
+                }
                 self.removeLive();
                 self.live = j;
                 self.appearance += 1;
@@ -415,7 +429,7 @@ pub const Service = struct {
                 j.destroy();
             }
         } else j.destroy();
-        self.changed(self.context);
+        self.notify();
         if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(180, debounced, self);
     }
     fn removeProviders(self: *Service, j: *Job) void {
@@ -431,7 +445,7 @@ pub const Service = struct {
     }
     pub fn status(self: *Service, alloc: std.mem.Allocator) ![]const u8 {
         const encoded = try std.json.Stringify.valueAlloc(alloc, self.prefs(), .{});
-        return std.json.Stringify.valueAlloc(alloc, .{ .revision = self.revision, .appearance = self.appearance, .busy = self.job != null or self.pending_reload, .jobs = self.jobs, .err = if (self.err) |e| @errorName(e) else null, .export_error = if (self.export_error) |e| @errorName(e) else null, .cache_hit = if (self.live) |j| j.cache_hit else false, .recovered = if (self.live) |j| j.recovered else false, .draft_dirty = self.draft != null, .draft_revision = if (self.draft != null) @as(?u64, self.draft_revision) else null, .path = self.path, .preferences_truncated = encoded.len > 5500, .preferences = if (encoded.len <= 5500) @as(?model.Preferences, self.prefs()) else null }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .revision = self.revision, .appearance = self.appearance, .busy = self.job != null or self.pending_reload, .jobs = self.jobs, .err = if (self.err) |e| @errorName(e) else null, .export_error = if (self.export_error) |e| @errorName(e) else null, .cache_hit = if (self.live) |j| j.cache_hit else false, .recovered = if (self.live) |j| j.recovered else false, .draft_dirty = self.draft.text != null, .draft_revision = if (self.draft.text != null) @as(?u64, self.draft.base_revision) else null, .draft_serial = self.draft.revision, .path = self.path, .preferences_truncated = encoded.len > 5500, .preferences = if (encoded.len <= 5500) @as(?model.Preferences, self.prefs()) else null }, .{});
     }
     pub fn style(self: *Service, widget: *gtk.Widget, panel: *gtk.Widget) void {
         const p = self.prefs();

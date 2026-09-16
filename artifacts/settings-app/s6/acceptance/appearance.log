@@ -1,0 +1,16 @@
+PASS bounded-full-document-invalid-and-empty-retention
+PASS partial-transfer-and-digest-failure-never-mutate-draft
+PASS shared-cas-and-canonical-operation-deduplication
+PASS real-appearance-form-preserves-full-preference-document
+PASS invalid-advanced-navigation-close-reopen-without-save
+PASS explicit-apply-atomic-save-and-event-driven-theme-refresh
+PASS normal-wallpaper-dialog-cancel-select-preview-and-save
+PASS image-and-native-theme-failure-retain-draft-and-working-settings
+PASS save-failure-retention-and-independent-export-error
+PASS external-change-three-way-merge-and-overlapping-conflict
+PASS in-flight-apply-cannot-clear-newer-equal-text-draft
+PASS lock-denial-hidden-window-and-explicit-unlock-resume
+PASS close-flush-reopen-and-explicit-discard
+PASS real-light-native-and-narrow-large-text-controls
+PASS backend-restart-and-close-failure-never-replay-local-candidate
+S3: 15 groups passed

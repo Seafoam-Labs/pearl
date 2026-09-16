@@ -136,11 +136,19 @@ and requires the exported Wayland/Aqueous environment.
 ## Polkit agent
 
 Pearl registers `org.freedesktop.PolicyKit1.AuthenticationAgent` for its logind
-login session. It first resolves its own PID; when running as a systemd user
-service without a login session (or inside a manager session), it queries
-logind's `User.Display` for its UID. It verifies the returned session belongs to
+login session. It first asks logind for the session of the connected Aqueous
+compositor, whose PID comes from the IPC socket's kernel credentials. If that
+process runs outside a login scope or in a manager session, Pearl tries its own
+PID, then resolves `XDG_SESSION_ID` from the compositor's initial environment
+through logind, or Pearl's inherited ID if the compositor has none. This also
+covers UWSM, which keeps session variables in the compositor unit while removing
+them from the general user-service environment. Procfs reads are bounded and
+temporary environment buffers are cleared; only the session ID is retained.
+When neither process identifies a login and no ID was inherited, it falls back to logind's
+`User.Display` for its UID. It verifies the returned session belongs to
 that UID and has a user login class. Greeter and manager sessions cannot receive
-Pearl authentication prompts. The session's `Active` property still controls
+Pearl authentication prompts. A supplied but invalid session ID fails closed.
+The session's `Active` property still controls
 whether prompts are allowed. Calls are accepted only from the current
 unique owner of the polkit authority name. Existing agent ownership is not
 forcibly replaced. Authority loss/restart cancels outstanding authentication,
@@ -152,6 +160,15 @@ lookup failure. An absent display session means Pearl must be launched from an
 authenticated desktop login; starting `polkitd` alone does not establish one.
 Pearl retries discovery when logind announces a new session or updates the
 user's display session. A successful lookup clears `session_error`.
+
+`session_source` reports `compositor`, `process`, `compositor_environment`,
+`environment`, or `display`.
+With multiple logins for the same user, `User.Display` can still name an inactive
+Wayland session on another VT. Pearl prefers the connected compositor's session
+even when its inherited session ID or `User.Display` names that older login.
+It re-resolves on compositor reconnection and ignores replies from previous
+connection generations. It does not move authentication to an unrelated active
+session when its own desktop becomes inactive.
 
 The GTK authentication panel shows the action, message and offered identities.
 It handles up to eight concrete Unix-user identities, lets the user select one,

@@ -1,10 +1,20 @@
 test {
+    _ = @import("settings/distribution.zig");
+    _ = @import("settings/editor_protocol.zig");
+    _ = @import("settings/transfer.zig");
+    _ = @import("config/draft.zig");
+    _ = @import("settings/appearance.zig");
+    _ = @import("settings/activation.zig");
+    _ = @import("settings/options.zig");
+    _ = @import("settings/protocol.zig");
     _ = @import("config/dms_import.zig");
     _ = @import("desktop/dock_policy.zig");
     _ = @import("services/clipboard_policy.zig");
     _ = @import("lock/conversation.zig");
     _ = @import("services/idle_policy.zig");
+    _ = @import("services/session_environment.zig");
     _ = @import("config/aqueous_model.zig");
+    _ = @import("config/aqueous_draft.zig");
     _ = @import("config/aqueous_contract.zig");
     _ = @import("config/aqueous_collections.zig");
     _ = @import("config/aqueous_transactions.zig");

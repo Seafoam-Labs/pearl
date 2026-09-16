@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "checks": {
+    "staged-production-files-permissions-link-order-and-session-unit": true,
+    "installed-startup-dry-run-private-bundle-explicit-apply-conflict-rollback-restart-and-bounds": true
+  },
+  "binary_sha256": {
+    "pearl": "28df1dae76d97f879c4630a2b7218ec9bcde29baa6597abc6ea9d32687a11de8",
+    "ctl": "4d062a02587ca20dc112d1ba9f93202cb7c3b0f90db2e62914b72e897eeb40cb",
+    "locker": "d7867a97051eceb7ddcb3d80c78f9a21cb986e485699346bc2ceec923525b7a1",
+    "settings": "03c2074a84b89c941d7f8e417425601f4a2cb2730e7c62bccdef0385312c6364"
+  }
+}

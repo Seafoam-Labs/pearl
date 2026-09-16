@@ -1,0 +1,14 @@
+{
+  "status": "running",
+  "checks": {
+    "bounded-full-document-invalid-and-empty-retention": true,
+    "partial-transfer-and-digest-failure-never-mutate-draft": true,
+    "shared-cas-and-canonical-operation-deduplication": true,
+    "real-appearance-form-preserves-full-preference-document": true
+  },
+  "binaries": {
+    "settings": "3ab33401722f9f0c52e405861c9fbe6596f9a716ff0acff922434cf1ab6200bf",
+    "pearl": "c32242f862ad465b9af3535abc574c8cec4d9ecb4c678bca5e33d5e6ce67c512",
+    "ctl": "53d9d995437020a159e4b482fb3f8a93c02799472f59b9e1e5841546bdb762de"
+  }
+}

@@ -3,7 +3,7 @@
 import argparse, datetime, json, os, subprocess, time, hashlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-TARGETS=('integration','test-components','test-adapter','test-surfaces','test-desktop','test-services','test-connectivity','test-session-services','test-preferences','test-aqueous-settings','test-capture-master','test-security','test-lock','test-clipboard-capture','test-dock-islands','test-release')
+TARGETS=('integration','test-components','test-adapter','test-surfaces','test-desktop','test-services','test-connectivity','test-session-services','test-preferences','test-aqueous-settings','test-capture-master','test-security','test-lock','test-clipboard-capture','test-dock-islands','test-settings-boundary','test-settings-app','test-settings-appearance','test-settings-services','test-settings-devices','test-settings-integration','test-settings-presentation','test-release')
 def fingerprint():
     paths=[ROOT/'build.zig',ROOT/'build.zig.zon']
     for folder in ('src','bindings','resources'):

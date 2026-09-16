@@ -46,7 +46,7 @@ the release archive recipe remains checksum-locked. Install the resulting packag
 with `pacman -U`; `makepkg` alone only builds it.
 
 `pearl-git` can be installed alongside `pearl`. Its commands are `pearl-git`,
-`pearlctl-git` and `pearl-lock-git`; its user unit is `pearl-git.service` and its
+`pearlctl-git`, `pearl-lock-git` and `pearl-settings-git`; its user unit is `pearl-git.service` and its
 desktop launcher is **Pearl Git Settings**. The Git shell launches its own locker,
 which uses `/etc/pam.d/pearl-git`. Package metadata, documentation and licenses live
 under `/usr/share/pearl-git`, `/usr/share/doc/pearl-git` and
@@ -71,7 +71,7 @@ are required: Aqueous finalizes its environment and UWSM starts the enabled unit
 The package prints these setup instructions on installation and upgrade.
 
 The reproduction script builds in two fresh extraction roots and compares all
-three production binary hashes. It can copy the already downloaded `zig-pkg`
+four production binary hashes. It can copy the already downloaded `zig-pkg`
 cache; otherwise Zig fetches its hash-pinned dependencies. This proves identical
 binaries for the recorded compiler, libraries and architecture; it does not claim
 cross-distro reproducibility. The package script runs normal dependency checks and
@@ -80,7 +80,7 @@ source archive, recipe, `.BUILDINFO`, `.PKGINFO`, payload list and hashes remain
 `artifacts/aqueous-master/package`. Package container byte reproducibility is not asserted;
 production ELF and source archive reproducibility are checked separately.
 
-The payload contains `pearl`, `pearlctl`, `pearl-lock`, embedded GTK resources and
+The payload contains `pearl`, `pearlctl`, `pearl-lock`, `pearl-settings`, embedded GTK resources and
 original icons, settings desktop entry, reviewed PAM policy, user unit, release
 metadata, docs, examples and third-party notices. The installer requires an
 absolute private `DESTDIR`; never use it as a live-system installer. Debug probes,
@@ -149,6 +149,15 @@ restoration and returning to DMS. No script in this release changes the running
 shell or host service enablement.
 
 ## Automated and human evidence
+
+Standalone Settings has a complete private acceptance target,
+`zig build test-settings-acceptance -Doptimize=ReleaseSafe`. It includes the
+normal-window Aqueous UI checks and the affected shell regressions. The release
+functional matrix additionally requires `test-settings-presentation`; the master
+UI gate matches both the production Pearl and Settings hashes. See the
+[S6 review](../artifacts/settings-app/s6/REVIEW.md) and
+[physical/Orca checklist](../artifacts/settings-app/s6/MANUAL.md). Automated success
+does not fill the separate manual release signoffs.
 
 ```sh
 python3 scripts/release-validate.py

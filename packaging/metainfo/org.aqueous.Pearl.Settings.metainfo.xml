@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.aqueous.Pearl.Settings</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-Pearl-Unlicensed</project_license>
+  <name>Pearl Settings</name>
+  <summary>Configure your Pearl and Aqueous desktop</summary>
+  <description>
+    <p>Manage appearance, your bar and dock, connections, sound, power and notifications in a normal application window.</p>
+    <p>Review and apply Pearl preferences and Aqueous configuration through your running Pearl session. Device controls take effect immediately; preference drafts are saved only when you apply them.</p>
+  </description>
+  <launchable type="desktop-id">org.aqueous.Pearl.Settings.desktop</launchable>
+  <provides><binary>pearl-settings</binary></provides>
+  <url type="homepage">https://github.com/Seafoam-Labs/pearl</url>
+  <developer id="org.aqueous"><name>Pearl contributors</name></developer>
+  <content_rating type="oars-1.1"/>
+</component>

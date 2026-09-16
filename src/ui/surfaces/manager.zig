@@ -116,6 +116,8 @@ pub const Manager = struct {
     capture_hide: bool = false,
     capture_feedback: bool = false,
     services_started: bool = false,
+    settings_observer_context: ?*anyopaque = null,
+    settings_observer: ?*const fn (*anyopaque) void = null,
     aqueous_settings: @import("../../config/aqueous_client.zig").Client = undefined,
     preferences: @import("../../config/service.zig").Service = undefined,
     osd_label: ?*gtk.Label = null,
@@ -226,6 +228,7 @@ pub const Manager = struct {
     fn aqueousSettingsChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (self.popup) |surface| if (surface.aqueous_settings) |view| view.update();
+        if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
     }
     fn aqueousCanRecord(context: *anyopaque) bool {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -263,6 +266,7 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
         self.syncClipboardPrivacy();
+        if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
         self.schedule();
     }
@@ -311,6 +315,7 @@ pub const Manager = struct {
     }
     fn servicesChanged(self: *Manager) void {
         if (!self.running) return;
+        if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
         // Reconcile UI only in an idle callback, outside service signal stacks.
         self.schedule();
     }
@@ -367,10 +372,33 @@ pub const Manager = struct {
         if (self.running) self.armClock();
         return 0;
     }
+    pub fn settingsLayoutRows(context: *anyopaque, alloc: std.mem.Allocator) ![]const @import("../../settings/live_protocol.zig").Row {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        const ui = @import("../../settings/live_protocol.zig");
+        const p = @import("../../settings/editor_protocol.zig");
+        var rows: std.ArrayList(ui.Row) = .empty;
+        const layout = if (self.layout) |*v| v else return &.{};
+        for (self.outputs.items) |output| {
+            const stamp = self.workspaceStamp(output);
+            const current = self.layout_stamp == stamp and std.mem.eql(u8, output.connector, layout.output[0..layout.output_len]);
+            var controls: std.ArrayList(ui.Control) = .empty;
+            try controls.append(alloc, try ui.button(alloc, "query", "Read workspace layout", .@"layout.get", .{ .output = output.id, .generation = p.num(stamp) }, layout.global != null and layout.manager == null));
+            for (@import("../../platform/wayland/layout.zig").names) |name| try controls.append(alloc, try ui.button(alloc, name, name, .@"layout.set", .{ .output = output.id, .generation = p.num(stamp), .layout = name }, layout.global != null and layout.manager == null));
+            try rows.append(alloc, .{ .id = output.id, .title = try std.fmt.allocPrint(alloc, "{s} · Workspace layout", .{output.connector}), .detail = if (current) layout.err orelse layout.value[0..layout.value_len] else "Choose a layout for this output’s active workspace.", .controls = controls.items });
+        }
+        return rows.items;
+    }
+    pub fn settingsLayoutAction(context: *anyopaque, value: @import("../../settings/live_protocol.zig").Layout) !void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        const output = try self.selected(value.output);
+        if (try @import("../../settings/editor_protocol.zig").number(value.generation) != self.workspaceStamp(output)) return error.Stale;
+        try self.queryLayout(output, value.layout);
+    }
     fn layoutChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
         if (self.popup) |popup| if (popup.control) |panel| panel.update();
+        if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
     }
     fn captureChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -426,6 +454,7 @@ pub const Manager = struct {
         self.lifecycle.sync();
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
         self.syncClipboardPrivacy();
+        if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
         self.syncSettingsAccess();
         if (self.client.availability != .ready) {
@@ -738,6 +767,16 @@ pub const Manager = struct {
         if (self.bluetooth.interest.count() != 0) self.bluetooth.revokeViews();
         if (self.power.interest.count() != 0) self.power.revokeViews();
     }
+    fn openSettings(self: *Manager, target: navigation.Target, activation: ?[]const u8) !void {
+        if (self.client.availability != .ready) return error.Unavailable;
+        if (self.client.model.get(.session, "session").?.locked) return error.Locked;
+        const display = gdk.Display.getDefault() orelse return error.Unavailable;
+        const context = display.getAppLaunchContext();
+        defer context.unref();
+        context.setTimestamp(0);
+        try @import("../../settings/launch.zig").open(target, context.as(gio.AppLaunchContext), activation);
+        self.hidePopup();
+    }
     fn settingsAction(self: *Manager, output_id: ?[]const u8, page: navigation.Route, intent: navigation.Intent) !void {
         if (!page.isCompact()) return error.InvalidRequest;
         const output = try self.selected(output_id);
@@ -971,9 +1010,10 @@ pub const Manager = struct {
                 self.preferences.reload();
                 return "{\"queued\":true}";
             },
-            .aqueous_show => {
-                try self.showPane(try self.selected(request.output), .aqueous_settings);
-                if (request.text) |page| try self.popup.?.aqueous_settings.?.showPage(page);
+            .aqueous_show, .settings_show => {
+                if (request.output != null) _ = try self.selected(request.output);
+                try self.openSettings(request.settingsTarget(), request.activation);
+                return "{\"launched\":true}";
             },
             .aqueous_reload => try self.aqueous_settings.requestReload(),
             .aqueous_keep => try self.aqueous_settings.choose(true),
@@ -994,7 +1034,6 @@ pub const Manager = struct {
                 self.aqueous_settings.discard();
                 aqueousSettingsChanged(self);
             },
-            .settings_show => try self.showPane(try self.selected(request.output), .settings),
             .session_action => {
                 try self.session_services.act(request);
                 return "{\"queued\":true}";
@@ -1273,6 +1312,14 @@ fn settingsNavigate(context: *anyopaque, page: navigation.Route) anyerror!void {
 fn controlTask(context: *anyopaque, task: Panels.Control.Task) void {
     const s: *Surface = @ptrCast(@alignCast(context));
     switch (task) {
+        .full_settings => {
+            const manager = s.manager;
+            const page = manager.settings_page orelse .overview;
+            manager.openSettings(.{ .page = page }, null) catch |err| {
+                s.control.?.launchFailed(err);
+                return;
+            };
+        },
         .media => barAction(s, .{ .pane = .media }),
         .settings => barAction(s, .{ .pane = .settings }),
         .aqueous_settings => barAction(s, .{ .pane = .aqueous_settings }),

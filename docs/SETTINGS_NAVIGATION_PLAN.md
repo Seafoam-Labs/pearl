@@ -31,8 +31,9 @@ the requested compact destination; defaults still select Overview. Internal
 navigation restores page-local state, and public `status.popup.page` reports the
 selected route. The [service-view ownership contract](SETTINGS_SERVICE_OWNERSHIP.md)
 is shared with the standalone plan. Service bar icons now open their matching
-compact pages; the gear opens Overview. The standalone handoff remains deferred
-until that application's launch contract is implemented.
+compact pages; the gear opens Overview. Standalone S5 adds **Open full settings**
+with the selected route, fixed executable dispatch and launch-failure feedback;
+primary bar clicks and keyboard mode `none` remain unchanged.
 
 ## Scope split
 

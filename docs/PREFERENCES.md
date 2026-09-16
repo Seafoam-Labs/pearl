@@ -3,9 +3,40 @@
 [T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
 dock behavior, split bar sections and matching native input/blur regions.
 
-Pearl settings are available from **Control center → Pearl settings**, or
-`pearlctl settings show`. They apply across all output surfaces without restarting
+Open **Pearl Settings** from the launcher or use
+`pearlctl settings show --page appearance`. The compact preference editor remains
+available from **Control center → Pearl settings**. They apply across all output surfaces without restarting
 Pearl. The implementation uses Zig 0.16.0 and the pinned Ghostty GTK/GIO bindings.
+
+## Standalone editor
+
+The Zig `pearl-settings --page appearance` application edits the same session-owned
+Pearl draft as the shell preference popup. Advanced exposes the full JSON,
+including output overrides, pinned applications and export templates. Use **Apply & save** to save all
+Pearl changes, or **Discard** to discard the shared draft. Navigation and normal
+close/reopen retain acknowledged drafts while the backend stays running; they
+never save implicitly. Invalid JSON stays available in Advanced for repair.
+
+Wallpaper selection uses a normal transient dialog and an asynchronous draft
+preview. The application changes its own theme only after a confirmed commit.
+External edits trigger conflict review; **Merge changes** combines independent
+fields, and Advanced's **View saved JSON** helps review overlapping edits.
+A lost backend requires explicit recovery of the local candidate. Closing before
+retention succeeds offers Keep open or discarding only untransferred changes.
+
+`pearlctl settings show` opens the standalone application's Overview by default.
+Use `--page appearance`, `--page bar`, `--page session` or `--page advanced` for
+Pearl preference editors. `control-center show/toggle` continues to open compact
+flyouts. The installed executable, desktop ID and icon agree on
+`org.aqueous.Pearl.Settings`; Git packages use `pearl-settings-git` and
+`org.aqueous.Pearl.Git.Settings`.
+
+Build with `zig build build-settings -Doptimize=ReleaseSafe` (also included in the
+normal build). The application never writes preferences directly or starts Pearl.
+With the backend absent, launch `pearl-settings` directly for the Retry window;
+`pearlctl` requires the running session backend. Closing Pearl itself loses its
+in-memory drafts; a still-open Settings window retains its local copy for review.
+See [the standalone plan](STANDALONE_SETTINGS_APPLICATION_PLAN.md).
 
 ## Theme modes
 

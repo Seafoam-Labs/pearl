@@ -328,6 +328,15 @@ pub const Power = struct {
         self.err = null;
         self.arm();
     }
+    pub fn brightnessGeneration(self: *Power) u64 {
+        return self.slots[@intFromEnum(Tag.session)].generation;
+    }
+    pub fn profileGeneration(self: *Power) u64 {
+        const slot = self.profilesSlot() orelse return 0;
+        var hash = std.hash.Wyhash.init(slot.generation);
+        hash.update(@tagName(slot.tag));
+        return hash.final();
+    }
     pub fn epoch(self: *Power) u64 {
         return self.slots[@intFromEnum(Tag.login)].generation;
     }

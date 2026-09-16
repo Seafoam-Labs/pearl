@@ -1,0 +1,25 @@
+info: event=settings-launch activation_context=false
+info: event=settings-instance-ready session=5c165e97c40288e35e6db2b1b53409c3
+info: event=settings-page page=overview
+info: event=settings-page page=advanced
+info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
+info: event=settings-page page=advanced
+info: event=settings-activation activation_context=false
+info: event=settings-page page=advanced
+info: event=settings-activation activation_context=false
+info: event=settings-page page=appearance
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.UDisks2VolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.UDisks2VolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.AfcVolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.AfcVolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.GoaVolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.GoaVolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.GPhoto2VolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.GPhoto2VolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.MTPVolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.MTPVolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.AfcVolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.AfcVolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.GoaVolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.GoaVolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.GPhoto2VolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.GPhoto2VolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.MTPVolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.MTPVolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+info: event=settings-activation activation_context=false
+info: event=settings-page page=advanced
+info: event=settings-activation activation_context=false
+info: event=settings-page page=appearance
+info: event=settings-activation activation_context=false
+info: event=settings-page page=advanced

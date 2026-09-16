@@ -10,7 +10,7 @@ while queue and seen<5000:
  try:
   name=node.get_name();role=node.get_role_name();states=node.get_state_set()
   showing=states.contains(Atspi.StateType.SHOWING)
-  if a.all or (showing and name):nodes.append(dict(name=name[:512],description=node.get_description()[:512],role=role,showing=showing,sensitive=states.contains(Atspi.StateType.SENSITIVE),focused=states.contains(Atspi.StateType.FOCUSED)))
+  if a.all or (showing and name):nodes.append(dict(name=name[:512],description=node.get_description()[:512],role=role,showing=showing,sensitive=states.contains(Atspi.StateType.SENSITIVE),focused=states.contains(Atspi.StateType.FOCUSED),checked=states.contains(Atspi.StateType.CHECKED),pressed=states.contains(Atspi.StateType.PRESSED),selected=states.contains(Atspi.StateType.SELECTED)))
   if showing and not performed and name==(a.focus or a.action):
    if a.focus:
     attempts.append(dict(role=role,focusable=states.contains(Atspi.StateType.FOCUSABLE),sensitive=states.contains(Atspi.StateType.SENSITIVE)))

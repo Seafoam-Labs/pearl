@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "checks": {
+    "two-process-handshake-persistent-heartbeat-and-capability-gating": true,
+    "cross-session-display-version-and-unimplemented-operation-denial": true,
+    "duplicate-id-denied": true,
+    "fragmented-frames-oversize-invalid-utf8-empty-frame": true,
+    "partial-handshake-timeout": true,
+    "eight-client-bound-and-disconnect-slot-reuse": true,
+    "handshake-does-not-create-popup-or-change-flyout-routing": true,
+    "backend-crash-eof-stale-socket-recovery-new-epoch-session-isolation": true,
+    "graceful-endpoint-cleanup": true
+  },
+  "pearl_sha256": "c172144a6f01d1d7acff6406d7b825d5ee6d535d7de756e019715524cdda98b6"
+}
+Build Summary: 10/10 steps succeeded
+test-settings-boundary success
++- run python3 success 5s
+   +- compile exe pearl ReleaseSafe native success 23s MaxRSS:680M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 13ms MaxRSS:53M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:55M
+   +- compile exe pearlctl ReleaseSafe native cached 15ms MaxRSS:59M
+

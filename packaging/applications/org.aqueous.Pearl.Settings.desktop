@@ -2,8 +2,10 @@
 Type=Application
 Name=Pearl Settings
 Comment=Configure the Pearl desktop shell
-Exec=pearlctl settings show
-Icon=preferences-desktop
+Exec=pearl-settings
+Icon=org.aqueous.Pearl.Settings
+StartupNotify=true
+StartupWMClass=org.aqueous.Pearl.Settings
 Terminal=false
 Categories=Settings;DesktopSettings;
-OnlyShowIn=Aqueous;
+OnlyShowIn=Aqueous;Aqueous-Git;Aqueous-Intel-Git;

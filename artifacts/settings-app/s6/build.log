@@ -1,0 +1,30 @@
+Build Summary: 23/23 steps succeeded
+install success
++- install pearl cached
+|  +- compile exe pearl ReleaseSafe native cached 14ms MaxRSS:55M
+|     +- run pkg-config success 1ms
+|     +- translate-c cached 14ms MaxRSS:52M
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|        +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:52M
++- install pearl-settings success
+|  +- compile exe pearl-settings ReleaseSafe native cached 17ms MaxRSS:55M
+|     +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+|     +- run glib-compile-resources (pearl.gresource) (reused)
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Settings.desktop to share/applications/org.aqueous.Pearl.Settings.desktop cached
++- install packaging/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg to share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg cached
++- install packaging/metainfo/org.aqueous.Pearl.Settings.metainfo.xml to share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml cached
++- install pearl-lock cached
+|  +- compile exe pearl-lock ReleaseSafe native cached 13ms MaxRSS:54M
+|     +- translate-c (reused)
+|     +- run glib-compile-resources (pearl.gresource) (reused)
+|     +- options cached
+|     +- translate-c cached 13ms MaxRSS:52M
++- install pearl-t00 cached
+|  +- compile exe pearl-t00 ReleaseSafe native cached 14ms MaxRSS:57M
+|     +- run pkg-config (reused)
+|     +- translate-c (reused)
++- install pearlctl cached
+   +- compile exe pearlctl ReleaseSafe native cached 17ms MaxRSS:58M

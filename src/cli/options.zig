@@ -41,7 +41,9 @@ pub fn parse(args: []const []const u8) !Options {
         } else if (std.mem.eql(u8, flag, "--output") and r.output == null) {
             r.output = value;
         } else if (std.mem.eql(u8, flag, "--page") and r.page == null) {
-            r.page = protocol.settings_navigation.parseCompact(value) catch return error.Usage;
+            r.page = protocol.settings_navigation.parse(value) catch return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--section") and r.section == null) {
+            r.section = value;
         } else if (std.mem.eql(u8, flag, "--edge") and r.edge == null) {
             r.edge = std.meta.stringToEnum(protocol.Edge, value) orelse return error.Usage;
         } else if (std.mem.eql(u8, flag, "--size") and r.size == null) {
@@ -110,11 +112,16 @@ pub const usage =
     \\       pearlctl lifecycle status
     \\       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit
     \\       pearlctl lifecycle action --text confirm --generation N
-    \\       pearlctl aqueous show|status|refresh|validate|apply|discard|rebase|reload
+    \\       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)
+    \\       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload
     \\       pearlctl aqueous keep|revert
     \\       pearlctl aqueous record --text FIELD_ID
     \\       pearlctl aqueous draft --text JSON
-    \\       pearlctl settings show [--output ID]
+    \\       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]
+    \\       Settings pages: overview, appearance, network, bluetooth, sound, power,
+    \\                       bar, notifications, session, aqueous, advanced
+    \\       Aqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced
+    \\       Repeated settings launches activate the window; they never toggle it closed.
     \\       pearlctl preferences status|reload
     \\       pearlctl preferences apply --revision N --text JSON
     \\       pearlctl popup show|toggle [--output ID]
@@ -183,7 +190,7 @@ test "control-center defaults and explicit compact pages preserve strict CLI val
     try t.expectError(error.Usage, parse(&.{ "control-center", "show", "--page" }));
     try t.expectError(error.Usage, parse(&.{ "control-center", "toggle", "--page", "sound", "--page", "network" }));
     try t.expectError(error.Usage, parse(&.{ "control-center", "show", "--page", "sound", "--output", "" }));
-    for ([_][]const u8{ "settings", "popup", "launcher" }) |command|
+    for ([_][]const u8{ "popup", "launcher" }) |command|
         try t.expectError(error.Usage, parse(&.{ command, "show", "--page", "sound" }));
     try t.expectError(error.Usage, parse(&.{ "calendar", "toggle", "--page", "sound" }));
     try t.expectError(error.Usage, parse(&.{ "status", "--page", "overview" }));
@@ -249,4 +256,28 @@ test "clipboard and capture commands validate identities, paths and region bound
     try t.expectError(error.Usage, parse(&.{ "capture", "copy", "--generation", "1", "--path", "/tmp/private.png" }));
     try t.expectError(error.Usage, parse(&.{ "clipboard", "status", "--text", "secret" }));
     try t.expectError(error.Usage, parse(&.{ "capture", "output", "--text", "1,2,3,4" }));
+}
+
+test "standalone settings destinations and Aqueous compatibility validate before launch" {
+    const t = std.testing;
+    try t.expectEqual(protocol.settings_navigation.Route.overview, (try parse(&.{ "settings", "show" })).request.settingsTarget().page);
+    for (std.enums.values(protocol.settings_navigation.Route)) |page| {
+        const request = (try parse(&.{ "settings", "show", "--page", page.id() })).request;
+        try t.expectEqual(page, request.settingsTarget().page);
+    }
+    for ([_][]const u8{ "--text", "--section" }) |flag| {
+        const target = (try parse(&.{ "aqueous", "show", flag, "displays" })).request.settingsTarget();
+        try t.expectEqual(protocol.settings_navigation.Route.aqueous, target.page);
+        try t.expectEqualStrings("displays", target.section.?);
+    }
+    try t.expectEqualStrings("keybinds", (try parse(&.{ "settings", "show", "--page", "aqueous", "--section", "keybinds" })).request.settingsTarget().section.?);
+    for ([_][]const []const u8{
+        &.{ "settings", "show", "--page", "bogus" },
+        &.{ "settings", "show", "--section", "displays" },
+        &.{ "settings", "show", "--page", "sound", "--section", "displays" },
+        &.{ "aqueous", "show", "--text", "unknown" },
+        &.{ "aqueous", "show", "--text", "input", "--section", "input" },
+        &.{ "aqueous", "show", "--page", "appearance" },
+        &.{ "settings", "show", "--page", "sound", "--page", "power" },
+    }) |invalid| try t.expectError(error.Usage, parse(invalid));
 }

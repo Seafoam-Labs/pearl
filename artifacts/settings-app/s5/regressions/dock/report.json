@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "checks": {
+    "default-islands-empty-dock-and-persistent-global-pin": true,
+    "keyboard-gio-launch-and-pinned-running-group": true,
+    "taskbar-flags-are-independent-from-switcher-flags": true,
+    "output-local-fullscreen-hiding-pointer-reveal-and-delay": true,
+    "minimized-windows-remain-on-dock": true,
+    "keyboard-window-activation-restores-minimized": true,
+    "intelligent-hiding-follows-visible-outer-geometry": true,
+    "inactive-session-hides-dock-and-rejects-reveal": true,
+    "popup-dock-keyboard-arbitration": true,
+    "context-actions-via-right-click-menu-key-and-shift-f10": true,
+    "dark-light-mixed-scale-and-enlarged-surface-captures": true,
+    "arbitrary-gtk-theme-colors-with-island-geometry": true,
+    "island-gaps-deliver-click-to-independent-underlay": true,
+    "per-output-vertical-layout-edge-conflict-and-escape": true,
+    "bounded-many-apps-scroll-and-keyboard-reveal": true,
+    "continuous-bar-and-disabled-dock-options": true,
+    "unpin-persistence-clean-exit-and-reservation-release": true
+  },
+  "pearl_sha256": "ec1af77e9774e5de6aa0f935f6412e4f1e93ee85746e444e989ee4bf22f9a557",
+  "ctl_sha256": "c4e8d774624253500f18ba035cf04bf94ae13f90cabcc16d18aee98ff2870f0b"
+}

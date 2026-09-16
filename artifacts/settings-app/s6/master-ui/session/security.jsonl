@@ -1,0 +1,7 @@
+{"event": "ready"}
+{"event": "session-lookup", "method": "GetSessionByPID", "compositor": false}
+{"event": "session-lookup", "method": "GetSessionByPID", "compositor": false}
+{"event": "delay-acquired", "lease": 1}
+{"event": "registered", "sender": ":1.2", "session": "test"}
+{"event": "delay-released", "lease": 1, "locked": false}
+{"event": "unregistered"}

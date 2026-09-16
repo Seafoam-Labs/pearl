@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "checks": {
+    "two-process-handshake-persistent-heartbeat-and-capability-gating": true,
+    "cross-session-display-version-and-unimplemented-operation-denial": true,
+    "duplicate-id-denied": true,
+    "fragmented-frames-oversize-invalid-utf8-empty-frame": true,
+    "partial-handshake-timeout": true,
+    "eight-client-bound-and-disconnect-slot-reuse": true,
+    "handshake-does-not-create-popup-or-change-flyout-routing": true,
+    "backend-crash-eof-stale-socket-recovery-new-epoch-session-isolation": true,
+    "graceful-endpoint-cleanup": true
+  },
+  "pearl_sha256": "c32242f862ad465b9af3535abc574c8cec4d9ecb4c678bca5e33d5e6ce67c512"
+}

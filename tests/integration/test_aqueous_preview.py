@@ -22,7 +22,7 @@ def main():
      channel.settimeout(5);channel.connect(str(s.runtime/'aqueous/outputd.sock'));channel.sendall(json.dumps(dict(op='test_output_retry',name=connector,action=action,**args)).encode()+b'\n')
      reply=json.loads(channel.makefile().readline());assert reply['ok'],reply
    def start(label):
-    app=s.child(label,[a.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready');ctl(s,a.ctl,'aqueous','show');settled(s,a.ctl);return app
+    app=s.child(label,[a.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready');ctl(s,a.ctl,'aqueous','refresh');settled(s,a.ctl);return app
    app=start('pearl')
    def begin(x):
     stage(s,a.ctl,monitor_changes=[dict(id='live:'+connector,name=connector,x=x,y=0,scale=1,transform='normal')]);ctl(s,a.ctl,'aqueous','apply')

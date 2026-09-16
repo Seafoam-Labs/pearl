@@ -17,24 +17,26 @@ def run(argv, *, env=None, code=0):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    for name in ('pearl','ctl','locker'):p.add_argument('--'+name,type=Path,required=True)
+    for name in ('pearl','ctl','locker','settings'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--output',type=Path,default=ROOT/'artifacts/t16/install');a=p.parse_args()
     a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
-    checks={};report={'status':'running','checks':checks,'binary_sha256':{n:hashlib.sha256(getattr(a,n).read_bytes()).hexdigest() for n in ('pearl','ctl','locker')}}
+    checks={};report={'status':'running','checks':checks,'binary_sha256':{n:hashlib.sha256(getattr(a,n).read_bytes()).hexdigest() for n in ('pearl','ctl','locker','settings')}}
     try:
         with tempfile.TemporaryDirectory(prefix='pearl-release-') as temp:
             root=Path(temp);stage=root/'stage';binaries=root/'bin';binaries.mkdir()
-            for source,name in ((a.pearl,'pearl'),(a.ctl,'pearlctl'),(a.locker,'pearl-lock')):shutil.copy2(source,binaries/name)
+            for source,name in ((a.pearl,'pearl'),(a.ctl,'pearlctl'),(a.locker,'pearl-lock'),(a.settings,'pearl-settings')):shutil.copy2(source,binaries/name)
             run(['bash',ROOT/'packaging/install.sh'],env=dict(os.environ,DESTDIR=str(stage),PEARL_BINARY_DIR=str(binaries)))
             installed=stage/'usr/bin';pearl=installed/'pearl';control=installed/'pearlctl'
-            assert sorted(x.name for x in installed.iterdir())==['pearl','pearl-lock','pearlctl']
+            assert sorted(x.name for x in installed.iterdir())==['pearl','pearl-lock','pearl-settings','pearlctl']
             version=json.loads((ROOT/'packaging/release.json').read_text())['version']
             for binary in installed.iterdir():
                 assert version in run([binary,'--version'])
                 assert binary.stat().st_mode&0o7777==0o755
             assert (stage/'etc/pam.d/pearl').read_bytes()==(ROOT/'packaging/pam.d/pearl').read_bytes()
             for notice in (ROOT/'bindings/licenses').iterdir():assert (stage/'usr/share/licenses/pearl'/notice.name).read_bytes()==notice.read_bytes()
-            assert (stage/'usr/share/applications/org.aqueous.Pearl.Settings.desktop').is_file()
+            for resource in ('applications/org.aqueous.Pearl.Settings.desktop','icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg','metainfo/org.aqueous.Pearl.Settings.metainfo.xml'):
+                assert (stage/'usr/share'/resource).is_file()
+            assert 'Exec=pearl-settings\n' in (stage/'usr/share/applications/org.aqueous.Pearl.Settings.desktop').read_text()
             assert (stage/'usr/share/pearl/release.json').is_file()
             assert not list(stage.rglob('*.wants'))
             unit=(stage/'usr/lib/systemd/user/pearl.service').read_text()

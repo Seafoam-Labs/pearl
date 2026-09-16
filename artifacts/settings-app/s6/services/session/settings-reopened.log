@@ -1,0 +1,11 @@
+info: event=settings-launch activation_context=false
+info: event=settings-instance-ready session=b9d805614c86f0dd9f56042c873b575c
+info: event=settings-page page=overview
+info: event=settings-page page=aqueous
+info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
+info: event=settings-page page=aqueous
+info: event=settings-connection-unavailable error=Eof
+info: event=settings-page page=aqueous
+info: event=settings-activation activation_context=false
+info: event=settings-page page=aqueous
+info: event=settings-aqueous-action action=discard pending=false

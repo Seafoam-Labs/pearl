@@ -139,6 +139,10 @@ pub fn main(init: std.process.Init) void {
     };
     const display = protocol.displayPath(a, env("XDG_RUNTIME_DIR"), env("WAYLAND_DISPLAY")) catch std.process.exit(3);
     var client: Client = .{ .loop = glib.MainLoop.new(null, 0), .request = parsed.request, .runtime = env("XDG_RUNTIME_DIR"), .display = display };
+    if (client.request.op == .settings_show or client.request.op == .aqueous_show) {
+        const token = if (env("XDG_ACTIVATION_TOKEN").len > 0) env("XDG_ACTIVATION_TOKEN") else env("DESKTOP_STARTUP_ID");
+        if (token.len > 0 and token.len <= 4096) client.request.activation = token;
+    }
     client.transport = wire.Transport.init(&client, Client.event);
     client.deadline = glib.timeoutAdd(5000, Client.timeout, &client);
     client.transport.open(std.mem.span(glib.getenv("AQUEOUS_SOCKET").?)) catch |err| client.stop(err);

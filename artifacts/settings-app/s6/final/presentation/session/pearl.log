@@ -1,0 +1,24 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=5d7b06742559f5a874cf5ceb10b980fa
+info(pearl): event=control-ready session=5d7b06742559f5a874cf5ceb10b980fa
+info: event=app-index-ready entries=160 truncated=false
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=preferences-applied revision=2 mode=static cache=false
+info: event=preferences-applied revision=3 mode=gtk cache=false
+info: event=preferences-applied revision=4 mode=static cache=false
+info: event=preferences-applied revision=5 mode=static cache=false
+info: event=preferences-applied revision=6 mode=gtk cache=false
+info: event=preferences-applied revision=7 mode=static cache=false
+info: event=preferences-applied revision=8 mode=static cache=false
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=stopping reason=signal pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "checks": {
+    "sound-pointer-volume-mute-real-libpulse": true,
+    "application-stream-target-choices-and-routing": true,
+    "power-pointer-brightness-and-profile-with-stable-generation": true,
+    "denied-power-operation-receipt-and-feedback": true,
+    "power-confirmation-cannot-be-used-by-another-peer": true,
+    "notifications-dnd-history-and-stable-dismissal": true,
+    "overview-media-actions-and-capability-state": true,
+    "live-pages-dark-light-native-and-480px-layout": true,
+    "lock-hides-window-denies-actions-and-requires-activation": true
+  }
+}

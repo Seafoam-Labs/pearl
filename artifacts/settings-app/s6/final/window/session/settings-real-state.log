@@ -1,0 +1,8 @@
+info: event=settings-launch activation_context=false
+info: event=settings-instance-ready session=ad5e4195ae25f612b7d7e5757c66fed8
+info: event=settings-page page=overview
+info: event=settings-page page=appearance
+info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
+info: event=settings-page page=appearance
+info: event=settings-connection-unavailable error=Eof
+info: event=settings-page page=appearance

@@ -20,7 +20,7 @@ def main():
    s.env.update(PATH=str(bin_dir)+':'+s.env['PATH'],PEARL_MASTER_HELPER=str(args.prefix.resolve()/'bin/aqueous-config'),PEARL_MASTER_FAULT=str(fault),PEARL_MASTER_CALLS=str(calls))
    app=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready')
    ipc=IPC(s)
-   ctl(s,args.ctl,'aqueous','show');v=settled(s,args.ctl);assert v['err'] is None,v
+   ctl(s,args.ctl,'aqueous','refresh');v=settled(s,args.ctl);assert v['err'] is None,v
    assert v['capabilities']['apply'] and v['capabilities']['display'],v
    checks['matching-toolchain-negotiation']=True
    # Exercise the new bounded CLI entry point against authoritative IPC state.
@@ -78,7 +78,7 @@ def main():
      ctl(s,args.ctl,'aqueous','discard');assert not ctl(s,args.ctl,'aqueous','reload',code=4)['ok']
      ctl(s,args.ctl,'quit');app.proc.wait(timeout=10);clean(app)
      fault.write_text('');app=s.child('pearl-recovery',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready')
-     ctl(s,args.ctl,'aqueous','show');v=settled(s,args.ctl);assert not v['unresolved'] and v['save']=='saved' and v['receipt']=='complete',v
+     ctl(s,args.ctl,'aqueous','refresh');v=settled(s,args.ctl);assert not v['unresolved'] and v['save']=='saved' and v['receipt']=='complete',v
      assert count()==before_count+1 and json.loads(record.read_text())['pending'] is False
    fault.write_text('');checks['lost-apply-reply-queries-receipt-without-second-write']=True;checks['restart-reconciles-pending-operation']=True
    for failure,value in [('nonzero-saved',27),('saved-no-snapshot',28),('lost-recovered',29)]:
@@ -172,7 +172,7 @@ def main():
    ctl(s,args.ctl,'aqueous','apply');v=wait_for(lambda:(lambda v:v if v['display_preview']=='pending' or not v['busy'] else False)(state(s,args.ctl)),15);assert v['display_preview']=='pending',v
    app.proc.kill();app.proc.wait(timeout=10)
    wait_for(lambda:ipc.call('display.snapshot')['outputs'][0]['actual']==before)
-   app=s.child('pearl-after-preview-crash',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready');ctl(s,args.ctl,'aqueous','show');v=settled(s,args.ctl);assert v['generation']==gen and not v['unresolved'],v
+   app=s.child('pearl-after-preview-crash',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready');ctl(s,args.ctl,'aqueous','refresh');v=settled(s,args.ctl);assert v['generation']==gen and not v['unresolved'],v
    checks['owner-crash-rolls-back-without-persistence']=True
    ipc.close();ctl(s,args.ctl,'quit');app.proc.wait(timeout=10);clean(app)
   report['status']='passed'

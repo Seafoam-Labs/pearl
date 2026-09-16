@@ -36,7 +36,7 @@ scroller. Bar keyboard mode remains `none`, as explicitly approved during F4;
 the flyout retains exclusive keyboard input.
 
 `control-center show/toggle [--output ID] [--page PAGE]` always addresses this
-flyout. A future full Settings application has an independent window lifecycle
+flyout. The full Settings application has an independent window lifecycle
 and does not count as the principal popup.
 
 ## Identity and ownership
@@ -83,6 +83,15 @@ Frames default to zero and use a transparent texture to ensure GTK attaches a
 buffer: an empty transparent box alone may never map. No full-screen invisible
 reservation surface intercepts desktop input. Killing Pearl releases all zones
 through normal Wayland client destruction.
+
+The standalone Settings application is a separate xdg toplevel, excluded from the
+shell popup count. Its launch handoff dismisses the compact flyout only after the
+fixed installed executable starts; failure retains the flyout and
+shows feedback. Closing that application does not stop Pearl. The bar retains
+keyboard mode `none`.
+
+The **Open full settings** action and its feedback are inside the selected page's
+scroll area, so large text and short outputs retain space for service controls.
 
 There is one popup across all outputs. Showing a new target replaces it. It is
 centered and clamped inside the target's usable bounds, including updates after

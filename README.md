@@ -64,6 +64,30 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Generated bindings](bindings/README.md): full layer-shell/session-lock namespaces sharing Ghostty's GTK types, with no C bridge.
 - [Progress](docs/PROGRESS.md) and [visual references](artifacts/t00/REFERENCES.md).
 
+## Settings
+
+Open **Pearl Settings** from the launcher, pin it to the dock, or run:
+
+```sh
+pearl-settings
+pearlctl settings show --page appearance
+pearlctl aqueous show --section displays
+```
+
+The Zig application is a normal window, with one instance per verified Aqueous
+session. Repeated launches select the requested page and activate that window.
+The bar keeps its compact controls; **Open full settings** opens their matching
+application page. Pearl must be running to edit; direct `pearl-settings` can show
+an unavailable-session window with Retry. It never starts a second shell.
+
+Device controls take effect immediately. **Apply & save** saves the shared Pearl
+preference draft; Aqueous has its own explicit Apply and display-preview flow.
+Acknowledged drafts survive closing the window while the backend remains alive.
+Backend loss retains a local copy for explicit recovery without replaying writes.
+See [Preferences](docs/PREFERENCES.md) and [Aqueous Settings](docs/AQUEOUS_SETTINGS.md).
+
+## Development commands
+
 ```sh
 ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build -Doptimize=ReleaseSafe
 ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test -Doptimize=ReleaseSafe

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """T12 and native-lock foundation: private login1/polkit and real GTK/PAM surfaces."""
-import argparse, hashlib, json, os, signal, sys, time
+import argparse, hashlib, json, os, shlex, signal, sys, time
 from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2]
@@ -9,15 +9,44 @@ from pearl_session import PrivateSession,wait_for
 from t00 import Session as T00Session
 from test_surfaces import IPC,ctl,status,capture,clean
 
+def managed_compositor_session(args,checks):
+    # UWSM keeps session identity in the compositor unit's EnvironmentFile and
+    # deliberately excludes it from the user manager's general environment.
+    wrapper=args.output/'aqueous-managed'
+    compositor=Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX',str(ROOT/'.cache/aqueous')))/'bin/aqueous'
+    wrapper.write_text('#!/bin/sh\nexport XDG_SESSION_ID=5\nexec '+shlex.quote(str(compositor))+' "$@"\n')
+    wrapper.chmod(0o700)
+    with PrivateSession(args.output/'managed-session',aqueous=wrapper) as s:
+        s.env['DBUS_SYSTEM_BUS_ADDRESS']='unix:path='+str(s.runtime/'system-bus')
+        s.child('system-bus',['dbus-daemon','--session','--nofork','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS']])
+        wait_for(lambda:s.run(['busctl','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS'],'list'],check=False).returncode==0)
+        s.env['PEARL_SECURITY_LOG']=str(s.output/'security.jsonl')
+        s.env['PEARL_TEST_SESSION_DISCOVERY']='compositor-manager'
+        s.env['PEARL_TEST_COMPOSITOR_PID']=str(s.compositor.proc.pid)
+        fixture=s.child('authority',['python3',ROOT/'tests/fixtures/session_security.py'],input_pipe=True);fixture.expect('event=ready')
+        pearl=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings',XDG_SESSION_ID='');pearl.expect('event=control-ready')
+        def state(): return ctl(s,args.ctl,'lifecycle','status')['result']
+        def wait(predicate): return wait_for(lambda:(lambda v:v if predicate(v) else False)(state()))
+        value=wait(lambda v:v['authentication']['registered'])
+        assert value['session_id']=='5' and value['active'] and value['session_source']=='compositor_environment',value
+        fixture.proc.stdin.write('{"begin":true}\n');fixture.proc.stdin.flush()
+        wait(lambda v:v['authentication']['pending'])
+        fixture.proc.stdin.write('{"cancel":true}\n');fixture.proc.stdin.flush()
+        wait(lambda v:not v['authentication']['pending'])
+        ctl(s,args.ctl,'quit');clean(pearl)
+        checks['uwsm-compositor-session-without-shell-session-environment']=True
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('pearl','ctl','locker','pam-module'): p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--output',type=Path,default=ROOT/'artifacts/t12/latest')
+    p.add_argument('--session-discovery-only',action='store_true')
     args=p.parse_args()
     for name in ('pearl','ctl','locker','pam_module','output'): setattr(args,name,getattr(args,name).resolve())
     args.output.mkdir(parents=True,exist_ok=True)
     checks={}; report={'status':'running','checks':checks,'binaries':{name:hashlib.sha256(getattr(args,name).read_bytes()).hexdigest() for name in ('pearl','ctl','locker','pam_module')}}
     try:
+        managed_compositor_session(args,checks)
         with PrivateSession(args.output/'session') as s:
             s.env['DBUS_SYSTEM_BUS_ADDRESS']='unix:path='+str(s.runtime/'system-bus')
             s.child('system-bus',['dbus-daemon','--session','--nofork','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS']])
@@ -25,12 +54,12 @@ def main():
             s.env['PEARL_SECURITY_LOG']=str(s.output/'security.jsonl');Path(s.env['PEARL_SECURITY_LOG']).write_text('')
             s.env['PEARL_TEST_LOCKER']=str(args.locker)
             s.env['PEARL_TEST_SESSION_DISCOVERY']='no-pid'
+            s.env['PEARL_TEST_COMPOSITOR_PID']=str(s.compositor.proc.pid)
             pam_dir=s.base/'pam';pam_dir.mkdir();s.env['PEARL_TEST_PAM_DIR']=str(pam_dir)
             pam_stack=f'auth required {args.pam_module}\naccount required {args.pam_module}\n'
             (pam_dir/'pearl').write_text(pam_stack)
             s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
             fixture=s.child('authority',['python3',ROOT/'tests/fixtures/session_security.py'],input_pipe=True);fixture.expect('event=ready')
-            pearl=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');pearl.expect('event=control-ready')
             ipc=IPC(s)
             def state(): return ctl(s,args.ctl,'lifecycle','status')['result']
             def wait(predicate,timeout=12): return wait_for(lambda:(lambda value:value if predicate(value) else False)(state()),timeout)
@@ -45,6 +74,52 @@ def main():
             def key(*args): s.run(['wtype','-s','150',*args,'-s','200'])
             def unlock(secret='fixture-secret'):
                 key('fixture-user','-k','Return');time.sleep(.3);key(secret,'-k','Return')
+            # An older Wayland login remains User.Display=3 while Aqueous is
+            # on active session 5. Resolve the connected compositor, including
+            # when Pearl inherited a stale session ID from the user manager.
+            for discovery,hint,expected,source in (
+                ('compositor-dual','3','5','compositor'),
+                ('process-dual','3','5','process'),
+                ('compositor-manager','5','5','environment'),
+                ('environment-dual','5','5','environment'),
+                ('compositor-foreign','5',None,None),
+                ('compositor-greeter','5',None,None),
+                ('environment-foreign','5',None,None),
+                ('environment-greeter','5',None,None),
+                ('environment-dual','missing',None,None),
+                ('environment-dual','3','3','environment'),
+            ):
+                command(discovery=discovery,restart='org.freedesktop.PolicyKit1')
+                wait_for(lambda:s.run(['busctl','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS'],'status','org.freedesktop.PolicyKit1'],check=False).returncode==0)
+                start=len(records())
+                candidate=s.child('pearl-session-'+discovery+'-'+hint,[args.pearl],G_DEBUG='fatal-warnings',XDG_SESSION_ID=hint)
+                candidate.expect('event=control-ready')
+                if expected is None:
+                    value=wait(lambda v:v['session_error'] is not None)
+                    assert value['session_id']=='' and not value['active'] and not value['authentication']['registered'],value
+                else:
+                    value=wait(lambda v:v['authentication']['registered'])
+                    assert value['session_id']==expected and value['session_source']==source and value['active']==(expected=='5'),value
+                    assert not any(r.get('method')=='GetUser' for r in records()[start:]),records()[start:]
+                    assert any(r.get('event')=='registered' and r.get('session')==expected for r in records()[start:])
+                    command(begin=True)
+                    if expected=='5':
+                        wait(lambda v:v['authentication']['pending'])
+                        command(active=False)
+                        value=wait(lambda v:not v['active'] and not v['authentication']['pending'])
+                        assert value['session_id']=='5',value
+                        command(active=True);wait(lambda v:v['active'])
+                    else:
+                        wait(lambda v:not v['authentication']['pending'])
+                        assert any(r.get('event')=='authentication' and r.get('outcome')=='cancelled' for r in records()[start:])
+                ctl(s,args.ctl,'quit');clean(candidate)
+            checks['compositor-session-overrides-inactive-user-display-and-stale-environment']=True
+            checks['managed-compositor-inherited-session-validated-by-logind']=True
+            checks['foreign-greeter-missing-and-inactive-sessions-cannot-authenticate']=True
+            if args.session_discovery_only:
+                ipc.close();report['status']='passed';print(json.dumps(report,indent=2));return
+            command(discovery='no-pid',restart='org.freedesktop.PolicyKit1')
+            pearl=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');pearl.expect('event=control-ready')
             ready=wait(lambda v:v['active'] and v['authentication']['registered'] and v['delay_inhibitor'] and v['idle_available'])
             assert ready['session_id']=='test' and ready['session_error'] is None
             assert any(r.get('method')=='GetUser' for r in records())

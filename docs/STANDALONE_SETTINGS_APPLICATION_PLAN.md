@@ -1,7 +1,17 @@
 # Standalone Pearl Settings application
 
-Status: proposed implementation plan, September 15, 2026. No application code is
-implemented by this document.
+Status: S1–S5 approved; S6 implementation and automated acceptance passed,
+September 15, 2026. The standalone GTK4 application and backend adapters are Zig.
+Physical-desktop and Orca checks remain pending, recorded separately from automated
+evidence. Final user review is pending.
+
+- [S1 frontend API and complete editor inventory](SETTINGS_FRONTEND_API.md)
+- [S1 implementation, validation and review checkpoint](../artifacts/settings-app/s1/REVIEW.md)
+- [S2 executable, window, validation and screenshots](../artifacts/settings-app/s2/REVIEW.md)
+- [S3 real editors, shared drafts, validation and screenshots](../artifacts/settings-app/s3/REVIEW.md)
+- [S4 sidebar, service flows, Aqueous editors and validation](../artifacts/settings-app/s4/REVIEW.md)
+- [S5 packaging, CLI integration, flyout handoff and validation](../artifacts/settings-app/s5/REVIEW.md)
+- [S6 acceptance, visual comparison and manual validation](../artifacts/settings-app/s6/REVIEW.md)
 
 ## Goal and scope
 
@@ -63,7 +73,7 @@ depend on the flyout migration being finished.
 
 ### Launch and activation
 
-Proposed commands (not implemented yet):
+Direct executable commands and S5 CLI launch integration:
 
 ```sh
 pearl-settings
@@ -328,7 +338,8 @@ including restart, second-launch and application-not-installed failure cases.
 
 ### S6 — Acceptance and visual comparison
 
-Add a proposed `test-settings-app` private-session integration target plus focused
+`test-settings-app` and the complete `test-settings-acceptance` private-session
+integration target are implemented, with focused
 unit tests for routes, frontend protocol and lifecycle state transitions. Adapt
 existing editor tests to find the app's window/probes where the old popup is
 replaced, retaining the original behavioral assertions.

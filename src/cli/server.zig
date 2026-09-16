@@ -179,7 +179,7 @@ const Slot = struct {
         }
         const result = self.owner.handle(self.owner.context, request, alloc) catch |err| {
             try self.failure(alloc, request.id, switch (err) {
-                error.Stale, error.InvalidRegion, error.InvalidPayload, error.InvalidPath, error.SaveFailed, error.Unavailable, error.OutputUnavailable, error.Locked, error.AmbiguousSeat, error.EdgeOccupied, error.InvalidSize, error.InvalidGroups, error.InvalidValue, error.Conflict, error.Busy, error.Unsupported, error.StaleConfirmation, error.NoConfirmation, error.InhibitorUnavailable, error.LockFailed, error.LockerMissing => err,
+                error.Stale, error.InvalidRegion, error.InvalidPayload, error.InvalidPath, error.SaveFailed, error.Unavailable, error.OutputUnavailable, error.Locked, error.AmbiguousSeat, error.EdgeOccupied, error.InvalidSize, error.InvalidGroups, error.InvalidValue, error.Conflict, error.Busy, error.Unsupported, error.StaleConfirmation, error.NoConfirmation, error.InhibitorUnavailable, error.LockFailed, error.LockerMissing, error.SettingsNotInstalled, error.SettingsLaunchFailed => err,
                 else => if (request.op == .preferences_apply and err != error.OutOfMemory) err else error.Internal,
             });
             return;
@@ -197,7 +197,7 @@ const Slot = struct {
         try self.wire.send(try std.fmt.allocPrint(alloc, "{s}\n", .{payload}));
     }
 };
-fn privateDirectory(path: []const u8) !void {
+pub fn privateDirectory(path: []const u8) !void {
     const name = try a.dupeZ(u8, path);
     defer a.free(name);
     if (glib.mkdirWithParents(name, 0o700) != 0) return error.RuntimeDirectory;

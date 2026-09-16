@@ -1,0 +1,250 @@
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "notification", "id": 1}
+{"kind": "notification", "id": 1}
+{"kind": "notification-signal", "signal": "ActionInvoked", "args": [1, "default"]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [1, 2]}
+{"kind": "notification", "id": 2}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [2, 1]}
+{"kind": "notification", "id": 3}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [3, 3]}
+{"kind": "notification", "id": 4}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [4, 3]}
+{"kind": "notification", "id": 5}
+{"kind": "notification", "id": 6}
+{"kind": "notification", "id": 7}
+{"kind": "notification", "id": 8}
+{"kind": "notification", "id": 9}
+{"kind": "notification", "id": 10}
+{"kind": "notification", "id": 11}
+{"kind": "notification", "id": 12}
+{"kind": "notification", "id": 13}
+{"kind": "notification", "id": 14}
+{"kind": "notification", "id": 15}
+{"kind": "notification", "id": 16}
+{"kind": "notification", "id": 17}
+{"kind": "notification", "id": 18}
+{"kind": "notification", "id": 19}
+{"kind": "notification", "id": 20}
+{"kind": "notification", "id": 21}
+{"kind": "notification", "id": 22}
+{"kind": "notification", "id": 23}
+{"kind": "notification", "id": 24}
+{"kind": "notification", "id": 25}
+{"kind": "notification", "id": 26}
+{"kind": "notification", "id": 27}
+{"kind": "notification", "id": 28}
+{"kind": "notification", "id": 29}
+{"kind": "notification", "id": 30}
+{"kind": "notification", "id": 31}
+{"kind": "notification", "id": 32}
+{"kind": "notification", "id": 33}
+{"kind": "notification", "id": 34}
+{"kind": "notification", "id": 35}
+{"kind": "notification", "id": 36}
+{"kind": "notification", "id": 37}
+{"kind": "notification", "id": 38}
+{"kind": "notification", "id": 39}
+{"kind": "notification", "id": 40}
+{"kind": "notification", "id": 41}
+{"kind": "notification", "id": 42}
+{"kind": "notification", "id": 43}
+{"kind": "notification", "id": 44}
+{"kind": "notification", "id": 45}
+{"kind": "notification", "id": 46}
+{"kind": "notification", "id": 47}
+{"kind": "notification", "id": 48}
+{"kind": "notification", "id": 49}
+{"kind": "notification", "id": 50}
+{"kind": "notification", "id": 51}
+{"kind": "notification", "id": 52}
+{"kind": "notification", "id": 53}
+{"kind": "notification", "id": 54}
+{"kind": "notification", "id": 55}
+{"kind": "notification", "id": 56}
+{"kind": "notification", "id": 57}
+{"kind": "notification", "id": 58}
+{"kind": "notification", "id": 59}
+{"kind": "notification", "id": 60}
+{"kind": "notification", "id": 61}
+{"kind": "notification", "id": 62}
+{"kind": "notification", "id": 63}
+{"kind": "notification", "id": 64}
+{"kind": "notification", "id": 65}
+{"kind": "notification", "id": 66}
+{"kind": "notification", "id": 67}
+{"kind": "notification", "id": 68}
+{"kind": "notification", "id": 69}
+{"kind": "notification", "id": 70}
+{"kind": "notification", "id": 71}
+{"kind": "notification", "id": 72}
+{"kind": "notification", "id": 73}
+{"kind": "notification", "id": 74}
+{"kind": "notification", "id": 75}
+{"kind": "notification", "id": 76}
+{"kind": "notification", "id": 77}
+{"kind": "notification", "id": 78}
+{"kind": "notification", "id": 79}
+{"kind": "notification", "id": 80}
+{"kind": "notification", "id": 81}
+{"kind": "notification", "id": 82}
+{"kind": "notification", "id": 83}
+{"kind": "notification", "id": 84}
+{"kind": "notification", "id": 85}
+{"kind": "notification", "id": 86}
+{"kind": "notification", "id": 87}
+{"kind": "notification", "id": 88}
+{"kind": "notification", "id": 89}
+{"kind": "notification", "id": 90}
+{"kind": "notification", "id": 91}
+{"kind": "notification", "id": 92}
+{"kind": "notification", "id": 93}
+{"kind": "notification", "id": 94}
+{"kind": "notification", "id": 95}
+{"kind": "notification", "id": 96}
+{"kind": "notification", "id": 97}
+{"kind": "notification", "id": 98}
+{"kind": "notification", "id": 99}
+{"kind": "notification", "id": 100}
+{"kind": "notification", "id": 101}
+{"kind": "notification", "id": 102}
+{"kind": "notification", "id": 103}
+{"kind": "notification", "id": 104}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [5, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [6, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [7, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [8, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [9, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [10, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [11, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [12, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [13, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [14, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [15, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [16, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [17, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [18, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [19, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [20, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [21, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [22, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [23, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [24, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [25, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [26, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [27, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [28, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [29, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [30, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [31, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [32, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [33, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [34, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [35, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [36, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [37, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [38, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [39, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [40, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [41, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [42, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [43, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [44, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [45, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [46, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [47, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [48, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [49, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [50, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [51, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [52, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [53, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [54, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [55, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [56, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [57, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [58, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [59, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [60, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [61, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [62, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [63, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [64, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [65, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [66, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [67, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [68, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [69, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [70, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [71, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [72, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [73, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [74, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [75, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [76, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [77, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [78, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [79, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [80, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [81, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [82, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [83, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [84, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [85, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [86, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [87, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [88, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [89, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [90, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [91, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [92, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [93, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [94, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [95, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [96, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [97, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [98, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [99, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [100, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [101, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [102, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [103, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [104, 3]}
+{"kind": "notification", "id": 105}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [105, 3]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "PlayPause", "args": []}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "Play", "args": []}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "SetPosition", "args": ["/track/one", 2400000]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "Pause", "args": []}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "SetPosition", "args": ["/track/one", 60000000]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "Next", "args": []}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.kde.StatusNotifierItem", "method": "Activate", "args": [0, 0]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.kde.StatusNotifierItem", "method": "SecondaryActivate", "args": [0, 0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [2]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [4]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 40368054]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 40368416]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}

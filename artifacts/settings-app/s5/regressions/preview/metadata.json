@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "production": false,
+  "checks": {
+    "keep-waits-for-presentation-and-revert-waits-for-hardware": true,
+    "inactive-session-blocks-keep-and-resumes-rollback": true,
+    "restart-reconciles-durable-preview-token": true
+  },
+  "pearl_sha256": "6204b8ff8df6c55ab25798bc43c017bdb931a8fd8e6d2f0f845ebc37137d525c",
+  "compositor_sha256": "0d569a2f27832961b60921f685e87a2f2b06da5c208529fde91b6598c5bde49d"
+}

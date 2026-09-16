@@ -123,6 +123,38 @@ pub fn build(b: *std.Build) void {
     app.step.dependOn(&system_versions.step);
     b.installArtifact(app);
 
+    var settings_app: *std.Build.Step.Compile = undefined;
+    var settings_test_app: *std.Build.Step.Compile = undefined;
+    for ([_]bool{ false, true }) |instrumented| {
+        // Ordinary application: deliberately excludes layer-shell, PulseAudio,
+        // polkit/PAM and shell service initialization dependencies.
+        const sm = b.createModule(.{ .root_source_file = b.path("src/settings_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+        for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "glibunix2", "gobject2", "gdkwayland4", "graphene1", "gdkpixbuf2", "giounix2" }) |name| sm.addImport(name, bindings.module(name));
+        sm.addImport("wayland", native);
+        sm.addAnonymousImport("settings_base_style", .{ .root_source_file = b.path("resources/style.css") });
+        sm.addAnonymousImport("settings_colors", .{ .root_source_file = b.path("resources/settings.css") });
+        sm.addAnonymousImport("settings_layout", .{ .root_source_file = b.path("resources/settings-layout.css") });
+        sm.addAnonymousImport("settings_native", .{ .root_source_file = b.path("resources/gtk-theme.css") });
+
+        sm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+        sm.linkSystemLibrary("wayland-client", .{});
+        configureApp(b, sm, resources, instrumented);
+        sm.strip = release and !instrumented;
+        const exe = b.addExecutable(.{ .name = if (instrumented) "pearl-settings-test" else "pearl-settings", .root_module = sm });
+        const install = b.addInstallArtifact(exe, .{ .dest_dir = .{ .override = .{ .custom = if (instrumented) "test" else "bin" } } });
+        const settings_build = b.step(if (instrumented) "build-settings-test" else "build-settings", "Stage standalone Settings application");
+        settings_build.dependOn(&install.step);
+        if (instrumented) settings_test_app = exe else {
+            settings_app = exe;
+            b.getInstallStep().dependOn(&install.step);
+            for ([_][]const u8{ "applications/org.aqueous.Pearl.Settings.desktop", "icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg", "metainfo/org.aqueous.Pearl.Settings.metainfo.xml" }) |asset| {
+                const resource_install = b.addInstallFile(b.path(b.fmt("packaging/{s}", .{asset})), b.fmt("share/{s}", .{asset}));
+                b.getInstallStep().dependOn(&resource_install.step);
+                settings_build.dependOn(&resource_install.step);
+            }
+        }
+    }
+
     var test_locker: *std.Build.Step.Compile = undefined;
     var production_locker: *std.Build.Step.Compile = undefined;
     for ([_]bool{ false, true }) |instrumented| {
@@ -161,6 +193,46 @@ pub fn build(b: *std.Build) void {
     const ctl = b.addExecutable(.{ .name = "pearlctl", .root_module = ctl_module });
     b.installArtifact(ctl);
 
+    const settings_window_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_app.py", "--settings" });
+    settings_window_test.addArtifactArg(settings_test_app);
+    settings_window_test.addArg("--production");
+    settings_window_test.addArtifactArg(settings_app);
+    settings_window_test.addArg("--pearl");
+    settings_window_test.addArtifactArg(app);
+    settings_window_test.addArg("--ctl");
+    settings_window_test.addArtifactArg(ctl);
+    if (b.args) |args| settings_window_test.addArgs(args);
+    b.step("test-settings-app", "Verify standalone window, process isolation, activation and presentation").dependOn(&settings_window_test.step);
+
+    const settings_appearance = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_appearance.py", "--settings" });
+    settings_appearance.addArtifactArg(settings_test_app);
+    settings_appearance.addArg("--pearl");
+    settings_appearance.addArtifactArg(app);
+    settings_appearance.addArg("--ctl");
+    settings_appearance.addArtifactArg(ctl);
+    settings_appearance.addArg("--spike");
+    settings_appearance.addArtifactArg(spike);
+    if (b.args) |args| settings_appearance.addArgs(args);
+    b.step("test-settings-appearance", "Verify real standalone Appearance editing, shared drafts and save lifecycle").dependOn(&settings_appearance.step);
+
+    const settings_services = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_services.py", "--settings" });
+    settings_services.addArtifactArg(settings_test_app);
+    settings_services.addArg("--pearl");
+    settings_services.addArtifactArg(app);
+    settings_services.addArg("--ctl");
+    settings_services.addArtifactArg(ctl);
+    settings_services.addArg("--spike");
+    settings_services.addArtifactArg(spike);
+    if (b.args) |args| settings_services.addArgs(args);
+    b.step("test-settings-services", "Verify standalone live pages and complete Aqueous editor boundary").dependOn(&settings_services.step);
+
+    const settings_boundary = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_boundary.py", "--pearl" });
+    settings_boundary.addArtifactArg(app);
+    settings_boundary.addArg("--ctl");
+    settings_boundary.addArtifactArg(ctl);
+    if (b.args) |args| settings_boundary.addArgs(args);
+    b.step("test-settings-boundary", "Verify Settings frontend handshake and isolation in private sessions").dependOn(&settings_boundary.step);
+
     const release_tools = b.addSystemCommand(&.{ "python3", "tests/test_release_tools.py" });
     b.step("test-release-tools", "Verify release gates fail closed and source archives are deterministic").dependOn(&release_tools.step);
 
@@ -168,6 +240,8 @@ pub fn build(b: *std.Build) void {
     release_test.addArtifactArg(app);
     release_test.addArg("--ctl");
     release_test.addArtifactArg(ctl);
+    release_test.addArg("--settings");
+    release_test.addArtifactArg(settings_app);
     release_test.addArg("--locker");
     release_test.addArtifactArg(production_locker);
     if (b.args) |args| release_test.addArgs(args);
@@ -197,6 +271,53 @@ pub fn build(b: *std.Build) void {
     test_module.addImport("wayland", native);
     const integration_app = b.addExecutable(.{ .name = "pearl-integration", .root_module = test_module });
     integration_app.step.dependOn(&system_versions.step);
+    const settings_devices = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_devices.py", "--settings" });
+    settings_devices.addArtifactArg(settings_test_app);
+    settings_devices.addArg("--pearl");
+    settings_devices.addArtifactArg(integration_app);
+    settings_devices.addArg("--ctl");
+    settings_devices.addArtifactArg(ctl);
+    settings_devices.addArg("--spike");
+    settings_devices.addArtifactArg(spike);
+    if (b.args) |args| settings_devices.addArgs(args);
+    b.step("test-settings-devices", "Verify standalone audio, power, notifications and media against private services").dependOn(&settings_devices.step);
+
+    const settings_acceptance = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_acceptance.py" });
+    for ([_][]const u8{ "--pearl", "--production-pearl", "--ctl", "--settings", "--production-settings", "--spike", "--locker" }, [_]*std.Build.Step.Compile{ integration_app, app, ctl, settings_test_app, settings_app, spike, production_locker }) |flag, binary| {
+        settings_acceptance.addArg(flag);
+        settings_acceptance.addArtifactArg(binary);
+    }
+    if (b.args) |args| settings_acceptance.addArgs(args);
+    const standalone_acceptance = b.step("test-settings-acceptance", "Run complete standalone Settings acceptance and affected private regressions");
+    standalone_acceptance.dependOn(&b.addRunArtifact(pure).step);
+    standalone_acceptance.dependOn(&settings_acceptance.step);
+
+    const settings_presentation = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_presentation.py", "--settings" });
+    settings_presentation.addArtifactArg(settings_test_app);
+    settings_presentation.addArg("--pearl");
+    settings_presentation.addArtifactArg(integration_app);
+    settings_presentation.addArg("--ctl");
+    settings_presentation.addArtifactArg(ctl);
+    if (b.args) |args| settings_presentation.addArgs(args);
+    b.step("test-settings-presentation", "Verify standalone reference pages, scales, short windows and monitor removal").dependOn(&settings_presentation.step);
+
+    const settings_integration = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_integration.py", "--pearl" });
+    settings_integration.addArtifactArg(integration_app);
+    settings_integration.addArg("--production-pearl");
+    settings_integration.addArtifactArg(app);
+    settings_integration.addArg("--ctl");
+    settings_integration.addArtifactArg(ctl);
+    settings_integration.addArg("--settings");
+    settings_integration.addArtifactArg(settings_test_app);
+    settings_integration.addArg("--production-settings");
+    settings_integration.addArtifactArg(settings_app);
+    settings_integration.addArg("--spike");
+    settings_integration.addArtifactArg(spike);
+    settings_integration.addArg("--locker");
+    settings_integration.addArtifactArg(production_locker);
+    if (b.args) |args| settings_integration.addArgs(args);
+    b.step("test-settings-integration", "Verify staged Settings desktop, CLI and flyout launch integration").dependOn(&settings_integration.step);
+
     const pam_fixture_module = b.createModule(.{ .root_source_file = b.path("tests/fixtures/pam.zig"), .target = target, .optimize = optimize, .link_libc = true });
     pam_fixture_module.addImport("pam", pam_module);
     pam_fixture_module.linkSystemLibrary("pam", .{});
@@ -273,7 +394,7 @@ pub fn build(b: *std.Build) void {
     b.step("test-surfaces", "Verify surfaces, CLI isolation and native blur in private Aqueous").dependOn(&surfaces.step);
 
     const dock = b.addSystemCommand(&.{ "python3", "tests/integration/test_dock_islands.py", "--pearl" });
-    dock.addArtifactArg(app);
+    dock.addArtifactArg(integration_app);
     dock.addArg("--ctl");
     dock.addArtifactArg(ctl);
     if (b.args) |args| dock.addArgs(args);
@@ -357,8 +478,10 @@ pub fn build(b: *std.Build) void {
     b.step("test-aqueous-preview", "Verify presentation, session suspension and durable preview recovery").dependOn(&preview_lifecycle.step);
     const master_ui = b.addSystemCommand(&.{ "python3", "tests/integration/test_master_ui.py", "--pearl" });
     master_ui.addArtifactArg(app);
-    master_ui.addArg("--keyboard-pearl");
-    master_ui.addArtifactArg(integration_app);
+    master_ui.addArg("--settings");
+    master_ui.addArtifactArg(settings_app);
+    master_ui.addArg("--keyboard-settings");
+    master_ui.addArtifactArg(settings_test_app);
     master_ui.addArg("--ctl");
     master_ui.addArtifactArg(ctl);
     if (b.args) |args| master_ui.addArgs(args);

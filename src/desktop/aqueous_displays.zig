@@ -35,7 +35,7 @@ pub fn render(view: anytype, box: *gtk.Box, snapshot: m.Value) !void {
     }
     // These models include disconnected declarations, profile membership and source order.
     try view.inventory(box, snapshot, "display_model", "All declarations: configured offline displays, profiles, policy and precedence");
-    try @import("aqueous_display_editor.zig").render(view, box, snapshot);
+    try @import("aqueous_display_editor.zig").For(@TypeOf(view.*)).render(view, box, snapshot);
 }
 pub fn refreshPlacement(view: anytype) !void {
     const box = view.placement_box orelse return;

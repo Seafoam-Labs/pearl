@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "checks": {
+    "all-eleven-pages-and-complete-aqueous-inventory": true,
+    "five-reference-pages-dark-light-native-narrow-and-large-text": true,
+    "100-125-150-200-percent-all-pages-preserve-draft": true,
+    "short-window-keeps-header-body-and-save-footer-reachable": true,
+    "move-output-disable-and-explicit-recovery-preserve-window-and-draft": true
+  },
+  "binaries": {
+    "settings": "fc142ca09e5d496174ab260534d28f7e62981e199748430069bdbbfec61bd42a",
+    "pearl": "522f96f9159d5284becf109f5013002aa40143be9cf71de875bd6a430d3b5690",
+    "ctl": "4d062a02587ca20dc112d1ba9f93202cb7c3b0f90db2e62914b72e897eeb40cb"
+  },
+  "disabled_output_auto_relocated": false
+}

@@ -237,3 +237,33 @@ failure while retaining other results and prior logs, use
 Do not treat a partial `--targets` run as full release acceptance. See
 [RELEASE.md](RELEASE.md) for packaging, reproduction and manual gates, and
 [MIGRATION.md](MIGRATION.md) for dry-run DMS import and restoration.
+## Standalone Settings acceptance
+
+The normal Settings window and its backend adapters are Zig. Run the complete
+private-session acceptance target with:
+
+```sh
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-settings-acceptance -Doptimize=ReleaseSafe
+```
+
+It runs pure tests and eighteen isolated suites covering the normal window,
+Appearance drafts, frontend protocol, live services, Aqueous editors, AT-SPI,
+packaged launch paths and affected shell regressions. Evidence defaults to
+`artifacts/settings-app/s6/acceptance/`. Pass `-- --jobs 1` for serial execution;
+`-- --resume` reuses passed reports only when source, binary and report hashes
+still match. Production binaries reject the read-only test probes.
+
+Focused checks are `test-settings-app`, `test-settings-presentation` and
+`test-master-ui`. The last now uses the normal application and separate production
+and instrumented Settings binaries, preserving the original keyboard/receipt
+assertions. No host services or configuration are changed by these fixtures.
+
+After presentation passes, generate the offline visual comparison:
+
+```sh
+python3 scripts/settings-visual-review.py
+```
+
+Physical activation, monitor unplug and Orca acceptance use the separate
+[manual checklist](../artifacts/settings-app/s6/MANUAL.md). Private AT-SPI inspection
+is automated evidence and does not substitute for a screen-reader review.

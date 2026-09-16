@@ -1,0 +1,12 @@
+info: event=settings-launch activation_context=false
+info: event=settings-instance-ready session=a2e5d9ba1d5815758b4dcfc6ebfb752f
+info: event=settings-page page=overview
+info: event=settings-page page=sound
+info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
+info: event=settings-connection-unavailable error=Unavailable
+info: event=settings-activation activation_context=false
+info: event=settings-page page=sound
+info: event=settings-activation activation_context=false
+info: event=settings-page page=sound
+info: event=settings-activation activation_context=false
+info: event=settings-page page=sound

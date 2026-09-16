@@ -18,6 +18,8 @@ pub const View = struct {
     arena: std.heap.ArenaAllocator,
     base: model.Preferences = .{},
     revision: u64 = 0,
+    draft_serial: u64 = 0,
+    local_error: ?anyerror = null,
     filling: bool = true,
     mode: *gtk.DropDown,
     variant: *gtk.DropDown,
@@ -219,14 +221,15 @@ pub const View = struct {
         defer self.filling = false;
         _ = self.arena.reset(.retain_capacity);
         const alloc = self.arena.allocator();
-        const json = self.service.draft orelse (std.json.Stringify.valueAlloc(alloc, self.service.prefs(), .{ .whitespace = .indent_2 }) catch "{}");
+        const json = self.service.draft.text orelse (std.json.Stringify.valueAlloc(alloc, self.service.prefs(), .{ .whitespace = .indent_2 }) catch "{}");
         var valid = true;
         self.base = model.parse(alloc, json) catch blk: {
             valid = false;
             break :blk (model.parse(alloc, std.json.Stringify.valueAlloc(alloc, self.service.prefs(), .{}) catch "{}") catch .{});
         };
         for (self.forms) |form| form.as(gtk.Widget).setSensitive(@intFromBool(valid));
-        self.revision = if (self.service.draft != null) self.service.draft_revision else self.service.revision;
+        self.revision = if (self.service.draft.text != null) self.service.draft.base_revision else self.service.revision;
+        self.draft_serial = self.service.draft.revision;
         const p = self.base;
         for (self.entries, [_][]const u8{ p.theme.gtk_name, p.theme.seed, p.wallpaper.path, p.wallpaper.color, p.font, p.bar.groups.left, p.bar.groups.right }) |e, value| e.as(gtk.Editable).setText(alloc.dupeZ(u8, value) catch "");
         self.mode.setSelected(@intFromEnum(p.theme.mode));
@@ -276,7 +279,7 @@ pub const View = struct {
         p.popup.dismiss_outside = self.outside.getActive() != 0;
         const json = std.json.Stringify.valueAlloc(a, p, .{ .whitespace = .indent_2 }) catch return;
         defer a.free(json);
-        self.service.keepDraft(json, self.revision);
+        if (!self.retain(json)) return;
         const z = a.dupeZ(u8, json) catch return;
         defer a.free(z);
         self.filling = true;
@@ -284,15 +287,27 @@ pub const View = struct {
         self.filling = false;
         self.update();
     }
+    fn retain(self: *View, json: []const u8) bool {
+        self.filling = true;
+        defer self.filling = false;
+        self.draft_serial = self.service.keepDraft(json, self.draft_serial, self.revision) catch |err| {
+            self.local_error = err;
+            self.message.setText("Could not retain this edit. The shared draft has not been overwritten; reopen settings to load it.");
+            return false;
+        };
+        self.local_error = null;
+        return true;
+    }
     pub fn update(self: *View) void {
-        if (self.service.draft == null and self.revision != self.service.revision) self.fill();
+        if (self.filling) return;
+        if (self.draft_serial != self.service.draft.revision or (self.service.draft.text == null and self.revision != self.service.revision)) self.fill();
         const busy = self.service.job != null or self.service.pending_reload;
-        const conflict = self.service.draft != null and self.revision != self.service.revision;
+        const conflict = self.service.draft.text != null and self.revision != self.service.revision;
         self.merge_button.as(gtk.Widget).setVisible(@intFromBool(conflict));
         self.merge_button.as(gtk.Widget).setSensitive(@intFromBool(!busy and conflict));
-        self.apply_button.as(gtk.Widget).setSensitive(@intFromBool(!busy and !conflict and self.service.draft != null));
+        self.apply_button.as(gtk.Widget).setSensitive(@intFromBool(!busy and !conflict and self.local_error == null and self.service.draft.text != null));
         var buffer: [256]u8 = undefined;
-        const message = if (busy) "Preparing settings…" else if (conflict) "Settings changed externally. Your draft is retained. Merge independent edits, or review conflicting fields in Advanced." else if (self.service.err) |err| std.fmt.bufPrintZ(&buffer, "Could not apply: {s}. Your draft and working appearance are retained.", .{@errorName(err)}) catch "Could not apply settings." else if (self.service.export_error) |err| std.fmt.bufPrintZ(&buffer, "Settings saved. Export needs attention: {s}", .{@errorName(err)}) catch "Export failed." else if (self.service.draft != null) "Unsaved draft" else "Settings are up to date.";
+        const message = if (busy) "Preparing settings…" else if (conflict) "Settings changed externally. Your draft is retained. Merge independent edits, or review conflicting fields in Advanced." else if (self.service.err) |err| std.fmt.bufPrintZ(&buffer, "Could not apply: {s}. Your draft and working appearance are retained.", .{@errorName(err)}) catch "Could not apply settings." else if (self.service.export_error) |err| std.fmt.bufPrintZ(&buffer, "Settings saved. Export needs attention: {s}", .{@errorName(err)}) catch "Export failed." else if (self.service.draft.text != null) "Unsaved draft" else "Settings are up to date.";
         self.message.setText(message);
     }
     fn edited(_: *gtk.Editable, self: *View) callconv(.c) void {
@@ -330,7 +345,7 @@ pub const View = struct {
             self.message.setText("Draft exceeds 64 KiB. Reduce its size before applying.");
             return;
         }
-        self.service.keepDraft(std.mem.span(json), self.revision);
+        if (!self.retain(std.mem.span(json))) return;
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
         const valid = if (model.parse(arena.allocator(), std.mem.span(json))) |_| true else |_| false;
@@ -339,21 +354,24 @@ pub const View = struct {
     }
     fn switched(_: *gtk.Notebook, _: *gtk.Widget, page_number: c_uint, self: *View) callconv(.c) void {
         if (self.filling or page_number == 2) return;
-        if (self.service.draft) |json| {
+        if (self.service.draft.text) |json| {
             var arena = std.heap.ArenaAllocator.init(a);
             defer arena.deinit();
             if (model.parse(arena.allocator(), json)) |_| self.fill() else |_| self.message.setText("Advanced JSON is invalid. Correct it before using the form.");
         }
     }
     fn applied(_: *gtk.Button, self: *View) callconv(.c) void {
-        const json = self.service.draft orelse return;
-        self.service.apply(json, self.revision) catch |err| {
+        const json = self.service.draft.text orelse return;
+        _ = json;
+        self.service.applyDraft(self.draft_serial, self.revision) catch |err| {
             self.service.err = err;
             self.update();
         };
     }
     fn merged(_: *gtk.Button, self: *View) callconv(.c) void {
-        self.service.mergeDraft() catch |err| {
+        self.filling = true;
+        defer self.filling = false;
+        self.service.mergeDraft(self.draft_serial) catch |err| {
             self.message.setText(if (err == error.MergeConflict) "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it." else "Cannot merge this draft. Correct its JSON and try again.");
             return;
         };
@@ -361,7 +379,14 @@ pub const View = struct {
         self.update();
     }
     fn discarded(_: *gtk.Button, self: *View) callconv(.c) void {
-        self.service.discardDraft();
+        self.filling = true;
+        self.service.discardDraft(self.draft_serial) catch {
+            self.filling = false;
+            self.message.setText("The shared draft changed. Reopen settings before discarding it.");
+            return;
+        };
+        self.filling = false;
+        self.local_error = null;
         self.fill();
         self.update();
     }

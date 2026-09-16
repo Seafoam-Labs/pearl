@@ -1,0 +1,72 @@
+Running window
+Running appearance
+Running boundary
+boundary: passed
+Running services
+window: passed
+Running devices
+appearance: passed
+Running presentation
+devices: passed
+Running master-ui
+services: passed
+Running launch
+launch: passed
+Running preferences
+presentation: passed
+Running audio-power
+master-ui: passed
+Running connectivity
+audio-power: passed
+Running session-services
+session-services: passed
+Running aqueous
+aqueous: passed
+Running preview
+connectivity: passed
+Running desktop
+preview: passed
+Running surfaces
+surfaces: passed
+Running packaging
+desktop: passed
+Running compact-lifecycle
+packaging: passed
+compact-lifecycle: passed
+preferences: passed
+Standalone automated acceptance: passed
+Build Summary: 22/22 steps succeeded; 107/107 tests passed
+test-settings-acceptance success
++- run test 107 pass (107 total) 84ms MaxRSS:12M
+|  +- compile test ReleaseSafe native cached 12ms MaxRSS:53M
++- run python3 success 3m
+   +- compile exe pearl-integration ReleaseSafe native cached 17ms MaxRSS:57M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 15ms MaxRSS:53M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |     +- compile exe zig-wayland-scanner Debug native cached 11ms MaxRSS:53M
+   +- compile exe pearl ReleaseSafe native cached 15ms MaxRSS:56M
+   |  +- run pkg-config (reused)
+   |  +- translate-c (reused)
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+   +- compile exe pearlctl ReleaseSafe native cached 18ms MaxRSS:58M
+   +- compile exe pearl-settings-test ReleaseSafe native cached 18ms MaxRSS:57M
+   |  +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   +- compile exe pearl-settings ReleaseSafe native cached 15ms MaxRSS:56M
+   |  +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   +- compile exe pearl-t00 ReleaseSafe native cached 18ms MaxRSS:58M
+   |  +- run pkg-config (reused)
+   |  +- translate-c (reused)
+   +- compile exe pearl-lock ReleaseSafe native cached 16ms MaxRSS:56M
+      +- translate-c (reused)
+      +- run glib-compile-resources (pearl.gresource) (reused)
+      +- options cached
+      +- translate-c cached 14ms MaxRSS:52M

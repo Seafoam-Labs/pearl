@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "checks": {
+    "direct-launch-without-shell-normal-window": true,
+    "production-excludes-samples-and-shell-agent-dependencies": true,
+    "second-launch-selects-page-and-retains-one-window": true,
+    "generic-launch-strict-validation-and-aqueous-sections": true,
+    "concurrent-launches-single-owner": true,
+    "gio-launcher-token-forwards-and-restores-minimized-window": true,
+    "ordinary-minimize-maximize-reactivation-and-escape": true,
+    "pointer-sidebar-selection-and-external-heading-focus": true,
+    "keyboard-focus-distinct-from-selection": true,
+    "internal-body-focus-and-page-scroll-restoration": true,
+    "committed-material-light-dark-native-gtk": true,
+    "narrow-navigation-fixed-footer-and-escape": true,
+    "large-text-reduced-motion-no-window-width-growth": true,
+    "backend-loss-and-explicit-retry-without-shell-start": true,
+    "ctrl-w-closes-only-frontend-and-removes-instance-endpoint": true,
+    "production-rejects-test-probe": true,
+    "cold-concurrent-launch-race": true,
+    "native-identity-cross-session-denial-on-shared-dbus": true,
+    "frontend-crash-stale-instance-recovery": true
+  },
+  "binaries": {
+    "settings": "11951d76259fcbf756305adb263b3abeb5d3db03ed35a47da3cb547c96f93961",
+    "production": "93f32cdf5eca837652b1b1378669d41741997c5dcc3deb31a9a964a4bb6a6b39",
+    "pearl": "d9cea220b63c04bf36b2ee02b0b7c4ad31b0a61e2bb91b2a31290af85040afa8",
+    "ctl": "547ac0dfba0b83a12b86d8dcbfcd69ff6a6b92913209aacb91120cb5bb17b72e"
+  }
+}

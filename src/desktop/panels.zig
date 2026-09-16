@@ -14,7 +14,7 @@ const focus_state = @import("focus_state.zig");
 const Text = @import("../services/policy.zig").Text;
 
 pub const Control = struct {
-    pub const Task = enum { media, overview, settings, aqueous_settings, close };
+    pub const Task = enum { media, overview, settings, aqueous_settings, full_settings, close };
     pub const Models = struct {
         audio: *@import("../services/audio.zig").Audio,
         power: *@import("../services/power.zig").Power,
@@ -23,6 +23,9 @@ pub const Control = struct {
         lifecycle: *@import("../services/lifecycle.zig").Lifecycle,
         auth: *@import("../services/polkit.zig").Agent,
     };
+    handoff: *gtk.Button,
+    handoff_box: *gtk.Box,
+    handoff_message: *gtk.Label,
     models: Models,
     window: *gtk.Window,
     navigate: *const fn (*anyopaque, navigation.Route) anyerror!void,
@@ -100,7 +103,17 @@ pub const Control = struct {
         stack.setTransitionType(.none);
         stack.as(gtk.Widget).setVexpand(1);
         host.append(stack.as(gtk.Widget));
-        self.* = .{ .models = models, .window = window, .navigate = navigate, .page = initial, .stack = stack, .heading = heading, .header = header.as(gtk.Widget), .heading_focus = heading_box.as(gtk.Widget), .chooser = chooser, .close = close, .layout = layout, .context = context, .action = action, .task = task };
+        const handoff = w.wrappingButton(tr("Open full settings", "Alle Einstellungen öffnen"));
+        const handoff_box = w.column(8);
+        _ = handoff_box.as(object.Object).refSink();
+        focus_state.tag(handoff.as(gtk.Widget), "settings:full", .{});
+        const installed = @import("../settings/launch.zig").available();
+        handoff.as(gtk.Widget).setSensitive(@intFromBool(installed));
+        handoff_box.append(handoff.as(gtk.Widget));
+        const handoff_message = w.label(if (installed) "" else tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert."), "pearl-secondary");
+        handoff_message.as(gtk.Widget).setVisible(@intFromBool(!installed));
+        handoff_box.append(handoff_message.as(gtk.Widget));
+        self.* = .{ .handoff = handoff, .handoff_box = handoff_box, .handoff_message = handoff_message, .models = models, .window = window, .navigate = navigate, .page = initial, .stack = stack, .heading = heading, .header = header.as(gtk.Widget), .heading_focus = heading_box.as(gtk.Widget), .chooser = chooser, .close = close, .layout = layout, .context = context, .action = action, .task = task };
         errdefer self.destroy();
         for (pages, 0..) |page, i| {
             const scroll = gtk.ScrolledWindow.new();
@@ -120,7 +133,15 @@ pub const Control = struct {
         self.queueRestore(.heading);
         self.chooser_signal = object.Object.signals.notify.connect(chooser.as(object.Object), *Control, sectionChanged, self, .{ .detail = "selected" });
         self.close_signal = gtk.Button.signals.clicked.connect(close, *Control, closeClicked, self, .{});
+        _ = gtk.Button.signals.clicked.connect(handoff, *Control, fullSettingsClicked, self, .{});
         return self;
+    }
+    fn fullSettingsClicked(_: *gtk.Button, self: *Control) callconv(.c) void {
+        self.task(self.context, .full_settings);
+    }
+    pub fn launchFailed(self: *Control, err: anyerror) void {
+        self.handoff_message.setText(if (err == error.SettingsNotInstalled) tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert.") else tr("Full settings could not be started. Try again after checking the installation.", "Die Einstellungen konnten nicht gestartet werden. Bitte die Installation prüfen."));
+        self.handoff_message.as(gtk.Widget).setVisible(1);
     }
     pub fn title(page: navigation.Route) [:0]const u8 {
         return tr(page.title(), switch (page) {
@@ -137,6 +158,9 @@ pub const Control = struct {
     }
     fn enterPage(self: *Control) !void {
         const body = self.bodies[index(self.page)];
+        // Share the handoff across pages without imposing fixed footer height on
+        // short outputs. The retained reference survives page-body teardown.
+        defer body.append(self.handoff_box.as(gtk.Widget));
         switch (self.page) {
             .overview => try self.composeOverview(body),
             .sound => self.sound = try services.Sound.create(body, self.models.audio),
@@ -310,6 +334,7 @@ pub const Control = struct {
         if (self.chooser_signal != 0) object.signalHandlerDisconnect(self.chooser.as(object.Object), self.chooser_signal);
         if (self.close_signal != 0) object.signalHandlerDisconnect(self.close.as(object.Object), self.close_signal);
         self.leavePage();
+        self.handoff_box.as(object.Object).unref();
         a.destroy(self);
     }
     pub fn update(self: *Control) void {
@@ -360,7 +385,7 @@ pub const Control = struct {
         for (self.bodies) |box| if (box.as(gtk.Widget).getFirstChild() != null) {
             populated += 1;
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .page = self.page, .heading = std.mem.span(self.heading.getText()), .focus = self.focusName(window), .button = focusedButton(window), .saved_focus = self.focus_ids[index(self.page)].slice(), .restoring = self.restore_tick != 0, .labels = labels.items, .populated_pages = populated, .viewports = self.viewports.len, .panel_width = panel.getAllocatedWidth(), .panel_height = panel.getAllocatedHeight(), .header_height = self.header.getHeight(), .body_width = scroll.as(gtk.Widget).getWidth(), .body_height = scroll.as(gtk.Widget).getHeight(), .scroll = scroll.getVadjustment().getValue(), .scroll_upper = scroll.getVadjustment().getUpper(), .scroll_page_size = scroll.getVadjustment().getPageSize(), .interest = .{ .network = self.models.network.interest.count() != 0, .bluetooth = self.models.bluetooth.interest.count() != 0, .power = self.models.power.panel_open } }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .handoff_available = self.handoff.as(gtk.Widget).getSensitive() != 0, .handoff_error = std.mem.span(self.handoff_message.getText()), .page = self.page, .heading = std.mem.span(self.heading.getText()), .focus = self.focusName(window), .button = focusedButton(window), .saved_focus = self.focus_ids[index(self.page)].slice(), .restoring = self.restore_tick != 0, .labels = labels.items, .populated_pages = populated, .viewports = self.viewports.len, .panel_width = panel.getAllocatedWidth(), .panel_height = panel.getAllocatedHeight(), .header_height = self.header.getHeight(), .body_width = scroll.as(gtk.Widget).getWidth(), .body_height = scroll.as(gtk.Widget).getHeight(), .scroll = scroll.getVadjustment().getValue(), .scroll_upper = scroll.getVadjustment().getUpper(), .scroll_page_size = scroll.getVadjustment().getPageSize(), .interest = .{ .network = self.models.network.interest.count() != 0, .bluetooth = self.models.bluetooth.interest.count() != 0, .power = self.models.power.panel_open } }, .{});
     }
     fn collectLabels(widget: *gtk.Widget, alloc: std.mem.Allocator, labels: *std.ArrayList([]const u8)) !void {
         if (labels.items.len >= 32 or widget.getVisible() == 0 or widget.hasCssClass("pearl-authentication") != 0 or object.ext.cast(gtk.PasswordEntry, widget) != null or object.ext.cast(gtk.Entry, widget) != null) return;

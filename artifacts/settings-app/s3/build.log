@@ -1,0 +1,18 @@
+Build Summary: 14/14 steps succeeded; 103/103 tests passed
+build-settings success
++- install pearl-settings success
+   +- compile exe pearl-settings ReleaseSafe native cached 10s MaxRSS:55M
+      +- run exe zig-wayland-scanner (wayland.zig) cached
+      |  +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:53M
+      +- run glib-compile-resources (pearl.gresource) cached
+      +- options cached
+build-settings-test success
++- install pearl-settings-test success
+   +- compile exe pearl-settings-test ReleaseSafe native cached 6s MaxRSS:54M
+      +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+      +- run glib-compile-resources (pearl.gresource) (reused)
+      +- options cached
+test success
++- run test 103 pass (103 total) 78ms MaxRSS:8M
+   +- compile test ReleaseSafe native cached 10ms MaxRSS:54M
+

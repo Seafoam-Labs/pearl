@@ -1,0 +1,84 @@
+{
+  "optimize": "ReleaseSafe",
+  "pure_tests": 104,
+  "suites": [
+    {
+      "suite": "S4 services/Aqueous",
+      "groups": 22,
+      "status": "passed",
+      "report": "acceptance/report.json"
+    },
+    {
+      "suite": "S4 devices",
+      "groups": 9,
+      "status": "passed",
+      "report": "devices/report.json"
+    },
+    {
+      "suite": "Window",
+      "groups": 19,
+      "status": "passed",
+      "report": "regressions/window/results.json"
+    },
+    {
+      "suite": "Appearance",
+      "groups": 15,
+      "status": "passed",
+      "report": "regressions/appearance/results.json"
+    },
+    {
+      "suite": "Boundary",
+      "groups": 9,
+      "status": "passed",
+      "report": "regressions/boundary/result.json"
+    },
+    {
+      "suite": "Compact lifecycle",
+      "groups": 10,
+      "status": "passed",
+      "report": "regressions/artifacts/settings-navigation/f3/lifecycle/results.json"
+    },
+    {
+      "suite": "Aqueous settings",
+      "groups": 22,
+      "status": "passed",
+      "report": "regressions/artifacts/aqueous-082/integration/metadata.json"
+    },
+    {
+      "suite": "Aqueous preview",
+      "groups": 3,
+      "status": "passed",
+      "report": "regressions/artifacts/aqueous-082/preview/metadata.json"
+    },
+    {
+      "suite": "Services",
+      "groups": 15,
+      "status": "passed",
+      "report": "regressions/artifacts/t07/latest/results.json"
+    },
+    {
+      "suite": "Connectivity",
+      "groups": 27,
+      "status": "passed",
+      "report": "regressions/artifacts/t08/latest/result.json"
+    },
+    {
+      "suite": "Session services",
+      "groups": 18,
+      "status": "passed",
+      "report": "regressions/artifacts/t09/latest/result.json"
+    },
+    {
+      "suite": "Surfaces",
+      "groups": 17,
+      "status": "passed",
+      "report": "regressions/surfaces/results.json"
+    },
+    {
+      "suite": "Desktop",
+      "groups": 15,
+      "status": "passed",
+      "report": "regressions/desktop/results.json"
+    }
+  ]
+}

@@ -1,0 +1,385 @@
+{
+  "status": "failed",
+  "source_sha256": "7d5dd4b1e9501586dc928bf553669e05c584fd49f861fe3faa8c9802d1d3c8e4",
+  "binaries": {
+    "pearl": "522f96f9159d5284becf109f5013002aa40143be9cf71de875bd6a430d3b5690",
+    "production_pearl": "28df1dae76d97f879c4630a2b7218ec9bcde29baa6597abc6ea9d32687a11de8",
+    "ctl": "4d062a02587ca20dc112d1ba9f93202cb7c3b0f90db2e62914b72e897eeb40cb",
+    "settings": "fc142ca09e5d496174ab260534d28f7e62981e199748430069bdbbfec61bd42a",
+    "production_settings": "041f84e36b47688a08b1a7e3517b0a1e7c73e68ec6b7917c5073fc6530f1f747",
+    "spike": "fab730785d239869a0acf18fc7a3d63a0c4586f4b4e29cb39a5eb7c48d1cd5ab",
+    "locker": "d7867a97051eceb7ddcb3d80c78f9a21cb986e485699346bc2ceec923525b7a1"
+  },
+  "suites": {
+    "boundary": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 10.48,
+      "groups": 9,
+      "evidence": "boundary/result.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_settings_boundary.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/boundary"
+      ],
+      "report_sha256": "d1467304891b90b2f0ea6cb4b30111e36181884364ea190dfc1e21637a559012"
+    },
+    "window": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 16.54,
+      "groups": 19,
+      "evidence": "window/results.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_settings_app.py",
+        "--settings",
+        "/home/zoey/Pearl/.zig-cache/o/70ac3a4c69aacccec5a259112213e562/pearl-settings-test",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--production",
+        "/home/zoey/Pearl/.zig-cache/o/9be386d8e55887280bd7558fc134ceea/pearl-settings",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/window"
+      ],
+      "report_sha256": "d652887f3d2a8c27136b88241ac3234943c57eefd4df4e2e7fc830df653326c3"
+    },
+    "appearance": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 32.52,
+      "groups": 15,
+      "evidence": "appearance/results.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_settings_appearance.py",
+        "--settings",
+        "/home/zoey/Pearl/.zig-cache/o/70ac3a4c69aacccec5a259112213e562/pearl-settings-test",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--spike",
+        "/home/zoey/Pearl/.zig-cache/o/a477dd5dbe4e5da89bd37c7b238877f4/pearl-t00",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/appearance"
+      ],
+      "report_sha256": "27bf9924296548100be1570de85530f5f206f7ce6adbc1990524292f5d67f7b9"
+    },
+    "devices": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 16.39,
+      "groups": 9,
+      "evidence": "devices/report.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_settings_devices.py",
+        "--settings",
+        "/home/zoey/Pearl/.zig-cache/o/70ac3a4c69aacccec5a259112213e562/pearl-settings-test",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/b707143c5979eb647221f0f84373969f/pearl-integration",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--spike",
+        "/home/zoey/Pearl/.zig-cache/o/a477dd5dbe4e5da89bd37c7b238877f4/pearl-t00",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/devices"
+      ],
+      "report_sha256": "ac3a89f3757adc49d8ad9b7b5053a90d2c47e0b10a5ea9f3679f412fc752c9f7"
+    },
+    "services": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 32.82,
+      "groups": 25,
+      "evidence": "services/report.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_settings_services.py",
+        "--settings",
+        "/home/zoey/Pearl/.zig-cache/o/70ac3a4c69aacccec5a259112213e562/pearl-settings-test",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--spike",
+        "/home/zoey/Pearl/.zig-cache/o/a477dd5dbe4e5da89bd37c7b238877f4/pearl-t00",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/services"
+      ],
+      "report_sha256": "7d1eb572cb60b9e24fdb19034f37ac6da927f28da0077fe79ac029bc12c848e3"
+    },
+    "launch": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 26.85,
+      "groups": 8,
+      "evidence": "launch/results.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_settings_integration.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/b707143c5979eb647221f0f84373969f/pearl-integration",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--production-pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--settings",
+        "/home/zoey/Pearl/.zig-cache/o/70ac3a4c69aacccec5a259112213e562/pearl-settings-test",
+        "--production-settings",
+        "/home/zoey/Pearl/.zig-cache/o/9be386d8e55887280bd7558fc134ceea/pearl-settings",
+        "--spike",
+        "/home/zoey/Pearl/.zig-cache/o/a477dd5dbe4e5da89bd37c7b238877f4/pearl-t00",
+        "--locker",
+        "/home/zoey/Pearl/.zig-cache/o/1d4c5b0d9867bdc2d1a320693ae657e8/pearl-lock",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/launch"
+      ],
+      "report_sha256": "3986af39f60f1090089a91a1d5bb5f0508f9f7c9f1ca3befc43bb99923d7667b"
+    },
+    "presentation": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 62.51,
+      "groups": 5,
+      "evidence": "presentation/results.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_settings_presentation.py",
+        "--settings",
+        "/home/zoey/Pearl/.zig-cache/o/70ac3a4c69aacccec5a259112213e562/pearl-settings-test",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/b707143c5979eb647221f0f84373969f/pearl-integration",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/presentation"
+      ],
+      "report_sha256": "784d2d5647b88586b7cdbb577e1e0446c0fa7d575b4807dc923afd30e5e06589"
+    },
+    "master-ui": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 67.92,
+      "groups": 10,
+      "evidence": "master-ui/metadata.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_master_ui.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--settings",
+        "/home/zoey/Pearl/.zig-cache/o/9be386d8e55887280bd7558fc134ceea/pearl-settings",
+        "--keyboard-settings",
+        "/home/zoey/Pearl/.zig-cache/o/70ac3a4c69aacccec5a259112213e562/pearl-settings-test",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/master-ui"
+      ],
+      "report_sha256": "25d05a53773afbbd9a19196d5d67ad0fd35df128cee0c2bf7fd7d5fc35e4c10b"
+    },
+    "audio-power": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 30.97,
+      "groups": 15,
+      "evidence": "audio-power/results.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_services.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/b707143c5979eb647221f0f84373969f/pearl-integration",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/audio-power"
+      ],
+      "report_sha256": "8054655ab317a75d74ee1c40d296bc392af58a607c63cd19887e0f06e9da95ef"
+    },
+    "session-services": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 23.1,
+      "groups": 18,
+      "evidence": "session-services/result.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_session_services.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/b707143c5979eb647221f0f84373969f/pearl-integration",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--production-pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--spike",
+        "/home/zoey/Pearl/.zig-cache/o/a477dd5dbe4e5da89bd37c7b238877f4/pearl-t00",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/session-services"
+      ],
+      "report_sha256": "86185f15ddeace23911cd9c00aea6a5cd8f2a543cf4e53de4f05056925a1bc51"
+    },
+    "connectivity": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 59.46,
+      "groups": 27,
+      "evidence": "connectivity/result.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_connectivity.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/b707143c5979eb647221f0f84373969f/pearl-integration",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/connectivity"
+      ],
+      "report_sha256": "24be04def49981c8ead5e16b6fb87ffbcbb80ca15aa2fc6994afacf3aee069e0"
+    },
+    "preview": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.47,
+      "groups": 3,
+      "evidence": "preview/metadata.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_aqueous_preview.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/preview"
+      ],
+      "report_sha256": "b1bdc826a32046caafc58b8d7fdcc9d7f7aeb99543f9efcf2b1a788c3fbca34b"
+    },
+    "aqueous": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 15.79,
+      "groups": 22,
+      "evidence": "aqueous/metadata.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_aqueous_master.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/aqueous"
+      ],
+      "report_sha256": "fe103ba593616007a18475d1cff447c730b6092b6fd0fe0eca87624d36729088"
+    },
+    "desktop": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 18.44,
+      "groups": 15,
+      "evidence": "desktop/results.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_desktop.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/desktop"
+      ],
+      "report_sha256": "48d90b43195be158b8f30268b72a655dd379b6bdf17e2a97d8703fbf08e6995a"
+    },
+    "surfaces": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 16.44,
+      "groups": 17,
+      "evidence": "surfaces/results.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_surfaces.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--spike",
+        "/home/zoey/Pearl/.zig-cache/o/a477dd5dbe4e5da89bd37c7b238877f4/pearl-t00",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/surfaces"
+      ],
+      "report_sha256": "56d264e34d2cc17ec210a1e86d3f3b3af2ebc337b3d670ff83cd7bda2f46d862"
+    },
+    "packaging": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.42,
+      "groups": 2,
+      "evidence": "packaging/metadata.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_release.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/d881d6797210236b5c725bf7f9fce5f5/pearl",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--settings",
+        "/home/zoey/Pearl/.zig-cache/o/9be386d8e55887280bd7558fc134ceea/pearl-settings",
+        "--locker",
+        "/home/zoey/Pearl/.zig-cache/o/1d4c5b0d9867bdc2d1a320693ae657e8/pearl-lock",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/packaging"
+      ],
+      "report_sha256": "3709a637804e3116b8c80794a36d5a93848649d0cbb2e7fcfd13aec243866d47"
+    },
+    "compact-lifecycle": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 15.44,
+      "groups": 10,
+      "evidence": "compact-lifecycle/results.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_settings_lifecycle.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/b707143c5979eb647221f0f84373969f/pearl-integration",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--spike",
+        "/home/zoey/Pearl/.zig-cache/o/a477dd5dbe4e5da89bd37c7b238877f4/pearl-t00",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/compact-lifecycle"
+      ],
+      "report_sha256": "885d54122a77be5ef43ecbaf5e7ee1e4ac870b76bf5d3fb0df4e8bf53dc2cd3e"
+    },
+    "preferences": {
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 133.63,
+      "groups": 24,
+      "evidence": "preferences/metadata.json",
+      "command": [
+        "/usr/bin/python3",
+        "/home/zoey/Pearl/tests/integration/test_preferences.py",
+        "--pearl",
+        "/home/zoey/Pearl/.zig-cache/o/b707143c5979eb647221f0f84373969f/pearl-integration",
+        "--ctl",
+        "/home/zoey/Pearl/.zig-cache/o/afe496a82e3bcc319ab744b23a31ac65/pearlctl",
+        "--output",
+        "/home/zoey/Pearl/artifacts/settings-app/s6/acceptance/preferences"
+      ],
+      "report_sha256": "a7e80eba5785c661bec3ff253f5112d92508dd22b6f5b3bd00d0a81abbcacb8e"
+    }
+  },
+  "manual_acceptance": false,
+  "source_unchanged": false
+}

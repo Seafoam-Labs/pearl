@@ -45,8 +45,9 @@ Network and Bluetooth acquisition does not start scanning or discovery.
 
 ## Standalone transport integration
 
-The future endpoint must associate backend-issued leases with its authenticated
-frontend connection and service. Do not accept an arbitrary numeric token as
+The [Settings frontend API](SETTINGS_FRONTEND_API.md) defines the process boundary.
+S4 binds backend-issued leases to its authenticated
+frontend connection and service. It never accepts an arbitrary numeric token as
 authorization: these tokens identify ownership, not callers. Disconnect releases
 only that connection's leases. Route prompt updates only to their owning frontend,
 and require both connection ownership and prompt serial on answers.
@@ -57,5 +58,11 @@ prompt. Existing immediate service operations retain their validation.
 
 `test-settings-lifecycle` exercises a second owner's interest and operations
 through an integration-build-only fixture. It covers cross-owner denial,
-independent cleanup, lock revocation and stale-token rejection. This verifies the
-backend interface; it does not implement the standalone process or transport.
+independent cleanup, lock revocation and stale-token rejection. S4 `test-settings-services` additionally exercises independent real frontend
+connections, prompt privacy, owned discovery and display-preview rollback.
+
+The normal app uses one connection for Pearl/live pages and another for Aqueous.
+Page changes release the first connection’s leases while retaining the second
+connection’s window-wide preview. Close waits for native rollback acknowledgment.
+Lock or connection loss revokes only the relevant owned work; unlock never
+re-presents the window automatically. Same-page activation preserves interest.

@@ -1,0 +1,30 @@
+{"service": "network", "kind": "agent-registered", "destination": ":1.4"}
+{"service": "bluetooth", "kind": "agent-registered", "destination": ":1.4"}
+{"service": "network", "kind": "agent-registered", "destination": ":1.4"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
+{"service": "network", "kind": "disconnect"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
+{"service": "network", "kind": "disconnect"}
+{"service": "bluetooth", "kind": "StartDiscovery"}
+{"service": "bluetooth", "kind": "StopDiscovery"}
+{"service": "bluetooth", "kind": "pair-started"}
+{"service": "bluetooth", "kind": "pair-rejected"}
+{"service": "bluetooth", "kind": "pair-cancelled"}
+{"service": "bluetooth", "kind": "pair-started"}
+{"service": "bluetooth", "kind": "pair-rejected"}
+{"service": "bluetooth", "kind": "pair-cancelled"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "secret-answer", "accepted": true}
+{"service": "bluetooth", "kind": "pair-started"}
+{"service": "bluetooth", "kind": "pair-accepted"}
+{"service": "bluetooth", "kind": "Connect"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "bluetooth", "kind": "StartDiscovery"}
+{"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
+{"service": "network", "kind": "disconnect"}
+{"service": "bluetooth", "kind": "StopDiscovery"}
+{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
+{"service": "network", "kind": "disconnect"}

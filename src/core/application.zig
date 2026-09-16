@@ -42,6 +42,7 @@ const State = struct {
     aqueous: ?adapter.Client = null,
     surfaces: ?SurfaceManager = null,
     control_server: ?control.Server = null,
+    settings_server: ?@import("../settings/server.zig").Server = null,
     session_source: c_uint = 0,
     identity_source: c_uint = 0,
     logout_source: c_uint = 0,
@@ -96,6 +97,11 @@ const State = struct {
         self.logout_source = 0;
         if (self.identity_source != 0) _ = glib.Source.remove(self.identity_source);
         self.identity_source = 0;
+        if (self.surfaces) |*surfaces| surfaces.settings_observer = null;
+        if (self.settings_server) |*server| {
+            server.deinit();
+            self.settings_server = null;
+        }
         if (self.control_server) |*server| {
             server.deinit();
             self.control_server = null;
@@ -262,6 +268,9 @@ fn sessionChanged(data: ?*anyopaque) callconv(.c) c_int {
         if (client.availability != .ready or !std.mem.eql(u8, &server.session, client.model.session)) {
             server.deinit();
             self.control_server = null;
+            if (self.surfaces) |*surfaces| surfaces.settings_observer = null;
+            if (self.settings_server) |*settings_server| settings_server.deinit();
+            self.settings_server = null;
         }
     }
     if (client.availability == .ready and self.control_server == null) {
@@ -280,9 +289,46 @@ fn sessionChanged(data: ?*anyopaque) callconv(.c) c_int {
             sessionFailed(self, err);
             return 0;
         };
+        self.settings_server = @import("../settings/server.zig").Server.init(std.mem.span(glib.getenv("XDG_RUNTIME_DIR").?), client.model.session, std.mem.span(glib.getenv("WAYLAND_DISPLAY").?)) catch |err| {
+            sessionFailed(self, err);
+            return 0;
+        };
+        self.settings_server.?.appearance_context = self;
+        self.settings_server.?.appearance = settingsAppearance;
+        self.settings_server.?.backend = .{ .service = &self.surfaces.?.preferences, .aqueous = &self.surfaces.?.aqueous_settings, .context = self, .allowed = settingsAllowed, .live = .{ .audio = &self.surfaces.?.audio, .network = &self.surfaces.?.network, .bluetooth = &self.surfaces.?.bluetooth, .power = &self.surfaces.?.power, .session = &self.surfaces.?.session_services, .lifecycle = &self.surfaces.?.lifecycle, .layout = &self.surfaces.?.layout.?, .layout_context = &self.surfaces.?, .layout_rows = @import("../ui/surfaces/manager.zig").Manager.settingsLayoutRows, .layout_action = @import("../ui/surfaces/manager.zig").Manager.settingsLayoutAction } };
+        self.surfaces.?.settings_observer_context = self;
+        self.surfaces.?.settings_observer = settingsServicesChanged;
+        self.settings_server.?.start() catch |err| {
+            sessionFailed(self, err);
+            return 0;
+        };
+        log.info("event=settings-backend-ready session={s}", .{client.model.session});
         log.info("event=control-ready session={s}", .{client.model.session});
     }
+    if (self.settings_server) |*server| server.sessionChanged();
     return 0;
+}
+fn settingsServicesChanged(context: *anyopaque) void {
+    const self: *State = @ptrCast(@alignCast(context));
+    if (self.settings_server) |*server| {
+        server.sessionChanged();
+        @import("../settings/server.zig").Server.preferencesChanged(server);
+    }
+}
+fn settingsAllowed(context: *anyopaque) !void {
+    const self: *State = @ptrCast(@alignCast(context));
+    const client = &self.aqueous.?;
+    const native = self.surfaces.?.effects.display_session orelse return error.Unavailable;
+    if (client.availability != .ready or !std.mem.eql(u8, &native, client.model.session)) return error.Unavailable;
+    const session = client.model.get(.session, "session") orelse return error.Unavailable;
+    const gate = self.surfaces.?.lifecycle.gate;
+    if (session.locked or gate.locked or gate.requesting or gate.preparing) return error.Locked;
+}
+fn settingsAppearance(context: *anyopaque) @import("../settings/appearance.zig").Snapshot {
+    const self: *State = @ptrCast(@alignCast(context));
+    const service = &self.surfaces.?.preferences;
+    const p = service.prefs();
+    return .{ .revision = service.appearance, .mode = p.theme.mode, .variant = p.theme.variant, .gtk_name = p.theme.gtk_name, .font = p.font, .font_size = p.font_size, .density = p.density, .reduced_motion = p.reduced_motion, .palette = if (service.live) |job| job.palette else @import("../theme/theme.zig").dark };
 }
 fn sessionFailed(self: *State, err: anyerror) void {
     self.failed = true;
@@ -385,6 +431,8 @@ fn cleanup(self: *State) void {
         gobject.signalHandlerDisconnect(connection.object, connection.id);
     if (self.session_source != 0) _ = glib.Source.remove(self.session_source);
     if (self.identity_source != 0) _ = glib.Source.remove(self.identity_source);
+    if (self.surfaces) |*surfaces| surfaces.settings_observer = null;
+    if (self.settings_server) |*server| server.deinit();
     if (self.control_server) |*server| server.deinit();
     if (self.surfaces) |*surfaces| surfaces.deinit();
     if (self.gallery) |*gallery| gallery.deinit();

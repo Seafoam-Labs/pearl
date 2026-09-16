@@ -29,7 +29,9 @@ pub const Lifecycle = struct {
     session_id: db.Text(128) = .{},
     session_error: db.Text(256) = .{},
     session_lookup_pending: bool = false,
-    session_from_display: bool = false,
+    session_source: enum { compositor, compositor_environment, environment, process, display } = .process,
+    session_generation: u32 = 0,
+    session_client_generation: ?u64 = null,
     user_path: db.Text(512) = .{},
     can_suspend: bool = false,
     can_hibernate: bool = false,
@@ -85,6 +87,10 @@ pub const Lifecycle = struct {
     }
     pub fn sync(self: *Lifecycle) void {
         const ready = self.client.availability == .ready;
+        if (ready and self.peer.owner.len != 0 and self.session_client_generation != self.client.generation) {
+            self.invalidateSession();
+            self.resolveSession();
+        }
         const locked = if (ready) (if (self.client.model.get(.session, "session")) |s| s.locked else false) else false;
         const changed = self.gate.available != ready or self.gate.locked != locked;
         self.gate.available = ready;
@@ -104,7 +110,8 @@ pub const Lifecycle = struct {
         self.session_path = .{};
         self.session_error = .{};
         self.session_lookup_pending = false;
-        self.session_from_display = false;
+        self.session_generation +%= 1;
+        self.session_client_generation = null;
         self.user_path = .{};
         self.gate.active = false;
         self.gate.sleep_pending = false;
@@ -129,41 +136,102 @@ pub const Lifecycle = struct {
     fn refreshSession(self: *Lifecycle) void {
         if (self.session_path.len == 0) return;
         self.session_lookup_pending = true;
-        self.peer.call(4, self.session_path.z(), "org.freedesktop.DBus.Properties", "GetAll", db.tuple(&.{db.str("org.freedesktop.login1.Session")}), "(a{sv})", 5000, done) catch self.sessionFailed("Could not read the logind session.");
+        self.sessionCall(4, self.session_path.z(), "org.freedesktop.DBus.Properties", "GetAll", db.tuple(&.{db.str("org.freedesktop.login1.Session")}), "(a{sv})") catch self.sessionFailed("Could not read the logind session.");
+    }
+    fn sessionCall(self: *Lifecycle, token: u32, object_path: [:0]const u8, interface: [:0]const u8, method: [:0]const u8, args: ?*glib.Variant, signature: [:0]const u8) !void {
+        try self.peer.call((@as(u64, self.session_generation) << 32) | token, object_path, interface, method, args, signature, 5000, done);
     }
     fn resolveSession(self: *Lifecycle) void {
-        if (self.session_lookup_pending or self.peer.owner.len == 0) return;
+        if (self.session_lookup_pending or self.peer.owner.len == 0 or self.client.availability != .ready) return;
+        self.session_generation +%= 1;
+        self.session_client_generation = self.client.generation;
         self.session_lookup_pending = true;
-        self.session_from_display = false;
-        self.call(1, "GetSessionByPID", db.tuple(&.{glib.Variant.newUint32(@intCast(std.c.getpid()))}), "(o)") catch self.sessionFailed("Could not query logind.");
+        // User.Display can name an older, inactive login on another VT. Bind
+        // to the compositor behind our verified IPC connection first.
+        const pid = self.client.request.wire.peerPid() orelse {
+            self.sessionFailed("Could not identify the connected compositor.");
+            return;
+        };
+        self.session_source = .compositor;
+        self.sessionCall(9, path, iface, "GetSessionByPID", db.tuple(&.{glib.Variant.newUint32(pid)}), "(o)") catch self.sessionFailed("Could not query the compositor's login session.");
+    }
+    fn resolveEnvironmentSession(self: *Lifecycle) void {
+        // UWSM may place both compositor and Pearl outside a login scope.
+        // Treat the inherited ID only as a hint: GetAll still verifies its UID
+        // and login class, and Active still gates every authentication request.
+        // UWSM exports session variables to the compositor's unit specifically,
+        // so Pearl's user service may not inherit them itself.
+        const pid = self.client.request.wire.peerPid() orelse {
+            self.sessionFailed("Could not identify the connected compositor.");
+            return;
+        };
+        const compositor_id = @import("session_environment.zig").read(pid) catch {
+            self.sessionFailed("Could not read the compositor's login session hint.");
+            return;
+        };
+        if (compositor_id) |id| {
+            self.session_source = .compositor_environment;
+            self.sessionCall(10, path, iface, "GetSession", db.tuple(&.{db.str(id.z())}), "(o)") catch self.sessionFailed("Could not query the compositor's inherited login session.");
+            return;
+        }
+        const id: [:0]const u8 = if (glib.getenv("XDG_SESSION_ID")) |v| std.mem.span(v) else "";
+        if (id.len == 0) {
+            self.resolveDisplaySession();
+            return;
+        }
+        if (id.len >= 128) {
+            self.sessionFailed("Invalid inherited login session ID.");
+            return;
+        }
+        self.session_source = .environment;
+        self.sessionCall(10, path, iface, "GetSession", db.tuple(&.{db.str(id)}), "(o)") catch self.sessionFailed("Could not query the inherited login session.");
+    }
+    fn resolveProcessSession(self: *Lifecycle) void {
+        self.session_source = .process;
+        self.sessionCall(1, path, iface, "GetSessionByPID", db.tuple(&.{glib.Variant.newUint32(@intCast(std.c.getpid()))}), "(o)") catch self.sessionFailed("Could not query logind.");
     }
     fn resolveDisplaySession(self: *Lifecycle) void {
-        // User services need not belong to a login session. Ask logind for
-        // this UID's display session; never guess from an environment variable.
-        self.session_from_display = true;
+        // Compatibility fallback when neither compositor, inherited session,
+        // nor Pearl's own process identifies a login session.
+        self.session_source = .display;
         self.session_lookup_pending = true;
-        self.call(7, "GetUser", db.tuple(&.{glib.Variant.newUint32(std.c.getuid())}), "(o)") catch self.sessionFailed("Could not query the logind user.");
+        self.sessionCall(7, path, iface, "GetUser", db.tuple(&.{glib.Variant.newUint32(std.c.getuid())}), "(o)") catch self.sessionFailed("Could not query the logind user.");
     }
-    fn sessionFailed(self: *Lifecycle, reason: []const u8) void {
+    fn invalidateSession(self: *Lifecycle) void {
         self.session_lookup_pending = false;
         self.session_id = .{};
         self.session_path = .{};
         self.gate.active = false;
-        self.session_error.set(reason);
         self.closeDelay();
         self.cancelConfirmation();
         self.rearm();
+    }
+    fn sessionFailed(self: *Lifecycle, reason: []const u8) void {
+        self.invalidateSession();
+        self.session_error.set(reason);
         std.log.warn("event=logind-session-unavailable reason={s}", .{reason});
     }
-    fn done(data: *anyopaque, token: u64, result: ?*glib.Variant, remote_error: ?[]const u8) void {
+    fn done(data: *anyopaque, raw_token: u64, result: ?*glib.Variant, remote_error: ?[]const u8) void {
         const self: *Lifecycle = @ptrCast(@alignCast(data));
+        const token: u32 = @truncate(raw_token);
+        if (token == 1 or token == 4 or token == 7 or token == 8 or token == 9 or token == 10) {
+            if (raw_token >> 32 != self.session_generation or self.session_client_generation != self.client.generation) return;
+        }
         defer {
             self.advance();
             self.changed(self.context);
         }
         const v = result orelse {
+            if (token == 9) {
+                if (std.mem.eql(u8, remote_error orelse "", "org.freedesktop.login1.NoSessionForPID")) self.resolveProcessSession() else self.sessionFailed(remote_error orelse "Compositor session lookup failed.");
+                return;
+            }
+            if (token == 10) {
+                self.sessionFailed(remote_error orelse "Inherited session lookup failed.");
+                return;
+            }
             if (token == 1) {
-                if (std.mem.eql(u8, remote_error orelse "", "org.freedesktop.login1.NoSessionForPID")) self.resolveDisplaySession() else self.sessionFailed(remote_error orelse "Session lookup failed.");
+                if (std.mem.eql(u8, remote_error orelse "", "org.freedesktop.login1.NoSessionForPID")) self.resolveEnvironmentSession() else self.sessionFailed(remote_error orelse "Session lookup failed.");
                 return;
             }
             if (token == 4 or token == 7 or token == 8) {
@@ -182,7 +250,7 @@ pub const Lifecycle = struct {
         const child = if (v.nChildren() > 0) v.getChildValue(0) else null;
         defer if (child) |c| c.unref();
         switch (token) {
-            1 => {
+            1, 9, 10 => {
                 self.session_path.set(std.mem.span(child.?.getString(null)));
                 self.refreshSession();
             },
@@ -194,8 +262,13 @@ pub const Lifecycle = struct {
             4 => {
                 self.session_lookup_pending = false;
                 const class = db.string(child.?, "Class", "s");
-                if (!self.session_from_display and std.mem.eql(u8, class.slice(), "manager")) {
-                    self.resolveDisplaySession();
+                if (self.session_source != .display and std.mem.eql(u8, class.slice(), "manager")) {
+                    switch (self.session_source) {
+                        .compositor => self.resolveProcessSession(),
+                        .process => self.resolveEnvironmentSession(),
+                        .environment, .compositor_environment => self.sessionFailed("Inherited session is a user manager, not a desktop login."),
+                        .display => unreachable,
+                    }
                     return;
                 }
                 const user = db.lookup(child.?, "User", "(uo)") orelse {
@@ -225,7 +298,7 @@ pub const Lifecycle = struct {
             },
             7 => {
                 self.user_path.set(std.mem.span(child.?.getString(null)));
-                self.peer.call(8, self.user_path.z(), "org.freedesktop.DBus.Properties", "Get", db.tuple(&.{ db.str("org.freedesktop.login1.User"), db.str("Display") }), "(v)", 5000, done) catch self.sessionFailed("Could not read the logind display session.");
+                self.sessionCall(8, self.user_path.z(), "org.freedesktop.DBus.Properties", "Get", db.tuple(&.{ db.str("org.freedesktop.login1.User"), db.str("Display") }), "(v)") catch self.sessionFailed("Could not read the logind display session.");
             },
             8 => {
                 const display = child.?.getVariant();
@@ -566,7 +639,7 @@ pub const Lifecycle = struct {
         return 0;
     }
     pub fn status(self: *Lifecycle, alloc: std.mem.Allocator, auth: *@import("polkit.zig").Agent) ![]const u8 {
-        return std.json.Stringify.valueAlloc(alloc, .{ .locker_pid = if (self.locker) |process| process.getIdentifier() else null, .authentication = .{ .registered = auth.registered, .pending = auth.request != null, .identities = auth.identity_count, .waiting = auth.waiting, .err = auth.err }, .available = self.gate.available, .active = self.gate.active, .session_id = self.session_id.slice(), .session_error = if (self.session_error.len != 0) self.session_error.slice() else null, .lock = self.gate, .idle_available = self.idle.notifier != null and self.idle.seat != null, .idle_held = self.idle_held, .on_battery = self.on_battery, .policy = if (self.on_battery) self.config.battery else self.config.ac, .can_lock = self.lock_supported, .can_logout = self.gate.available and self.gate.active and !self.gate.locked and self.client.capabilities.commands, .can_suspend = self.can_suspend and self.delay_fd >= 0 and self.lock_supported, .can_hibernate = self.can_hibernate and self.delay_fd >= 0 and self.lock_supported, .delay_inhibitor = self.delay_fd >= 0, .pending = self.pending, .confirmation = self.confirmation, .busy = self.action_busy or self.query_busy, .err = self.err }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .locker_pid = if (self.locker) |process| process.getIdentifier() else null, .authentication = .{ .registered = auth.registered, .pending = auth.request != null, .identities = auth.identity_count, .waiting = auth.waiting, .err = auth.err }, .available = self.gate.available, .active = self.gate.active, .session_id = self.session_id.slice(), .session_source = if (self.session_id.len != 0) @tagName(self.session_source) else null, .session_error = if (self.session_error.len != 0) self.session_error.slice() else null, .lock = self.gate, .idle_available = self.idle.notifier != null and self.idle.seat != null, .idle_held = self.idle_held, .on_battery = self.on_battery, .policy = if (self.on_battery) self.config.battery else self.config.ac, .can_lock = self.lock_supported, .can_logout = self.gate.available and self.gate.active and !self.gate.locked and self.client.capabilities.commands, .can_suspend = self.can_suspend and self.delay_fd >= 0 and self.lock_supported, .can_hibernate = self.can_hibernate and self.delay_fd >= 0 and self.lock_supported, .delay_inhibitor = self.delay_fd >= 0, .pending = self.pending, .confirmation = self.confirmation, .busy = self.action_busy or self.query_busy, .err = self.err }, .{});
     }
 };
 fn narrow(value: db.Text(512)) db.Text(128) {

@@ -1,0 +1,11 @@
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.051s
+
+OK
+Build Summary: 5/5 steps succeeded; 107/107 tests passed
+test success
++- run test 107 pass (107 total) 79ms MaxRSS:7M
+   +- compile test ReleaseSafe native success 18s MaxRSS:515M
+test-release-tools success
++- run python3 success 101ms

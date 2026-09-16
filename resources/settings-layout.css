@@ -1,0 +1,50 @@
+.settings-window { border-radius: 16px; }
+.settings-window headerbar { min-height: 50px; padding: 0 12px; }
+.settings-brand { font-size: 13px; font-weight: 600; }
+.settings-pearl { font-size: 22px; color: #d0bcff; }
+.settings-nav { padding: 6px 12px 18px; }
+.settings-group { font-size: 0.72em; letter-spacing: 1.4px; margin: 10px 12px 6px; }
+.settings-window button.settings-nav-item { border-radius: 11px; padding: 0 12px; min-height: 44px; }
+.settings-window button.settings-nav-item label { font-weight: normal; }
+.settings-window button.settings-nav-item:focus-visible { outline-offset: -3px; outline-width: 2px; outline-style: solid; }
+.settings-window button { min-height: 26px; }
+.settings-page-header { padding: 24px 30px 20px; }
+.settings-heading { font-size: 2em; font-weight: 500; letter-spacing: -0.6px; }
+.settings-body { padding: 0 30px 24px; }
+.settings-card { border-radius: 16px; padding: 0; }
+.settings-card > label, .settings-card > image { margin: 16px 20px; }
+.settings-card > scale { margin: 0 20px 20px; }
+.settings-form-row { padding: 14px 20px; }
+.settings-form-row flowboxchild { padding: 0; }
+.settings-row-title { font-weight: 500; }
+.settings-window .pearl-secondary { font-size: 0.92em; }
+.settings-window button.settings-value { border-radius: 10px; padding: 6px 12px; }
+.settings-footer { padding: 12px 24px; }
+.settings-footer .pearl-secondary { font-size: 0.86em; }
+.settings-footer .settings-draft-badge { font-size: 0.8em; }
+.settings-status { padding: 0 30px 16px; }
+.settings-window button.settings-category { border-radius: 14px; padding: 18px; }
+.settings-window button.settings-swatch { border-radius: 50%; min-width: 24px; min-height: 24px; padding: 0; }
+.settings-window button.lavender { background: #d0bcff; outline: 2px solid #d0bcff; outline-offset: 3px; }
+.settings-window button.blue { background: #abcaf0; }
+.settings-window button.green { background: #acd6bc; }
+.settings-window button.pink { background: #edb8cd; }
+.settings-wallpaper { margin: 16px 20px 0; border-radius: 12px; background: linear-gradient(155deg, #211a2b 10%, #322441 42%, #9576b5 75%, #54406b); }
+.settings-draft-preview { margin: 16px 20px 0; border-radius: 12px; }
+.settings-window .settings-live-card { padding: 14px 20px; }
+.settings-window .settings-live-card > label { margin: 0; }
+.settings-window .settings-live-card > .pearl-card-title { font-size: 1em; font-weight: 500; }
+.settings-live-actions { margin-top: 8px; }
+.settings-window.settings-narrow .settings-page-header { padding: 18px 16px 16px; }
+.settings-window.settings-narrow .settings-body { padding: 0 16px 18px; }
+.settings-window.settings-narrow .settings-footer { padding: 12px 16px; }
+.settings-window.settings-narrow .settings-status { padding: 0 16px 12px; }
+.settings-window.settings-narrow .settings-form-row { padding: 14px; }
+.settings-window.pearl-compact .settings-body { padding-bottom: 16px; }
+.settings-window.pearl-compact .settings-form-row { padding-top: 10px; padding-bottom: 10px; }
+.settings-window.pearl-reduced-motion * { transition: none; animation: none; }
+.settings-window.pearl-gtk .settings-card { background: alpha(currentColor, 0.04); border: 1px solid alpha(currentColor, 0.12); }
+.settings-window.pearl-gtk .settings-sidebar { background: alpha(currentColor, 0.02); border-right: 1px solid alpha(currentColor, 0.15); }
+.settings-window.pearl-gtk .settings-footer { border-top: 1px solid alpha(currentColor, 0.15); }
+
+.settings-window headerbar button { border-radius: 9px; min-width: 24px; min-height: 24px; padding: 5px; background: transparent; }

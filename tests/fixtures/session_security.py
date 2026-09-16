@@ -8,6 +8,7 @@ assert os.environ['DBUS_SYSTEM_BUS_ADDRESS'].startswith('unix:path=/tmp/pearl-de
 bus=Gio.bus_get_sync(Gio.BusType.SYSTEM,None)
 loop=GLib.MainLoop(); owners={}; registered=None; cookie='fixture-cookie'; inhibited=''; active=True; counter=0; on_battery=False
 discovery=os.environ.get('PEARL_TEST_SESSION_DISCOVERY','direct')
+compositor_pid=int(os.environ.get('PEARL_TEST_COMPOSITOR_PID','0'))
 log=Path(os.environ['PEARL_SECURITY_LOG'])
 def record(event,**fields):
     with log.open('a') as f: f.write(json.dumps(dict(event=event,**fields))+'\n')
@@ -26,10 +27,22 @@ def prepare(value):
 def method(conn,sender,path,iface,name,args,inv):
     global registered,counter
     if name=='GetSessionByPID':
-        record('session-lookup',method=name)
-        if discovery in ('direct','manager'):
+        pid=args.unpack()[0]
+        record('session-lookup',method=name,compositor=pid==compositor_pid)
+        if discovery.startswith('compositor-') and pid==compositor_pid:
+            session='manager' if discovery=='compositor-manager' else '5'
+            inv.return_value(GLib.Variant('(o)',('/org/freedesktop/login1/session/'+session,)))
+        elif discovery=='process-dual' and pid!=compositor_pid:
+            inv.return_value(GLib.Variant('(o)',('/org/freedesktop/login1/session/5',)))
+        elif discovery in ('direct','manager'):
             inv.return_value(GLib.Variant('(o)',('/org/freedesktop/login1/session/'+('manager' if discovery=='manager' else 'test'),)))
         else: inv.return_dbus_error('org.freedesktop.login1.NoSessionForPID','PID belongs to a user service, not a login session')
+    elif name=='GetSession':
+        session=args.unpack()[0]
+        record('session-lookup',method=name,session=session)
+        if session in ('3','5'):
+            inv.return_value(GLib.Variant('(o)',('/org/freedesktop/login1/session/'+session,)))
+        else: inv.return_dbus_error('org.freedesktop.login1.NoSuchSession','No such login session')
     elif name=='GetUser':
         assert args.unpack()[0]==os.getuid()
         record('session-lookup',method=name)
@@ -37,10 +50,16 @@ def method(conn,sender,path,iface,name,args,inv):
     elif name=='Get':
         assert args.unpack()==('org.freedesktop.login1.User','Display')
         display=('', '/') if discovery=='missing' else ('test','/org/freedesktop/login1/session/test')
+        if discovery.startswith('compositor-') or discovery.startswith('environment-'): display=('3','/org/freedesktop/login1/session/3')
         inv.return_value(GLib.Variant('(v)',(GLib.Variant('(so)',display),)))
     elif name.startswith('Can'): inv.return_value(GLib.Variant('(s)',('yes',)))
     elif name=='GetAll':
         values={'OnBattery':GLib.Variant('b',on_battery)} if path=='/org/freedesktop/UPower' else {'Id':GLib.Variant('s','test'),'Active':GLib.Variant('b',active),'Class':GLib.Variant('s','manager' if path.endswith('/manager') else 'greeter' if discovery=='greeter' else 'user'),'User':GLib.Variant('(uo)',(os.getuid()+1 if discovery=='foreign' else os.getuid(),'/org/freedesktop/login1/user/test'))}
+        if path.endswith(('/3','/5')):
+            values['Id']=GLib.Variant('s',path.rsplit('/',1)[1])
+            values['Active']=GLib.Variant('b',active and path.endswith('/5'))
+            if discovery.endswith('-foreign'): values['User']=GLib.Variant('(uo)',(os.getuid()+1,'/org/freedesktop/login1/user/test'))
+            if discovery.endswith('-greeter'): values['Class']=GLib.Variant('s','greeter')
         inv.return_value(GLib.Variant('(a{sv})',(values,)))
     elif name=='Inhibit':
         values=args.unpack(); assert values[0]=='sleep' and values[3]=='delay'
@@ -57,16 +76,18 @@ def method(conn,sender,path,iface,name,args,inv):
         record(name,locked=locked()); prepare(True); inv.return_value(GLib.Variant('()',()))
     elif name in ('PowerOff','Reboot'): record(name); inv.return_value(GLib.Variant('()',()))
     elif name=='RegisterAuthenticationAgent':
-        assert args.unpack()[0]==('unix-session',{'session-id':'test'})
+        session=args.unpack()[0]
+        assert session[0]=='unix-session' and session[1]['session-id'] in ('test','3','5')
         if registered:
             inv.return_dbus_error('org.freedesktop.PolicyKit1.Error.Failed','Agent exists'); return
-        registered=(sender,args.unpack()[2]); record('registered',sender=sender); inv.return_value(GLib.Variant('()',()))
+        registered=(sender,args.unpack()[2]); record('registered',sender=sender,session=session[1]['session-id']); inv.return_value(GLib.Variant('()',()))
     elif name=='UnregisterAuthenticationAgent': registered=None; record('unregistered'); inv.return_value(GLib.Variant('()',()))
     else: inv.return_dbus_error('org.freedesktop.DBus.Error.UnknownMethod','Fixture method unavailable')
 def export(path,xml):
     for iface in Gio.DBusNodeInfo.new_for_xml(xml).interfaces: bus.register_object(path,iface,method,None,None)
 export('/org/freedesktop/login1','''<node><interface name="org.freedesktop.login1.Manager">
 <method name="GetSessionByPID"><arg type="u" direction="in"/><arg type="o" direction="out"/></method>
+<method name="GetSession"><arg type="s" direction="in"/><arg type="o" direction="out"/></method>
 <method name="GetUser"><arg type="u" direction="in"/><arg type="o" direction="out"/></method>
 <method name="CanSuspend"><arg type="s" direction="out"/></method><method name="CanHibernate"><arg type="s" direction="out"/></method>
 <method name="CanPowerOff"><arg type="s" direction="out"/></method><method name="CanReboot"><arg type="s" direction="out"/></method>
@@ -77,6 +98,8 @@ export('/org/freedesktop/login1','''<node><interface name="org.freedesktop.login
 <signal name="PrepareForSleep"><arg type="b"/></signal></interface></node>''')
 export('/org/freedesktop/login1/session/test','''<node><interface name="org.freedesktop.DBus.Properties"><method name="GetAll"><arg type="s" direction="in"/><arg type="a{sv}" direction="out"/></method><signal name="PropertiesChanged"><arg type="s"/><arg type="a{sv}"/><arg type="as"/></signal></interface></node>''')
 export('/org/freedesktop/login1/session/manager','''<node><interface name="org.freedesktop.DBus.Properties"><method name="GetAll"><arg type="s" direction="in"/><arg type="a{sv}" direction="out"/></method></interface></node>''')
+for session in ('3','5'):
+    export('/org/freedesktop/login1/session/'+session,'<node><interface name="org.freedesktop.DBus.Properties"><method name="GetAll"><arg type="s" direction="in"/><arg type="a{sv}" direction="out"/></method></interface></node>')
 export('/org/freedesktop/login1/user/test','''<node><interface name="org.freedesktop.DBus.Properties"><method name="Get"><arg type="s" direction="in"/><arg type="s" direction="in"/><arg type="v" direction="out"/></method></interface></node>''')
 export('/org/freedesktop/PolicyKit1/Authority','''<node><interface name="org.freedesktop.PolicyKit1.Authority"><method name="RegisterAuthenticationAgent"><arg type="(sa{sv})" direction="in"/><arg type="s" direction="in"/><arg type="s" direction="in"/></method><method name="UnregisterAuthenticationAgent"><arg type="(sa{sv})" direction="in"/><arg type="s" direction="in"/></method></interface></node>''')
 export('/org/freedesktop/UPower','<node><interface name="org.freedesktop.DBus.Properties"><method name="GetAll"><arg type="s" direction="in"/><arg type="a{sv}" direction="out"/></method><signal name="PropertiesChanged"><arg type="s"/><arg type="a{sv}"/><arg type="as"/></signal></interface></node>')
@@ -97,6 +120,8 @@ def command(fd,condition):
     if 'prepare' in data: prepare(data['prepare'])
     if 'active' in data:
         active=data['active']; bus.emit_signal(None,'/org/freedesktop/login1/session/test','org.freedesktop.DBus.Properties','PropertiesChanged',GLib.Variant('(sa{sv}as)',('org.freedesktop.login1.Session',{'Active':GLib.Variant('b',active)},[])))
+        for session in ('3','5'):
+            bus.emit_signal(None,'/org/freedesktop/login1/session/'+session,'org.freedesktop.DBus.Properties','PropertiesChanged',GLib.Variant('(sa{sv}as)',('org.freedesktop.login1.Session',{'Active':GLib.Variant('b',active and session=='5')},[])))
     if 'begin' in data:
         assert registered
         identities=[('unix-user',{'uid':GLib.Variant('u',uid)}) for uid in (os.getuid(),65534)]

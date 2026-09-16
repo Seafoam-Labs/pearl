@@ -10,6 +10,8 @@ pub const Transport = struct {
     source: ?*glib.Source = null,
     framer: codec.Framer,
     output: ?[]u8 = null,
+    /// Credential-bearing Settings channels clear owned I/O buffers on release.
+    secure: bool = false,
     offset: usize = 0,
     sent: usize = 0,
     connecting: bool = false,
@@ -33,9 +35,10 @@ pub const Transport = struct {
             s.unref();
         }
         self.socket = null;
-        if (self.output) |p| a.free(p);
+        if (self.output) |p| { if (self.secure) std.crypto.secureZero(u8, p); a.free(p); }
         self.output = null;
         self.offset = 0;
+        if (self.secure) std.crypto.secureZero(u8, self.framer.buffer.items);
         self.framer.reset();
     }
     pub fn open(self: *Transport, path: [:0]const u8) !void {
@@ -75,6 +78,19 @@ pub const Transport = struct {
         self.offset = 0;
         self.sent = 0;
         try self.arm();
+    }
+    /// Kernel identity of the connected, same-user server; never supplied by IPC.
+    pub fn peerPid(self: *Transport) ?u32 {
+        if (self.connecting) return null;
+        const socket = self.socket orelse return null;
+        var err: ?*glib.Error = null;
+        defer if (err) |e| e.free();
+        const credentials = socket.getCredentials(&err) orelse return null;
+        defer credentials.unref();
+        const uid = credentials.getUnixUser(&err);
+        if (!peerAllowed(err == null, uid, std.os.linux.getuid())) return null;
+        const pid = credentials.getUnixPid(&err);
+        return if (err == null and pid > 0) @intCast(pid) else null;
     }
     fn disarm(self: *Transport) void {
         if (self.source) |s| {
@@ -130,6 +146,7 @@ pub const Transport = struct {
                     self.offset += @intCast(count);
                     self.sent += @intCast(count);
                     if (self.offset == p.len) {
+                        if (self.secure) std.crypto.secureZero(u8, p);
                         a.free(p);
                         self.output = null;
                         self.notify(self.context, .sent);
@@ -144,6 +161,7 @@ pub const Transport = struct {
         }
         if (condition.in or condition.hup) {
             var buffer: [16384]u8 = undefined;
+            defer if (self.secure) std.crypto.secureZero(u8, &buffer);
             var budget: usize = 256 * 1024;
             while (budget > 0) {
                 const count = socket.receive(&buffer, buffer.len, null, &err);
@@ -162,6 +180,7 @@ pub const Transport = struct {
                     input = input[read.consumed..];
                     if (read.frame) |frame| self.notify(self.context, .{ .frame = frame });
                     if (self.generation != generation) return;
+                    if (read.frame != null and self.secure) std.crypto.secureZero(u8, self.framer.buffer.items);
                 }
             }
         }

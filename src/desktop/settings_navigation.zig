@@ -46,6 +46,36 @@ pub fn parse(id: []const u8) !Route {
     return std.meta.stringToEnum(Route, id) orelse error.InvalidRoute;
 }
 
+/// Preserve the existing Aqueous editor's section IDs and notebook order.
+pub const aqueous_sections = [_][]const u8{ "appearance", "layouts", "input", "keybinds", "rules", "displays", "advanced" };
+
+pub fn aqueousSectionIndex(id: []const u8) !usize {
+    for (aqueous_sections, 0..) |name, index| if (std.mem.eql(u8, id, name)) return index;
+    return error.UnknownPage;
+}
+
+pub const Target = struct {
+    page: Route = .overview,
+    section: ?[]const u8 = null,
+
+    pub fn validate(self: Target) !void {
+        if (self.section) |section| {
+            if (self.page != .aqueous) return error.InvalidSection;
+            _ = try aqueousSectionIndex(section);
+        }
+    }
+};
+
+test "application targets reuse routes and preserve Aqueous sections" {
+    for (aqueous_sections, 0..) |section, index| {
+        try std.testing.expectEqual(index, try aqueousSectionIndex(section));
+        try (Target{ .page = .aqueous, .section = section }).validate();
+        try std.testing.expectError(error.InvalidSection, (Target{ .page = .appearance, .section = section }).validate());
+    }
+    try (Target{}).validate();
+    try std.testing.expectError(error.UnknownPage, (Target{ .page = .aqueous, .section = "unknown" }).validate());
+}
+
 pub const compact_routes = blk: {
     var count = 0;
     for (std.enums.values(Route)) |route| if (route.isCompact()) {

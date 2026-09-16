@@ -12,6 +12,8 @@ from test_desktop import desktop, keys, entries, FIXTURE
 from test_preferences import settled, apply
 
 
+from compact_editor import open_editor
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pearl', type=Path, required=True)
@@ -142,7 +144,9 @@ def main():
             # Schema uses font_size as a logical point size; all widgets remeasure.
             apply(s,args.ctl,p);time.sleep(.4);capture(s,'enlarged-text')
             for pane,args_ in [('launcher',['launcher','show']),('control',['control-center','show']),('calendar',['calendar','toggle']),('notifications',['notifications','toggle']),('media',['media','toggle']),('tray',['tray','toggle']),('settings',['settings','show']),('aqueous-settings',['aqueous','show']),('clipboard-capture',['clipboard','show'])]:
-                ctl(s,args.ctl,*args_,'--output',oid);time.sleep(.25);capture(s,'large-'+pane,first['connector']);ctl(s,args.ctl,'popup','hide')
+                if pane in ('settings','aqueous-settings'):open_editor(s,args.ctl,aqueous=pane=='aqueous-settings',output=oid)
+                else:ctl(s,args.ctl,*args_,'--output',oid)
+                time.sleep(.25);capture(s,'large-'+pane,first['connector']);ctl(s,args.ctl,'popup','hide')
             checks['dark-light-mixed-scale-and-enlarged-surface-captures']=True
             custom=Path(s.env['XDG_DATA_HOME'])/'themes'/'Pearl-Islands'/'gtk-4.0';custom.mkdir(parents=True)
             (custom/'gtk.css').write_text('.background {background:#184a40;color:#ffffdd;} button {background:#664477;color:white;}')

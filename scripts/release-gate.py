@@ -4,20 +4,22 @@ import argparse, hashlib, json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 MANUAL=('direct-login','uwsm-login','visual-review','physical-displays','physical-security','hardware-services','accessibility','presentation-performance')
-TARGETS={'unit','integration','test-components','test-adapter','test-surfaces','test-desktop','test-services','test-connectivity','test-session-services','test-preferences','test-aqueous-settings','test-capture-master','test-security','test-lock','test-clipboard-capture','test-dock-islands','test-release'}
+TARGETS={'unit','integration','test-components','test-adapter','test-surfaces','test-desktop','test-services','test-connectivity','test-session-services','test-preferences','test-aqueous-settings','test-capture-master','test-security','test-lock','test-clipboard-capture','test-dock-islands','test-settings-boundary','test-settings-app','test-settings-appearance','test-settings-services','test-settings-devices','test-settings-integration','test-settings-presentation','test-release'}
 def read(path):
     try:return json.loads(path.read_text())
     except (OSError,ValueError):return {}
 
 def evaluate(evidence,project=ROOT):
     checks={};package=read(evidence/'package/metadata.json');binary=package.get('binary_sha256',{})
-    checks['package']=package.get('status')=='passed' and set(binary)=={'pearl','pearlctl','pearl-lock'}
+    checks['package']=package.get('status')=='passed' and set(binary)=={'pearl','pearlctl','pearl-lock','pearl-settings'}
     packaged=evidence/'package'/Path(package.get('package','missing')).name
     checks['package-hash']=packaged.is_file() and hashlib.sha256(packaged.read_bytes()).hexdigest()==package.get('sha256')
     functional=read(evidence/'functional/metadata.json');targets=functional.get('targets',{})
     checks['functional']=functional.get('status')=='passed' and functional.get('source_unchanged') is True and TARGETS<=targets.keys() and all(targets[n].get('exit_code')==0 for n in TARGETS if n in targets)
     installed=read(evidence/'functional/test-release/metadata.json').get('binary_sha256',{})
-    checks['tested-production-binaries']=bool(binary) and installed=={'pearl':binary.get('pearl'),'ctl':binary.get('pearlctl'),'locker':binary.get('pearl-lock')}
+    checks['tested-production-binaries']=bool(binary) and installed=={'pearl':binary.get('pearl'),'ctl':binary.get('pearlctl'),'locker':binary.get('pearl-lock'),'settings':binary.get('pearl-settings')}
+    standalone=read(evidence/'functional/test-settings-integration/results.json')
+    checks['standalone-settings']=standalone.get('status')=='passed' and standalone.get('binary_sha256',{}).get('production_settings')==binary.get('pearl-settings') and standalone.get('binary_sha256',{}).get('production_pearl')==binary.get('pearl') and bool(binary)
     performance=read(evidence/'performance/metadata.json')
     checks['performance-soak']=performance.get('status')=='passed' and performance.get('cycles',0)>=1000 and len(performance.get('idle_samples',[]))>=61 and performance.get('pearl_sha256')==binary.get('pearl') and bool(binary) and performance.get('native_preview_revert_cycles',0)>=10 and performance.get('helper_contention_cycles',0)>=10
     repro=read(evidence/'reproducibility/metadata.json');runs=repro.get('runs',[])
@@ -35,7 +37,7 @@ def evaluate(evidence,project=ROOT):
     coverage=read(project/'docs/aqueous-capabilities.json')
     rows=coverage.get('rows',[])
     ui=read(evidence/'ui/metadata.json')
-    checks['master-ui']=ui.get('baseline')==baseline and ui.get('status')=='passed' and ui.get('quick') is False and ui.get('pearl_sha256')==binary.get('pearl') and bool(binary) and all(ui.get('checks',{}).get(k) for k in ('theme-dark','theme-light','theme-gtk-compact','theme-large-text','native-accessibility-names-and-roles','keyboard-rule-entry-and-shared-advanced-draft','custom-shortcut-recorder-cancellation','mixed-scale-display-page','settings-allocation-fits-default-and-large-text'))
+    checks['master-ui']=ui.get('baseline')==baseline and ui.get('status')=='passed' and ui.get('quick') is False and ui.get('pearl_sha256')==binary.get('pearl') and ui.get('settings_sha256')==binary.get('pearl-settings') and bool(binary) and all(ui.get('checks',{}).get(k) for k in ('theme-dark','theme-light','theme-gtk-compact','theme-large-text','native-accessibility-names-and-roles','keyboard-rule-entry-and-shared-advanced-draft','custom-shortcut-recorder-cancellation','mixed-scale-display-page','settings-allocation-fits-default-and-large-text'))
     fixtures=project/'tests/fixtures/aqueous-master';provenance=read(fixtures/'provenance.json')
     checks['contract-fixture-hashes']=provenance.get('revision')==release.get('aqueous_revision') and bool(provenance.get('fixture_sha256')) and all((fixtures/name).is_file() and hashlib.sha256((fixtures/name).read_bytes()).hexdigest()==digest for name,digest in provenance.get('fixture_sha256',{}).items())
     checks['capability-inventory']=coverage.get('inventory_complete') is True and coverage.get('revision')==release.get('aqueous_revision') and len(rows)>=385 and all(all(row.get(key) for key in ('kind','name','source','consumer','entry','test','status')) for row in rows)

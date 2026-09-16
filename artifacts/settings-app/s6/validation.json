@@ -1,0 +1,33 @@
+{
+  "status": "automated-passed-manual-pending",
+  "pure_tests": 107,
+  "release_tool_tests": 5,
+  "integration_suites": 18,
+  "integration_check_groups": 254,
+  "page_layout_checks": 102,
+  "reference_captures": 44,
+  "automated_report": "final/results.json",
+  "source_unchanged_during_acceptance": true,
+  "source_sha256": "609ed087c2fefee4ef714e4dd4e568338d2726482775faf9a5e068a4eb0a2076",
+  "binary_sha256": {
+    "pearl": "522f96f9159d5284becf109f5013002aa40143be9cf71de875bd6a430d3b5690",
+    "production_pearl": "28df1dae76d97f879c4630a2b7218ec9bcde29baa6597abc6ea9d32687a11de8",
+    "ctl": "4d062a02587ca20dc112d1ba9f93202cb7c3b0f90db2e62914b72e897eeb40cb",
+    "settings": "1ebd4ff808c5b82d09a7991fe0df497a31f230809ad4606ce5f7f453d1dae1e6",
+    "production_settings": "2de82fef33f1f05823b72f87f799ce24f37d9107bf8161f4eea9e7c74ec27e90",
+    "spike": "fab730785d239869a0acf18fc7a3d63a0c4586f4b4e29cb39a5eb7c48d1cd5ab",
+    "locker": "d7867a97051eceb7ddcb3d80c78f9a21cb986e485699346bc2ceec923525b7a1"
+  },
+  "checks": {
+    "production_build": true,
+    "zig_format": true,
+    "source_whitespace": true,
+    "python_syntax": true
+  },
+  "manual": {
+    "physical_activation": "pending",
+    "physical_monitor_unplug": "pending",
+    "orca": "pending"
+  },
+  "known_fixture_limit": "Headless output disable preserves compositor window assignment; explicit move recovery and retained draft passed."
+}

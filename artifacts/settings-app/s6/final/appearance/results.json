@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "checks": {
+    "bounded-full-document-invalid-and-empty-retention": true,
+    "partial-transfer-and-digest-failure-never-mutate-draft": true,
+    "shared-cas-and-canonical-operation-deduplication": true,
+    "real-appearance-form-preserves-full-preference-document": true,
+    "invalid-advanced-navigation-close-reopen-without-save": true,
+    "explicit-apply-atomic-save-and-event-driven-theme-refresh": true,
+    "normal-wallpaper-dialog-cancel-select-preview-and-save": true,
+    "image-and-native-theme-failure-retain-draft-and-working-settings": true,
+    "save-failure-retention-and-independent-export-error": true,
+    "external-change-three-way-merge-and-overlapping-conflict": true,
+    "in-flight-apply-cannot-clear-newer-equal-text-draft": true,
+    "lock-denial-hidden-window-and-explicit-unlock-resume": true,
+    "close-flush-reopen-and-explicit-discard": true,
+    "real-light-native-and-narrow-large-text-controls": true,
+    "backend-restart-and-close-failure-never-replay-local-candidate": true
+  },
+  "binaries": {
+    "settings": "1ebd4ff808c5b82d09a7991fe0df497a31f230809ad4606ce5f7f453d1dae1e6",
+    "pearl": "28df1dae76d97f879c4630a2b7218ec9bcde29baa6597abc6ea9d32687a11de8",
+    "ctl": "4d062a02587ca20dc112d1ba9f93202cb7c3b0f90db2e62914b72e897eeb40cb"
+  }
+}

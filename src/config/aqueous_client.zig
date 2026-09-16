@@ -97,9 +97,16 @@ pub const Client = struct {
     review: ?[]u8 = null,
     review_revision: ?u64 = null,
     review_version: u64 = 0,
+    report_version: u64 = 0,
+    jobs: u64 = 0,
+    completed_job: ?u64 = null,
+    completed_error: ?anyerror = null,
     operation_id: [64:0]u8 = @splat(0),
     recording: bool = false,
     poll: c_uint = 0,
+    pub fn canRecord(self: *const Client) bool {
+        return self.can_record(self.context);
+    }
     pub fn rebase(self: *Client) !void {
         if (self.job != null) return error.Busy;
         if (self.unresolved and self.version <= self.uncertain_version) return error.RefreshRequired;
@@ -184,6 +191,15 @@ pub const Client = struct {
         self.revision +%= 1;
         // Discard is not permission to retry an uncertain save.
     }
+    pub fn checkDraft(self: *const Client, expected: u64, version: ?u64) !void {
+        if (expected != self.revision) return error.StaleDraft;
+        if (version) |v| if (v != self.version) return error.Conflict;
+    }
+    pub fn keepDraftExpected(self: *Client, bytes: []const u8, expected: u64, version: u64) !void {
+        try self.checkDraft(expected, version);
+        try self.keepDraft(bytes);
+        self.changed(self.context);
+    }
     pub fn keepDraft(self: *Client, bytes: []const u8) !void {
         if (self.job) |j| j.choice.store(2, .release);
         if (bytes.len > model.max_request) return error.RequestTooLarge;
@@ -200,33 +216,12 @@ pub const Client = struct {
         self.revision +%= 1;
     }
     pub fn emptyDraft(self: *Client, alloc: std.mem.Allocator) ![]u8 {
-        return std.json.Stringify.valueAlloc(alloc, .{ .protocol = @as(u32, 1), .expected_generation = model.str(model.get(self.baseValue(), "generation")), .changes = [_]struct {}{}, .raw_files = struct {}{} }, .{ .whitespace = .indent_2 });
+        return @import("aqueous_draft.zig").empty(alloc, self.baseValue());
     }
     pub fn editField(self: *Client, id: []const u8, value_: model.Value) !void {
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
-        const alloc = arena.allocator();
-        var v = try model.parse(alloc, self.draft orelse try self.emptyDraft(alloc), model.max_request);
-        const f = model.field(self.baseValue(), id) orelse return error.UnknownField;
-        if (model.get(model.get(v, "raw_files"), model.str(model.get(f, "file"))) != .null) return error.ConflictingEdits;
-        if (v != .object) return error.InvalidRequest;
-        var changes = model.get(v, "changes");
-        if (changes != .array) return error.InvalidRequest;
-        var found = false;
-        for (changes.array.items) |*c| if (std.mem.eql(u8, model.str(model.get(c.*, "id")), id)) {
-            try c.object.put(alloc, "value", value_);
-            found = true;
-            break;
-        };
-        if (!found) {
-            var change: model.Value = .{ .object = .empty };
-            try change.object.put(alloc, "id", .{ .string = id });
-            try change.object.put(alloc, "value", value_);
-            try changes.array.append(change);
-        }
-        try v.object.put(alloc, "changes", changes);
-        const json = try std.json.Stringify.valueAlloc(alloc, v, .{ .whitespace = .indent_2 });
-        try self.keepDraft(json);
+        try self.keepDraft(try @import("aqueous_draft.zig").field(arena.allocator(), self.baseValue(), self.draft, id, value_));
     }
     pub fn begin(self: *Client, op: Operation) !void {
         if (!self.running or self.job != null or self.reload_ticket != null) return error.Busy;
@@ -257,6 +252,7 @@ pub const Client = struct {
                 j.reviewed_digest = try alloc.dupe(u8, try contract.hex(prior, "candidate_digest", 64));
             }
         }
+        self.jobs +|= 1;
         self.job = j;
         self.err = null;
         self.detail = @splat(0);
@@ -611,6 +607,9 @@ pub const Client = struct {
             if (self.revision == j.revision and !j.reconciled and refreshed and j.operation_resolved) self.discard();
             self.reload_state = if (j.reconciled or !j.reload_reported) .unknown else if (j.reload_applied) .applied else .failed;
         } else if (j.reverted) self.outcome = if (j.invalidated) .invalidated else .reverted else if (j.failure != null) self.outcome = .failed else if (j.op == .refresh) self.outcome = .loaded else self.outcome = .validated;
+        self.report_version +|= 1;
+        self.completed_job = self.jobs;
+        self.completed_error = j.failure;
         j.destroy();
         self.changed(self.context);
     }

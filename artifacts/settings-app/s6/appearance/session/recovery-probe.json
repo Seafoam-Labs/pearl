@@ -1,0 +1,382 @@
+{
+  "links": [
+    {
+      "page": "overview",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 99,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "network",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 201,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "bluetooth",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 261,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "sound",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 363,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "power",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 423,
+        "width": 195,
+        "height": 80
+      }
+    },
+    {
+      "page": "appearance",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 547,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "bar",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 607,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "notifications",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 667,
+        "width": 195,
+        "height": 80
+      }
+    },
+    {
+      "page": "session",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 791,
+        "width": 195,
+        "height": 80
+      }
+    },
+    {
+      "page": "aqueous",
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 873,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "advanced",
+      "active": true,
+      "bounds": {
+        "x": 12,
+        "y": 933,
+        "width": 195,
+        "height": 58
+      }
+    }
+  ],
+  "controls": [
+    {
+      "field": "mode",
+      "focused": false,
+      "bounds": {
+        "x": 769,
+        "y": 340,
+        "width": 221,
+        "height": 47
+      }
+    },
+    {
+      "field": "variant",
+      "focused": false,
+      "bounds": {
+        "x": 888,
+        "y": 408,
+        "width": 102,
+        "height": 47
+      }
+    },
+    {
+      "field": "source",
+      "focused": false,
+      "bounds": {
+        "x": 250,
+        "y": 330,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "gtk_name",
+      "focused": false,
+      "bounds": {
+        "x": 235,
+        "y": 319,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "seed",
+      "focused": false,
+      "bounds": {
+        "x": 235,
+        "y": 319,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "wallpaper",
+      "focused": false,
+      "bounds": {
+        "x": 624,
+        "y": 654,
+        "width": 366,
+        "height": 55
+      }
+    },
+    {
+      "field": "color",
+      "focused": false,
+      "bounds": {
+        "x": 624,
+        "y": 856,
+        "width": 366,
+        "height": 55
+      }
+    },
+    {
+      "field": "font",
+      "focused": false,
+      "bounds": {
+        "x": 624,
+        "y": 947,
+        "width": 366,
+        "height": 55
+      }
+    },
+    {
+      "field": "font_size",
+      "focused": false,
+      "bounds": {
+        "x": 848,
+        "y": 1023,
+        "width": 142,
+        "height": 47
+      }
+    },
+    {
+      "field": "fit",
+      "focused": false,
+      "bounds": {
+        "x": 746,
+        "y": 788,
+        "width": 244,
+        "height": 47
+      }
+    },
+    {
+      "field": "density",
+      "focused": false,
+      "bounds": {
+        "x": 800,
+        "y": 1091,
+        "width": 190,
+        "height": 47
+      }
+    },
+    {
+      "field": "motion",
+      "focused": false,
+      "bounds": {
+        "x": 940,
+        "y": 1161,
+        "width": 50,
+        "height": 28
+      }
+    },
+    {
+      "field": "choose",
+      "focused": false,
+      "bounds": {
+        "x": 784,
+        "y": 719,
+        "width": 206,
+        "height": 47
+      }
+    },
+    {
+      "field": "raw",
+      "focused": false,
+      "bounds": {
+        "x": 220,
+        "y": 330,
+        "width": 820,
+        "height": 239
+      }
+    },
+    {
+      "field": "apply",
+      "focused": false,
+      "bounds": {
+        "x": 845,
+        "y": 701,
+        "width": 171,
+        "height": 47
+      }
+    },
+    {
+      "field": "discard",
+      "focused": false,
+      "bounds": {
+        "x": 726,
+        "y": 701,
+        "width": 111,
+        "height": 47
+      }
+    },
+    {
+      "field": "merge",
+      "focused": false,
+      "bounds": {
+        "x": 518,
+        "y": 701,
+        "width": 200,
+        "height": 47
+      }
+    }
+  ],
+  "editor": {
+    "ready": true,
+    "online": true,
+    "recovery": true,
+    "state": {
+      "revision": 1,
+      "draft_revision": 0,
+      "base_revision": 1,
+      "dirty": false,
+      "valid": true,
+      "conflict": false,
+      "busy": false,
+      "locked": false
+    },
+    "local": true,
+    "upload": "none",
+    "download": "none",
+    "error_code": "",
+    "validation": "",
+    "export_error": "",
+    "bytes": 16,
+    "sha256": "f3cf682b95829c99e9eac4f3c56090311399789333c8e9e7a383cc6a32888abe",
+    "picker": false,
+    "preview": false,
+    "close_dialog": false,
+    "can_apply": false,
+    "can_edit": false
+  },
+  "service_prompt": false,
+  "aqueous": {
+    "online": true,
+    "ready": true,
+    "recovery": false,
+    "dirty": false,
+    "version": 3,
+    "revision": 0,
+    "backend_version": 1,
+    "mode": "idle",
+    "phase": 0,
+    "busy": false,
+    "receipt_pending": false,
+    "recording": false,
+    "fields": 221,
+    "err": null,
+    "detail": ""
+  },
+  "widget_focus": "GtkBox",
+  "focus": "heading",
+  "active": false,
+  "key_events": 17,
+  "header_bounds": {
+    "x": 250,
+    "y": 75,
+    "width": 760,
+    "height": 66
+  },
+  "footer_bounds": {
+    "x": 220,
+    "y": 569,
+    "width": 820,
+    "height": 191
+  },
+  "body_bounds": {
+    "x": 220,
+    "y": 330,
+    "width": 820,
+    "height": 239
+  },
+  "retry_bounds": {
+    "x": 237,
+    "y": 246,
+    "width": 26,
+    "height": 14
+  },
+  "sections_bounds": {
+    "x": 895,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  "pid": 1297188,
+  "page": "advanced",
+  "section": null,
+  "connected": true,
+  "fixture": false,
+  "narrow": false,
+  "width": 1040,
+  "height": 760,
+  "visible": true,
+  "scroll": 0,
+  "heading": "Advanced",
+  "status": "Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict.",
+  "style": "dark",
+  "appearance_updates": 4,
+  "activation_contexts": 0,
+  "sections_open": false
+}

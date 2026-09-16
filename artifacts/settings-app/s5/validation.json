@@ -1,0 +1,103 @@
+{
+  "status": "passed",
+  "optimize": "ReleaseSafe",
+  "pure_tests": 107,
+  "release_tool_tests": 5,
+  "suites": {
+    "settings-integration": {
+      "status": "passed",
+      "groups": 8,
+      "report": "integration/results.json",
+      "binary_sha256": {
+        "production_pearl": "28df1dae76d97f879c4630a2b7218ec9bcde29baa6597abc6ea9d32687a11de8",
+        "production_settings": "03c2074a84b89c941d7f8e417425601f4a2cb2730e7c62bccdef0385312c6364",
+        "ctl": "4d062a02587ca20dc112d1ba9f93202cb7c3b0f90db2e62914b72e897eeb40cb"
+      }
+    },
+    "staged-install": {
+      "status": "passed",
+      "groups": 2,
+      "report": "install/metadata.json",
+      "binary_sha256": {
+        "pearl": "28df1dae76d97f879c4630a2b7218ec9bcde29baa6597abc6ea9d32687a11de8",
+        "ctl": "4d062a02587ca20dc112d1ba9f93202cb7c3b0f90db2e62914b72e897eeb40cb",
+        "locker": "d7867a97051eceb7ddcb3d80c78f9a21cb986e485699346bc2ceec923525b7a1",
+        "settings": "03c2074a84b89c941d7f8e417425601f4a2cb2730e7c62bccdef0385312c6364"
+      }
+    },
+    "preferences": {
+      "status": "passed",
+      "groups": 24,
+      "report": "regressions/preferences/metadata.json",
+      "binary_sha256": {
+        "pearl_sha256": "6ce5996dfc3f069ae1773740914fa5847cc0b2ff896d215b15c81342a74dc085",
+        "ctl_sha256": "e0666a3e24494b892567232edaf0efdfbee1e02a875e83e1fa37b44ec7711591"
+      }
+    },
+    "dock": {
+      "status": "passed",
+      "groups": 17,
+      "report": "regressions/dock/report.json",
+      "binary_sha256": {
+        "pearl_sha256": "ec1af77e9774e5de6aa0f935f6412e4f1e93ee85746e444e989ee4bf22f9a557",
+        "ctl_sha256": "c4e8d774624253500f18ba035cf04bf94ae13f90cabcc16d18aee98ff2870f0b"
+      }
+    },
+    "lifecycle": {
+      "status": "passed",
+      "groups": 10,
+      "report": "regressions/lifecycle/results.json",
+      "binary_sha256": {
+        "pearl_sha256": "522f96f9159d5284becf109f5013002aa40143be9cf71de875bd6a430d3b5690",
+        "ctl_sha256": "4d062a02587ca20dc112d1ba9f93202cb7c3b0f90db2e62914b72e897eeb40cb"
+      }
+    },
+    "aqueous": {
+      "status": "passed",
+      "groups": 22,
+      "report": "regressions/aqueous/metadata.json",
+      "binary_sha256": {
+        "pearl_sha256": "6204b8ff8df6c55ab25798bc43c017bdb931a8fd8e6d2f0f845ebc37137d525c"
+      }
+    },
+    "preview": {
+      "status": "passed",
+      "groups": 3,
+      "report": "regressions/preview/metadata.json",
+      "binary_sha256": {
+        "pearl_sha256": "6204b8ff8df6c55ab25798bc43c017bdb931a8fd8e6d2f0f845ebc37137d525c",
+        "compositor_sha256": "0d569a2f27832961b60921f685e87a2f2b06da5c208529fde91b6598c5bde49d"
+      }
+    },
+    "compact-accessibility": {
+      "status": "passed",
+      "groups": 8,
+      "report": "regressions/accessibility/results.json",
+      "binary_sha256": {
+        "pearl_sha256": "7eb6be2a1459a84a0bc22c0fcf57dbd4cb77174cc4824df75fc77df5c3212a67",
+        "ctl_sha256": "c4e8d774624253500f18ba035cf04bf94ae13f90cabcc16d18aee98ff2870f0b"
+      }
+    }
+  },
+  "compact_presentation": {
+    "page_checks": 175,
+    "configurations": 35
+  },
+  "built_binaries": {
+    "pearl": "28df1dae76d97f879c4630a2b7218ec9bcde29baa6597abc6ea9d32687a11de8",
+    "pearlctl": "4d062a02587ca20dc112d1ba9f93202cb7c3b0f90db2e62914b72e897eeb40cb",
+    "pearl-lock": "d7867a97051eceb7ddcb3d80c78f9a21cb986e485699346bc2ceec923525b7a1",
+    "pearl-settings": "03c2074a84b89c941d7f8e417425601f4a2cb2730e7c62bccdef0385312c6364"
+  },
+  "checks": {
+    "production_build": true,
+    "appstream": true,
+    "source_whitespace": true,
+    "shell_python_syntax": true,
+    "zig_format": true
+  },
+  "limitations": [
+    "desktop-file-validate reports the three supported Aqueous desktop names as unregistered OnlyShowIn values; actual GIO discovery passes.",
+    "Full standalone S6 acceptance, legacy master UI suite migration and release signoff are pending."
+  ]
+}

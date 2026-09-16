@@ -24,7 +24,7 @@ def main():
         ('connectivity', 'test_connectivity.py', args.pearl, [], 'result.json'),
         ('session-services', 'test_session_services.py', args.pearl, ['--production-pearl', args.production_pearl, '--spike', args.spike], 'result.json'),
     ]
-    result = dict(status='running', suites={}, binaries={name:hashlib.sha256(getattr(args,name).read_bytes()).hexdigest() for name in ('pearl','production_pearl','ctl','spike')}, bar_keyboard_policy='none: user-approved', handoff='deferred: standalone application/launch contract not implemented', concurrent_frontend='backend owner fixture; standalone process not implemented')
+    result = dict(status='running', suites={}, binaries={name:hashlib.sha256(getattr(args,name).read_bytes()).hexdigest() for name in ('pearl','production_pearl','ctl','spike')}, bar_keyboard_policy='none: user-approved', handoff='covered by test-settings-integration', concurrent_frontend='real frontend covered by test-settings-services; owner fixtures here')
     try:
         for name, script, binary, extra, filename in suites:
             print('Settings acceptance: '+name, flush=True)

@@ -34,6 +34,8 @@ pub const Request = struct {
     offset: ?u16 = null,
     output: ?[]const u8 = null,
     page: ?settings_navigation.Route = null,
+    section: ?[]const u8 = null,
+    activation: ?[]const u8 = null,
     edge: ?Edge = null,
     size: ?u16 = null,
     text: ?[]const u8 = null,
@@ -43,6 +45,9 @@ pub const Request = struct {
     right: ?[]const u8 = null,
     layout: ?[]const u8 = null,
 
+    pub fn settingsTarget(self: Request) settings_navigation.Target {
+        return .{ .page = if (self.op == .aqueous_show) .aqueous else self.page orelse .overview, .section = if (self.op == .aqueous_show) self.section orelse self.text else self.section };
+    }
     pub fn compactPage(self: Request) settings_navigation.Route {
         return self.page orelse .overview;
     }
@@ -100,9 +105,10 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
             .capture_windows => &[_][]const u8{"offset"},
             .capture_region => &[_][]const u8{ "output", "text" },
             .lifecycle_action => &[_][]const u8{ "text", "generation" },
-            .aqueous_show => &[_][]const u8{ "output", "text" },
+            .aqueous_show => &[_][]const u8{ "output", "text", "section", "activation" },
+            .settings_show => &[_][]const u8{ "output", "page", "section", "activation" },
             .control_show, .control_toggle => &[_][]const u8{ "output", "page" },
-            .settings_show, .notifications_toggle, .media_toggle, .tray_toggle, .popup_show, .popup_toggle, .launcher_show, .launcher_toggle, .calendar_toggle, .overview_toggle, .layout_get => &[_][]const u8{"output"},
+            .notifications_toggle, .media_toggle, .tray_toggle, .popup_show, .popup_toggle, .launcher_show, .launcher_toggle, .calendar_toggle, .overview_toggle, .layout_get => &[_][]const u8{"output"},
             .bar_set, .frame_set => &[_][]const u8{ "output", "edge", "size" },
             .osd_show => &[_][]const u8{ "output", "text", "duration_ms" },
             .bar_groups => &[_][]const u8{ "output", "left", "center", "right" },
@@ -128,7 +134,15 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     if (r.output) |id| if (id.len == 0 or id.len > 1024 or std.mem.indexOfScalar(u8, id, 0) != null) return error.InvalidRequest;
     if (value.object.contains("page")) {
         const page = r.page orelse return error.InvalidRequest;
-        if (!page.isCompact()) return error.InvalidRequest;
+        if (r.op != .settings_show and !page.isCompact()) return error.InvalidRequest;
+    }
+    if (r.op == .settings_show or r.op == .aqueous_show) {
+        if (r.section != null and r.text != null) return error.InvalidRequest;
+        if (value.object.contains("text") and r.text == null) return error.InvalidRequest;
+        r.settingsTarget().validate() catch return error.InvalidRequest;
+        if (value.object.contains("section") and r.section == null) return error.InvalidRequest;
+        if (value.object.contains("activation") and r.activation == null) return error.InvalidRequest;
+        if (r.activation) |token| if (token.len == 0 or token.len > 4096 or std.mem.indexOfScalar(u8, token, 0) != null) return error.InvalidRequest;
     }
     switch (r.op) {
         .dock_pin, .dock_unpin => {
@@ -295,12 +309,37 @@ test "wire compact pages reject malformed, duplicate, app-only and unrelated fie
         "\"op\":\"control_show\",\"page\":\"sound\",\"page\":\"network\"}",
         "\"op\":\"control_show\",\"page\":\"sound\",\"output\":\"\"}",
         "\"op\":\"control_show\",\"page\":\"sound\",\"extra\":true}",
-        "\"op\":\"settings_show\",\"page\":\"sound\"}",
         "\"op\":\"popup_show\",\"page\":\"overview\"}",
         "\"op\":\"status\",\"page\":null}",
     }) |suffix| {
         if (parse(a, try std.mem.concat(a, u8, &.{ prefix, suffix }))) |_| return error.AcceptedInvalidPage else |_| {}
     }
+}
+
+test "standalone launch wire rejects null and malformed activation or section fields" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const prefix = "{\"pearl\":1,\"id\":\"7\",\"session\":\"0123456789abcdef0123456789abcdef\",\"display\":\"/private/wayland-1\",";
+    for ([_][]const u8{
+        "\"op\":\"settings_show\",\"section\":null}",
+        "\"op\":\"settings_show\",\"activation\":null}",
+        "\"op\":\"settings_show\",\"activation\":\"\"}",
+        "\"op\":\"settings_show\",\"activation\":\"a\\u0000b\"}",
+        "\"op\":\"settings_show\",\"page\":\"aqueous\",\"section\":\"unknown\"}",
+        "\"op\":\"aqueous_show\",\"text\":null}",
+        "\"op\":\"aqueous_show\",\"text\":\"input\",\"section\":\"input\"}",
+        "\"op\":\"control_show\",\"activation\":\"token\"}",
+    }) |suffix| {
+        if (parse(a, try std.mem.concat(a, u8, &.{ prefix, suffix }))) |_| return error.AcceptedInvalidLaunch else |_| {}
+    }
+    var token: [4097]u8 = @splat('a');
+    var request: Request = .{ .op = .settings_show, .session = "0123456789abcdef0123456789abcdef", .display = "/private/wayland-1", .page = .aqueous, .section = "displays", .activation = token[0..4096] };
+    const decoded = try parse(a, try std.json.Stringify.valueAlloc(a, request, .{ .emit_null_optional_fields = false }));
+    try t.expectEqualStrings("displays", decoded.settingsTarget().section.?);
+    request.activation = &token;
+    try t.expectError(error.InvalidRequest, parse(a, try std.json.Stringify.valueAlloc(a, request, .{ .emit_null_optional_fields = false })));
 }
 
 test "control fields have operation-specific bounds and endpoint identity is normalized" {

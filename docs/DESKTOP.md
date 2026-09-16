@@ -38,8 +38,18 @@ Compact page IDs are `overview` (default), `sound`, `network`, `bluetooth` and
 `power`. Invalid IDs are rejected before changing the flyout.
 `pearlctl status` reports the selected route as `popup.page`; task popups use
 `null`. This command always means the shell-owned compact flyout. The standalone
-`pearl-settings` application and its launch handoff remain a separate deliverable;
-all existing compact controls work without it.
+`pearl-settings` application has an independent normal-window lifecycle.
+**Open full settings** carries the current route and available activation context;
+a successful process launch dismisses the flyout to release keyboard input.
+Missing installations disable the link with an explanation. A dispatch failure
+keeps the flyout open with feedback. All existing compact controls work without it.
+
+`pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION]` and
+`pearlctl aqueous show [--section SECTION]` dispatch the fixed matching executable
+directly from the verified backend. Repeated launches activate its existing window.
+Legacy `--output ID` is validated but normal application placement belongs to the
+compositor. The menu/dock use `org.aqueous.Pearl.Settings.desktop` and its installed
+icon (Git packages use `org.aqueous.Pearl.Git.Settings.desktop`).
 
 Bar service buttons expose an action name and a current-status description to
 assistive technology. Selected headings are announced; inactive page controls are

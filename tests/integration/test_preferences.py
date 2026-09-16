@@ -22,6 +22,8 @@ def apply(s,b,p,expected_error=None):
 def external(path,p):
     temp=path.with_suffix('.new');temp.write_text(json.dumps(p) if isinstance(p,dict) else p);temp.replace(path)
 
+from compact_editor import open_editor
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pearl',type=Path,required=True);parser.add_argument('--ctl',type=Path,required=True)
@@ -37,7 +39,7 @@ def main():
             v=settled(s,args.ctl);assert v['appearance']==1 and v['err'] is None,v
             path=Path(v['path']);assert not path.exists();assert path.with_name('last-good.json').exists()
             p=v['preferences'];output=status(s,args.ctl)['outputs'][0]
-            ctl(s,args.ctl,'settings','show');time.sleep(.5);capture(s,'settings-static-dark',output['connector'])
+            open_editor(s,args.ctl);time.sleep(.5);capture(s,'settings-static-dark',output['connector'])
             focus_target(s,app,'settings-wallpaper-choose');key(s,'-k','space');time.sleep(.5)
             capture(s,'wallpaper-picker',output['connector'])
             key(s,'-k','Escape')
@@ -55,7 +57,7 @@ def main():
             assert path.read_bytes()==before and not state(s,args.ctl)['draft_dirty']
             key(s,'-k','space');time.sleep(.5);ctl(s,args.ctl,'popup','hide')
             assert status(s,args.ctl)['popup'] is None and app.proc.poll() is None
-            ctl(s,args.ctl,'settings','show');time.sleep(.3)
+            open_editor(s,args.ctl);time.sleep(.3)
             focus_target(s,app,'settings-wallpaper-choose');key(s,'-k','space');time.sleep(.5);key(s,'-k','Escape')
             checks['wallpaper-picker-selection-cancel-save-and-parent-close']=True
             # Every accepted selection switches to Cover, including when the
@@ -100,7 +102,7 @@ def main():
             ctl(s,args.ctl,'popup','hide');time.sleep(.3)
             pixels=capture(s,'large-wallpaper',output['connector'])
             assert pixels.getpixel((10,200))==(171,150,211)
-            ctl(s,args.ctl,'settings','show');time.sleep(.3)
+            open_editor(s,args.ctl);time.sleep(.3)
             invalid=s.base/'invalid.png';invalid.write_bytes(b'not an image')
             bad=copy.deepcopy(p);bad['wallpaper']['path']=str(invalid)
             v=apply(s,args.ctl,bad,'InvalidImage');assert v['preferences']==p
@@ -136,7 +138,7 @@ def main():
             ctl(s,args.ctl,'popup','hide');assert state(s,args.ctl)['draft_dirty']
             before=state(s,args.ctl);p['density']='compact';external(path,p)
             wait_for(lambda:state(s,args.ctl)['revision']>before['revision']);settled(s,args.ctl)
-            ctl(s,args.ctl,'settings','show');time.sleep(.2)
+            open_editor(s,args.ctl);time.sleep(.2)
             assert state(s,args.ctl)['draft_revision']<state(s,args.ctl)['revision']
             focus_target(s,app,'settings-merge');key(s,'-k','space')
             assert state(s,args.ctl)['draft_revision']==state(s,args.ctl)['revision']
