@@ -43,16 +43,19 @@ it is compiled out of production.
 The separate [greeter PKGBUILD](../packaging/arch-greeter/PKGBUILD) builds
 `pearl-greeter-git` independently of the desktop shell. From
 `packaging/arch-greeter`, run `makepkg -si`. Installation creates the default
-`/etc/pearl/greeter.json` (UWSM allowed) and `/etc/pearl/greetd.toml`, provisions
+`/etc/pearl/greeter.json` (UWSM allowed) and replaces `/etc/greetd/config.toml`, provisions
 the greeter account/directories, and selects `pearl-greeter.service` for the next
-boot without restarting the current desktop. Existing configuration edits survive
-upgrades through pacman's backup handling.
+boot without restarting the current desktop. Appearance configuration edits survive
+upgrades through pacman's backup handling; install/upgrade hooks reinstall Pearl's
+greetd configuration on VT7.
 
 Before installation, `/etc/greetd/config.toml` is copied to
-`/etc/greetd/config.toml.bak` if it exists and no backup exists yet. This service
-uses its own greetd config, preserving `/etc/greetd/config.toml`.
+`/etc/greetd/config.toml.bak` if it exists and no backup exists yet. The hook then
+replaces the standard config with `/usr/share/pearl-greeter/greetd.toml`.
+Both the packaged service and a direct greetd invocation use `/etc/greetd/config.toml`.
 The package saves the previous display-manager selection/default target and
 restores them on removal unless the administrator has since changed the selection.
+Removal also restores the `.bak` when the config still matches Pearl's template.
 Run `sudo /usr/lib/pearl/pearl-greeter-setup restore` to restore it earlier.
 See [package setup and recovery](../packaging/arch-greeter/README.md) for details.
 

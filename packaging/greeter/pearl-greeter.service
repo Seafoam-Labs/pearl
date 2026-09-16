@@ -7,7 +7,7 @@ StartLimitBurst=5
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/greetd --config /etc/pearl/greetd.toml
+ExecStart=/usr/bin/greetd --config /etc/greetd/config.toml
 IgnoreSIGPIPE=no
 SendSIGHUP=yes
 TimeoutStopSec=30s

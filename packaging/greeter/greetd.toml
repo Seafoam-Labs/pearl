@@ -1,4 +1,4 @@
-# Pearl's private greetd configuration; /etc/greetd/config.toml is preserved.
+# Installed as /etc/greetd/config.toml; the previous config is saved as config.toml.bak.
 [terminal]
 vt = 7
 switch = true

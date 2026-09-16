@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -77,14 +78,29 @@ class Setup:
             self.systemctl('enable', state['previous_unit'])
         self.replace_link('display-manager.service', state['display_manager'])
         self.replace_link('default.target', state['default_target'])
+        self.restore_config()
         self.state.unlink()
+
+    def restore_config(self):
+        config = self.root/'etc/greetd/config.toml'
+        template = self.root/'usr/share/pearl-greeter/greetd.toml'
+        backup = config.with_name('config.toml.bak')
+        # Restore our replacement, preserving a later administrator configuration.
+        if not config.is_file() or not template.is_file() or config.read_bytes() != template.read_bytes():
+            return
+        if backup.is_file():
+            shutil.copy2(backup, config)
+        else:
+            config.unlink()
 
     def restore(self):
         if not self.state.exists():
+            self.restore_config()
             print('No previous Pearl Greeter setup to restore.')
             return
         current = self.target('display-manager.service')
         if not current or Path(current).name != UNIT:
+            self.restore_config()
             print('Display-manager selection has changed; preserving the current setup.')
             return
         state = json.loads(self.state.read_text())
