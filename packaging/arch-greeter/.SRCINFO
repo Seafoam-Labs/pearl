@@ -1,7 +1,7 @@
 pkgbase = pearl-greeter-git
 	pkgdesc = GTK greetd login screen hosted by ordinary Aqueous (Git version)
 	pkgver = 1.0.0rc2.r36.g45f341b
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/Seafoam-Labs/pearl
 	install = pearl-greeter.install
 	arch = x86_64
@@ -10,7 +10,7 @@ pkgbase = pearl-greeter-git
 	makedepends = zig=0.16.0
 	makedepends = pkgconf
 	depends = greetd>=0.10.3
-	depends = aqueous
+	depends = aqueous>0.7
 	depends = uwsm>=0.26.7
 	depends = dbus
 	depends = polkit

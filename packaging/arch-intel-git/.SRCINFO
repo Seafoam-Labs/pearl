@@ -1,9 +1,9 @@
-pkgbase = pearl-git
-	pkgdesc = GTK desktop shell exclusively for Aqueous (Git version)
+pkgbase = pearl-intel-git
+	pkgdesc = GTK desktop shell exclusively for Aqueous (Intel baseline, Git version)
 	pkgver = 1.0.0rc2.r22.ga002d24
-	pkgrel = 5
+	pkgrel = 2
 	url = https://github.com/Seafoam-Labs/pearl
-	install = pearl-git.install
+	install = pearl-intel-git.install
 	arch = x86_64
 	license = LicenseRef-Pearl-Unlicensed
 	makedepends = git
@@ -34,10 +34,12 @@ pkgbase = pearl-git
 	optdepends = bluez>=5.87: Bluetooth controls
 	optdepends = upower>=1.91.4: battery status
 	optdepends = power-profiles-daemon>=0.30: power profiles
+	provides = pearl-git=1.0.0rc2.r22.ga002d24
+	conflicts = pearl-git
 	options = !strip
 	options = !debug
 	backup = etc/pam.d/pearl-git
 	source = pearl::git+https://github.com/Seafoam-Labs/pearl.git
 	sha256sums = SKIP
 
-pkgname = pearl-git
+pkgname = pearl-intel-git

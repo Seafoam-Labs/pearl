@@ -134,8 +134,11 @@ The compositor enables Vulkan effects against the recorded patched wlroots;
 private tests select pixman or Vulkan explicitly. Production tool hashes, helper
 0.8.0 and dependency hash are separate entries in `packaging/release.json`.
 Test-only crash/fault binaries are labelled separately and never packaged.
-Aqueous's installed package currently provides only the unversioned
-virtual `aqueous`, so the package depends on that name. A package version alone
+Pearl (release, Git and Intel Git) and Pearl Greeter require `aqueous>0.7`.
+Alternative packages must advertise a versioned provider such as
+`provides=("aqueous=$pkgver")`; an unversioned `provides=('aqueous')` does not
+satisfy this dependency. This is a strict package-version comparison against
+`0.7`, not an exclusion of the entire `0.7.x` series. A package version alone
 cannot certify Pearl's native protocol and settings capabilities. Startup/runtime
 handshakes and the [compatibility contract](COMPATIBILITY.md) enforce them. Review
 that contract when updating Aqueous. Optional missing services leave dependent
