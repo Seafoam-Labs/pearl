@@ -44,12 +44,17 @@ The install hook selects `pearl-greeter.service` as `display-manager.service` an
 sets `graphical.target` for the next boot. The greeter uses VT7, with a matching
 `getty@tty7.service` conflict; VT1 remains available for console login. This service runs
 `greetd --config /etc/greetd/config.toml`.
-The previous display-manager selection and default target are recorded under
+Enabled `ly.service` and `ly@…service` instances are also disabled, since Ly can
+start through `multi-user.target` without owning `display-manager.service`.
+The previous display-manager selection, enabled Ly services and default target are recorded under
 `/var/lib/pearl-greeter-setup/previous.json`. No service is stopped, started or
 restarted by the package. Reboot when ready to use the new greeter.
 
 Upgrades provision any missing account directories and reinstall the Pearl greetd
 configuration, preserving the original `.bak`. They do not change service selection.
+If an earlier installation left Ly enabled alongside Pearl, run the setup command
+below after updating, then reboot. It disables the remaining Ly boot entries even
+when Pearl is already selected and preserves the original restore backup.
 A masked/custom display-manager
 unit causes automatic setup to report a failure instead of replacing that unit;
 after resolving it, rerun:
@@ -58,7 +63,7 @@ after resolving it, rerun:
 sudo /usr/lib/pearl/pearl-greeter-setup enable
 ```
 
-Restore the previous boot setup with:
+Restore the previous boot setup, including previously enabled Ly services, with:
 
 ```sh
 sudo /usr/lib/pearl/pearl-greeter-setup restore

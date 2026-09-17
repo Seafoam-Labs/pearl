@@ -43,9 +43,31 @@ class Setup:
             temporary.symlink_to(target)
             temporary.replace(path)
 
+    def enabled_ly_units(self):
+        # Ly can boot through multi-user.target without a display-manager alias.
+        # list-unit-files only lists the template, losing non-default instances.
+        candidates = {'ly.service'}
+        for directory in ('etc/systemd/system', 'usr/local/lib/systemd/system',
+                          'usr/lib/systemd/system'):
+            for path in (self.root/directory).rglob('ly@*.service'):
+                if path.is_symlink() and path.name != 'ly@.service':
+                    candidates.add(path.name)
+        return sorted(unit for unit in candidates
+                      if self.systemctl('is-enabled', unit, check=False).stdout.strip() == 'enabled')
+
+    def save_state(self, state):
+        self.state.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        self.state.parent.chmod(0o700)
+        temporary = self.state.with_suffix('.tmp')
+        temporary.write_text(json.dumps(state, indent=2)+'\n')
+        temporary.chmod(0o600)
+        temporary.replace(self.state)
+
     def enable(self):
         previous = self.target('display-manager.service')
-        if previous and Path(previous).name == UNIT:
+        already_selected = bool(previous and Path(previous).name == UNIT)
+        ly_units = self.enabled_ly_units()
+        if already_selected and not ly_units:
             print('Pearl Greeter is already selected.')
             return
         default = self.target('default.target')
@@ -53,32 +75,47 @@ class Setup:
         if previous_unit and (not previous_unit.endswith('.service') or previous_unit.startswith('-')):
             raise RuntimeError('Unrecognized previous display-manager service')
         enabled = bool(previous_unit and self.systemctl('is-enabled', previous_unit, check=False).stdout.strip() == 'enabled')
-        state = dict(display_manager=previous, previous_unit=previous_unit,
-                     previous_enabled=enabled, default_target=default)
-        self.state.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-        self.state.parent.chmod(0o700)
-        temporary = self.state.with_suffix('.tmp')
-        temporary.write_text(json.dumps(state, indent=2)+'\n')
-        temporary.chmod(0o600)
-        temporary.replace(self.state)
+        current = dict(display_manager=previous, previous_unit=previous_unit,
+                       previous_enabled=enabled, default_target=default,
+                       ly_units=ly_units)
+        saved = json.loads(self.state.read_text()) if self.state.exists() else None
+        # Repair earlier installs without replacing their original rollback state.
+        state = dict(saved) if already_selected and saved is not None else dict(current)
+        state['ly_units'] = sorted(set(state.get('ly_units', [])) | set(ly_units))
+        self.save_state(state)
         try:
-            if previous_unit:
-                self.systemctl('disable', previous_unit)
-            self.systemctl('enable', '--force', UNIT)
-            self.systemctl('set-default', 'graphical.target')
+            if ly_units:
+                self.systemctl('disable', *ly_units)
+                # Disabling an instance can leave Ly's autovt alias behind,
+                # allowing logind to launch it again when that VT is selected.
+                for unit in ly_units:
+                    if unit.startswith('ly@'):
+                        alias = self.system/unit.replace('ly@', 'autovt@', 1)
+                        if alias.is_symlink() and Path(os.readlink(alias)).name in ('ly@.service', unit):
+                            alias.unlink()
+            if not already_selected:
+                if previous_unit and previous_unit not in ly_units:
+                    self.systemctl('disable', previous_unit)
+                self.systemctl('enable', '--force', UNIT)
+                self.systemctl('set-default', 'graphical.target')
         except (subprocess.CalledProcessError, OSError):
-            self.restore_state(state)
+            self.restore_state(current, restore_config=not already_selected)
+            if saved is not None:
+                self.save_state(saved)
             raise
         print('Pearl Greeter selected for next boot; previous setup saved in '+str(self.state))
 
-    def restore_state(self, state):
+    def restore_state(self, state, restore_config=True):
         # Offline unit-file operations only: never stop a running login session.
         self.systemctl('disable', UNIT)
         if state['previous_enabled']:
             self.systemctl('enable', state['previous_unit'])
+        if state.get('ly_units'):
+            self.systemctl('enable', *state['ly_units'])
         self.replace_link('display-manager.service', state['display_manager'])
         self.replace_link('default.target', state['default_target'])
-        self.restore_config()
+        if restore_config:
+            self.restore_config()
         self.state.unlink()
 
     def restore_config(self):

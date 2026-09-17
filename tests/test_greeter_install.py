@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('greeter_setup', ROOT/'packaging/greeter/setup.py')
@@ -26,6 +27,8 @@ class GreeterInstall(unittest.TestCase):
         units.mkdir(parents=True)
         (units/'pearl-greeter.service').write_text((ROOT/'packaging/greeter/pearl-greeter.service').read_text())
         (units/'old.service').write_text('[Service]\nExecStart=/usr/bin/true\n[Install]\nAlias=display-manager.service\nWantedBy=graphical.target\n')
+        (units/'ly@.service').write_text('[Service]\nExecStart=/usr/bin/true\n[Install]\nAlias=autovt@.service\nWantedBy=multi-user.target\nDefaultInstance=tty2\n')
+        (units/'ly.service').write_text('[Service]\nExecStart=/usr/bin/true\n[Install]\nWantedBy=multi-user.target\n')
         for name in ('graphical.target', 'multi-user.target', 'rescue.target'):
             (units/name).write_text('[Unit]\nDescription=Fixture target\n')
         self.install = setup.Setup(self.root)
@@ -137,6 +140,104 @@ class GreeterInstall(unittest.TestCase):
         self.install.restore()
         self.assertIsNone(self.install.target('display-manager.service'))
         self.assertIsNone(self.install.target('default.target'))
+
+    def test_ly_without_display_manager_alias_is_disabled_and_restored(self):
+        for unit in ('ly.service', 'ly@tty2.service', 'ly@tty7.service'):
+            with self.subTest(unit=unit):
+                self.install.systemctl('enable', unit)
+                self.install.enable()
+                self.assertEqual(Path(self.install.target('display-manager.service')).name, setup.UNIT)
+                self.assertFalse((self.system/'multi-user.target.wants'/unit).is_symlink())
+                if unit.startswith('ly@'):
+                    self.assertFalse((self.system/unit.replace('ly@', 'autovt@')).is_symlink())
+                self.install.restore()
+                self.assertTrue((self.system/'multi-user.target.wants'/unit).is_symlink())
+                self.assertIsNone(self.install.target('display-manager.service'))
+                self.install.systemctl('disable', unit)
+
+    def test_all_enabled_ly_instances_are_restored_alongside_previous_manager(self):
+        self.old_manager()
+        units = ('ly@tty2.service', 'ly@tty7.service')
+        self.install.systemctl('enable', *units)
+        self.install.enable()
+        for unit in units:
+            self.assertFalse((self.system/'multi-user.target.wants'/unit).is_symlink())
+        self.install.restore()
+        for unit in units:
+            self.assertTrue((self.system/'multi-user.target.wants'/unit).is_symlink())
+        self.assertEqual(Path(self.install.target('display-manager.service')).name, 'old.service')
+
+    def test_repeat_enable_repairs_ly_and_preserves_original_backup(self):
+        self.old_manager()
+        self.install.enable()
+        original = json.loads(self.install.state.read_text())
+        self.install.systemctl('enable', 'ly@tty2.service')
+        self.install.enable()
+        self.assertFalse((self.system/'multi-user.target.wants/ly@tty2.service').is_symlink())
+        repaired = json.loads(self.install.state.read_text())
+        for key in ('display_manager', 'previous_unit', 'previous_enabled', 'default_target'):
+            self.assertEqual(repaired[key], original[key])
+        self.install.enable()
+        self.install.restore()
+        self.assertTrue((self.system/'multi-user.target.wants/ly@tty2.service').is_symlink())
+        self.assertEqual(Path(self.install.target('display-manager.service')).name, 'old.service')
+
+    def test_failed_activation_restores_ly(self):
+        self.install.systemctl('enable', 'ly@tty2.service')
+        (self.system/setup.UNIT).symlink_to('/dev/null')
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.install.enable()
+        self.assertTrue((self.system/'multi-user.target.wants/ly@tty2.service').is_symlink())
+        self.assertIsNone(self.install.target('display-manager.service'))
+
+    def test_disabled_ly_is_not_enabled_by_restore(self):
+        self.install.enable()
+        self.install.restore()
+        self.assertFalse((self.system/'multi-user.target.wants/ly.service').is_symlink())
+        self.assertFalse((self.system/'multi-user.target.wants/ly@tty2.service').is_symlink())
+
+    def test_repair_of_legacy_state_preserves_original_backup(self):
+        self.old_manager()
+        self.install.enable()
+        state = json.loads(self.install.state.read_text())
+        del state['ly_units']
+        self.install.state.write_text(json.dumps(state))
+        self.install.systemctl('enable', 'ly@tty7.service')
+        self.install.enable()
+        self.install.restore()
+        self.assertTrue((self.system/'multi-user.target.wants/ly@tty7.service').is_symlink())
+        self.assertEqual(Path(self.install.target('display-manager.service')).name, 'old.service')
+
+    def test_failed_repair_preserves_backup_and_pearl_config(self):
+        self.old_manager()
+        self.replace_config()
+        self.install.enable()
+        saved = self.install.state.read_bytes()
+        self.install.systemctl('enable', 'ly@tty2.service')
+        systemctl = self.install.systemctl
+
+        def fail_after_disabling_ly(*args, **kwargs):
+            result = systemctl(*args, **kwargs)
+            if args == ('disable', 'ly@tty2.service'):
+                raise subprocess.CalledProcessError(1, args)
+            return result
+
+        with patch.object(self.install, 'systemctl', side_effect=fail_after_disabling_ly):
+            with self.assertRaises(subprocess.CalledProcessError):
+                self.install.enable()
+        self.assertEqual(self.install.state.read_bytes(), saved)
+        self.assertEqual(Path(self.install.target('display-manager.service')).name, setup.UNIT)
+        self.assertTrue((self.system/'multi-user.target.wants/ly@tty2.service').is_symlink())
+        self.assertEqual((self.root/'etc/greetd/config.toml').read_bytes(), self.template.read_bytes())
+
+    def test_restore_after_later_manager_choice_does_not_reenable_ly(self):
+        self.install.systemctl('enable', 'ly@tty2.service')
+        self.install.enable()
+        self.install.systemctl('disable', setup.UNIT)
+        self.install.systemctl('enable', 'old.service')
+        self.install.restore()
+        self.assertFalse((self.system/'multi-user.target.wants/ly@tty2.service').is_symlink())
+        self.assertEqual(Path(self.install.target('display-manager.service')).name, 'old.service')
 
     def test_repeat_enable_preserves_original_backup(self):
         self.old_manager()

@@ -55,6 +55,11 @@ replaces the standard config with `/usr/share/pearl-greeter/greetd.toml`.
 Both the packaged service and a direct greetd invocation use `/etc/greetd/config.toml`.
 The package saves the previous display-manager selection/default target and
 restores them on removal unless the administrator has since changed the selection.
+It also disables and records enabled `ly.service` and `ly@…service` instances,
+which can start independently of `display-manager.service`. If an older install
+left Ly enabled, update the package, run
+`sudo /usr/lib/pearl/pearl-greeter-setup enable`, then reboot. Rerunning setup
+repairs this case while keeping the original restore backup.
 Removal also restores the `.bak` when the config still matches Pearl's template.
 Run `sudo /usr/lib/pearl/pearl-greeter-setup restore` to restore it earlier.
 See [package setup and recovery](../packaging/arch-greeter/README.md) for details.
