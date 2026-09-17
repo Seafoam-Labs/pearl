@@ -39,6 +39,28 @@ recipe, or use the private package script. Neither path installs the package or
 enables services. Do not use the template PKGBUILD before replacing its hash via
 the source generator.
 
+Separate Intel-compatible generic x86-64 baseline Git packages are available:
+
+- [`pearl-intel-git`](../packaging/arch-intel-git/PKGBUILD)
+- [`pearl-darkly-style-intel-git`](../packaging/arch-darkly-style-intel-git/PKGBUILD)
+
+The original recipes retain their existing CPU settings. Both Intel variants
+fetch the upstream Git default branch and derive their versions from Git. Build
+these packages with:
+
+```sh
+(cd packaging/arch-intel-git && makepkg)
+(cd packaging/arch-darkly-style-intel-git && makepkg)
+```
+
+Pearl uses `-Dcpu=baseline` for build and checks; Darkly uses
+`-march=x86-64 -mtune=generic` after the configured compiler flags. Compiler
+optimizations remain enabled. `pearl-intel-git` provides and conflicts with
+`pearl-git`, retaining its `pearl-git` commands, service and integration paths.
+It can coexist with the release `pearl` package. `pearl-darkly-style-intel-git`
+provides and conflicts with `pearl-darkly-style` and the other Darkly providers.
+The existing Git shell and greeter recipes already use `-Dcpu=baseline`.
+
 For the latest upstream Git revision, use the standalone
 [`pearl-git` recipe](../packaging/arch-git/PKGBUILD):
 

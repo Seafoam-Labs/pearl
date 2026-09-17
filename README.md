@@ -57,6 +57,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Clipboard and screenshots](docs/CLIPBOARD_CAPTURE.md): private history, native output/region capture, isolated-source selection with color validation, save/copy controls and lock behavior.
 - [Native lock screen](docs/LOCK_SCREEN.md): responsive input, accessibility, output lifecycle and resource verification.
 - [Preferences, wallpaper and themes](docs/PREFERENCES.md) and [theme visual evidence](artifacts/t10/comparison.html): settings, dynamic Material colors, native GTK themes, draft recovery and opt-in exports.
+- [Matugen profiles plan](docs/MATUGEN_PROFILES_IMPLEMENTATION_PLAN.md): individual application themes, Seafoam profiles and a future Pearl theme provider interface.
 - [Notifications, tray and media](docs/SESSION_SERVICES.md) and [session-service visual evidence](artifacts/t09/comparison.html): protocol contracts, bounds, keyboard controls, ownership and session-bus recovery.
 - [Network and Bluetooth](docs/CONNECTIVITY.md) and [connectivity visual evidence](artifacts/t08/comparison.html): connection/pairing agents, bounded discovery, credential handling and hardware acceptance.
 - [Audio and power](docs/SERVICES.md) and [audio/power visual evidence](artifacts/t07/comparison.html): service behavior, CLI, permissions and physical release checks.
