@@ -31,13 +31,13 @@ sha256sums=('@SOURCE_SHA256@')
 build() {
     cd "$srcdir/pearl-$pkgver"
     export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
-    zig build -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true
+    zig build -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline
 }
 
 check() {
     cd "$srcdir/pearl-$pkgver"
     export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
-    zig build test test-adapter-unit test-bindings test-release-tools -Doptimize=ReleaseSafe
+    zig build test test-adapter-unit test-bindings test-release-tools -Doptimize=ReleaseSafe -Dcpu=baseline
 }
 
 package() {
