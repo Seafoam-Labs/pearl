@@ -21,6 +21,7 @@ test {
     _ = @import("services/session_environment.zig");
     _ = @import("config/aqueous_model.zig");
     _ = @import("config/aqueous_draft.zig");
+    _ = @import("config/border_theme.zig");
     _ = @import("config/aqueous_contract.zig");
     _ = @import("config/aqueous_collections.zig");
     _ = @import("config/aqueous_transactions.zig");

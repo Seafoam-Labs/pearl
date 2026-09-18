@@ -268,6 +268,13 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| settings_appearance.addArgs(args);
     b.step("test-settings-appearance", "Verify real standalone Appearance editing, shared drafts and save lifecycle").dependOn(&settings_appearance.step);
 
+    const border_theme = b.addSystemCommand(&.{ "python3", "tests/integration/test_border_theme.py", "--settings" });
+    border_theme.addArtifactArg(settings_test_app);
+    border_theme.addArg("--pearl");
+    border_theme.addArtifactArg(app);
+    if (b.args) |args| border_theme.addArgs(args);
+    b.step("test-border-theme", "Verify matugen border colors, draft deferral and generator failure").dependOn(&border_theme.step);
+
     const settings_services = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_services.py", "--settings" });
     settings_services.addArtifactArg(settings_test_app);
     settings_services.addArg("--pearl");

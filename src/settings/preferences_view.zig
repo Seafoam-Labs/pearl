@@ -27,6 +27,7 @@ pub const View = struct {
     editing_form: bool = false,
     raw_invalid: bool = false,
     mode: *gtk.DropDown,
+    sync_borders: *gtk.Switch = undefined,
     variant: *gtk.DropDown,
     source: *gtk.DropDown,
     fit: *gtk.DropDown,
@@ -75,6 +76,8 @@ pub const View = struct {
         seed.setPlaceholderText("#6750a4");
         const hint = w.label(if (german) "Dynamische Farben benötigen matugen 4.x. Ein leerer GTK-Name folgt dem System." else "Dynamic colors need matugen 4.x. An empty GTK theme name follows the system.", "pearl-secondary");
         appearance.append(hint.as(gtk.Widget));
+        const sync_borders = toggle(appearance, if (german) "Fensterrahmen folgen dem Pearl-Design" else "Window borders follow Pearl theme");
+        appearance.append(w.label(if (german) "Verwendet Material-Farben für aktive, normale und dringende Fenster. Wartet auf ausstehende Aqueous-Änderungen. Ausschalten behält die letzten Farben; im GTK-Modus pausiert die Synchronisierung." else "Uses Material colors for focused, normal, and urgent windows. Waits for pending Aqueous edits. Turning off keeps the last colors; GTK mode pauses synchronization.", "pearl-secondary").as(gtk.Widget));
         const wallpaper = card(host);
         const picture = gtk.Picture.new();
         picture.setCanShrink(1);
@@ -142,6 +145,8 @@ pub const View = struct {
         // The caller installs raw_view directly in Advanced's sole viewport.
         self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison };
         self.greeter_sync = try @import("greeter_sync.zig").View.create(host, self, syncPreferences, german);
+        self.sync_borders = sync_borders;
+        _ = object.Object.signals.notify.connect(sync_borders.as(object.Object), *View, selected, self, .{ .detail = "active" });
         gtk.StyleContext.addProviderForDisplay(window.as(gtk.Widget).getDisplay(), self.preview_css.as(gtk.StyleProvider), 602);
         _ = gtk.Button.signals.clicked.connect(qt_retry, *View, retryQt, self, .{});
         _ = gtk.Button.signals.clicked.connect(qt_review, *View, reviewQt, self, .{});
@@ -230,6 +235,7 @@ pub const View = struct {
     }
     fn fill(self: *View, prefs: model.Preferences) void {
         self.mode.setSelected(@intFromEnum(prefs.theme.mode));
+        self.sync_borders.setActive(@intFromBool(prefs.theme.sync_borders));
         self.variant.setSelected(@intFromEnum(prefs.theme.variant));
         self.source.setSelected(@intFromEnum(prefs.theme.source));
         self.fit.setSelected(@intFromEnum(prefs.wallpaper.mode));
@@ -252,6 +258,7 @@ pub const View = struct {
         if (self.filling or !self.editor.editable()) return;
         var prefs = self.prefs;
         prefs.theme.mode = @enumFromInt(self.mode.getSelected());
+        prefs.theme.sync_borders = self.sync_borders.getActive() != 0;
         prefs.theme.variant = @enumFromInt(self.variant.getSelected());
         prefs.theme.source = @enumFromInt(self.source.getSelected());
         prefs.theme.gtk_name = text(self.entries[0]);

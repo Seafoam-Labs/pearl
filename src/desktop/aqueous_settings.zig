@@ -228,6 +228,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             for (categories, titles) |category, title| {
                 var box = self.page(notebook, title);
                 if (std.mem.eql(u8, category, "appearance")) {
+                    box.append(w.label("To match window borders to Material or matugen colors automatically, enable ‘Window borders follow Pearl theme’ in Pearl’s Appearance settings.", "pearl-secondary").as(gtk.Widget));
                     try self.inventory(box, self.client.value(), "desktop_typography", "Desktop font synchronization");
                     try self.inventory(box, self.client.value(), "desktop_cursor", "Desktop cursor synchronization");
                 }
@@ -266,7 +267,7 @@ pub fn ViewFor(comptime ClientType: type) type {
                     try self.inventory(box, snapshot, "snap_layouts", "Snap layouts");
                 }
                 for (m.list(m.get(snapshot, "fields"))) |field| {
-                    if (!std.mem.eql(u8, m.str(m.get(field, "category")), category)) continue;
+                    if (!std.mem.eql(u8, m.fieldCategory(field), category)) continue;
                     var value = m.get(field, "value");
                     for (m.list(m.get(draft, "changes"))) |c| if (std.mem.eql(u8, m.str(m.get(c, "id")), m.str(m.get(field, "id")))) {
                         value = m.get(c, "value");

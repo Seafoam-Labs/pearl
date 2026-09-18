@@ -117,10 +117,10 @@ The JSON companion records source, consumer, entry point, test owner and disposi
 | `layout.gaps_inner` | src/desktop/aqueous_settings.zig — layouts / Inner gaps | implemented: integer; canonical helper validates the full request. |
 | `layout.master_ratio` | src/desktop/aqueous_settings.zig — layouts / Master ratio | implemented: double; canonical helper validates the full request. |
 | `layout.master_count` | src/desktop/aqueous_settings.zig — layouts / Master count | implemented: integer; canonical helper validates the full request. |
-| `layout.border_width` | src/desktop/aqueous_settings.zig — layouts / Border width | implemented: integer; canonical helper validates the full request. |
-| `layout.border_focused` | src/desktop/aqueous_settings.zig — layouts / Focused border | implemented: color; canonical helper validates the full request. |
-| `layout.border_normal` | src/desktop/aqueous_settings.zig — layouts / Normal border | implemented: color; canonical helper validates the full request. |
-| `layout.border_urgent` | src/desktop/aqueous_settings.zig — layouts / Urgent border | implemented: color; canonical helper validates the full request. |
+| `layout.border_width` | src/desktop/aqueous_settings.zig — appearance / Border width | implemented: integer; canonical helper validates the full request. |
+| `layout.border_focused` | src/desktop/aqueous_settings.zig — appearance / Focused border | implemented: color; canonical helper validates the full request. |
+| `layout.border_normal` | src/desktop/aqueous_settings.zig — appearance / Normal border | implemented: color; canonical helper validates the full request. |
+| `layout.border_urgent` | src/desktop/aqueous_settings.zig — appearance / Urgent border | implemented: color; canonical helper validates the full request. |
 | `layout.force_ssd` | src/desktop/aqueous_settings.zig — layouts / Prefer server decorations | implemented: boolean; canonical helper validates the full request. |
 | `layout.slots.primary` | src/desktop/aqueous_settings.zig — layouts / Primary slot | implemented: select; canonical helper validates the full request. |
 | `layout.slots.secondary` | src/desktop/aqueous_settings.zig — layouts / Secondary slot | implemented: select; canonical helper validates the full request. |

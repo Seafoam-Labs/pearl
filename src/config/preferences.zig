@@ -10,6 +10,7 @@ pub const Theme = struct {
     source: enum { seed, wallpaper } = .seed,
     // Empty follows GTK settings, including GTK_THEME and user gtk.css.
     gtk_name: []const u8 = "",
+    sync_borders: bool = false,
 };
 pub const Wallpaper = struct {
     mode: enum { gradient, solid, cover, contain } = .gradient,

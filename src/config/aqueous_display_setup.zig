@@ -307,7 +307,7 @@ pub fn sharedSummary(a: A, base: m.Value, draft: m.Value) ![]const u8 {
     var lines: std.ArrayList(u8) = .empty;
     for (m.list(m.get(draft, "changes"))) |change| {
         const field = m.field(base, m.str(m.get(change, "id"))) orelse continue;
-        try lines.appendSlice(a, try std.fmt.allocPrint(a, "• {s}: {s}\n", .{ m.str(m.get(field, "category")), m.str(m.get(field, "label")) }));
+        try lines.appendSlice(a, try std.fmt.allocPrint(a, "• {s}: {s}\n", .{ m.fieldCategory(field), m.str(m.get(field, "label")) }));
     }
     if (draft == .object) {
         var it = draft.object.iterator();

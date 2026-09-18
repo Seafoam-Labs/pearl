@@ -1063,6 +1063,7 @@ pub const Window = struct {
             }
         }
         if (self.preferences_view) |view| {
+            try controls.append(alloc, .{ .field = "sync_borders", .focused = if (focus) |f| f == view.sync_borders.as(gtk.Widget) else false, .bounds = self.bounds(view.sync_borders.as(gtk.Widget)) });
             for ([_]*gtk.Widget{ view.qt_enabled.as(gtk.Widget), view.qt_retry.as(gtk.Widget), view.qt_review.as(gtk.Widget), view.qt_reapply.as(gtk.Widget), view.qt_kde.as(gtk.Widget) }, [_][]const u8{ "qt_enabled", "qt_retry", "qt_review", "qt_reapply", "qt_kde" }) |widget, name|
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .bounds = self.bounds(widget) });
         }

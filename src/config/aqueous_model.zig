@@ -1,5 +1,11 @@
 //! Helper JSON is the authority. Pearl never parses or serializes Aqueous TOML.
 const std = @import("std");
+
+/// Presentation categories may differ from the compositor's storage schema.
+pub fn fieldCategory(metadata: Value) []const u8 {
+    if (std.mem.startsWith(u8, str(get(metadata, "id")), "layout.border_")) return "appearance";
+    return str(get(metadata, "category"));
+}
 pub const Value = std.json.Value;
 pub const max_request = 4 * 1024 * 1024;
 pub const max_response = 16 * 1024 * 1024;

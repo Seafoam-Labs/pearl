@@ -124,6 +124,7 @@ pub const Manager = struct {
     settings_observer: ?*const fn (*anyopaque) void = null,
     aqueous_settings: @import("../../config/aqueous_client.zig").Client = undefined,
     preferences: @import("../../config/service.zig").Service = undefined,
+    border_theme: @import("../../config/border_theme.zig").Sync = .{},
     identifiers: std.ArrayList(*Surface) = .empty,
     identify_timer: c_uint = 0,
     osd_label: ?*gtk.Label = null,
@@ -241,6 +242,52 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (self.popup) |surface| if (surface.aqueous_settings) |view| view.update();
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
+        self.schedule();
+    }
+    fn syncBorderTheme(self: *Manager) void {
+        const borders = @import("../../config/border_theme.zig");
+        const live = self.preferences.live orelse return;
+        const c = &self.aqueous_settings;
+        const enabled = live.prefs.theme.sync_borders and live.prefs.theme.mode != .gtk;
+        if (enabled and self.client.model.session.len != 32) return;
+        const desired: ?borders.Target = if (enabled) .{ .colors = borders.colors(live.palette) catch return, .session = self.client.model.session[0..32].* } else null;
+        const action = self.border_theme.next(desired, .{
+            .allowed = self.running and self.preferences.integration_allowed and self.preferences.job == null and aqueousCanReload(self),
+            .busy = c.job != null or c.reload_ticket != null or c.recording,
+            .draft = c.draft != null,
+            .unresolved = c.unresolved,
+            .jobs = c.jobs,
+            .completed_job = c.completed_job,
+            .failed = c.err != null,
+        });
+        switch (action) {
+            .none => return,
+            .refresh => c.begin(.refresh) catch |err| {
+                self.border_theme.pending = false;
+                c.err = err;
+                c.changed(c.context);
+            },
+            .apply => {
+                var arena = std.heap.ArenaAllocator.init(a);
+                defer arena.deinit();
+                const draft = borders.request(arena.allocator(), c.value(), desired.?.colors) catch |err| {
+                    c.err = err;
+                    c.changed(c.context);
+                    return;
+                };
+                if (draft) |bytes| {
+                    c.keepDraft(bytes) catch |err| {
+                        c.err = err;
+                        c.changed(c.context);
+                        return;
+                    };
+                    c.begin(.apply) catch |err| {
+                        c.err = err;
+                        c.changed(c.context);
+                    };
+                }
+            },
+        }
     }
     fn aqueousCanRecord(context: *anyopaque) bool {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -496,6 +543,7 @@ pub const Manager = struct {
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
         self.syncSettingsAccess();
+        self.syncBorderTheme();
         if (self.client.availability != .ready) {
             self.session_services.notifications.setLocked(true);
             self.clear();

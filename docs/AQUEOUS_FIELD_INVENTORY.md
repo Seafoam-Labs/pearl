@@ -47,10 +47,10 @@ See [AQUEOUS_SETTINGS.md](AQUEOUS_SETTINGS.md) for workflows and safety gates.
 | `layout.gaps_inner` | Layouts | integer spin control | `layout` | edit/validate; apply requires classified impact |
 | `layout.master_ratio` | Layouts | decimal spin control | `layout` | edit/validate; apply requires classified impact |
 | `layout.master_count` | Layouts | integer spin control | `layout` | edit/validate; apply requires classified impact |
-| `layout.border_width` | Layouts | integer spin control | `layout` | edit/validate; apply requires classified impact |
-| `layout.border_focused` | Layouts | color text entry | `layout` | edit/validate; apply requires classified impact |
-| `layout.border_normal` | Layouts | color text entry | `layout` | edit/validate; apply requires classified impact |
-| `layout.border_urgent` | Layouts | color text entry | `layout` | edit/validate; apply requires classified impact |
+| `layout.border_width` | Appearance | integer spin control | `layout` | edit/validate; apply requires classified impact |
+| `layout.border_focused` | Appearance | color text entry | `layout` | edit/validate; apply requires classified impact |
+| `layout.border_normal` | Appearance | color text entry | `layout` | edit/validate; apply requires classified impact |
+| `layout.border_urgent` | Appearance | color text entry | `layout` | edit/validate; apply requires classified impact |
 | `layout.force_ssd` | Layouts | checkbox | `layout` | edit/validate; apply requires classified impact |
 | `layout.slots.primary` | Layouts | schema choices | `layout` | edit/validate; apply requires classified impact |
 | `layout.slots.secondary` | Layouts | schema choices | `layout` | edit/validate; apply requires classified impact |

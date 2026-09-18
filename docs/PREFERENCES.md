@@ -40,6 +40,19 @@ See [the standalone plan](STANDALONE_SETTINGS_APPLICATION_PLAN.md).
 
 ## Theme modes
 
+Enable **Window borders follow Pearl theme** in Appearance to synchronize Aqueous
+border colors after saving the theme. Focused borders use Material `primary`,
+normal borders use `outline`, and urgent borders use `error`. Dynamic themes use
+the current matugen palette, including seed, wallpaper, and dark/light changes.
+The setting defaults off (`theme.sync_borders` in preferences JSON). GTK mode
+pauses synchronization; disabling it keeps the last colors for manual editing in
+**Aqueous → Appearance**. Border width is unaffected.
+
+Synchronization waits for pending Aqueous drafts and active operations, then
+refreshes and saves only changed border colors through the normal Aqueous
+transaction. Errors remain visible in Aqueous settings for review and retry;
+failed or uncertain saves are not retried automatically.
+
 - **Static Material**: Pearl's dark or light palette. No generator is required.
 - **Dynamic Material**: derive a dark/light palette from a hex seed or the selected
   wallpaper. Requires **matugen 4.x**; tested with 4.2.0. Generator failure keeps
