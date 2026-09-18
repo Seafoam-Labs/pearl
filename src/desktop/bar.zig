@@ -18,6 +18,8 @@ pub const Bar = struct {
     network_service: *@import("../services/network.zig").Network,
     bluetooth_service: *@import("../services/bluetooth.zig").Bluetooth,
     session_services: *@import("../services/session.zig").Session,
+    plugins: ?*@import("../plugins/manager.zig").Manager = null,
+    plugin_views: std.ArrayList(*@import("../plugins/view.zig").View) = .empty,
     tray: ?*@import("tray.zig").Bar = null,
     notification_label: ?*gtk.Label = null,
     media_label: ?*gtk.Label = null,
@@ -43,9 +45,9 @@ pub const Bar = struct {
     vertical: bool = false,
     compact: bool = false,
     length: i32 = 1280,
-    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session) !*Bar {
+    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager) !*Bar {
         const self = try a.create(Bar);
-        self.* = .{ .host = host, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
+        self.* = .{ .host = host, .plugins = plugins, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
         self.groups = .{ try a.dupeZ(u8, "launcher,workspaces,title"), try a.dupeZ(u8, "clock"), try a.dupeZ(u8, (policy.Groups{}).right) };
         try self.build();
         return self;
@@ -64,6 +66,9 @@ pub const Bar = struct {
         list.* = .empty;
     }
     fn clear(self: *Bar) void {
+        for (self.plugin_views.items) |view| view.destroy();
+        self.plugin_views.deinit(a);
+        self.plugin_views = .empty;
         self.sections = @splat(null);
         if (self.tray) |tray| tray.destroy();
         self.tray = null;
@@ -158,6 +163,22 @@ pub const Bar = struct {
             }
             var parts = std.mem.splitScalar(u8, group, ',');
             while (parts.next()) |part| {
+                if (std.mem.startsWith(u8, part, "plugin:") and @import("../plugins/model.zig").reference(part)) {
+                    if (self.plugins) |manager| {
+                        const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 4);
+                        const viewport = gtk.ScrolledWindow.new();
+                        viewport.setPolicy(.external, .external);
+                        viewport.setPropagateNaturalWidth(1);
+                        viewport.setPropagateNaturalHeight(1);
+                        viewport.setMaxContentWidth(if (self.vertical) 128 else 192);
+                        viewport.setMaxContentHeight(if (self.vertical) 192 else 128);
+                        viewport.setChild(host.as(gtk.Widget));
+                        box.append(viewport.as(gtk.Widget));
+                        const view = try @import("../plugins/view.zig").View.create(host, manager, part[7 .. part.len - 5], false);
+                        try self.plugin_views.append(a, view);
+                    }
+                    continue;
+                }
                 const item = std.meta.stringToEnum(policy.Item, part) orelse continue;
                 const widget: *gtk.Widget = switch (item) {
                     .tray => blk: {
@@ -298,6 +319,7 @@ pub const Bar = struct {
         self.action(self.context, .{ .pane = .tray });
     }
     pub fn update(self: *Bar) void {
+        for (self.plugin_views.items) |view| view.update();
         if (self.tray) |tray| tray.update();
         if (self.notification_label) |label| {
             var count: usize = 0;

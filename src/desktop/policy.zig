@@ -8,12 +8,21 @@ pub const Groups = struct {
     center: []const u8 = "clock",
     right: []const u8 = "media,tray,audio,network,battery,notifications,clipboard,keyboard,control",
     pub fn validate(self: Groups) !void {
+        var plugins: [16][]const u8 = undefined;
+        var plugin_count: usize = 0;
         var seen = std.EnumSet(Item).initEmpty();
         for ([_][]const u8{ self.left, self.center, self.right }) |group| {
-            if (group.len > 128) return error.InvalidGroups;
+            if (group.len > 512) return error.InvalidGroups;
             if (group.len == 0) continue;
             var parts = std.mem.splitScalar(u8, group, ',');
             while (parts.next()) |part| {
+                if (std.mem.startsWith(u8, part, "plugin:")) {
+                    if (!@import("../plugins/model.zig").reference(part) or plugin_count == plugins.len) return error.InvalidGroups;
+                    for (plugins[0..plugin_count]) |old| if (std.mem.eql(u8, old, part)) return error.InvalidGroups;
+                    plugins[plugin_count] = part;
+                    plugin_count += 1;
+                    continue;
+                }
                 const item = std.meta.stringToEnum(Item, part) orelse return error.InvalidGroups;
                 if (seen.contains(item)) return error.InvalidGroups;
                 seen.insert(item);
@@ -63,4 +72,11 @@ test "launcher respects switcher policy and represents minimized windows separat
     window.skip_switcher = false;
     window.can_activate = false;
     try std.testing.expect(!eligible(window));
+}
+
+test "plugin bar references remain distinct from builtins and preserve primary controls" {
+    try (Groups{ .center = "plugin:pearl.timer-c/main" }).validate();
+    try std.testing.expectError(error.InvalidGroups, (Groups{ .center = "plugin:../main" }).validate());
+    try std.testing.expectError(error.InvalidGroups, (Groups{ .center = "plugin:demo/main", .right = "plugin:demo/main" }).validate());
+    try std.testing.expectError(error.InvalidGroups, (Groups{ .left = "plugin:demo/main" }).validate());
 }

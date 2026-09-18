@@ -8,10 +8,10 @@ def archive(root, output):
     epoch=int(os.environ.get('SOURCE_DATE_EPOCH',meta['source_date_epoch']))
     version=meta['arch_pkgver']; output.mkdir(parents=True,exist_ok=True)
     paths=[]
-    for name in ('build.zig','build.zig.zon','.zigversion','README.md','LICENSE','src','spikes','bindings','resources','scripts','packaging','tests','docs'):
+    for name in ('build.zig','build.zig.zon','.zigversion','README.md','LICENSE','src','spikes','plugins','bindings','resources','scripts','packaging','tests','docs'):
         path=root/name
         if path.is_file():paths.append(path)
-        elif path.is_dir():paths.extend(p for p in path.rglob('*') if p.is_file() and '__pycache__' not in p.parts and not p.name.endswith('.pyc'))
+        elif path.is_dir():paths.extend(p for p in path.rglob('*') if p.is_file() and not {'__pycache__', '.zig-cache', 'target'}.intersection(p.relative_to(path).parts) and not p.name.endswith('.pyc'))
     target=output/f'pearl-{version}.tar.gz'
     with target.open('wb') as raw, gzip.GzipFile(filename='',fileobj=raw,mode='wb',mtime=epoch) as compressed, tarfile.open(fileobj=compressed,mode='w|',format=tarfile.PAX_FORMAT) as tar:
         for p in sorted(paths):

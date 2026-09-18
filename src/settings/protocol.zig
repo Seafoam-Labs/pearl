@@ -37,7 +37,7 @@ pub const Request = struct {
     id: []const u8,
     session: []const u8,
     display: []const u8,
-    op: enum { hello, ping, @"qt.retry", @"qt.review", @"qt.reapply", @"page.enter", @"page.leave", @"page.get", @"document.get", @"document.read", @"document.begin", @"document.write", @"document.finish", @"document.cancel", @"draft.discard", @"draft.merge", @"draft.validate", @"draft.apply", @"operation.get", @"frontend.close", @"list.get", @"audio.set", @"brightness.set", @"profile.set", @"network.action", @"network.editor", @"bluetooth.action", @"prompt.answer", @"notifications.action", @"lifecycle.action", @"power.action", @"media.action", @"layout.get", @"layout.set", @"aqueous.get", @"aqueous.action" },
+    op: enum { hello, ping, @"qt.retry", @"qt.review", @"qt.reapply", @"page.enter", @"page.leave", @"page.get", @"document.get", @"document.read", @"document.begin", @"document.write", @"document.finish", @"document.cancel", @"draft.discard", @"draft.merge", @"draft.validate", @"draft.apply", @"operation.get", @"frontend.close", @"list.get", @"plugin.action", @"audio.set", @"brightness.set", @"profile.set", @"network.action", @"network.editor", @"bluetooth.action", @"prompt.answer", @"notifications.action", @"lifecycle.action", @"power.action", @"media.action", @"layout.get", @"layout.set", @"aqueous.get", @"aqueous.action" },
     epoch: ?[]const u8 = null,
     params: ?std.json.Value = null,
 };

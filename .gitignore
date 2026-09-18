@@ -5,3 +5,4 @@ zig-pkg/
 __pycache__/
 *.pyc
 artifacts/t00/runs/
+/plugins/examples/*/target/

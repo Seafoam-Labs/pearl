@@ -11,6 +11,25 @@ prefix=/usr # Matches the packaged unit; distribution packages may patch both.
 for binary in pearl pearlctl pearl-lock pearl-settings; do
     install -Dm755 "$binaries/$binary" "$destination$prefix/bin/$binary"
 done
+if [[ -f "$binaries/pearl-plugin-host" ]]; then
+    install -Dm755 "$binaries/pearl-plugin-host" "$destination$prefix/bin/pearl-plugin-host"
+    install -Dm644 "$binaries/../share/licenses/pearl/Wasmtime-LICENSE" "$destination$prefix/share/licenses/pearl/Wasmtime-LICENSE"
+fi
+install -Dm644 "$source_root/plugins/wit/plugin.wit" "$destination$prefix/share/pearl/plugins-sdk/plugin.wit"
+if [[ -n "${PEARL_PLUGIN_EXAMPLES_DIR:-}" ]]; then
+    [[ -f "$binaries/pearl-plugin-host" ]] || { echo 'Plugin examples require a Wasm-enabled build' >&2; exit 2; }
+    # Explicit allowlist: never install failure fixtures, intermediates or caches.
+    for example in timer-c counter-zig counter-rust companion-c; do
+        for member in plugin.json plugin.wasm; do
+            install -Dm644 "$PEARL_PLUGIN_EXAMPLES_DIR/$example/$member" \
+                "$destination$prefix/share/pearl/plugins/$example/$member"
+        done
+    done
+    for member in cat.png LICENSE.assets; do
+        install -Dm644 "$PEARL_PLUGIN_EXAMPLES_DIR/companion-c/$member" \
+            "$destination$prefix/share/pearl/plugins/companion-c/$member"
+    done
+fi
 for version in 5 6; do
     if [[ -f "$binaries/pearl-qt${version}-probe" ]]; then
         install -Dm755 "$binaries/pearl-qt${version}-probe" "$destination$prefix/lib/pearl/pearl-qt${version}-probe"

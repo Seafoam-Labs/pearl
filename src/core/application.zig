@@ -295,7 +295,7 @@ fn sessionChanged(data: ?*anyopaque) callconv(.c) c_int {
         };
         self.settings_server.?.appearance_context = self;
         self.settings_server.?.appearance = settingsAppearance;
-        self.settings_server.?.backend = .{ .service = &self.surfaces.?.preferences, .aqueous = &self.surfaces.?.aqueous_settings, .context = self, .allowed = settingsAllowed, .live = .{ .audio = &self.surfaces.?.audio, .network = &self.surfaces.?.network, .bluetooth = &self.surfaces.?.bluetooth, .power = &self.surfaces.?.power, .session = &self.surfaces.?.session_services, .lifecycle = &self.surfaces.?.lifecycle, .layout = &self.surfaces.?.layout.?, .layout_context = &self.surfaces.?, .layout_rows = @import("../ui/surfaces/manager.zig").Manager.settingsLayoutRows, .layout_action = @import("../ui/surfaces/manager.zig").Manager.settingsLayoutAction } };
+        self.settings_server.?.backend = .{ .service = &self.surfaces.?.preferences, .aqueous = &self.surfaces.?.aqueous_settings, .context = self, .allowed = settingsAllowed, .live = .{ .plugins = self.surfaces.?.plugins, .audio = &self.surfaces.?.audio, .network = &self.surfaces.?.network, .bluetooth = &self.surfaces.?.bluetooth, .power = &self.surfaces.?.power, .session = &self.surfaces.?.session_services, .lifecycle = &self.surfaces.?.lifecycle, .layout = &self.surfaces.?.layout.?, .layout_context = &self.surfaces.?, .layout_rows = @import("../ui/surfaces/manager.zig").Manager.settingsLayoutRows, .layout_action = @import("../ui/surfaces/manager.zig").Manager.settingsLayoutAction } };
         self.surfaces.?.settings_observer_context = self;
         self.surfaces.?.settings_observer = settingsServicesChanged;
         self.settings_server.?.start() catch |err| {

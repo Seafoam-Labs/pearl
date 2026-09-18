@@ -1,7 +1,7 @@
 pkgbase = pearl-intel-git
 	pkgdesc = GTK desktop shell exclusively for Aqueous (Intel baseline, Git version)
 	pkgver = 1.0.0rc2.r22.ga002d24
-	pkgrel = 2
+	pkgrel = 3
 	url = https://github.com/Seafoam-Labs/pearl
 	install = pearl-intel-git.install
 	arch = x86_64
@@ -13,6 +13,9 @@ pkgbase = pearl-intel-git
 	makedepends = qt5-base
 	makedepends = qt6-base
 	makedepends = python>=3.14
+	makedepends = rust
+	makedepends = rust-wasm
+	makedepends = librsvg
 	depends = gtk4>=1:4.22.5
 	depends = glib2>=2.88.3
 	depends = gtk4-layer-shell>=1.3.0
@@ -40,6 +43,12 @@ pkgbase = pearl-intel-git
 	options = !debug
 	backup = etc/pam.d/pearl-git
 	source = pearl::git+https://github.com/Seafoam-Labs/pearl.git
+	source = https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.2/wasmtime-v48.0.2-x86_64-linux-c-api.tar.xz
+	source = https://github.com/bytecodealliance/wit-bindgen/releases/download/v0.62.0/wit-bindgen-0.62.0-x86_64-linux.tar.gz
+	source = https://github.com/bytecodealliance/wasm-tools/releases/download/v1.259.0/wasm-tools-1.259.0-x86_64-linux.tar.gz
 	sha256sums = SKIP
+	sha256sums = d9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9
+	sha256sums = 3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe
+	sha256sums = 3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160
 
 pkgname = pearl-intel-git

@@ -22,6 +22,7 @@ pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock =
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
+    plugins: @import("../plugins/model.zig").Preferences = .{},
     idle: @import("../services/idle_policy.zig").Config = .{},
     theme: Theme = .{},
     qt: @import("../theme/qt.zig").Config = .{},
@@ -46,6 +47,7 @@ pub const Preferences = struct {
         return self.dock;
     }
     pub fn validate(self: Preferences) !void {
+        try self.plugins.validate();
         try self.qt.validate();
         if (self.qt.enabled) for (self.font) |ch| if (ch < 32 or ch == 127) return error.InvalidQtFont;
         try @import("../desktop/dock_policy.zig").validate(self.dock);

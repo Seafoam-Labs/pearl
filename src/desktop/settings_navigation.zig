@@ -13,6 +13,7 @@ pub const Route = enum {
     session,
     aqueous,
     advanced,
+    plugins,
 
     pub fn id(self: Route) [:0]const u8 {
         return @tagName(self);
@@ -31,13 +32,14 @@ pub const Route = enum {
             .session => "Session & lock",
             .aqueous => "Aqueous",
             .advanced => "Advanced",
+            .plugins => "Plugins",
         };
     }
 
     pub fn isCompact(self: Route) bool {
         return switch (self) {
             .overview, .network, .bluetooth, .sound, .power => true,
-            .appearance, .bar, .notifications, .session, .aqueous, .advanced => false,
+            .appearance, .bar, .notifications, .session, .aqueous, .advanced, .plugins => false,
         };
     }
 };

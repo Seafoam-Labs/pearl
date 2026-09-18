@@ -44,6 +44,7 @@ pub const Window = struct {
     aqueous_view: ?*@import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor) = null,
     aqueous_footer: *gtk.Box,
     review_button: *gtk.Button,
+    plugins_view: ?*@import("plugins_view.zig").View = null,
     preferences_view: ?*@import("preferences_view.zig").View = null,
     preference_pages: [2]?*@import("preference_pages.zig").View = .{ null, null },
     live_pages: [count]?*@import("live_view.zig").View = @splat(null),
@@ -252,6 +253,11 @@ pub const Window = struct {
                 self.preference_pages[i] = try @import("preference_pages.zig").View.create(host, editor, route == .session);
             }
         }
+        if (!fixture) {
+            const body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(nav.Route.plugins)].body).?;
+            while (body.as(gtk.Widget).getFirstChild()) |child| body.remove(child);
+            self.plugins_view = try @import("plugins_view.zig").View.create(body, editor, self, invalidatePageFocus);
+        }
         if (!fixture) for ([_]nav.Route{ .overview, .network, .bluetooth, .sound, .power, .notifications, .session }) |route| {
             const body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(route)].body).?;
             if (route != .overview and route != .session) while (body.as(gtk.Widget).getFirstChild()) |child| {
@@ -310,6 +316,7 @@ pub const Window = struct {
             self.aqueous_rebuilding = true;
             view.destroy();
         }
+        if (self.plugins_view) |view| view.destroy();
         for (self.live_pages) |page| if (page) |view| view.destroy();
         for (self.preference_pages) |page| if (page) |view| view.destroy();
         if (self.preferences_view) |view| view.destroy();
@@ -345,6 +352,7 @@ pub const Window = struct {
             .session => "Sitzung und Sperre",
             .aqueous => "Aqueous",
             .advanced => "Erweitert",
+            .plugins => "Plugins",
         };
     }
     fn description(self: *Window, route: nav.Route) [:0]const u8 {
@@ -359,6 +367,7 @@ pub const Window = struct {
             .notifications => self.t("Manage interruptions and notification history.", "Unterbrechungen und Benachrichtigungen verwalten."),
             .session => self.t("Automatic locking and sleep for your session.", "Automatische Sperre und Ruhemodus einstellen."),
             .aqueous => self.t("Configure your compositor by section.", "Compositor nach Bereichen konfigurieren."),
+            .plugins => self.t("Manage installed plugins, permissions and placement.", "Installierte Plugins, Berechtigungen und Platzierung verwalten."),
             .advanced => self.t("Review the complete Pearl preferences document.", "Alle Pearl-Einstellungen als Dokument anzeigen."),
         };
     }
@@ -373,7 +382,7 @@ pub const Window = struct {
             .bar, .aqueous => "pearl-window-symbolic",
             .notifications => "pearl-notifications-symbolic",
             .session => "system-lock-screen-symbolic",
-            .advanced => "pearl-emblem-system-symbolic",
+            .advanced, .plugins => "pearl-emblem-system-symbolic",
         };
     }
     fn sectionTitle(self: *Window, index: usize) [:0]const u8 {
@@ -647,7 +656,7 @@ pub const Window = struct {
         }
         self.restore_id = glib.idleAdd(restore, self);
         const preference = switch (target.page) {
-            .appearance, .bar, .session, .advanced => true,
+            .appearance, .bar, .session, .advanced, .plugins => true,
             else => false,
         };
         self.save.as(gtk.Widget).getParent().?.setVisible(@intFromBool(preference));
@@ -721,6 +730,7 @@ pub const Window = struct {
         const editor = self.editor;
         self.saved_button.as(gtk.Widget).setVisible(@intFromBool(self.target.page == .advanced));
         self.saved_button.as(gtk.Widget).setSensitive(@intFromBool(editor.ready and editor.current != null));
+        if (self.plugins_view) |view| view.update();
         if (self.preferences_view) |view| view.update();
         for (self.preference_pages) |page| if (page) |view| view.update();
         for (self.live_pages) |page| if (page) |view| view.update();
@@ -728,7 +738,7 @@ pub const Window = struct {
         const dirty = editor.local != null or editor.state.dirty;
         self.draft_badge.as(gtk.Widget).setVisible(@intFromBool((dirty or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
         self.review_button.as(gtk.Widget).setVisible(@intFromBool((dirty or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
-        const preference_page = self.target.page == .appearance or self.target.page == .bar or self.target.page == .session or self.target.page == .advanced;
+        const preference_page = self.target.page == .appearance or self.target.page == .bar or self.target.page == .session or self.target.page == .advanced or self.target.page == .plugins;
         self.actions.as(gtk.Widget).setVisible(@intFromBool((editor.ready or dirty) and preference_page));
         self.merge_button.as(gtk.Widget).setVisible(@intFromBool(editor.state.conflict or editor.recovery));
         const available = editor.online and editor.ready and !editor.state.locked and !editor.state.busy and editor.download == .none and editor.operation == null;
@@ -1056,6 +1066,12 @@ pub const Window = struct {
             for ([_]*gtk.Widget{ view.qt_enabled.as(gtk.Widget), view.qt_retry.as(gtk.Widget), view.qt_review.as(gtk.Widget), view.qt_reapply.as(gtk.Widget), view.qt_kde.as(gtk.Widget) }, [_][]const u8{ "qt_enabled", "qt_retry", "qt_review", "qt_reapply", "qt_kde" }) |widget, name|
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .bounds = self.bounds(widget) });
         }
+        if (self.plugins_view) |view| if (self.target.page == .plugins) for (view.rows.items) |row| {
+            inline for (.{ "enabled", "activity", "overlay", "mode", "output", "x", "y", "width", "height", "interactive", "locked", "fullscreen" }) |name| {
+                const widget = @field(row, name).as(gtk.Widget);
+                try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "{s}/{s}", .{ row.info.id, name }), .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            }
+        };
         for (self.preference_pages) |item| if (item) |view| for (view.fields) |field| {
             if (field.widget.getMapped() != 0) try controls.append(alloc, .{ .field = field.spec.path, .focused = if (focus) |f| f == field.widget or f.isAncestor(field.widget) != 0 else false, .bounds = self.bounds(field.widget) });
         };

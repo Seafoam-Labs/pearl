@@ -108,3 +108,5 @@
 .pearl-root.$scope .pearl-dock .focused { background: $high$; }
 
 .pearl-root.$scope popover > contents { background: $container$; color: $text$; border: 1px solid alpha($outline$, 0.3); border-radius: 14px; padding: 8px; }
+
+.pearl-root.$scope .pearl-plugin-label { color: $text$; }

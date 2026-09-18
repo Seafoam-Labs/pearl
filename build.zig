@@ -5,6 +5,8 @@ const builtin = @import("builtin");
 pub fn build(b: *std.Build) void {
     if (!std.mem.eql(u8, builtin.zig_version_string, "0.16.0"))
         @panic("Pearl requires Zig 0.16.0; see .zigversion");
+    const plugin_examples = b.option([]const u8, "plugin-examples", "Prebuilt plugin examples and failure fixtures") orelse ".cache/plugin-examples";
+    const wasm_plugins = b.option(bool, "wasm-plugins", "Build the experimental WebAssembly plugin helper") orelse false;
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const release = b.option(bool, "release", "Strip production artifacts for reproducible ReleaseSafe packages") orelse false;
@@ -123,7 +125,7 @@ pub fn build(b: *std.Build) void {
     }
 
     const module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
-    configureApp(b, module, resources, false);
+    configureApp(b, module, resources, false, wasm_plugins);
     module.addImport("wayland", native);
     module.strip = release;
     const app = b.addExecutable(.{ .name = "pearl", .root_module = module });
@@ -145,7 +147,7 @@ pub fn build(b: *std.Build) void {
 
         sm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
         sm.linkSystemLibrary("wayland-client", .{});
-        configureApp(b, sm, resources, instrumented);
+        configureApp(b, sm, resources, instrumented, wasm_plugins);
         sm.strip = release and !instrumented;
         const exe = b.addExecutable(.{ .name = if (instrumented) "pearl-settings-test" else "pearl-settings", .root_module = sm });
         const install = b.addInstallArtifact(exe, .{ .dest_dir = .{ .override = .{ .custom = if (instrumented) "test" else "bin" } } });
@@ -166,7 +168,7 @@ pub fn build(b: *std.Build) void {
     var production_locker: *std.Build.Step.Compile = undefined;
     for ([_]bool{ false, true }) |instrumented| {
         const lock_module = gtkModule(b, bindings, target, optimize, "src/lock_main.zig", pulse_module);
-        configureApp(b, lock_module, resources, instrumented);
+        configureApp(b, lock_module, resources, instrumented, false);
         lock_module.addImport("pam", pam_module);
         lock_module.linkSystemLibrary("pam", .{});
         lock_module.strip = release and !instrumented;
@@ -194,12 +196,44 @@ pub fn build(b: *std.Build) void {
     const pure = b.addTest(.{ .root_module = pure_module });
     b.step("test", "Run pure lifecycle, startup and Aqueous model tests without GTK or a compositor").dependOn(&b.addRunArtifact(pure).step);
 
+    b.step("test-plugin-unit", "Verify plugin documents, permissions, framing and route isolation").dependOn(&b.addRunArtifact(pure).step);
+    if (wasm_plugins) {
+        const prefix = b.option([]const u8, "wasmtime-prefix", "Verified Wasmtime 48.0.2 C API prefix") orelse @panic("-Dwasm-plugins=true requires -Dwasmtime-prefix");
+        const translated = b.addTranslateC(.{ .root_source_file = .{ .cwd_relative = b.pathJoin(&.{ prefix, "include/wasmtime.h" }) }, .target = target, .optimize = optimize });
+        translated.addIncludePath(.{ .cwd_relative = b.pathJoin(&.{ prefix, "include" }) });
+        const host = b.createModule(.{ .root_source_file = b.path("src/plugin_host_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+        host.addImport("wasmtime", translated.createModule());
+        host.addObjectFile(.{ .cwd_relative = b.pathJoin(&.{ prefix, "lib/libwasmtime.a" }) });
+        host.linkSystemLibrary("m", .{});
+        host.linkSystemLibrary("gcc_s", .{});
+        host.linkSystemLibrary("dl", .{});
+        host.linkSystemLibrary("pthread", .{});
+        const exe = b.addExecutable(.{ .name = "pearl-plugin-host", .root_module = host });
+        const helper_install = b.addInstallArtifact(exe, .{});
+        const runtime_license = b.addInstallFile(.{ .cwd_relative = b.pathJoin(&.{ prefix, "LICENSE" }) }, "share/licenses/pearl/Wasmtime-LICENSE");
+        const helper_step = b.step("build-plugin-host", "Build the isolated plugin helper and stage its pinned runtime");
+        for ([_]*std.Build.Step{ &helper_install.step, &runtime_license.step }) |step| {
+            helper_step.dependOn(step);
+            b.getInstallStep().dependOn(step);
+        }
+        const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugin_host.py", "--helper", b.getInstallPath(.bin, "pearl-plugin-host"), "--examples", plugin_examples });
+        check.step.dependOn(helper_step);
+        b.step("test-plugin-host", "Exercise three guest languages, sprites and helper failures").dependOn(&check.step);
+    }
+
     const ctl_module = b.createModule(.{ .root_source_file = b.path("src/pearlctl.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| ctl_module.addImport(name, bindings.module(name));
     ctl_module.strip = release;
     const ctl = b.addExecutable(.{ .name = "pearlctl", .root_module = ctl_module });
     b.installArtifact(ctl);
 
+    if (wasm_plugins) {
+        const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugins.py", "--pearl", b.getInstallPath(.bin, "pearl"), "--ctl", b.getInstallPath(.bin, "pearlctl"), "--settings" });
+        check.addArtifactArg(settings_test_app);
+        check.addArgs(&.{ "--examples", plugin_examples });
+        check.step.dependOn(b.getInstallStep());
+        b.step("test-plugins", "Verify plugins and main Settings in private Aqueous").dependOn(&check.step);
+    }
     if (b.option(bool, "qt-themes", "Build isolated Qt 5/6 Darkly dependency probes") orelse false) {
         for ([_][]const u8{ "5", "6" }) |version| {
             const probe = b.addSystemCommand(&.{"python3"});
@@ -304,7 +338,7 @@ pub fn build(b: *std.Build) void {
     b.step("test-adapter", "Exercise IPC recovery, policy and commands on private sockets and nested Aqueous").dependOn(&adapter_test.step);
 
     const test_module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
-    configureApp(b, test_module, resources, true);
+    configureApp(b, test_module, resources, true, wasm_plugins);
     test_module.addImport("wayland", native);
     const integration_app = b.addExecutable(.{ .name = "pearl-integration", .root_module = test_module });
     integration_app.step.dependOn(&system_versions.step);
@@ -576,10 +610,11 @@ pub fn build(b: *std.Build) void {
     }
 }
 
-fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.LazyPath, test_hooks: bool) void {
+fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.LazyPath, test_hooks: bool, wasm_plugins: bool) void {
     module.addAnonymousImport("pearl_resources", .{ .root_source_file = resources });
     const options = b.addOptions();
     options.addOption(bool, "test_hooks", test_hooks);
+    options.addOption(bool, "wasm_plugins", wasm_plugins);
     module.addOptions("build_options", options);
 }
 

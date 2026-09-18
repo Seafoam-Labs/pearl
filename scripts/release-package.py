@@ -12,14 +12,19 @@ def main():
             work=Path(temp);meta=source.archive(ROOT,work);report['source']=meta
             env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(ROOT/'.cache/zig'),SOURCE_DATE_EPOCH=str(meta['source_date_epoch']),PKGDEST=str(a.output))
             with (a.output/'makepkg.log').open('w') as log:
-                subprocess.run(['makepkg','--nobuild','--noconfirm'],cwd=work,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=60)
+                subprocess.run(['makepkg','--nobuild','--noconfirm'],cwd=work,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=600)
                 extracted=work/'src'/('pearl-'+json.loads((ROOT/'packaging/release.json').read_text())['arch_pkgver'])
                 if (ROOT/'zig-pkg').is_dir():shutil.copytree(ROOT/'zig-pkg',extracted/'zig-pkg')
                 subprocess.run(['makepkg','--noextract','--force','--noconfirm'],cwd=work,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=900)
             package_paths=subprocess.check_output(['makepkg','--packagelist'],cwd=work,env=env,text=True).splitlines();assert len(package_paths)==1
             package=Path(package_paths[0]);report['package']=package.name;report['sha256']=hashlib.sha256(package.read_bytes()).hexdigest()
             with tarfile.open(package) as tar:
-                names=set(tar.getnames());assert {n for n in names if n.startswith('usr/bin/') and not n.endswith('/')}=={'usr/bin/pearl','usr/bin/pearlctl','usr/bin/pearl-lock','usr/bin/pearl-settings'}
+                names=set(tar.getnames());assert {n for n in names if n.startswith('usr/bin/') and not n.endswith('/')}=={'usr/bin/pearl','usr/bin/pearlctl','usr/bin/pearl-lock','usr/bin/pearl-settings','usr/bin/pearl-plugin-host'}
+                plugin_files={f'usr/share/pearl/plugins/{example}/{member}' for example in ('timer-c','counter-zig','counter-rust','companion-c') for member in ('plugin.json','plugin.wasm')}
+                plugin_files.update({'usr/share/pearl/plugins/companion-c/cat.png','usr/share/pearl/plugins/companion-c/LICENSE.assets'})
+                assert {n for n in names if n.startswith('usr/share/pearl/plugins/') and tar.getmember(n).isfile()}==plugin_files
+                assert {'usr/share/pearl/plugins-sdk/plugin.wit','usr/share/licenses/pearl/Wasmtime-LICENSE'} <= names
+                report['plugin_payload_sha256']={n:hashlib.sha256(tar.extractfile(n).read()).hexdigest() for n in sorted(plugin_files | {'usr/bin/pearl-plugin-host'})}
                 assert 'etc/pam.d/pearl' in names and 'usr/lib/systemd/user/pearl.service' in names
                 for resource in ('applications/org.aqueous.Pearl.Settings.desktop','icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg','metainfo/org.aqueous.Pearl.Settings.metainfo.xml'):
                     assert 'usr/share/'+resource in names

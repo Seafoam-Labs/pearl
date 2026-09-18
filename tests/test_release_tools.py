@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Release tooling must fail closed and archives must exclude local state."""
-import hashlib, importlib.util, json, tempfile, unittest
+import hashlib, importlib.util, json, tempfile, unittest, tarfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 def module(name):
@@ -35,7 +35,12 @@ class ReleaseTools(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             root=Path(t)/'source';root.mkdir();write(root,'packaging/release.json',{'arch_pkgver':'1','version':'1','source_date_epoch':1})
             (root/'packaging/arch').mkdir();(root/'packaging/arch/PKGBUILD').write_text("sha256sums=('@SOURCE_SHA256@')\n");(root/'README.md').write_text('fixture')
+            write(root,'plugins/wit/plugin.wit',{'included':True})
+            write(root,'plugins/examples/rust/target/generated.wasm',{'excluded':True})
             first=source.archive(root,Path(t)/'one');write(root,'artifacts/private.json',{'ignored':True});second=source.archive(root,Path(t)/'two')
+            with tarfile.open(Path(t)/'one'/first['archive']) as archive:
+                self.assertIn('pearl-1/plugins/wit/plugin.wit',archive.getnames())
+                self.assertFalse(any('/target/' in name for name in archive.getnames()))
             self.assertEqual(first,second);self.assertIn(first['sha256'],(Path(t)/'one/PKGBUILD').read_text())
             (root/'src').mkdir();(root/'src/link').symlink_to(root/'README.md')
             with self.assertRaises(ValueError):source.archive(root,Path(t)/'three')

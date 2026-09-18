@@ -1,0 +1,29 @@
+package pearl:plugin@0.1.0;
+
+interface types {
+    enum node-kind { label, button, image }
+    record node { id: u32, kind: node-kind, text: string, asset: string, clip: string }
+    record scene { nodes: list<node> }
+    record setting { key: string, value: string }
+    enum event-kind { activate, click, timer, settings, deactivate, activity, preview }
+    record event { kind: event-kind, node: u32, count: u32, settings: list<setting>, reduced-motion: bool }
+}
+
+interface host {
+    use types.{scene};
+    publish: func(value: scene) -> result<_, string>;
+    log: func(message: string);
+    set-timer: func(milliseconds: u32) -> result<_, string>;
+    enum availability { available, permission-denied, unsupported, suspended }
+    input-activity: func(subscribe: bool) -> availability;
+}
+
+interface guest {
+    use types.{event};
+    handle-event: func(value: event) -> result<_, string>;
+}
+
+world plugin {
+    import host;
+    export guest;
+}

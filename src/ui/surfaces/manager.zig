@@ -78,11 +78,14 @@ const Output = struct {
     reservations: policy.Reservation = .{},
     wallpaper: ?*Surface = null,
     bar: ?*Surface = null,
+    plugin_overlays: std.ArrayList(*@import("../../plugins/overlay.zig").Overlay) = .empty,
     dock: ?*@import("../../desktop/dock.zig").Dock = null,
     frames: [4]?*Surface = .{ null, null, null, null },
     seen: bool = false,
     preferences_revision: u64 = 0,
     fn destroy(self: *Output) void {
+        for (self.plugin_overlays.items) |overlay| overlay.destroy();
+        self.plugin_overlays.deinit(a);
         if (self.dock) |dock| dock.destroy();
         if (self.wallpaper) |s| s.destroy();
         if (self.bar) |s| s.destroy();
@@ -116,6 +119,7 @@ pub const Manager = struct {
     capture_hide: bool = false,
     capture_feedback: bool = false,
     services_started: bool = false,
+    plugins: ?*@import("../../plugins/manager.zig").Manager = null,
     settings_observer_context: ?*anyopaque = null,
     settings_observer: ?*const fn (*anyopaque) void = null,
     aqueous_settings: @import("../../config/aqueous_client.zig").Client = undefined,
@@ -178,6 +182,9 @@ pub const Manager = struct {
         self.session_services.start();
         try self.clipboard.start();
         try self.capture.start();
+        self.plugins = try @import("../../plugins/manager.zig").Manager.create(self.app.as(gio.Application), self, pluginsChanged);
+        self.plugins.?.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
+        self.syncClipboardPrivacy();
         self.armClock();
         gtk.IconTheme.getForDisplay(self.display).addResourcePath("/org/aqueous/Pearl/icons");
         self.monitor_signal = gio.ListModel.signals.items_changed.connect(self.display.getMonitors(), *Manager, monitorsChanged, self, .{});
@@ -196,6 +203,8 @@ pub const Manager = struct {
         self.unwatchMonitors();
         self.monitor_watches.deinit(a);
         self.clear();
+        if (self.plugins) |plugins| plugins.stop();
+        self.plugins = null;
         if (self.services_started) {
             self.aqueous_settings.stop();
             self.preferences.stop();
@@ -253,11 +262,20 @@ pub const Manager = struct {
     }
     fn validatePreferences(context: *anyopaque, prefs: @import("../../config/preferences.zig").Preferences) !void {
         const self: *Manager = @ptrCast(@alignCast(context));
+        try self.validatePlugins(prefs);
         for (self.outputs.items) |output| {
             var reservations = output.reservations;
             const bar = prefs.forOutput(output.connector);
             try reservations.bar(bar.edge, bar.size);
         }
+    }
+    fn validatePlugins(self: *Manager, prefs: @import("../../config/preferences.zig").Preferences) !void {
+        const plugins = self.plugins orelse return;
+        for (prefs.plugins.entries) |cfg| if (cfg.enabled) {
+            for (plugins.slots.items) |slot| if (std.mem.eql(u8, cfg.id, slot.id()) and std.mem.eql(u8, cfg.digest, &slot.entry.package.digest)) {
+                try slot.entry.package.manifest.config(cfg);
+            };
+        };
     }
     fn logoutRequested(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -269,6 +287,11 @@ pub const Manager = struct {
         const locked = !matched or self.client.availability != .ready or !gate.available or !gate.active or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
         self.clipboard.setLocked(locked);
         self.capture.setLocked(locked);
+        if (self.plugins) |plugins| plugins.setLocked(locked);
+        if (locked) for (self.outputs.items) |output| {
+            for (output.plugin_overlays.items) |overlay| overlay.window.as(gtk.Widget).setVisible(0);
+            if (output.bar) |surface| if (surface.bar) |bar| for (bar.plugin_views.items) |view| view.update();
+        };
     }
     fn lifecycleChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -286,6 +309,10 @@ pub const Manager = struct {
         if (self.auth.window) |window| self.preferences.style(window.as(gtk.Widget), self.auth.panel.?.as(gtk.Widget));
         self.schedule();
     }
+    fn pluginsChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.servicesChanged();
+    }
     fn preferencesChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
@@ -296,6 +323,7 @@ pub const Manager = struct {
         for ([_]?*Surface{ self.popup, self.osd, self.notification }) |maybe| if (maybe) |surface| self.styleSurface(surface);
         if (self.popup) |surface| if (surface.settings) |view| view.update();
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
+        if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
         self.authChangedSelf();
         self.positionPopup();
         self.schedule();
@@ -462,6 +490,7 @@ pub const Manager = struct {
         }
         self.lifecycle.sync();
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
+        if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
         self.syncClipboardPrivacy();
         if (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or (self.lifecycle.session_id.slice().len != 0 and !self.lifecycle.gate.active)) self.hideIdentifiers();
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
@@ -551,6 +580,7 @@ pub const Manager = struct {
             const gate = self.lifecycle.gate;
             const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active));
             if (o.dock) |dock| try dock.update(self.preferences.prefs().dockForOutput(o.connector), o.reservations.bar_edge, bounds, dock_locked);
+            try self.syncPluginOverlays(o, dock_locked);
             if (changed and self.popup != null and self.popup.?.output == o) self.positionPopup();
         }
         var i: usize = 0;
@@ -659,7 +689,7 @@ pub const Manager = struct {
             .bar => {
                 panel_widget.addCssClass("pearl-bar-panel");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, 4);
-                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services);
+                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -767,6 +797,47 @@ pub const Manager = struct {
     }
     pub fn showPopup(self: *Manager, output: *Output) !void {
         return self.showPane(output, .launcher);
+    }
+    fn syncPluginOverlays(self: *Manager, output: *Output, locked: bool) !void {
+        const plugins = self.plugins orelse return;
+        for (output.plugin_overlays.items) |overlay| overlay.seen = false;
+        var fullscreen = false;
+        var entities = self.client.model.entities.valueIterator();
+        while (entities.next()) |entity| if (entity.* == .window and entity.window.fullscreen and entity.window.visible) {
+            if (entity.window.output) |id| if (std.mem.eql(u8, id, output.id)) {
+                fullscreen = true;
+            };
+        };
+        for (self.preferences.prefs().plugins.entries) |cfg| {
+            if (!cfg.enabled or cfg.placement.mode != .overlay or !cfg.grants.overlay) continue;
+            if (cfg.placement.output.len > 0) {
+                if (!std.mem.eql(u8, cfg.placement.output, output.connector)) continue;
+            } else if (self.outputs.items.len == 0 or self.outputs.items[0] != output) continue;
+            var active = false;
+            for (plugins.slots.items) |slot| if (std.mem.eql(u8, slot.id(), cfg.id) and slot.status == .active and slot.scene != null) {
+                active = true;
+                break;
+            };
+            if (!active or locked) continue;
+            var found: ?*@import("../../plugins/overlay.zig").Overlay = null;
+            for (output.plugin_overlays.items) |overlay| if (std.mem.eql(u8, overlay.view.id, cfg.id)) {
+                found = overlay;
+                break;
+            };
+            if (found == null) {
+                const overlay = try @import("../../plugins/overlay.zig").Overlay.create(self.app, output.monitor, &self.effects, plugins, &self.preferences, cfg.id);
+                try output.plugin_overlays.append(a, overlay);
+                found = overlay;
+            }
+            found.?.update(cfg.placement, output.bounds.width, output.bounds.height, cfg.placement.hide_fullscreen and fullscreen);
+        }
+        var i: usize = 0;
+        while (i < output.plugin_overlays.items.len) {
+            if (!output.plugin_overlays.items[i].seen) {
+                const overlay = output.plugin_overlays.orderedRemove(i);
+                overlay.destroy();
+            } else i += 1;
+        }
     }
     fn syncSettingsAccess(self: *Manager) void {
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
@@ -1017,6 +1088,7 @@ pub const Manager = struct {
             return control_page.report(popup.window, alloc);
         }
         if (request.op == .aqueous_status) return self.aqueous_settings.status(alloc, request.text);
+        if (request.op == .plugin_list or request.op == .plugin_inspect) return (self.plugins orelse return error.Unavailable).report(alloc, request.path, request.offset orelse 0);
         if (request.op == .preferences_status) return self.preferences.status(alloc);
         if (request.op == .status) return self.status(alloc);
         if (request.op == .connectivity_status) return @import("../../services/connectivity_status.zig").encode(alloc, &self.network, &self.bluetooth, request.offset orelse 0);
@@ -1026,7 +1098,7 @@ pub const Manager = struct {
         if (@import("build_options").test_hooks and request.op == .aqueous_draft and std.mem.startsWith(u8, request.text orelse "", "{\"test_owner\":"))
             return self.owner_probe.command(alloc, request.text.?, &self.network, &self.bluetooth, &self.power);
         switch (request.op) {
-            .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .plugin_list, .plugin_inspect, .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
             .dock_show, .dock_hide, .dock_pin, .dock_unpin => {
                 const dock = (try self.selected(request.output)).dock orelse return error.Unavailable;
                 if (dock.locked) return error.Locked;
@@ -1059,6 +1131,36 @@ pub const Manager = struct {
                 const crop = if (request.op == .capture_region) try @import("../../services/clipboard_policy.zig").region(request.text.?, output.bounds.width, output.bounds.height) else null;
                 try self.capture.take(output.connector, output.bounds.width, output.bounds.height, crop);
                 return "{\"queued\":true}";
+            },
+            .plugin_reload => {
+                try (self.plugins orelse return error.Unavailable).retry(request.path.?);
+            },
+            .plugin_enable, .plugin_disable => {
+                const plugins = self.plugins orelse return error.Unavailable;
+                if (plugins.locked) return error.Locked;
+                if (self.preferences.draft.text != null) return error.Conflict;
+                const m = @import("../../plugins/model.zig");
+                var prefs = self.preferences.prefs();
+                var configs: std.ArrayList(m.Config) = .empty;
+                var cfg = prefs.plugins.find(request.path.?) orelse m.Config{ .id = request.path.? };
+                cfg.enabled = request.op == .plugin_enable;
+                if (cfg.enabled) {
+                    if (!std.mem.eql(u8, cfg.digest, request.text.?)) cfg.grants = .{};
+                    cfg.digest = request.text.?;
+                    var found = false;
+                    for (plugins.slots.items) |slot| if (std.mem.eql(u8, slot.id(), cfg.id) and std.mem.eql(u8, &slot.entry.package.digest, cfg.digest)) {
+                        try slot.entry.package.manifest.config(cfg);
+                        found = true;
+                        break;
+                    };
+                    if (!found) return error.PluginContentChanged;
+                }
+                for (prefs.plugins.entries) |old| if (!std.mem.eql(u8, old.id, cfg.id)) {
+                    try configs.append(alloc, old);
+                };
+                try configs.append(alloc, cfg);
+                prefs.plugins.entries = configs.items;
+                try self.preferences.apply(try std.json.Stringify.valueAlloc(alloc, prefs, .{}), request.revision.?);
             },
             .preferences_apply => {
                 try self.preferences.apply(request.text.?, request.revision.?);

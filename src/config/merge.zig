@@ -1,4 +1,4 @@
-//! Three-way JSON merge. Objects merge by field; lists/scalars stay atomic.
+//! Three-way JSON merge. Plugin records merge by identity; other lists remain atomic.
 const std = @import("std");
 const V = std.json.Value;
 fn equal(a: V, b: V) bool {
@@ -22,14 +22,44 @@ fn equal(a: V, b: V) bool {
         },
     };
 }
-fn merge(a: std.mem.Allocator, base: V, ours: V, theirs: V) !V {
+const Scope = enum { normal, plugins, entries, entry, settings };
+fn merge(a: std.mem.Allocator, base: V, ours: V, theirs: V, scope: Scope) anyerror!V {
     if (equal(ours, base)) return theirs;
     if (equal(theirs, base) or equal(ours, theirs)) return ours;
+    if (scope == .entries or scope == .settings) return keyed(a, base, ours, theirs, if (scope == .entries) "id" else "key", if (scope == .entries) .entry else .normal);
+    if (scope == .entry and (!equal(base.object.get("digest").?, ours.object.get("digest").?) or !equal(base.object.get("digest").?, theirs.object.get("digest").?))) return error.MergeConflict;
     if (base != .object or ours != .object or theirs != .object) return error.MergeConflict;
     // All inputs are canonical schema output, so they contain the same keys.
     var result: V = .{ .object = .empty };
     var it = ours.object.iterator();
-    while (it.next()) |field| try result.object.put(a, field.key_ptr.*, try merge(a, base.object.get(field.key_ptr.*) orelse return error.MergeConflict, field.value_ptr.*, theirs.object.get(field.key_ptr.*) orelse return error.MergeConflict));
+    while (it.next()) |field| {
+        const key = field.key_ptr.*;
+        const next: Scope = if (scope == .normal and std.mem.eql(u8, key, "plugins")) .plugins else if (scope == .plugins and std.mem.eql(u8, key, "entries")) .entries else if (scope == .entry and std.mem.eql(u8, key, "settings")) .settings else .normal;
+        try result.object.put(a, key, try merge(a, base.object.get(key) orelse return error.MergeConflict, field.value_ptr.*, theirs.object.get(key) orelse return error.MergeConflict, next));
+    }
+    return result;
+}
+fn find(values: V, field: []const u8, key: []const u8) ?V {
+    for (values.array.items) |value| if (std.mem.eql(u8, value.object.get(field).?.string, key)) return value;
+    return null;
+}
+fn optionalEqual(x: ?V, y: ?V) bool {
+    return if (x) |value| if (y) |other| equal(value, other) else false else y == null;
+}
+fn keyed(a: std.mem.Allocator, base: V, ours: V, theirs: V, field: []const u8, scope: Scope) anyerror!V {
+    var keys: std.StringHashMap(void) = .init(a);
+    defer keys.deinit();
+    var result: V = .{ .array = std.array_list.Managed(V).init(a) };
+    for ([_]V{ ours, theirs, base }) |values| for (values.array.items) |entry| {
+        const key = entry.object.get(field).?.string;
+        const visited = try keys.getOrPut(key);
+        if (visited.found_existing) continue;
+        const b = find(base, field, key);
+        const o = find(ours, field, key);
+        const t = find(theirs, field, key);
+        const value = if (optionalEqual(o, b)) t else if (optionalEqual(t, b) or optionalEqual(o, t)) o else if (b != null and o != null and t != null) try merge(a, b.?, o.?, t.?, scope) else return error.MergeConflict;
+        if (value) |v| try result.array.append(v);
+    };
     return result;
 }
 pub fn json(a: std.mem.Allocator, base: []const u8, ours: []const u8, theirs: []const u8) ![]const u8 {
@@ -39,7 +69,7 @@ pub fn json(a: std.mem.Allocator, base: []const u8, ours: []const u8, theirs: []
         const p = try model.parse(a, bytes);
         value.* = try std.json.parseFromSliceLeaky(V, a, try std.json.Stringify.valueAlloc(a, p, .{}), .{});
     }
-    const result = try std.json.Stringify.valueAlloc(a, try merge(a, values[0], values[1], values[2]), .{ .whitespace = .indent_2 });
+    const result = try std.json.Stringify.valueAlloc(a, try merge(a, values[0], values[1], values[2], .normal), .{ .whitespace = .indent_2 });
     _ = try model.parse(a, result);
     return result;
 }
@@ -52,4 +82,19 @@ test "disjoint external edits merge; overlapping edits and invalid combined grou
     try std.testing.expectEqual(.compact, result.density);
     try std.testing.expectError(error.MergeConflict, json(a, "{}", "{\"font_size\":16}", "{\"font_size\":18}"));
     try std.testing.expectError(error.InvalidGroups, json(a, "{}", "{\"bar\":{\"groups\":{\"left\":\"launcher,title,overview\"}}}", "{\"bar\":{\"groups\":{\"right\":\"control,overview\"}}}"));
+}
+
+test "plugin drafts merge disjoint identities and settings but reject conflicting approval" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const result = try @import("preferences.zig").parse(a, try json(a, "{}", "{\"plugins\":{\"entries\":[{\"id\":\"one\"}]}}", "{\"plugins\":{\"entries\":[{\"id\":\"two\"}]}}"));
+    try std.testing.expectEqual(@as(usize, 2), result.plugins.entries.len);
+    const base = "{\"plugins\":{\"entries\":[{\"id\":\"one\"}]}}";
+    const ours = "{\"plugins\":{\"entries\":[{\"id\":\"one\",\"settings\":[{\"key\":\"speed\",\"value\":\"2\"}]}]}}";
+    const theirs = "{\"plugins\":{\"entries\":[{\"id\":\"one\",\"settings\":[{\"key\":\"color\",\"value\":\"blue\"}]}]}}";
+    const settings = try @import("preferences.zig").parse(a, try json(a, base, ours, theirs));
+    try std.testing.expectEqual(@as(usize, 2), settings.plugins.entries[0].settings.len);
+    const changed = "{\"plugins\":{\"entries\":[{\"id\":\"one\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}}";
+    try std.testing.expectError(error.MergeConflict, json(a, base, ours, changed));
 }

@@ -1,4 +1,7 @@
 test {
+    _ = @import("plugins/model.zig");
+    _ = @import("settings/live_protocol.zig");
+    _ = @import("plugins/protocol.zig");
     _ = @import("config/ini.zig");
     _ = @import("config/json_keys.zig");
     _ = @import("theme/qt.zig");

@@ -1,0 +1,67 @@
+{
+  "id": "pearl.companion",
+  "name": "Pearl Cat",
+  "version": "0.1.0",
+  "capabilities": {
+    "input_activity": true,
+    "overlay": true
+  },
+  "assets": [
+    {
+      "id": "cat",
+      "path": "cat.png",
+      "license": "CC0-1.0",
+      "width": 384,
+      "height": 96
+    }
+  ],
+  "clips": [
+    {
+      "id": "idle",
+      "frames": [
+        {
+          "asset": "cat",
+          "width": 128,
+          "height": 96,
+          "duration_ms": 100
+        }
+      ]
+    },
+    {
+      "id": "tap-left",
+      "frames": [
+        {
+          "asset": "cat",
+          "width": 128,
+          "height": 96,
+          "duration_ms": 100,
+          "x": 128
+        },
+        {
+          "asset": "cat",
+          "width": 128,
+          "height": 96,
+          "duration_ms": 200
+        }
+      ]
+    },
+    {
+      "id": "tap-right",
+      "frames": [
+        {
+          "asset": "cat",
+          "width": 128,
+          "height": 96,
+          "duration_ms": 100,
+          "x": 256
+        },
+        {
+          "asset": "cat",
+          "width": 128,
+          "height": 96,
+          "duration_ms": 200
+        }
+      ]
+    }
+  ]
+}

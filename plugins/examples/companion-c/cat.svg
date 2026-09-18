@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="384" height="96" viewBox="0 0 384 96">
+<!-- Original Pearl companion sprite, CC0-1.0. Three 128×96 frames. -->
+<defs><g id="cat" stroke="#403a50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+<path d="M27 62 L25 23 Q27 17 44 30 Q63 22 81 30 Q101 16 103 24 L101 62 Q89 81 64 81 Q39 81 27 62Z" fill="#faf4ef"/>
+<path d="M34 31 L35 43 L45 36 M83 36 L94 30 L93 43" fill="#ecabc0" stroke="none"/>
+<path d="M46 48 L46 51 M81 48 L81 51 M58 56 Q64 62 70 56 M64 55 L64 59" fill="none"/>
+<path d="M17 77 Q64 69 110 77 L107 94 L20 94Z" fill="#c6b5e9"/>
+<path d="M24 84 L103 84" stroke="#8d79b0"/>
+</g></defs>
+<g><use href="#cat"/><g fill="#faf4ef" stroke="#403a50" stroke-width="3"><ellipse cx="44" cy="73" rx="12" ry="8"/><ellipse cx="84" cy="73" rx="12" ry="8"/></g></g>
+<g transform="translate(128)"><use href="#cat"/><g fill="#faf4ef" stroke="#403a50" stroke-width="3"><ellipse cx="44" cy="82" rx="13" ry="6"/><ellipse cx="84" cy="67" rx="11" ry="9"/></g><path d="M22 65 L16 58 M32 59 L30 51" stroke="#f3b44d" stroke-width="3"/></g>
+<g transform="translate(256)"><use href="#cat"/><g fill="#faf4ef" stroke="#403a50" stroke-width="3"><ellipse cx="44" cy="67" rx="11" ry="9"/><ellipse cx="84" cy="82" rx="13" ry="6"/></g><path d="M105 65 L112 58 M96 59 L98 51" stroke="#f3b44d" stroke-width="3"/></g>
+</svg>

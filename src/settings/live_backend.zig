@@ -16,6 +16,7 @@ pub const Scope = struct {
 };
 pub const Pending = enum { none, audio, network, scan, bluetooth, discovery, brightness, profile, power, media, lifecycle, layout };
 pub const Live = struct {
+    plugins: ?*@import("../plugins/manager.zig").Manager = null,
     audio: *@import("../services/audio.zig").Audio,
     network: *@import("../services/network.zig").Network,
     bluetooth: *@import("../services/bluetooth.zig").Bluetooth,
@@ -83,6 +84,22 @@ pub const Live = struct {
     }
     pub fn perform(self: *Live, scope: *Scope, route: nav.Route, revision: u64, op: ui.Op, params: std.json.Value, alloc: std.mem.Allocator) !Pending {
         switch (op) {
+            .@"plugin.action" => {
+                if (route != .plugins) return error.WrongPage;
+                const v = try p.fields(ui.Plugin, alloc, params);
+                const plugins = self.plugins orelse return error.Unavailable;
+                switch (v.action) {
+                    .retry => try plugins.retry(v.id),
+                    .preview => {
+                        for (plugins.slots.items) |slot| if (std.mem.eql(u8, slot.id(), v.id) and slot.status == .active) {
+                            try slot.send(.{ .kind = .preview, .reduced_motion = plugins.reduced_motion });
+                            return .none;
+                        };
+                        return error.Unavailable;
+                    },
+                }
+                return .none;
+            },
             .@"layout.set", .@"layout.get" => {
                 if (route != .overview) return error.WrongPage;
                 const v = try p.fields(ui.Layout, alloc, params);
@@ -223,6 +240,26 @@ pub const Live = struct {
         }
     }
     pub fn page(self: *Live, alloc: std.mem.Allocator, scope: *Scope, route: nav.Route, _: u64, offset: usize) !ui.Page {
+        if (route == .plugins) {
+            const plugins = self.plugins orelse return .{ .summary = "Plugin service unavailable", .rows = &.{}, .offset = p.num(0) };
+            var infos: std.ArrayList(ui.PluginInfo) = .empty;
+            for (plugins.slots.items) |slot| {
+                const manifest = slot.entry.package.manifest;
+                try infos.append(alloc, .{ .id = manifest.id, .name = manifest.name, .version = manifest.version, .digest = &slot.entry.package.digest, .capabilities = manifest.capabilities, .settings = manifest.settings, .status = @tagName(slot.status), .error_code = slot.error_code });
+            }
+            const saved = try std.json.parseFromSliceLeaky(@import("../plugins/model.zig").Preferences, alloc, plugins.prefs orelse "{}", .{});
+            for (saved.entries) |cfg| {
+                var found = false;
+                for (plugins.slots.items) |slot| if (std.mem.eql(u8, slot.id(), cfg.id)) {
+                    found = true;
+                    break;
+                };
+                if (!found) try infos.append(alloc, .{ .installed = false, .id = cfg.id, .name = cfg.id, .version = "missing", .digest = "", .capabilities = cfg.grants, .settings = &.{}, .status = "missing", .error_code = "PluginPackageMissing" });
+            }
+            const start = @min(offset, infos.items.len);
+            const end = @min(start + 4, infos.items.len);
+            return .{ .summary = if (plugins.discovery_error) |err| err else if (plugins.registry == null) "Discovering local plugins…" else try std.fmt.allocPrint(alloc, "{d} installed packages · {d} rejected · Input activity unsupported by this compositor", .{ plugins.slots.items.len, plugins.registry.?.rejected }), .rows = &.{}, .plugins = infos.items[start..end], .offset = p.num(start), .next_offset = if (end < infos.items.len) p.num(end) else null };
+        }
         var rows: std.ArrayList(ui.Row) = .empty;
         var summary: []const u8 = "";
         var pending = false;

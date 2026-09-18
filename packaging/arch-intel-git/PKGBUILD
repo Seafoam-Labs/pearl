@@ -3,7 +3,7 @@
 # installation.
 pkgname=pearl-intel-git
 pkgver=1.0.0rc2.r22.ga002d24
-pkgrel=2
+pkgrel=3
 pkgdesc='GTK desktop shell exclusively for Aqueous (Intel baseline, Git version)'
 arch=('x86_64')
 url='https://github.com/Seafoam-Labs/pearl'
@@ -18,7 +18,8 @@ depends=('gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
 # aqueous-config >=0.8.2 with protected collections and display declaration capabilities is required.
 # Upstream packaging still pulls in DMS; use a shell-neutral build for Pearl.
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
-makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14')
+makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
+             'rust' 'rust-wasm' 'librsvg')
 optdepends=('qtengine: shared Qt 5/6 application appearance management'
             'pearl-darkly-style: Darkly Qt application styles without KWin decorations'
             'matugen>=4.2.0: dynamic Material colors'
@@ -29,8 +30,19 @@ optdepends=('qtengine: shared Qt 5/6 application appearance management'
 backup=('etc/pam.d/pearl-git')
 install=pearl-intel-git.install
 options=('!strip' '!debug')
-source=("pearl::git+$url.git")
-sha256sums=('SKIP')
+# Keep the runtime and SDK tools in sync with plugins/build-examples.py.
+_wasmtime=48.0.2
+_wit_bindgen=0.62.0
+_wasm_tools=1.259.0
+source=("pearl::git+$url.git"
+        "https://github.com/bytecodealliance/wasmtime/releases/download/v$_wasmtime/wasmtime-v$_wasmtime-x86_64-linux-c-api.tar.xz"
+        "https://github.com/bytecodealliance/wit-bindgen/releases/download/v$_wit_bindgen/wit-bindgen-$_wit_bindgen-x86_64-linux.tar.gz"
+        "https://github.com/bytecodealliance/wasm-tools/releases/download/v$_wasm_tools/wasm-tools-$_wasm_tools-x86_64-linux.tar.gz")
+# The release archive hash is filled by release-source.py; only Git uses SKIP.
+sha256sums=('SKIP'
+            'd9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9'
+            '3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe'
+            '3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160')
 
 pkgver() {
     cd "$srcdir/pearl"
@@ -46,28 +58,41 @@ prepare() {
     # The instrumented locker continues to use its private test PAM fixture.
     sed -i 's/pearl-lock"/pearl-lock-git"/g' src/services/lifecycle.zig
     sed -i 's/pam_start("pearl",/pam_start("pearl-git",/' src/lock/pam.zig
+    # Fetch locked Rust dependencies here; build() is entirely offline.
+    CARGO_HOME="$PWD/.cache/plugin-cargo" cargo fetch --locked --target wasm32-wasip2 \
+        --manifest-path plugins/examples/counter-rust/Cargo.toml
 }
 
 build() {
     cd "$srcdir/pearl"
     export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
-    zig build -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline
+    python3 plugins/build-examples.py --fixtures \
+        --wit-bindgen "$srcdir/wit-bindgen-$_wit_bindgen-x86_64-linux/wit-bindgen" \
+        --wasm-tools "$srcdir/wasm-tools-$_wasm_tools-x86_64-linux/wasm-tools"
+    zig build -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline \
+        -Dwasm-plugins=true -Dwasmtime-prefix="$srcdir/wasmtime-v$_wasmtime-x86_64-linux-c-api"
 }
 
 check() {
     cd "$srcdir/pearl"
     export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
-    zig build test test-adapter-unit test-bindings test-release-tools -Doptimize=ReleaseSafe -Dcpu=baseline
+    zig build test test-adapter-unit test-bindings test-release-tools test-plugin-host \
+        -Doptimize=ReleaseSafe -Dcpu=baseline \
+        -Dwasm-plugins=true -Dwasmtime-prefix="$srcdir/wasmtime-v$_wasmtime-x86_64-linux-c-api"
 }
 
 package() {
     cd "$srcdir/pearl"
-    DESTDIR="$pkgdir" bash packaging/install.sh
+    PEARL_PLUGIN_EXAMPLES_DIR="$PWD/.cache/plugin-examples" \
+        DESTDIR="$pkgdir" bash packaging/install.sh
 
     local binary directory
     for binary in pearl pearlctl pearl-lock pearl-settings; do
         mv "$pkgdir/usr/bin/$binary" "$pkgdir/usr/bin/$binary-git"
     done
+    if [[ -f "$pkgdir/usr/bin/pearl-plugin-host" ]]; then
+        mv "$pkgdir/usr/bin/pearl-plugin-host" "$pkgdir/usr/bin/pearl-plugin-host-git"
+    fi
     mv "$pkgdir/etc/pam.d/pearl" "$pkgdir/etc/pam.d/pearl-git"
     for directory in share/pearl share/doc/pearl share/licenses/pearl; do
         mv "$pkgdir/usr/$directory" "$pkgdir/usr/$directory-git"

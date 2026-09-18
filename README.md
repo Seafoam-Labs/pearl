@@ -39,6 +39,8 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Aqueous 0.8.2 integration evidence](artifacts/aqueous-082/README.md) and [previous master UI gallery](artifacts/aqueous-master/README.md).
 - [Release and packaging](docs/RELEASE.md) and [DMS migration / switch-back](docs/MIGRATION.md).
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
+- [Experimental WebAssembly plugins](docs/PLUGINS.md): C, Zig and Rust components, native widgets and companion overlays, with controls in the main Settings app. [Implementation roadmap](docs/WASM_PLUGIN_IMPLEMENTATION_PLAN.md).
+- [Plugin development guide](docs/PLUGIN_DEVELOPMENT.md): build your first clickable widget, install and test it, then add settings, timers or an animated companion.
 - [Settings-flyout navigation plan](docs/SETTINGS_NAVIGATION_PLAN.md): proposed direct bar shortcuts and separate compact settings pages.
 - [Standalone Settings application plan](docs/STANDALONE_SETTINGS_APPLICATION_PLAN.md): a separately launchable Settings app, sidebar pages, backend integration, packaging and design mockups.
 - [Qt application theming](docs/QT_THEMING.md): opt-in QtEngine + Darkly application styles for Qt 5/6, Pearl palettes, font/density settings, session setup and conditional restore. [Milestones](docs/QT_DARKLY_IMPLEMENTATION_PLAN.md) record delivery and remaining compatibility checks.

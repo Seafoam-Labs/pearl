@@ -1,0 +1,13 @@
+[package]
+name = "pearl-counter"
+version = "0.1.0"
+edition = "2024"
+[lib]
+crate-type = ["cdylib"]
+[dependencies]
+wit-bindgen = { version = "=0.62.0", default-features = false, features = ["macros", "realloc"] }
+dlmalloc = { version = "=0.2.14", features = ["global"] }
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = "s"
