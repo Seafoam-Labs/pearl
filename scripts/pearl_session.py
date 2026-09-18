@@ -24,11 +24,11 @@ def wait_for(check, timeout=10):
 
 
 class Child:
-    def __init__(self, argv, env, cwd, logfile, echo=False, input_pipe=False, log_limit=20000):
+    def __init__(self, argv, env, cwd, logfile, echo=False, input_pipe=False, log_limit=20000, pass_fds=()):
         self.lines = []
         self.proc = subprocess.Popen([str(x) for x in argv], env=env, cwd=cwd,
                                      stdin=subprocess.PIPE if input_pipe else subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT, text=True, start_new_session=True)
+                                     stderr=subprocess.STDOUT, text=True, start_new_session=True, pass_fds=pass_fds)
         self.logfile = Path(logfile)
         self.logfile.parent.mkdir(parents=True, exist_ok=True)
         def collect():
@@ -81,7 +81,9 @@ class Child:
 
 
 class PrivateSession:
-    def __init__(self, output, aqueous=None, backend='headless', parent_display=None, inherited=None, renderer='pixman', wm_extra='', tool_prefix=None):
+    def __init__(self, output, aqueous=None, backend='headless', parent_display=None, inherited=None, renderer='pixman', wm_extra='', tool_prefix=None, compositor_args=(), compositor_fds=()):
+        self.compositor_args = compositor_args
+        self.compositor_fds = compositor_fds
         self.baseline = None
         self.output = Path(output).resolve()
         self.tool_prefix = Path(tool_prefix or os.environ['PEARL_TEST_AQUEOUS_PREFIX']).resolve() if tool_prefix or os.environ.get('PEARL_TEST_AQUEOUS_PREFIX') else None
@@ -118,8 +120,8 @@ class PrivateSession:
     def __exit__(self, *_):
         self.close()
 
-    def child(self, name, argv, *, echo=False, input_pipe=False, log_limit=20000, **overrides):
-        child = Child(argv, dict(self.env, **overrides), self.base, self.output / f'{name}.log', echo=echo, input_pipe=input_pipe, log_limit=log_limit)
+    def child(self, name, argv, *, echo=False, input_pipe=False, log_limit=20000, pass_fds=(), **overrides):
+        child = Child(argv, dict(self.env, **overrides), self.base, self.output / f'{name}.log', echo=echo, input_pipe=input_pipe, log_limit=log_limit, pass_fds=pass_fds)
         self.children.append(child)
         return child
 
@@ -175,7 +177,7 @@ class PrivateSession:
         if self.parent_display:
             compositor_env['WAYLAND_DISPLAY'] = str(self.parent_display)
         marker = 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
-        self.compositor = self.child('compositor', [self.aqueous, '-no-xwayland', '-c', marker], **compositor_env)
+        self.compositor = self.child('compositor', [self.aqueous, *self.compositor_args, '-no-xwayland', '-c', marker], pass_fds=self.compositor_fds, **compositor_env)
         def ready():
             if self.compositor.proc.poll() is not None:
                 raise RuntimeError('private Aqueous failed: ' + str(self.compositor.logfile))

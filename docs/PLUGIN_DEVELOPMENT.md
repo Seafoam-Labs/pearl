@@ -22,7 +22,8 @@ between Pearl and a plugin. Generated bindings let your language use it.
 The current interface supports bar widgets, timers, settings controls, PNG images,
 sprite animations and desktop overlays. It does not expose files, networking,
 commands, system services or arbitrary GTK/HTML interfaces to plugin code.
-Global keyboard and mouse activity is currently unavailable.
+With a separate user grant and a supported Aqueous session, plugins can receive
+coarse keyboard/mouse activity notifications. They never receive typed text or keys.
 
 ## Choose an example
 
@@ -286,12 +287,32 @@ After installing and approving the updated package, expand its settings, grant
 apply. Enable **Accept clicks** if your overlay has buttons. Overlays hide during
 lock/authentication and inactive sessions.
 
-**A Bongo Cat-style reaction to global typing is not available yet.** The current
-cat reacts to its own button and the Settings **Preview** action. Declaring
-`input_activity` and granting permission does not provide global events:
-`input-activity` currently returns `unsupported` with a grant and
-`permission-denied` without one. See the
-[Aqueous dependency](AQUEOUS_PLUGIN_ACTIVITY.md) for that remaining work.
+To make a Bongo Cat-style companion react to typing:
+
+1. Declare `"capabilities": {"input_activity": true}` in `plugin.json`.
+2. Call `pearl_plugin_host_input_activity(true)` from an event callback, usually
+   activation. Check its returned availability before describing activity as live.
+3. Handle `PEARL_PLUGIN_TYPES_EVENT_KIND_ACTIVITY` like Preview: publish a tap
+   clip, alternating poses if desired. Respect `event->reduced_motion` with a
+   still pose. The supplied cat already does this.
+4. In main **Settings → Plugins**, approve and enable the package, switch on
+   **Allow keyboard and mouse activity**, then **Apply & save**.
+5. Launch Pearl through the matching Aqueous Pearl integration service; see
+   [activity setup](AQUEOUS_PLUGIN_ACTIVITY.md). A manual launch cannot authorize
+   itself merely by advertising the protocol.
+
+Each activity event represents a coalesced notification; `count` is always `1`,
+not the number of keys pressed. Notifications include fresh keyboard and mouse
+button presses but exclude held-key repeats, motion, scrolling and virtual input.
+Keyboard versus mouse categories stay inside Pearl. Bursts may merge or be
+skipped, so use this for a playful reaction, never a keystroke counter.
+
+`input-activity(false)` unsubscribes. The subscription change commits only when
+your callback succeeds. Availability can be `available`, `permission-denied`,
+`unsupported` or `suspended`; keep clicks and Preview useful in every state.
+Pearl resets activity guests across privacy transitions, so do not rely on guest
+memory surviving a lock or authentication prompt. This protocol cannot recognize
+password fields inside ordinary applications.
 
 ## Use Zig or Rust instead
 

@@ -49,7 +49,7 @@ def main():
         assert 'Exec=pearl-settings\n' in desktop.read_text()
         assert (stage/'usr/share/icons/hicolor/scalable/apps'/f'{APP_ID}.svg').is_file()
         assert (stage/'usr/share/metainfo'/f'{APP_ID}.metainfo.xml').is_file()
-        with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-082') as s:
+        with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
           s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
           s.env['PATH']=str(bindir)+os.pathsep+s.env['PATH']
           s.env['XDG_DATA_DIRS']=str(stage/'usr/share')+os.pathsep+s.env.get('XDG_DATA_DIRS','/usr/local/share:/usr/share')

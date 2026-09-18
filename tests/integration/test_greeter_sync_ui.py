@@ -21,7 +21,7 @@ def main():
     parser.add_argument('--output', type=Path, default=ROOT/'artifacts/greeter-sync/ui')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-082') as s:
+    with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'
         config_dir = s.base/'greeter-config'
         config_dir.mkdir()

@@ -1,5 +1,5 @@
 {
-  "session": "41bf08cf7dac85ed2be0454aa9defee7",
+  "session": "5ca4f8f659417a60bc8819cef1539fca",
   "schema": 1,
   "max_request_bytes": 65536,
   "max_frame_bytes": 4259840,
@@ -21,8 +21,9 @@
     "candidate_impact_v1": true,
     "display_preview_v1": true,
     "display_preview_commit_v1": true,
-    "display_preview_hardware": false,
+    "display_preview_hardware": true,
     "display_preview_completion_v1": true,
+    "display_preview_feature_policy_v1": true,
     "display_preview_acceptance_build": false
   }
 }

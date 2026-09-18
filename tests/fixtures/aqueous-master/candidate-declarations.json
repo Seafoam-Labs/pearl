@@ -1,7 +1,7 @@
 {
   "ok": true,
   "protocol": 1,
-  "helper_version": "0.8.2",
+  "helper_version": "0.8.3",
   "capabilities": [
     "schema_fields",
     "validate",
@@ -31,15 +31,16 @@
     "display_preview_commit_v1",
     "collection_schema_v1",
     "collection_preconditions_v1",
+    "display_preview_feature_policy_v1",
     "protected_collection_apply_v1",
     "collection_preconditions_v2",
     "display_declaration_mutations_v1"
   ],
-  "generation": "c191138ffcbe90a3",
+  "generation": "8826aace8e9b2628",
   "candidate_review": {
     "version": 1,
-    "original_generation": "3b8b2b6bdbcaa630",
-    "candidate_digest": "feb6594088b31c86f40c47cf58a8a9155b0f63d55c950f5c66baea2806d4464c",
+    "original_generation": "edb2f0f0d802b8d7",
+    "candidate_digest": "b45da1d7c91083e47264eaf462acf8b9750a1da1365d4f0d898d53c7ebaac035",
     "changed_files": [
       "outputs"
     ],
@@ -53,8 +54,8 @@
   },
   "candidate_impact": {
     "version": 1,
-    "original_generation": "3b8b2b6bdbcaa630",
-    "candidate_digest": "feb6594088b31c86f40c47cf58a8a9155b0f63d55c950f5c66baea2806d4464c",
+    "original_generation": "edb2f0f0d802b8d7",
+    "candidate_digest": "b45da1d7c91083e47264eaf462acf8b9750a1da1365d4f0d898d53c7ebaac035",
     "changed_files": [
       "outputs"
     ],
@@ -131,7 +132,7 @@
       ],
       "activated_profile": null,
       "complete": true,
-      "session": "41bf08cf7dac85ed2be0454aa9defee7",
+      "session": "5ca4f8f659417a60bc8819cef1539fca",
       "display_revision": "6",
       "effects": [
         "display_deferred"
@@ -170,15 +171,15 @@
   },
   "display_model": {
     "version": 2,
-    "generation": "c191138ffcbe90a3",
+    "generation": "8826aace8e9b2628",
     "candidate": true,
     "declarations": [
       {
-        "id": "display-v1:d3f621d2f139001ce839acfd7552d5bf08e43851edff272ce11d492db72e3957",
+        "id": "display-v1:c187be7fbedb92571908d5f21f2d534e83c02acbdacc3c834c0f75a501aea8af",
         "kind": "profile",
         "parent_id": null,
         "source": "outputs",
-        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/outputs.toml",
+        "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/outputs.toml",
         "declaration": 1,
         "section": "display.profile",
         "repeated": true,
@@ -190,11 +191,11 @@
         ]
       },
       {
-        "id": "display-v1:317082b672333d468b5378ca8ccf3ae7e505b9355eddc62e627110f3d41f0da2",
+        "id": "display-v1:3f343733c16561b7ad48f0172d1aad646d69032a7ad0c826a2fffe07440ed299",
         "kind": "member",
-        "parent_id": "display-v1:d3f621d2f139001ce839acfd7552d5bf08e43851edff272ce11d492db72e3957",
+        "parent_id": "display-v1:c187be7fbedb92571908d5f21f2d534e83c02acbdacc3c834c0f75a501aea8af",
         "source": "outputs",
-        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/outputs.toml",
+        "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/outputs.toml",
         "declaration": 2,
         "section": "display.profile.output",
         "repeated": true,
@@ -347,8 +348,8 @@
     },
     "live": {
       "version": 1,
-      "config_generation": "3b8b2b6bdbcaa630",
-      "session": "41bf08cf7dac85ed2be0454aa9defee7",
+      "config_generation": "edb2f0f0d802b8d7",
+      "session": "5ca4f8f659417a60bc8819cef1539fca",
       "display_revision": "6",
       "observation": "current",
       "active_profile": "",
@@ -558,7 +559,7 @@
               "store": true,
               "test": false,
               "preview": false,
-              "reason": "vrr_hardware_acceptance_pending"
+              "reason": "vrr_unsupported"
             },
             "mirroring": {
               "store": true,
@@ -760,7 +761,7 @@
               "store": true,
               "test": false,
               "preview": false,
-              "reason": "vrr_hardware_acceptance_pending"
+              "reason": "vrr_unsupported"
             },
             "mirroring": {
               "store": true,
@@ -799,8 +800,8 @@
   },
   "display_observation": {
     "version": 1,
-    "config_generation": "3b8b2b6bdbcaa630",
-    "session": "41bf08cf7dac85ed2be0454aa9defee7",
+    "config_generation": "edb2f0f0d802b8d7",
+    "session": "5ca4f8f659417a60bc8819cef1539fca",
     "display_revision": "6",
     "observation": "current",
     "active_profile": "",
@@ -1010,7 +1011,7 @@
             "store": true,
             "test": false,
             "preview": false,
-            "reason": "vrr_hardware_acceptance_pending"
+            "reason": "vrr_unsupported"
           },
           "mirroring": {
             "store": true,
@@ -1212,7 +1213,7 @@
             "store": true,
             "test": false,
             "preview": false,
-            "reason": "vrr_hardware_acceptance_pending"
+            "reason": "vrr_unsupported"
           },
           "mirroring": {
             "store": true,
@@ -1385,11 +1386,11 @@
   },
   "display_declarations": [
     {
-      "id": "display-v1:d3f621d2f139001ce839acfd7552d5bf08e43851edff272ce11d492db72e3957",
+      "id": "display-v1:c187be7fbedb92571908d5f21f2d534e83c02acbdacc3c834c0f75a501aea8af",
       "kind": "profile",
       "parent_id": null,
       "source": "outputs",
-      "path": "/tmp/pearl-dev-rqff014d/config/aqueous/outputs.toml",
+      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/outputs.toml",
       "declaration": 1,
       "section": "display.profile",
       "repeated": true,
@@ -1401,11 +1402,11 @@
       ]
     },
     {
-      "id": "display-v1:317082b672333d468b5378ca8ccf3ae7e505b9355eddc62e627110f3d41f0da2",
+      "id": "display-v1:3f343733c16561b7ad48f0172d1aad646d69032a7ad0c826a2fffe07440ed299",
       "kind": "member",
-      "parent_id": "display-v1:d3f621d2f139001ce839acfd7552d5bf08e43851edff272ce11d492db72e3957",
+      "parent_id": "display-v1:c187be7fbedb92571908d5f21f2d534e83c02acbdacc3c834c0f75a501aea8af",
       "source": "outputs",
-      "path": "/tmp/pearl-dev-rqff014d/config/aqueous/outputs.toml",
+      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/outputs.toml",
       "declaration": 2,
       "section": "display.profile.output",
       "repeated": true,
@@ -1439,40 +1440,40 @@
     "schema": "aqueous-config-additions-v1.schema.json#/$defs/display_declaration_changes"
   },
   "display_source_ids": {
-    "wm": "display-v1:6f9c9d0ea19704f97c981367e34ce8f4ac525b3e3150e5e950098e926cf45ced",
-    "outputs": "display-v1:43a6d283f20ed92c5629fd7a6af4c2bc0b80bc9a0882dc3876f5abae76071b73"
+    "wm": "display-v1:7eccc8e4f03f9e8b7646be73aafb6aef5eb26fa8789270dd38f4046534fbc5a4",
+    "outputs": "display-v1:68465b231fb1bc2b61c3d3e921d31f7bb1c3bbb4570e6c7a73ef40b2ca19a7da"
   },
   "collection_identity": {
     "version": 1,
     "scope": "generation",
-    "generation": "c191138ffcbe90a3",
+    "generation": "8826aace8e9b2628",
     "precondition": "expected_generation",
     "stale_edit": "external_change",
     "raw_and_structured_same_collection": "conflicting_edits",
     "rebase": "unsupported"
   },
   "collection_preconditions": {
-    "wm": "7ef4e9a8f4197aeedd64f5d0f2e9ffd4d4e6b7d2e12cdcde7d1e9f02b29b5a63",
-    "rules": "e4bb2b163092b71fb6abc84cdfd6ecbdff41a032f9f6ef1ab178d8ddb5d818f0",
-    "layout": "d8fa39fd514307b6d7ee96cad9f0ffd6a182dfedb938545e78785214639d35fd"
+    "wm": "3b21ae65b801e814bfede1d20e215fb4755f49e716a99a67a2dbff0e5b8b1ada",
+    "rules": "506ba60b3d32972b1d63a407c64d90bc2aa45e4f034daf65945dc1065a5b57a4",
+    "layout": "5e11f3287841e08cc9dd57e40721f3a693497dc1b08140f37f354fa02ff3ab20"
   },
   "collection_preconditions_v2": {
     "version": 2,
     "sources": {
       "wm": {
-        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/wm.toml",
+        "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/wm.toml",
         "exists": true,
-        "digest": "10a643c4b84f06ffe3765cb052f94ca5b270a18ee03a14d6abd2fc83602cf733"
+        "digest": "765445a6071f823ac6ce9a40c5345bcfd31ca29d376eb716ea72bfa73ef93d32"
       },
       "rules": {
-        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/rules.toml",
+        "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/rules.toml",
         "exists": false,
-        "digest": "286e723fbd5fc42c8a3d3765da8619eff2847249e46f4dccae49d4506eee9f23"
+        "digest": "10d7b03abc388f6a96ba8c624369b848382fbb46121faf93e39041ce8332e51e"
       },
       "layout": {
-        "path": "/tmp/pearl-dev-rqff014d/config/aqueous/layout.toml",
+        "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/layout.toml",
         "exists": false,
-        "digest": "04a661ba2a4b7946898896c1004afe86ebf86c004cd99b245b4899166614074d"
+        "digest": "dfb67d55d39d1baa41083d1161e9c68354d0fcbe2936aabe2914f13e4dd20ef0"
       }
     }
   },
@@ -1829,6 +1830,18 @@
           "exclusive_minimum": false
         },
         {
+          "key": "scrolling_width",
+          "type": "number",
+          "default": null,
+          "options": [],
+          "matcher": null,
+          "range": [
+            0,
+            1
+          ],
+          "exclusive_minimum": true
+        },
+        {
           "key": "tag",
           "type": "string",
           "default": null,
@@ -1928,37 +1941,37 @@
   "stacking_alias_count": 0,
   "files": {
     "wm": {
-      "path": "/tmp/pearl-dev-rqff014d/config/aqueous/wm.toml",
+      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/wm.toml",
       "writable": true,
       "exists": true,
       "size": 160
     },
     "layout": {
-      "path": "/tmp/pearl-dev-rqff014d/config/aqueous/layout.toml",
+      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/layout.toml",
       "writable": true,
       "exists": false,
       "size": 0
     },
     "input": {
-      "path": "/tmp/pearl-dev-rqff014d/config/aqueous/input.toml",
+      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/input.toml",
       "writable": true,
       "exists": false,
       "size": 0
     },
     "outputs": {
-      "path": "/tmp/pearl-dev-rqff014d/config/aqueous/outputs.toml",
+      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/outputs.toml",
       "writable": true,
       "exists": false,
       "size": 100
     },
     "rules": {
-      "path": "/tmp/pearl-dev-rqff014d/config/aqueous/rules.toml",
+      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/rules.toml",
       "writable": true,
       "exists": false,
       "size": 0
     },
     "appearance": {
-      "path": "/tmp/pearl-dev-rqff014d/config/aqueous/appearance.toml",
+      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/appearance.toml",
       "writable": true,
       "exists": false,
       "size": 0

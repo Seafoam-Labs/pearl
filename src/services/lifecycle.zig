@@ -13,6 +13,8 @@ const iface = "org.freedesktop.login1.Manager";
 pub const Action = enum { logout, @"suspend", hibernate };
 const FdJob = struct { service: *Lifecycle, epoch: u64 };
 pub const Lifecycle = struct {
+    activity_broker: ?*@import("../platform/wayland/input_activity.zig").Broker = null,
+    activity_token: @import("../platform/wayland/input_activity.zig").Token = .{},
     app: *gio.Application,
     display: *@import("gdk4").Display,
     client: *@import("../aqueous/client.zig").Client,
@@ -65,6 +67,7 @@ pub const Lifecycle = struct {
     }
     pub fn stop(self: *Lifecycle) void {
         self.running = false;
+        self.activity_token.cancel();
         self.cancelConfirmation();
         self.idle.stop();
         self.peer.stop();
@@ -460,6 +463,24 @@ pub const Lifecycle = struct {
         if (!self.lock_supported) return error.Unsupported;
         if (self.gate.acquired() or self.gate.requesting) return;
         if (self.locker != null) return error.LockFailed;
+        self.gate.requesting = true;
+        self.activity_token.begin(self.activity_broker, self, activityReady);
+        self.changed(self.context);
+    }
+    fn activityReady(context: *anyopaque) void {
+        const self: *Lifecycle = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        self.launchLocker() catch {
+            self.gate.fail();
+            self.gate.requesting = false;
+            self.activity_token.cancel();
+            self.err = "Could not start Pearl lock.";
+            self.changed(self.context);
+        };
+    }
+    fn launchLocker(self: *Lifecycle) !void {
+        self.syncLockState();
+        if (!self.gate.available or !self.gate.active) return error.Unavailable;
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
         const alloc = arena.allocator();
@@ -552,6 +573,7 @@ pub const Lifecycle = struct {
         self.locker = null;
         self.gate.ready = false;
         self.gate.requesting = false;
+        self.activity_token.cancel();
         self.gate.sleep_pending = false;
         self.syncLockState();
         if (self.gate.locked) {

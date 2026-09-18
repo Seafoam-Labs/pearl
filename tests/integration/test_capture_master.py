@@ -10,7 +10,7 @@ from test_surfaces import ctl,status,IPC,clean,capture
 def main():
  p=argparse.ArgumentParser(description=__doc__)
  for name in ('pearl','ctl'):p.add_argument('--'+name,type=Path,default=ROOT/'zig-out/bin'/('pearlctl' if name=='ctl' else 'pearl'))
- p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-082');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/capture');args=p.parse_args();args.pearl=args.pearl.resolve();args.ctl=args.ctl.resolve();args.prefix=args.prefix.resolve();args.output=args.output.resolve();args.output.mkdir(parents=True,exist_ok=True)
+ p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/capture');args=p.parse_args();args.pearl=args.pearl.resolve();args.ctl=args.ctl.resolve();args.prefix=args.prefix.resolve();args.output=args.output.resolve();args.output.mkdir(parents=True,exist_ok=True)
  report=dict(status='running',checks={},baseline=json.loads((args.prefix/'metadata.json').read_text()),pearl_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest());checks=report['checks']
  try:
   with PrivateSession(args.output/'session',tool_prefix=args.prefix) as s:

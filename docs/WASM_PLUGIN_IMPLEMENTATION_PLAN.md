@@ -13,12 +13,14 @@ rediscovery on Pearl restart. Settings edits restart instances, while sprite
 playback stays in Pearl. The detailed stages below remain the acceptance roadmap;
 their complete release gates have not all been certified.
 
-**Outstanding external dependency:** real global input activity needs a verified
-Aqueous extension. The current companion supports clicks and synthetic previews,
-reports unsupported activity, and does not observe typing in other applications.
-The [upstream dependency specification](AQUEOUS_PLUGIN_ACTIVITY.md) records the
-privacy and test requirements. Broader hardware/scale/rotation, soak, performance
-and security-audit gates remain release work.
+**Input activity integrated:** Pearl consumes Aqueous's extension at revision
+`88587243059d58d72dd0fe2146d0ebdb64f26474`, with authenticated launch, dynamic
+availability, bounded guest delivery and authentication inhibitors. The
+[input activity plan](PLUGIN_INPUT_ACTIVITY_IMPLEMENTATION_PLAN.md) supersedes
+historical aggregate-count requirements below: the v0.1 guest receives `count=1`
+per coalesced notification. See [acceptance evidence](PLUGIN_INPUT_ACTIVITY_VALIDATION.md).
+Physical keyboard/VT acceptance, broader hardware/scale/rotation, soak,
+performance and security-audit gates remain release work.
 
 ## Decision and feasibility
 

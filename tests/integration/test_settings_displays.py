@@ -53,7 +53,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     checks = {}; report = dict(status='running', checks=checks)
     try:
-      with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-082') as s:
+      with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'; ipc = IPC(s)
         wm = Path(s.env['AQUEOUS_CONFIG']); wm.write_text(wm.read_text().replace('"floating"', '"stacking"'))
         output = next(iter(ipc.outputs().values())); connector = output['name']

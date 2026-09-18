@@ -10,7 +10,7 @@ from test_aqueous_settings import state,settled,stage
 def main():
  p=argparse.ArgumentParser()
  p.add_argument('--pearl',type=Path,default=ROOT/'zig-out/bin/pearl');p.add_argument('--ctl',type=Path,default=ROOT/'zig-out/bin/pearlctl')
- p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-082');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/preview')
+ p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/preview')
  a=p.parse_args();a.pearl=a.pearl.resolve();a.ctl=a.ctl.resolve();a.prefix=a.prefix.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
  binary=a.prefix/'instrumented/bin/aqueous'
  report=dict(status='running',production=False,checks={},pearl_sha256=hashlib.sha256(a.pearl.read_bytes()).hexdigest(),compositor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())

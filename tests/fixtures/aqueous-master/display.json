@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "config_generation": "3b8b2b6bdbcaa630",
-  "session": "41bf08cf7dac85ed2be0454aa9defee7",
+  "config_generation": "edb2f0f0d802b8d7",
+  "session": "5ca4f8f659417a60bc8819cef1539fca",
   "display_revision": "6",
   "observation": "current",
   "active_profile": "",
@@ -211,7 +211,7 @@
           "store": true,
           "test": false,
           "preview": false,
-          "reason": "vrr_hardware_acceptance_pending"
+          "reason": "vrr_unsupported"
         },
         "mirroring": {
           "store": true,
@@ -413,7 +413,7 @@
           "store": true,
           "test": false,
           "preview": false,
-          "reason": "vrr_hardware_acceptance_pending"
+          "reason": "vrr_unsupported"
         },
         "mirroring": {
           "store": true,

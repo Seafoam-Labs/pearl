@@ -19,7 +19,7 @@ pub const Choice = struct { label: []const u8, value: []const u8 };
 pub const Row = struct { id: []const u8, title: []const u8, detail: []const u8 = "", controls: []const Control = &.{} };
 pub const Prompt = struct { service: enum { network, bluetooth }, serial: p.Number, kind: []const u8, title: []const u8, challenge: []const u8 = "", secret: bool, editable: bool = true };
 pub const Plugin = struct { view: []const u8, operation: []const u8, id: []const u8, action: enum { retry, preview } };
-pub const PluginInfo = struct { installed: bool = true, id: []const u8, name: []const u8, version: []const u8, digest: []const u8, capabilities: @import("../plugins/model.zig").Grants, settings: []const @import("../plugins/model.zig").Schema, status: []const u8, error_code: ?[]const u8 = null };
+pub const PluginInfo = struct { installed: bool = true, id: []const u8, name: []const u8, version: []const u8, digest: []const u8, capabilities: @import("../plugins/model.zig").Grants, settings: []const @import("../plugins/model.zig").Schema, status: []const u8, input_activity: []const u8 = "unsupported", error_code: ?[]const u8 = null };
 pub const PluginPage = struct { summary: []const u8, plugins: []const PluginInfo = &.{}, next_offset: ?[]const u8 = null };
 pub const Page = struct { plugins: []const PluginInfo = &.{}, summary: []const u8, pending: bool = false, truncated: bool = false, rows: []const Row, offset: p.Number, next_offset: ?p.Number = null, prompt: ?Prompt = null };
 pub const List = struct { view: []const u8, list: enum { items }, revision: []const u8, offset: []const u8 };

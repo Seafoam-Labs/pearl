@@ -47,20 +47,27 @@ pub fn main() !void {
             const alloc = arena.allocator();
             const request = try wire.parse(wire.Request, alloc, buffer[0..end]);
             if (request.generation != generation or request.sequence != sequence + 1) return error.PluginSequence;
-            if (request.event.settings.len > 16) return error.PluginSettingsLimit;
-            for (request.event.settings) |s| {
-                if (!m.identifier(s.key)) return error.PluginSetting;
-                try m.text(s.value, 256);
-            }
             sequence = request.sequence;
-            var reply: wire.Reply = .{ .generation = generation, .sequence = sequence };
-            const scene = runtime.handle(request.event) catch |err| blk: {
-                reply.error_code = @errorName(err);
-                break :blk null;
-            };
+            runtime.activity_state = request.state;
+            var reply: wire.Reply = .{ .generation = generation, .sequence = sequence, .activity_epoch = request.state.epoch };
+            var scene: ?[]u8 = null;
+            if (request.event) |event| {
+                if (event.settings.len > 16) return error.PluginSettingsLimit;
+                for (event.settings) |s| {
+                    if (!m.identifier(s.key)) return error.PluginSetting;
+                    try m.text(s.value, 256);
+                }
+                if (event.kind == .activity and (!runtime.grants.input_activity or !runtime.activity_requested or request.state.availability != .available or event.count != 1)) return error.PluginActivityDenied;
+                scene = runtime.handle(event) catch |err| blk: {
+                    reply.error_code = @errorName(err);
+                    break :blk null;
+                };
+            }
             defer if (scene) |s| a.free(s);
             if (scene) |s| reply.scene = try std.json.parseFromSliceLeaky(m.Scene, alloc, s, .{});
             reply.timer_ms = runtime.timer_ms;
+            reply.timer_changed = request.event != null and runtime.timer_changed;
+            reply.activity_requested = runtime.activity_requested;
             const bytes = try std.json.Stringify.valueAlloc(alloc, reply, .{ .emit_null_optional_fields = false });
             if (bytes.len + 1 > m.Limits.frame) return error.PluginFrameLimit;
             const line = try std.fmt.allocPrint(alloc, "{s}\n", .{bytes});
@@ -70,7 +77,7 @@ pub fn main() !void {
                 if (count <= 0) return error.HelperWrite;
                 sent += @intCast(count);
             }
-            if (reply.error_code != null or request.event.kind == .deactivate) return;
+            if (reply.error_code != null or (if (request.event) |event| event.kind == .deactivate else false)) return;
             std.mem.copyForwards(u8, &buffer, buffer[end + 1 .. used]);
             used -= end + 1;
         }

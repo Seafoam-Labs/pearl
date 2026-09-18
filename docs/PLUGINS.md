@@ -109,12 +109,31 @@ When a draft is pending, use its position controls instead. Overlays reserve no
 screen space, request no keyboard focus, and disappear before lock/authentication
 or inactive-session transitions. Output removal tears down associated views.
 
-**Global typing/mouse activity is currently unsupported.** The pinned Aqueous
-interfaces provide no verified privacy-preserving activity source. The WIT
-availability query returns `permission-denied` without a grant and `unsupported`
-with a grant. The cat still supports its own button and Settings Preview.
-It does not monitor other applications. See the
-[Aqueous dependency contract](AQUEOUS_PLUGIN_ACTIVITY.md) for the remaining work.
+**Pearl Cat can react to typing and mouse-button presses in other applications.**
+Approve and enable the package, turn on **Allow keyboard and mouse activity** in
+main Settings → Plugins, then Apply. Use the matching Aqueous Pearl integration
+service described in [activity setup](AQUEOUS_PLUGIN_ACTIVITY.md).
+
+`input-activity(true)` records a plugin's subscription request. Its manifest and
+saved grant must both allow activity. `false` unsubscribes; the request commits
+only after a successful callback. Availability is `available`, `permission-denied`,
+`unsupported`, or `suspended` and can change during the session. Settings and
+`pearlctl plugins list` report the current state and a source-level reason.
+
+An `activity` event's `count = 1` means one coalesced notification, **not one key
+press**. At most ten guest callbacks run per second; bursts merge and stale input
+is dropped. No keys, text, button identities, device/window identity or input
+timestamps reach plugins. Held-key repeats, releases, motion, scrolling, touch,
+tablets and virtual devices do not count. Ordinary application password fields
+are not detectable; suspension covers Pearl-managed authentication, compositor
+locks and inactive native sessions.
+
+Pearl uses one authorized subscription on GTK's existing Wayland connection and
+acknowledges independently of guest speed. Local privacy gates stop helpers and
+hide views before authentication. Pearl waits for the compositor's suspension
+acknowledgment, with a bounded 500 ms fallback that destroys the subscription.
+Fresh readiness is required on resume. Older compositors, unsupported sessions
+and unauthorized launches retain local clicks and Settings Preview.
 
 ## CLI
 
@@ -169,11 +188,12 @@ After building examples with `--fixtures`:
 zig build test
 zig build test-plugin-host -Dwasm-plugins=true -Dwasmtime-prefix=/absolute/prefix
 zig build test-plugins -Dwasm-plugins=true -Dwasmtime-prefix=/absolute/prefix
+# With the separate diagnostic Aqueous prefix; see the activity validation guide:
+zig build test-plugin-activity -Dwasm-plugins=true -Dwasmtime-prefix=/absolute/prefix
 ```
 
-Validation on the implementation: **124 pure tests**, **14 helper checks**, the
-private-desktop suite against a staged installation, and a plugin-disabled
-private-session check passed. The Settings test clicks the actual enable switch
+The [activity acceptance record](PLUGIN_INPUT_ACTIVITY_VALIDATION.md) records
+the current unit, helper, compositor and private-session results. The Settings test clicks the actual enable switch
 and Apply button; it also injects an invalid PNG while GTK warnings are fatal.
 
 The helper suite exercises real C/Zig/Rust components, repeated calls, sprites,
@@ -184,6 +204,6 @@ mock system services. It checks native bar/overlay contributions, the main
 Settings page, retained draft Apply, failure isolation, retry and inactive-session
 cleanup/restart. These tests do not touch the user's desktop.
 
-Real compositor activity, broad hardware/scale/rotation coverage and the full
+Physical hardware acceptance, broad scale/rotation coverage and the full
 release soak/security/performance gates remain open in the
 [original implementation plan](WASM_PLUGIN_IMPLEMENTATION_PLAN.md).

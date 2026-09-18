@@ -38,6 +38,8 @@ pub fn build(b: *std.Build) void {
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-foreign-toplevel-list-v1.xml"));
     scanner.generate("aqueous_window_info_manager_v1", 3);
     scanner.generate("aqueous_shell_manager_v1", 2);
+    scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-input-activity-v1.xml"));
+    scanner.generate("aqueous_input_activity_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/wlr-output-management-unstable-v1.xml"));
     scanner.generate("zwlr_output_manager_v1", 4);
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-idle-notify-v1.xml"));
@@ -197,6 +199,7 @@ pub fn build(b: *std.Build) void {
     b.step("test", "Run pure lifecycle, startup and Aqueous model tests without GTK or a compositor").dependOn(&b.addRunArtifact(pure).step);
 
     b.step("test-plugin-unit", "Verify plugin documents, permissions, framing and route isolation").dependOn(&b.addRunArtifact(pure).step);
+    var plugin_test_helper: ?*std.Build.Step.InstallArtifact = null;
     if (wasm_plugins) {
         const prefix = b.option([]const u8, "wasmtime-prefix", "Verified Wasmtime 48.0.2 C API prefix") orelse @panic("-Dwasm-plugins=true requires -Dwasmtime-prefix");
         const translated = b.addTranslateC(.{ .root_source_file = .{ .cwd_relative = b.pathJoin(&.{ prefix, "include/wasmtime.h" }) }, .target = target, .optimize = optimize });
@@ -210,6 +213,7 @@ pub fn build(b: *std.Build) void {
         host.linkSystemLibrary("pthread", .{});
         const exe = b.addExecutable(.{ .name = "pearl-plugin-host", .root_module = host });
         const helper_install = b.addInstallArtifact(exe, .{});
+        plugin_test_helper = b.addInstallArtifact(exe, .{ .dest_dir = .{ .override = .{ .custom = "test" } } });
         const runtime_license = b.addInstallFile(.{ .cwd_relative = b.pathJoin(&.{ prefix, "LICENSE" }) }, "share/licenses/pearl/Wasmtime-LICENSE");
         const helper_step = b.step("build-plugin-host", "Build the isolated plugin helper and stage its pinned runtime");
         for ([_]*std.Build.Step{ &helper_install.step, &runtime_license.step }) |step| {
@@ -349,6 +353,19 @@ pub fn build(b: *std.Build) void {
     test_module.addImport("wayland", native);
     const integration_app = b.addExecutable(.{ .name = "pearl-integration", .root_module = test_module });
     integration_app.step.dependOn(&system_versions.step);
+    const integration_build = b.step("build-integration", "Stage the private instrumented shell (never packaged)");
+    integration_build.dependOn(&b.addInstallArtifact(integration_app, .{ .dest_dir = .{ .override = .{ .custom = "test" } } }).step);
+    if (plugin_test_helper) |helper| integration_build.dependOn(&helper.step);
+    var plugin_activity_test: ?*std.Build.Step.Run = null;
+    if (wasm_plugins) {
+        const activity = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugin_activity.py" });
+        plugin_activity_test = activity;
+        activity.step.dependOn(integration_build);
+        activity.addArg("--ctl");
+        activity.addArtifactArg(ctl);
+        if (b.args) |args| activity.addArgs(args);
+        b.step("test-plugin-activity", "Verify compositor input, cat poses and privacy on private Aqueous").dependOn(&activity.step);
+    }
     const greeter_sync_ui = b.addSystemCommand(&.{ "python3", "tests/integration/test_greeter_sync_ui.py", "--settings" });
     greeter_sync_ui.addArtifactArg(settings_test_app);
     greeter_sync_ui.addArg("--pearl");
@@ -409,6 +426,12 @@ pub fn build(b: *std.Build) void {
     pam_fixture_module.addImport("pam", pam_module);
     pam_fixture_module.linkSystemLibrary("pam", .{});
     const pam_fixture = b.addLibrary(.{ .name = "pearl-pam-fixture", .linkage = .dynamic, .root_module = pam_fixture_module });
+    if (plugin_activity_test) |activity| {
+        activity.addArg("--pam-module");
+        activity.addArtifactArg(pam_fixture);
+        activity.addArg("--locker");
+        activity.addArtifactArg(test_locker);
+    }
     const fingerprint = b.addSystemCommand(&.{ "python3", "tests/integration/test_fingerprint.py", "--greeter" });
     fingerprint.addArtifactArg(greeter_test_executable);
     fingerprint.addArg("--locker");

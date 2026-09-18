@@ -17,7 +17,8 @@
     "ext_output_image_capture_source_manager_v1": 1,
     "ext_foreign_toplevel_image_capture_source_manager_v1": 1,
     "aqueous_capture_color_manager_v1": 1,
-    "ext_foreign_toplevel_list_v1": 1
+    "ext_foreign_toplevel_list_v1": 1,
+    "aqueous_input_activity_manager_v1": 1
   },
   "inputs": {
     "wayland.xml": {
@@ -69,9 +70,13 @@
       "sha256": "4ef41d15e4cdb9f550158391358ceec724a6708b43b7efedec03121a6bb8458d"
     },
     "aqueous-capture-color-v1.xml": {
-      "source": "Aqueous 1d038dc3bafa0044d9599f8f51f84105a6a85bb3: compositor/protocol/aqueous-capture-color-v1.xml",
-      "sha256": "84e329bda57764a00c0cba365ee5973296907f382aebf90faef2cc0a1b476ee9"
+      "source": "Aqueous 88587243059d58d72dd0fe2146d0ebdb64f26474: compositor/protocol/aqueous-capture-color-v1.xml",
+      "sha256": "accf3b14ef4261dbf867f82c5cf88a2d6c96bc5d7f9b9628c2b0f5012a6cfeb3"
+    },
+    "aqueous-input-activity-v1.xml": {
+      "source": "Aqueous 88587243059d58d72dd0fe2146d0ebdb64f26474: compositor/protocol/aqueous-input-activity-v1.xml",
+      "sha256": "a564fe42e852247fb7c7c2acb06702b0d35aad0444076beb30b09eded01f0cc4"
     }
   },
-  "generated_sha256": "35578f79ed93b5b6bbfd5357a0e7abe2a6e7c7a5bc43b7c4a0e6900a8d586273"
+  "generated_sha256": "88c449f52b2c5ba95c65d5818a550781c5edfe93c181a7d01eb02acf0b900559"
 }

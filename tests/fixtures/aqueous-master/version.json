@@ -1,7 +1,7 @@
 {
   "ok": true,
   "protocol": 1,
-  "version": "0.8.2",
+  "version": "0.8.3",
   "capabilities": [
     "schema_fields",
     "validate",
@@ -31,6 +31,7 @@
     "display_preview_commit_v1",
     "collection_schema_v1",
     "collection_preconditions_v1",
+    "display_preview_feature_policy_v1",
     "protected_collection_apply_v1",
     "collection_preconditions_v2",
     "display_declaration_mutations_v1"

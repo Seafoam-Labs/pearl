@@ -76,7 +76,7 @@ def main():
         checks[name] = True
         print('PASS', name, flush=True)
     try:
-        with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-082') as s:
+        with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
             s.env['GSETTINGS_BACKEND'] = 'memory'
             mode = s.base/'generator-mode'; mode.write_text('pass')
             calls = s.base/'generator-calls'; calls.write_text('')

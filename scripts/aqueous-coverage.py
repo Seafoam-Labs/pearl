@@ -3,7 +3,7 @@
 import hashlib,json,re
 from aqueous_target import REV,TARGET
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1];F=ROOT/'tests/fixtures/aqueous-master';SOURCE=ROOT/'.cache/aqueous-082/source'
+ROOT=Path(__file__).resolve().parents[1];F=ROOT/'tests/fixtures/aqueous-master';SOURCE=ROOT/'.cache/aqueous-activity-production/source'
 snapshot=json.loads((F/'snapshot.json').read_text());version=json.loads((F/'version.json').read_text());rows=[]
 def row(kind,name,source,consumer,entry,test,status='implemented',note=''):
  rows.append(dict(kind=kind,name=name,source=source,consumer=consumer,owner=consumer,entry=entry,test=test,status=status,required_capability=('helper '+name if kind=='helper-capability' else ({'scalar-field':'schema_fields', 'snapshot-model':{'display_model':'display_model_v2','display_observation':'display_observation_v1','display_configuration':'display_configuration_v1','collection_schema':'collection_schema_v1','collection_identity':'collection_identity_v1','collection_preconditions':'collection_preconditions_v1','window_rules':'window_rules','custom_keybinds':'keybinds'}.get(name,'schema_fields; helper protocol 1 optional snapshot field'), 'operation-result':'apply_result_v1 / operation_receipts_v1', 'collection-operation':'collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1 + candidate_impact_v1', 'collection-field':'collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1', 'display-observation':'display_observation_v1', 'display-control':'display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1', 'display-operation':'display_declaration_mutations_v1', 'preview-state':'display_preview_commit_v1', 'transaction-model':'named additive helper capability', 'native-command':'IPC protocol 1 commands; overview/keyboard capabilities for dependent actions', 'native-ipc':'IPC protocol 1; display_preview_v1 + display_preview_commit_v1 for leases', 'wayland-global':name}.get(kind, 'helper protocol 1; named optional field contract'))),note=note))
@@ -46,6 +46,7 @@ for name in commands:
  row('native-command',name,'compositor/aqueous/IpcProtocol.zig','src/aqueous/commands.zig; src/ui/surfaces/manager.zig',entry,'src/aqueous/tests.zig; tests/integration/test_aqueous_master.py',note=note)
 consumers={
  'ext_image_copy_capture_manager_v1':('src/services/image_copy.zig','Capture output / region / isolated window','implemented'),
+ 'aqueous_input_activity_manager_v1':('src/platform/wayland/input_activity.zig','Main Settings / Plugins granted coarse input','implemented'),
  'aqueous_capture_color_manager_v1':('src/services/image_copy.zig','SDR metadata gate and conversion','implemented'),
  'ext_output_image_capture_source_manager_v1':('src/services/image_copy.zig','Capture output / region','implemented'),
  'ext_foreign_toplevel_image_capture_source_manager_v1':('src/services/image_copy.zig','Capture isolated window; capture windows/window CLI','implemented'),
@@ -66,7 +67,7 @@ for name,v in re.findall(r"interface: '([^']+)',\s+version:\s+(\d+)",registry):
  consumer,entry,status=consumers.get(name,('GTK/GDK, compositor or application client','Protocol service; no additional standalone shell control','application-owned'))
  note='Registry version '+v
  if name=='ext_foreign_toplevel_image_capture_source_manager_v1':note+='; source selected natively; PNG export requires described SDR. Supported scene destinations export SDR; unknown encodings remain unavailable.'
- row('wayland-global',name,'Captured matching-master registry; XML where vendored',consumer,entry,'tests/integration/test_capture_master.py' if 'capture' in name or name=='ext_foreign_toplevel_list_v1' else 'tests/integration/test_surfaces.py',status,note)
+ row('wayland-global',name,'Captured matching-master registry; XML where vendored',consumer,entry,'tests/integration/test_plugin_activity.py' if name=='aqueous_input_activity_manager_v1' else 'tests/integration/test_capture_master.py' if 'capture' in name or name=='ext_foreign_toplevel_list_v1' else 'tests/integration/test_surfaces.py',status,note)
 display_fields=json.loads((ROOT/'src/config/aqueous_display_fields.json').read_text())
 upstream=json.loads((F/'helper.schema.json').read_text())['$defs']['display_fields']['properties']
 assert display_fields==upstream, 'Vendored display controls differ from pinned canonical schema'

@@ -122,7 +122,7 @@ pub const View = struct {
         self.content.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable()));
         for (self.rows.items, page.plugins) |row, info| {
             const cfg = document.plugins.find(info.id) orelse m.Config{ .id = info.id };
-            row.status.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {s}\n{s}\nApproval: {s}", .{ info.status, info.error_code orelse "No runtime error", info.digest, if (std.mem.eql(u8, cfg.digest, info.digest)) "current package approved" else "review and approve this package" }, 0) catch continue);
+            row.status.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {s}\nInput activity: {s}\n{s}\nApproval: {s}", .{ info.status, info.error_code orelse "No runtime error", info.input_activity, info.digest, if (std.mem.eql(u8, cfg.digest, info.digest)) "current package approved" else "review and approve this package" }, 0) catch continue);
             row.enabled.as(gtk.Widget).setSensitive(@intFromBool(info.installed or cfg.enabled));
             row.enabled.setActive(@intFromBool(cfg.enabled));
             row.activity.setActive(@intFromBool(cfg.grants.input_activity));
@@ -171,7 +171,7 @@ pub const View = struct {
         config.as(gtk.Widget).setSensitive(@intFromBool(info.installed));
         expander.as(gtk.Widget).setVisible(@intFromBool(info.settings.len > 0 or info.capabilities.overlay or info.capabilities.input_activity));
         const row = try alloc.create(Row);
-        row.* = .{ .view = self, .info = info, .status = status, .enabled = toggle(card, "Enabled"), .activity = toggle(config, "Allow aggregate input activity (currently unsupported)"), .overlay = toggle(placement, "Allow desktop overlay"), .mode = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "Bar", "Desktop overlay" })), .output = makeEntry(placement, "Overlay output (empty: first output)"), .x = number(placement, "Horizontal position", 0, 65535), .y = number(placement, "Vertical position", 0, 65535), .width = number(placement, "Width", 16, 512), .height = number(placement, "Height", 16, 512), .interactive = toggle(placement, "Accept clicks (off: click through)"), .locked = toggle(placement, "Lock placement"), .fullscreen = toggle(placement, "Hide over fullscreen windows"), .values = try alloc.alloc(*gtk.Widget, info.settings.len) };
+        row.* = .{ .view = self, .info = info, .status = status, .enabled = toggle(card, "Enabled"), .activity = toggle(config, "Allow keyboard and mouse activity"), .overlay = toggle(placement, "Allow desktop overlay"), .mode = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "Bar", "Desktop overlay" })), .output = makeEntry(placement, "Overlay output (empty: first output)"), .x = number(placement, "Horizontal position", 0, 65535), .y = number(placement, "Vertical position", 0, 65535), .width = number(placement, "Width", 16, 512), .height = number(placement, "Height", 16, 512), .interactive = toggle(placement, "Accept clicks (off: click through)"), .locked = toggle(placement, "Lock placement"), .fullscreen = toggle(placement, "Hide over fullscreen windows"), .values = try alloc.alloc(*gtk.Widget, info.settings.len) };
         card.append(expander.as(gtk.Widget));
         field(placement, "Placement", row.mode.as(gtk.Widget));
         row.activity.as(gtk.Widget).setSensitive(@intFromBool(info.capabilities.input_activity));

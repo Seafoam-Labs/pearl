@@ -1,8 +1,11 @@
 # Remaining Aqueous dependencies
 
-Current source: `b3d486920c42e24d45bed0a79e68915fe11c4815`, helper 0.8.2,
+Current source: `88587243059d58d72dd0fe2146d0ebdb64f26474`, helper 0.8.2,
 protocol 1. See [implementation](AQUEOUS_082_UPDATE_PLAN.md) and
 [integration evidence](../artifacts/aqueous-082/README.md).
+
+See also [input activity integration](AQUEOUS_PLUGIN_ACTIVITY.md) and its
+[validation record](PLUGIN_INPUT_ACTIVITY_VALIDATION.md).
 
 ## Resolved in this integration
 

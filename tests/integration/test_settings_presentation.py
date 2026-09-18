@@ -21,7 +21,7 @@ def main():
     report=dict(status='running',checks={},captures=[],layouts=[],binaries={n:hashlib.sha256(getattr(args,n).read_bytes()).hexdigest() for n in ('settings','pearl','ctl')})
     checks=report['checks']
     try:
-      with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-082') as s:
+      with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
         s.env['GSETTINGS_BACKEND']='memory';ipc=IPC(s)
         wm=Path(s.env['AQUEOUS_CONFIG']);wm.write_text(wm.read_text().replace('"floating"','"stacking"'))
         output=next(iter(ipc.outputs().values()));connector=output['name']

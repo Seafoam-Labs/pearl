@@ -245,7 +245,7 @@ pub const Live = struct {
             var infos: std.ArrayList(ui.PluginInfo) = .empty;
             for (plugins.slots.items) |slot| {
                 const manifest = slot.entry.package.manifest;
-                try infos.append(alloc, .{ .id = manifest.id, .name = manifest.name, .version = manifest.version, .digest = &slot.entry.package.digest, .capabilities = manifest.capabilities, .settings = manifest.settings, .status = @tagName(slot.status), .error_code = slot.error_code });
+                try infos.append(alloc, .{ .id = manifest.id, .name = manifest.name, .version = manifest.version, .digest = &slot.entry.package.digest, .capabilities = manifest.capabilities, .settings = manifest.settings, .status = @tagName(slot.status), .input_activity = @tagName(slot.activityState().availability), .error_code = slot.error_code });
             }
             const saved = try std.json.parseFromSliceLeaky(@import("../plugins/model.zig").Preferences, alloc, plugins.prefs orelse "{}", .{});
             for (saved.entries) |cfg| {
@@ -258,7 +258,7 @@ pub const Live = struct {
             }
             const start = @min(offset, infos.items.len);
             const end = @min(start + 4, infos.items.len);
-            return .{ .summary = if (plugins.discovery_error) |err| err else if (plugins.registry == null) "Discovering local plugins…" else try std.fmt.allocPrint(alloc, "{d} installed packages · {d} rejected · Input activity unsupported by this compositor", .{ plugins.slots.items.len, plugins.registry.?.rejected }), .rows = &.{}, .plugins = infos.items[start..end], .offset = p.num(start), .next_offset = if (end < infos.items.len) p.num(end) else null };
+            return .{ .summary = if (plugins.discovery_error) |err| err else if (plugins.registry == null) "Discovering local plugins…" else try std.fmt.allocPrint(alloc, "{d} installed packages · {d} rejected · {s}", .{ plugins.slots.items.len, plugins.registry.?.rejected, plugins.activityReason() }), .rows = &.{}, .plugins = infos.items[start..end], .offset = p.num(start), .next_offset = if (end < infos.items.len) p.num(end) else null };
         }
         var rows: std.ArrayList(ui.Row) = .empty;
         var summary: []const u8 = "";

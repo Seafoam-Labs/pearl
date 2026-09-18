@@ -1,5 +1,5 @@
 {
-  "revision": "b3d486920c42e24d45bed0a79e68915fe11c4815",
+  "revision": "88587243059d58d72dd0fe2146d0ebdb64f26474",
   "helper": "0.8.2",
   "inventory_complete": true,
   "acceptance_evidence": "artifacts/aqueous-082/README.md",
@@ -339,6 +339,18 @@
       "status": "implemented",
       "required_capability": "helper collection_preconditions_v1",
       "note": "Canonical protected collection transactions; touched-source preconditions and reviewed candidate digest."
+    },
+    {
+      "kind": "helper-capability",
+      "name": "display_preview_feature_policy_v1",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/config/aqueous_client.zig",
+      "owner": "src/config/aqueous_client.zig",
+      "entry": "Aqueous settings / pearlctl aqueous",
+      "test": "tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "helper display_preview_feature_policy_v1",
+      "note": "Negotiated helper contract; helper owns canonical configuration."
     },
     {
       "kind": "helper-capability",
@@ -3954,6 +3966,18 @@
     },
     {
       "kind": "collection-field",
+      "name": "window_rules.scrolling_width",
+      "source": "settingsApplication/src/backend/schema.zig; operations.zig",
+      "consumer": "src/desktop/aqueous_collections.zig",
+      "owner": "src/desktop/aqueous_collections.zig",
+      "entry": "Rules: scrolling_width",
+      "test": "src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py",
+      "status": "implemented",
+      "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
+      "note": "number; inheritance distinct from false/zero; canonical classification and protected save."
+    },
+    {
+      "kind": "collection-field",
       "name": "window_rules.tag",
       "source": "settingsApplication/src/backend/schema.zig; operations.zig",
       "consumer": "src/desktop/aqueous_collections.zig",
@@ -4718,7 +4742,7 @@
       "test": "tests/integration/test_surfaces.py",
       "status": "application-owned",
       "required_capability": "zxdg_decoration_manager_v1",
-      "note": "Registry version 1"
+      "note": "Registry version 2"
     },
     {
       "kind": "wayland-global",
@@ -4934,7 +4958,7 @@
       "test": "tests/integration/test_surfaces.py",
       "status": "application-owned",
       "required_capability": "zwp_linux_dmabuf_v1",
-      "note": "Registry version 5"
+      "note": "Registry version 6"
     },
     {
       "kind": "wayland-global",
@@ -5198,7 +5222,7 @@
       "test": "tests/integration/test_surfaces.py",
       "status": "application-owned",
       "required_capability": "zwp_text_input_manager_v3",
-      "note": "Registry version 1"
+      "note": "Registry version 2"
     },
     {
       "kind": "wayland-global",
@@ -5210,7 +5234,7 @@
       "test": "tests/integration/test_surfaces.py",
       "status": "application-owned",
       "required_capability": "zwp_tablet_manager_v2",
-      "note": "Registry version 1"
+      "note": "Registry version 2"
     },
     {
       "kind": "wayland-global",
@@ -5295,6 +5319,18 @@
       "status": "implemented",
       "required_capability": "aqueous_shell_manager_v1",
       "note": "Registry version 2"
+    },
+    {
+      "kind": "wayland-global",
+      "name": "aqueous_input_activity_manager_v1",
+      "source": "Captured matching-master registry; XML where vendored",
+      "consumer": "src/platform/wayland/input_activity.zig",
+      "owner": "src/platform/wayland/input_activity.zig",
+      "entry": "Main Settings / Plugins granted coarse input",
+      "test": "tests/integration/test_plugin_activity.py",
+      "status": "implemented",
+      "required_capability": "aqueous_input_activity_manager_v1",
+      "note": "Registry version 1"
     },
     {
       "kind": "wayland-global",

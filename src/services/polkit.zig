@@ -15,6 +15,8 @@ const authority_iface = "org.freedesktop.PolicyKit1.Authority";
 const agent_path = "/org/aqueous/Pearl/AuthenticationAgent";
 const Connection = struct { emitter: *object.Object, signal: c_ulong };
 pub const Agent = struct {
+    activity_broker: ?*@import("../platform/wayland/input_activity.zig").Broker = null,
+    activity_token: @import("../platform/wayland/input_activity.zig").Token = .{},
     app: *gio.Application,
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
@@ -235,8 +237,19 @@ pub const Agent = struct {
         invocation.ref();
         self.request = invocation;
         self.timeout = glib.timeoutAddSeconds(120, expired, self);
-        window.present();
+        self.activity_token.begin(self.activity_broker, self, activityReady);
         self.changed(self.context);
+    }
+    fn activityReady(context: *anyopaque) void {
+        const self: *Agent = @ptrCast(@alignCast(context));
+        if (self.request == null or !self.allowed or !self.registered) {
+            self.cancel();
+            return;
+        }
+        if (self.window) |window| {
+            window.present();
+            if (@import("build_options").test_hooks) std.log.info("event=activity-auth-presented", .{});
+        }
     }
     fn remember(self: *Agent, emitter: *object.Object, signal_id: c_ulong) void {
         _ = emitter.ref();
@@ -261,6 +274,7 @@ pub const Agent = struct {
         self.identity_count = 0;
     }
     pub fn cancel(self: *Agent) void {
+        self.activity_token.cancel();
         if (self.request == null and self.window == null and self.conversation == null) return;
         if (self.request) |invocation| {
             self.request = null;
@@ -291,6 +305,7 @@ pub const Agent = struct {
         self.changed(self.context);
     }
     fn submit(self: *Agent) void {
+        if (self.activity_token.callback != null) return;
         if (!self.allowed or self.request == null) {
             self.cancel();
             return;
@@ -333,6 +348,7 @@ pub const Agent = struct {
         if (self.prompt) |p| p.setText(bounded.z());
     }
     fn completed(session: *agent.Session, _: c_int, self: *Agent) callconv(.c) void {
+        self.activity_token.cancel();
         for (self.session_signals) |s| object.signalHandlerDisconnect(session.as(object.Object), s);
         self.conversation = null;
         session.unref();

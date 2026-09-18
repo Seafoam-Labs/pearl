@@ -10,7 +10,7 @@ TOML backend; install that helper alongside Pearl. Shell appearance, including
 system/installed GTK themes, remains under **Pearl settings**.
 
 The current target is Aqueous master
-`b3d486920c42e24d45bed0a79e68915fe11c4815`, helper **0.8.2**, protocol 1.
+`88587243059d58d72dd0fe2146d0ebdb64f26474`, helper **0.8.2**, protocol 1.
 Pearl discovers the helper through PATH, negotiates capabilities and always uses
 `--shell none`. Older helpers can remain readable, but writes require the modern
 receipt, candidate-impact and recoverable-commit capabilities.

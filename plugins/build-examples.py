@@ -49,6 +49,11 @@ if not args.skip_rust:
     run(args.wasm_tools, 'validate', destination/'plugin.wasm')
 if args.fixtures:
     import json
+    destination = out/'activity-fixture'; destination.mkdir(exist_ok=True)
+    core = out/'activity-fixture.core.wasm'
+    run('zig', 'cc', '-O2', '-mexec-model=reactor', ROOT/'tests/fixtures/plugin_activity.c', *common, '-o', core, env=env)
+    run(args.wasm_tools, 'component', 'new', core, '-o', destination/'plugin.wasm')
+    (destination/'plugin.json').write_text(json.dumps(dict(id='pearl.activity-fixture',name='Activity fixture',version='0.1.0',capabilities=dict(input_activity=True))))
     for case in range(1, 7):
         destination = out/f'fault-{case}'; destination.mkdir(exist_ok=True)
         core = out/f'fault-{case}.core.wasm'

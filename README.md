@@ -30,7 +30,7 @@ survive external edits, with conflict-aware merging and atomic persistence.
 Pearl now replaces the Aqueous settings frontend, with schema-driven GTK pages,
 retained drafts, structured collection editors, shortcut recording and compositor-owned
 display previews. Structured save receipts survive interrupted helper calls and Pearl
-restarts. The current integration pins Aqueous master `b3d4869` and aqueous-config
+restarts. The current integration pins Aqueous master `8858724` and aqueous-config
 0.8.2; structured collections now save and display declarations/profiles have typed editors; hardware-gated operations show their [upstream dependency](docs/AQUEOUS_MASTER_DEPENDENCIES.md).
 Session actions, a real polkit agent, AC/battery idle policies and a native
 Noctalia-like GTK/PAM lock screen are now implemented. Physical security/session
@@ -41,6 +41,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
 - [Experimental WebAssembly plugins](docs/PLUGINS.md): C, Zig and Rust components, native widgets and companion overlays, with controls in the main Settings app. [Implementation roadmap](docs/WASM_PLUGIN_IMPLEMENTATION_PLAN.md).
 - [Plugin development guide](docs/PLUGIN_DEVELOPMENT.md): build your first clickable widget, install and test it, then add settings, timers or an animated companion.
+- [Live plugin input activity plan](docs/PLUGIN_INPUT_ACTIVITY_IMPLEMENTATION_PLAN.md): implemented Aqueous integration for typing reactions, with permission and authentication controls; physical hardware acceptance remains open.
 - [Settings-flyout navigation plan](docs/SETTINGS_NAVIGATION_PLAN.md): proposed direct bar shortcuts and separate compact settings pages.
 - [Standalone Settings application plan](docs/STANDALONE_SETTINGS_APPLICATION_PLAN.md): a separately launchable Settings app, sidebar pages, backend integration, packaging and design mockups.
 - [Qt application theming](docs/QT_THEMING.md): opt-in QtEngine + Darkly application styles for Qt 5/6, Pearl palettes, font/density settings, session setup and conditional restore. [Milestones](docs/QT_DARKLY_IMPLEMENTATION_PLAN.md) record delivery and remaining compatibility checks.

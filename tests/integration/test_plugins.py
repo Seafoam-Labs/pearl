@@ -12,13 +12,14 @@ from types import SimpleNamespace
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('pearl','settings','ctl','examples'): p.add_argument('--'+name,required=True,type=Path)
+    p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production')
     p.add_argument('--runtime-disabled',action='store_true')
     p.add_argument('--output',type=Path,default=ROOT/'.cache/plugin-session')
     args=p.parse_args()
     for key,value in vars(args).items():
         if isinstance(value,Path):setattr(args,key,value.resolve())
     checks=[]
-    with PrivateSession(args.output,tool_prefix=ROOT/'.cache/aqueous-082') as s:
+    with PrivateSession(args.output,tool_prefix=args.prefix) as s:
         s.env['DBUS_SYSTEM_BUS_ADDRESS']='unix:path='+str(s.runtime/'system-bus')
         s.child('system-bus',['dbus-daemon','--session','--nofork','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS']])
         wait_for(lambda:s.run(['busctl','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS'],'list'],check=False).returncode==0)

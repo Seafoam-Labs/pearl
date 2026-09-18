@@ -19,13 +19,28 @@ pub const View = struct {
     arena: std.heap.ArenaAllocator,
     items: std.ArrayList(*Item) = .empty,
     tick: c_uint = 0,
+    paint_clock: ?*gdk.FrameClock = null,
+    paint_signal: c_ulong = 0,
     pub fn create(host: *gtk.Box, manager: *Manager, id: []const u8, overlay: bool) !*View {
         const self = try a.create(View);
         self.* = .{ .host = host, .manager = manager, .id = try a.dupe(u8, id), .overlay = overlay, .arena = std.heap.ArenaAllocator.init(a) };
         self.update();
         return self;
     }
+    fn clearPaint(self: *View) void {
+        if (self.paint_clock) |clock| {
+            @import("gobject2").signalHandlerDisconnect(clock.as(@import("gobject2").Object), self.paint_signal);
+            clock.unref();
+        }
+        self.paint_clock = null;
+        self.paint_signal = 0;
+    }
+    fn painted(_: *gdk.FrameClock, self: *View) callconv(.c) void {
+        if (self.slot) |slot| slot.test_painted_us = glib.getMonotonicTime();
+        self.clearPaint();
+    }
     fn clear(self: *View) void {
+        self.clearPaint();
         if (self.tick != 0) self.host.as(gtk.Widget).removeTickCallback(self.tick);
         self.tick = 0;
         for (self.items.items) |item| if (item.signal != 0) @import("gobject2").signalHandlerDisconnect(item.widget.as(@import("gobject2").Object), item.signal);
@@ -107,6 +122,11 @@ pub const View = struct {
                 self.paint(item);
             }
         }
+        if (@import("build_options").test_hooks) if (self.host.as(gtk.Widget).getFrameClock()) |clock| {
+            _ = clock.ref();
+            self.paint_clock = clock;
+            self.paint_signal = gdk.FrameClock.signals.after_paint.connect(clock, *View, painted, self, .{});
+        };
         var animated = false;
         for (self.items.items) |item| if (item.clip) |clip| {
             if (clip.frames.len > 1) animated = true;

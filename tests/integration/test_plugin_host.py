@@ -12,16 +12,16 @@ def digest(package):
     return sha.hexdigest()
 
 class Guest:
-    def __init__(self, helper, package, approved=None):
+    def __init__(self, helper, package, approved=None, activity=False):
         self.socket, child = socket.socketpair(); self.socket.settimeout(8)
         actions = [(os.POSIX_SPAWN_DUP2, child.fileno(), 3)]
         self.log = tempfile.TemporaryFile()
         actions += [(os.POSIX_SPAWN_DUP2, self.log.fileno(), 2)]
-        self.pid = os.posix_spawn(str(helper), [str(helper)], dict(PEARL_PLUGIN_PACKAGE=str(package), PEARL_PLUGIN_DIGEST=approved or digest(package), PEARL_PLUGIN_GENERATION='7', PEARL_PLUGIN_ACTIVITY='0'), file_actions=actions)
+        self.pid = os.posix_spawn(str(helper), [str(helper)], dict(PEARL_PLUGIN_PACKAGE=str(package), PEARL_PLUGIN_DIGEST=approved or digest(package), PEARL_PLUGIN_GENERATION='7', PEARL_PLUGIN_ACTIVITY='1' if activity else '0'), file_actions=actions)
         child.close(); self.stream = self.socket.makefile('rb'); self.seq = 0
-    def call(self, kind, **params):
+    def call(self, kind, state=None, **params):
         self.seq += 1
-        self.socket.sendall(json.dumps(dict(version=1, generation=7, sequence=self.seq, event=dict(kind=kind, **params))).encode()+b'\n')
+        self.socket.sendall(json.dumps(dict(version=2, generation=7, sequence=self.seq, state=state or dict(availability="unsupported",epoch=1), event=dict(kind=kind, **params) if kind else None)).encode()+b'\n')
         reply = self.stream.readline()
         if not reply:
             self.log.seek(0); raise AssertionError(self.log.read().decode(errors='replace'))
@@ -60,6 +60,41 @@ def main():
             guest.call('deactivate')
         finally: assert guest.close()==0
         checks.append(name)
+    guest=Guest(helper,root/'companion-c',activity=True)
+    try:
+        result=guest.call('activate')
+        assert result['activity_requested'] and 'local preview' in result['scene']['nodes'][1]['text'],result
+        ready=dict(availability='available',epoch=2)
+        result=guest.call(None,state=ready)
+        assert not result.get('scene') and result['activity_epoch']==2 and result['activity_requested'],result
+        result=guest.call('activity',count=1,state=ready)
+        assert result['scene']['nodes'][0]['clip']=='tap-left' and result['scene']['nodes'][1]['text']=='Tap',result
+        result=guest.call('activity',count=1,state=ready,reduced_motion=True)
+        assert result['scene']['nodes'][0]['clip']=='idle',result
+        result=guest.call('preview',state=dict(availability='suspended',epoch=3))
+        assert 'local preview' in result['scene']['nodes'][1]['text'],result
+    finally: assert guest.close()==0
+    checks.append('activity-availability-private-state-and-reduced-motion')
+    for granted in (False,True):
+        guest=Guest(helper,root/'companion-c',activity=granted)
+        result=guest.call('activate')
+        assert result['activity_requested']==granted,result
+        guest.seq+=1
+        guest.socket.sendall(json.dumps(dict(version=2,generation=7,sequence=guest.seq,state=dict(availability='suspended',epoch=4),event=dict(kind='activity',count=1))).encode()+b'\n')
+        try: assert guest.stream.readline()==b''
+        finally: assert guest.close()!=0
+    checks.append('ungranted-or-suspended-activity-rejected')
+    for trap, expected in ((3,False),(4,True)):
+        guest=Guest(helper,root/'activity-fixture',activity=True)
+        try:
+            assert guest.call('activate')['activity_requested']
+            assert not guest.call('click',node=1)['activity_requested']
+            assert guest.call('click',node=2)['activity_requested']
+            if not expected: assert not guest.call('click',node=1)['activity_requested']
+            result=guest.call('click',node=trap)
+            assert result['error_code'] and result['activity_requested']==expected,result
+        finally: assert guest.close()==0
+    checks.append('unsubscribe-and-atomic-intent-on-trap')
     for case in range(1, 7):
         guest=Guest(helper,root/f'fault-{case}')
         started=time.monotonic()
@@ -87,7 +122,7 @@ def main():
     finally: assert guest.close()!=0
     checks.append('unapproved-import-rejected')
     guest=Guest(helper,root/'timer-c')
-    guest.socket.sendall(b'{"version":1,"generation":8,"sequence":1,"event":{"kind":"activate"}}\n')
+    guest.socket.sendall(b'{"version":2,"generation":8,"sequence":1,"event":{"kind":"activate"}}\n')
     try: assert guest.stream.readline()==b''
     finally: assert guest.close()!=0
     checks.append('stale-generation-rejected')

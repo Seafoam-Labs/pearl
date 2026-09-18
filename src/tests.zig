@@ -46,3 +46,7 @@ test {
 comptime {
     _ = @import("services/policy.zig");
 }
+
+test {
+    _ = @import("plugins/activity_policy.zig");
+}

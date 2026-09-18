@@ -60,9 +60,13 @@ pub const Runtime = struct {
     pending: ?[]u8 = null,
     timer_ms: u32 = 0,
     next_timer: u32 = 0,
+    timer_changed: bool = false,
     published: bool = false,
     calls: usize = 0,
     grants: m.Grants,
+    activity_state: @import("activity_policy.zig").HostState = .{},
+    activity_requested: bool = false,
+    next_activity: bool = false,
     pub fn create(wasm: []const u8, manifest: m.Manifest, grants: m.Grants) !*Runtime {
         const self = try a.create(Runtime);
         errdefer a.destroy(self);
@@ -122,6 +126,8 @@ pub const Runtime = struct {
         self.calls = 0;
         self.published = false;
         self.next_timer = self.timer_ms;
+        self.timer_changed = false;
+        self.next_activity = self.activity_requested;
         var arg = eventValue(event);
         defer c.wasmtime_component_val_delete(&arg);
         var result = std.mem.zeroes(V);
@@ -131,6 +137,7 @@ pub const Runtime = struct {
         try check(c.wasmtime_component_func_call(&self.function, ctx, &arg, 1, &result, 1));
         if (result.kind != c.WASMTIME_COMPONENT_RESULT or !result.of.result.is_ok or result.of.result.val != null) return error.PluginCallback;
         self.timer_ms = self.next_timer;
+        self.activity_requested = self.next_activity;
         const pending = self.pending;
         self.pending = null;
         return pending;
@@ -183,13 +190,16 @@ pub const Runtime = struct {
         const ms = args[0].of.u32;
         if (ms != 0 and (ms < 100 or ms > 86400000)) return failure();
         self.next_timer = ms;
+        self.timer_changed = true;
         success(out);
         return null;
     }
     fn activity(data: ?*anyopaque, _: ?*c.wasmtime_context_t, _: ?*const c.wasmtime_component_func_type_t, args: [*c]V, argc: usize, out: [*c]V, outc: usize) callconv(.c) ?*c.wasmtime_error_t {
         const self: *Runtime = @ptrCast(@alignCast(data.?));
         if (!self.admit() or argc != 1 or outc != 1 or args[0].kind != c.WASMTIME_COMPONENT_BOOL) return failure();
-        out[0] = string(if (self.grants.input_activity) "unsupported" else "permission-denied", c.WASMTIME_COMPONENT_ENUM);
+        const allowed = self.grants.input_activity and self.manifest.capabilities.input_activity;
+        self.next_activity = allowed and args[0].of.boolean;
+        out[0] = string(if (allowed) @tagName(self.activity_state.availability) else "permission-denied", c.WASMTIME_COMPONENT_ENUM);
         return null;
     }
 };

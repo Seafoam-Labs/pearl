@@ -9,11 +9,12 @@ and physical login remain unverified. See [Qt theming](QT_THEMING.md) and
 [current evidence](../artifacts/qtengine/README.md).
 
 The current integration pins Zig **0.16.0**, Aqueous
-`b3d486920c42e24d45bed0a79e68915fe11c4815` and aqueous-config **0.8.2**.
+`88587243059d58d72dd0fe2146d0ebdb64f26474` and aqueous-config **0.8.2**.
 Matching compositor/helper/aqueousctl and freshly patched wlroots hashes are in
 [release metadata](../packaging/release.json) and the private build metadata
-under `.cache/aqueous-082`. [New evidence](../artifacts/aqueous-082/README.md)
-is separate from the previous `artifacts/aqueous-master` acceptance bundle.
+under `.cache/aqueous-activity-production`. [Activity integration evidence](PLUGIN_INPUT_ACTIVITY_VALIDATION.md)
+records the latest checks; earlier [0.8.2 evidence](../artifacts/aqueous-082/README.md)
+applies to its recorded binaries.
 
 Modern writes negotiate structured results, receipts, impact and recoverable commits.
 Collection-only edits additionally use `protected_collection_apply_v1` and

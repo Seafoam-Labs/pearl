@@ -59,7 +59,7 @@ interface: 'wp_fractional_scale_manager_v1',             version:  1, name: 16
 interface: 'wl_subcompositor',                           version:  1, name: 17
 interface: 'wp_cursor_shape_manager_v1',                 version:  2, name: 18
 interface: 'xdg_wm_base',                                version:  7, name: 19
-interface: 'zxdg_decoration_manager_v1',                 version:  1, name: 20
+interface: 'zxdg_decoration_manager_v1',                 version:  2, name: 20
 interface: 'org_kde_kwin_server_decoration_manager',     version:  1, name: 21
 interface: 'xdg_activation_v1',                          version:  1, name: 22
 interface: 'zxdg_exporter_v2',                           version:  1, name: 23
@@ -77,7 +77,7 @@ interface: 'zwlr_foreign_toplevel_manager_v1',           version:  3, name: 34
 interface: 'ext_foreign_toplevel_list_v1',               version:  1, name: 35
 interface: 'ext_foreign_toplevel_image_capture_source_manager_v1', version:  1, name: 36
 interface: 'wp_tearing_control_manager_v1',              version:  1, name: 37
-interface: 'zwp_linux_dmabuf_v1',                        version:  5, name: 38
+interface: 'zwp_linux_dmabuf_v1',                        version:  6, name: 38
 	main device: 0xE280 (/dev/dri/card1 or /dev/dri/renderD128)
 	tranche
 		target device: 0xE280 (/dev/dri/card1 or /dev/dri/renderD128)
@@ -300,7 +300,7 @@ interface: 'wp_color_manager_v1',                        version:  3, name: 40
 	supported named primaries:
 		srgb
 		bt2020
-	output: 73
+	output: 74
 		image description id: 2
 		primaries (xy):
 			 red: 0.640000 0.330000 green: 0.300000 0.600000
@@ -312,7 +312,7 @@ interface: 'wp_color_manager_v1',                        version:  3, name: 40
 			 red: 0.640000 0.330000 green: 0.300000 0.600000
 			blue: 0.150000 0.060000 white: 0.312700 0.329000
 		target_luminances (cd/m²): min 0.2000 max 80
-	output: 72
+	output: 73
 		image description id: 1
 		primaries (xy):
 			 red: 0.640000 0.330000 green: 0.300000 0.600000
@@ -335,13 +335,13 @@ interface: 'wp_presentation',                            version:  2, name: 48
 	presentation clock id: 1 (CLOCK_MONOTONIC)
 interface: 'zxdg_output_manager_v1',                     version:  3, name: 49
 	xdg_output_v1
-		output: 73
+		output: 74
 		name: 'HEADLESS-1'
 		description: 'Headless output 1'
 		logical_x: 1280, logical_y: 0
 		logical_width: 1280, logical_height: 720
 	xdg_output_v1
-		output: 72
+		output: 73
 		name: 'HEADLESS-2'
 		description: 'Headless output 2'
 		logical_x: 0, logical_y: 0
@@ -356,8 +356,8 @@ interface: 'zwlr_virtual_pointer_manager_v1',            version:  2, name: 56
 interface: 'zwp_virtual_keyboard_manager_v1',            version:  1, name: 57
 interface: 'zwp_pointer_constraints_v1',                 version:  1, name: 58
 interface: 'zwp_input_method_manager_v2',                version:  1, name: 59
-interface: 'zwp_text_input_manager_v3',                  version:  1, name: 60
-interface: 'zwp_tablet_manager_v2',                      version:  1, name: 61
+interface: 'zwp_text_input_manager_v3',                  version:  2, name: 60
+interface: 'zwp_tablet_manager_v2',                      version:  2, name: 61
 interface: 'wp_pointer_warp_v1',                         version:  1, name: 62
 interface: 'wl_seat',                                    version:  9, name: 63
 	name: default
@@ -367,10 +367,11 @@ interface: 'aqueous_xkb_config_v1',                      version:  2, name: 65
 interface: 'zwp_idle_inhibit_manager_v1',                version:  1, name: 66
 interface: 'ext_session_lock_manager_v1',                version:  1, name: 67
 interface: 'aqueous_shell_manager_v1',                   version:  2, name: 68
-interface: 'zwp_keyboard_shortcuts_inhibit_manager_v1',  version:  1, name: 69
-interface: 'ext_background_effect_manager_v1',           version:  1, name: 70
-interface: 'xdg_system_bell_v1',                         version:  1, name: 71
-interface: 'wl_output',                                  version:  4, name: 72
+interface: 'aqueous_input_activity_manager_v1',          version:  1, name: 69
+interface: 'zwp_keyboard_shortcuts_inhibit_manager_v1',  version:  1, name: 70
+interface: 'ext_background_effect_manager_v1',           version:  1, name: 71
+interface: 'xdg_system_bell_v1',                         version:  1, name: 72
+interface: 'wl_output',                                  version:  4, name: 73
 	name: HEADLESS-2
 	description: Headless output 2
 	x: 0, y: 0, scale: 1,
@@ -380,7 +381,7 @@ interface: 'wl_output',                                  version:  4, name: 72
 	mode:
 		width: 1280 px, height: 720 px, refresh: 0.000 Hz,
 		flags: current
-interface: 'wl_output',                                  version:  4, name: 73
+interface: 'wl_output',                                  version:  4, name: 74
 	name: HEADLESS-1
 	description: Headless output 1
 	x: 0, y: 0, scale: 1,

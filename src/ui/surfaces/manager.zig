@@ -119,6 +119,7 @@ pub const Manager = struct {
     capture_hide: bool = false,
     capture_feedback: bool = false,
     services_started: bool = false,
+    activity: ?*@import("../../platform/wayland/input_activity.zig").Broker = null,
     plugins: ?*@import("../../plugins/manager.zig").Manager = null,
     settings_observer_context: ?*anyopaque = null,
     settings_observer: ?*const fn (*anyopaque) void = null,
@@ -153,6 +154,12 @@ pub const Manager = struct {
         self.index = .{ .app = self.app.as(gio.Application), .context = self, .changed = appsChanged };
         self.effects = try native.Effects.init(self.display);
         self.running = true;
+        self.activity = @import("../../platform/wayland/input_activity.zig").Broker.create(self.display) catch null;
+        if (self.activity) |broker| {
+            broker.context = self;
+            broker.changed = activityChanged;
+            broker.activity = activityEvent;
+        }
         self.effects.context = self;
         self.effects.changed = nativeChanged;
         self.effects.start();
@@ -173,8 +180,8 @@ pub const Manager = struct {
         self.aqueous_settings.start();
         self.services_started = true;
         self.audio.start();
-        self.lifecycle = .{ .app = self.app.as(gio.Application), .display = self.display, .client = self.client, .context = self, .changed = lifecycleChanged, .request_logout = logoutRequested };
-        self.auth = .{ .app = self.app.as(gio.Application), .context = self, .changed = authChanged };
+        self.lifecycle = .{ .app = self.app.as(gio.Application), .display = self.display, .client = self.client, .context = self, .changed = lifecycleChanged, .request_logout = logoutRequested, .activity_broker = self.activity };
+        self.auth = .{ .app = self.app.as(gio.Application), .context = self, .changed = authChanged, .activity_broker = self.activity };
         self.auth.start();
         try self.lifecycle.start();
         self.power.start();
@@ -184,6 +191,8 @@ pub const Manager = struct {
         try self.clipboard.start();
         try self.capture.start();
         self.plugins = try @import("../../plugins/manager.zig").Manager.create(self.app.as(gio.Application), self, pluginsChanged);
+        self.plugins.?.broker = self.activity;
+        if (self.activity) |broker| self.plugins.?.setActivity(broker.state());
         self.plugins.?.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
         self.syncClipboardPrivacy();
         self.armClock();
@@ -223,6 +232,8 @@ pub const Manager = struct {
         if (self.osd_flush != 0) _ = glib.Source.remove(self.osd_flush);
         self.osd_flush = 0;
         self.outputs.deinit(a);
+        if (self.activity) |broker| broker.destroy();
+        self.activity = null;
         self.effects.deinit();
         if (self.layout) |*layout| layout.deinit();
         self.layout = null;
@@ -331,7 +342,7 @@ pub const Manager = struct {
     pub fn syncClipboardPrivacy(self: *Manager) void {
         const gate = self.lifecycle.gate;
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
-        const locked = !matched or self.client.availability != .ready or !gate.available or !gate.active or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
+        const locked = (if (self.activity) |broker| broker.inhibited() else false) or !matched or self.client.availability != .ready or !gate.available or !gate.active or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
         self.clipboard.setLocked(locked);
         self.capture.setLocked(locked);
         if (self.plugins) |plugins| plugins.setLocked(locked);
@@ -355,6 +366,20 @@ pub const Manager = struct {
         self.syncClipboardPrivacy();
         if (self.auth.window) |window| self.preferences.style(window.as(gtk.Widget), self.auth.panel.?.as(gtk.Widget));
         self.schedule();
+    }
+    fn activityChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        self.syncClipboardPrivacy();
+        if (self.plugins) |plugins| if (self.activity) |broker| plugins.setActivity(broker.state());
+        if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
+        self.schedule();
+    }
+    fn activityEvent(context: *anyopaque, mask: u32, epoch: u64) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        self.syncClipboardPrivacy();
+        if (self.plugins) |plugins| plugins.noteActivity(mask, epoch);
     }
     fn pluginsChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));

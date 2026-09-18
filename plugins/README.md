@@ -18,7 +18,7 @@ allocator/reallocation export, as in the example. Standard-library WASI output
 is rejected instead of receiving implicit system access.
 
 `handle-event` receives activation with validated effective settings, button
-clicks, timers and explicit previews. One guest instance serves all its views.
+clicks, timers, explicit previews and granted coarse activity. One guest instance serves all its views.
 Settings/permission changes restart that instance; no guest state survives a
 restart unless represented in host settings. There are no output/window handles.
 
@@ -27,10 +27,13 @@ restart unless represented in host settings. There are no output/window handles.
   this package. The scene commits only if the guest callback succeeds.
 - `set-timer(ms)` sets the next one-shot timer after the callback. Zero cancels;
   valid nonzero delays are 100–86,400,000 ms. Set it again on each timer event to
-  repeat. A callback that does not change the timer retains the requested delay.
-- `input-activity(subscribe)` currently returns `permission-denied` or
-  `unsupported`. Preview is synthetic and never represents another application's
-  input. Don't advertise global typing support until this reports available.
+  repeat. A callback that does not change the timer preserves its existing deadline.
+- `input-activity(subscribe)` commits subscription intent after a successful
+  callback and returns current availability: `available`, `permission-denied`,
+  `unsupported` or `suspended`. Delivery requires a manifest capability, a saved
+  grant and an authorized Aqueous session. Activity `count=1` means one coalesced
+  notification, never a press count. `false` unsubscribes. Preview remains
+  synthetic. See [activity setup](../docs/AQUEOUS_PLUGIN_ACTIVITY.md).
 - `log(text)` validates bounded diagnostic text; the current host discards it
   rather than writing arbitrary guest content to the desktop journal.
 

@@ -16,7 +16,8 @@ depends=('gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
          'cairo>=1.18.4' 'systemd>=261.3' 'aqueous>0.7' 'uwsm>=0.26.7')
 # Alternative packages must provide aqueous with a version newer than 0.7.
 # aqueous-config >=0.8.2 with protected collections and display declaration capabilities is required.
-# Upstream packaging still pulls in DMS; use a shell-neutral build for Pearl.
+# Live plugin input requires the matching Aqueous Pearl integration service.
+# See docs/AQUEOUS_PLUGIN_ACTIVITY.md; the general version floor is unchanged.
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
 makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
              'rust' 'rust-wasm' 'librsvg')

@@ -20,7 +20,7 @@ def main():
     args = p.parse_args()
     args.output = args.output.resolve(); args.output.mkdir(parents=True, exist_ok=True)
     checks = []
-    with PrivateSession(args.output/'desktop', tool_prefix=ROOT/'.cache/aqueous-082') as s:
+    with PrivateSession(args.output/'desktop', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
         if args.libraries: s.env['LD_LIBRARY_PATH'] = str(args.libraries.resolve())
         if args.engine_prefix:
             prefix=args.engine_prefix.resolve()

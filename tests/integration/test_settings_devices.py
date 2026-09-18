@@ -16,7 +16,7 @@ def main():
     for name in ('settings','pearl','ctl','spike','output'):setattr(args,name,getattr(args,name).resolve())
     args.output.mkdir(parents=True,exist_ok=True);checks={};report=dict(status='running',checks=checks)
     try:
-      with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-082') as s:
+      with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
         ipc=IPC(s);s.env['GSETTINGS_BACKEND']='memory'
         wm=Path(s.env['AQUEOUS_CONFIG']);wm.write_text(wm.read_text().replace('"floating"','"stacking"'))
         output=next(iter(ipc.outputs().values()));s.run(['wlr-randr','--output',output['name'],'--custom-mode','1600x1100@60Hz'])

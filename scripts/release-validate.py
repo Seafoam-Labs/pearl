@@ -18,7 +18,7 @@ def main():
     if a.resume and (a.output/'metadata.json').is_file():
         report=json.loads((a.output/'metadata.json').read_text());report['status']='running'
     initial=fingerprint();report['source_fingerprint']=initial
-    env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(ROOT/'.cache/zig'),PEARL_TEST_AQUEOUS_PREFIX=str(ROOT/'.cache/aqueous-082'))
+    env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(ROOT/'.cache/zig'),PEARL_TEST_AQUEOUS_PREFIX=str(ROOT/'.cache/aqueous-activity-production'))
     try:
         for target in ('unit',*a.targets):
             command=['zig','build',*(['test','test-adapter-unit','test-bindings','test-release-tools'] if target=='unit' else [target]),'-Doptimize=ReleaseSafe','-Drelease=true','--summary','all']

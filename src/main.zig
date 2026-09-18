@@ -30,6 +30,9 @@ fn endpointExists() bool {
 }
 
 pub fn main(init: std.process.Init) void {
+    const bootstrap = @import("platform/wayland/activity_bootstrap.zig");
+    bootstrap.capture(init) catch std.process.exit(1);
+    defer bootstrap.close();
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch {
         log.err("Unable to read arguments.", .{});
         std.process.exit(2);
@@ -38,6 +41,7 @@ pub fn main(init: std.process.Init) void {
         log.err("{s}", .{startup.diagnostic(err)});
         std.process.exit(2);
     };
+    if (parsed.mode == .demo or !options.wasm_plugins) bootstrap.close();
     switch (parsed.action) {
         .help => {
             glib.print("Usage: pearl [--demo] [--help] [--version] [--check-environment]\n\nDefault: Aqueous session application.\n--demo: standalone gallery with sample content (Wayland required).\n");
