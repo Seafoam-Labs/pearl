@@ -1,0 +1,93 @@
+{
+  "status": "passed",
+  "checks": {
+    "invalid-readiness-fd-rejected-before-opening-display": true,
+    "gtk-accessible-prompt-labels-and-mixed-scale-large-text": true,
+    "caps-lock-indicator-follows-keyboard-state": true,
+    "repeated-output-return-preserves-lock-and-current-prompt-focus": true,
+    "small-logical-output-remains-usable-with-large-text": true,
+    "oversize-utf8-response-rejected-without-truncation-and-retry-works": true,
+    "helper-crash-stays-locked-and-recovers": true,
+    "helper-malformed-stays-locked-and-recovers": true,
+    "helper-hang-stays-locked-and-recovers": true,
+    "helper-missing-stays-locked-and-recovers": true,
+    "duplicate-lock-and-broken-readiness-do-not-release-original": true,
+    "escape-clears-conversation-and-enter-retries-without-pointer": true,
+    "fingerprint-preserves-lock-authority": true,
+    "fingerprint-fallback-preserves-lock-authority": true,
+    "fingerprint-input-status-preserves-lock-authority": true,
+    "fingerprint-wait-preserves-lock-authority": true,
+    "fingerprint-denied-preserves-lock-authority": true,
+    "output-soak-reuses-view-slots-and-file-descriptors": true,
+    "all-outputs-removed-return-to-usable-authentication": true,
+    "idle-clock-updates-are-bounded-with-no-auth-ui-churn": true
+  },
+  "binaries": {
+    "locker": "c7e0aece2cb1fac74cb17f3388446f00aa614b91459f94067ea136609d353532",
+    "pam_module": "536ad64186cb3c5a1f3110ea169f231e7bd678b3f443fb342f6fa0c3d8cf6a08"
+  },
+  "outputs": {
+    "cycles": 100,
+    "before": {
+      "pss_bytes": 40869888,
+      "fds": 8,
+      "cpu_ticks": 25,
+      "rss_bytes": 72974336
+    },
+    "samples": [
+      {
+        "cycles": 25,
+        "pss_bytes": 37193728,
+        "fds": 8,
+        "cpu_ticks": 54,
+        "rss_bytes": 72155136
+      },
+      {
+        "cycles": 50,
+        "pss_bytes": 37193728,
+        "fds": 8,
+        "cpu_ticks": 83,
+        "rss_bytes": 72269824
+      },
+      {
+        "cycles": 75,
+        "pss_bytes": 37165056,
+        "fds": 8,
+        "cpu_ticks": 112,
+        "rss_bytes": 72019968
+      },
+      {
+        "cycles": 100,
+        "pss_bytes": 37165056,
+        "fds": 8,
+        "cpu_ticks": 141,
+        "rss_bytes": 72019968
+      }
+    ],
+    "after": {
+      "pss_bytes": 37165056,
+      "fds": 8,
+      "cpu_ticks": 141,
+      "rss_bytes": 72019968
+    }
+  },
+  "idle": {
+    "state": "locked, authentication cancelled",
+    "seconds": 65.00005839900041,
+    "before": {
+      "pss_bytes": 39291904,
+      "fds": 8,
+      "cpu_ticks": 25,
+      "rss_bytes": 71532544
+    },
+    "after": {
+      "pss_bytes": 39264256,
+      "fds": 8,
+      "cpu_ticks": 26,
+      "rss_bytes": 71794688
+    },
+    "cpu_seconds": 0.01,
+    "clock_events": 1,
+    "ui_updates": 0
+  }
+}

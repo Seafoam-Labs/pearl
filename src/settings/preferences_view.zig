@@ -62,12 +62,13 @@ pub const View = struct {
     qt_reapply: *gtk.Button,
     qt_comparison: *gtk.Label,
     german: bool,
+    themes: *@import("themes_view.zig").View = undefined,
     greeter_sync: *@import("greeter_sync.zig").View = undefined,
 
     pub fn create(window: *gtk.Window, host: *gtk.Box, editor: *Editor, german: bool) !*View {
         const self = try a.create(View);
         const appearance = card(host);
-        const mode = dropdown(appearance, if (german) "Design" else "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme" });
+        const mode = dropdown(appearance, if (german) "Design" else "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme", "Community package" });
         const variant = dropdown(appearance, if (german) "Farbvariante" else "Color variant", &.{ "Dark", "Light" });
         const source = dropdown(appearance, if (german) "Dynamische Farben aus" else "Dynamic colors from", &.{ "Seed color", "Wallpaper" });
         const gtk_name = entry(appearance, if (german) "GTK-Designname" else "GTK theme name", 96);
@@ -144,6 +145,8 @@ pub const View = struct {
         w.name(raw_view.as(gtk.Widget), if (german) "Vollständige Pearl-Einstellungen als JSON" else "Full Pearl preferences JSON");
         // The caller installs raw_view directly in Advanced's sole viewport.
         self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison };
+        self.themes = try @import("themes_view.zig").View.create(host, editor);
+        host.reorderChildAfter(self.themes.root.as(gtk.Widget), appearance.as(gtk.Widget));
         self.greeter_sync = try @import("greeter_sync.zig").View.create(host, self, syncPreferences, german);
         self.sync_borders = sync_borders;
         _ = object.Object.signals.notify.connect(sync_borders.as(object.Object), *View, selected, self, .{ .detail = "active" });
@@ -167,6 +170,7 @@ pub const View = struct {
     }
     pub fn destroy(self: *View) void {
         self.filling = true;
+        self.themes.destroy();
         self.greeter_sync.destroy();
         self.closePicker();
         if (self.preview_idle != 0) _ = glib.Source.remove(self.preview_idle);
@@ -193,6 +197,7 @@ pub const View = struct {
         return if (self.german) de else en;
     }
     pub fn update(self: *View) void {
+        self.themes.update();
         const text_ = self.editor.text();
         const changed = self.shown == null or !std.mem.eql(u8, self.shown.?, text_);
         if (changed and !self.filling) {
@@ -230,11 +235,16 @@ pub const View = struct {
         showRow(self.entries[0].as(gtk.Widget), self.mode.getSelected() == 2);
         showRow(self.entries[1].as(gtk.Widget), self.mode.getSelected() == 1 and self.source.getSelected() == 0);
         self.mode_hint.as(gtk.Widget).setVisible(@intFromBool(self.mode.getSelected() != 0));
-        self.mode_hint.setText(if (self.mode.getSelected() == 2) self.t("An empty GTK theme name follows the system.", "Ein leerer GTK-Name folgt dem System.") else self.t("Dynamic colors need matugen 4.x.", "Dynamische Farben benötigen matugen 4.x."));
+        self.mode_hint.setText(if (self.mode.getSelected() == 2) self.t("An empty GTK theme name follows the system.", "Ein leerer GTK-Name folgt dem System.") else if (self.mode.getSelected() == 3) "Select an installed community theme below." else self.t("Dynamic colors need matugen 4.x.", "Dynamische Farben benötigen matugen 4.x."));
         self.message.setText(if (self.raw_invalid) self.t("Advanced JSON is invalid. Correct it there to use these controls.", "Das JSON ist ungültig. Korrigiere es unter Erweitert, um diese Regler zu nutzen.") else "");
     }
     fn fill(self: *View, prefs: model.Preferences) void {
-        self.mode.setSelected(@intFromEnum(prefs.theme.mode));
+        self.mode.setSelected(switch (prefs.theme.mode) {
+            .static => 0,
+            .dynamic => 1,
+            .gtk => 2,
+            .package => 3,
+        });
         self.sync_borders.setActive(@intFromBool(prefs.theme.sync_borders));
         self.variant.setSelected(@intFromEnum(prefs.theme.variant));
         self.source.setSelected(@intFromEnum(prefs.theme.source));
@@ -257,7 +267,12 @@ pub const View = struct {
     fn saveForm(self: *View) void {
         if (self.filling or !self.editor.editable()) return;
         var prefs = self.prefs;
-        prefs.theme.mode = @enumFromInt(self.mode.getSelected());
+        prefs.theme.mode = switch (self.mode.getSelected()) {
+            1 => .dynamic,
+            2 => .gtk,
+            3 => .package,
+            else => .static,
+        };
         prefs.theme.sync_borders = self.sync_borders.getActive() != 0;
         prefs.theme.variant = @enumFromInt(self.variant.getSelected());
         prefs.theme.source = @enumFromInt(self.source.getSelected());

@@ -20,6 +20,27 @@ pub fn build(b: *std.Build) void {
         }
         return;
     }
+    var themes_tool: *std.Build.Step.Compile = undefined;
+    for ([_]bool{ false, true }) |instrumented| {
+        const tm = b.createModule(.{ .root_source_file = b.path("src/themes_main.zig"), .target = target, .optimize = optimize, .link_libc = true, .strip = release and !instrumented });
+        for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| tm.addImport(name, bindings.module(name));
+        for ([_][]const u8{ "gio-2.0", "libcurl", "libarchive" }) |name| tm.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+        const options = b.addOptions();
+        options.addOption(bool, "test_hooks", instrumented);
+        tm.addOptions("build_options", options);
+        const tool = b.addExecutable(.{ .name = if (instrumented) "pearl-themes-test" else "pearl-themes", .root_module = tm });
+        if (!instrumented) {
+            themes_tool = tool;
+            b.installArtifact(tool);
+            b.step("build-themes", "Build native theme author and repository tools").dependOn(&b.addInstallArtifact(tool, .{}).step);
+        } else {
+            for ([_][]const u8{ "packages", "repository" }) |suite| {
+                const test_ = b.addSystemCommand(&.{ "python3", "tests/integration/test_theme_packages.py", "--suite", suite, "--tool" });
+                test_.addArtifactArg(tool);
+                b.step(b.fmt("test-theme-{s}", .{suite}), "Verify native theme packages and community repository operations in private XDG roots").dependOn(&test_.step);
+            }
+        }
+    }
     const pam = b.addTranslateC(.{ .root_source_file = b.path("bindings/headers/pam.h"), .target = target, .optimize = optimize });
     pam.addIncludePath(b.path("bindings/headers"));
     const pam_module = pam.createModule();
@@ -250,6 +271,13 @@ pub fn build(b: *std.Build) void {
         }
     }
 
+    const custom_themes = b.addSystemCommand(&.{ "python3", "tests/integration/test_custom_themes.py", "--pearl" });
+    custom_themes.addArtifactArg(app);
+    custom_themes.addArg("--settings");
+    custom_themes.addArtifactArg(settings_test_app);
+    if (b.args) |args| custom_themes.addArgs(args);
+    b.step("test-custom-themes", "Verify community themes and recovery in a private desktop session").dependOn(&custom_themes.step);
+
     const settings_window_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_app.py", "--settings" });
     settings_window_test.addArtifactArg(settings_test_app);
     settings_window_test.addArg("--production");
@@ -311,6 +339,8 @@ pub fn build(b: *std.Build) void {
 
     const release_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_release.py", "--pearl" });
     release_test.addArtifactArg(app);
+    release_test.addArg("--themes");
+    release_test.addArtifactArg(themes_tool);
     release_test.addArg("--ctl");
     release_test.addArtifactArg(ctl);
     release_test.addArg("--settings");
@@ -650,6 +680,8 @@ pub fn build(b: *std.Build) void {
 }
 
 fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.LazyPath, test_hooks: bool, wasm_plugins: bool) void {
+    module.linkSystemLibrary("libcurl", .{ .use_pkg_config = .force });
+    module.linkSystemLibrary("libarchive", .{ .use_pkg_config = .force });
     module.addAnonymousImport("pearl_resources", .{ .root_source_file = resources });
     const options = b.addOptions();
     options.addOption(bool, "test_hooks", test_hooks);

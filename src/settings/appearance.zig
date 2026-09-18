@@ -13,6 +13,8 @@ pub const Snapshot = struct {
     density: @FieldType(prefs.Preferences, "density") = .normal,
     reduced_motion: bool = false,
     palette: theme.Palette = theme.dark,
+    style_tokens: @import("../theme/style.zig").Tokens = .{},
+    style_css: []const u8 = "",
     pub fn jsonStringify(self: Snapshot, writer: *std.json.Stringify) !void {
         try writer.beginObject();
         inline for (@typeInfo(Snapshot).@"struct".fields) |field| {
@@ -25,14 +27,16 @@ pub const Snapshot = struct {
         try writer.endObject();
     }
     pub fn read(alloc: std.mem.Allocator, value: std.json.Value) !Snapshot {
-        var result: Snapshot = undefined;
+        var result: Snapshot = .{};
         inline for (@typeInfo(Snapshot).@"struct".fields) |field| {
-            const v = try e.field(value, field.name);
-            if (comptime std.mem.eql(u8, field.name, "revision")) {
+            if (comptime std.mem.eql(u8, field.name, "style_tokens") or std.mem.eql(u8, field.name, "style_css")) {
+                if (value.object.get(field.name)) |v| @field(result, field.name) = try e.read(field.type, alloc, v);
+            } else if (comptime std.mem.eql(u8, field.name, "revision")) {
+                const v = try e.field(value, field.name);
                 const text = try e.read([]const u8, alloc, v);
                 try e.decimal(text);
                 result.revision = try std.fmt.parseInt(u64, text, 10);
-            } else @field(result, field.name) = try e.read(field.type, alloc, v);
+            } else @field(result, field.name) = try e.read(field.type, alloc, try e.field(value, field.name));
         }
         return result;
     }

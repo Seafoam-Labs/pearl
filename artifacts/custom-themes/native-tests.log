@@ -1,0 +1,3 @@
+PASS native palette/style validation, discovery, installation, rollback, ownership and hostile archives
+PASS native HTTPS repository, pinned release download, digest failures, immutable versions and offline cache
+PASS native theme jobs, fixed/generated previews, cancellation, exact live palette/style, bounded snapshots, restart and built-in recovery

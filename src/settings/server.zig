@@ -311,7 +311,7 @@ const Slot = struct {
                 .session = self.owner.session[0..],
                 .display = self.owner.display,
                 .epoch = self.owner.epoch[0..],
-                .capabilities = protocol.Capabilities{ .committed_appearance = self.owner.appearance != null, .page_snapshots = self.owner.backend != null, .pearl_draft = self.owner.backend != null, .aqueous_draft = if (self.owner.backend) |backend| backend.aqueous != null else false, .display_preview = if (self.owner.backend) |backend| backend.aqueous != null else false, .live_controls = if (self.owner.backend) |backend| backend.live != null else false, .prompts = if (self.owner.backend) |backend| backend.live != null else false },
+                .capabilities = protocol.Capabilities{ .community_themes = self.owner.backend != null, .committed_appearance = self.owner.appearance != null, .page_snapshots = self.owner.backend != null, .pearl_draft = self.owner.backend != null, .aqueous_draft = if (self.owner.backend) |backend| backend.aqueous != null else false, .display_preview = if (self.owner.backend) |backend| backend.aqueous != null else false, .live_controls = if (self.owner.backend) |backend| backend.live != null else false, .prompts = if (self.owner.backend) |backend| backend.live != null else false },
                 .appearance = if (self.owner.appearance) |get| @as(?@import("appearance.zig").Snapshot, get(self.owner.appearance_context.?)) else null,
                 .limits = limits,
             },

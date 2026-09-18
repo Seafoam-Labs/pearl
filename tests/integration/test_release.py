@@ -17,17 +17,17 @@ def run(argv, *, env=None, code=0):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    for name in ('pearl','ctl','locker','settings'):p.add_argument('--'+name,type=Path,required=True)
+    for name in ('pearl','ctl','locker','settings','themes'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--output',type=Path,default=ROOT/'artifacts/t16/install');a=p.parse_args()
     a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
-    checks={};report={'status':'running','checks':checks,'binary_sha256':{n:hashlib.sha256(getattr(a,n).read_bytes()).hexdigest() for n in ('pearl','ctl','locker','settings')}}
+    checks={};report={'status':'running','checks':checks,'binary_sha256':{n:hashlib.sha256(getattr(a,n).read_bytes()).hexdigest() for n in ('pearl','ctl','locker','settings','themes')}}
     try:
         with tempfile.TemporaryDirectory(prefix='pearl-release-') as temp:
             root=Path(temp);stage=root/'stage';binaries=root/'bin';binaries.mkdir()
-            for source,name in ((a.pearl,'pearl'),(a.ctl,'pearlctl'),(a.locker,'pearl-lock'),(a.settings,'pearl-settings')):shutil.copy2(source,binaries/name)
+            for source,name in ((a.pearl,'pearl'),(a.ctl,'pearlctl'),(a.locker,'pearl-lock'),(a.settings,'pearl-settings'),(a.themes,'pearl-themes')):shutil.copy2(source,binaries/name)
             run(['bash',ROOT/'packaging/install.sh'],env=dict(os.environ,DESTDIR=str(stage),PEARL_BINARY_DIR=str(binaries)))
             installed=stage/'usr/bin';pearl=installed/'pearl';control=installed/'pearlctl'
-            assert sorted(x.name for x in installed.iterdir())==['pearl','pearl-lock','pearl-settings','pearlctl']
+            assert sorted(x.name for x in installed.iterdir())==['pearl','pearl-lock','pearl-settings','pearl-themes','pearlctl']
             version=json.loads((ROOT/'packaging/release.json').read_text())['version']
             for binary in installed.iterdir():
                 assert version in run([binary,'--version'])

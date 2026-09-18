@@ -59,7 +59,7 @@ pub const View = struct {
         const bar = page(notebook, "Bar & behavior");
         const advanced = page(notebook, "Advanced");
         const session = page(notebook, "Session");
-        self.* = .{ .service = service, .host = host, .forms = .{ appearance, bar, session }, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme" }), .variant = dropdown(appearance, "Color variant", &.{ "Dark", "Light" }), .source = dropdown(appearance, "Dynamic colors from", &.{ "Seed color", "Wallpaper" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
+        self.* = .{ .service = service, .host = host, .forms = .{ appearance, bar, session }, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme", "Community package" }), .variant = dropdown(appearance, "Color variant", &.{ "Dark", "Light" }), .source = dropdown(appearance, "Dynamic colors from", &.{ "Seed color", "Wallpaper" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
         session.append(w.label("Pearl's native lock screen uses your shell theme. Zero disables an automatic timeout. Suspend must follow the lock timeout; Pearl waits for verified lock acquisition.", "pearl-secondary").as(gtk.Widget));
         for ([_][:0]const u8{ "AC · lock after seconds", "AC · suspend after seconds", "Battery · lock after seconds", "Battery · suspend after seconds" }, 0..) |label, i| {
             self.idle_spins[i] = spin(session, label, 0, 86400);
@@ -247,7 +247,12 @@ pub const View = struct {
         self.draft_serial = self.service.draft.revision;
         const p = self.base;
         for (self.entries, [_][]const u8{ p.theme.gtk_name, p.theme.seed, p.wallpaper.path, p.wallpaper.color, p.font, p.bar.groups.left, p.bar.groups.right }) |e, value| e.as(gtk.Editable).setText(alloc.dupeZ(u8, value) catch "");
-        self.mode.setSelected(@intFromEnum(p.theme.mode));
+        self.mode.setSelected(switch (p.theme.mode) {
+            .static => 0,
+            .dynamic => 1,
+            .gtk => 2,
+            .package => 3,
+        });
         self.variant.setSelected(@intFromEnum(p.theme.variant));
         self.source.setSelected(@intFromEnum(p.theme.source));
         self.fit.setSelected(@intFromEnum(p.wallpaper.mode));
@@ -270,7 +275,12 @@ pub const View = struct {
     fn saveForm(self: *View) void {
         if (self.filling) return;
         var p = self.base;
-        p.theme.mode = @enumFromInt(self.mode.getSelected());
+        p.theme.mode = switch (self.mode.getSelected()) {
+            1 => .dynamic,
+            2 => .gtk,
+            3 => .package,
+            else => .static,
+        };
         p.theme.variant = @enumFromInt(self.variant.getSelected());
         p.theme.source = @enumFromInt(self.source.getSelected());
         p.wallpaper.mode = @enumFromInt(self.fit.getSelected());

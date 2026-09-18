@@ -1,0 +1,798 @@
+{
+  "links": [
+    {
+      "page": "overview",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 95,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "network",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 193,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "bluetooth",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 253,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "sound",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 351,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "power",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 411,
+        "width": 195,
+        "height": 69
+      }
+    },
+    {
+      "page": "appearance",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": true,
+      "bounds": {
+        "x": 12,
+        "y": 520,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "bar",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 580,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "notifications",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 640,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "session",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 738,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 798,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "appearance",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 50,
+        "width": 26,
+        "height": 14
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "layouts",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 50,
+        "width": 26,
+        "height": 14
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "input",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 50,
+        "width": 26,
+        "height": 14
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "keybinds",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 50,
+        "width": 26,
+        "height": 14
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "rules",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 50,
+        "width": 26,
+        "height": 14
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "displays",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 50,
+        "width": 26,
+        "height": 14
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "advanced",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 50,
+        "width": 26,
+        "height": 14
+      }
+    },
+    {
+      "page": "advanced",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 858,
+        "width": 195,
+        "height": 58
+      }
+    },
+    {
+      "page": "plugins",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 918,
+        "width": 195,
+        "height": 58
+      }
+    }
+  ],
+  "controls": [
+    {
+      "field": "mode",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 747,
+        "y": -371,
+        "width": 242,
+        "height": 42
+      }
+    },
+    {
+      "field": "variant",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 893,
+        "y": -308,
+        "width": 96,
+        "height": 42
+      }
+    },
+    {
+      "field": "source",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 251,
+        "y": -381,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "gtk_name",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 236,
+        "y": -392,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "seed",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 236,
+        "y": -392,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "wallpaper",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 695,
+        "y": 1253,
+        "width": 294,
+        "height": 54
+      }
+    },
+    {
+      "field": "color",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 695,
+        "y": 1444,
+        "width": 294,
+        "height": 54
+      }
+    },
+    {
+      "field": "font",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 695,
+        "y": 1536,
+        "width": 294,
+        "height": 54
+      }
+    },
+    {
+      "field": "font_size",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 847,
+        "y": 1611,
+        "width": 142,
+        "height": 42
+      }
+    },
+    {
+      "field": "fit",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 778,
+        "y": 1381,
+        "width": 211,
+        "height": 42
+      }
+    },
+    {
+      "field": "density",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 857,
+        "y": 1674,
+        "width": 132,
+        "height": 42
+      }
+    },
+    {
+      "field": "motion",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 939,
+        "y": 1737,
+        "width": 50,
+        "height": 28
+      }
+    },
+    {
+      "field": "choose",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 813,
+        "y": 1317,
+        "width": 176,
+        "height": 42
+      }
+    },
+    {
+      "field": "greeter_sync",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 250,
+        "y": 2958,
+        "width": 169,
+        "height": 42
+      }
+    },
+    {
+      "field": "raw",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 208,
+        "y": 171,
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "field": "apply",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 869,
+        "y": 796,
+        "width": 147,
+        "height": 42
+      }
+    },
+    {
+      "field": "discard",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 764,
+        "y": 796,
+        "width": 97,
+        "height": 42
+      }
+    },
+    {
+      "field": "merge",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 751,
+        "y": 789,
+        "width": 26,
+        "height": 14
+      }
+    },
+    {
+      "field": "sync_borders",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 939,
+        "y": -188,
+        "width": 50,
+        "height": 28
+      }
+    },
+    {
+      "field": "themes.installed.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 127,
+        "width": 730,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.community.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 177,
+        "width": 730,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.cancel.0",
+      "focused": false,
+      "enabled": false,
+      "bounds": {
+        "x": 265,
+        "y": 227,
+        "width": 730,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.builtin.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 279,
+        "width": 730,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.defaults.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 331,
+        "width": 730,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.inherit_colors.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 383,
+        "width": 730,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.default_style.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 435,
+        "width": 730,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.preview_draft.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 487,
+        "width": 730,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.source_add.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": null
+    },
+    {
+      "field": "themes.source_remove.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": null
+    },
+    {
+      "field": "themes.import_archive.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": null
+    },
+    {
+      "field": "themes.select.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 741,
+        "width": 128,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.colors.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 397,
+        "y": 741,
+        "width": 124,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.style.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 525,
+        "y": 741,
+        "width": 111,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.preview.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 787,
+        "width": 730,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.remove.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 265,
+        "y": 833,
+        "width": 270,
+        "height": 42
+      }
+    },
+    {
+      "field": "themes.rollback.0",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 539,
+        "y": 833,
+        "width": 269,
+        "height": 42
+      }
+    },
+    {
+      "field": "qt_enabled",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 939,
+        "y": 1971,
+        "width": 50,
+        "height": 28
+      }
+    },
+    {
+      "field": "qt_retry",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 251,
+        "y": 2687,
+        "width": 758,
+        "height": 42
+      }
+    },
+    {
+      "field": "qt_review",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 251,
+        "y": 2729,
+        "width": 758,
+        "height": 42
+      }
+    },
+    {
+      "field": "qt_reapply",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 238,
+        "y": 1786,
+        "width": 26,
+        "height": 14
+      }
+    },
+    {
+      "field": "qt_kde",
+      "focused": false,
+      "enabled": true,
+      "bounds": {
+        "x": 939,
+        "y": 2466,
+        "width": 50,
+        "height": 28
+      }
+    }
+  ],
+  "editor": {
+    "ready": true,
+    "online": true,
+    "recovery": false,
+    "state": {
+      "revision": 2,
+      "draft_revision": 6,
+      "base_revision": 2,
+      "dirty": false,
+      "valid": true,
+      "conflict": false,
+      "busy": false,
+      "locked": false
+    },
+    "local": false,
+    "upload": "none",
+    "download": "none",
+    "error_code": "",
+    "validation": "",
+    "export_error": "",
+    "bytes": 1262,
+    "sha256": "dc83bdbf471d0d6f3f495850758aef04b9695d4fe4d20b0854b0c61ba2c12963",
+    "picker": false,
+    "preview": false,
+    "close_dialog": false,
+    "can_apply": false,
+    "can_edit": true
+  },
+  "theme_busy": false,
+  "theme_status": "Selection matches saved preferences.",
+  "service_prompt": false,
+  "aqueous": {
+    "online": true,
+    "ready": true,
+    "recovery": false,
+    "dirty": false,
+    "version": 2,
+    "revision": 0,
+    "backend_version": 1,
+    "mode": "idle",
+    "phase": 0,
+    "busy": false,
+    "receipt_pending": false,
+    "recording": false,
+    "shared_review": false,
+    "display_changes": 0,
+    "display_blocked": false,
+    "fields": 221,
+    "err": null,
+    "detail": ""
+  },
+  "greeter_sync_status": "Copies this background and theme. Administrator authentication is required.",
+  "footer_text": "Pearl preferences \u00b7 All changes are applied explicitly.",
+  "widget_focus": "none",
+  "focus": "body",
+  "active": false,
+  "key_events": 0,
+  "header_bounds": {
+    "x": 250,
+    "y": 75,
+    "width": 760,
+    "height": 55
+  },
+  "footer_bounds": {
+    "x": 220,
+    "y": 751,
+    "width": 820,
+    "height": 99
+  },
+  "body_bounds": {
+    "x": 220,
+    "y": 183,
+    "width": 820,
+    "height": 568
+  },
+  "retry_bounds": {
+    "x": 207,
+    "y": 44,
+    "width": 26,
+    "height": 14
+  },
+  "navigation_bounds": {
+    "x": 0,
+    "y": 51,
+    "width": 220,
+    "height": 799
+  },
+  "sections_bounds": {
+    "x": 895,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  "pid": 1504261,
+  "page": "appearance",
+  "section": null,
+  "connected": true,
+  "fixture": false,
+  "narrow": false,
+  "width": 1040,
+  "height": 850,
+  "visible": true,
+  "scroll": 565,
+  "heading": "Appearance",
+  "status": "",
+  "style": "light",
+  "appearance_updates": 3,
+  "activation_contexts": 0,
+  "sections_open": false
+}

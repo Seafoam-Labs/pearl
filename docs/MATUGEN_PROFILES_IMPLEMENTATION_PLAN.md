@@ -5,6 +5,12 @@ implement it. “Matugen” is the generator's spelling. A **profile** here mean
 application template plus its metadata and installation recipe, not a palette
 generation algorithm.
 
+The complementary [custom themes plan](CUSTOM_THEMES_IMPLEMENTATION_PLAN.md)
+defines community repository downloads and installation, the future package
+system, real theme provider and fixed-palette render data extension. This plan
+can still ship first with its empty production provider;
+the custom-theme integration milestone builds on the contracts below.
+
 ## Intended behavior
 
 Add **Appearance → Application themes → Matugen profiles**. Users can select a

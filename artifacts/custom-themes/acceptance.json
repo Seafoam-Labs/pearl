@@ -1,0 +1,88 @@
+{
+  "status": "passed",
+  "binaries": {
+    "pearl": "5df226d43517d3721843d20c9f588f9b93129ea673f36cf27400ae3510dd8f0f",
+    "settings": "91a8d7ea36bee9b5750722efe4294a79e9eca950658514c86546fa79de2df015"
+  },
+  "manifest": {
+    "schema_version": 1,
+    "id": "org.example.sample",
+    "name": "Sample Theme",
+    "author": "Fixture author",
+    "license": "CC0-1.0",
+    "source": "https://example.org/sample",
+    "asset_version": "1.0.0",
+    "requires": {
+      "palette_api": 1,
+      "style_api": 1
+    },
+    "palettes": {
+      "dark": "dark.json",
+      "light": "light.json"
+    },
+    "style": {
+      "tokens": "tokens.json",
+      "css": "extra.css"
+    }
+  },
+  "palette": {
+    "surface": "#101c19",
+    "low": "#162822",
+    "container": "#1c3028",
+    "high": "#263d32",
+    "text": "#e8f4e9",
+    "secondary": "#c5d8c9",
+    "primary": "#a4dfb0",
+    "on_primary": "#10391d",
+    "primary_container": "#285b37",
+    "on_container": "#d3f8dc",
+    "outline": "#82998a",
+    "error_color": "#ffb4ab",
+    "error_container": "#601410"
+  },
+  "light_palette": {
+    "surface": "#f4fbf5",
+    "low": "#edf5ed",
+    "container": "#e7efe7",
+    "high": "#dce6dc",
+    "text": "#14221a",
+    "secondary": "#344b3b",
+    "primary": "#285b37",
+    "on_primary": "#ffffff",
+    "primary_container": "#c5efce",
+    "on_container": "#10391d",
+    "outline": "#657d6b",
+    "error_color": "#8c1d18",
+    "error_container": "#f9dedc"
+  },
+  "tokens": {
+    "card_radius": 4,
+    "control_radius": 3,
+    "border_width": 1,
+    "padding_x": 12,
+    "padding_y": 10,
+    "title_scale_percent": 110,
+    "shadow": {
+      "x": 0,
+      "y": 2,
+      "blur": 8,
+      "spread": 0,
+      "opacity_percent": 20
+    },
+    "motion_ms": 100
+  },
+  "archive_sha256": "81ecc1f535ce8df475fe50ad408da55eca96fb99ce6a24817b3b945a7f092150",
+  "checks": [
+    "backend_jobs",
+    "exact_palette",
+    "independent_preview",
+    "gui_draft_discard",
+    "light_compact_large_text",
+    "stale_catalog_rejection",
+    "bounded_snapshot_rotation",
+    "package_removal_restart_snapshot",
+    "builtin_recovery",
+    "no_matugen_for_fixed_palette",
+    "cancellable_generated_preview"
+  ]
+}

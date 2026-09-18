@@ -71,6 +71,7 @@
 
 /* T06 desktop composition: primary bar controls survive compact output widths. */
 .pearl-root.$scope.pearl-shell .pearl-bar-panel { padding: 0 6px; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel label.pearl-bar-item { color: $text$; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-icon { padding: 2px 8px; min-width: 24px; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-workspace { padding: 2px 8px; min-width: 16px; color: $secondary$; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-workspace-active { padding: 2px 12px; min-width: 20px; background: $primary$; color: $on_primary$; }

@@ -34,6 +34,13 @@ pub const Editor = struct {
     qt_summary: Text(1024) = .{},
     qt_review_text: Text(16385) = .{},
     qt_review_digest: Text(65) = .{},
+    theme_result: ?[]u8 = null,
+    theme_busy: bool = false,
+    theme_serial: u64 = 0,
+    theme_poll: c_uint = 0,
+    theme_poll_ready: bool = false,
+    theme_error: Text(128) = .{},
+    theme_progress: Text(128) = .{},
     online: bool = false,
     ready: bool = false,
     recovery: bool = false,
@@ -79,6 +86,8 @@ pub const Editor = struct {
     flushing: bool = false,
 
     pub fn deinit(self: *Editor) void {
+        if (self.theme_poll != 0) _ = glib.Source.remove(self.theme_poll);
+        self.clear(&self.theme_result);
         self.cancelTimers();
         self.clearLiveCommand();
         if (self.idle != 0) _ = glib.Source.remove(self.idle);
@@ -102,6 +111,29 @@ pub const Editor = struct {
             a.free(command.payload);
         }
         self.live_command = null;
+    }
+    pub fn themeCommand(self: *Editor, request: @import("../theme/commands.zig").Request) !void {
+        if (!self.client.capabilities.community_themes) return error.Unsupported;
+        if (!self.editable() or self.live_command != null or self.theme_busy) return error.Busy;
+        const text_ = try std.json.Stringify.valueAlloc(a, request, .{});
+        defer a.free(text_);
+        self.live_command = .{ .op = .@"theme.start", .payload = try std.json.Stringify.valueAlloc(a, .{ .request = text_ }, .{}) };
+        self.theme_busy = true;
+        self.theme_error.set("");
+        self.clear(&self.theme_result);
+        self.wake();
+    }
+    pub fn cancelTheme(self: *Editor) void {
+        if (!self.online or self.live_command != null) return;
+        self.live_command = .{ .op = .@"theme.cancel", .payload = std.json.Stringify.valueAlloc(a, .{ .serial = p.num(self.theme_serial) }, .{}) catch return };
+        self.wake();
+    }
+    fn themeTick(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Editor = @ptrCast(@alignCast(data.?));
+        self.theme_poll = 0;
+        self.theme_poll_ready = true;
+        self.wake();
+        return 0;
     }
     pub fn liveAction(self: *Editor, op: @import("client.zig").Operation, params: std.json.Value) !void {
         if (!self.online or !self.ready or self.suspended or self.state.locked) return error.Unavailable;
@@ -158,6 +190,7 @@ pub const Editor = struct {
     }
     pub fn disconnected(self: *Editor) void {
         self.online = false;
+        self.resetThemeJob();
         self.clearLiveCommand();
         self.querying_live = null;
         self.cancelTimers();
@@ -187,6 +220,7 @@ pub const Editor = struct {
     pub fn locked(self: *Editor, value: bool) void {
         self.state.locked = value;
         if (value) {
+            self.resetThemeJob();
             self.suspended = true;
             self.clearLiveCommand();
             self.clear(&self.live);
@@ -197,6 +231,15 @@ pub const Editor = struct {
         }
         self.notify(self.context, .{ .locked = value });
         self.changed();
+    }
+    fn resetThemeJob(self: *Editor) void {
+        if (self.theme_poll != 0) _ = glib.Source.remove(self.theme_poll);
+        self.theme_poll = 0;
+        self.theme_poll_ready = false;
+        self.theme_busy = false;
+        self.theme_serial = 0;
+        self.clear(&self.theme_result);
+        self.theme_error.set("");
     }
     pub fn resumeEditing(self: *Editor) void {
         if (self.state.locked) return;
@@ -406,6 +449,11 @@ pub const Editor = struct {
             try self.client.request(.@"list.get", .{ .view = p.num(self.view), .list = "items", .revision = p.num(self.live_revision), .offset = p.num(self.live_offset) });
             return;
         }
+        if (self.theme_poll_ready) {
+            self.theme_poll_ready = false;
+            try self.client.request(.@"theme.get", .{ .serial = p.num(self.theme_serial) });
+            return;
+        }
         while (self.live_poll < self.live_receipts.len) {
             const index = self.live_poll;
             self.live_poll += 1;
@@ -495,12 +543,25 @@ pub const Editor = struct {
         }
         self.notify(self.context, .changed);
     }
+    fn receiveFailure(self: *Editor, op: @import("client.zig").Operation, code: []const u8) void {
+        // Another editor may commit between page.get and document.get. A stale
+        // read with no local mutation is retried; it must not leave an Apply
+        // failure banner after the new committed appearance arrives.
+        if (op == .@"document.get" and std.mem.eql(u8, code, "StaleDraft") and self.local == null and self.upload == .none and self.operation == null and self.action == .none and self.submitted == .none) {
+            if (self.transfer != 0) self.cancel_transfer = self.transfer;
+            self.resetTransfer();
+            self.needs_snapshot = true;
+            self.failed = false;
+            return;
+        }
+        self.fail(code);
+    }
     pub fn reply(self: *Editor, reply_: Reply) void {
         if (self.suspended) {
             self.needs_snapshot = true;
             return;
         }
-        self.receive(reply_) catch |err| self.fail(@errorName(err));
+        self.receive(reply_) catch |err| self.receiveFailure(reply_.op, @errorName(err));
         self.notify(self.context, .changed);
         self.wake();
     }
@@ -511,13 +572,35 @@ pub const Editor = struct {
         return p.number(try field([]const u8, value, name));
     }
     fn receive(self: *Editor, reply_: Reply) !void {
+        if (reply_.op == .@"theme.start" or reply_.op == .@"theme.get" or reply_.op == .@"theme.cancel") {
+            if (reply_.error_code) |code| {
+                self.theme_busy = false;
+                self.theme_error.set(code);
+                return;
+            }
+            const result = reply_.result;
+            self.theme_serial = try count(result, "serial");
+            self.theme_busy = try field(bool, result, "busy");
+            const phase = try field([]const u8, result, "phase");
+            const label: []const u8 = if (std.mem.eql(u8, phase, "fetching_index")) "Fetching repository" else if (std.mem.eql(u8, phase, "downloading")) "Downloading theme" else if (std.mem.eql(u8, phase, "validating")) "Validating package" else if (std.mem.eql(u8, phase, "installing")) "Installing theme" else if (std.mem.eql(u8, phase, "generating")) "Generating preview colors" else "Working";
+            var progress_text: [128]u8 = undefined;
+            self.theme_progress.set(try std.fmt.bufPrint(&progress_text, "{s} · {d} / {d} KiB", .{ label, (try count(result, "received")) / 1024, (try count(result, "total")) / 1024 }));
+            if (result.object.get("error_code")) |code| if (code == .string) self.theme_error.set(code.string);
+            if (result.object.get("result")) |value| if (value != .null) {
+                const bytes = try std.json.Stringify.valueAlloc(a, value, .{});
+                self.clear(&self.theme_result);
+                self.theme_result = bytes;
+            };
+            if (self.theme_busy and self.theme_poll == 0) self.theme_poll = glib.timeoutAdd(250, themeTick, self);
+            return;
+        }
         if (reply_.error_code) |code| {
             if (reply_.op == .@"list.get" and std.mem.eql(u8, code, "Stale")) {
                 self.needs_snapshot = true;
                 return;
             }
             if (std.mem.eql(u8, code, "StaleDraft") or std.mem.eql(u8, code, "Conflict")) self.needs_snapshot = true;
-            self.fail(code);
+            self.receiveFailure(reply_.op, code);
             return;
         }
         const v = reply_.result;

@@ -69,6 +69,7 @@ pub const Backend = struct {
         }
     }
     pub fn changed(self: *Backend) void {
+        if (self.locked()) if (self.service.theme_jobs.job) |job| job.cancel.cancel();
         self.revision +|= 1;
         for (&self.ledger) |*slot| if (slot.*) |*entry| {
             if (entry.state != .pending) continue;
@@ -148,6 +149,19 @@ pub const Backend = struct {
         const params = request.params orelse return error.InvalidRequest;
         peer.expire();
         switch (request.op) {
+            .@"theme.start" => {
+                const v = try p.fields(struct { request: []const u8 }, alloc, params);
+                try self.allowed(self.context);
+                try self.service.theme_jobs.start(self.service.app, v.request);
+                return self.service.theme_jobs.status(alloc);
+            },
+            .@"theme.get", .@"theme.cancel" => {
+                const v = try p.fields(struct { serial: ?[]const u8 = null }, alloc, params);
+                try self.allowed(self.context);
+                if (v.serial) |serial| if (try p.number(serial) != self.service.theme_jobs.serial) return error.StaleThemeJob;
+                if (request.op == .@"theme.cancel") if (self.service.theme_jobs.job) |job| job.cancel.cancel();
+                return self.service.theme_jobs.status(alloc);
+            },
             .@"qt.retry", .@"qt.review", .@"qt.reapply" => {
                 const v = try p.fields(struct { revision: []const u8, digest: ?[]const u8 = null }, alloc, params);
                 if (self.locked()) return error.Locked;

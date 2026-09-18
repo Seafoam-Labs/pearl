@@ -74,7 +74,7 @@ pub fn scopedCss(allocator: std.mem.Allocator, template: []const u8, scope: []co
 }
 pub fn validate(p: Palette) !void {
     inline for (@typeInfo(Palette).@"struct".fields) |field| if (!@import("../config/preferences.zig").hex(@field(p, field.name))) return error.InvalidPalette;
-    for ([_][2][]const u8{ .{ p.text, p.surface }, .{ p.text, p.high }, .{ p.secondary, p.container }, .{ p.on_primary, p.primary }, .{ p.on_container, p.primary_container } }) |pair| {
+    for ([_][2][]const u8{ .{ p.text, p.surface }, .{ p.text, p.high }, .{ p.secondary, p.container }, .{ p.on_primary, p.primary }, .{ p.on_container, p.primary_container }, .{ p.error_color, p.error_container } }) |pair| {
         const x = luminance(pair[0]);
         const y = luminance(pair[1]);
         if ((@max(x, y) + 0.05) / (@min(x, y) + 0.05) < 4.5) return error.InsufficientContrast;

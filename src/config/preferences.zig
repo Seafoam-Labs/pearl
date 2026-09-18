@@ -4,7 +4,12 @@ pub const Groups = @import("../desktop/policy.zig").Groups;
 pub const Edge = @import("../ui/surfaces/policy.zig").Edge;
 pub const max_bytes = 65536;
 pub const Theme = struct {
-    mode: enum { static, dynamic, gtk } = .static,
+    mode: enum { static, dynamic, gtk, package } = .static,
+    package_id: []const u8 = "",
+    palette_id: []const u8 = "",
+    style_id: []const u8 = "",
+    catalog_revision: []const u8 = "",
+    snapshot_digest: []const u8 = "",
     variant: enum { dark, light } = .dark,
     seed: []const u8 = "#6750a4",
     source: enum { seed, wallpaper } = .seed,
@@ -61,6 +66,10 @@ pub const Preferences = struct {
         if (self.version != 1) return error.UnsupportedVersion;
         try safeText(self.font, 96);
         try safeText(self.theme.gtk_name, 96);
+        for ([_][]const u8{ self.theme.package_id, self.theme.palette_id, self.theme.style_id }) |id| if (id.len > 0) try @import("../theme/package_model.zig").identifier(id);
+        if (self.theme.catalog_revision.len > 0) try @import("../theme/package_model.zig").digest(self.theme.catalog_revision);
+        if (self.theme.snapshot_digest.len > 0) try @import("../theme/package_model.zig").digest(self.theme.snapshot_digest);
+        if (self.theme.mode == .package and self.theme.package_id.len == 0 and self.theme.palette_id.len == 0) return error.ThemeSelectionRequired;
         for (self.font) |ch| if (ch == '"' or ch == '\\' or ch == ';' or ch == '{' or ch == '}') return error.InvalidFont;
         for (self.theme.gtk_name) |ch| if (ch == '/' or ch == '\\' or ch == ':') return error.InvalidThemeName;
         if (!hex(self.theme.seed) or !hex(self.wallpaper.color)) return error.InvalidColor;

@@ -32,6 +32,7 @@ pub const Job = struct {
     native_provider: ?*gtk.CssProvider = null,
     native_name: [:0]const u8 = "",
     palette: theme.Palette = theme.dark,
+    custom: @import("../theme/resolve.zig").Resolved = .{},
     failure: ?anyerror = null,
     warning: ?anyerror = null,
     export_error: ?anyerror = null,
@@ -87,6 +88,7 @@ pub const Service = struct {
     qt_review_text: @import("../services/policy.zig").Text(16385) = .{},
     qt_review_digest: ?[64]u8 = null,
     jobs: u64 = 0,
+    theme_jobs: @import("../theme/jobs.zig").Manager = .{},
     draft: @import("draft.zig").Draft = .{},
     pub fn notify(self: *Service) void {
         self.changed(self.context);
@@ -140,6 +142,7 @@ pub const Service = struct {
     pub fn stop(self: *Service) void {
         if (!self.running) return;
         self.running = false;
+        self.theme_jobs.stop();
         self.draft.deinit(a);
         if (self.monitor) |m| {
             _ = m.cancel();
@@ -273,6 +276,8 @@ pub const Service = struct {
                 }
                 j.native_name = "";
                 j.prefs.theme.mode = .static;
+                j.prefs.theme.package_id = "";
+                j.prefs.theme.style_id = "";
                 j.prefs.wallpaper.mode = .solid;
                 prepareAppearance(j) catch |err| {
                     j.failure = err;
@@ -324,6 +329,8 @@ pub const Service = struct {
             // A last-good file may refer to a removed font/theme/image too.
             // Keep it on disk; show a static fallback with an explicit error.
             j.prefs.theme.mode = .static;
+            j.prefs.theme.package_id = "";
+            j.prefs.theme.style_id = "";
             j.prefs.wallpaper.mode = .solid;
             try prepareAppearance(j);
         };
@@ -372,6 +379,20 @@ pub const Service = struct {
             j.image = pixbuf.Pixbuf.newFromStream(stream.as(gio.InputStream), j.cancel, null) orelse return error.ImageDecodeFailed;
         }
         j.palette = if (p.theme.variant == .dark) theme.dark else theme.light;
+        if (p.theme.mode != .gtk and (p.theme.mode == .package or p.theme.package_id.len > 0 or p.theme.style_id.len > 0)) {
+            const custom = @import("../theme/resolve.zig");
+            const snapshot = try std.fmt.allocPrintSentinel(alloc, "{s}/theme-snapshots/{s}.json", .{ j.service.dir, p.theme.snapshot_digest }, 0);
+            // A restart reuses the committed appearance, even after package updates.
+            const saved = if (j.requested == null and p.theme.snapshot_digest.len == 64) io.read(alloc, snapshot, 16384, j.cancel) catch null else null;
+            if (saved != null and !saved.?.missing) {
+                if (!std.mem.eql(u8, &io.digest(saved.?.bytes), p.theme.snapshot_digest)) return error.ThemeSnapshotCorrupt;
+                j.custom = try modelParseCustom(alloc, saved.?.bytes);
+            } else {
+                if (j.requested == null and p.theme.snapshot_digest.len == 64) return error.ThemeSnapshotMissing;
+                j.custom = try custom.resolve(alloc, p.theme, try @import("../theme/catalog.zig").scan(alloc), j.requested != null);
+            }
+            if (j.custom.palette) |value| j.palette = value;
+        } else j.custom = .{};
         if (p.theme.mode == .dynamic) {
             const previous = self.live;
             const same_source = if (previous) |live| j.requested != null and live.prefs.theme.mode == .dynamic and
@@ -399,17 +420,37 @@ pub const Service = struct {
         };
         const font = if (p.font.len > 0) try std.fmt.allocPrint(alloc, ".pearl-root.pearl-shell {{ font-family: \"{s}\", sans-serif; font-size: {d}px; }}\n", .{ p.font, p.font_size }) else if (p.theme.mode != .gtk or p.font_size != 14) try std.fmt.allocPrint(alloc, ".pearl-root.pearl-shell {{ font-size: {d}px; }}\n", .{p.font_size}) else "";
         const wallpaper = if (p.wallpaper.mode == .gradient) "" else try std.fmt.allocPrint(alloc, ".pearl-root.pearl-shell.pearl-wallpaper {{ background: {s}; }}\n", .{p.wallpaper.color});
-        j.css = try std.fmt.allocPrintSentinel(alloc, "{s}\n{s}{s}", .{ bytes, font, wallpaper }, 0);
+        const token_template = try @import("../theme/style.zig").tokenCss(alloc, j.custom.tokens, p.reduced_motion);
+        const tokens = try theme.scopedCss(alloc, token_template, "pearl-custom", j.palette);
+        // Authentication surfaces keep built-in layout and receive colors only.
+        const extra = if (self.integration_allowed) try theme.scopedCss(alloc, j.custom.css, "pearl-custom", j.palette) else "";
+        j.css = try std.fmt.allocPrintSentinel(alloc, "{s}\n{s}\n{s}\n{s}{s}", .{ bytes, if (self.integration_allowed) tokens else "", extra, font, wallpaper }, 0);
+        if (j.custom.digest.len > 0) {
+            const snapshot_bytes = try std.json.Stringify.valueAlloc(alloc, j.custom, .{});
+            j.prefs.theme.snapshot_digest = try alloc.dupe(u8, &io.digest(snapshot_bytes));
+        } else j.prefs.theme.snapshot_digest = "";
+        j.json = try std.json.Stringify.valueAlloc(alloc, j.prefs, .{ .whitespace = .indent_2 });
         if (j.cancel.isCancelled() != 0) return error.Cancelled;
     }
     fn persist(j: *Job) !void {
         const self = j.service;
+        if (!j.recovered and j.custom.digest.len > 0) {
+            const alloc = j.arena.allocator();
+            const directory = try std.fmt.allocPrintSentinel(alloc, "{s}/theme-snapshots", .{self.dir}, 0);
+            try io.mkdir(directory);
+            try @import("../theme/snapshots.zig").write(alloc, directory, j.prefs.theme.snapshot_digest, try std.json.Stringify.valueAlloc(alloc, j.custom, .{}));
+        }
         if (j.requested != null) try io.replace(self.path, j.json, j.disk.?, j.cancel);
         if (j.requested == null and j.cancel.isCancelled() != 0) return error.Cancelled;
         if (!j.recovered) io.atomic(self.good_path, j.json, false) catch |err| {
             j.warning = err;
         };
         if (j.recovered) return;
+        if (j.warning == null) {
+            const alloc = j.arena.allocator();
+            const directory = try std.fmt.allocPrintSentinel(alloc, "{s}/theme-snapshots", .{self.dir}, 0);
+            @import("../theme/snapshots.zig").prune(alloc, directory, j.prefs.theme.snapshot_digest, if (self.live) |old| old.prefs.theme.snapshot_digest else "") catch {};
+        }
         // Export failure is independent: it must never undo a successful shell save.
         exports(j) catch |err| {
             j.export_error = err;
@@ -630,4 +671,13 @@ fn exports(j: *Job) !void {
         try io.replace(path, text, old, j.cancel);
         try io.atomic(marker, &io.digest(text), false);
     }
+}
+
+fn modelParseCustom(alloc: std.mem.Allocator, bytes: []const u8) !@import("../theme/resolve.zig").Resolved {
+    const result = try @import("../theme/package_model.zig").parse(@import("../theme/resolve.zig").Resolved, alloc, bytes, 16384);
+    if (result.palette_api != 1 or result.style_api != 1) return error.UnsupportedThemeSnapshot;
+    if (result.palette) |p| try theme.validate(p);
+    try result.tokens.validate();
+    if (result.css.len > 3072) return error.ThemeCssTooLarge;
+    return result;
 }

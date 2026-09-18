@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "checks": [
+    "checkbox-saves-only-border-colors",
+    "real-matugen-seed-and-variant-follow",
+    "wallpaper-generated-palette-follows",
+    "manual-drafts-defer-sync-without-applying-other-edits",
+    "generator-failure-keeps-border-colors",
+    "gtk-and-disabled-setting-preserve-colors"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "repository_id": "example",
+  "releases": [
+    {
+      "id": "org.example.meadow",
+      "name": "Meadow example",
+      "author": "Pearl contributors",
+      "license": "CC0-1.0",
+      "source": "https://example.org/pearl-themes/meadow",
+      "requires": {
+        "palette_api": 1,
+        "style_api": 1
+      },
+      "version": "1.0.0",
+      "url": "https://example.org/pearl-themes/meadow-1.0.0.tar.gz",
+      "sha256": "a2d1e4704f4541c7c081a6d947cb9521a1a4a0ed03a832b07f5186f7ac615669",
+      "size": 988,
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "style": true,
+      "description": "Original accessible green palette and compact component styling."
+    }
+  ]
+}

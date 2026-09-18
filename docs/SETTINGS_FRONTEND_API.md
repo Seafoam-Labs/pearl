@@ -1,5 +1,35 @@
 # Settings frontend API, version 1
 
+## Community themes
+
+The backend advertises `community_themes:true`. `theme.start` accepts
+`{request: JSON_STRING}` using the native [theme command contract](CUSTOM_THEMES.md).
+It returns `busy`, decimal-string `serial`, `phase`, decimal-string
+`received`/`total` byte counts, nullable `error_code`, and nullable JSON `result`.
+`theme.get` and `theme.cancel` take optional decimal-string `serial`; mismatch
+fails with `StaleThemeJob`. One session-owned worker runs at a time. The frontend
+polls every 250 ms only while busy and clears polling state on lock/disconnect.
+Operations are denied while locked. Cancellation is asynchronous and cannot
+undo a published package. Results are bounded to 120,000 bytes.
+`preview_render` additionally resolves generated colors with a 15-second worker
+deadline; other backend theme jobs have a 60-second deadline. `preview` remains
+a read-only metadata resolution without generator execution.
+
+`catalog` returns `entries`, all installed `ids`, `next_offset`, `diagnostics`,
+`diagnostic_count`, `revision`, and `sources`: at most 16 entries and eight
+diagnostics per response. Later pages send `offset` and captured `revision`;
+changes reject with `ThemeCatalogChanged`. Invalid/duplicate IDs are unavailable.
+Repository pages use bounded `next` URLs. Install captures repository, page URL,
+package ID, version and archive digest, preventing selection of another release.
+
+Committed appearance adds optional `style_tokens` and `style_css`. Old servers
+omitting them retain built-in styling. Settings uses resolved committed bytes,
+never package filesystem reads or generators. Preview uses isolated widget roots;
+selection edits the normal shared draft. Clients without the capability must not
+send theme operations. See the author guide for remaining profile integration.
+
+## Existing frontend contract
+
 S1–S6 implementation notes, September 15, 2026. The standalone GTK4 frontend
 and backend adapters are Zig in `src/settings/`. Handshake, committed appearance,
 page snapshots, shared Pearl/Aqueous drafts and live-service adapters are implemented.

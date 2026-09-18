@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "org.example.meadow",
+  "name": "Meadow example",
+  "author": "Pearl contributors",
+  "license": "CC0-1.0",
+  "source": "https://example.org/pearl-themes/meadow",
+  "asset_version": "1.0.0",
+  "requires": {
+    "palette_api": 1,
+    "style_api": 1
+  },
+  "palettes": {
+    "dark": "dark.json",
+    "light": "light.json"
+  },
+  "style": {
+    "tokens": "tokens.json",
+    "css": "components.css"
+  }
+}

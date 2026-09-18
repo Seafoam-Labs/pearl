@@ -1,5 +1,10 @@
 # Preferences, wallpaper and themes
 
+Community package mode and independent `theme.package_id`, `palette_id` and
+`style_id` selections are documented in [Community themes](CUSTOM_THEMES.md).
+Their catalog/snapshot hashes are backend-managed. Installing a package does
+not activate it; selection and Apply & save use the existing shared draft.
+
 [T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
 dock behavior, split bar sections and matching native input/blur regions.
 

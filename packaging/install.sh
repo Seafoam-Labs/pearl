@@ -8,7 +8,7 @@ case "$destination" in /|"") echo 'DESTDIR must be a staging directory, not /' >
 [[ $(realpath -m -- "$destination") != / ]] || { echo 'DESTDIR resolves to /' >&2; exit 2; }
 binaries=${PEARL_BINARY_DIR:-$source_root/zig-out/bin}
 prefix=/usr # Matches the packaged unit; distribution packages may patch both.
-for binary in pearl pearlctl pearl-lock pearl-settings; do
+for binary in pearl pearlctl pearl-lock pearl-settings pearl-themes; do
     install -Dm755 "$binaries/$binary" "$destination$prefix/bin/$binary"
 done
 if [[ -f "$binaries/pearl-plugin-host" ]]; then

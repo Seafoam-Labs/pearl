@@ -74,8 +74,8 @@ def main():
                 state = hello['result']; epoch = state['epoch']
                 assert state['session'] == token and state['display'] == display
                 assert epoch != hello2['result']['epoch']
-                assert all(state['capabilities'][k] for k in ('handshake', 'committed_appearance', 'page_snapshots', 'pearl_draft', 'aqueous_draft', 'live_controls', 'prompts', 'display_preview'))
-                assert not any(v for k, v in state['capabilities'].items() if k not in ('handshake', 'committed_appearance', 'page_snapshots', 'pearl_draft', 'aqueous_draft', 'live_controls', 'prompts', 'display_preview'))
+                assert all(state['capabilities'][k] for k in ('handshake', 'committed_appearance', 'page_snapshots', 'pearl_draft', 'aqueous_draft', 'live_controls', 'prompts', 'display_preview', 'community_themes'))
+                assert not any(v for k, v in state['capabilities'].items() if k not in ('handshake', 'committed_appearance', 'page_snapshots', 'pearl_draft', 'aqueous_draft', 'live_controls', 'prompts', 'display_preview', 'community_themes'))
                 assert f.call()['result']['epoch'] == epoch
                 assert g.call()['result']['session'] == token2
             checks['two-process-handshake-persistent-heartbeat-and-capability-gating'] = True

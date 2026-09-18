@@ -1,5 +1,12 @@
 # Pearl development
 
+Community themes add libcurl and libarchive development/runtime dependencies.
+`zig build build-themes` builds the native `pearl-themes` validator, packer and
+package manager. `zig build test-theme-packages` covers contracts and interrupted
+installation/removal recovery; `test-theme-repository` uses a private HTTPS
+fixture; `test-custom-themes` runs a private desktop. Python is development test
+infrastructure only. See [the author guide](CUSTOM_THEMES.md).
+
 For optional Qt application theming, build with `-Dqt-themes=true`; the default
 build retains no Qt build dependency. Qt 5 and Qt 6.6+ development files and a C++
 compiler build isolated probes. `zig build test-qt-theme-unit` covers pure policy
