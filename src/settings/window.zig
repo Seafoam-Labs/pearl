@@ -1067,6 +1067,9 @@ pub const Window = struct {
             for ([_]*gtk.Widget{ view.qt_enabled.as(gtk.Widget), view.qt_retry.as(gtk.Widget), view.qt_review.as(gtk.Widget), view.qt_reapply.as(gtk.Widget), view.qt_kde.as(gtk.Widget) }, [_][]const u8{ "qt_enabled", "qt_retry", "qt_review", "qt_reapply", "qt_kde" }) |widget, name|
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .bounds = self.bounds(widget) });
         }
+        if (self.plugins_view) |view| if (self.target.page == .plugins) {
+            try controls.append(alloc, .{ .field = "plugins.refresh", .focused = if (focus) |f| f == view.refresh.as(gtk.Widget) else false, .enabled = view.refresh.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(view.refresh.as(gtk.Widget)) });
+        };
         if (self.plugins_view) |view| if (self.target.page == .plugins) for (view.rows.items) |row| {
             inline for (.{ "enabled", "activity", "overlay", "mode", "output", "x", "y", "width", "height", "interactive", "locked", "fullscreen" }) |name| {
                 const widget = @field(row, name).as(gtk.Widget);

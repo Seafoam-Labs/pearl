@@ -9,6 +9,7 @@ pub const c = @cImport({
     @cInclude("unistd.h");
     @cInclude("sys/stat.h");
     @cInclude("dirent.h");
+    @cInclude("errno.h");
 });
 const a = std.heap.c_allocator;
 pub const Image = struct { id: []const u8, bytes: []const u8 };
@@ -29,6 +30,8 @@ pub const Package = struct {
         return loadFd(fd);
     }
     pub fn loadFd(fd: c_int) !*Package {
+        var before: c.struct_stat = undefined;
+        if (c.fstat(fd, &before) != 0) return error.PluginDirectory;
         var arena = std.heap.ArenaAllocator.init(a);
         errdefer arena.deinit();
         const alloc = arena.allocator();
@@ -50,6 +53,20 @@ pub const Package = struct {
             if (png.len < 24 or !std.mem.eql(u8, png[0..8], "\x89PNG\r\n\x1a\n") or !std.mem.eql(u8, png[12..16], "IHDR") or std.mem.readInt(u32, png[16..20], .big) != asset.width or std.mem.readInt(u32, png[20..24], .big) != asset.height) return error.InvalidPluginImage;
             hashPart(&sha, png);
             image.* = .{ .id = asset.id, .bytes = png };
+        }
+        var after: c.struct_stat = undefined;
+        if (c.fstat(fd, &after) != 0 or !stable(before, after)) return error.PluginFileChanged;
+        // Re-read every declared file to catch cross-file changes during the snapshot.
+        const verification = try read(alloc, fd, "plugin.json", m.Limits.manifest);
+        if (!std.mem.eql(u8, bytes, verification)) return error.PluginFileChanged;
+        alloc.free(verification);
+        const component = try read(alloc, fd, manifest.component, m.Limits.component);
+        if (!std.mem.eql(u8, wasm, component)) return error.PluginFileChanged;
+        alloc.free(component);
+        for (manifest.assets, images) |asset, image| {
+            const again = try read(alloc, fd, asset.path, 2 * 1024 * 1024);
+            if (!std.mem.eql(u8, image.bytes, again)) return error.PluginFileChanged;
+            alloc.free(again);
         }
         var digest: [32]u8 = undefined;
         sha.final(&digest);
@@ -90,7 +107,13 @@ pub fn read(alloc: std.mem.Allocator, base: c_int, path: []const u8, limit: usiz
         }
         var extra: u8 = undefined;
         if (c.read(current, &extra, 1) != 0) return error.PluginFileChanged;
+        var after: c.struct_stat = undefined;
+        if (c.fstat(current, &after) != 0 or !stable(stat, after)) return error.PluginFileChanged;
         return bytes;
     }
     return error.PluginFile;
+}
+
+fn stable(before: c.struct_stat, after: c.struct_stat) bool {
+    return before.st_ino == after.st_ino and before.st_dev == after.st_dev and before.st_size == after.st_size and std.meta.eql(before.st_mtim, after.st_mtim) and std.meta.eql(before.st_ctim, after.st_ctim);
 }

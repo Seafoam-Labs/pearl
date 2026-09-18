@@ -59,6 +59,32 @@ def main():
         assert any(x['page']=='plugins' for x in probe(s,ipc)['links'])
         capture(s,'plugins-main-settings',next(x['name'] for x in ipc.state() if x['kind']=='output'))
         checks.append('main-settings-page-and-live-registry')
+        generations={x['id']:x['generation'] for x in listed()['packages']}
+        requested=listed()['requested'];ready(s,ipc);click(s,ipc,'plugins.refresh')
+        wait_for(lambda:listed()['completed']>requested and not listed()['pending'])
+        assert {x['id']:x['generation'] for x in listed()['packages']}==generations
+        checks.append('actual-settings-refresh-button-preserves-all-instances')
+        # Unrelated row focus and retained edits survive another package update.
+        ready(s,ipc);click(s,ipc,'pearl.counter-rust/enabled')
+        wait_for(lambda:peer.state()['dirty'])
+        draft_before=peer.document()
+        ready(s,ipc)
+        # GtkSwitch pointer toggles do not necessarily move keyboard focus.
+        for _ in range(80):
+            if next(c for c in probe(s,ipc)['controls'] if c['field']=='pearl.counter-rust/enabled')['focused']: break
+            s.run(['wtype','-k','Tab'])
+        else: raise AssertionError('could not focus the retained plugin row')
+        timer_manifest=packages/'timer-c/plugin.json';manifest_bytes=timer_manifest.read_bytes()
+        timer_manifest.write_text(json.dumps(json.loads(manifest_bytes) | dict(version='focus-test')))
+        wait_for(lambda:next(x for x in listed()['packages'] if x['id']=='pearl.timer-c').get('error_code')=='PluginApprovalRequired')
+        time.sleep(.6)
+        assert next(c for c in probe(s,ipc)['controls'] if c['field']=='pearl.counter-rust/enabled')['focused'], [c['field'] for c in probe(s,ipc)['controls'] if c['focused']]
+        assert peer.document()==draft_before
+        timer_manifest.write_bytes(manifest_bytes)
+        wait_for(lambda:next(x for x in listed()['packages'] if x['id']=='pearl.timer-c')['status']=='active')
+        assert peer.action('discard')['state']=='succeeded'
+        ready(s,ipc)
+        checks.append('unrelated-row-focus-and-unsaved-values-survive-update')
         response=ctl(s,args.ctl,'control-center','show','--page','plugins',code=2)
         checks.append('flyout-rejects-plugins-route')
         response=peer.call('plugin.action',view=peer.view,operation=uuid.uuid4().hex,id='pearl.companion',action='preview');assert response['ok'],response
@@ -72,7 +98,7 @@ def main():
         timer=packages/'timer-c/plugin.wasm';original=timer.read_bytes();timer.write_bytes(original+b'changed')
         candidate=json.loads(peer.document());next(x for x in candidate['plugins']['entries'] if x['id']=='pearl.timer-c')['enabled']=True
         peer.keep(json.dumps(candidate));assert peer.action('apply')['state']=='succeeded'
-        wait_for(lambda:next(x for x in listed()['packages'] if x['id']=='pearl.timer-c')['status']=='failed')
+        wait_for(lambda:next(x for x in listed()['packages'] if x['id']=='pearl.timer-c')['status'] in ('failed','unavailable'))
         assert all(x['status']=='active' for x in listed()['packages'] if x['id']!='pearl.timer-c')
         timer.write_bytes(original)
         response=peer.call('plugin.action',view=peer.view,operation=uuid.uuid4().hex,id='pearl.timer-c',action='retry');assert response['ok'],response

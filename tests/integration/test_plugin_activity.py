@@ -138,6 +138,22 @@ def main():
         auth_delay=time.monotonic()-auth_start
         if args.stall_ack: assert .45 <= auth_delay < 2,auth_delay
         checks.append('bounded-inhibit-timeout' if args.stall_ack else 'acknowledged-inhibit-before-authentication')
+        # Retire and restore a package while authentication owns the privacy gate.
+        # This must preserve the session's authorized Aqueous manager and discard
+        # input queued for either retired helper generation.
+        cat_manifest=packages/'companion-c/plugin.json'
+        original_manifest=cat_manifest.read_bytes()
+        updated=json.loads(original_manifest);updated['version']='privacy-refresh'
+        cat_manifest.write_text(json.dumps(updated))
+        ticket=ctl(s,args.ctl,'plugins','refresh')['result']['requested']
+        wait_for(lambda:listed()['completed']>=ticket)
+        wait_cat(lambda v:v['version']=='privacy-refresh' and v['status']=='suspended' and v['nodes']==0)
+        press()
+        cat_manifest.write_bytes(original_manifest)
+        ticket=ctl(s,args.ctl,'plugins','refresh')['result']['requested']
+        wait_for(lambda:listed()['completed']>=ticket)
+        wait_cat(lambda v:v['version']==json.loads(original_manifest)['version'] and v['status']=='suspended' and v['nodes']==0)
+        checks.append('replacement-and-restore-during-auth-preserve-privacy-and-authorized-broker')
         authority_command({'cancel':True})
         wait_cat(lambda v:v['status']=='active' and v['input_activity']=='available')
         quiet(lambda:None)

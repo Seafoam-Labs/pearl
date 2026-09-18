@@ -9,6 +9,7 @@ pub const Limits = struct {
     pub const frame = 65536;
     pub const nodes = 32;
 };
+pub const PackageSource = struct { source: []const u8, path: []const u8, digest: []const u8 };
 pub const Grants = struct { input_activity: bool = false, overlay: bool = false };
 pub const Setting = struct { key: []const u8, value: []const u8 };
 pub const Schema = struct { key: []const u8, label: []const u8, kind: enum { text, number, toggle } = .text, default: []const u8 = "", min: i32 = 0, max: i32 = 86400 };

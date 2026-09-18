@@ -9,6 +9,13 @@ The Rust example uses wit-bindgen's Rust macros and a locked freestanding
 allocator. The Zig example imports the generated C header and links its glue.
 No handwritten language-specific protocol exists in the Pearl host.
 
+Installed packages are discovered live. Use main Settings → Plugins →
+**Refresh plugins** or `pearlctl plugins refresh` for a manual scan. A changed
+manifest, component or PNG needs fresh approval and permission review; unchanged
+packages keep running. Build outside the discovery tree and move complete packages
+into place. Keep one package per ID in each root. See the development guide for
+update and removal behavior.
+
 A package is a directory containing `plugin.json`, `plugin.wasm` and declared
 PNG assets. The component must export `pearl:plugin/guest@0.1.0.handle-event`.
 It may import the matching Pearl host interface and its type definitions only;

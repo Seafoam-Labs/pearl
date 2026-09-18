@@ -329,11 +329,17 @@ pub const Manager = struct {
     }
     fn validatePlugins(self: *Manager, prefs: @import("../../config/preferences.zig").Preferences) !void {
         const plugins = self.plugins orelse return;
-        for (prefs.plugins.entries) |cfg| if (cfg.enabled) {
-            for (plugins.slots.items) |slot| if (std.mem.eql(u8, cfg.id, slot.id()) and std.mem.eql(u8, cfg.digest, &slot.entry.package.digest)) {
-                try slot.entry.package.manifest.config(cfg);
+        for (prefs.plugins.entries) |cfg| {
+            const old = self.preferences.prefs().plugins.find(cfg.id);
+            const new_approval = cfg.digest.len > 0 and (old == null or !std.mem.eql(u8, old.?.digest, cfg.digest));
+            var found_package = false;
+            for (plugins.slots.items) |slot| if (std.mem.eql(u8, cfg.id, slot.id())) {
+                found_package = true;
+                if (new_approval and (slot.discovery_error != null or !std.mem.eql(u8, cfg.digest, &slot.entry.package.digest))) return error.PluginContentChanged;
+                if ((cfg.enabled or new_approval) and std.mem.eql(u8, cfg.digest, &slot.entry.package.digest)) try slot.entry.package.manifest.config(cfg);
             };
-        };
+            if (new_approval and !found_package) return error.PluginPackageMissing;
+        }
     }
     fn logoutRequested(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -1161,6 +1167,10 @@ pub const Manager = struct {
             return control_page.report(popup.window, alloc);
         }
         if (request.op == .aqueous_status) return self.aqueous_settings.status(alloc, request.text);
+        if (request.op == .plugin_refresh) {
+            const plugins = self.plugins orelse return error.Unavailable;
+            return std.json.Stringify.valueAlloc(alloc, .{ .version = 1, .requested = plugins.requestRefresh(), .pending = true }, .{});
+        }
         if (request.op == .plugin_list or request.op == .plugin_inspect) return (self.plugins orelse return error.Unavailable).report(alloc, request.path, request.offset orelse 0);
         if (request.op == .preferences_status) return self.preferences.status(alloc);
         if (request.op == .status) return self.status(alloc);
@@ -1171,7 +1181,7 @@ pub const Manager = struct {
         if (@import("build_options").test_hooks and request.op == .aqueous_draft and std.mem.startsWith(u8, request.text orelse "", "{\"test_owner\":"))
             return self.owner_probe.command(alloc, request.text.?, &self.network, &self.bluetooth, &self.power);
         switch (request.op) {
-            .plugin_list, .plugin_inspect, .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .plugin_refresh, .plugin_list, .plugin_inspect, .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
             .dock_show, .dock_hide, .dock_pin, .dock_unpin => {
                 const dock = (try self.selected(request.output)).dock orelse return error.Unavailable;
                 if (dock.locked) return error.Locked;

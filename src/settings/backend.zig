@@ -210,7 +210,7 @@ pub const Backend = struct {
                 if (offset > 128) return error.InvalidOffset;
                 return std.json.Stringify.valueAlloc(alloc, try live.page(alloc, &peer.scope, peer.target.?.page, self.revision, @intCast(offset)), .{});
             },
-            .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => return self.liveMutate(peer, request, alloc),
+            .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => return self.liveMutate(peer, request, alloc),
             .@"document.get" => {
                 const v = try p.fields(p.GetDocument, alloc, params);
                 if (peer.transfer != null) return error.TransferBusy;
@@ -308,8 +308,9 @@ pub const Backend = struct {
         try self.allowed(self.context);
         if (try p.number(view) != peer.view or peer.target == null) return error.StaleView;
         const canonical = switch (request.op) {
-            inline .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => |op| blk: {
+            inline .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => |op| blk: {
                 const T = switch (op) {
+                    .@"plugin.refresh" => ui.PluginRefresh,
                     .@"plugin.action" => ui.Plugin,
                     .@"audio.set" => ui.Audio,
                     .@"brightness.set" => ui.Brightness,

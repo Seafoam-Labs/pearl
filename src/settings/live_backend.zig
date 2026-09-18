@@ -84,6 +84,13 @@ pub const Live = struct {
     }
     pub fn perform(self: *Live, scope: *Scope, route: nav.Route, revision: u64, op: ui.Op, params: std.json.Value, alloc: std.mem.Allocator) !Pending {
         switch (op) {
+            .@"plugin.refresh" => {
+                if (route != .plugins) return error.WrongPage;
+                _ = try p.fields(ui.PluginRefresh, alloc, params);
+                const plugins = self.plugins orelse return error.Unavailable;
+                _ = plugins.requestRefresh();
+                return .none;
+            },
             .@"plugin.action" => {
                 if (route != .plugins) return error.WrongPage;
                 const v = try p.fields(ui.Plugin, alloc, params);
@@ -245,7 +252,7 @@ pub const Live = struct {
             var infos: std.ArrayList(ui.PluginInfo) = .empty;
             for (plugins.slots.items) |slot| {
                 const manifest = slot.entry.package.manifest;
-                try infos.append(alloc, .{ .id = manifest.id, .name = manifest.name, .version = manifest.version, .digest = &slot.entry.package.digest, .capabilities = manifest.capabilities, .settings = manifest.settings, .status = @tagName(slot.status), .input_activity = @tagName(slot.activityState().availability), .error_code = slot.error_code });
+                try infos.append(alloc, .{ .available = slot.discovery_error == null, .sources = try plugins.sources(alloc, slot.id()), .source = if (slot.entry.root == 0) "user" else "system", .path = slot.entry.path, .shadowed = slot.shadowed, .id = manifest.id, .name = manifest.name, .version = manifest.version, .digest = &slot.entry.package.digest, .capabilities = manifest.capabilities, .settings = manifest.settings, .status = @tagName(slot.status), .input_activity = @tagName(slot.activityState().availability), .error_code = slot.error_code });
             }
             const saved = try std.json.parseFromSliceLeaky(@import("../plugins/model.zig").Preferences, alloc, plugins.prefs orelse "{}", .{});
             for (saved.entries) |cfg| {
@@ -256,9 +263,14 @@ pub const Live = struct {
                 };
                 if (!found) try infos.append(alloc, .{ .installed = false, .id = cfg.id, .name = cfg.id, .version = "missing", .digest = "", .capabilities = cfg.grants, .settings = &.{}, .status = "missing", .error_code = "PluginPackageMissing" });
             }
+            std.mem.sort(ui.PluginInfo, infos.items, {}, struct {
+                fn less(_: void, left: ui.PluginInfo, right: ui.PluginInfo) bool {
+                    return std.mem.lessThan(u8, left.id, right.id);
+                }
+            }.less);
             const start = @min(offset, infos.items.len);
             const end = @min(start + 4, infos.items.len);
-            return .{ .summary = if (plugins.discovery_error) |err| err else if (plugins.registry == null) "Discovering local plugins…" else try std.fmt.allocPrint(alloc, "{d} installed packages · {d} rejected · {s}", .{ plugins.slots.items.len, plugins.registry.?.rejected, plugins.activityReason() }), .rows = &.{}, .plugins = infos.items[start..end], .offset = p.num(start), .next_offset = if (end < infos.items.len) p.num(end) else null };
+            return .{ .refresh_available = true, .pending = plugins.scanning or plugins.refresh_source != 0, .requested = p.num(plugins.requested), .completed = p.num(plugins.completed), .discovery_revision = p.num(plugins.revision), .monitoring = if (plugins.discovery.degraded) "polling (30 seconds)" else "watching", .summary = if (plugins.discovery_error) |err| err else if (plugins.registry == null) "Discovering local plugins…" else try std.fmt.allocPrint(alloc, "{d} installed packages · {d} rejected · {s}{s}{s} · {s}", .{ plugins.slots.items.len, plugins.registry.?.rejected, if (plugins.registry.?.issues.items.len > 0) plugins.registry.?.issues.items[0].path else "", if (plugins.registry.?.issues.items.len > 0) ": " else "", if (plugins.registry.?.issues.items.len > 0) plugins.registry.?.issues.items[0].code else "", plugins.activityReason() }), .rows = &.{}, .plugins = infos.items[start..end], .offset = p.num(start), .next_offset = if (end < infos.items.len) p.num(end) else null };
         }
         var rows: std.ArrayList(ui.Row) = .empty;
         var summary: []const u8 = "";

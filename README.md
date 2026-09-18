@@ -42,6 +42,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Experimental WebAssembly plugins](docs/PLUGINS.md): C, Zig and Rust components, native widgets and companion overlays, with controls in the main Settings app. [Implementation roadmap](docs/WASM_PLUGIN_IMPLEMENTATION_PLAN.md).
 - [Plugin development guide](docs/PLUGIN_DEVELOPMENT.md): build your first clickable widget, install and test it, then add settings, timers or an animated companion.
 - [Live plugin input activity plan](docs/PLUGIN_INPUT_ACTIVITY_IMPLEMENTATION_PLAN.md): implemented Aqueous integration for typing reactions, with permission and authentication controls; physical hardware acceptance remains open.
+- [Live plugin discovery plan](docs/PLUGIN_LIVE_RELOAD_IMPLEMENTATION_PLAN.md): install, update and remove plugins without restarting Pearl, with automatic discovery and package approval.
 - [Settings-flyout navigation plan](docs/SETTINGS_NAVIGATION_PLAN.md): proposed direct bar shortcuts and separate compact settings pages.
 - [Standalone Settings application plan](docs/STANDALONE_SETTINGS_APPLICATION_PLAN.md): a separately launchable Settings app, sidebar pages, backend integration, packaging and design mockups.
 - [Qt application theming](docs/QT_THEMING.md): opt-in QtEngine + Darkly application styles for Qt 5/6, Pearl palettes, font/density settings, session setup and conditional restore. [Milestones](docs/QT_DARKLY_IMPLEMENTATION_PLAN.md) record delivery and remaining compatibility checks.

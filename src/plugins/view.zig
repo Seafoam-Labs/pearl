@@ -50,6 +50,8 @@ pub const View = struct {
         _ = self.arena.reset(.free_all);
         if (self.shown) |bytes| a.free(bytes);
         self.shown = null;
+        if (self.slot) |slot| slot.release();
+        self.slot = null;
     }
     pub fn destroy(self: *View) void {
         self.clear();
@@ -73,10 +75,11 @@ pub const View = struct {
             };
             if ((cfg.placement.mode == .overlay) != self.overlay) slot = null;
         }
-        self.slot = slot;
         const bytes = if (slot) |current| current.scene.? else "";
-        if (self.shown) |old| if (std.mem.eql(u8, old, bytes) and self.reduced_motion == self.manager.reduced_motion) return;
+        if (self.shown) |old| if (self.slot == slot and std.mem.eql(u8, old, bytes) and self.reduced_motion == self.manager.reduced_motion) return;
+        if (slot) |current| current.retain();
         self.clear();
+        self.slot = slot;
         self.reduced_motion = self.manager.reduced_motion;
         self.host.as(gtk.Widget).setVisible(@intFromBool(slot != null));
         if (slot == null) return;

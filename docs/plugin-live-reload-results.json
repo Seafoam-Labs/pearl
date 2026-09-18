@@ -1,0 +1,278 @@
+{
+  "date": "2026-09-18",
+  "unit_tests": 130,
+  "scope": "Private-session acceptance; hardware and broader release gates remain separate.",
+  "reports": {
+    "stress": {
+      "status": "passed",
+      "checks": [
+        "absent-user-root-install-and-no-op-refresh-preserves-instance",
+        "changed-content-requires-approval-stale-apply-rejected-draft-preserved",
+        "invalid-replacement-and-same-root-conflict-recovery",
+        "deterministic-user-priority-invalid-override-does-not-fall-through",
+        "unreadable-root-preserved-and-root-rename-rearms-watches",
+        "inactive-install-removal-cannot-start-helpers",
+        "nested-asset-only-update-and-animated-view-removal",
+        "100-cycles-stable-shell-unrelated-helper-and-resource-baseline"
+      ],
+      "install_seconds": 0.9000403940008255,
+      "baseline": {
+        "fds": 32,
+        "watches": 7,
+        "bytes": 1851394,
+        "helpers": 2
+      },
+      "final": {
+        "fds": 28,
+        "watches": 7,
+        "bytes": 1851394,
+        "helpers": 2
+      }
+    },
+    "discovery": {
+      "status": "passed",
+      "checks": [
+        "absent-user-root-install-and-no-op-refresh-preserves-instance",
+        "unchanged-failed-plugin-does-not-crash-loop-on-refresh",
+        "event-storm-and-manual-refresh-requests-coalesce",
+        "global-traversal-budget-fails-without-false-uninstall",
+        "changed-content-requires-approval-stale-apply-rejected-draft-preserved",
+        "invalid-replacement-and-same-root-conflict-recovery",
+        "deterministic-user-priority-invalid-override-does-not-fall-through",
+        "unreadable-root-preserved-and-root-rename-rearms-watches",
+        "inactive-install-removal-cannot-start-helpers",
+        "nested-asset-only-update-and-animated-view-removal",
+        "2-cycles-stable-shell-unrelated-helper-and-resource-baseline"
+      ],
+      "install_seconds": 0.8808364830001665,
+      "baseline": {
+        "fds": 32,
+        "watches": 7,
+        "bytes": 1851394,
+        "helpers": 2
+      },
+      "final": {
+        "fds": 32,
+        "watches": 7,
+        "bytes": 1851394,
+        "helpers": 2
+      }
+    },
+    "polling": {
+      "status": "passed",
+      "checks": [
+        "absent-user-root-install-and-no-op-refresh-preserves-instance",
+        "missing-monitors-recover-through-automatic-30-second-poll",
+        "unchanged-failed-plugin-does-not-crash-loop-on-refresh",
+        "event-storm-and-manual-refresh-requests-coalesce",
+        "changed-content-requires-approval-stale-apply-rejected-draft-preserved",
+        "invalid-replacement-and-same-root-conflict-recovery",
+        "deterministic-user-priority-invalid-override-does-not-fall-through",
+        "unreadable-root-preserved-and-root-rename-rearms-watches",
+        "inactive-install-removal-cannot-start-helpers",
+        "nested-asset-only-update-and-animated-view-removal",
+        "1-cycles-stable-shell-unrelated-helper-and-resource-baseline"
+      ],
+      "install_seconds": 1.8768481580009393,
+      "baseline": {
+        "fds": 32,
+        "watches": 0,
+        "bytes": 1851394,
+        "helpers": 2
+      },
+      "final": {
+        "fds": 32,
+        "watches": 0,
+        "bytes": 1851394,
+        "helpers": 2
+      }
+    },
+    "runtime_disabled": {
+      "status": "passed",
+      "checks": [
+        "absent-user-root-install-and-no-op-refresh-preserves-instance",
+        "unchanged-failed-plugin-does-not-crash-loop-on-refresh",
+        "event-storm-and-manual-refresh-requests-coalesce",
+        "changed-content-requires-approval-stale-apply-rejected-draft-preserved",
+        "invalid-replacement-and-same-root-conflict-recovery",
+        "deterministic-user-priority-invalid-override-does-not-fall-through",
+        "unreadable-root-preserved-and-root-rename-rearms-watches",
+        "inactive-install-removal-cannot-start-helpers",
+        "nested-asset-only-update-and-animated-view-removal",
+        "1-cycles-stable-shell-unrelated-helper-and-resource-baseline"
+      ],
+      "install_seconds": 0.8818960270000389,
+      "baseline": {
+        "fds": 28,
+        "watches": 7,
+        "bytes": 1851394,
+        "helpers": 0
+      },
+      "final": {
+        "fds": 28,
+        "watches": 7,
+        "bytes": 1851394,
+        "helpers": 0
+      }
+    },
+    "older_aqueous": {
+      "status": "passed",
+      "checks": [
+        "absent-user-root-install-and-no-op-refresh-preserves-instance",
+        "unchanged-failed-plugin-does-not-crash-loop-on-refresh",
+        "event-storm-and-manual-refresh-requests-coalesce",
+        "global-traversal-budget-fails-without-false-uninstall",
+        "changed-content-requires-approval-stale-apply-rejected-draft-preserved",
+        "invalid-replacement-and-same-root-conflict-recovery",
+        "deterministic-user-priority-invalid-override-does-not-fall-through",
+        "unreadable-root-preserved-and-root-rename-rearms-watches",
+        "inactive-install-removal-cannot-start-helpers",
+        "nested-asset-only-update-and-animated-view-removal",
+        "1-cycles-stable-shell-unrelated-helper-and-resource-baseline"
+      ],
+      "install_seconds": 0.9057243450006354,
+      "baseline": {
+        "fds": 32,
+        "watches": 7,
+        "bytes": 1851394,
+        "helpers": 2
+      },
+      "final": {
+        "fds": 32,
+        "watches": 7,
+        "bytes": 1851394,
+        "helpers": 2
+      },
+      "idle_cpu_percent": 0.3333127699352132
+    },
+    "activity": {
+      "status": "passed",
+      "checks": [
+        "authorized-shared-display-ready",
+        "capability-consumed-and-not-inherited",
+        "other-application-keyboard-to-painted-cat",
+        "physical-pointer-button-ingress",
+        "virtual-and-held-repeat-excluded",
+        "shared-source-unsubscribe-and-independent-grant-revocation",
+        "saved-grant-revocation-and-fresh-resubscription",
+        "acknowledged-inhibit-before-authentication",
+        "replacement-and-restore-during-auth-preserve-privacy-and-authorized-broker",
+        "polkit-inhibition-and-no-post-auth-replay",
+        "overlapping-polkit-lock-and-native-unlock-no-replay",
+        "compositor-session-suspension-and-fresh-readiness",
+        "live-activity-in-native-bar",
+        "reduced-motion-still-pose",
+        "owner-revocation-keeps-gtk-display-alive"
+      ],
+      "latency_ms": {
+        "samples": 24,
+        "median": 63.598,
+        "p95": 84.196,
+        "p99": 91.792,
+        "max": 91.792
+      },
+      "scope": "diagnostic physical ingress; GTK after-paint, not hardware presentation"
+    },
+    "activity_stalled_ack": {
+      "status": "passed",
+      "checks": [
+        "authorized-shared-display-ready",
+        "capability-consumed-and-not-inherited",
+        "other-application-keyboard-to-painted-cat",
+        "physical-pointer-button-ingress",
+        "virtual-and-held-repeat-excluded",
+        "shared-source-unsubscribe-and-independent-grant-revocation",
+        "saved-grant-revocation-and-fresh-resubscription",
+        "bounded-inhibit-timeout",
+        "replacement-and-restore-during-auth-preserve-privacy-and-authorized-broker",
+        "polkit-inhibition-and-no-post-auth-replay",
+        "overlapping-polkit-lock-and-native-unlock-no-replay",
+        "compositor-session-suspension-and-fresh-readiness",
+        "live-activity-in-native-bar",
+        "reduced-motion-still-pose",
+        "owner-revocation-keeps-gtk-display-alive"
+      ],
+      "latency_ms": {
+        "samples": 24,
+        "median": 67.609,
+        "p95": 76.69,
+        "p99": 79.777,
+        "max": 79.777
+      },
+      "scope": "diagnostic physical ingress; GTK after-paint, not hardware presentation"
+    },
+    "security": {
+      "status": "passed",
+      "checks": {
+        "uwsm-compositor-session-without-shell-session-environment": true,
+        "compositor-session-overrides-inactive-user-display-and-stale-environment": true,
+        "managed-compositor-inherited-session-validated-by-logind": true,
+        "foreign-greeter-missing-and-inactive-sessions-cannot-authenticate": true,
+        "user-service-without-pid-session-registers-for-display-session": true,
+        "display-session-validation-recovery-and-inactivity-cancellation": true,
+        "logind-session-native-idle-and-authority-registration": true,
+        "authority-identities-cancellation-and-unsupported-identity": true,
+        "authority-restart-and-escape-cleanup": true,
+        "confirmation-generation-and-sleep-inhibitor": true,
+        "native-lock-acquisition-acknowledgement": true,
+        "output-removal-return-remains-locked": true,
+        "pam-multi-message-failure-cancellation-and-success": true,
+        "native-lock-material-light-and-gtk-theme": true,
+        "suspend-lock-before-call-delay-release-and-resume-rearm": true,
+        "external-sleep-preparation": true,
+        "ac-battery-policy-selection": true,
+        "actual-idle-policy-pause-and-automatic-suspend": true,
+        "logind-restart": true,
+        "inactive-session-actions-gated": true,
+        "account-policy-denial-never-unlocks": true,
+        "shell-exit-preserves-independent-lock": true,
+        "false-ready-times-out-no-suspend-and-failed-preparation-retains-delay": true,
+        "locker-crash-fails-closed-and-aqueous-allows-authenticated-recovery": true,
+        "shell-sigkill-preserves-owned-locker-and-authentication": true,
+        "acknowledged-aqueous-logout-stops-shell": true
+      },
+      "binaries": {
+        "pearl": "c57a4c63f6dd61fd0034779d321ea28f09bbeec8f997affac56ec7a87daa2532",
+        "ctl": "69ba0cec0e9f67e9f20788116b6d7518d7a8fd580a23f2fa2f14009f648f9e5e",
+        "locker": "ed6030dfe3e473b7291ca219c53cef9b8c45e1adb3827999ef738837d540eb7f",
+        "pam_module": "648b7eb3d5c2179651be2cf7cd86ac9d2c67881b3f8d5b4b77b2bc58f3bcacb2"
+      },
+      "locked_capture_allowed": true
+    },
+    "helper": {
+      "status": "passed",
+      "checks": [
+        "timer-c",
+        "counter-zig",
+        "counter-rust",
+        "companion-c",
+        "activity-availability-private-state-and-reduced-motion",
+        "ungranted-or-suspended-activity-rejected",
+        "unsubscribe-and-atomic-intent-on-trap",
+        "fault-1",
+        "fault-2",
+        "fault-3",
+        "fault-4",
+        "fault-5",
+        "fault-6",
+        "changed-package-rejected",
+        "symlink-rejected",
+        "unapproved-import-rejected",
+        "stale-generation-rejected"
+      ]
+    },
+    "settings": {
+      "status": "passed",
+      "checks": [
+        "four-real-components-active-in-shell-invalid-png-isolated",
+        "main-settings-page-and-live-registry",
+        "actual-settings-refresh-button-preserves-all-instances",
+        "unrelated-row-focus-and-unsaved-values-survive-update",
+        "flyout-rejects-plugins-route",
+        "disable-through-settings-draft-apply",
+        "changed-package-failure-isolated-explicit-retry",
+        "inactive-session-clears-scenes-and-restarts-new-generations"
+      ]
+    }
+  }
+}

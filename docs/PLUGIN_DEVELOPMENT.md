@@ -200,8 +200,8 @@ install -Dm644 "$plugin_work/package/plugin.wasm" "$plugin_install/plugin.wasm"
 This path works for release and Git builds. Use regular files: Pearl rejects
 symlinked package members.
 
-**Restart the running Pearl shell** so it discovers the package. Reopening
-Settings alone does not rescan plugin directories. Then:
+Pearl discovers installed packages automatically. Open main **Settings → Plugins**
+and select **Refresh plugins** if it has not appeared yet. No Pearl restart is needed. Then:
 
 1. Open the main **Pearl Settings → Plugins** page.
 2. Find **Hello counter** and select **Approve package**.
@@ -216,9 +216,22 @@ group. If an output uses custom bar groups, add `plugin:example.hello-c/main` to
 that output's group in **Bar & dock** as well.
 
 Approval records a fingerprint of the manifest, component and declared images.
-When any of those files change, rebuild, copy the updated files, restart Pearl,
-and approve the new package before enabling it again. **Retry** and CLI `reload`
-restart the already discovered package; they do not load new package contents.
+When any of those files change, rebuild and copy the updated files. Pearl stops
+that plugin and displays its new fingerprint. Review its permission switches
+(they default off for changed content), select **Approve package**, and Apply.
+Unchanged plugins keep their counters, timers and helper processes.
+
+For a clean update, build a complete package outside the plugin directory and
+rename it into place. If replacing an existing directory, move the old directory
+outside the discovery root first. Avoid keeping two versions with the same ID
+under one root: Pearl reports a conflict instead of guessing which one to run.
+Ordinary file copies also work; incomplete packages remain unavailable until valid.
+
+**Refresh plugins** and `pearlctl plugins refresh` discover files. **Retry** and
+`pearlctl plugins reload --path example.hello-c` restart an already discovered
+instance. Removing a package stops it, while preserving its saved settings and
+bar reference. Restoring exactly the approved files resumes an enabled plugin
+when the session is unlocked. Plugin memory resets whenever its helper restarts.
 
 ## Add features a little at a time
 
@@ -361,14 +374,14 @@ for console debugging.
 
 | Symptom | What to check |
 | --- | --- |
-| Plugin is missing from Settings | Check the installation path, valid JSON, required files and regular-file permissions; restart Pearl. Invalid packages can be rejected during discovery. |
+| Plugin is missing from Settings | Check the installation path, valid JSON, required files and regular-file permissions; select **Refresh plugins**. Invalid packages can be rejected during discovery. |
 | `PluginRuntimeNotBuilt` | Run a Pearl build with `-Dwasm-plugins=true`, or rebuild/install the updated Arch package. |
 | `PluginApprovalRequired` | Restart after replacing files, approve the new fingerprint, enable and apply. |
 | Active but absent from the bar | Add its `plugin:<id>/main` reference to the active bar group and apply; check per-output overrides. |
 | Failed during loading | Use the final component rather than core Wasm; check the WIT version and avoid WASI/system imports. |
 | Failed after a click | Check unique node IDs, declared assets and host-call results; publish at most once and return promptly. |
 | Suspended during lock or inactive session | This is expected. Pearl removes plugin views and restarts enabled instances when the session is available again. |
-| Rebuild has no effect | Copy the new package files, restart Pearl, then approve the changed package. Retry alone does not rescan. |
+| Rebuild has no effect | Copy the new package files, select **Refresh plugins**, then review permissions and approve the changed package. Retry alone does not rescan. |
 
 Keep scenes small: at most 32 nodes, including at most 4 images per scene.
 Ordinary event handling has a 100 ms deadline plus a Wasm instruction budget.

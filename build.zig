@@ -356,6 +356,15 @@ pub fn build(b: *std.Build) void {
     const integration_build = b.step("build-integration", "Stage the private instrumented shell (never packaged)");
     integration_build.dependOn(&b.addInstallArtifact(integration_app, .{ .dest_dir = .{ .override = .{ .custom = "test" } } }).step);
     if (plugin_test_helper) |helper| integration_build.dependOn(&helper.step);
+    const discovery_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugin_discovery.py" });
+    discovery_test.step.dependOn(integration_build);
+    discovery_test.addArg("--settings");
+    discovery_test.addArtifactArg(settings_test_app);
+    discovery_test.addArg("--ctl");
+    discovery_test.addArtifactArg(ctl);
+    if (!wasm_plugins) discovery_test.addArg("--runtime-disabled");
+    if (b.args) |args| discovery_test.addArgs(args);
+    b.step("test-plugin-discovery", "Verify live plugin installation, replacement and removal in a private session").dependOn(&discovery_test.step);
     var plugin_activity_test: ?*std.Build.Step.Run = null;
     if (wasm_plugins) {
         const activity = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugin_activity.py" });

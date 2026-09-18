@@ -37,7 +37,7 @@ Git packages rename the helper to `pearl-plugin-host-git` alongside `pearl-git`.
 The release, Git and Intel Git Arch packages enable the runtime and build and
 install all four examples into `/usr/share/pearl/plugins/` (release) or
 `/usr/share/pearl-git/plugins/` (Git variants). After installing/upgrading the
-package, restart Pearl to see them in main Settings → Plugins. They remain
+package, they appear automatically in main Settings → Plugins. They remain
 disabled until you approve and enable them; installation does not change your
 preferences or add bar widgets.
 
@@ -71,11 +71,14 @@ Outputs are under `.cache/plugin-examples/`. The `timer-c`, `counter-zig`,
 directories are test fixtures; do not install them for everyday use.
 
 Copy each desired package to `$XDG_DATA_HOME/pearl/plugins/<directory>` (normally
-`~/.local/share/pearl/plugins/<directory>`), then restart Pearl to discover it.
+`~/.local/share/pearl/plugins/<directory>`). Pearl discovers it automatically;
+main Settings → Plugins also offers **Refresh plugins**.
 System packages can use the installation's `share/pearl/plugins/` directory
 (`share/pearl-git/plugins/` for Git builds). One optional version-directory level
 is supported. Packages must contain regular files; symlinked members are rejected.
-The user discovery root has priority over duplicate system IDs and versions.
+The user root has priority over system packages with the same ID, regardless of
+version. Multiple packages with one ID in the same root are a conflict. The page
+shows the selected source and candidate paths; remove the extra copy to resolve it.
 Discovery does not execute any plugin.
 
 Open Plugins, review the package fingerprint and requested permissions, choose
@@ -91,8 +94,47 @@ Apply, Discard and conflict workflow. Missing packages retain their configuratio
 and can be disabled. Independent plugin records/settings merge by identity;
 concurrent changes involving a different approved fingerprint require review.
 Retry restarts an existing approved package; Preview sends a synthetic event.
-Both act immediately. Changed package bytes cannot reuse an old approval;
-restart Pearl to rediscover updated content and approve the new fingerprint.
+Both act immediately. Changed package bytes cannot reuse an old approval.
+
+## Live installation and updates
+
+Install, update, remove, enable, disable and retry plugins while Pearl runs.
+Discovery scans off the GTK thread and watches both package roots, their parents,
+package containers and declared nested asset/component directories. Missing roots
+are watched through an existing ancestor. Settings reports discovery progress,
+errors, source paths and watch/polling status. Refresh does not save a draft.
+
+An unchanged package at the same selected path keeps its helper and guest state.
+Changing its selected source/path restarts only that helper, even for identical
+bytes; an identical fingerprint keeps its saved approval valid. Changed fingerprints
+(including PNG-only edits) retire that instance and require fresh approval.
+Optional grants must be reviewed again; Settings starts them off for changed
+content. Removed packages retain preferences and bar references. Restoring the
+exact approved package resumes it if enabled, its configuration remains valid,
+and privacy gates permit. Failed unchanged plugins require explicit Retry.
+
+Incomplete or invalid updates remain unavailable. An invalid user override never
+silently falls through to a system copy. An unreadable root or exhausted scan
+budget preserves the last complete index and reports an error. Prefer staging
+complete packages outside the discovery tree and renaming them into place.
+
+File events debounce for 250 ms, with a 2-second maximum deferral and at most one
+scan start per second. One active scan and one pending refresh bound concurrency.
+New watches trigger a verification pass to cover installation races. Repeated
+errors get three retries; incomplete/degraded monitoring polls every 30 seconds.
+Manual Refresh remains available. Snapshot fingerprints are verified again by
+the helper before execution.
+
+Only changed rows are rebuilt in Settings; unrelated focus and drafts survive.
+A schema that no longer accepts saved values requires explicit correction/reset.
+An approval staged for an obsolete fingerprint is rejected at Apply.
+Lock, authentication and inactivity still suppress helpers and views; refreshing
+packages does not recreate the authorized Aqueous activity manager.
+
+See the [implementation plan](PLUGIN_LIVE_RELOAD_IMPLEMENTATION_PLAN.md) and
+[validation record](PLUGIN_LIVE_RELOAD_VALIDATION.md). Updating Pearl's executable,
+compiled runtime support or revoked compositor authorization is outside this
+live package-management mechanism.
 
 ## Companion and overlays
 
@@ -138,6 +180,7 @@ and unauthorized launches retain local clicks and Settings Preview.
 ## CLI
 
 ```sh
+pearlctl plugins refresh
 pearlctl plugins list
 pearlctl plugins list --offset 4
 pearlctl plugins inspect --path pearl.timer-c
@@ -147,7 +190,14 @@ pearlctl plugins disable --path pearl.timer-c --revision N
 pearlctl plugins reload --path pearl.timer-c
 ```
 
-List/inspect include status, errors, fingerprint, capabilities and generation.
+Refresh returns a `requested` ticket immediately. In `plugins list`, wait for
+`completed >= requested` and `pending: false`, then inspect `error_code` and
+package status. Acceptance is neither completion nor approval. `discovery_revision`
+counts committed snapshots independently of helper `generation`.
+List/inspect include status, errors, fingerprint, capabilities, source/candidate
+paths and generation. Candidate/issue details are bounded to four per response;
+long responses reduce page size or set `details_truncated` to stay within the
+control protocol limit. Follow `next_offset` instead of assuming four entries.
 CLI changes reject stale preference revisions and retained Settings drafts.
 Enabling a new fingerprint clears previously granted optional capabilities;
 review and grant them in Settings. CLI reload is an explicit retry, not a package
@@ -156,7 +206,10 @@ rescan. These commands use the existing session-scoped Pearl control endpoint.
 ## Limits and trust boundary
 
 - Maximum 32 discovered packages, 8 enabled instances; manifests 16 KiB and
-  components 16 MiB. Discovery snapshot budget is 64 MiB including decoded images.
+  components 16 MiB. Each discovery snapshot admits at most 64 MiB of package and
+  decoded-image data; current, candidate and retired records share a 128 MiB cap.
+  Bounded read/verification scratch space and helper RSS are separate. Scans visit
+  at most 2,048 entries and 512 directories; monitors are capped at 520.
 - One private socketpair and helper per instance. Messages are bounded to 64 KiB,
   ordered by generation and sequence, with one outstanding callback.
 - Wasm memory: 32 MiB per memory, at most two memories; bounded tables/instances.
@@ -176,7 +229,7 @@ rescan. These commands use the existing session-scoped Pearl control endpoint.
   there is no automatic crash loop. Revocation terminates the old generation.
 
 The current scene model is deliberately flat: labels, buttons and images with
-optional named clips. Future service APIs, richer layouts, live package rescans,
+optional named clips. Future service APIs, richer layouts,
 marketplaces and signatures require separate contracts. This is an opt-in
 experimental implementation, not a completed third-party security audit.
 
@@ -188,6 +241,7 @@ After building examples with `--fixtures`:
 zig build test
 zig build test-plugin-host -Dwasm-plugins=true -Dwasmtime-prefix=/absolute/prefix
 zig build test-plugins -Dwasm-plugins=true -Dwasmtime-prefix=/absolute/prefix
+zig build test-plugin-discovery -Dwasm-plugins=true -Dwasmtime-prefix=/absolute/prefix
 # With the separate diagnostic Aqueous prefix; see the activity validation guide:
 zig build test-plugin-activity -Dwasm-plugins=true -Dwasmtime-prefix=/absolute/prefix
 ```

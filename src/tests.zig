@@ -1,5 +1,6 @@
 test {
     _ = @import("plugins/model.zig");
+    _ = @import("plugins/discovery_policy.zig");
     _ = @import("settings/live_protocol.zig");
     _ = @import("plugins/protocol.zig");
     _ = @import("config/ini.zig");

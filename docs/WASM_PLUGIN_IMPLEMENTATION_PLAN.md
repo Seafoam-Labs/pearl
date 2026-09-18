@@ -8,8 +8,9 @@ page. See [the implementation guide](PLUGINS.md) for the actual contract,
 limits, build instructions and verification commands.
 
 The implementation statically links the pinned runtime only into the helper.
-The initial scene contract is flat (label/button/image); package changes require
-rediscovery on Pearl restart. Settings edits restart instances, while sprite
+The initial scene contract is flat (label/button/image). Package installation,
+replacement and removal now refresh live; changed fingerprints require approval.
+See [live discovery validation](PLUGIN_LIVE_RELOAD_VALIDATION.md). Settings edits restart instances, while sprite
 playback stays in Pearl. The detailed stages below remain the acceptance roadmap;
 their complete release gates have not all been certified.
 
