@@ -2,6 +2,7 @@ test {
     _ = @import("theme/package_model.zig");
     _ = @import("theme/style.zig");
     _ = @import("plugins/model.zig");
+    _ = @import("plugins/placement.zig");
     _ = @import("plugins/discovery_policy.zig");
     _ = @import("settings/live_protocol.zig");
     _ = @import("plugins/protocol.zig");

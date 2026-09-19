@@ -59,6 +59,58 @@ def main():
         assert any(x['page']=='plugins' for x in probe(s,ipc)['links'])
         capture(s,'plugins-main-settings',next(x['name'] for x in ipc.state() if x['kind']=='output'))
         checks.append('main-settings-page-and-live-registry')
+        def activate(field):
+            # Keyboard navigation scrolls the form without wheel-editing spin controls.
+            ready(s,ipc)
+            for _ in range(100):
+                if next(c for c in probe(s,ipc)['controls'] if c['field']==field)['focused']: break
+                s.run(['wtype','-s','50','-k','Tab','-s','50'])
+            else: raise AssertionError('Could not focus '+field)
+            s.run(['wtype','-s','100','-k','space','-s','200'])
+        # A newly enabled companion receives an actual placement, including overrides.
+        candidate=json.loads(peer.document())
+        companion=next(c for c in candidate['plugins']['entries'] if c['id']=='pearl.companion')
+        companion.update(enabled=False,grants=dict(overlay=False),placement=dict(mode='bar'))
+        outputs=ctl(s,args.ctl,'status')['result']['outputs']
+        candidate['outputs']=[dict(connector=o['connector'],bar=dict(edge='left',groups=candidate['bar']['groups'])) for o in outputs]
+        peer.keep(json.dumps(candidate));assert peer.action('apply')['state']=='succeeded'
+        wait_for(lambda:next(x for x in listed()['packages'] if x['id']=='pearl.companion')['status']=='disabled')
+        ready(s,ipc);activate('pearl.companion/enabled')
+        wait_for(lambda:peer.state()['dirty'])
+        draft=json.loads(peer.document())
+        reference='plugin:pearl.companion/main'
+        assert reference in draft['bar']['groups']['right'].split(',')
+        assert all(reference in o['bar']['groups']['right'].split(',') for o in draft['outputs'])
+        click(s,ipc,'apply')
+        wait_for(lambda:not peer.state()['dirty'] and not peer.state()['busy'])
+        wait_for(lambda:next(x for x in listed()['packages'] if x['id']=='pearl.companion')['status']=='active')
+        wait_for(lambda:all(reference in o['groups']['right'].split(',') for o in ctl(s,args.ctl,'status')['result']['outputs']))
+        capture(s,'companion-enabled-on-bar',outputs[0]['connector'])
+        # Choosing Desktop overlay is the explicit overlay grant. No second switch required.
+        ready(s,ipc);activate('pearl.companion/expand')
+        activate('pearl.companion/mode')
+        s.run(['wtype','-s','100','-k','End','-k','Return','-s','200'])
+        wait_for(lambda:peer.state()['dirty'])
+        draft=json.loads(peer.document());companion=next(c for c in draft['plugins']['entries'] if c['id']=='pearl.companion')
+        assert companion['placement']['mode']=='overlay' and companion['grants']['overlay'],companion
+        click(s,ipc,'apply')
+        wait_for(lambda:not peer.state()['dirty'] and not peer.state()['busy'])
+        wait_for(lambda:next(x for x in listed()['packages'] if x['id']=='pearl.companion')['status']=='active')
+        capture(s,'companion-selected-overlay',outputs[0]['connector'])
+        ready(s,ipc);activate('pearl.companion/overlay')
+        wait_for(lambda:peer.state()['dirty'])
+        companion=next(c for c in json.loads(peer.document())['plugins']['entries'] if c['id']=='pearl.companion')
+        assert companion['placement']['mode']=='bar' and not companion['grants']['overlay'], companion
+        assert peer.action('discard')['state']=='succeeded'
+        # Add to bar must leave overlay mode, not merely add an invisible reference.
+        ready(s,ipc);activate('pearl.companion/bar')
+        wait_for(lambda:peer.state()['dirty'])
+        assert next(c for c in json.loads(peer.document())['plugins']['entries'] if c['id']=='pearl.companion')['placement']['mode']=='bar'
+        click(s,ipc,'apply')
+        wait_for(lambda:not peer.state()['dirty'] and not peer.state()['busy'])
+        wait_for(lambda:next(x for x in listed()['packages'] if x['id']=='pearl.companion')['status']=='active')
+        activate('pearl.companion/expand')
+        checks.append('enable-places-companion-on-output-bars-and-overlay-selection-grants-placement')
         generations={x['id']:x['generation'] for x in listed()['packages']}
         requested=listed()['requested'];ready(s,ipc);click(s,ipc,'plugins.refresh')
         wait_for(lambda:listed()['completed']>requested and not listed()['pending'])

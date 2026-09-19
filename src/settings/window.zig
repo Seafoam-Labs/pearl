@@ -1088,9 +1088,15 @@ pub const Window = struct {
             try controls.append(alloc, .{ .field = "plugins.refresh", .focused = if (focus) |f| f == view.refresh.as(gtk.Widget) else false, .enabled = view.refresh.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(view.refresh.as(gtk.Widget)) });
         };
         if (self.plugins_view) |view| if (self.target.page == .plugins) for (view.rows.items) |row| {
-            inline for (.{ "enabled", "activity", "overlay", "mode", "output", "x", "y", "width", "height", "interactive", "locked", "fullscreen" }) |name| {
+            inline for (.{ "expand", "enabled", "activity", "overlay", "mode", "output", "x", "y", "width", "height", "interactive", "locked", "fullscreen" }) |name| {
                 const widget = @field(row, name).as(gtk.Widget);
                 try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "{s}/{s}", .{ row.info.id, name }), .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            }
+        };
+        if (self.plugins_view) |view| if (self.target.page == .plugins) for (view.rows.items) |row| {
+            for (row.actions, [_][]const u8{ "approve", "bar", "retry", "preview", "reset" }) |button, name| {
+                const widget = button.as(gtk.Widget);
+                try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "{s}/{s}", .{ row.info.id, name }), .focused = if (focus) |f| f == widget else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
             }
         };
         for (self.preference_pages) |item| if (item) |view| for (view.fields) |field| {

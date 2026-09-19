@@ -14,6 +14,7 @@ const Row = struct {
     arena: std.heap.ArenaAllocator,
     card: *gtk.Box,
     details: *gtk.Revealer,
+    expand: *gtk.ToggleButton,
     signals: std.ArrayList(struct { value: *object.Object, id: c_ulong }) = .empty,
     permissions_edited: bool = false,
     actions: [5]*gtk.Button = undefined,
@@ -64,7 +65,7 @@ pub const View = struct {
         const self = try a.create(View);
         const summary = w.label("Discovering plugins…", "pearl-secondary");
         host.append(summary.as(gtk.Widget));
-        host.append(w.label("Review and approve a plugin before enabling it. Apply saves changes; Retry and Preview act immediately. Installed packages refresh automatically. Changed packages need fresh approval and permission review.", "pearl-secondary").as(gtk.Widget));
+        host.append(w.label("Review and approve a plugin before enabling it. Enabling adds the plugin to the bar; choose Desktop overlay under Settings and placement to float it on the desktop. Apply saves changes; Retry and Preview act immediately. Installed packages refresh automatically. Changed packages need fresh approval and permission review.", "pearl-secondary").as(gtk.Widget));
         const content = w.column(12);
         host.append(content.as(gtk.Widget));
         const controls = gtk.Box.new(.horizontal, 8);
@@ -217,7 +218,7 @@ pub const View = struct {
         const expand = gtk.ToggleButton.newWithLabel("Settings and placement");
         config.as(gtk.Widget).setSensitive(@intFromBool(info.installed));
         expand.as(gtk.Widget).setVisible(@intFromBool(info.settings.len > 0 or info.capabilities.overlay or info.capabilities.input_activity));
-        row.* = .{ .arena = arena, .card = card, .details = details, .view = self, .info = info, .status = status, .enabled = toggle(card, "Enabled"), .activity = toggle(config, "Allow keyboard and mouse activity"), .overlay = toggle(placement, "Allow desktop overlay"), .mode = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "Bar", "Desktop overlay" })), .output = makeEntry(placement, "Overlay output (empty: first output)"), .x = number(placement, "Horizontal position", 0, 65535), .y = number(placement, "Vertical position", 0, 65535), .width = number(placement, "Width", 16, 512), .height = number(placement, "Height", 16, 512), .interactive = toggle(placement, "Accept clicks (off: click through)"), .locked = toggle(placement, "Lock placement"), .fullscreen = toggle(placement, "Hide over fullscreen windows"), .values = try alloc.alloc(*gtk.Widget, info.settings.len) };
+        row.* = .{ .arena = arena, .card = card, .details = details, .expand = expand, .view = self, .info = info, .status = status, .enabled = toggle(card, "Enabled"), .activity = toggle(config, "Allow keyboard and mouse activity"), .overlay = toggle(placement, "Allow desktop overlay"), .mode = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "Bar", "Desktop overlay" })), .output = makeEntry(placement, "Overlay output (empty: first output)"), .x = number(placement, "Horizontal position", 0, 65535), .y = number(placement, "Vertical position", 0, 65535), .width = number(placement, "Width", 16, 512), .height = number(placement, "Height", 16, 512), .interactive = toggle(placement, "Accept clicks (off: click through)"), .locked = toggle(placement, "Lock placement"), .fullscreen = toggle(placement, "Hide over fullscreen windows"), .values = try alloc.alloc(*gtk.Widget, info.settings.len) };
         errdefer {
             for (row.signals.items) |signal| object.signalHandlerDisconnect(signal.value, signal.id);
             row.signals.deinit(a);
@@ -229,7 +230,7 @@ pub const View = struct {
         row.activity.as(gtk.Widget).setSensitive(@intFromBool(info.capabilities.input_activity));
         row.overlay.as(gtk.Widget).setSensitive(@intFromBool(info.capabilities.overlay));
         inline for (.{ "enabled", "activity", "overlay", "interactive", "locked", "fullscreen" }) |name| row.track(@field(row, name).as(object.Object), object.Object.signals.notify.connect(@field(row, name).as(object.Object), *Row, changed, row, .{ .detail = "active" }));
-        row.track(row.mode.as(object.Object), object.Object.signals.notify.connect(row.mode.as(object.Object), *Row, changed, row, .{ .detail = "selected" }));
+        row.track(row.mode.as(object.Object), object.Object.signals.notify.connect(row.mode.as(object.Object), *Row, modeChanged, row, .{ .detail = "selected" }));
         inline for (.{ "x", "y", "width", "height" }) |name| row.track(@field(row, name).as(object.Object), gtk.SpinButton.signals.value_changed.connect(@field(row, name), *Row, spun, row, .{}));
         row.track(row.output.as(gtk.Editable).as(object.Object), gtk.Editable.signals.changed.connect(row.output.as(gtk.Editable), *Row, edited, row, .{}));
         for (info.settings, row.values) |spec, *value| {
@@ -299,7 +300,22 @@ pub const View = struct {
         field(card, title, value.as(gtk.Widget));
         return value;
     }
-    fn changed(_: *object.Object, _: *object.ParamSpec, row: *Row) callconv(.c) void {
+    fn changed(value: *object.Object, _: *object.ParamSpec, row: *Row) callconv(.c) void {
+        if (row.view.filling or row.view.editing) return;
+        // Revoking overlay permission returns the plugin to a visible bar placement.
+        if (value == row.overlay.as(object.Object) and row.overlay.getActive() == 0 and row.mode.getSelected() == 1) {
+            row.view.filling = true;
+            row.mode.setSelected(0);
+            row.view.filling = false;
+        }
+        row.view.save(row, null) catch |err| row.view.report(err);
+    }
+    fn modeChanged(_: *object.Object, _: *object.ParamSpec, row: *Row) callconv(.c) void {
+        if (row.view.filling or row.view.editing) return;
+        // Explicitly selecting Desktop overlay also permits that placement.
+        row.view.filling = true;
+        row.overlay.setActive(@intFromBool(row.mode.getSelected() == 1));
+        row.view.filling = false;
         row.view.save(row, null) catch |err| row.view.report(err);
     }
     fn spun(_: *gtk.SpinButton, row: *Row) callconv(.c) void {
@@ -340,7 +356,8 @@ pub const View = struct {
             return;
         }
         var document = try std.json.parseFromSliceLeaky(prefs.Preferences, alloc, self.editor.text(), .{});
-        var cfg = document.plugins.find(row.info.id) orelse m.Config{ .id = row.info.id };
+        const previous = document.plugins.find(row.info.id) orelse m.Config{ .id = row.info.id };
+        var cfg = previous;
         cfg.enabled = row.enabled.getActive() != 0;
         row.permissions_edited = true;
         const incompatible = schemaError(row.info, cfg) != null;
@@ -367,23 +384,13 @@ pub const View = struct {
             cfg.settings = values;
             if (action == .approve) cfg.digest = row.info.digest;
         }
+        try @import("../plugins/placement.zig").update(alloc, &document, previous, &cfg, action == .bar);
         var entries: std.ArrayList(m.Config) = .empty;
         for (document.plugins.entries) |old| if (!std.mem.eql(u8, old.id, cfg.id)) {
             try entries.append(alloc, old);
         };
         try entries.append(alloc, cfg);
         document.plugins.entries = entries.items;
-        if (action == .bar) {
-            const ref = try std.fmt.allocPrint(alloc, "plugin:{s}/main", .{cfg.id});
-            var present = false;
-            for ([_][]const u8{ document.bar.groups.left, document.bar.groups.center, document.bar.groups.right }) |group| {
-                var parts = std.mem.splitScalar(u8, group, ',');
-                while (parts.next()) |part| if (std.mem.eql(u8, part, ref)) {
-                    present = true;
-                };
-            }
-            if (!present) document.bar.groups.right = try std.fmt.allocPrint(alloc, "{s}{s}{s}", .{ document.bar.groups.right, if (document.bar.groups.right.len > 0) "," else "", ref });
-        }
         try self.editor.edit(try std.json.Stringify.valueAlloc(alloc, document, .{ .whitespace = .indent_2 }));
     }
 };

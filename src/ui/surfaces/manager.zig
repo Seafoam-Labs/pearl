@@ -1225,7 +1225,8 @@ pub const Manager = struct {
                 const m = @import("../../plugins/model.zig");
                 var prefs = self.preferences.prefs();
                 var configs: std.ArrayList(m.Config) = .empty;
-                var cfg = prefs.plugins.find(request.path.?) orelse m.Config{ .id = request.path.? };
+                const previous = prefs.plugins.find(request.path.?) orelse m.Config{ .id = request.path.? };
+                var cfg = previous;
                 cfg.enabled = request.op == .plugin_enable;
                 if (cfg.enabled) {
                     if (!std.mem.eql(u8, cfg.digest, request.text.?)) cfg.grants = .{};
@@ -1241,6 +1242,7 @@ pub const Manager = struct {
                 for (prefs.plugins.entries) |old| if (!std.mem.eql(u8, old.id, cfg.id)) {
                     try configs.append(alloc, old);
                 };
+                try @import("../../plugins/placement.zig").update(alloc, &prefs, previous, &cfg, false);
                 try configs.append(alloc, cfg);
                 prefs.plugins.entries = configs.items;
                 try self.preferences.apply(try std.json.Stringify.valueAlloc(alloc, prefs, .{}), request.revision.?);

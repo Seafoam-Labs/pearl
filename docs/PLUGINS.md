@@ -82,8 +82,12 @@ shows the selected source and candidate paths; remove the extra copy to resolve 
 Discovery does not execute any plugin.
 
 Open Plugins, review the package fingerprint and requested permissions, choose
-**Approve package**, then enable it and **Apply & save**. **Add to bar** adds its
-reference to the right bar group in the draft. Bar references have the form
+**Approve package**, then enable it and **Apply & save**. Enabling a plugin in
+Bar mode adds it to the right bar group, including per-output overrides; an
+existing placement in another group is preserved. **Add to bar** switches an
+overlay back to Bar mode and adds any missing references in the draft. Choosing
+**Desktop overlay** under **Settings and placement** also grants overlay
+permission. Turning that permission off returns the enabled plugin to the bar. Bar references have the form
 `plugin:pearl.timer-c/main`; they may also be entered in Bar & dock or per-output
 preferences. Unknown references remain harmless until a matching plugin runs.
 The native launcher remains mandatory.
