@@ -8,6 +8,7 @@ const a = std.heap.c_allocator;
 const focus_state = @import("focus_state.zig");
 pub const View = struct {
     service: *Lifecycle,
+    power_actions: *@import("services.zig").PowerActions,
     confirmation: ?u64 = null,
     auth: *Agent,
     label: *gtk.Label,
@@ -16,12 +17,13 @@ pub const View = struct {
     rows: [7]Row,
     const Row = struct { view: *View, index: usize };
     const labels = [_][:0]const u8{ "Lock", "Suspend", "Hibernate", "Log out", "Pause automatic idle", "Confirm", "Cancel" };
-    pub fn create(host: *gtk.Box, service: *Lifecycle, auth: *Agent) !*View {
+    pub fn create(host: *gtk.Box, service: *Lifecycle, auth: *Agent, power: *@import("../services/power.zig").Power) !*View {
         const self = try a.create(View);
+        errdefer a.destroy(self);
         const card = w.card();
         host.append(card.as(gtk.Widget));
         card.append(w.label("Session & security", "pearl-card-title").as(gtk.Widget));
-        self.* = .{ .service = service, .auth = auth, .label = w.label("", "pearl-secondary"), .buttons = undefined, .signals = undefined, .rows = undefined };
+        self.* = .{ .service = service, .auth = auth, .power_actions = undefined, .label = w.label("", "pearl-secondary"), .buttons = undefined, .signals = undefined, .rows = undefined };
         self.label.setWrap(1);
         card.append(self.label.as(gtk.Widget));
         const flow = w.flow(3);
@@ -35,16 +37,23 @@ pub const View = struct {
             self.signals[i] = gtk.Button.signals.clicked.connect(button, *Row, clicked, &self.rows[i], .{});
             flow.insert(button.as(gtk.Widget), -1);
         }
+        errdefer {
+            for (self.buttons, self.signals) |button, id| object.signalHandlerDisconnect(button.as(object.Object), id);
+            for (self.buttons) |button| button.unref();
+        }
+        self.power_actions = try @import("services.zig").PowerActions.create(card, power);
         self.update();
         return self;
     }
     pub fn destroy(self: *View) void {
+        self.power_actions.destroy();
         for (self.buttons, self.signals) |button, id| object.signalHandlerDisconnect(button.as(object.Object), id);
         for (self.buttons) |button| button.unref();
         if (self.confirmation == self.service.confirmation and self.service.pending != null) self.service.act("cancel", null) catch {};
         a.destroy(self);
     }
     pub fn update(self: *View) void {
+        self.power_actions.update();
         const s = self.service;
         var buffer: [768]u8 = undefined;
         const text = if (s.pending) |action| std.fmt.bufPrintZ(&buffer, "Confirm {s}? This confirmation expires after 20 seconds.", .{@tagName(action)}) catch "Confirm session action?" else if (s.err) |err| std.fmt.bufPrintZ(&buffer, "{s}", .{err}) catch "Session action failed" else if (self.auth.err) |err| std.fmt.bufPrintZ(&buffer, "{s}", .{err}) catch "Authentication unavailable" else if (s.gate.requesting) "Acquiring native session lock…" else "Pearl lock · Automatic idle follows your AC/battery policy";

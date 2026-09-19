@@ -101,9 +101,39 @@ def main():
             checks['selected-service-interest-only-and-no-implicit-scans'] = True
             assert any('Playback' in text for text in snapshots['top-sound']['labels']), snapshots['top-sound']
             assert any('Recording' in text for text in snapshots['top-sound']['labels']), snapshots['top-sound']
-            for text in ('Media controls', 'Window overview', 'Pearl settings', 'Aqueous settings', 'Session & security', 'Workspace layout'):
+            for text in ('Media controls', 'Window overview', 'Pearl settings', 'Aqueous settings', 'Session & security', 'Workspace layout', 'Power off…', 'Restart…'):
                 assert text in snapshots['top-overview']['labels'], text
             checks['application-streams-and-overview-control-coverage'] = True
+            # Overview power controls use real input against the private login service.
+            def focus_button(label):
+                for _ in range(60):
+                    if report(s, args.ctl)['button'] == label:
+                        return
+                    s.run(['wtype', '-s', '50', '-k', 'Tab', '-s', '50'])
+                raise AssertionError('Missing power action: '+label)
+
+            def power_records():
+                return [json.loads(line) for line in Path(s.env['PEARL_TEST_POWER_LOG']).read_text().splitlines()]
+
+            show_page(s, args.ctl, 'overview', output['id'])
+            focus_button('Power off…')
+            s.run(['wtype', '-s', '100', '-k', 'space', '-s', '300'])
+            assert 'Confirm power off' in report(s, args.ctl)['labels']
+            assert not any(r['kind'] == 'PowerOff' for r in power_records())
+            focus_button('Cancel')
+            s.run(['wtype', '-s', '100', '-k', 'space', '-s', '300'])
+            assert 'Confirm power off' not in report(s, args.ctl)['labels']
+            focus_button('Power off…')
+            s.run(['wtype', '-s', '100', '-k', 'space', '-s', '300'])
+            choose_page(s, args.ctl, 'sound')
+            choose_page(s, args.ctl, 'overview')
+            assert 'Confirm power off' not in report(s, args.ctl)['labels']
+            focus_button('Power off…')
+            s.run(['wtype', '-s', '100', '-k', 'space', '-s', '300'])
+            assert not any(r['kind'] == 'PowerOff' for r in power_records())
+            s.run(['wtype', '-s', '100', '-k', 'space', '-s', '300'])
+            wait_for(lambda: any(r['kind'] == 'PowerOff' and r.get('accepted') for r in power_records()))
+            checks['overview-power-confirmation-cancel-and-page-departure'] = True
             # Scroll actual content to its end; the fixed header pixels stay put.
             choose_page(s, args.ctl, 'network')
             rect = status(s, args.ctl)['popup']['rect']

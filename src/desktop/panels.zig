@@ -190,7 +190,7 @@ pub const Control = struct {
             _ = gtk.Button.signals.clicked.connect(button, *TaskLink, taskClicked, &self.tasks[i], .{});
             tasks.insert(button.as(gtk.Widget), -1);
         }
-        self.lifecycle = try @import("lifecycle.zig").View.create(body, self.models.lifecycle, self.models.auth);
+        self.lifecycle = try @import("lifecycle.zig").View.create(body, self.models.lifecycle, self.models.auth, self.models.power);
         const section = w.card();
         section.as(gtk.Widget).addCssClass("pearl-layout-card");
         section.append(w.label(tr("Workspace layout", "Anordnung der Arbeitsfläche"), "pearl-card-title").as(gtk.Widget));

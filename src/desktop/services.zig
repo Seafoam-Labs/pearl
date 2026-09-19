@@ -139,19 +139,22 @@ pub const PowerView = struct {
     error_label: *gtk.Label,
     brightness: *gtk.Scale,
     profiles: [3]*gtk.Button,
-    off: *gtk.Button,
-    reboot: *gtk.Button,
+    actions: *PowerActions,
     updating: bool = false,
     probe_focus: ?*gtk.Widget = null,
     connections: std.ArrayList(Connection) = .empty,
-    confirmation: @import("../services/policy.zig").Confirmation = .{},
     profile_choices: [3]ProfileChoice = undefined,
     const ProfileChoice = struct { view: *PowerView, index: u8 };
     pub fn create(host: *gtk.Box, power: *Power) !*PowerView {
         const owner = try power.acquireView();
         errdefer power.releaseView(owner);
         const self = try a.create(PowerView);
-        self.* = .{ .owner = owner, .power = power, .power_status = undefined, .profile_status = undefined, .brightness_label = undefined, .error_label = undefined, .brightness = undefined, .profiles = undefined, .off = undefined, .reboot = undefined };
+        self.* = .{ .owner = owner, .power = power, .power_status = undefined, .profile_status = undefined, .brightness_label = undefined, .error_label = undefined, .brightness = undefined, .profiles = undefined, .actions = undefined };
+        errdefer {
+            for (self.connections.items) |c| object.signalHandlerDisconnect(c.object, c.id);
+            self.connections.deinit(a);
+            a.destroy(self);
+        }
         const root = host;
         const power_card = w.card();
         root.append(power_card.as(gtk.Widget));
@@ -179,20 +182,8 @@ pub const PowerView = struct {
             profile_box.insert(button.*.as(gtk.Widget), -1);
             self.remember(button.*.as(object.Object), gtk.Button.signals.clicked.connect(button.*, *ProfileChoice, profileClicked, &self.profile_choices[i], .{}), false);
         }
-        const actions = w.flow(3);
-        power_card.append(actions.as(gtk.Widget));
-        self.off = w.wrappingButton(tr("Power off…", "Ausschalten…"));
-        self.reboot = w.wrappingButton(tr("Restart…", "Neu starten…"));
-        for ([_]*gtk.Button{ self.off, self.reboot }) |button| {
-            actions.append(button.as(gtk.Widget));
-            self.remember(button.as(object.Object), gtk.Button.signals.clicked.connect(button, *PowerView, powerClicked, self, .{}), false);
-        }
-        focus_state.tag(self.off.as(gtk.Widget), "power-off", .{});
-        focus_state.tag(self.reboot.as(gtk.Widget), "reboot", .{});
-        const cancel = w.wrappingButton(tr("Cancel", "Abbrechen"));
-        focus_state.tag(cancel.as(gtk.Widget), "power-cancel", .{});
-        actions.insert(cancel.as(gtk.Widget), -1);
-        self.remember(cancel.as(object.Object), gtk.Button.signals.clicked.connect(cancel, *PowerView, cancelClicked, self, .{}), false);
+        self.actions = try PowerActions.create(power_card, power);
+        self.actions.show_status = false;
         self.error_label = w.label("", "pearl-secondary");
         self.error_label.setWrap(1);
         root.append(self.error_label.as(gtk.Widget));
@@ -203,6 +194,7 @@ pub const PowerView = struct {
         self.connections.append(a, .{ .object = obj, .id = id }) catch @panic("OOM");
     }
     pub fn destroy(self: *PowerView) void {
+        self.actions.destroy();
         for (self.connections.items) |c| object.signalHandlerDisconnect(c.object, c.id);
         self.power.releaseView(self.owner);
         self.connections.deinit(a);
@@ -220,25 +212,19 @@ pub const PowerView = struct {
         self.brightness.as(gtk.Widget).setSensitive(@intFromBool(power.brightnessAvailable()));
         if (!power.brightness_pending and power.brightness_wanted == null and power.feedback == null) self.brightness.as(gtk.Range).setValue(@floatFromInt(power.backlight.percent()));
         self.profile_status.setText(if (!power.profiles[0] and !power.profiles[1] and !power.profiles[2]) tr("Power profiles unavailable", "Energieprofile nicht verfügbar") else tr("Power profile", "Energieprofil"));
-        self.off.as(gtk.Widget).setTooltipText(if (power.can_off) tr("Power off after confirmation", "Ausschalten nach Bestätigung") else tr("Power off is unavailable or requires permission", "Ausschalten ist nicht verfügbar oder erfordert eine Berechtigung"));
-        self.reboot.as(gtk.Widget).setTooltipText(if (power.can_reboot) tr("Restart after confirmation", "Neustart nach Bestätigung") else tr("Restart is unavailable or requires permission", "Neustart ist nicht verfügbar oder erfordert eine Berechtigung"));
         if (power.backlight.maximum > 0 and !power.brightnessAvailable()) self.brightness_label.setText(tr("Brightness unavailable · an active session is required", "Helligkeit nicht verfügbar · eine aktive Sitzung ist erforderlich"));
         for (self.profiles, 0..) |button, i| {
             button.as(gtk.Widget).setSensitive(@intFromBool(power.profiles[i]));
             if (std.mem.eql(u8, power.profile.slice(), Power.profile_names[i])) button.as(gtk.Widget).addCssClass("pearl-selected") else button.as(gtk.Widget).removeCssClass("pearl-selected");
         }
-        _ = self.confirmation.valid(power.epoch(), glib.getMonotonicTime());
-        self.off.setLabel(if (self.confirmation.action != null and !self.confirmation.action.?) tr("Confirm power off", "Ausschalten bestätigen") else tr("Power off…", "Ausschalten…"));
-        self.reboot.setLabel(if (self.confirmation.action != null and self.confirmation.action.?) tr("Confirm restart", "Neustart bestätigen") else tr("Restart…", "Neu starten…"));
-        self.off.as(gtk.Widget).setSensitive(@intFromBool(power.can_off and !power.action_pending and !power.preparing));
-        self.reboot.as(gtk.Widget).setSensitive(@intFromBool(power.can_reboot and !power.action_pending and !power.preparing));
+        self.actions.update();
         self.error_label.setText(if (power.err) |e| std.fmt.bufPrintZ(&buffer, "{s}", .{e}) catch "Power error" else if (power.profile_pending or power.profile_wanted != null) tr("Applying power profile…", "Energieprofil wird angewendet…") else if (power.action_pending) tr("Waiting for the power service…", "Warten auf den Energiedienst…") else power.degraded.z());
     }
     pub fn probe(self: *PowerView, window: *gtk.Window) void {
         const focus = window.getFocus();
         if (focus == self.probe_focus) return;
         self.probe_focus = focus;
-        std.log.info("event=services-focus target={s}", .{if (focus == self.brightness.as(gtk.Widget)) "brightness" else if (focus == self.off.as(gtk.Widget)) "power-off" else if (focus == self.reboot.as(gtk.Widget)) "reboot" else "other"});
+        std.log.info("event=services-focus target={s}", .{if (focus == self.brightness.as(gtk.Widget)) "brightness" else if (focus == self.actions.off.as(gtk.Widget)) "power-off" else if (focus == self.actions.reboot.as(gtk.Widget)) "reboot" else "other"});
     }
     fn brightnessChanged(range: *gtk.Range, self: *PowerView) callconv(.c) void {
         if (!self.updating) self.power.setBrightness(@intFromFloat(range.getValue())) catch {};
@@ -246,11 +232,67 @@ pub const PowerView = struct {
     fn profileClicked(_: *gtk.Button, choice: *ProfileChoice) callconv(.c) void {
         choice.view.power.setProfile(choice.index) catch {};
     }
-    fn cancelClicked(_: *gtk.Button, self: *PowerView) callconv(.c) void {
+};
+
+/// Shared confirmation controls for the overview and the power page.
+pub const PowerActions = struct {
+    power: *Power,
+    off: *gtk.Button,
+    reboot: *gtk.Button,
+    error_label: *gtk.Label,
+    connections: std.ArrayList(Connection) = .empty,
+    confirmation: @import("../services/policy.zig").Confirmation = .{},
+    show_status: bool = true,
+
+    pub fn create(host: *gtk.Box, power: *Power) !*PowerActions {
+        const self = try a.create(PowerActions);
+        self.* = .{ .power = power, .off = undefined, .reboot = undefined, .error_label = undefined };
+        const actions = w.flow(3);
+        host.append(actions.as(gtk.Widget));
+        self.off = w.wrappingButton(tr("Power off…", "Ausschalten…"));
+        self.reboot = w.wrappingButton(tr("Restart…", "Neu starten…"));
+        for ([_]*gtk.Button{ self.off, self.reboot }) |button| {
+            actions.append(button.as(gtk.Widget));
+            self.remember(button.as(object.Object), gtk.Button.signals.clicked.connect(button, *PowerActions, powerClicked, self, .{}), false);
+        }
+        focus_state.tag(self.off.as(gtk.Widget), "power-off", .{});
+        focus_state.tag(self.reboot.as(gtk.Widget), "reboot", .{});
+        const cancel = w.wrappingButton(tr("Cancel", "Abbrechen"));
+        focus_state.tag(cancel.as(gtk.Widget), "power-cancel", .{});
+        actions.insert(cancel.as(gtk.Widget), -1);
+        self.remember(cancel.as(object.Object), gtk.Button.signals.clicked.connect(cancel, *PowerActions, cancelClicked, self, .{}), false);
+        self.error_label = w.label("", "pearl-secondary");
+        self.error_label.setWrap(1);
+        host.append(self.error_label.as(gtk.Widget));
+        self.update();
+        return self;
+    }
+    fn remember(self: *PowerActions, obj: *object.Object, id: c_ulong, _: bool) void {
+        self.connections.append(a, .{ .object = obj, .id = id }) catch @panic("OOM");
+    }
+    pub fn destroy(self: *PowerActions) void {
+        for (self.connections.items) |c| object.signalHandlerDisconnect(c.object, c.id);
+        self.connections.deinit(a);
+        a.destroy(self);
+    }
+    pub fn update(self: *PowerActions) void {
+        const power = self.power;
+        self.off.as(gtk.Widget).setTooltipText(if (power.can_off) tr("Power off after confirmation", "Ausschalten nach Bestätigung") else tr("Power off is unavailable or requires permission", "Ausschalten ist nicht verfügbar oder erfordert eine Berechtigung"));
+        self.reboot.as(gtk.Widget).setTooltipText(if (power.can_reboot) tr("Restart after confirmation", "Neustart nach Bestätigung") else tr("Restart is unavailable or requires permission", "Neustart ist nicht verfügbar oder erfordert eine Berechtigung"));
+        _ = self.confirmation.valid(power.epoch(), glib.getMonotonicTime());
+        self.off.setLabel(if (self.confirmation.action != null and !self.confirmation.action.?) tr("Confirm power off", "Ausschalten bestätigen") else tr("Power off…", "Ausschalten…"));
+        self.reboot.setLabel(if (self.confirmation.action != null and self.confirmation.action.?) tr("Confirm restart", "Neustart bestätigen") else tr("Restart…", "Neu starten…"));
+        self.off.as(gtk.Widget).setSensitive(@intFromBool(power.can_off and !power.action_pending and !power.preparing));
+        self.reboot.as(gtk.Widget).setSensitive(@intFromBool(power.can_reboot and !power.action_pending and !power.preparing));
+        var buffer: [1024]u8 = undefined;
+        self.error_label.setText(if (power.err) |e| std.fmt.bufPrintZ(&buffer, "{s}", .{e}) catch "Power error" else if (power.action_pending) tr("Waiting for the power service…", "Warten auf den Energiedienst…") else "");
+        self.error_label.as(gtk.Widget).setVisible(@intFromBool(self.show_status and (power.err != null or power.action_pending)));
+    }
+    fn cancelClicked(_: *gtk.Button, self: *PowerActions) callconv(.c) void {
         self.confirmation.action = null;
         self.update();
     }
-    fn powerClicked(button: *gtk.Button, self: *PowerView) callconv(.c) void {
+    fn powerClicked(button: *gtk.Button, self: *PowerActions) callconv(.c) void {
         const reboot = button == self.reboot;
         const now = glib.getMonotonicTime();
         const confirmed = self.confirmation.click(reboot, self.power.epoch(), now);
