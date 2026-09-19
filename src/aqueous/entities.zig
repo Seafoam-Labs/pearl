@@ -170,6 +170,12 @@ pub fn read(comptime T: type, allocator: Allocator, value: std.json.Value) anyer
         },
         .@"enum" => return if (value == .string) std.meta.stringToEnum(T, value.string) orelse error.InvalidEnum else error.InvalidType,
         .optional => |info| return if (value == .null) null else try read(info.child, allocator, value),
+        .array => |info| {
+            if (value != .array or value.array.items.len != info.len) return error.InvalidRange;
+            var result: T = undefined;
+            for (&result, value.array.items) |*out, item| out.* = try read(info.child, allocator, item);
+            return result;
+        },
         .pointer => |info| {
             if (info.child == u8) return if (value == .string) value.string else error.InvalidType;
             if (value != .array) return error.InvalidType;
@@ -233,4 +239,15 @@ pub fn ownedBytes(value: anytype) usize {
         },
         else => 0,
     };
+}
+
+test "fixed protocol arrays enforce length and element types" {
+    const a = std.testing.allocator;
+    const valid = try std.json.parseFromSlice(std.json.Value, a, "[1,2]", .{});
+    defer valid.deinit();
+    try std.testing.expectEqual([2]u8{ 1, 2 }, try read([2]u8, a, valid.value));
+    try std.testing.expectError(error.InvalidRange, read([3]u8, a, valid.value));
+    const invalid = try std.json.parseFromSlice(std.json.Value, a, "[1,\"2\"]", .{});
+    defer invalid.deinit();
+    try std.testing.expectError(error.InvalidType, read([2]u8, a, invalid.value));
 }

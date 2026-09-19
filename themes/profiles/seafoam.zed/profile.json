@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "seafoam.zed",
+  "application": "zed",
+  "adapter": "zed",
+  "name": "Seafoam · zed",
+  "author": "Seafoam Labs and attributed upstream contributors",
+  "license": "GPL-3.0-only",
+  "source": "https://github.com/Seafoam-Labs/aqueous-dotfiles/tree/76772cb9d009f971193b6fb2dbb56854055225d5",
+  "asset_version": "1.0.0",
+  "variants": [
+    "dark",
+    "light"
+  ],
+  "templates": [
+    {
+      "path": "template.json",
+      "output": "theme.json"
+    }
+  ],
+  "instructions": "Select Seafoam Pearl Dark or Seafoam Pearl Light in the Zed theme selector."
+}

@@ -287,3 +287,16 @@ python3 scripts/settings-visual-review.py
 Physical activation, monitor unplug and Orca acceptance use the separate
 [manual checklist](../artifacts/settings-app/s6/MANUAL.md). Private AT-SPI inspection
 is automated evidence and does not substitute for a screen-reader review.
+
+
+## Completion feature checks
+
+`test-theme-assets` checks PNG decoding/bounds and native GResource lifetime.
+`test-theme-discovery` checks missing roots, nested edits and idle teardown.
+`test-matugen` checks private JSON rendering, attributed profiles, immutable
+snapshots, conditional ownership and Starship review/backup. `test-theme-completion`
+uses a private compositor/XDG session for image chunks, committed/preview GTK
+rendering, automatic discovery, exact fixed app colors and offline recovery.
+`test-theme-publishing` checks deterministic multipage publication and source
+migration in private roots. These require libpng and Matugen 4.2.0; Python remains
+only development orchestration. Evidence is in artifacts/theme-completion.

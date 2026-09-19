@@ -58,3 +58,10 @@ if [[ -f "$source_root/LICENSE" ]]; then
 fi
 # The GTK resource bundle and original icons are embedded in pearl/pearl-lock/pearl-settings.
 # No test executables, fixture PAM modules, service enablement or pacman hooks.
+# Profiles are attributed data, never executable hooks.
+for profile in "$source_root"/themes/profiles/*; do
+    [[ -d "$profile" ]] || continue
+    for member in "$profile"/*; do
+        install -Dm644 "$member" "$destination$prefix/share/pearl/matugen/profiles/$(basename "$profile")/$(basename "$member")"
+    done
+done

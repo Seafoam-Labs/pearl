@@ -122,6 +122,8 @@ pub const Backend = struct {
         const validation_error = self.validation(alloc);
         return std.json.Stringify.valueAlloc(alloc, .{
             .revision = p.num(s.revision),
+            .theme_catalog_generation = p.num(s.theme_discovery.generation),
+            .theme_discovery_degraded = s.theme_discovery.degraded,
             .draft_revision = p.num(s.draft.revision),
             .base_revision = p.num(if (s.draft.text != null) s.draft.base_revision else s.revision),
             .dirty = s.draft.text != null,
@@ -131,6 +133,7 @@ pub const Backend = struct {
             .busy = s.job != null or s.pending_reload,
             .error_code = if (s.err) |err| @errorName(err) else null,
             .qt = s.qt_status,
+            .applications = s.application_status,
             .qt_review_text = s.qt_review_text.slice(),
             .qt_review_digest = if (s.qt_review_digest) |*hash| @as(?[]const u8, hash) else null,
             .export_error = if (s.export_error) |err| @errorName(err) else null,
@@ -149,13 +152,44 @@ pub const Backend = struct {
         const params = request.params orelse return error.InvalidRequest;
         peer.expire();
         switch (request.op) {
+            .@"theme.asset" => {
+                const v = try p.fields(struct { preview: bool, revision: []const u8, digest: []const u8, offset: u32 }, alloc, params);
+                try self.allowed(self.context);
+                const revision = try p.number(v.revision);
+                try @import("../theme/package_model.zig").digest(v.digest);
+                const blobs = if (v.preview) blk: {
+                    if (revision != self.service.theme_jobs.serial or self.service.theme_jobs.job != null) return error.StaleThemeAsset;
+                    break :blk self.service.theme_jobs.blobs;
+                } else blk: {
+                    if (revision != self.service.appearance) return error.StaleThemeAsset;
+                    const job = self.service.live orelse return error.StaleThemeAsset;
+                    break :blk job.custom.blobs;
+                };
+                for (blobs) |blob| if (std.mem.eql(u8, blob.digest, v.digest)) {
+                    if (v.offset > blob.bytes.len) return error.InvalidAssetOffset;
+                    const chunk = blob.bytes[v.offset..@min(blob.bytes.len, v.offset + 48 * 1024)];
+                    const encoded = try alloc.alloc(u8, std.base64.standard.Encoder.calcSize(chunk.len));
+                    _ = std.base64.standard.Encoder.encode(encoded, chunk);
+                    return std.json.Stringify.valueAlloc(alloc, .{ .digest = blob.digest, .offset = v.offset, .total = blob.bytes.len, .data = encoded }, .{});
+                };
+                return error.ThemeAssetUnavailable;
+            },
             .@"theme.start" => {
                 const v = try p.fields(struct { request: []const u8 }, alloc, params);
                 try self.allowed(self.context);
-                try self.service.theme_jobs.start(self.service.app, v.request);
+                var command = try @import("../theme/package_model.zig").parse(@import("../theme/commands.zig").Request, alloc, v.request, 16384);
+                if (command.action == .application_review or command.action == .application_install or command.action == .application_retry) {
+                    if (self.service.job != null or self.service.pending_reload) return error.Busy;
+                    if (try p.number(command.revision) != self.service.revision) return error.Conflict;
+                    const preferences = self.service.prefs();
+                    if (!preferences.matugen.enabled) return error.ApplicationManagementDisabled;
+                    command.sha256 = preferences.matugen.snapshot_digest;
+                }
+                try self.service.theme_jobs.start(self.service.app, try std.json.Stringify.valueAlloc(alloc, command, .{}));
                 return self.service.theme_jobs.status(alloc);
             },
             .@"theme.get", .@"theme.cancel" => {
+                self.service.updateApplicationJob();
                 const v = try p.fields(struct { serial: ?[]const u8 = null }, alloc, params);
                 try self.allowed(self.context);
                 if (v.serial) |serial| if (try p.number(serial) != self.service.theme_jobs.serial) return error.StaleThemeJob;

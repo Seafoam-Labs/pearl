@@ -63,6 +63,7 @@ pub const View = struct {
     qt_comparison: *gtk.Label,
     german: bool,
     themes: *@import("themes_view.zig").View = undefined,
+    profiles: *@import("profiles_view.zig").View = undefined,
     greeter_sync: *@import("greeter_sync.zig").View = undefined,
 
     pub fn create(window: *gtk.Window, host: *gtk.Box, editor: *Editor, german: bool) !*View {
@@ -146,6 +147,7 @@ pub const View = struct {
         // The caller installs raw_view directly in Advanced's sole viewport.
         self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison };
         self.themes = try @import("themes_view.zig").View.create(host, editor);
+        self.profiles = try @import("profiles_view.zig").View.create(host, editor);
         host.reorderChildAfter(self.themes.root.as(gtk.Widget), appearance.as(gtk.Widget));
         self.greeter_sync = try @import("greeter_sync.zig").View.create(host, self, syncPreferences, german);
         self.sync_borders = sync_borders;
@@ -171,6 +173,7 @@ pub const View = struct {
     pub fn destroy(self: *View) void {
         self.filling = true;
         self.themes.destroy();
+        self.profiles.destroy();
         self.greeter_sync.destroy();
         self.closePicker();
         if (self.preview_idle != 0) _ = glib.Source.remove(self.preview_idle);
@@ -198,6 +201,7 @@ pub const View = struct {
     }
     pub fn update(self: *View) void {
         self.themes.update();
+        self.profiles.update();
         const text_ = self.editor.text();
         const changed = self.shown == null or !std.mem.eql(u8, self.shown.?, text_);
         if (changed and !self.filling) {

@@ -1,0 +1,11 @@
+{
+  "zig": "0.16.0",
+  "matugen": "matugen 4.2.0",
+  "build": "zig build -Drelease=true -Doptimize=ReleaseSafe (default source disabled)",
+  "binaries": {
+    "pearl": "fd62798b694e3371bb7ce97edd3e502323dfb5e45722bb877648a912956d5d30",
+    "pearl-settings": "4f4604a85d6eaf40f6f8011b0aba0bff39613fa7216267d16246d80dc253665f",
+    "pearl-lock": "4dc38e295bc6bde451889bb8bc400e1d722b8ccfffc8616e15d15f81e6d44ec6",
+    "pearl-themes": "0d420728304a9d9e3d2384c08a0aa9f66d8de88dd0da164dd2b8740bbfd98851"
+  }
+}

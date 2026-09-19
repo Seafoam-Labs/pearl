@@ -1,10 +1,10 @@
-# Community themes · API 1
+# Community themes · schemas 1 and 2
 
 Pearl can download arbitrary community packages containing exact palettes,
 component tokens and restricted CSS. No theme names are compiled into the
 selector. GTK4 themes remain available through the existing GTK mode.
 All theme discovery, validation, networking, installation and author tools are
-implemented in Zig. libcurl supplies HTTPS and libarchive supplies archive IO.
+implemented in Zig. libcurl supplies HTTPS, libarchive supplies archive IO and libpng validates static images.
 Python is used only by development tests; it is not installed with this feature.
 
 In Settings → Appearance → Community themes, expand **Community repositories
@@ -18,9 +18,12 @@ deadline, using private temporary files rather than application configuration.
 Repository buttons select among configured sources. Search filters the current
 page by name or author; use the next-page button to browse more packages.
 
-The repository list starts empty. No official hosting URL or maintainers have
-been selected. An arbitrary compatible HTTPS repository works without rebuilding
-Pearl. The `example.org` addresses in the author fixtures are placeholders.
+The repository list currently starts empty. The intended default project is
+`Seafoam-Labs/pearl-community-themes` on GitHub; it does not exist yet and is not
+configured as a source. The [repository scaffold](../community-repository/README.md) and native publication builder are ready for review; hosting remains a launch gate.
+Image assets, local discovery and application profiles are described below. An arbitrary
+compatible HTTPS repository works without rebuilding Pearl. The `example.org`
+addresses in the author fixtures are placeholders.
 
 Installation and activation are separate. Downloading/updating/rolling back a
 package never changes the current appearance. Refresh Installed and select/apply
@@ -50,8 +53,9 @@ through their existing opt-in integrations. Package CSS does not style Qt apps.
 
 Discovery scans `$XDG_DATA_HOME/pearl/themes/*` and
 `$XDG_DATA_DIRS/pearl/themes/*`. Each child is a package directory. Duplicate IDs
-are unavailable rather than silently shadowing each other. Settings refreshes
-on request, without idle directory polling. The catalog is limited to 256
+are unavailable rather than silently shadowing each other. GIO watches refresh Settings automatically after local changes, without idle polling.
+A changed draft must be explicitly selected/previewed again; discovery never activates it.
+Watch exhaustion reports degraded discovery, with explicit Refresh available. The catalog is limited to 256
 directories and 64 MiB of valid package content; metadata is paginated.
 
 Managed packages have receipts under `$XDG_STATE_HOME/pearl/themes`. Updates,
@@ -103,7 +107,7 @@ the release format. Neither is installed as a built-in theme.
 IDs use lowercase ASCII letters, digits, `.`, `_`, `-`, begin with a letter or
 digit and have at most 96 bytes. `pearl.*` is reserved. Versions are three decimal
 components without leading zeros. Metadata strings are nonempty UTF-8, at most
-256 bytes, without control characters. Either palettes or style must be present;
+256 bytes, without control characters. At least one palette, style or schema-2 application profile must be present;
 declare the corresponding API. Unsupported APIs cannot be activated.
 
 Packages are directories or tar.gz archives whose root contains `theme.json`.
@@ -199,3 +203,89 @@ See [repository publishing](THEME_REPOSITORIES.md) for the index contract.
 Application profile declarations and full Matugen render data are not accepted
 yet: that integration depends on the separate profiles implementation. See
 [remaining milestones](CUSTOM_THEMES_IMPLEMENTATION_PLAN.md).
+
+
+## Schema 2: images and full application profiles
+
+Schema 1 remains readable. Schema 2 adds `images`, `profiles`, `defaults` and
+`render_data`. See the complete [Mist example](../community-repository/themes/seafoam.mist/theme.json).
+Capabilities are independent: `palette_api:1`, `style_api:1` (or `2` for images),
+`profile_api:1`, `render_data_api:1`. Declare capabilities for supplied data;
+unknown versions/fields are errors. Old clients reject schema 2 explicitly.
+
+`images` contains `{ "id":"mist", "path":"mist.png" }` entries. Style API 2
+supports `background-image: url("theme-asset:mist")` or `none` on permitted
+components, `background-size: cover|contain|auto`, `background-repeat:
+repeat|no-repeat|repeat-x|repeat-y`, and cardinal/center background positions.
+Only static PNG is accepted. No SVG, APNG, remote/file URLs or supplied resources.
+Images are decoded and normalized before GTK sees them, then addressed by hash
+in an in-memory GResource. Limits: 32 images, 2 MiB each, 8 MiB encoded total,
+2,048 pixels per dimension and 32 MiB decoded RGBA per appearance. The durable
+blob store is capped at 256 MiB and collects only unreferenced owned hashes.
+Current/previous/history snapshots protect their assets. Preview resources are
+memory-only; neither package removal nor cache deletion changes committed bytes.
+Palette contrast checks cannot prove readability over an image: review it visually.
+
+`profiles` lists descriptor paths; `defaults` maps `application` to `profile`.
+Descriptors have schema 1, an arbitrary ID, application/adapter, name, author,
+license, source, asset_version, supported dark/light variants and up to eight
+`templates` entries with package-relative `path` and basename `output`. Outputs
+are `.json` for Zed, `.toml` for Starship, `.css` for other adapters. Templates are
+UTF-8, at most 128 KiB each. No contributed commands or destinations are accepted.
+Standalone descriptors live at `$XDG_DATA_HOME/pearl/matugen/profiles/*/profile.json`
+and equivalent system data roots. Duplicate IDs are unavailable. Catalog pages
+contain at most 16 summaries and a revision; selection captures exact bytes.
+
+`render_data` maps dark/light to optional JSON paths. Render-data schema 1 uses
+`renderer:"matugen-4"`, full `colors`, `base16`, and `palettes` objects in Matugen
+4.2.0 hex JSON format. Supply all Material roles, all sixteen base16 roles and all
+six tonal palettes; retain dark/light/default values. The 13-role shell projection
+must exactly match that variant’s shell palette. See the example's `render-*.json`
+and [round-trip fixture](../tests/fixtures/community/render-data/matugen-4.2.json).
+Fixed colors are passed directly to Matugen JSON input, never reconstructed from
+a seed. A shell-only palette cannot supply Follow Pearl application colors.
+
+## Application management and recovery
+
+Settings → Appearance → Application themes is opt-in. Each application can follow
+the active package, use an independently selected profile, or be Off. The active
+`package_id` supplies defaults independently of `palette_id` and `style_id`; GTK
+mode has no package provider. Follow Pearl uses full dynamic data or the effective
+fixed palette's full data. Independent seed/wallpaper colors work in every shell
+mode. Choosing/browsing/installing profiles does not generate or write app files.
+Apply captures templates and colors; reconciliation follows the shell commit.
+Per-app failures preserve last-good outputs and do not roll back valid shell saves.
+
+Zed installs a distinctly named file in `$XDG_CONFIG_HOME/zed/themes`. Equibop uses
+its themes directory (`EQUICORD_USER_DATA_DIR` is respected). Activate the theme in
+the application. Fluxer and Steam receive CSS for manual setup. Generated outputs
+are bounded under `$XDG_CONFIG_HOME/pearl/matugen/outputs/<application>/output-N.ext`.
+Starship requires review of the concrete current/proposed complete configuration
+before installation and saves the original. A changed file invalidates review.
+Custom `STARSHIP_CONFIG` locations require manual setup. Off restores only files
+whose contents still match Pearl's ownership journal; user edits report conflicts.
+No contributed reload hooks run. Qt remains managed solely by QtEngine/Darkly.
+
+Initial Seafoam profiles carry pinned source attribution and licenses under
+`themes/profiles`. Their IDs are catalog data, not hardcoded choices. Dark-only
+profiles report unavailable in light mode. Install required app plugins/fonts
+separately. No Aqueous template is supplied.
+
+Committed app snapshots are content-addressed under `pearl/matugen/snapshots`,
+separate from shell snapshots (4 MiB each, 32-file ceiling; current/previous
+retained). Retry and restart use captured templates after package edits/removal.
+Discovery never adopts new templates. Apply is required to capture updates.
+Private Matugen configs contain only selected templates and outputs, with no
+user hooks; renderer cache, output sizes, CPU/memory limits and cancellation are
+bounded. Generated output may remain after Off. Clear a saved selection explicitly
+to repair unavailable packages; preserve snapshots/journals when troubleshooting.
+
+Before downgrading to an API-1 client, disable application management and Apply,
+choose the built-in theme and Apply, back up preferences, then remove the additive
+`matugen` object for versions that reject it. Do not manually delete ownership
+journals before restoring files. Schema-2 packages/indexes require a new client.
+
+Automatic profile refresh preserves the draft’s expected catalog revision.
+Choosing a profile/assignment, or **Use current profile versions on Apply**,
+explicitly adopts the displayed catalog for the next Apply. Editing only the
+seed or master switch does not silently accept changed template versions.

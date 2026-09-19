@@ -1,0 +1,146 @@
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.059s
+
+OK
+{
+  "status": "passed",
+  "checks": {
+    "invalid-readiness-fd-rejected-before-opening-display": true,
+    "gtk-accessible-prompt-labels-and-mixed-scale-large-text": true,
+    "caps-lock-indicator-follows-keyboard-state": true,
+    "repeated-output-return-preserves-lock-and-current-prompt-focus": true,
+    "small-logical-output-remains-usable-with-large-text": true,
+    "oversize-utf8-response-rejected-without-truncation-and-retry-works": true,
+    "helper-crash-stays-locked-and-recovers": true,
+    "helper-malformed-stays-locked-and-recovers": true,
+    "helper-hang-stays-locked-and-recovers": true,
+    "helper-missing-stays-locked-and-recovers": true,
+    "duplicate-lock-and-broken-readiness-do-not-release-original": true,
+    "escape-clears-conversation-and-enter-retries-without-pointer": true,
+    "fingerprint-preserves-lock-authority": true,
+    "fingerprint-fallback-preserves-lock-authority": true,
+    "fingerprint-input-status-preserves-lock-authority": true,
+    "fingerprint-wait-preserves-lock-authority": true,
+    "fingerprint-denied-preserves-lock-authority": true,
+    "output-soak-reuses-view-slots-and-file-descriptors": true,
+    "all-outputs-removed-return-to-usable-authentication": true,
+    "idle-clock-updates-are-bounded-with-no-auth-ui-churn": true
+  },
+  "binaries": {
+    "locker": "37800727d2faff2c9571881e91e6194b4d437b48de71de49d5b540c68dddd1e8",
+    "pam_module": "648b7eb3d5c2179651be2cf7cd86ac9d2c67881b3f8d5b4b77b2bc58f3bcacb2"
+  },
+  "outputs": {
+    "cycles": 100,
+    "before": {
+      "pss_bytes": 33518592,
+      "fds": 8,
+      "cpu_ticks": 22,
+      "rss_bytes": 66519040
+    },
+    "samples": [
+      {
+        "cycles": 25,
+        "pss_bytes": 29835264,
+        "fds": 8,
+        "cpu_ticks": 52,
+        "rss_bytes": 65912832
+      },
+      {
+        "cycles": 50,
+        "pss_bytes": 29835264,
+        "fds": 8,
+        "cpu_ticks": 82,
+        "rss_bytes": 65179648
+      },
+      {
+        "cycles": 75,
+        "pss_bytes": 29828096,
+        "fds": 8,
+        "cpu_ticks": 112,
+        "rss_bytes": 65138688
+      },
+      {
+        "cycles": 100,
+        "pss_bytes": 29827072,
+        "fds": 8,
+        "cpu_ticks": 141,
+        "rss_bytes": 65114112
+      }
+    ],
+    "after": {
+      "pss_bytes": 29827072,
+      "fds": 8,
+      "cpu_ticks": 141,
+      "rss_bytes": 65114112
+    }
+  },
+  "idle": {
+    "state": "locked, authentication cancelled",
+    "seconds": 65.00006483900506,
+    "before": {
+      "pss_bytes": 33546240,
+      "fds": 8,
+      "cpu_ticks": 22,
+      "rss_bytes": 67244032
+    },
+    "after": {
+      "pss_bytes": 33857536,
+      "fds": 8,
+      "cpu_ticks": 23,
+      "rss_bytes": 67244032
+    },
+    "cpu_seconds": 0.01,
+    "clock_events": 1,
+    "ui_updates": 0
+  }
+}
+{
+  "status": "passed",
+  "checks": {
+    "staged-production-files-permissions-link-order-and-session-unit": true,
+    "installed-startup-dry-run-private-bundle-explicit-apply-conflict-rollback-restart-and-bounds": true
+  },
+  "binary_sha256": {
+    "pearl": "30e461e4e0f3bef6f5013a4ea192f5e597425c65377834960dbb8aa941fd144f",
+    "ctl": "62463c4e9cb2d8bce308b40ac4f13e9395520814ec730752b9a3f7adf54e166a",
+    "locker": "0c7a3ac403fe72b0459e67d4d1c71bc6009e7699b667258cb13e45d126fd76d7",
+    "settings": "e7b04c7f57aa602c26f88d2dc3334a671514d96c1b15a2b6ff69554d36ee105c",
+    "themes": "d5717d88c8d106c90fa87a5cdb8c66098a5f8f9363fcffc1feb34993164fc34d"
+  }
+}
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_settings_presentation.py", line 147, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_presentation.py", line 129, in main
+    wait_for(lambda:other['id'] not in ipc.outputs())
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 19, in wait_for
+    value = check()
+  File "/home/zoey/Pearl/tests/integration/test_settings_presentation.py", line 129, in <lambda>
+    wait_for(lambda:other['id'] not in ipc.outputs())
+                                       ~~~~~~~~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 44, in outputs
+    return {e['id']: e for e in self.state() if e['kind'] == 'output' and e['enabled'] and e['powered']}
+                                ~~~~~~~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 41, in state
+    return self.call('snapshot')['batch']['upsert']
+           ~~~~~~~~~^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 35, in call
+    self.sock.sendall(json.dumps(req).encode() + b'\n')
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+PASS: T03 components, keyboard, translation, virtualization, idle and captures
+test-settings-presentation
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_presentation.py --settings ./.zig-cache/o/19ae07b28177f550172cc7d5513e4e14/pearl-settings-test --pearl ./.zig-cache/o/8bd74f388d822a4d588f31a4c727d9e0/pearl-integration --ctl ./.zig-cache/o/3dd3748e207c54aa160c1247666d94fe/pearlctl
+
+Build Summary: 30/32 steps succeeded (1 failed)
+test-settings-presentation transitive failure
++- run python3 failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/6b1ad2e608f6a0e8c1e71d7031e417ce/build /usr/bin/zig /usr/lib/zig /home/zoey/Pearl .zig-cache .cache/zig --seed 0x9cc7b853 -Z9ff66254887e9dc7 test-settings-presentation test-components test-lock test-release-tools test-release -Doptimize=ReleaseSafe

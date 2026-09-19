@@ -10,6 +10,25 @@ pub const Resolved = struct {
     tokens: style.Tokens = .{},
     css: []const u8 = "",
     digest: []const u8 = "",
+    images: []const @import("assets.zig").Image = &.{},
+    blobs: []const @import("assets.zig").Blob = &.{},
+    pub fn jsonStringify(self: Resolved, writer: *std.json.Stringify) !void {
+        try writer.beginObject();
+        inline for (@typeInfo(Resolved).@"struct".fields) |field| {
+            if (comptime !std.mem.eql(u8, field.name, "blobs")) {
+                if (comptime std.mem.eql(u8, field.name, "images")) {
+                    if (self.images.len > 0) {
+                        try writer.objectField(field.name);
+                        try writer.write(self.images);
+                    }
+                } else {
+                    try writer.objectField(field.name);
+                    try writer.write(@field(self, field.name));
+                }
+            }
+        }
+        try writer.endObject();
+    }
 };
 pub fn resolve(a: std.mem.Allocator, p: prefs.Theme, c: catalog.Catalog, check_revision: bool) !Resolved {
     if (p.mode == .gtk) return .{};
@@ -26,6 +45,14 @@ pub fn resolve(a: std.mem.Allocator, p: prefs.Theme, c: catalog.Catalog, check_r
             if (p.style_id.len > 0 and s.manifest.style == null) return error.ThemeStyleUnavailable;
             result.tokens = s.tokens;
             result.css = s.css;
+            if (s.images.len > 0) {
+                const entry = try c.get(s.manifest.id);
+                const captured = try @import("package.zig").load(a, entry.path);
+                if (!std.mem.eql(u8, &captured.digest, &s.digest)) return error.ThemeCatalogChanged;
+                result.style_api = 2;
+                result.images = captured.images;
+                result.blobs = captured.blobs;
+            }
         }
     }
     return result;

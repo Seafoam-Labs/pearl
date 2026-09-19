@@ -1,23 +1,27 @@
 # Individual Matugen application themes
 
-Status: proposed, September 16, 2026. This document plans the feature; it does not
-implement it. “Matugen” is the generator's spelling. A **profile** here means an
-application template plus its metadata and installation recipe, not a palette
-generation algorithm.
+Status: implemented locally with focused acceptance, September 18, 2026.
+The Zig catalog/provider, complete Matugen JSON inputs, worker, adapter journals,
+committed snapshots and shared Settings controls now exist. M1–M6 remain subject
+to the expanded acceptance/release gates in the [completion plan](CUSTOM_THEMES_COMPLETION_PLAN.md).
+The architecture below records the intended behavior, not a claim that every
+manual application activation/accessibility scenario has been certified.
 
-The complementary [custom themes plan](CUSTOM_THEMES_IMPLEMENTATION_PLAN.md)
-defines community repository downloads and installation, the future package
-system, real theme provider and fixed-palette render data extension. This plan
-can still ship first with its empty production provider;
-the custom-theme integration milestone builds on the contracts below.
+See [current contract and recovery](CUSTOM_THEMES.md) and
+[execution evidence](../artifacts/theme-completion/README.md). Five attributed
+Seafoam profiles are installed as data; Zed and Starship’s DMS-only terminal roles
+were explicitly ported to Matugen base16 (mapping in themes/profiles/ATTRIBUTION.md).
+The real package provider and fixed full render data are implemented. The default
+GitHub repository remains uncreated/unpublished and disabled in Pearl builds.
 
 ## Intended behavior
 
 Add **Appearance → Application themes → Matugen profiles**. Users can select a
-profile for each application independently of their Pearl shell theme. A future
-Pearl theme can provide profiles and recommended assignments through a small
-provider interface. Implement that interface with an empty production provider
-and fixture providers first; a complete Pearl theme package system is not required.
+profile for each application independently of their Pearl shell theme. Pearl
+theme packages will provide profiles and recommended assignments through a small
+provider interface. Establish the interface with fixture providers first, then
+connect the real committed package provider as required by completion step C4.
+An empty provider is a development stage, not completion of theme inheritance.
 
 Each application has three choices:
 
@@ -119,7 +123,7 @@ Theme changes recompute inherited assignments only. Explicit profile IDs remain
 stable even when their provider disappears; report unavailable and preserve the
 last installed output until the user chooses another profile or restores it.
 
-## Profile catalog and theme-provider stub
+## Profile catalog and theme-provider interface
 
 Introduce `src/theme/matugen_profiles.zig` for typed metadata, validation and
 resolution, plus `src/theme/theme_provider.zig` for the narrow provider contract:
@@ -130,14 +134,14 @@ ThemeProviderSnapshot {
     profiles[],                    // same descriptors used by the independent catalog
     defaults: application_id -> profile_id
 }
-activeThemeProvider() -> snapshot  // initial production implementation: empty
+activeThemeProvider() -> snapshot  // fixtures first, committed package provider in C4
 ```
 
-The stub must not infer a Pearl theme from `gtk_name` or the DMS settings file.
-Use fixtures to prove theme inheritance before a real provider exists. The
-production UI can show Follow Pearl theme with “This theme provides no profile”.
-Future theme package selection will feed this interface; no theme store,
-downloader, package activation or shell palette importer is needed here.
+The provider must not infer a Pearl theme from `gtk_name` or the DMS settings file.
+Use fixtures to prove theme inheritance before connecting the real provider.
+Show “This theme provides no profile” only when the committed provider has no
+assignment. Completion step C4 connects the existing package system to this
+interface; the profile model does not need a second store or downloader.
 
 A profile descriptor contains schema version, namespaced ID, application ID,
 display name, author/source attribution, asset version/digest, template paths,
@@ -200,7 +204,7 @@ from publishing after a newer Apply. No generator remains running at idle.
 
 ## Installation, ownership and status
 
-Publish generated files under `$XDG_CONFIG_HOME/pearl/matugen/outputs/<profile-id>`.
+Publish generated files under `$XDG_CONFIG_HOME/pearl/matugen/outputs/<application>/output-N.ext` (fixed adapter directories bound storage across arbitrary profile IDs).
 Application adapters copy or reference those files only at defined destinations:
 
 - Zed and Equibop: install distinct Pearl-owned theme files in their theme
@@ -272,9 +276,10 @@ obeys existing session/lock gates. Surface a compact summary in CLI status.
 | M6: release documentation | Package collection and manifests, update preferences/frontend API docs, add consumer setup and downgrade instructions. | Run focused unit/integration suites and isolated real-app checks; record supported versions and manual-activation gaps. |
 
 M1 and M2 establish the contracts before M3/M4; M5 consumes those contracts.
-All six steps deliver individual selection. Theme inheritance is considered
-ready when fixture providers exercise the same resolver and UI as independent
-profiles; a real Pearl theme package implementation remains a separate feature.
+All six steps deliver individual selection. Fixture providers establish resolver
+and UI coverage; full theme inheritance additionally requires the committed
+package provider and immutable render inputs in completion step C4. The package
+foundation already exists, but that integration remains unimplemented.
 
 Add a focused `test-matugen` target for meaningful resolver, renderer and ownership
 tests. Also run the existing preferences and Settings suites when their schemas

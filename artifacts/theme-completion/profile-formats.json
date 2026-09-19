@@ -1,0 +1,53 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "profile": "seafoam.equibop",
+      "variant": "dark",
+      "format": ".css",
+      "sha256": "d6300369831202287721684304795da21b41fcf44730380c157ec4de6e5e98b7"
+    },
+    {
+      "profile": "seafoam.fluxer",
+      "variant": "dark",
+      "format": ".css",
+      "sha256": "387ed10592a0d5f2270fe78c80c61751e51420ff55e74c74bce4be8b0e433209"
+    },
+    {
+      "profile": "seafoam.fluxer",
+      "variant": "light",
+      "format": ".css",
+      "sha256": "18e16aeee171876427d9c3f9762f4142b42f0e151252e31dc3e10415c1b1ee99"
+    },
+    {
+      "profile": "seafoam.starship",
+      "variant": "dark",
+      "format": ".toml",
+      "sha256": "06a5a18b1e36e070730f0e922915efbe119b278272a3cb777ad9373081424aae"
+    },
+    {
+      "profile": "seafoam.starship",
+      "variant": "light",
+      "format": ".toml",
+      "sha256": "32e4b5d2d08b1bf67173cc921e4e5d33c961cd183b8cbb6749935b4388a2a014"
+    },
+    {
+      "profile": "seafoam.steam",
+      "variant": "dark",
+      "format": ".css",
+      "sha256": "a3274760e79a2402cb82725a2b0366ecbf34fc62ca17a3a915d5e3c23d2bc38a"
+    },
+    {
+      "profile": "seafoam.zed",
+      "variant": "dark",
+      "format": ".json",
+      "sha256": "e7f26e7bfde2f1eba97d3fbcc2b86f4bf33f13c4541dee603837aeff401fc8f5"
+    },
+    {
+      "profile": "seafoam.zed",
+      "variant": "light",
+      "format": ".json",
+      "sha256": "e7f26e7bfde2f1eba97d3fbcc2b86f4bf33f13c4541dee603837aeff401fc8f5"
+    }
+  ]
+}

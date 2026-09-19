@@ -6,17 +6,18 @@ browser, scoped CSS/imports, durable snapshots and the three theme test targets
 exist. The implemented contract is in [CUSTOM_THEMES.md](CUSTOM_THEMES.md);
 publishing is in [THEME_REPOSITORIES.md](THEME_REPOSITORIES.md).
 
-T1–T3 have executable acceptance coverage. T4 includes bounded radii, borders,
-padding, title scaling, shadows and motion; user font/density/motion settings
-retain precedence. T5 includes restricted component CSS and package-local CSS
-imports; image assets and a broader CSS contract remain open. Explicit previews
-resolve built-in/fixed/generated colors in an isolated root; Matugen previews
-are cancellable and have a deadline. Catalog refresh is explicit.
-T6 remains dependent on the unimplemented Matugen profiles milestones M1–M5;
-packages cannot yet declare application profiles or full render data. T7 author
-and contributor docs and native validation/packing tools exist; default repository
-hosting, maintainers and expanded visual/compatibility evidence remain open.
-No official repository URL has been invented or automatically configured.
+The [completion plan](CUSTOM_THEMES_COMPLETION_PLAN.md) records the implementation
+and release gates for schema-2 image assets, event-driven discovery, committed
+application profiles and native repository publication tooling. T1–T4 retain their
+existing coverage. T5 image resources and T6 application integration now have
+native and private-desktop checks. T7 includes a reviewable GitHub scaffold and
+deterministic pagination tooling. These are implemented locally; the milestones
+are not declared fully accepted while the presentation and hosting gates remain.
+
+`Seafoam-Labs/pearl-community-themes` has not been created or published. The default
+source is implemented behind a disabled build flag, with absent/explicit/empty
+configuration migration tested. Actual maintainers, hosting verification and
+launch approval remain required. See [current evidence](../artifacts/theme-completion/README.md).
 
 All deployed theme tooling is Zig. Python files are development test harnesses
 only. The rest of this document records the target architecture and pending
@@ -193,8 +194,9 @@ archives through static hosting or release assets; Pearl consumes that format
 without requiring Git, a hosting-provider account or provider-specific APIs.
 Keep repository URLs configurable so additional community sources can be added
 without rebuilding Pearl. Ship a maintained default community source once its
-hosting and maintainers are established; its actual URL is a release setup task,
-not an invented endpoint or dependency on a particular hosting service.
+hosting and maintainers are established. The selected GitHub project is
+`Seafoam-Labs/pearl-community-themes`; see the completion plan for its proposed
+index URL and launch checks. The consumer contract remains host-independent.
 
 Each repository has a stable ID and display name. Each indexed release provides
 package ID, version, author, license, project/source link, description, declared
@@ -206,8 +208,9 @@ Verify index metadata against the downloaded manifest before installation.
 
 The browser separates **Installed** and **Community** views with search, source,
 variant and capability filters. Paginate the remote catalog independently of
-the installed-package limit: at most 256 entries and 1 MiB per index page, with
-bounded pagination/download work and cancellation. Newly published compatible
+the installed-package limit: the implemented bounds are 16 releases and 96,000
+normalized JSON bytes per page, with a 1 MiB download ceiling and bounded
+pagination/download work and cancellation. Newly published compatible
 entries appear after Refresh without updating Pearl. Show unsupported packages
 with their required capabilities and explain compatibility before download.
 Repository metadata and screenshots are data, not executable HTML or scripts.

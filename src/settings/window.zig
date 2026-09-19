@@ -1073,6 +1073,14 @@ pub const Window = struct {
             for ([_][]const @import("themes_view.zig").Control{ view.themes.controls.items, view.themes.row_controls.items }) |bindings| for (bindings) |binding| {
                 try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget else false, .enabled = binding.widget.isSensitive() != 0, .bounds = self.bounds(binding.widget) });
             };
+            for ([_]*gtk.Widget{ view.profiles.enabled.as(gtk.Widget), view.profiles.source.as(gtk.Widget), view.profiles.seed.as(gtk.Widget) }, [_][]const u8{ "applications.enabled", "applications.source", "applications.seed" }) |widget, name| {
+                try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            }
+            for (std.enums.values(@import("../theme/matugen_profiles.zig").Application), 0..) |application, i| {
+                for ([_]*gtk.Widget{ view.profiles.modes[i].as(gtk.Widget), view.profiles.pickers[i].as(gtk.Widget) }, [_][]const u8{ "mode", "profile" }) |widget, name| {
+                    try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "applications.{s}.{s}", .{ @tagName(application), name }), .focused = if (focus) |f| f == widget else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+                }
+            }
             for ([_]*gtk.Widget{ view.qt_enabled.as(gtk.Widget), view.qt_retry.as(gtk.Widget), view.qt_review.as(gtk.Widget), view.qt_reapply.as(gtk.Widget), view.qt_kde.as(gtk.Widget) }, [_][]const u8{ "qt_enabled", "qt_retry", "qt_review", "qt_reapply", "qt_kde" }) |widget, name|
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .bounds = self.bounds(widget) });
         }

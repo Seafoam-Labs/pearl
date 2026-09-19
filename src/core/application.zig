@@ -328,7 +328,7 @@ fn settingsAppearance(context: *anyopaque) @import("../settings/appearance.zig")
     const self: *State = @ptrCast(@alignCast(context));
     const service = &self.surfaces.?.preferences;
     const p = service.prefs();
-    return .{ .revision = service.appearance, .mode = p.theme.mode, .variant = p.theme.variant, .gtk_name = p.theme.gtk_name, .font = p.font, .font_size = p.font_size, .density = p.density, .reduced_motion = p.reduced_motion, .palette = if (service.live) |job| job.palette else @import("../theme/theme.zig").dark, .style_tokens = if (service.live) |job| job.custom.tokens else .{}, .style_css = if (service.live) |job| job.custom.css else "" };
+    return .{ .revision = service.appearance, .mode = p.theme.mode, .variant = p.theme.variant, .gtk_name = p.theme.gtk_name, .font = p.font, .font_size = p.font_size, .density = p.density, .reduced_motion = p.reduced_motion, .palette = if (service.live) |job| job.palette else @import("../theme/theme.zig").dark, .style_tokens = if (service.live) |job| job.custom.tokens else .{}, .style_css = if (service.live) |job| job.custom.css else "", .images = if (service.live) |job| job.custom.images else &.{} };
 }
 fn sessionFailed(self: *State, err: anyerror) void {
     self.failed = true;

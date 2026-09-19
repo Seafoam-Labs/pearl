@@ -52,6 +52,11 @@ pub fn remaining(a: std.mem.Allocator, path: [:0]const u8) ![]const File {
     var total: usize = 0;
     var entries: usize = 0;
     try scan(a, fd, "", &files, &total, &entries, 0);
+    std.mem.sort(File, files.items, {}, struct {
+        fn less(_: void, x: File, y: File) bool {
+            return std.mem.lessThan(u8, x.path, y.path);
+        }
+    }.less);
     return files.items;
 }
 pub const Package = struct {
@@ -62,6 +67,9 @@ pub const Package = struct {
     light: ?@import("theme.zig").Palette = null,
     tokens: styles.Tokens = .{},
     css: []const u8 = "",
+    images: []const @import("assets.zig").Image = &.{},
+    blobs: []const @import("assets.zig").Blob = &.{},
+    profiles: []const @import("matugen_profiles.zig").Descriptor = &.{},
     pub fn asset(self: Package, path: []const u8) ![]const u8 {
         try model.relative(path);
         for (self.files) |file| if (std.mem.eql(u8, file.path, path)) return file.bytes;
@@ -97,10 +105,42 @@ pub fn load(a: std.mem.Allocator, path: [:0]const u8) !Package {
     try result.manifest.validate();
     if (result.manifest.palettes.dark) |p| result.dark = try model.palette(a, try result.asset(p));
     if (result.manifest.palettes.light) |p| result.light = try model.palette(a, try result.asset(p));
+    const assets = @import("assets.zig");
+    var images: std.ArrayList(assets.Image) = .empty;
+    var blobs: std.ArrayList(assets.Blob) = .empty;
+    for (result.manifest.images) |declaration| {
+        const image = try assets.validate(a, declaration.id, try result.asset(declaration.path));
+        try images.append(a, image.image);
+        try blobs.append(a, image.blob);
+        try assets.bounds(images.items);
+    }
+    result.images = images.items;
+    result.blobs = blobs.items;
+    const profiles = @import("matugen_profiles.zig");
+    var descriptors: std.ArrayList(profiles.Descriptor) = .empty;
+    for (result.manifest.profiles) |path_| {
+        const descriptor = try model.parse(profiles.Descriptor, a, try result.asset(path_), 16384);
+        try descriptor.validate();
+        for (descriptors.items) |old| if (std.mem.eql(u8, old.id, descriptor.id)) return error.DuplicateThemeProfile;
+        for (descriptor.templates) |template| try profiles.template(try result.asset(template.path));
+        try descriptors.append(a, descriptor);
+    }
+    result.profiles = descriptors.items;
+    for (result.manifest.defaults) |assignment| {
+        var found = false;
+        for (result.profiles) |profile| if (std.mem.eql(u8, profile.id, assignment.profile) and std.mem.eql(u8, @tagName(profile.application), assignment.application)) {
+            found = true;
+        };
+        if (!found) return error.ThemeDefaultProfileMissing;
+    }
+    if (result.manifest.render_data) |data| {
+        if (data.dark) |p| try @import("render_data.zig").validate(a, try result.asset(p), "dark", result.dark.?);
+        if (data.light) |p| try @import("render_data.zig").validate(a, try result.asset(p), "light", result.light.?);
+    }
     if (result.manifest.style) |style| {
         if (style.tokens) |p| result.tokens = try model.parse(styles.Tokens, a, try result.asset(p), 65536);
         try result.tokens.validate();
-        if (style.css) |p| result.css = try styles.compileFiles(a, result.files, p);
+        if (style.css) |p| result.css = try styles.compileFilesWithImages(a, result.files, p, result.images);
     }
     return result;
 }

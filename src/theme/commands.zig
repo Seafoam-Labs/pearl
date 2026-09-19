@@ -7,7 +7,7 @@ const install = @import("install.zig");
 const io = @import("../config/io.zig");
 extern fn mkdtemp([*:0]u8) ?[*:0]u8;
 pub const Request = struct {
-    action: enum { catalog, validate, validate_index, pack, preview, preview_render, source_add, source_remove, refresh, install, import_archive, remove, rollback },
+    action: enum { catalog, profiles_catalog, application_review, application_install, application_retry, validate, verify_profiles, validate_index, pack, publish_build, preview, preview_render, source_add, source_remove, source_default, refresh, install, import_archive, remove, rollback },
     id: []const u8 = "",
     name: []const u8 = "",
     url: []const u8 = "",
@@ -33,8 +33,35 @@ pub const Entry = struct {
     error_code: ?[]const u8 = null,
 };
 pub fn run(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress) ![]const u8 {
+    return runWithAssets(a, request, cancel, report, null);
+}
+pub fn runWithAssets(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress, blobs: ?*[]const @import("assets.zig").Blob) ![]const u8 {
     if (cancel.isCancelled() != 0) return error.Cancelled;
     switch (request.action) {
+        .application_review, .application_install, .application_retry => {
+            const glib = @import("glib2");
+            const config = std.mem.span(glib.getUserConfigDir());
+            const root = try std.fmt.allocPrint(a, "{s}/pearl", .{config});
+            const snapshot = try @import("application_profiles.zig").load(a, root, request.sha256);
+            if (request.action == .application_review) return std.json.Stringify.valueAlloc(a, .{ .application_review = try @import("application_profiles.zig").reviewStarship(a, config, snapshot, cancel) }, .{});
+            if (request.action == .application_install) {
+                try @import("application_profiles.zig").installStarship(a, config, snapshot, request.id, cancel);
+                return "{\"application_action\":true}";
+            }
+            return std.json.Stringify.valueAlloc(a, .{ .application_status = try @import("application_profiles.zig").reconcile(a, config, true, snapshot, cancel) }, .{});
+        },
+        .profiles_catalog => {
+            const choices = try @import("theme_provider.zig").catalog(a, try @import("catalog.zig").scan(a));
+            if (request.revision.len > 0 and !std.mem.eql(u8, request.revision, &choices.revision)) return error.ProfileCatalogChanged;
+            if (request.offset > choices.entries.len) return error.InvalidCatalogOffset;
+            const end = @min(choices.entries.len, @as(usize, request.offset) + 16);
+            const Brief = struct { descriptor: struct { id: []const u8, name: []const u8, application: @import("matugen_profiles.zig").Application }, origin: []const u8 };
+            const brief = try a.alloc(Brief, end - request.offset);
+            for (choices.entries[request.offset..end], brief) |entry, *out| out.* = .{ .descriptor = .{ .id = entry.descriptor.id, .name = entry.descriptor.name, .application = entry.descriptor.application }, .origin = entry.origin };
+            return std.json.Stringify.valueAlloc(a, .{ .profile_catalog = true, .revision = choices.revision[0..], .entries = brief, .next_offset = if (end < choices.entries.len) @as(?usize, end) else null }, .{});
+        },
+        .publish_build => return @import("publishing.zig").build(a, try a.dupeZ(u8, request.path), try a.dupeZ(u8, request.output), cancel),
+        .verify_profiles => return @import("application_profiles.zig").verifyPackage(a, try a.dupeZ(u8, request.path), request.output, cancel),
         .validate => {
             const package = try @import("package.zig").load(a, try a.dupeZ(u8, request.path));
             return std.json.Stringify.valueAlloc(a, package.manifest, .{});
@@ -97,6 +124,7 @@ pub fn run(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, rep
                     resolved.palette = try @import("generator.zig").palette(a, preferences, image, temporary, cancel, &hit);
                 } else resolved.palette = if (theme.variant == .dark) @import("theme.zig").dark else @import("theme.zig").light;
             }
+            if (blobs) |sink| sink.* = resolved.blobs;
             return std.json.Stringify.valueAlloc(a, resolved, .{});
         },
         else => {},
@@ -104,6 +132,17 @@ pub fn run(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, rep
     var store = try install.Store.init(a);
     defer store.deinit();
     switch (request.action) {
+        .source_default => {
+            if (!repository.default_enabled) return error.DefaultRepositoryNotLaunched;
+            const old = try repository.sources(a);
+            for (old.sources) |source| if (std.mem.eql(u8, source.id, repository.default_source.id) or std.mem.eql(u8, source.url, repository.default_source.url)) return error.ThemeRepositoryAlreadyConfigured;
+            const next = try a.alloc(repository.Source, old.sources.len + 1);
+            @memcpy(next[0..old.sources.len], old.sources);
+            next[old.sources.len] = repository.default_source;
+            const result: repository.Sources = .{ .sources = next };
+            try repository.saveSources(a, result);
+            return std.json.Stringify.valueAlloc(a, result, .{});
+        },
         .source_add, .source_remove => {
             try model.identifier(request.id);
             const old = try repository.sources(a);
@@ -140,7 +179,7 @@ pub fn run(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, rep
                 found = r;
             };
             const release = found orelse return error.ThemeReleaseChanged;
-            if ((release.requires.palette_api != null and release.requires.palette_api != 1) or (release.requires.style_api != null and release.requires.style_api != 1)) return error.UnsupportedThemeApi;
+            if (!release.requires.supported()) return error.UnsupportedThemeApi;
             if (report) |p| p.set(.downloading);
             const bytes = try repository.download(a, release.url, model.max_bytes, cancel, report);
             if (bytes.len != release.size or !std.mem.eql(u8, &model.hash(bytes), release.sha256)) return error.ThemeDownloadDigestMismatch;

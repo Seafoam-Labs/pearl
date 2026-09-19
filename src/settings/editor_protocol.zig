@@ -57,6 +57,9 @@ pub fn hash(value: []const u8) ![64]u8 {
 /// remains available while the user visits another category.
 pub const Snapshot = struct {
     revision: []const u8,
+    theme_catalog_generation: []const u8 = "0",
+    theme_discovery_degraded: bool = false,
+    applications: @import("../theme/matugen_profiles.zig").Status = .{},
     draft_revision: []const u8,
     base_revision: []const u8,
     dirty: bool,

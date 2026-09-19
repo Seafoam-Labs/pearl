@@ -1,0 +1,364 @@
+/* ============================================================================
+ * Fluxer - matugen Material You theme  (vibrant + safeguarded)
+ * ----------------------------------------------------------------------------
+ * Verified against fluxerapp/fluxer @ fa3e852 (2026-06-16),
+ * fluxer_app/src/features/theme/variables/ThemeVariableManifest.ts
+ * Rendered + validated against matugen 4.1.0.
+ *
+ * PHILOSOPHY
+ *   This theme is meant to LOOK like your wallpaper. Surfaces, text and chrome
+ *   use matugen's own tonal roles (surface_container_*, on_surface, outline...),
+ *   which are already tinted toward the palette AND carry a guaranteed tonal
+ *   ladder. A vibrant palette therefore yields vibrant-tinted panels - we do
+ *   NOT flatten them to gray anymore.
+ *
+ *   Only colors that TELL THE USER SOMETHING keep their identifying hue
+ *   (presence dots, mentions, alerts, terminal colors). Those are pinned to a
+ *   canonical hue and merely tinted toward the accent.
+ *
+ * SAFEGUARDS (why the palette can't render itself unusable)
+ *   1. Every text/icon color is paired with the matugen on_* role that Material
+ *      You GUARANTEES to contrast with its background (on_surface vs surface,
+ *      on_primary vs primary, etc.). Legibility survives any wallpaper.
+ *   2. Surfaces use the tonal ladder verbatim (L 6% -> 21%), so panel-to-panel
+ *      depth is always present regardless of hue/chroma.
+ *   3. --mtg-surface-floor forces a minimum lightness gap for the base canvas
+ *      so text never sits on a near-white surface in a pathological palette.
+ *   4. Translucent overlays use on_surface (not raw white), so hover/active
+ *      states stay visible on any surface tint.
+ *   5. Raise the global accessibility floor at generation time with:
+ *         matugen image WALL --contrast 0.4   (range -1..1, higher = safer)
+ *
+ * KNOBS (edit these in Quick CSS or here)
+ *   --mtg-tint     : how far semantic colors pull toward the accent (0%..100%)
+ *   --mtg-status-tint : same but for presence dots (kept low; meaning matters)
+ *   --saturation-factor : Fluxer's own global chroma multiplier (1 = stock)
+ *
+ * NOTE FOR EDITORS: do NOT write double-brace tags inside comments - matugen
+ * parses the whole file for them and will refuse to render. (That is what was
+ * breaking earlier revisions.)
+ * ============================================================================ */
+
+:root {
+  --mtg-tint: 30%;
+  --mtg-status-tint: 5%;
+  --saturation-factor: 1;
+
+  /* ====================== TRANSLUCENCY KNOBS =========================== */
+  /* Masters set a whole tier; lower = more wallpaper. Fine knobs below       */
+  /* override a single region - leave them commented to inherit their master. */
+  /* Content surfaces carry text, so their master defaults higher; drop those */
+  /* only if you want see-through text panels. ANSI/terminal stays solid by   */
+  /* design. Requires Fluxer window transparency, otherwise this blends       */
+  /* against the app's own backdrop instead of the desktop.                   */
+  --mtg-surface-alpha: 100%; /* deep surfaces: chat canvas, channel/DM list   */
+  --mtg-panel-alpha:   100%; /* raised chrome: server bar, headers, tertiary  */
+  --mtg-content-alpha: 100%; /* text panels: message box, code, tables, quotes*/
+
+  /* Fine overrides - uncomment any to override its master --------------- */
+  /*--mtg-chat-alpha:       0%;  /* main message area                       */
+  /*--mtg-channels-alpha:   20%;  /* channel / DM list column                */
+  /*--mtg-containers-alpha: 0%;  /* cards, member list, nested panels       */
+  /*--mtg-guilds-alpha:     0%;  /* server / guild bar + tertiary           */
+  /*--mtg-headers-alpha:    0%;  /* channel + window header bars            */
+  /*--mtg-input-alpha:      0%;  /* message compose box                     */
+  /*--mtg-code-alpha:       0%;  /* code blocks + inline code               */
+  /*--mtg-table-alpha:      0%;  /* markdown tables                         */
+  /*--mtg-popout-alpha:     40%;  /* popovers, blockquotes, control panels   */
+
+  /* ============================ SURFACES ================================ */
+  /* matugen tonal ladder - already palette-tinted, guaranteed contrast steps  */
+  /* Each surface reads a fine knob and falls back to its tier master if the    */
+  /* fine knob is left commented. Set any knob to 100% to make it fully opaque.  */
+  --background-primary:           color-mix(in srgb, {{ colors.surface.default.hex }} var(--mtg-chat-alpha, var(--mtg-surface-alpha)), transparent);
+  --bg-primary:                   color-mix(in srgb, {{ colors.surface.default.hex }} var(--mtg-chat-alpha, var(--mtg-surface-alpha)), transparent);
+  --background-secondary:         color-mix(in srgb, {{ colors.surface_container_low.default.hex }} var(--mtg-channels-alpha, var(--mtg-surface-alpha)), transparent);
+  --bg-secondary:                 color-mix(in srgb, {{ colors.surface_container_low.default.hex }} var(--mtg-channels-alpha, var(--mtg-surface-alpha)), transparent);
+  --background-secondary-lighter: color-mix(in srgb, {{ colors.surface_container.default.hex }} var(--mtg-containers-alpha, var(--mtg-surface-alpha)), transparent);
+  --background-secondary-alt:     color-mix(in srgb, {{ colors.surface_container.default.hex }} var(--mtg-containers-alpha, var(--mtg-surface-alpha)), transparent);
+  --background-channel-header:    color-mix(in srgb, {{ colors.surface_container.default.hex }} var(--mtg-headers-alpha, var(--mtg-panel-alpha)), transparent);
+  --guild-list-foreground:        color-mix(in srgb, {{ colors.surface_container_high.default.hex }} var(--mtg-guilds-alpha, var(--mtg-panel-alpha)), transparent);
+  --background-tertiary:          color-mix(in srgb, {{ colors.surface_container_lowest.default.hex }} var(--mtg-guilds-alpha, var(--mtg-surface-alpha)), transparent);
+  --bg-tertiary:                  color-mix(in srgb, {{ colors.surface_container_lowest.default.hex }} var(--mtg-guilds-alpha, var(--mtg-surface-alpha)), transparent);
+  --background-header-primary:    color-mix(in srgb, {{ colors.surface_container_high.default.hex }} var(--mtg-headers-alpha, var(--mtg-panel-alpha)), transparent);
+  --background-header-secondary:  color-mix(in srgb, {{ colors.surface_container_high.default.hex }} var(--mtg-headers-alpha, var(--mtg-panel-alpha)), transparent);
+  --background-header-primary-hover: color-mix(in srgb, {{ colors.surface_container_highest.default.hex }} var(--mtg-headers-alpha, var(--mtg-panel-alpha)), transparent);
+  --bg-blockquote:    color-mix(in srgb, {{ colors.surface_container.default.hex }} var(--mtg-popout-alpha, var(--mtg-content-alpha)), transparent);
+  --panel-control-bg: color-mix(in srgb, {{ colors.surface_container.default.hex }} var(--mtg-popout-alpha, var(--mtg-content-alpha)), transparent);
+  --layout-gap: 6px;
+
+  /* translucent overlays keyed off on_surface so they show on any tint */
+  --background-modifier-hover:    color-mix(in srgb, {{ colors.on_surface.default.hex }} 6%, transparent);
+  --background-modifier-selected: color-mix(in srgb, {{ colors.on_surface.default.hex }} 11%, transparent);
+  --background-modifier-accent:   color-mix(in srgb, {{ colors.primary.default.hex }} 15%, transparent);
+  --bg-hover:  color-mix(in srgb, {{ colors.on_surface.default.hex }} 6%, transparent);
+  --bg-active: color-mix(in srgb, {{ colors.on_surface.default.hex }} 11%, transparent);
+  --surface-interactive-hover-bg:    color-mix(in srgb, {{ colors.primary.default.hex }} 6%, transparent);
+  --surface-interactive-selected-bg: color-mix(in srgb, {{ colors.primary.default.hex }} 25%, transparent);
+  --surface-interactive-selected-color: {{ colors.on_surface.default.hex }};
+
+  /* ============================== TEXT ================================== */
+  /* on_surface is GUARANTEED to contrast with the surfaces above            */
+  --text-primary:        {{ colors.on_surface.default.hex }};
+  --text-secondary:      {{ colors.on_surface.default.hex }};
+  --text-chat:           {{ colors.on_surface.default.hex }};
+  --text-primary-muted:  {{ colors.on_surface_variant.default.hex }};
+  --text-chat-muted:     {{ colors.on_surface_variant.default.hex }};
+  --text-tertiary:       {{ colors.on_surface_variant.default.hex }};
+  --text-tertiary-muted: {{ colors.outline.default.hex }};
+  --text-tertiary-secondary: {{ colors.outline.default.hex }};
+  --text-on-brand-primary: {{ colors.on_primary.default.hex }};
+  --text-link:           {{ colors.primary.default.hex }};
+  --text-selection:      color-mix(in srgb, {{ colors.primary.default.hex }} 35%, transparent);
+  --message-timestamp-color: {{ colors.on_surface_variant.default.hex }};
+
+  /* ============================= BRAND ================================== */
+  /* full wallpaper color - this is where vibrancy lives                     */
+  --brand-primary:       {{ colors.primary.default.hex }};
+  --brand-secondary:     {{ colors.primary_container.default.hex }};
+  --brand-primary-light: {{ colors.primary.default.hex }};
+  --brand-primary-fill:  {{ colors.on_primary.default.hex }};
+  --accent-primary:      {{ colors.primary.default.hex }};
+  --accent-purple:       {{ colors.tertiary.default.hex }};
+  --plutonium:           {{ colors.primary.default.hex }};
+  --plutonium-hover:     {{ colors.primary_container.default.hex }};
+  --plutonium-text:      {{ colors.on_primary.default.hex }};
+  /* plutonium badge is a recognizable gold marker - keep it gold, light tint */
+  --plutonium-icon:      color-mix(in oklch, hsl(38 92% 50%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --interactive-active:  {{ colors.primary.default.hex }};
+  --interactive-muted:   {{ colors.on_surface_variant.default.hex }};
+  --invite-verified-icon-color: {{ colors.on_surface.default.hex }};
+
+  /* ===================== SEMANTIC ACCENTS (meaning kept) =============== */
+  /* canonical hue preserved, tinted toward accent by --mtg-tint            */
+  --accent-info:    color-mix(in oklch, hsl(198 92% 70%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --accent-success: color-mix(in oklch, hsl(152 72% 45%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --accent-warning: color-mix(in oklch, hsl(45 93% 55%)  calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --accent-danger:  color-mix(in oklch, hsl(0 84% 62%)   calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --text-warning:   color-mix(in oklch, hsl(45 93% 60%)  calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+
+  /* ===================== STATUS DOTS (low tint - critical info) ========= */
+  --status-online:  color-mix(in oklch, hsl(152 72% 42%) calc(100% - var(--mtg-status-tint)), {{ colors.primary.default.hex }} var(--mtg-status-tint));
+  --status-idle:    color-mix(in oklch, hsl(45 93% 52%)  calc(100% - var(--mtg-status-tint)), {{ colors.primary.default.hex }} var(--mtg-status-tint));
+  --status-dnd:     color-mix(in oklch, hsl(0 84% 60%)   calc(100% - var(--mtg-status-tint)), {{ colors.primary.default.hex }} var(--mtg-status-tint));
+  --status-danger:  color-mix(in oklch, hsl(1 77% 57%)   calc(100% - var(--mtg-status-tint)), {{ colors.primary.default.hex }} var(--mtg-status-tint));
+  --status-warning: color-mix(in oklch, hsl(45 93% 52%)  calc(100% - var(--mtg-status-tint)), {{ colors.primary.default.hex }} var(--mtg-status-tint));
+  --status-offline: {{ colors.outline.default.hex }};
+
+  /* ============================ ALERTS ================================= */
+  --alert-note-color:      color-mix(in oklch, hsl(198 92% 70%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --alert-tip-color:       color-mix(in oklch, hsl(152 72% 48%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --alert-important-color: color-mix(in oklch, hsl(278 85% 68%) calc(100% - var(--mtg-tint)), {{ colors.tertiary.default.hex }} var(--mtg-tint));
+  --alert-warning-color:   color-mix(in oklch, hsl(45 93% 58%)  calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --alert-caution-color:   color-mix(in oklch, hsl(359 75% 62%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+
+  /* ============================ MESSAGES =============================== */
+  --message-mention-color:    color-mix(in oklch, rgb(234 197 50) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --message-mention-bg:       color-mix(in srgb, {{ colors.primary.default.hex }} 10%, transparent);
+  --message-mention-bg-hover: color-mix(in srgb, {{ colors.primary.default.hex }} 15%, transparent);
+  --message-reply-color:      {{ colors.primary.default.hex }};
+  --message-reply-bg:         color-mix(in srgb, {{ colors.primary.default.hex }} 10%, transparent);
+  --message-unknown-warning-color: color-mix(in oklch, hsl(33 100% 60%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+
+  /* ============================= MARKUP ================================ */
+  --markup-everyone-text:   color-mix(in oklch, hsl(250 80% 78%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --markup-everyone-fill:   color-mix(in srgb, var(--markup-everyone-text) 18%, transparent);
+  --markup-everyone-border: color-mix(in srgb, var(--markup-everyone-text) 30%, transparent);
+  --markup-here-text:       color-mix(in oklch, hsl(45 90% 72%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --markup-here-fill:       color-mix(in srgb, var(--markup-here-text) 18%, transparent);
+  --markup-here-border:     color-mix(in srgb, var(--markup-here-text) 30%, transparent);
+  --markup-mention-text:    {{ colors.primary.default.hex }};
+  --markup-mention-fill:    color-mix(in srgb, {{ colors.primary.default.hex }} 20%, transparent);
+  --markup-mention-border:  color-mix(in srgb, {{ colors.primary.default.hex }} 30%, transparent);
+  --markup-interactive-hover-text: {{ colors.primary.default.hex }};
+  --markup-interactive-hover-fill: color-mix(in srgb, {{ colors.primary.default.hex }} 30%, transparent);
+  --markup-jump-link-text:  {{ colors.primary.default.hex }};
+  --markup-jump-link-fill:  color-mix(in srgb, {{ colors.primary.default.hex }} 12%, transparent);
+  --markup-jump-link-hover-fill: color-mix(in srgb, {{ colors.primary.default.hex }} 20%, transparent);
+  --markup-strikethrough-color: currentColor;
+
+  /* ============================= BUTTONS =============================== */
+  /* primary action button = green by stock design (send/confirm). Kept green */
+  /* but tinted; brand color lives in --brand-* above. Text uses guaranteed   */
+  /* white since fills stay saturated/dark enough.                            */
+  --button-primary-fill:        color-mix(in oklch, hsl(139 55% 44%) calc(100% - var(--mtg-status-tint)), {{ colors.primary.default.hex }} var(--mtg-status-tint));
+  --button-primary-active-fill: color-mix(in oklch, hsl(136 60% 38%) calc(100% - var(--mtg-status-tint)), {{ colors.primary.default.hex }} var(--mtg-status-tint));
+  --button-primary-text:        hsl(0 0% 100%);
+  --button-danger-fill:         color-mix(in oklch, hsl(359 70% 54%) calc(100% - var(--mtg-status-tint)), {{ colors.primary.default.hex }} var(--mtg-status-tint));
+  --button-danger-active-fill:  color-mix(in oklch, hsl(359 65% 46%) calc(100% - var(--mtg-status-tint)), {{ colors.primary.default.hex }} var(--mtg-status-tint));
+  --button-danger-text:         hsl(0 0% 100%);
+  --button-danger-outline-text: {{ colors.on_surface.default.hex }};
+  --button-danger-outline-active-fill:   color-mix(in oklch, hsl(359 65% 48%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --button-danger-outline-active-border: transparent;
+  --button-secondary-fill:        color-mix(in srgb, {{ colors.on_surface.default.hex }} 10%, transparent);
+  --button-secondary-active-fill: color-mix(in srgb, {{ colors.on_surface.default.hex }} 16%, transparent);
+  --button-secondary-text:        {{ colors.on_surface.default.hex }};
+  --button-secondary-active-text: {{ colors.on_surface.default.hex }};
+  --button-outline-text:          {{ colors.on_surface.default.hex }};
+  --button-outline-active-fill:   color-mix(in srgb, {{ colors.on_surface.default.hex }} 15%, transparent);
+  --button-ghost-text:            {{ colors.on_surface.default.hex }};
+  --button-inverted-fill:         {{ colors.on_surface.default.hex }};
+  --button-inverted-text:         {{ colors.surface.default.hex }};
+  --control-button-active-bg:   {{ colors.surface_container_highest.default.hex }};
+  --control-button-active-text: {{ colors.on_surface.default.hex }};
+  --control-button-hover-bg:    {{ colors.surface_container_high.default.hex }};
+  --control-button-hover-text:  {{ colors.on_surface.default.hex }};
+  --control-button-normal-bg:   transparent;
+  --control-button-normal-text: {{ colors.on_surface_variant.default.hex }};
+  --control-button-danger-text:     color-mix(in oklch, hsl(1 77% 62%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --control-button-danger-hover-bg: color-mix(in oklch, hsl(1 60% 25%) 60%, {{ colors.surface_container.default.hex }} 40%);
+
+  /* ========================= BORDERS / FOCUS =========================== */
+  --border-color:        color-mix(in srgb, {{ colors.outline.default.hex }} 45%, transparent);
+  --border-color-hover:  color-mix(in srgb, {{ colors.primary.default.hex }} 65%, transparent);
+  --border-color-focus:  color-mix(in srgb, {{ colors.primary.default.hex }} 60%, transparent);
+  --focus-primary:       {{ colors.primary.default.hex }};
+  --background-modifier-accent-focus: color-mix(in srgb, {{ colors.primary.default.hex }} 22%, transparent);
+  --panel-control-border:   color-mix(in srgb, {{ colors.outline.default.hex }} 55%, transparent);
+  --panel-control-divider:  color-mix(in srgb, {{ colors.outline_variant.default.hex }} 70%, transparent);
+  --panel-control-highlight:color-mix(in srgb, {{ colors.on_surface.default.hex }} 4%, transparent);
+  --user-area-divider-color:color-mix(in srgb, {{ colors.outline_variant.default.hex }} 40%, transparent);
+  --theme-border: color-mix(in srgb, {{ colors.outline.default.hex }} 45%, transparent);
+  --theme-border-width: 2px;
+
+  /* =========================== SCROLLBAR =============================== */
+  --scrollbar-thumb-bg:       color-mix(in srgb, {{ colors.outline.default.hex }} 50%, transparent);
+  --scrollbar-thumb-bg-hover: color-mix(in srgb, {{ colors.outline.default.hex }} 80%, transparent);
+  --scrollbar-track-bg:       transparent;
+
+  /* ============================= FORMS ================================= */
+  --background-textarea:     color-mix(in srgb, {{ colors.surface_container_high.default.hex }} var(--mtg-input-alpha, var(--mtg-content-alpha)), transparent);
+  --form-surface-background: color-mix(in srgb, {{ colors.surface_container.default.hex }} var(--mtg-input-alpha, var(--mtg-content-alpha)), transparent);
+
+  /* ============================= TABLES ================================ */
+  --bg-table-header:   color-mix(in srgb, {{ colors.surface_container_high.default.hex }} var(--mtg-table-alpha, var(--mtg-content-alpha)), transparent);
+  --bg-table-row-even: color-mix(in srgb, {{ colors.surface_container_low.default.hex }} var(--mtg-table-alpha, var(--mtg-content-alpha)), transparent);
+  --bg-table-row-odd:  color-mix(in srgb, {{ colors.surface_container_lowest.default.hex }} var(--mtg-table-alpha, var(--mtg-content-alpha)), transparent);
+
+  /* ========================= CODE BLOCKS / INLINE ====================== */
+  --bg-code:        color-mix(in srgb, {{ colors.surface_container.default.hex }} var(--mtg-code-alpha, var(--mtg-content-alpha)), transparent);
+  --bg-code-block:  color-mix(in srgb, {{ colors.surface_container_low.default.hex }} var(--mtg-code-alpha, var(--mtg-content-alpha)), transparent);
+  --code-block-bg:  color-mix(in srgb, {{ colors.surface_container_low.default.hex }} var(--mtg-code-alpha, var(--mtg-content-alpha)), transparent);
+  --code-inline-bg: color-mix(in srgb, {{ colors.surface_container.default.hex }} var(--mtg-code-alpha, var(--mtg-content-alpha)), transparent);
+  --code-block-border:    color-mix(in srgb, {{ colors.outline.default.hex }} 35%, transparent);
+  --code-block-highlight: color-mix(in srgb, {{ colors.on_surface.default.hex }} 10%, transparent);
+  --code-text:  {{ colors.on_surface.default.hex }};
+  --code-muted: {{ colors.on_surface_variant.default.hex }};
+  --text-code:  {{ colors.on_surface.default.hex }};
+
+  /* ===================== ANSI / TERMINAL (16 colors) =================== */
+  /* canonical hues kept (terminal colors are semantic), tinted by --mtg-tint */
+  --ansi-fg-black:   {{ colors.surface_container_highest.default.hex }};
+  --ansi-fg-red:     color-mix(in oklch, hsl(0 88% 62%)   calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-green:   color-mix(in oklch, hsl(99 50% 52%)  calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-yellow:  color-mix(in oklch, hsl(41 70% 67%)  calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-blue:    color-mix(in oklch, hsl(207 70% 60%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-magenta: color-mix(in oklch, hsl(305 50% 66%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-cyan:    color-mix(in oklch, hsl(168 60% 55%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-white:   {{ colors.on_surface_variant.default.hex }};
+  --ansi-fg-bright-black:   {{ colors.outline.default.hex }};
+  --ansi-fg-bright-red:     color-mix(in oklch, hsl(0 95% 68%)   calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-bright-green:   color-mix(in oklch, hsl(99 55% 58%)  calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-bright-yellow:  color-mix(in oklch, hsl(41 80% 72%)  calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-bright-blue:    color-mix(in oklch, hsl(207 80% 66%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-bright-magenta: color-mix(in oklch, hsl(305 60% 72%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-bright-cyan:    color-mix(in oklch, hsl(168 65% 60%) calc(100% - var(--mtg-tint)), {{ colors.primary.default.hex }} var(--mtg-tint));
+  --ansi-fg-bright-white:   {{ colors.on_surface.default.hex }};
+  --ansi-inverse-text: {{ colors.surface.default.hex }};
+  --ansi-inverse-bg:   {{ colors.on_surface.default.hex }};
+  --ansi-bg-black:         color-mix(in srgb, {{ colors.surface_container_highest.default.hex }} 88%, {{ colors.surface_container_low.default.hex }} 12%);
+  --ansi-bg-red:           color-mix(in srgb, var(--ansi-fg-red) 88%, {{ colors.surface_container_low.default.hex }} 12%);
+  --ansi-bg-green:         color-mix(in srgb, var(--ansi-fg-green) 88%, {{ colors.surface_container_low.default.hex }} 12%);
+  --ansi-bg-yellow:        color-mix(in srgb, var(--ansi-fg-yellow) 88%, {{ colors.surface_container_low.default.hex }} 12%);
+  --ansi-bg-blue:          color-mix(in srgb, var(--ansi-fg-blue) 88%, {{ colors.surface_container_low.default.hex }} 12%);
+  --ansi-bg-magenta:       color-mix(in srgb, var(--ansi-fg-magenta) 88%, {{ colors.surface_container_low.default.hex }} 12%);
+  --ansi-bg-cyan:          color-mix(in srgb, var(--ansi-fg-cyan) 88%, {{ colors.surface_container_low.default.hex }} 12%);
+  --ansi-bg-white:         color-mix(in srgb, {{ colors.on_surface_variant.default.hex }} 88%, {{ colors.surface_container_low.default.hex }} 12%);
+  --ansi-bg-bright-black:  color-mix(in srgb, {{ colors.outline.default.hex }} 88%, {{ colors.surface_container_low.default.hex }} 12%);
+  --ansi-bg-bright-red:    color-mix(in srgb, var(--ansi-fg-bright-red) 92%, {{ colors.surface_container_low.default.hex }} 8%);
+  --ansi-bg-bright-green:  color-mix(in srgb, var(--ansi-fg-bright-green) 92%, {{ colors.surface_container_low.default.hex }} 8%);
+  --ansi-bg-bright-yellow: color-mix(in srgb, var(--ansi-fg-bright-yellow) 92%, {{ colors.surface_container_low.default.hex }} 8%);
+  --ansi-bg-bright-blue:   color-mix(in srgb, var(--ansi-fg-bright-blue) 92%, {{ colors.surface_container_low.default.hex }} 8%);
+  --ansi-bg-bright-magenta:color-mix(in srgb, var(--ansi-fg-bright-magenta) 92%, {{ colors.surface_container_low.default.hex }} 8%);
+  --ansi-bg-bright-cyan:   color-mix(in srgb, var(--ansi-fg-bright-cyan) 92%, {{ colors.surface_container_low.default.hex }} 8%);
+  --ansi-bg-bright-white:  color-mix(in srgb, {{ colors.on_surface.default.hex }} 92%, {{ colors.surface_container_low.default.hex }} 8%);
+
+  /* =========================== SPOILERS ================================ */
+  --spoiler-overlay-color:       color-mix(in srgb, {{ colors.surface_container_lowest.default.hex }} 80%, transparent);
+  --spoiler-overlay-hover-color: color-mix(in srgb, {{ colors.surface_container_lowest.default.hex }} 90%, transparent);
+}
+
+/* ==========================================================================
+ * PANEL LAYOUT
+ * Model: the chat pane is the FRAME, not a panel. The channel list, the
+ * message list and the composer are three panels sitting on that frame.
+ * ========================================================================== */
+
+/* --- frame seams: 6px frame around the whole layout grid ----------------- */
+[class*='guildLayoutContent_'] {
+  column-gap: 6px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-right: 6px;
+  background: var(--background-tertiary);   /* the seam colour, everywhere */
+}
+
+/* the chat pane: rounded container the message + composer panels sit in */
+[class*='guildMainContent'] {
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-xl);   /* matches the panels inside */
+  box-sizing: border-box;
+  background: transparent !important;   /* keep - seams stay uniform #1d2021 */
+  transition: border-color 0.2s ease;
+}
+
+[class*='guildMainContent']:hover {
+  border-color: var(--border-color-hover);
+}
+
+/* the chat column's own wrappers must not repaint over that frame */
+[class*='channelLayoutContainer'],
+[class*='ChannelChatLayout'][class*='container'] {
+  background: transparent !important;
+}
+
+/* --- panel 1: channel / DM list ------------------------------------------ */
+[class*='guildNavbarContainer'] {
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+  /* keep clear of the user area so the bottom border stays visible */
+  height: calc(100% - var(--layout-user-area-height) - 6px);
+}
+
+/* --- panel 2: message list ----------------------------------------------- */
+[class*='ChannelChatLayout'][class*='messages'] {
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-sizing: border-box;
+  margin: 6px 6px 0;
+  background: var(--background-primary);
+  transition: border-color 0.2s ease;
+}
+
+/* --- panel 3: message composer ------------------------------------------- */
+/* border the box itself so the ring hugs it - no wrapper, no margin overflow */
+[class*='textareaOuterRow'] {
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-sizing: border-box;
+  margin: 6px 6px 6px;
+  transition: border-color 0.2s ease;
+}
+
+[class*='textareaOuterRow']:hover {
+  border-color: var(--border-color-hover);
+}
+
+/* --- shared hover -------------------------------------------------------- */
+[class*='guildNavbarContainer']:hover,
+[class*='ChannelChatLayout'][class*='messages']:hover,
+[class*='ChannelChatLayout'][class*='textarea']:hover {
+  border-color: var(--border-color-hover);
+}

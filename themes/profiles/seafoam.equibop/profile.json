@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "seafoam.equibop",
+  "application": "equibop",
+  "adapter": "equibop",
+  "name": "Seafoam · equibop",
+  "author": "Seafoam Labs and attributed upstream contributors",
+  "license": "GPL-3.0-only AND MIT",
+  "source": "https://github.com/Seafoam-Labs/aqueous-dotfiles/tree/76772cb9d009f971193b6fb2dbb56854055225d5",
+  "asset_version": "1.0.0",
+  "variants": [
+    "dark"
+  ],
+  "templates": [
+    {
+      "path": "template.css",
+      "output": "theme.css"
+    }
+  ],
+  "instructions": "Enable the Seafoam Midnight (Pearl) theme in Equibop; use dark mode."
+}

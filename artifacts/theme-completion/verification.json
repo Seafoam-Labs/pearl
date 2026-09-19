@@ -1,0 +1,31 @@
+{
+  "status": "local-implementation-verified-hosting-and-release-gates-open",
+  "production_build": "passed",
+  "default_source_enabled": false,
+  "passed": [
+    "test",
+    "test-theme-assets",
+    "test-matugen",
+    "test-theme-discovery",
+    "test-theme-packages",
+    "test-theme-publishing",
+    "test-theme-repository",
+    "test-theme-completion",
+    "test-custom-themes",
+    "test-preferences",
+    "test-settings-appearance",
+    "test-settings-boundary",
+    "test-border-theme",
+    "test-components",
+    "test-lock",
+    "test-release-tools",
+    "test-release",
+    "test-qt-theme (private QtEngine)",
+    "test-qt-session (private QtEngine)"
+  ],
+  "open": [
+    "test-settings-presentation: existing Aqueous assertion on output removal",
+    "GitHub maintainers, repository/settings, pinned CI binaries, publication and real HTTPS acceptance",
+    "Full manual/adversarial acceptance matrix"
+  ]
+}

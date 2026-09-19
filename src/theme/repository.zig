@@ -15,6 +15,8 @@ fn initializeCurl() callconv(.c) void {
 }
 pub const Source = struct { id: []const u8, name: []const u8, url: []const u8 };
 pub const Sources = struct { schema_version: u32 = 1, sources: []const Source = &.{} };
+pub const default_enabled = if (@hasDecl(@import("build_options"), "community_theme_repository")) @import("build_options").community_theme_repository else false;
+pub const default_source: Source = .{ .id = "seafoam-community", .name = "Pearl community themes", .url = "https://raw.githubusercontent.com/Seafoam-Labs/pearl-community-themes/main/index.json" };
 pub const Release = struct {
     id: []const u8,
     name: []const u8,
@@ -40,7 +42,7 @@ pub fn url(value: []const u8) !void {
 pub fn sources(a: std.mem.Allocator) !Sources {
     const path = try sourcePath(a);
     const file = try io.read(a, path, 65536, null);
-    if (file.missing) return .{};
+    if (file.missing) return .{ .sources = if (default_enabled) &.{default_source} else &.{} };
     const result = try model.parse(Sources, a, file.bytes, 65536);
     try validateSources(result);
     return result;
@@ -65,12 +67,14 @@ pub fn saveSources(a: std.mem.Allocator, value: Sources) !void {
 }
 pub fn parseIndex(a: std.mem.Allocator, bytes: []const u8, source: Source) !Index {
     const value = try model.parse(Index, a, bytes, 1048576);
-    if (value.schema_version != 1 or !std.mem.eql(u8, value.repository_id, source.id)) return error.RepositoryIdentityMismatch;
+    if (value.schema_version != 1 and value.schema_version != 2) return error.UnsupportedRepositorySchema;
+    if (!std.mem.eql(u8, value.repository_id, source.id)) return error.RepositoryIdentityMismatch;
     // Worst-case metadata must fit in one bounded Settings response. Repositories
     // publish additional pages through `next`, rather than silently truncating.
     if (value.releases.len > 16) return error.RepositoryPageLimit;
     if (value.next) |next| try url(next);
     for (value.releases, 0..) |release, i| {
+        if (value.schema_version == 1 and (release.requires.style_api == 2 or release.requires.profile_api != null or release.requires.render_data_api != null)) return error.UnsupportedRepositorySchema;
         try model.identifier(release.id);
         if (std.mem.startsWith(u8, release.id, "pearl.")) return error.ReservedThemeId;
         _ = try model.version(release.version);

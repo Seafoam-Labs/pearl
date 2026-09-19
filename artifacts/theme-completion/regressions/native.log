@@ -1,0 +1,2 @@
+PASS native palette/style validation, discovery, installation, rollback, ownership and hostile archives
+PASS: schema-2 assets, deterministic multipage publication, archive hashes and source migration

@@ -15,6 +15,7 @@ pub const Snapshot = struct {
     palette: theme.Palette = theme.dark,
     style_tokens: @import("../theme/style.zig").Tokens = .{},
     style_css: []const u8 = "",
+    images: []const @import("../theme/asset_model.zig").Image = &.{},
     pub fn jsonStringify(self: Snapshot, writer: *std.json.Stringify) !void {
         try writer.beginObject();
         inline for (@typeInfo(Snapshot).@"struct".fields) |field| {
@@ -29,7 +30,7 @@ pub const Snapshot = struct {
     pub fn read(alloc: std.mem.Allocator, value: std.json.Value) !Snapshot {
         var result: Snapshot = .{};
         inline for (@typeInfo(Snapshot).@"struct".fields) |field| {
-            if (comptime std.mem.eql(u8, field.name, "style_tokens") or std.mem.eql(u8, field.name, "style_css")) {
+            if (comptime std.mem.eql(u8, field.name, "style_tokens") or std.mem.eql(u8, field.name, "style_css") or std.mem.eql(u8, field.name, "images")) {
                 if (value.object.get(field.name)) |v| @field(result, field.name) = try e.read(field.type, alloc, v);
             } else if (comptime std.mem.eql(u8, field.name, "revision")) {
                 const v = try e.field(value, field.name);

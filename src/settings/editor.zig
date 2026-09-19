@@ -35,12 +35,22 @@ pub const Editor = struct {
     qt_review_text: Text(16385) = .{},
     qt_review_digest: Text(65) = .{},
     theme_result: ?[]u8 = null,
+    profile_result: ?[]u8 = null,
+    profile_serial: u64 = 0,
+    application_command: bool = false,
+    application_review: ?[]u8 = null,
+    theme_catalog_generation: u64 = 0,
+    theme_discovery_degraded: bool = false,
+    application_summary: Text(16384) = .{},
     theme_busy: bool = false,
     theme_serial: u64 = 0,
     theme_poll: c_uint = 0,
     theme_poll_ready: bool = false,
     theme_error: Text(128) = .{},
     theme_progress: Text(128) = .{},
+    preview_transfer: ?@import("asset_transfer.zig").Transfer = null,
+    preview_provider: @import("../theme/assets.zig").Provider = .{},
+    preview_pending: ?[]u8 = null,
     online: bool = false,
     ready: bool = false,
     recovery: bool = false,
@@ -86,8 +96,7 @@ pub const Editor = struct {
     flushing: bool = false,
 
     pub fn deinit(self: *Editor) void {
-        if (self.theme_poll != 0) _ = glib.Source.remove(self.theme_poll);
-        self.clear(&self.theme_result);
+        self.resetThemeJob();
         self.cancelTimers();
         self.clearLiveCommand();
         if (self.idle != 0) _ = glib.Source.remove(self.idle);
@@ -119,12 +128,25 @@ pub const Editor = struct {
         defer a.free(text_);
         self.live_command = .{ .op = .@"theme.start", .payload = try std.json.Stringify.valueAlloc(a, .{ .request = text_ }, .{}) };
         self.theme_busy = true;
+        self.application_command = switch (request.action) {
+            .profiles_catalog, .application_review, .application_install, .application_retry => true,
+            else => false,
+        };
         self.theme_error.set("");
-        self.clear(&self.theme_result);
+        if (!self.application_command) self.clear(&self.theme_result);
         self.wake();
     }
     pub fn cancelTheme(self: *Editor) void {
         if (!self.online or self.live_command != null) return;
+        if (self.preview_transfer) |*transfer| {
+            transfer.deinit();
+            self.preview_transfer = null;
+            self.clear(&self.preview_pending);
+            self.theme_busy = false;
+            self.theme_error.set("Cancelled");
+            self.wake();
+            return;
+        }
         self.live_command = .{ .op = .@"theme.cancel", .payload = std.json.Stringify.valueAlloc(a, .{ .serial = p.num(self.theme_serial) }, .{}) catch return };
         self.wake();
     }
@@ -233,6 +255,12 @@ pub const Editor = struct {
         self.changed();
     }
     fn resetThemeJob(self: *Editor) void {
+        self.clear(&self.profile_result);
+        self.clear(&self.application_review);
+        if (self.preview_transfer) |*transfer| transfer.deinit();
+        self.preview_transfer = null;
+        self.clear(&self.preview_pending);
+        self.preview_provider.deinit();
         if (self.theme_poll != 0) _ = glib.Source.remove(self.theme_poll);
         self.theme_poll = 0;
         self.theme_poll_ready = false;
@@ -388,6 +416,10 @@ pub const Editor = struct {
     }
     fn pump(self: *Editor) !void {
         if (!self.online or self.client.waiting or self.suspended) return;
+        if (self.preview_transfer) |*transfer| {
+            try transfer.request(self.client);
+            return;
+        }
         if (self.cancel_transfer) |transfer| {
             self.cancel_transfer = null;
             try self.client.request(.@"document.cancel", .{ .transfer = p.num(transfer) });
@@ -572,6 +604,30 @@ pub const Editor = struct {
         return p.number(try field([]const u8, value, name));
     }
     fn receive(self: *Editor, reply_: Reply) !void {
+        if (reply_.op == .@"theme.asset") {
+            if (self.preview_transfer) |*transfer| {
+                if (reply_.error_code) |code| {
+                    transfer.deinit();
+                    self.preview_transfer = null;
+                    self.clear(&self.preview_pending);
+                    self.theme_error.set(code);
+                    self.theme_busy = false;
+                    return;
+                }
+                if (try transfer.accept(reply_.result)) {
+                    const provider = try @import("../theme/assets.zig").Provider.init(transfer.blobs.items);
+                    self.preview_provider.deinit();
+                    self.preview_provider = provider;
+                    transfer.deinit();
+                    self.preview_transfer = null;
+                    self.clear(&self.theme_result);
+                    self.theme_result = self.preview_pending;
+                    self.preview_pending = null;
+                    self.theme_busy = false;
+                }
+            }
+            return;
+        }
         if (reply_.op == .@"theme.start" or reply_.op == .@"theme.get" or reply_.op == .@"theme.cancel") {
             if (reply_.error_code) |code| {
                 self.theme_busy = false;
@@ -588,6 +644,34 @@ pub const Editor = struct {
             if (result.object.get("error_code")) |code| if (code == .string) self.theme_error.set(code.string);
             if (result.object.get("result")) |value| if (value != .null) {
                 const bytes = try std.json.Stringify.valueAlloc(a, value, .{});
+                if (value == .object and value.object.contains("profile_catalog")) {
+                    self.clear(&self.profile_result);
+                    self.profile_result = bytes;
+                    self.profile_serial +%= 1;
+                    return;
+                }
+                if (value == .object and value.object.contains("application_review")) {
+                    self.clear(&self.application_review);
+                    self.application_review = bytes;
+                    return;
+                }
+                if (value == .object and (value.object.contains("application_action") or value.object.contains("application_status"))) {
+                    a.free(bytes);
+                    self.needs_snapshot = true;
+                    return;
+                }
+                if (value == .object and value.object.get("images") != null) {
+                    var arena = std.heap.ArenaAllocator.init(a);
+                    defer arena.deinit();
+                    const images = try e.read([]const @import("../theme/assets.zig").Image, arena.allocator(), value.object.get("images").?);
+                    if (images.len > 0) {
+                        self.preview_transfer = try @import("asset_transfer.zig").Transfer.init(images, self.theme_serial, true);
+                        self.clear(&self.preview_pending);
+                        self.preview_pending = bytes;
+                        self.theme_busy = true;
+                        return;
+                    }
+                }
                 self.clear(&self.theme_result);
                 self.theme_result = bytes;
             };
@@ -621,6 +705,16 @@ pub const Editor = struct {
                 };
                 const snapshot = try e.read(p.Snapshot, a, try e.field(v, "snapshot"));
                 const revision = try p.number(snapshot.revision);
+                self.theme_catalog_generation = try p.number(snapshot.theme_catalog_generation);
+                self.theme_discovery_degraded = snapshot.theme_discovery_degraded;
+                var app_summary: std.ArrayList(u8) = .empty;
+                defer app_summary.deinit(a);
+                for (snapshot.applications.targets, std.enums.values(@import("../theme/matugen_profiles.zig").Application)) |status, application| {
+                    const line = try std.fmt.allocPrint(a, "{s}: {s} · {s} · {s}{s}{s}\n{s}\n{s}\n", .{ @tagName(application), @tagName(status.state), status.profile, status.origin, if (status.error_code != null) " · " else "", status.error_code orelse "", status.output, status.instructions });
+                    defer a.free(line);
+                    try app_summary.appendSlice(a, line);
+                }
+                self.application_summary.set(app_summary.items);
                 const draft_revision = try p.number(snapshot.draft_revision);
                 const reload = !self.ready or self.acknowledged == null or self.state.draft_revision != draft_revision or self.state.revision != revision;
                 self.state = .{ .revision = revision, .draft_revision = draft_revision, .base_revision = try p.number(snapshot.base_revision), .dirty = snapshot.dirty, .valid = snapshot.valid, .conflict = snapshot.conflict, .busy = snapshot.busy, .locked = snapshot.locked };

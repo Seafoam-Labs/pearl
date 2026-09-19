@@ -7,6 +7,7 @@ pub fn build(b: *std.Build) void {
         @panic("Pearl requires Zig 0.16.0; see .zigversion");
     const plugin_examples = b.option([]const u8, "plugin-examples", "Prebuilt plugin examples and failure fixtures") orelse ".cache/plugin-examples";
     const wasm_plugins = b.option(bool, "wasm-plugins", "Build the experimental WebAssembly plugin helper") orelse false;
+    const community_theme_repository = b.option(bool, "community-theme-repository", "Enable the launched Seafoam community repository") orelse false;
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const release = b.option(bool, "release", "Strip production artifacts for reproducible ReleaseSafe packages") orelse false;
@@ -21,12 +22,16 @@ pub fn build(b: *std.Build) void {
         return;
     }
     var themes_tool: *std.Build.Step.Compile = undefined;
+    for ([_][]const u8{ "zed", "equibop", "fluxer", "starship", "steam" }) |application| {
+        b.installDirectory(.{ .source_dir = b.path(b.fmt("themes/profiles/seafoam.{s}", .{application})), .install_dir = .prefix, .install_subdir = b.fmt("share/pearl/matugen/profiles/seafoam.{s}", .{application}) });
+    }
     for ([_]bool{ false, true }) |instrumented| {
         const tm = b.createModule(.{ .root_source_file = b.path("src/themes_main.zig"), .target = target, .optimize = optimize, .link_libc = true, .strip = release and !instrumented });
         for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| tm.addImport(name, bindings.module(name));
-        for ([_][]const u8{ "gio-2.0", "libcurl", "libarchive" }) |name| tm.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+        for ([_][]const u8{ "gio-2.0", "libcurl", "libarchive", "libpng" }) |name| tm.linkSystemLibrary(name, .{ .use_pkg_config = .force });
         const options = b.addOptions();
         options.addOption(bool, "test_hooks", instrumented);
+        options.addOption(bool, "community_theme_repository", community_theme_repository);
         tm.addOptions("build_options", options);
         const tool = b.addExecutable(.{ .name = if (instrumented) "pearl-themes-test" else "pearl-themes", .root_module = tm });
         if (!instrumented) {
@@ -41,6 +46,30 @@ pub fn build(b: *std.Build) void {
             }
         }
     }
+    const assets_module = b.createModule(.{ .root_source_file = b.path("src/theme_assets_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const publishing_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_theme_publishing.py", "--tool" });
+    publishing_test.addArtifactArg(themes_tool);
+    if (community_theme_repository) publishing_test.addArg("--default-enabled");
+    b.step("test-theme-publishing", "Verify native deterministic publication, schema 2 and source migration").dependOn(&publishing_test.step);
+    for ([_][]const u8{ "gio-2.0", "libpng" }) |name| assets_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+    const assets_test = b.addTest(.{ .root_module = assets_module });
+    b.step("test-theme-assets", "Validate PNG bounds and native memory resource lifetimes").dependOn(&b.addRunArtifact(assets_test).step);
+    const theme_native_module = b.createModule(.{ .root_source_file = b.path("src/theme_native_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| theme_native_module.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gio-2.0", "libcurl", "libarchive", "libpng" }) |name| theme_native_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+    const native_options = b.addOptions();
+    native_options.addOption(bool, "test_hooks", true);
+    theme_native_module.addOptions("build_options", native_options);
+    theme_native_module.addAnonymousImport("matugen_fixture", .{ .root_source_file = b.path("tests/fixtures/community/render-data/matugen-4.2.json") });
+    const theme_native_test = b.addRunArtifact(b.addTest(.{ .root_module = theme_native_module }));
+    theme_native_test.setCwd(b.path("."));
+    theme_native_test.setEnvironmentVariable("XDG_CACHE_HOME", b.pathFromRoot(".cache/profile-tests"));
+    const matugen_tests = b.step("test-matugen", "Test native application rendering, snapshots and ownership recovery");
+    matugen_tests.dependOn(&theme_native_test.step);
+    const profile_formats = b.addSystemCommand(&.{ "python3", "tests/integration/test_profile_formats.py", "--tool" });
+    profile_formats.addArtifactArg(themes_tool);
+    matugen_tests.dependOn(&profile_formats.step);
+    b.step("test-theme-discovery", "Test event-driven local theme discovery").dependOn(&theme_native_test.step);
     const pam = b.addTranslateC(.{ .root_source_file = b.path("bindings/headers/pam.h"), .target = target, .optimize = optimize });
     pam.addIncludePath(b.path("bindings/headers"));
     const pam_module = pam.createModule();
@@ -148,7 +177,7 @@ pub fn build(b: *std.Build) void {
     }
 
     const module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
-    configureApp(b, module, resources, false, wasm_plugins);
+    configureApp(b, module, resources, false, wasm_plugins, community_theme_repository);
     module.addImport("wayland", native);
     module.strip = release;
     const app = b.addExecutable(.{ .name = "pearl", .root_module = module });
@@ -170,7 +199,7 @@ pub fn build(b: *std.Build) void {
 
         sm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
         sm.linkSystemLibrary("wayland-client", .{});
-        configureApp(b, sm, resources, instrumented, wasm_plugins);
+        configureApp(b, sm, resources, instrumented, wasm_plugins, community_theme_repository);
         sm.strip = release and !instrumented;
         const exe = b.addExecutable(.{ .name = if (instrumented) "pearl-settings-test" else "pearl-settings", .root_module = sm });
         const install = b.addInstallArtifact(exe, .{ .dest_dir = .{ .override = .{ .custom = if (instrumented) "test" else "bin" } } });
@@ -191,7 +220,7 @@ pub fn build(b: *std.Build) void {
     var production_locker: *std.Build.Step.Compile = undefined;
     for ([_]bool{ false, true }) |instrumented| {
         const lock_module = gtkModule(b, bindings, target, optimize, "src/lock_main.zig", pulse_module);
-        configureApp(b, lock_module, resources, instrumented, false);
+        configureApp(b, lock_module, resources, instrumented, false, community_theme_repository);
         lock_module.addImport("pam", pam_module);
         lock_module.linkSystemLibrary("pam", .{});
         lock_module.strip = release and !instrumented;
@@ -277,6 +306,12 @@ pub fn build(b: *std.Build) void {
     custom_themes.addArtifactArg(settings_test_app);
     if (b.args) |args| custom_themes.addArgs(args);
     b.step("test-custom-themes", "Verify community themes and recovery in a private desktop session").dependOn(&custom_themes.step);
+    const theme_completion = b.addSystemCommand(&.{ "python3", "tests/integration/test_theme_completion.py", "--pearl" });
+    theme_completion.addArtifactArg(app);
+    theme_completion.addArg("--settings");
+    theme_completion.addArtifactArg(settings_test_app);
+    if (b.args) |args| theme_completion.addArgs(args);
+    b.step("test-theme-completion", "Verify image transfer, discovery and committed application profiles in a private session").dependOn(&theme_completion.step);
 
     const settings_window_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_app.py", "--settings" });
     settings_window_test.addArtifactArg(settings_test_app);
@@ -379,7 +414,7 @@ pub fn build(b: *std.Build) void {
     b.step("test-adapter", "Exercise IPC recovery, policy and commands on private sockets and nested Aqueous").dependOn(&adapter_test.step);
 
     const test_module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
-    configureApp(b, test_module, resources, true, wasm_plugins);
+    configureApp(b, test_module, resources, true, wasm_plugins, community_theme_repository);
     test_module.addImport("wayland", native);
     const integration_app = b.addExecutable(.{ .name = "pearl-integration", .root_module = test_module });
     integration_app.step.dependOn(&system_versions.step);
@@ -679,13 +714,15 @@ pub fn build(b: *std.Build) void {
     }
 }
 
-fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.LazyPath, test_hooks: bool, wasm_plugins: bool) void {
+fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.LazyPath, test_hooks: bool, wasm_plugins: bool, community_theme_repository: bool) void {
     module.linkSystemLibrary("libcurl", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("libarchive", .{ .use_pkg_config = .force });
+    module.linkSystemLibrary("libpng", .{ .use_pkg_config = .force });
     module.addAnonymousImport("pearl_resources", .{ .root_source_file = resources });
     const options = b.addOptions();
     options.addOption(bool, "test_hooks", test_hooks);
     options.addOption(bool, "wasm_plugins", wasm_plugins);
+    options.addOption(bool, "community_theme_repository", community_theme_repository);
     module.addOptions("build_options", options);
 }
 

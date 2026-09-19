@@ -1,0 +1,295 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+palette = "dms"
+
+format = """\
+[╭](fg:overlay2)[\ue0b6](flamingo)\
+$os$username[\ue0b0](bg:peach fg:flamingo)\
+$directory[\ue0b0](fg:peach bg:teal)\
+$git_branch$git_status[\ue0b0](fg:teal bg:sapphire)\
+$c$cpp$rust$golang$nodejs$bun$php$java$kotlin$haskell$python[\ue0b0](fg:sapphire bg:surface2)\
+$docker_context$conda$pixi[\ue0b0](fg:surface2)\
+$fill $cmd_duration$time\
+\n[╰─](fg:overlay2)$character"""
+
+[fill]
+symbol = "-"
+style = "fg:overlay2"
+
+[os]
+disabled = false
+style = "bg:flamingo fg:on_accent"
+
+[os.symbols]
+# Taken from https://www.nerdfonts.com/cheat-sheet
+Windows = "\uf17a"
+Ubuntu = "\uf31b"
+SUSE = "\uef6d"
+Raspbian = "\uf315"
+Mint = "Mint"
+Macos = "\uf302"
+Manjaro = "\uf312"
+Linux = "\uf17c"
+Gentoo = "\uf30d"
+Fedora = "\uf30a"
+Alpine = "\uf300"
+Amazon = "\uf270"
+Android = "\ue70e"
+AOSC = "\uf301"
+Arch = "\uf303"
+Artix = "\uf31f"
+EndeavourOS = "\uf322"
+CentOS = "\uf304"
+Debian = "\uf306"
+Redhat = "\uef5d"
+RedHatEnterprise = "\uef5d"
+Pop = "\uf32a"
+CachyOS = "\uf385"
+
+[username]
+show_always = true
+style_user = "bg:flamingo fg:on_accent"
+style_root = "bg:flamingo fg:on_accent"
+format = '[ $user ]($style)'
+
+[directory]
+style = "fg:on_accent bg:peach"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = "󰝚 "
+"Pictures" = " "
+"Developer" = "󰲋 "
+"Games" = ""
+"scripts" = "󰑷"
+"Applications" = "󰣆"
+"Calibre" = ""
+
+[git_branch]
+symbol = ""
+style = "bg:teal"
+format = '[[ $symbol $branch ]](fg:on_accent bg:teal)]($style)'
+
+[git_status]
+style = "bg:teal"
+format = '[[($all_status$ahead_behind )](fg:on_accent bg:teal)]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[bun]
+symbol = ""
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[c]
+symbol = " "
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[cpp]
+symbol = " "
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[rust]
+symbol = ""
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[golang]
+symbol = ""
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[php]
+symbol = ""
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[java]
+symbol = ""
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[kotlin]
+symbol = ""
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[haskell]
+symbol = ""
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[python]
+symbol = ""
+style = "bg:sapphire"
+format = '[[ $symbol( $version) ](fg:on_accent bg:sapphire)]($style)'
+
+[docker_context]
+symbol = ""
+style = "bg:surface2"
+format = '[[ $symbol( $context) ](fg:text bg:surface2)]($style)'
+
+[conda]
+style = "bg:surface2"
+format = '[[ $symbol( $environment) ](fg:text bg:surface2)]($style)'
+
+[pixi]
+style = "bg:surface2"
+format = '[[ $symbol( $version)( $environment) ](fg:text bg:surface2)]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "fg:teal"
+format = '[ $time ]($style)'
+
+[cmd_duration]
+min_time = 200
+show_milliseconds = false
+style = "fg:peach"
+format = '[⏱ $duration ]($style)'
+
+[character]
+format = "$symbol "
+success_symbol = '[](bold fg:green)'
+error_symbol = '[✗](bold fg:red)'
+vicmd_symbol = '[❮](bold fg:peach)'
+
+[palettes.dms]
+
+# ---------------------------------------------------------------------------
+#  1. MATUGEN MATERIAL ROLES — the raw palette (49)
+#     Values come from your theme JSON where it pins them, otherwise from the
+#     theme's matugen_type scheme.
+# ---------------------------------------------------------------------------
+primary                  = "{{ colors.primary.default.hex }}"
+on_primary               = "{{ colors.on_primary.default.hex }}"
+primary_container        = "{{ colors.primary_container.default.hex }}"
+on_primary_container     = "{{ colors.on_primary_container.default.hex }}"
+primary_fixed            = "{{ colors.primary_fixed.default.hex }}"
+primary_fixed_dim        = "{{ colors.primary_fixed_dim.default.hex }}"
+on_primary_fixed         = "{{ colors.on_primary_fixed.default.hex }}"
+on_primary_fixed_variant = "{{ colors.on_primary_fixed_variant.default.hex }}"
+inverse_primary          = "{{ colors.inverse_primary.default.hex }}"
+
+secondary                = "{{ colors.secondary.default.hex }}"
+on_secondary             = "{{ colors.on_secondary.default.hex }}"
+secondary_container      = "{{ colors.secondary_container.default.hex }}"
+on_secondary_container   = "{{ colors.on_secondary_container.default.hex }}"
+secondary_fixed          = "{{ colors.secondary_fixed.default.hex }}"
+secondary_fixed_dim      = "{{ colors.secondary_fixed_dim.default.hex }}"
+on_secondary_fixed       = "{{ colors.on_secondary_fixed.default.hex }}"
+on_secondary_fixed_variant = "{{ colors.on_secondary_fixed_variant.default.hex }}"
+
+tertiary                 = "{{ colors.tertiary.default.hex }}"
+on_tertiary              = "{{ colors.on_tertiary.default.hex }}"
+tertiary_container       = "{{ colors.tertiary_container.default.hex }}"
+on_tertiary_container    = "{{ colors.on_tertiary_container.default.hex }}"
+tertiary_fixed           = "{{ colors.tertiary_fixed.default.hex }}"
+tertiary_fixed_dim       = "{{ colors.tertiary_fixed_dim.default.hex }}"
+on_tertiary_fixed        = "{{ colors.on_tertiary_fixed.default.hex }}"
+on_tertiary_fixed_variant = "{{ colors.on_tertiary_fixed_variant.default.hex }}"
+
+error                    = "{{ colors.error.default.hex }}"
+on_error                 = "{{ colors.on_error.default.hex }}"
+error_container          = "{{ colors.error_container.default.hex }}"
+on_error_container       = "{{ colors.on_error_container.default.hex }}"
+
+surface                  = "{{ colors.surface.default.hex }}"
+surface_dim              = "{{ colors.surface_dim.default.hex }}"
+surface_bright           = "{{ colors.surface_bright.default.hex }}"
+surface_variant          = "{{ colors.surface_variant.default.hex }}"
+surface_container_lowest = "{{ colors.surface_container_lowest.default.hex }}"
+surface_container_low    = "{{ colors.surface_container_low.default.hex }}"
+surface_container        = "{{ colors.surface_container.default.hex }}"
+surface_container_high   = "{{ colors.surface_container_high.default.hex }}"
+surface_container_highest = "{{ colors.surface_container_highest.default.hex }}"
+on_surface               = "{{ colors.on_surface.default.hex }}"
+on_surface_variant       = "{{ colors.on_surface_variant.default.hex }}"
+background               = "{{ colors.background.default.hex }}"
+on_background            = "{{ colors.on_background.default.hex }}"
+
+outline                  = "{{ colors.outline.default.hex }}"
+outline_variant          = "{{ colors.outline_variant.default.hex }}"
+inverse_surface          = "{{ colors.inverse_surface.default.hex }}"
+inverse_on_surface       = "{{ colors.inverse_on_surface.default.hex }}"
+shadow                   = "{{ colors.shadow.default.hex }}"
+scrim                    = "{{ colors.scrim.default.hex }}"
+source_color             = "{{ colors.source_color.default.hex }}"
+
+# ---------------------------------------------------------------------------
+#  2. DANK16 ANSI SLOTS — the raw terminal palette (16)
+# ---------------------------------------------------------------------------
+ansi0  = "{{ base16.base00.default.hex }}"
+ansi1  = "{{ base16.base08.default.hex }}"
+ansi2  = "{{ base16.base0b.default.hex }}"
+ansi3  = "{{ base16.base0a.default.hex }}"
+ansi4  = "{{ base16.base0d.default.hex }}"
+ansi5  = "{{ base16.base0e.default.hex }}"
+ansi6  = "{{ base16.base0c.default.hex }}"
+ansi7  = "{{ base16.base05.default.hex }}"
+ansi8  = "{{ base16.base03.default.hex }}"
+ansi9  = "{{ base16.base08.default.hex }}"
+ansi10 = "{{ base16.base0b.default.hex }}"
+ansi11 = "{{ base16.base0a.default.hex }}"
+ansi12 = "{{ base16.base0d.default.hex }}"
+ansi13 = "{{ base16.base0e.default.hex }}"
+ansi14 = "{{ base16.base0c.default.hex }}"
+ansi15 = "{{ base16.base07.default.hex }}"
+
+# ---------------------------------------------------------------------------
+#  3. ROLE ALIASES — Catppuccin-compatible names
+#     These are what the modules in this file reference. Palettes cannot
+#     reference each other, so each alias repeats its token rather than
+#     pointing at a name in section 1 or 2.
+# ---------------------------------------------------------------------------
+
+# text / neutrals
+text      = "{{ colors.on_surface.default.hex }}"
+subtext1  = "{{ colors.on_surface_variant.default.hex }}"
+subtext0  = "{{ colors.outline.default.hex }}"
+white     = "{{ colors.on_surface_variant.default.hex }}"
+black     = "{{ colors.surface_container_high.default.hex }}"
+
+# surfaces
+base      = "{{ colors.surface.default.hex }}"
+mantle    = "{{ colors.surface_container_lowest.default.hex }}"
+crust     = "{{ colors.surface_container_lowest.default.hex }}"
+surface0  = "{{ colors.surface_container.default.hex }}"
+surface1  = "{{ colors.surface_container_high.default.hex }}"
+surface2  = "{{ colors.surface_container_high.default.hex }}"
+surface3  = "{{ colors.surface_container_highest.default.hex }}"
+overlay0  = "{{ colors.surface_container_high.default.hex }}"
+overlay1  = "{{ colors.surface_container_highest.default.hex }}"
+overlay2  = "{{ colors.surface_container_highest.default.hex }}"
+
+# ANSI-semantic hues -> dank16 (always the right hue family)
+red       = "{{ base16.base08.default.hex }}"
+yellow    = "{{ base16.base0a.default.hex }}"
+green     = "{{ base16.base0b.default.hex }}"
+cyan      = "{{ base16.base0c.default.hex }}"
+magenta   = "{{ base16.base0e.default.hex }}"
+pink      = "{{ base16.base0e.default.hex }}"
+
+# theme-semantic hues -> matugen roles (stable across accents)
+maroon    = "{{ colors.error.default.hex }}"
+flamingo  = "{{ colors.primary.default.hex }}"
+teal     = "{{ base16.base0a.default.hex }}"
+peach      = "{{ colors.secondary.default.hex }}"
+sky       = "{{ base16.base0b.default.hex }}"
+blue      = "{{ colors.tertiary.default.hex }}"
+sapphire  = "{{ colors.tertiary.default.hex }}"
+lavender  = "{{ colors.tertiary.default.hex }}"
+mauve     = "{{ base16.base0d.default.hex }}"
+rosewater = "{{ base16.base0a.default.hex }}"
+
+# segment ink: your current choice, flips correctly in light mode
+on_accent = "{{ colors.surface_variant.default.hex }}"

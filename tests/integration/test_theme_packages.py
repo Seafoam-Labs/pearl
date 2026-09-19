@@ -129,7 +129,7 @@ def main():
             run('validate',error='InvalidStyleToken',path=str(bad))
             fixture(bad);(bad/'extra.css').write_text('@import "extra.css";')
             run('validate',error='ThemeCssImportCycle',path=str(bad))
-            fixture(bad); b = json.loads((bad/'theme.json').read_text()); b['requires']['style_api']=2; (bad/'theme.json').write_text(json.dumps(b))
+            fixture(bad); b = json.loads((bad/'theme.json').read_text()); b['requires']['style_api']=99; (bad/'theme.json').write_text(json.dumps(b))
             run('validate', error='UnsupportedStyleApi', path=str(bad))
             # Extraction never follows links or writes traversal paths.
             for name, kind, expected in [('../escaped', tarfile.REGTYPE, 'InvalidThemePath'), ('link', tarfile.SYMTYPE, 'ThemeArchiveSpecialFile')]:

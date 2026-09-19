@@ -294,3 +294,20 @@ truncate the stored configuration or the settings editor.
 Run `zig build test-preferences -Doptimize=ReleaseSafe` in the documented
 [private test environment](DEVELOPMENT.md). Evidence and known release limits
 are tracked in [PROGRESS.md](PROGRESS.md).
+
+
+## Application themes
+
+The optional top-level `matugen` object defaults to disabled:
+
+```json
+{"enabled":false,"colors":{"source":"follow_pearl","seed":"#6750a4"},"applications":{"zed":{"mode":"theme","profile_id":""},"steam":{"mode":"off","profile_id":""}},"snapshot_digest":"","catalog_revision":""}
+```
+
+Colors may follow_pearl, seed or wallpaper. Application modes are theme, profile
+(explicit profile_id), or off. Omitted applications inherit theme defaults while
+management is enabled. Manual and Off choices survive changes to the active theme.
+The backend owns snapshot_digest; the picker captures catalog_revision. Controls
+share the ordinary draft, Apply/Discard and independent object merge behavior.
+Application reconciliation follows preference commit and reports each app’s state
+separately. See [the author/recovery guide](CUSTOM_THEMES.md).

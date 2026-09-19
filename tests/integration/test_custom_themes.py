@@ -17,7 +17,7 @@ class Peer(EditorPeer):
             self.capabilities = reply['result']['capabilities']
         return reply
     def theme(self, action, error=None, **kw):
-        reply = self.call('theme.start', request=json.dumps(dict(action=action, **kw)))
+        reply = wait_for(lambda: (r if (r := self.call('theme.start', request=json.dumps(dict(action=action, **kw))))['ok'] or r.get('err', {}).get('code') != 'Busy' else False), 30)
         assert reply['ok'], reply
         status = wait_for(lambda: (v if not (v := self.call('theme.get')['result'])['busy'] else False), 60)
         assert status['error_code'] == error, status
@@ -66,6 +66,7 @@ def main():
         assert len(committed['theme']['snapshot_digest'])==64
         app=s.child('settings',[args.settings.resolve(),'--page','appearance'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');ready(s,ipc)
         wait_for(lambda: any(c['field']=='themes.preview.0' for c in probe(s,ipc)['controls']), 15)
+        wait_for(lambda: not probe(s,ipc)['theme_busy'],15)
         click(s,ipc,'themes.preview.0')
         wait_for(lambda: probe(s,ipc)['theme_status'].startswith('Preview only'),15)
         assert json.loads(peer.document('committed'))==committed

@@ -8,7 +8,10 @@ const Prefs = @import("../config/preferences.zig");
 pub fn run(a: std.mem.Allocator, argv: []const [:0]const u8, cancel: *gio.Cancellable) ![]const u8 {
     const pointers = try a.allocSentinel(?[*:0]const u8, argv.len, null);
     for (argv, 0..) |arg, i| pointers[i] = arg.ptr;
-    const proc = gio.Subprocess.newv(@ptrCast(pointers.ptr), .{ .stdout_pipe = true, .stderr_silence = true }, null) orelse return error.MatugenUnavailable;
+    const launcher = gio.SubprocessLauncher.new(.{ .stdout_pipe = true, .stderr_silence = true });
+    defer launcher.unref();
+    launcher.setChildSetup(childLimits, null, null);
+    const proc = launcher.spawnv(@ptrCast(pointers.ptr), null) orelse return error.MatugenUnavailable;
     defer proc.unref();
     defer {
         proc.forceExit();
@@ -26,7 +29,20 @@ pub fn run(a: std.mem.Allocator, argv: []const [:0]const u8, cancel: *gio.Cancel
     if (proc.waitCheck(cancel, null) == 0) return error.GeneratorFailed;
     return bytes[0..used];
 }
+fn childLimits(_: ?*anyopaque) callconv(.c) void {
+    // Async-signal-safe syscalls only: this runs after fork in a multithreaded app.
+    const limit: std.os.linux.rlimit = .{ .cur = 131072, .max = 131072 };
+    if (std.os.linux.setrlimit(.FSIZE, &limit) != 0) std.os.linux.exit(126);
+    const memory: std.os.linux.rlimit = .{ .cur = 512 * 1024 * 1024, .max = 512 * 1024 * 1024 };
+    if (std.os.linux.setrlimit(.AS, &memory) != 0) std.os.linux.exit(126);
+    const cpu: std.os.linux.rlimit = .{ .cur = 10, .max = 10 };
+    if (std.os.linux.setrlimit(.CPU, &cpu) != 0) std.os.linux.exit(126);
+}
 pub fn palette(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]const u8, cache_dir: [:0]const u8, cancel: *gio.Cancellable, hit: *bool) !theme.Palette {
+    return (try full(a, p, image, cache_dir, cancel, hit)).palette;
+}
+pub const Full = struct { palette: theme.Palette, json: []const u8, version: []const u8 };
+pub fn full(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]const u8, cache_dir: [:0]const u8, cancel: *gio.Cancellable, hit: *bool) !Full {
     const version = try run(a, &.{ "matugen", "--version" }, cancel);
     if (version.len > 256 or !std.mem.startsWith(u8, version, "matugen 4.")) return error.UnsupportedMatugenVersion;
     const identity = try std.fmt.allocPrint(a, "pearl-palette-v1\n{s}\n{s}\n{s}\n{s}", .{ version, @tagName(p.theme.variant), @tagName(p.theme.source), if (p.theme.source == .seed) p.theme.seed else image orelse return error.ImageRequired });
@@ -37,7 +53,7 @@ pub fn palette(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]const u8, c
         if (cached.bytes.len > 65 and std.mem.eql(u8, cached.bytes[0..64], &key)) {
             if (theme.matugenPalette(a, cached.bytes[65..], @tagName(p.theme.variant))) |value| {
                 hit.* = true;
-                return value;
+                return .{ .palette = value, .json = cached.bytes[65..], .version = version };
             } else |_| {}
         }
     } else |_| {}
@@ -59,5 +75,5 @@ pub fn palette(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]const u8, c
     if (cancel.isCancelled() != 0) return error.Cancelled;
     const encoded = try std.fmt.allocPrint(a, "{s}\n{s}", .{ key, json });
     io.atomic(cache, encoded, false) catch {}; // Cache failure cannot discard a valid palette.
-    return value;
+    return .{ .palette = value, .json = json, .version = version };
 }

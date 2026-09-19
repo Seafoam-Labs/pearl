@@ -288,3 +288,10 @@ gates, not evidence that those features passed. Previous candidate evidence in
 
 Use `python3 scripts/render-master-evidence.py` after validation to refresh the
 local evidence index and screenshot gallery. It never grants manual acceptance.
+
+
+Community theme images link libpng. The staged installation includes attributed
+Seafoam profiles under share/pearl/matugen/profiles and their licenses. Source
+archives include themes and the reviewable community-repository scaffold; no
+Python theme or publishing executable is deployed. The hosted default must stay
+disabled until the scaffold launch checklist and real GitHub round trip pass.

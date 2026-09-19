@@ -7,7 +7,7 @@ const w = @import("../ui/components/widgets.zig");
 const Editor = @import("editor.zig").Editor;
 const cmd = @import("../theme/commands.zig");
 const a = std.heap.c_allocator;
-const Kind = enum { installed, installed_next, community, next, source_select, source_add, source_remove, import_archive, cancel, defaults, builtin, inherit_colors, default_style, select, colors, style, preview, preview_draft, install, remove, rollback };
+const Kind = enum { installed, installed_next, community, next, source_select, source_add, source_remove, source_default, import_archive, cancel, defaults, builtin, inherit_colors, default_style, select, colors, style, preview, preview_draft, install, remove, rollback };
 const Action = struct { owner: *View, kind: Kind, index: usize = 0 };
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
 pub const View = struct {
@@ -29,6 +29,8 @@ pub const View = struct {
     page_data: std.heap.ArenaAllocator = .init(a),
     navigation_data: std.heap.ArenaAllocator = .init(a),
     sources: []const @import("../theme/repository.zig").Source = &.{},
+    catalog_generation: u64 = 0,
+    automatic_refresh: bool = false,
     controls: std.ArrayList(Control) = .empty,
     row_controls: std.ArrayList(Control) = .empty,
     entries: []const cmd.Entry = &.{},
@@ -60,6 +62,7 @@ pub const View = struct {
         root.append(actions.as(gtk.Widget));
         try self.button(actions, "Installed", .installed, 0, false);
         try self.button(actions, "Community · refresh", .community, 0, false);
+        if (@import("../theme/repository.zig").default_enabled) try self.button(actions, "Add default community repository", .source_default, 0, false);
         try self.button(actions, "Cancel download", .cancel, 0, false);
         try self.button(root, "Use built-in theme", .builtin, 0, false);
         try self.button(root, "Use selected theme defaults", .defaults, 0, false);
@@ -141,7 +144,9 @@ pub const View = struct {
         self.perform(action.kind, action.index) catch |err| self.status.setText(@errorName(err));
     }
     fn perform(self: *View, kind: Kind, index: usize) !void {
+        self.automatic_refresh = false;
         switch (kind) {
+            .source_default => try self.send(.{ .action = .source_default }),
             .installed => try self.send(.{ .action = .catalog }),
             .installed_next => try self.send(.{ .action = .catalog, .offset = self.next_offset orelse return, .revision = self.revision }),
             .community, .next => {
@@ -250,7 +255,7 @@ pub const View = struct {
                 box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s}", .{ r.name, r.version, r.author }, 0), "pearl-card-title").as(gtk.Widget));
                 if (r.description.len > 0) box.append(w.label(try alloc.dupeZ(u8, r.description), "pearl-secondary").as(gtk.Widget));
                 box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ r.license, r.source }, 0), "pearl-secondary").as(gtk.Widget));
-                if ((r.requires.palette_api != null and r.requires.palette_api != 1) or (r.requires.style_api != null and r.requires.style_api != 1)) box.append(w.label("Requires an unsupported theme API", "pearl-secondary").as(gtk.Widget)) else try self.button(box, "Download / update", .install, i, true);
+                if (!r.requires.supported()) box.append(w.label("Requires an unsupported theme API", "pearl-secondary").as(gtk.Widget)) else try self.button(box, "Download / update", .install, i, true);
             }
             if (self.next_url.len > 0) try self.button(self.list, "Next repository page", .next, 0, true);
         } else {
@@ -281,6 +286,7 @@ pub const View = struct {
     }
     pub fn update(self: *View) void {
         self.updateSelection();
+        defer self.refreshCatalog();
         for ([_][]const Control{ self.controls.items, self.row_controls.items }) |bindings| for (bindings) |binding| {
             const cancel = std.mem.startsWith(u8, binding.id, "themes.cancel.");
             binding.widget.setSensitive(@intFromBool(if (cancel) self.editor.theme_busy else self.editor.editable() and !self.editor.theme_busy));
@@ -294,10 +300,10 @@ pub const View = struct {
             self.initialized = true;
         }
         if (self.editor.theme_busy) {
-            self.status.setText(self.editor.theme_progress.z());
+            if (!self.editor.application_command) self.status.setText(self.editor.theme_progress.z());
             return;
         }
-        if (self.editor.theme_error.len > 0) {
+        if (self.editor.theme_error.len > 0 and !self.editor.application_command) {
             self.status.setText(self.editor.theme_error.z());
             return;
         }
@@ -309,6 +315,14 @@ pub const View = struct {
             self.render() catch {};
             self.status.setText(@errorName(err));
         };
+    }
+    fn refreshCatalog(self: *View) void {
+        if (!self.initialized or self.catalog_generation == self.editor.theme_catalog_generation or self.editor.theme_busy or !self.editor.editable()) return;
+        self.send(.{ .action = .catalog }) catch return;
+        self.automatic_refresh = true;
+        self.catalog_generation = self.editor.theme_catalog_generation;
+        self.preview_root.as(gtk.Widget).setVisible(0);
+        self.status.setText("Installed themes changed. Preview again before applying changed selections.");
     }
     fn updateSelection(self: *View) void {
         var memory = std.heap.ArenaAllocator.init(a);
@@ -349,7 +363,7 @@ pub const View = struct {
                 self.next_offset = result.next_offset;
                 self.sources = result.sources;
                 self.revision = result.revision;
-                self.community = false;
+                if (!self.automatic_refresh) self.community = false;
                 if (result.sources.len > 0 and entry(self.source_id).len == 0) {
                     self.source_id.as(gtk.Editable).setText(try alloc.dupeZ(u8, result.sources[0].id));
                     self.source_name.as(gtk.Editable).setText(try alloc.dupeZ(u8, result.sources[0].name));
@@ -357,6 +371,7 @@ pub const View = struct {
                 }
                 self.status.setText(if (result.diagnostics.len > 0) try std.fmt.allocPrintSentinel(alloc, "Package unavailable: {s} ({s})", .{ result.diagnostics[0].path, result.diagnostics[0].error_code }, 0) else if (result.entries.len == 0) "No themes installed. Add a community repository or import an archive." else "Installed themes. Choose colors and widget style, then Apply & save.");
                 try self.render();
+                if (self.editor.theme_discovery_degraded) self.status.setText("Automatic discovery is degraded. Use Installed to refresh available themes.");
             },
             .refresh => {
                 _ = self.page_data.reset(.free_all);
@@ -381,7 +396,7 @@ pub const View = struct {
                 self.preview_root.as(gtk.Widget).setVisible(1);
                 self.status.setText(if (resolved.palette == null) "Style preview uses default dark colors; generated colors apply on save." else "Preview only · committed appearance is unchanged");
             },
-            .install, .import_archive, .remove, .rollback, .source_add, .source_remove => try self.send(.{ .action = .catalog }),
+            .install, .import_archive, .remove, .rollback, .source_add, .source_remove, .source_default => try self.send(.{ .action = .catalog }),
             else => self.status.setText("Operation complete."),
         }
     }

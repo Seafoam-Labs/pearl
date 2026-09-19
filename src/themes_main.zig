@@ -16,14 +16,14 @@ pub fn main(init: std.process.Init) !void {
         return;
     }
     if (args.len != 2) {
-        glib.printerr("Usage: pearl-themes '{\"action\":\"catalog\"}'\nActions: catalog, validate, validate_index, pack, preview, preview_render, source_add, source_remove, refresh, install, import_archive, remove, rollback\n");
+        glib.printerr("Usage: pearl-themes '{\"action\":\"catalog\"}'\nActions: catalog, profiles_catalog, validate, verify_profiles, validate_index, pack, publish_build, preview, preview_render, source_add, source_remove, source_default, refresh, install, import_archive, remove, rollback, application_review, application_install, application_retry\n");
         std.process.exit(2);
     }
     const request = @import("theme/package_model.zig").parse(@import("theme/commands.zig").Request, a, args[1], 16384) catch |err| {
         glib.printerr("%s\n", @errorName(err).ptr);
         std.process.exit(2);
     };
-    if (request.action == .preview_render) {
+    if (request.action == .preview_render or request.action == .verify_profiles or request.action == .application_review or request.action == .application_install or request.action == .application_retry) {
         // The same worker/deadline as Settings bounds generator execution.
         const app = gio.Application.new("org.aqueous.Pearl.ThemeAuthor", .{ .non_unique = true });
         defer app.unref();

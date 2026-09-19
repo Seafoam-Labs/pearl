@@ -1,0 +1,115 @@
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_custom_themes.py", line 143, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_custom_themes.py", line 70, in main
+    wait_for(lambda: probe(s,ipc)['theme_status'].startswith('Preview only'),15)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 23, in wait_for
+    raise TimeoutError('private session condition timed out')
+TimeoutError: private session condition timed out
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_settings_boundary.py", line 149, in <module>
+    if __name__ == '__main__': main()
+                               ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_boundary.py", line 78, in main
+    assert not any(v for k, v in state['capabilities'].items() if k not in ('handshake', 'committed_appearance', 'page_snapshots', 'pearl_draft', 'aqueous_draft', 'live_controls', 'prompts', 'display_preview', 'community_themes'))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_qt_theme.py", line 194, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_qt_theme.py", line 68, in main
+    assert status['qt5']['state']==status['qt6']['state']==status['engine']['state']=='applied',status
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'desired_revision': 0, 'applied_revision': 0, 'qt5': {'state': 'missing_dependency', 'error_code': 'QtPlatformThemeUnavailable'}, 'qt6': {'state': 'applied', 'error_code': None}, 'engine': {'state': 'applied', 'error_code': None}, 'darkly': {'state': 'applied', 'error_code': None}, 'kde': {'state': 'applied', 'error_code': None}, 'environment': {'state': 'applied', 'error_code': None}, 'restart_apps': True, 'restart_session': False, 'gtk_fallback': False, 'busy': False}
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_theme_completion.py", line 123, in <module>
+    main()
+    ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_theme_completion.py", line 87, in main
+    wait_for(lambda: probe(s, ipc)['theme_status'].startswith('Preview only'), 20)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 23, in wait_for
+    raise TimeoutError('private session condition timed out')
+TimeoutError: private session condition timed out
+PASS bounded-full-document-invalid-and-empty-retention
+PASS partial-transfer-and-digest-failure-never-mutate-draft
+PASS shared-cas-and-canonical-operation-deduplication
+PASS real-appearance-form-preserves-full-preference-document
+PASS invalid-advanced-navigation-close-reopen-without-save
+PASS explicit-apply-atomic-save-and-event-driven-theme-refresh
+PASS normal-wallpaper-dialog-cancel-select-preview-and-save
+PASS image-and-native-theme-failure-retain-draft-and-working-settings
+PASS save-failure-retention-and-independent-export-error
+PASS external-change-three-way-merge-and-overlapping-conflict
+PASS in-flight-apply-cannot-clear-newer-equal-text-draft
+PASS lock-denial-hidden-window-and-explicit-unlock-resume
+PASS close-flush-reopen-and-explicit-discard
+PASS real-light-native-and-narrow-large-text-controls
+PASS backend-restart-and-close-failure-never-replay-local-candidate
+S3: 15 groups passed
+{
+  "status": "passed",
+  "checks": {
+    "wallpaper-picker-selection-cancel-save-and-parent-close": true,
+    "wallpaper-picker-sets-cover-from-every-fit-mode": true,
+    "defaults-atomic-save-and-live-popup-theme": true,
+    "one-theme-updates-bars-popup-wallpaper-and-second-output-osd": true,
+    "corrupt-external-config-and-stale-revision": true,
+    "wallpapers-exceed-former-dimension-pixel-and-file-size-caps": true,
+    "image-validation-fifo-rejection-and-dynamic-palette-cache": true,
+    "missing-font-falls-back": true,
+    "broken-gtk-css-cannot-replace-working-theme-or-config": true,
+    "installed-gtk-theme-and-system-follow-without-material-css": true,
+    "bar-reservation-conflict-is-rejected-before-saving": true,
+    "per-connector-bar-and-popup-policies": true,
+    "gtk-draft-survives-close-external-edit-and-three-way-merge": true,
+    "opt-in-exports-ownership-backup-and-disable": true,
+    "failed-save-retains-working-file": true,
+    "legacy-migration-is-validated-and-only-written-on-apply": true,
+    "large-preferences-preserved-with-bounded-control-status": true,
+    "no-theme-work-at-idle": true,
+    "restart-uses-last-good-without-overwriting-corruption": true,
+    "generator-failure-malformed-output-bounds-and-deadline": true,
+    "rapid-edits-cancel-obsolete-generator-and-coalesce-latest": true,
+    "concurrent-disk-edit-blocks-save-before-atomic-replacement": true,
+    "shutdown-cancels-worker-and-reaps-generator": true,
+    "static-theme-and-last-good-recovery-without-matugen": true
+  },
+  "pearl_sha256": "0c86959f6463f6fe0a78ef60b95e0aad2cffb570b9cbabd533bd2fb32540977b",
+  "ctl_sha256": "62463c4e9cb2d8bce308b40ac4f13e9395520814ec730752b9a3f7adf54e166a"
+}
+test-custom-themes
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_custom_themes.py --pearl ./.zig-cache/o/49861daf3f4c56b23ad244949dda1a12/pearl --settings ./.zig-cache/o/e120cadeb90eed4db9fa388b73fad59e/pearl-settings-test
+
+test-settings-boundary
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_boundary.py --pearl ./.zig-cache/o/49861daf3f4c56b23ad244949dda1a12/pearl --ctl /home/zoey/Pearl/zig-out/bin/pearlctl
+
+test-qt-theme
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_qt_theme.py --driver ./.zig-cache/o/31c36f78cb5539fc02f8a8987bd0a995/pearl-qt-test
+
+test-theme-completion
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_theme_completion.py --pearl ./.zig-cache/o/49861daf3f4c56b23ad244949dda1a12/pearl --settings ./.zig-cache/o/e120cadeb90eed4db9fa388b73fad59e/pearl-settings-test
+
+Build Summary: 40/48 steps succeeded (4 failed)
+test-custom-themes transitive failure
++- run python3 failure
+test-theme-completion transitive failure
++- run python3 failure
+test-settings-boundary transitive failure
++- run python3 failure
+test-qt-theme transitive failure
++- run python3 failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/6b1ad2e608f6a0e8c1e71d7031e417ce/build /usr/bin/zig /usr/lib/zig /home/zoey/Pearl .zig-cache .cache/zig --seed 0xb671208a -Z9887b4ab98b2f6c1 test-custom-themes test-theme-completion test-settings-boundary test-settings-appearance test-preferences test-qt-theme -Doptimize=ReleaseSafe

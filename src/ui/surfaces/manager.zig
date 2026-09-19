@@ -174,7 +174,7 @@ pub const Manager = struct {
         self.clipboard = .{ .display = self.display, .context = self, .changed = nativeChanged };
         self.capture = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = captureChanged };
         self.session_services = .{ .app = self.app.as(gio.Application), .context = self, .changed = sessionChanged };
-        self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged, .validate = validatePreferences };
+        self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged, .validate = validatePreferences, .shell_appearance = true };
         try self.preferences.start();
         self.aqueous_settings = .{ .app = self.app.as(gio.Application), .context = self, .changed = aqueousSettingsChanged, .reload = aqueousReload, .can_reload = aqueousCanReload, .can_record = aqueousCanRecord, .identify_outputs = identifyDisplays, .peer_pid = aqueousPeerPid };
         self.aqueous_settings.start();

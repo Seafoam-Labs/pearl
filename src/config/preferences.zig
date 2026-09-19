@@ -32,6 +32,7 @@ pub const Preferences = struct {
     idle: @import("../services/idle_policy.zig").Config = .{},
     theme: Theme = .{},
     qt: @import("../theme/qt.zig").Config = .{},
+    matugen: @import("../theme/matugen_profiles.zig").Config = .{},
     wallpaper: Wallpaper = .{},
     font: []const u8 = "",
     font_size: u8 = 14,
@@ -55,6 +56,7 @@ pub const Preferences = struct {
     pub fn validate(self: Preferences) !void {
         try self.plugins.validate();
         try self.qt.validate();
+        try self.matugen.validate();
         if (self.qt.enabled) for (self.font) |ch| if (ch < 32 or ch == 127) return error.InvalidQtFont;
         try @import("../desktop/dock_policy.zig").validate(self.dock);
         if (self.pinned_apps.len > 16) return error.TooManyPins;

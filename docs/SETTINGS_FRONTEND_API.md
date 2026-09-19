@@ -445,3 +445,28 @@ Frontend crash tests cover owned credentials/discovery and native preview
 rollback; lock during a frontend-owned preview is also exercised. Physical
 activation/unplug and Orca review remain separate from fixture evidence. See
 [S6 results](../artifacts/settings-app/s6/REVIEW.md).
+
+
+## Image and application profile extensions
+
+Capabilities `theme_assets` and `application_profiles` are additive and false
+when absent. Appearance metadata can include images (id, digest, size, width,
+height); an asset-free snapshot remains compatible. `theme.asset` takes preview,
+revision, digest and offset. It returns bounded base64 chunks (48 KiB decoded),
+authorized against the current committed appearance or preview job. No path is
+accepted. Clients verify the complete hash/length, register native resources in
+memory and replace their provider only after all images arrive. Obsolete transfers
+are cancelled. Existing 120,000-byte theme response limits remain.
+
+`theme.start` actions profiles_catalog, application_review, application_install
+and application_retry run backend jobs. Profile pages carry a revision, summaries
+and next_offset. Application actions require the current preferences revision;
+install also supplies the digest returned by review. The backend supplies the
+committed snapshot reference. Status includes per-app desired/applied revisions,
+origin, errors and activation-required states. No frontend reads templates, scans
+packages, invokes Matugen or writes application destinations.
+
+Page state includes theme_catalog_generation and discovery degradation. Generation
+changes refresh metadata while preserving the shared draft and search. Content
+revision checks at Apply remain authoritative. Discovery never triggers network
+fetching or template generation.

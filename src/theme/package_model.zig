@@ -3,7 +3,18 @@ const std = @import("std");
 const theme = @import("theme.zig");
 pub const max_bytes = 16 * 1024 * 1024;
 pub const max_entries = 1024;
-pub const APIs = struct { palette_api: ?u32 = null, style_api: ?u32 = null };
+pub const APIs = struct {
+    palette_api: ?u32 = null,
+    style_api: ?u32 = null,
+    profile_api: ?u32 = null,
+    render_data_api: ?u32 = null,
+    pub fn supported(self: APIs) bool {
+        return (self.palette_api == null or self.palette_api == 1) and
+            (self.style_api == null or self.style_api == 1 or self.style_api == 2) and
+            (self.profile_api == null or self.profile_api == 1) and
+            (self.render_data_api == null or self.render_data_api == 1);
+    }
+};
 pub const Manifest = struct {
     schema_version: u32,
     id: []const u8,
@@ -15,24 +26,55 @@ pub const Manifest = struct {
     requires: APIs,
     palettes: struct { dark: ?[]const u8 = null, light: ?[]const u8 = null } = .{},
     style: ?struct { tokens: ?[]const u8 = null, css: ?[]const u8 = null } = null,
+    images: []const struct { id: []const u8, path: []const u8 } = &.{},
+    profiles: []const []const u8 = &.{},
+    defaults: []const struct { application: []const u8, profile: []const u8 } = &.{},
+    render_data: ?struct { dark: ?[]const u8 = null, light: ?[]const u8 = null } = null,
     pub fn validate(self: Manifest) !void {
-        if (self.schema_version != 1) return error.UnsupportedThemeSchema;
+        if (self.schema_version != 1 and self.schema_version != 2) return error.UnsupportedThemeSchema;
+        if (self.schema_version == 1 and (self.images.len != 0 or self.profiles.len != 0 or self.defaults.len != 0 or self.render_data != null or self.requires.profile_api != null or self.requires.render_data_api != null or self.requires.style_api == 2)) return error.UnsupportedThemeSchema;
         try identifier(self.id);
         if (std.mem.startsWith(u8, self.id, "pearl.")) return error.ReservedThemeId;
         for ([_][]const u8{ self.name, self.author, self.license, self.source }) |s| try text(s, 256);
         _ = try version(self.asset_version);
         if (self.requires.palette_api) |v| if (v != 1) return error.UnsupportedPaletteApi;
-        if (self.requires.style_api) |v| if (v != 1) return error.UnsupportedStyleApi;
-        if (self.palettes.dark == null and self.palettes.light == null and self.style == null) return error.EmptyTheme;
+        if (self.requires.style_api) |v| if (v != 1 and v != 2) return error.UnsupportedStyleApi;
+        if (!self.requires.supported()) return error.UnsupportedThemeApi;
+        if (self.palettes.dark == null and self.palettes.light == null and self.style == null and self.profiles.len == 0) return error.EmptyTheme;
         for ([_]?[]const u8{ self.palettes.dark, self.palettes.light }) |p| if (p) |path| {
             if (self.requires.palette_api != 1) return error.MissingPaletteApi;
             try relative(path);
         };
         if (self.style) |s| {
-            if (self.requires.style_api != 1) return error.MissingStyleApi;
+            if (self.requires.style_api == null) return error.MissingStyleApi;
             if (s.tokens == null and s.css == null) return error.EmptyStyle;
             if (s.tokens) |p| try relative(p);
             if (s.css) |p| try relative(p);
+        }
+        if (self.images.len > 32 or self.profiles.len > 32 or self.defaults.len > 32) return error.ThemeEntryLimit;
+        if (self.images.len > 0 and (self.requires.style_api != 2 or self.style == null)) return error.MissingStyleApi;
+        for (self.images, 0..) |image, i| {
+            try identifier(image.id);
+            try relative(image.path);
+            for (self.images[0..i]) |previous| if (std.mem.eql(u8, previous.id, image.id)) return error.DuplicateThemeAsset;
+        }
+        if ((self.profiles.len > 0 or self.defaults.len > 0) and self.requires.profile_api != 1) return error.MissingProfileApi;
+        for (self.profiles, 0..) |path, i| {
+            try relative(path);
+            for (self.profiles[0..i]) |old| if (std.mem.eql(u8, old, path)) return error.DuplicateThemeProfile;
+        }
+        for (self.defaults, 0..) |entry, i| {
+            try identifier(entry.application);
+            try identifier(entry.profile);
+            for (self.defaults[0..i]) |old| if (std.mem.eql(u8, old.application, entry.application)) return error.DuplicateThemeDefault;
+        }
+        if (self.render_data) |data| {
+            if (self.requires.render_data_api != 1) return error.MissingRenderDataApi;
+            if (data.dark == null and data.light == null) return error.EmptyRenderData;
+            for ([_]?[]const u8{ data.dark, data.light }, [_]?[]const u8{ self.palettes.dark, self.palettes.light }) |path, shell| if (path) |p| {
+                if (shell == null) return error.RenderDataRequiresPalette;
+                try relative(p);
+            };
         }
     }
 };

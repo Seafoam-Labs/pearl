@@ -3,7 +3,7 @@
     .fingerprint = 0x231087f3fa26aa9b,
     .version = "1.0.0-rc.2",
     .minimum_zig_version = "0.16.0",
-    .paths = .{ "build.zig", "build.zig.zon", ".zigversion", "spikes", "bindings", "scripts", "src", "resources", "tests", "packaging", "docs", "README.md" },
+    .paths = .{ "build.zig", "build.zig.zon", ".zigversion", "spikes", "bindings", "scripts", "src", "resources", "tests", "packaging", "docs", "themes", "community-repository", "README.md" },
     .dependencies = .{
         .wayland = .{
             .url = "https://codeberg.org/ifreund/zig-wayland/archive/v0.6.0.tar.gz",

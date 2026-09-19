@@ -33,6 +33,11 @@ pub const Job = struct {
     native_name: [:0]const u8 = "",
     palette: theme.Palette = theme.dark,
     custom: @import("../theme/resolve.zig").Resolved = .{},
+    asset_provider: @import("../theme/assets.zig").Provider = .{},
+    dynamic_json: ?[]const u8 = null,
+    application_snapshot: @import("../theme/theme_provider.zig").Snapshot = .{},
+    application_result: @import("../theme/matugen_profiles.zig").Status = .{},
+    application_error: ?anyerror = null,
     failure: ?anyerror = null,
     warning: ?anyerror = null,
     export_error: ?anyerror = null,
@@ -51,6 +56,7 @@ pub const Job = struct {
         if (self.texture) |p| p.unref();
         if (self.provider) |p| p.unref();
         if (self.native_provider) |p| p.unref();
+        self.asset_provider.deinit();
         self.cancel.unref();
         self.arena.deinit();
         a.destroy(self);
@@ -84,11 +90,15 @@ pub const Service = struct {
     err: ?anyerror = null,
     export_error: ?anyerror = null,
     qt_status: qt.Status = .{},
+    application_status: @import("../theme/matugen_profiles.zig").Status = .{},
+    application_job_serial: u64 = 0,
     integration_allowed: bool = false,
+    shell_appearance: bool = false,
     qt_review_text: @import("../services/policy.zig").Text(16385) = .{},
     qt_review_digest: ?[64]u8 = null,
     jobs: u64 = 0,
     theme_jobs: @import("../theme/jobs.zig").Manager = .{},
+    theme_discovery: @import("../theme/discovery.zig").Discovery = .{},
     draft: @import("draft.zig").Draft = .{},
     pub fn notify(self: *Service) void {
         self.changed(self.context);
@@ -137,12 +147,16 @@ pub const Service = struct {
         self.monitor = file.monitorDirectory(.{ .watch_moves = true }, null, null) orelse return error.MonitorUnavailable;
         if (self.monitor) |m| _ = gio.FileMonitor.signals.changed.connect(m, *Service, fileChanged, self, .{});
         self.running = true;
+        self.theme_jobs.context = self;
+        self.theme_jobs.finished = themeJobFinished;
+        if (self.shell_appearance) try self.theme_discovery.start(self.app, self, themeCatalogChanged);
         self.reload();
     }
     pub fn stop(self: *Service) void {
         if (!self.running) return;
         self.running = false;
         self.theme_jobs.stop();
+        if (self.theme_discovery.active) self.theme_discovery.stop();
         self.draft.deinit(a);
         if (self.monitor) |m| {
             _ = m.cancel();
@@ -169,9 +183,23 @@ pub const Service = struct {
         a.free(self.good_path);
         a.free(self.cache_dir);
     }
+    fn themeCatalogChanged(context: *anyopaque) void {
+        const self: *Service = @ptrCast(@alignCast(context));
+        if (self.running) self.notify();
+    }
+    fn themeJobFinished(context: *anyopaque) void {
+        const self: *Service = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        self.updateApplicationJob();
+        if (self.theme_jobs.error_code == null) switch (self.theme_jobs.last_action) {
+            .catalog, .install, .import_archive, .remove, .rollback => self.theme_discovery.request(),
+            else => {},
+        };
+    }
     pub fn retryQt(self: *Service, revision: u64, review_only: bool, reviewed: ?[64]u8) !void {
         if (!self.running or !self.integration_allowed) return error.Unavailable;
         if (self.job != null or self.pending_reload) return error.Busy;
+        if (self.cancelApplicationActionBusy()) return error.Busy;
         if (revision != self.revision) return error.Conflict;
         const j = self.live orelse return error.Unavailable;
         if (j.recovered) return error.Unavailable;
@@ -192,6 +220,7 @@ pub const Service = struct {
     }
     fn queueReload(self: *Service, force: bool) void {
         if (!self.running) return;
+        self.cancelApplicationAction();
         self.force_reload = self.force_reload or force;
         self.pending_reload = true;
         if (self.job) |j| if (j.requested == null and j.stage != .integrate) {
@@ -215,11 +244,44 @@ pub const Service = struct {
     }
     pub fn apply(self: *Service, json: []const u8, revision: u64) !void {
         if (!self.running or self.job != null or self.pending_reload) return error.Busy;
+        if (self.cancelApplicationActionBusy()) return error.Busy;
         if (revision != self.revision) return error.Conflict;
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
         _ = try model.parse(arena.allocator(), json);
         try self.launch(json);
+    }
+    fn cancelApplicationActionBusy(self: *Service) bool {
+        if (self.theme_jobs.job) |job| if (job.request.action == .application_install or job.request.action == .application_retry or job.request.action == .application_review) {
+            job.cancel.cancel();
+            return true;
+        };
+        return false;
+    }
+    fn cancelApplicationAction(self: *Service) void {
+        _ = self.cancelApplicationActionBusy();
+    }
+    pub fn updateApplicationJob(self: *Service) void {
+        if (self.theme_jobs.job != null or self.theme_jobs.error_code != null or self.application_job_serial == self.theme_jobs.serial or self.theme_jobs.application_revision != self.revision) return;
+        const bytes = self.theme_jobs.result orelse return;
+        const job = self.live orelse return;
+        const alloc = job.arena.allocator();
+        if (self.theme_jobs.last_action == .application_retry) {
+            const Result = struct { application_status: @import("../theme/matugen_profiles.zig").Status };
+            const result = @import("../theme/package_model.zig").parse(Result, alloc, bytes, 120000) catch return;
+            self.application_status = result.application_status;
+            self.application_status.desired_revision = self.revision;
+            var successful = true;
+            for (self.application_status.targets) |target| switch (target.state) {
+                .failed, .conflict, .unavailable, .unsupported => successful = false,
+                else => {},
+            };
+            if (successful) self.application_status.applied_revision = self.revision;
+        } else if (self.theme_jobs.last_action == .application_install) {
+            self.application_status.targets[@intFromEnum(@import("../theme/matugen_profiles.zig").Application.starship)].state = .applied;
+        } else return;
+        self.application_job_serial = self.theme_jobs.serial;
+        self.notify();
     }
     fn launch(self: *Service, requested: ?[]const u8) !void {
         const j = try a.create(Job);
@@ -304,6 +366,24 @@ pub const Service = struct {
                 .qt5 = .{ .state = .failed, .error_code = @errorName(err) },
                 .qt6 = .{ .state = .failed, .error_code = @errorName(err) },
             };
+            if (!j.qt_review_only) {
+                const application_result = @import("../theme/application_profiles.zig").reconcile(scratch.allocator(), std.mem.span(glib.getUserConfigDir()), j.prefs.matugen.enabled, j.application_snapshot, j.cancel) catch |err| blk: {
+                    var failed: @import("../theme/matugen_profiles.zig").Status = .{};
+                    for (&failed.targets) |*target| target.* = .{ .state = .failed, .error_code = @errorName(err) };
+                    break :blk failed;
+                };
+                // Rendering buffers belong to this worker iteration, not the
+                // long-lived appearance arena (Qt retry can reuse this Job).
+                const new_status = std.json.Stringify.valueAlloc(scratch.allocator(), application_result, .{}) catch null;
+                const old_status = std.json.Stringify.valueAlloc(scratch.allocator(), j.application_result, .{}) catch null;
+                if (new_status != null and (old_status == null or !std.mem.eql(u8, new_status.?, old_status.?))) {
+                    j.application_result = @import("../theme/package_model.zig").parse(@import("../theme/matugen_profiles.zig").Status, j.arena.allocator(), new_status.?, 65536) catch .{ .targets = @splat(.{ .state = .failed, .error_code = "ApplicationStatusUnavailable" }) };
+                }
+                if (new_status == null) j.application_result = .{ .targets = @splat(.{ .state = .failed, .error_code = "ApplicationStatusUnavailable" }) };
+                if (j.application_error) |err| for (&j.application_result.targets) |*target| {
+                    target.* = .{ .state = .unavailable, .error_code = @errorName(err) };
+                };
+            }
         } else persist(j) catch |err| {
             j.failure = err;
         };
@@ -387,6 +467,7 @@ pub const Service = struct {
             if (saved != null and !saved.?.missing) {
                 if (!std.mem.eql(u8, &io.digest(saved.?.bytes), p.theme.snapshot_digest)) return error.ThemeSnapshotCorrupt;
                 j.custom = try modelParseCustom(alloc, saved.?.bytes);
+                j.custom.blobs = try @import("../theme/asset_store.zig").load(alloc, try std.fmt.allocPrintSentinel(alloc, "{s}/theme-assets", .{self.dir}, 0), j.custom.images);
             } else {
                 if (j.requested == null and p.theme.snapshot_digest.len == 64) return error.ThemeSnapshotMissing;
                 j.custom = try custom.resolve(alloc, p.theme, try @import("../theme/catalog.zig").scan(alloc), j.requested != null);
@@ -404,7 +485,12 @@ pub const Service = struct {
                 inline for (@typeInfo(theme.Palette).@"struct".fields) |field|
                     @field(j.palette, field.name) = try alloc.dupe(u8, @field(previous.?.palette, field.name));
                 j.cache_hit = true;
-            } else j.palette = try generator.palette(alloc, p, image_bytes, self.cache_dir, j.cancel, &j.cache_hit);
+                if (previous.?.dynamic_json) |json| j.dynamic_json = try alloc.dupe(u8, json);
+            } else {
+                const generated = try generator.full(alloc, p, image_bytes, self.cache_dir, j.cancel, &j.cache_hit);
+                j.palette = generated.palette;
+                j.dynamic_json = generated.json;
+            }
         }
         if (p.theme.mode == .gtk and p.theme.gtk_name.len > 0) {
             j.native_name = try alloc.dupeZ(u8, p.theme.gtk_name);
@@ -423,21 +509,39 @@ pub const Service = struct {
         const token_template = try @import("../theme/style.zig").tokenCss(alloc, j.custom.tokens, p.reduced_motion);
         const tokens = try theme.scopedCss(alloc, token_template, "pearl-custom", j.palette);
         // Authentication surfaces keep built-in layout and receive colors only.
-        const extra = if (self.integration_allowed) try theme.scopedCss(alloc, j.custom.css, "pearl-custom", j.palette) else "";
-        j.css = try std.fmt.allocPrintSentinel(alloc, "{s}\n{s}\n{s}\n{s}{s}", .{ bytes, if (self.integration_allowed) tokens else "", extra, font, wallpaper }, 0);
+        const extra = if (self.shell_appearance) try theme.scopedCss(alloc, j.custom.css, "pearl-custom", j.palette) else "";
+        j.css = try std.fmt.allocPrintSentinel(alloc, "{s}\n{s}\n{s}\n{s}{s}", .{ bytes, if (self.shell_appearance) tokens else "", extra, font, wallpaper }, 0);
         if (j.custom.digest.len > 0) {
             const snapshot_bytes = try std.json.Stringify.valueAlloc(alloc, j.custom, .{});
             j.prefs.theme.snapshot_digest = try alloc.dupe(u8, &io.digest(snapshot_bytes));
         } else j.prefs.theme.snapshot_digest = "";
+        if (self.shell_appearance and p.matugen.enabled) {
+            j.application_snapshot = if (j.requested == null and p.matugen.snapshot_digest.len > 0)
+                @import("../theme/application_profiles.zig").load(alloc, self.dir, p.matugen.snapshot_digest) catch |err| blk: {
+                    j.application_error = err;
+                    break :blk .{};
+                }
+            else
+                @import("../theme/theme_provider.zig").capture(alloc, p, j.dynamic_json, j.cancel, try std.fmt.allocPrintSentinel(alloc, "{s}/applications", .{self.cache_dir}, 0)) catch |err| blk: {
+                    j.application_error = err;
+                    break :blk .{};
+                };
+            if (j.application_error) |err| j.application_snapshot.error_code = @errorName(err);
+            j.prefs.matugen.snapshot_digest = try alloc.dupe(u8, &io.digest(try std.json.Stringify.valueAlloc(alloc, j.application_snapshot, .{})));
+        } else if (!p.matugen.enabled) j.prefs.matugen.snapshot_digest = "";
         j.json = try std.json.Stringify.valueAlloc(alloc, j.prefs, .{ .whitespace = .indent_2 });
         if (j.cancel.isCancelled() != 0) return error.Cancelled;
     }
     fn persist(j: *Job) !void {
         const self = j.service;
+        if (!j.recovered and self.shell_appearance and j.prefs.matugen.enabled) {
+            _ = try @import("../theme/application_profiles.zig").save(j.arena.allocator(), self.dir, j.application_snapshot);
+        }
         if (!j.recovered and j.custom.digest.len > 0) {
             const alloc = j.arena.allocator();
             const directory = try std.fmt.allocPrintSentinel(alloc, "{s}/theme-snapshots", .{self.dir}, 0);
             try io.mkdir(directory);
+            try @import("../theme/asset_store.zig").save(alloc, try std.fmt.allocPrintSentinel(alloc, "{s}/theme-assets", .{self.dir}, 0), j.custom.blobs);
             try @import("../theme/snapshots.zig").write(alloc, directory, j.prefs.theme.snapshot_digest, try std.json.Stringify.valueAlloc(alloc, j.custom, .{}));
         }
         if (j.requested != null) try io.replace(self.path, j.json, j.disk.?, j.cancel);
@@ -450,6 +554,8 @@ pub const Service = struct {
             const alloc = j.arena.allocator();
             const directory = try std.fmt.allocPrintSentinel(alloc, "{s}/theme-snapshots", .{self.dir}, 0);
             @import("../theme/snapshots.zig").prune(alloc, directory, j.prefs.theme.snapshot_digest, if (self.live) |old| old.prefs.theme.snapshot_digest else "") catch {};
+            @import("../theme/asset_store.zig").prune(alloc, try std.fmt.allocPrintSentinel(alloc, "{s}/theme-assets", .{self.dir}, 0), directory) catch {};
+            if (self.shell_appearance) @import("../theme/application_profiles.zig").prune(alloc, self.dir, j.prefs.matugen.snapshot_digest, if (self.live) |old| old.prefs.matugen.snapshot_digest else "") catch {};
         }
         // Export failure is independent: it must never undo a successful shell save.
         exports(j) catch |err| {
@@ -482,6 +588,13 @@ pub const Service = struct {
                 if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(180, debounced, self);
                 return;
             }
+            self.application_status = j.application_result;
+            self.application_status.desired_revision = self.revision;
+            var application_success = true;
+            for (self.application_status.targets) |target| if (target.state == .failed or target.state == .conflict or target.state == .unavailable or target.state == .unsupported) {
+                application_success = false;
+            };
+            if (application_success) self.application_status.applied_revision = self.revision;
             self.qt_review_digest = null;
             self.qt_review_text.set("");
             const previously_applied = self.qt_status.applied_revision;
@@ -553,6 +666,7 @@ pub const Service = struct {
                     self.draft.discard(a, expected) catch {};
                 }
                 self.removeLive();
+                self.application_status = .{ .desired_revision = self.revision };
                 self.live = j;
                 self.appearance += 1;
                 if (j.requested != null) {
@@ -608,6 +722,8 @@ fn cssError(_: *gtk.CssProvider, _: *gtk.CssSection, err: *glib.Error, failed: *
     if (err.f_domain == gtk.cssParserErrorQuark()) failed.* = true;
 }
 fn validateProviders(j: *Job) !void {
+    j.asset_provider.deinit();
+    if (j.service.shell_appearance) j.asset_provider = try @import("../theme/assets.zig").Provider.init(j.custom.blobs);
     if (j.service.validate) |validate| try validate(j.service.context, j.prefs);
     if (j.image) |image| j.texture = gdk.Texture.newForPixbuf(image);
     var failed = false;
@@ -675,7 +791,8 @@ fn exports(j: *Job) !void {
 
 fn modelParseCustom(alloc: std.mem.Allocator, bytes: []const u8) !@import("../theme/resolve.zig").Resolved {
     const result = try @import("../theme/package_model.zig").parse(@import("../theme/resolve.zig").Resolved, alloc, bytes, 16384);
-    if (result.palette_api != 1 or result.style_api != 1) return error.UnsupportedThemeSnapshot;
+    if (result.palette_api != 1 or (result.style_api != 1 and result.style_api != 2)) return error.UnsupportedThemeSnapshot;
+    try @import("../theme/assets.zig").bounds(result.images);
     if (result.palette) |p| try theme.validate(p);
     try result.tokens.validate();
     if (result.css.len > 3072) return error.ThemeCssTooLarge;

@@ -28,15 +28,22 @@ pub const Client = struct {
     refresh_appearance: bool = false,
     deadline: c_uint = 0,
     heartbeat: c_uint = 0,
+    appearance_transfer: ?@import("asset_transfer.zig").Transfer = null,
+    appearance_json: ?[]u8 = null,
+    asset_provider: @import("../theme/assets.zig").Provider = .{},
+    asset_revision: ?u64 = null,
     pub fn init(self: *Client) void {
         self.transport = wire.Transport.init(self, event);
         self.transport.secure = true;
     }
     pub fn deinit(self: *Client) void {
         self.stop();
+        self.asset_provider.deinit();
         self.transport.deinit();
     }
     pub fn stop(self: *Client) void {
+        self.clearAppearanceTransfer();
+        self.asset_revision = null;
         if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
         if (self.heartbeat != 0) _ = glib.Source.remove(self.heartbeat);
         self.deadline = 0;
@@ -177,6 +184,28 @@ pub const Client = struct {
         }
         const ok = try e.read(bool, alloc, try e.field(v, "ok"));
         if (self.operation != .hello and self.operation != .ping) {
+            if (self.operation == .@"theme.asset" and self.appearance_transfer != null) {
+                self.waiting = false;
+                if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
+                self.deadline = 0;
+                if (!ok) {
+                    self.clearAppearanceTransfer();
+                    return error.ThemeAssetTransferFailed;
+                }
+                if (try self.appearance_transfer.?.accept(try e.field(v, "result"))) {
+                    var provider = try @import("../theme/assets.zig").Provider.init(self.appearance_transfer.?.blobs.items);
+                    errdefer provider.deinit();
+                    const saved = try std.json.parseFromSliceLeaky(std.json.Value, alloc, self.appearance_json.?, .{});
+                    const snapshot = try @import("appearance.zig").Snapshot.read(alloc, saved);
+                    self.notify(self.context, .{ .connected = snapshot });
+                    self.asset_provider.deinit();
+                    self.asset_provider = provider;
+                    self.asset_revision = snapshot.revision;
+                    self.clearAppearanceTransfer();
+                    if (self.heartbeat == 0) self.heartbeat = glib.timeoutAdd((protocol.Limits{}).heartbeat_ms, tick, self);
+                } else try self.appearance_transfer.?.request(self);
+                return;
+            }
             const epoch = try e.read([]const u8, alloc, try e.field(v, "epoch"));
             if (!std.mem.eql(u8, epoch, &self.epoch.?)) return error.StaleSession;
             self.waiting = false;
@@ -216,7 +245,19 @@ pub const Client = struct {
         self.waiting = false;
         if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
         self.deadline = 0;
+        if (appearance) |snapshot| if (snapshot.images.len > 0 and self.asset_revision != snapshot.revision) {
+            if (!caps.theme_assets) return error.UnsupportedThemeAssets;
+            self.clearAppearanceTransfer();
+            self.appearance_json = try std.json.Stringify.valueAlloc(a, snapshot, .{});
+            self.appearance_transfer = try @import("asset_transfer.zig").Transfer.init(snapshot.images, snapshot.revision, false);
+            try self.appearance_transfer.?.request(self);
+            return;
+        };
         self.notify(self.context, .{ .connected = appearance }); // Borrowed during callback only.
+        if (appearance) |snapshot| if (snapshot.images.len == 0) {
+            self.asset_provider.deinit();
+            self.asset_revision = snapshot.revision;
+        };
         if (self.heartbeat == 0) self.heartbeat = glib.timeoutAdd(if (caps.pearl_draft) (protocol.Limits{}).heartbeat_ms else 1000, tick, self);
     }
     fn tick(context: ?*anyopaque) callconv(.c) c_int {
@@ -227,6 +268,12 @@ pub const Client = struct {
             return 0;
         };
         return 1;
+    }
+    fn clearAppearanceTransfer(self: *Client) void {
+        if (self.appearance_transfer) |*transfer| transfer.deinit();
+        self.appearance_transfer = null;
+        if (self.appearance_json) |json| a.free(json);
+        self.appearance_json = null;
     }
     fn expired(context: ?*anyopaque) callconv(.c) c_int {
         const self: *Client = @ptrCast(@alignCast(context.?));

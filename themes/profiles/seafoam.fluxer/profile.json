@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "seafoam.fluxer",
+  "application": "fluxer",
+  "adapter": "fluxer",
+  "name": "Seafoam · fluxer",
+  "author": "Seafoam Labs and attributed upstream contributors",
+  "license": "GPL-3.0-only",
+  "source": "https://github.com/Seafoam-Labs/aqueous-dotfiles/tree/76772cb9d009f971193b6fb2dbb56854055225d5",
+  "asset_version": "1.0.0",
+  "variants": [
+    "dark",
+    "light"
+  ],
+  "templates": [
+    {
+      "path": "template.css",
+      "output": "theme.css"
+    }
+  ],
+  "instructions": "Import the generated CSS through Fluxer theme settings."
+}

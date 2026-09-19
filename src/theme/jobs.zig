@@ -10,11 +10,20 @@ pub const Manager = struct {
     error_code: ?anyerror = null,
     serial: u64 = 0,
     stopped: bool = false,
+    assets_arena: std.heap.ArenaAllocator = .init(a),
+    blobs: []const @import("assets.zig").Blob = &.{},
+    last_action: @FieldType(@import("commands.zig").Request, "action") = .catalog,
+    application_revision: u64 = 0,
+    finished: ?*const fn (*anyopaque) void = null,
+    context: ?*anyopaque = null,
     pub fn stop(self: *Manager) void {
         self.stopped = true;
         if (self.job) |job| job.cancel.cancel();
         if (self.result) |bytes| a.free(bytes);
         self.result = null;
+        self.assets_arena.deinit();
+        self.assets_arena = .init(a);
+        self.blobs = &.{};
     }
     pub fn start(self: *Manager, app: *gio.Application, text: []const u8) !void {
         if (self.stopped) return error.Unavailable;
@@ -23,9 +32,13 @@ pub const Manager = struct {
         job.* = .{ .manager = self, .app = app, .arena = .init(a), .cancel = gio.Cancellable.new(), .request = undefined };
         errdefer job.destroy();
         job.request = try @import("package_model.zig").parse(@import("commands.zig").Request, job.arena.allocator(), text, 16384);
+        self.last_action = job.request.action;
+        self.application_revision = std.fmt.parseInt(u64, job.request.revision, 10) catch 0;
         self.error_code = null;
         if (self.result) |old| a.free(old);
         self.result = null;
+        _ = self.assets_arena.reset(.free_all);
+        self.blobs = &.{};
         self.job = job;
         job.deadline = glib.timeoutAdd(if (job.request.action == .preview_render) 15000 else 60000, expired, job);
         self.serial +|= 1;
@@ -51,6 +64,7 @@ const Job = struct {
     request: @import("commands.zig").Request,
     result: ?[]const u8 = null,
     failure: ?anyerror = null,
+    blobs: []const @import("assets.zig").Blob = &.{},
     progress: @import("progress.zig").Progress = .{},
     deadline: c_uint = 0,
     fn destroy(self: *Job) void {
@@ -68,7 +82,7 @@ fn expired(data: ?*anyopaque) callconv(.c) c_int {
 }
 fn work(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
     const job: *Job = @ptrCast(@alignCast(data.?));
-    job.result = @import("commands.zig").run(job.arena.allocator(), job.request, job.cancel, &job.progress) catch |err| blk: {
+    job.result = @import("commands.zig").runWithAssets(job.arena.allocator(), job.request, job.cancel, &job.progress, &job.blobs) catch |err| blk: {
         job.failure = err;
         break :blk null;
     };
@@ -83,12 +97,19 @@ fn done(_: ?*object.Object, _: *gio.AsyncResult, data: ?*anyopaque) callconv(.c)
     const self = job.manager;
     self.job = null;
     if (!self.stopped) {
+        self.blobs = cloneBlobs(self.assets_arena.allocator(), job.blobs) catch &.{};
         self.error_code = job.failure;
         if (job.result) |bytes| self.result = a.dupe(u8, bytes) catch blk: {
             self.error_code = error.OutOfMemory;
             break :blk null;
         };
+        if (self.finished) |finished| finished(self.context.?);
     }
     job.app.release();
     job.destroy();
+}
+fn cloneBlobs(alloc: std.mem.Allocator, blobs: []const @import("assets.zig").Blob) ![]const @import("assets.zig").Blob {
+    const copy = try alloc.alloc(@import("assets.zig").Blob, blobs.len);
+    for (blobs, copy) |source, *destination| destination.* = .{ .digest = try alloc.dupe(u8, source.digest), .bytes = try alloc.dupe(u8, source.bytes) };
+    return copy;
 }

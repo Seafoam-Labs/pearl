@@ -48,11 +48,15 @@ fn one(s: []const u8, choices: []const []const u8) bool {
 /// Imports are expanded from the immutable package file list, never GTK's
 /// filesystem/network resolver. Only quoted package-relative CSS is accepted.
 pub fn compileFiles(a: std.mem.Allocator, files: anytype, path: []const u8) ![]const u8 {
+    return compileFilesWithImages(a, files, path, &[_]Asset{});
+}
+pub const Asset = struct { id: []const u8, digest: []const u8 };
+pub fn compileFilesWithImages(a: std.mem.Allocator, files: anytype, path: []const u8, images: anytype) ![]const u8 {
     var stack: [4][]const u8 = undefined;
     var bytes: usize = 0;
-    return expand(a, files, path, &stack, 0, &bytes);
+    return expand(a, files, path, &stack, 0, &bytes, images);
 }
-fn expand(a: std.mem.Allocator, files: anytype, path: []const u8, stack: *[4][]const u8, depth: usize, bytes: *usize) anyerror![]const u8 {
+fn expand(a: std.mem.Allocator, files: anytype, path: []const u8, stack: *[4][]const u8, depth: usize, bytes: *usize, images: anytype) anyerror![]const u8 {
     try model.relative(path);
     if (depth >= stack.len) return error.ThemeCssImportDepth;
     for (stack[0..depth]) |old| if (std.mem.eql(u8, old, path)) return error.ThemeCssImportCycle;
@@ -76,11 +80,11 @@ fn expand(a: std.mem.Allocator, files: anytype, path: []const u8, stack: *[4][]c
             const tail = trim(spec[end + 1 ..]);
             if (tail.len == 0 or tail[0] != ';') return error.InvalidThemeCssImport;
             const imported = if (std.fs.path.dirname(path)) |dir| try std.fmt.allocPrint(a, "{s}/{s}", .{ dir, relative }) else relative;
-            try out.appendSlice(a, try expand(a, files, imported, stack, depth + 1, bytes));
+            try out.appendSlice(a, try expand(a, files, imported, stack, depth + 1, bytes, images));
             rest = trim(tail[1..]);
         } else {
             const end = std.mem.indexOfScalar(u8, rest, '}') orelse return error.InvalidThemeCss;
-            try out.appendSlice(a, try compile(a, rest[0 .. end + 1]));
+            try out.appendSlice(a, try compileWithImages(a, rest[0 .. end + 1], images));
             rest = trim(rest[end + 1 ..]);
         }
         if (out.items.len > 3072) return error.ThemeCssTooLarge;
@@ -90,6 +94,9 @@ fn expand(a: std.mem.Allocator, files: anytype, path: []const u8, stack: *[4][]c
 /// Input selectors are component names; compilation constructs every scoped branch.
 /// Only paint, border and radius properties are allowed; authentication never uses it.
 pub fn compile(a: std.mem.Allocator, source: []const u8) ![]const u8 {
+    return compileWithImages(a, source, &[_]Asset{});
+}
+pub fn compileWithImages(a: std.mem.Allocator, source: []const u8, images: anytype) ![]const u8 {
     if (source.len > 2048) return error.ThemeCssTooLarge;
     var rest = trim(source);
     var out: std.ArrayList(u8) = .empty;
@@ -115,7 +122,7 @@ pub fn compile(a: std.mem.Allocator, source: []const u8) ![]const u8 {
             if (d.len == 0) continue;
             const sep = std.mem.indexOfScalar(u8, d, ':') orelse return error.InvalidThemeCss;
             const key = trim(d[0..sep]);
-            const value = trim(d[sep + 1 ..]);
+            var value = trim(d[sep + 1 ..]);
             if (one(key, &.{ "color", "background-color", "border-color" })) {
                 var valid = @import("../config/preferences.zig").hex(value);
                 inline for (@typeInfo(@import("theme.zig").Palette).@"struct".fields) |field| {
@@ -128,6 +135,27 @@ pub fn compile(a: std.mem.Allocator, source: []const u8) ![]const u8 {
                 if (v > 32 or (std.mem.eql(u8, key, "border-width") and v > 4)) return error.InvalidThemeCssDimension;
             } else if (std.mem.eql(u8, key, "border-style")) {
                 if (!one(value, &.{ "solid", "dashed", "none" })) return error.InvalidThemeCss;
+            } else if (std.mem.eql(u8, key, "background-image")) {
+                if (std.mem.eql(u8, value, "none")) {} else {
+                    const prefix = "url(\"theme-asset:";
+                    if (!std.mem.startsWith(u8, value, prefix) or !std.mem.endsWith(u8, value, "\")")) return error.InvalidThemeAssetUrl;
+                    const id = value[prefix.len .. value.len - 2];
+                    try model.identifier(id);
+                    var found = false;
+                    for (images) |image| if (std.mem.eql(u8, image.id, id)) {
+                        try model.digest(image.digest);
+                        value = try std.fmt.allocPrint(a, "url(\"resource:///org/aqueous/Pearl/theme-assets/{s}.png\")", .{image.digest});
+                        found = true;
+                        break;
+                    };
+                    if (!found) return error.ThemeAssetMissing;
+                }
+            } else if (std.mem.eql(u8, key, "background-size")) {
+                if (images.len == 0 or !one(value, &.{ "cover", "contain", "auto" })) return error.InvalidThemeImageStyle;
+            } else if (std.mem.eql(u8, key, "background-repeat")) {
+                if (images.len == 0 or !one(value, &.{ "repeat", "no-repeat", "repeat-x", "repeat-y" })) return error.InvalidThemeImageStyle;
+            } else if (std.mem.eql(u8, key, "background-position")) {
+                if (images.len == 0 or !one(value, &.{ "center", "top", "bottom", "left", "right" })) return error.InvalidThemeImageStyle;
             } else return error.UnsupportedThemeCssProperty;
             try out.appendSlice(a, key);
             try out.append(a, ':');

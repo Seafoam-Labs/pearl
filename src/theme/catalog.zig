@@ -64,7 +64,11 @@ pub fn scan(a: std.mem.Allocator) !Catalog {
             // validation buffers. Assets have already contributed to the digest.
             var metadata = package;
             metadata.files = &.{};
-            const retained = try model.parse(pkg.Package, a, try std.json.Stringify.valueAlloc(temporary.allocator(), metadata, .{}), 16384);
+            metadata.blobs = &.{};
+            const retained = model.parse(pkg.Package, a, try std.json.Stringify.valueAlloc(temporary.allocator(), metadata, .{}), 131072) catch |err| {
+                try diagnostics.append(a, .{ .path = path, .error_code = @errorName(err) });
+                continue;
+            };
             try entries.append(a, .{ .path = path, .package = retained });
         }
     }
