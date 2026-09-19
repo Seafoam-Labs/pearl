@@ -1,0 +1,112 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=app-index-ready entries=2 truncated=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=9a273063fcdc5863b18cc83b9bc70aef
+info(pearl): event=control-ready session=9a273063fcdc5863b18cc83b9bc70aef
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=preferences-applied revision=2 mode=static cache=false
+event=fixture-ready Alpha
+info: event=popup-opened output=1
+info: event=launcher-results count=4 shown=4 publish_us=180
+info: event=launcher-painted latency_us=2295
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=popup-closed
+event=fixture-ready Alpha
+event=fixture-ready Alpha
+event=fixture-ready Alpha
+info: event=preferences-applied revision=3 mode=static cache=false
+info: event=preferences-applied revision=4 mode=static cache=false
+info: event=preferences-applied revision=5 mode=static cache=false
+info: event=preferences-applied revision=6 mode=static cache=false
+info: event=preferences-applied revision=7 mode=static cache=false
+info: event=popup-opened output=1
+info: event=launcher-results count=7 shown=7 publish_us=2815
+info: event=launcher-results count=7 shown=7 publish_us=242
+info: event=launcher-painted latency_us=14448
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=settings-focus target=body
+info: event=settings-focus target=heading
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=session-focus target=dnd
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=session-focus target=other
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=session-focus target=other
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=settings-focus target=body
+info: event=settings-focus target=heading
+info: event=settings-focus target=body
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=session-focus target=settings-other
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=settings-focus target=body
+info: event=settings-focus target=heading
+info: event=settings-focus target=body
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=settings-focus target=body
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=popup-closed
+info: event=preferences-applied revision=8 mode=gtk cache=false
+info: event=preferences-applied revision=9 mode=static cache=false
+info: event=preferences-applied revision=10 mode=static cache=false
+info: event=app-index-ready entries=16 truncated=false
+info: event=preferences-applied revision=11 mode=static cache=false
+info: event=preferences-applied revision=12 mode=static cache=false
+info: event=preferences-applied revision=13 mode=static cache=false
+info: event=preferences-applied revision=14 mode=static cache=false
+info(pearl): event=stopping reason=control-quit pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

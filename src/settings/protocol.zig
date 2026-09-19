@@ -34,6 +34,7 @@ pub const Capabilities = struct {
     community_themes: bool = false,
     theme_assets: bool = false,
     application_profiles: bool = false,
+    bar_widgets: bool = false,
 };
 pub const Request = struct {
     settings: u32,

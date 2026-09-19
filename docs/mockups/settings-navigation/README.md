@@ -11,6 +11,9 @@ destinations. These images illustrate the standalone app.
 The [Aqueous Displays concept](../aqueous-displays/README.md) explores a simpler
 display arrangement, selected-screen editor, and Apply / Keep / Revert flow.
 
+The [Bar editor concept](../bar-editor/README.md) replaces widget text fields
+with selection menus and ordered groups inside the Bar & dock page.
+
 ## Review
 
 - Click Sound, Network, Bluetooth or Battery in the example bar. The matching

@@ -328,6 +328,15 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| settings_window_test.addArgs(args);
     b.step("test-settings-app", "Verify standalone window, process isolation, activation and presentation").dependOn(&settings_window_test.step);
 
+    const bar_editor = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_bar_editor.py", "--settings" });
+    bar_editor.addArtifactArg(settings_test_app);
+    bar_editor.addArg("--pearl");
+    bar_editor.addArtifactArg(app);
+    bar_editor.addArg("--ctl");
+    bar_editor.addArtifactArg(ctl);
+    if (b.args) |args| bar_editor.addArgs(args);
+    b.step("test-settings-bar-editor", "Verify native bar selections, shared drafts and persistence").dependOn(&bar_editor.step);
+
     const settings_appearance = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_appearance.py", "--settings" });
     settings_appearance.addArtifactArg(settings_test_app);
     settings_appearance.addArg("--pearl");

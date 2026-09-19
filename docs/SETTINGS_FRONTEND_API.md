@@ -28,6 +28,27 @@ never package filesystem reads or generators. Preview uses isolated widget roots
 selection edits the normal shared draft. Clients without the capability must not
 send theme operations. See the author guide for remaining profile integration.
 
+## Bar widget catalog extension
+
+The optional handshake capability `bar_widgets` advertises a read-only catalog
+on the `bar` page's existing `live` snapshot. `live.bar_widgets` is null when
+unsupported, or an array of at most 32 objects with `id`, `name`, `digest`,
+`available` and `status`. Each package currently provides only `/main`.
+Snapshots come from the session-owned plugin manager; they carry no package
+paths, settings schemas, guest commands or permission mutations. Plugin actions
+remain restricted to the Plugins page.
+
+Settings combines this metadata with the latest Pearl draft to offer approved,
+enabled packages whose placement mode is `bar`. It rechecks the current digest
+and availability when adding. Legacy backends retain builtin selection and show
+existing plugin references with fallback labels. No catalog is needed to retain,
+move or remove an existing valid reference.
+
+All layout edits still use the existing full-document draft protocol; no new
+mutation operation is introduced. Cross-group moves change both group strings
+in one validated candidate. Menu actions are tied to the displayed bar state
+and reject a changed layout instead of applying stale positions.
+
 ## Existing frontend contract
 
 S1–S6 implementation notes, September 15, 2026. The standalone GTK4 frontend

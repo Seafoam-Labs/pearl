@@ -12,9 +12,6 @@ const bar_fields = [_]Spec{
     .{ .path = "bar.edge", .label = "Bar edge", .kind = .choice, .choices = edges },
     .{ .path = "bar.size", .label = "Bar size", .kind = .number, .min = 32, .max = 160 },
     .{ .path = "bar.islands", .label = "Separate bar islands", .kind = .toggle },
-    .{ .path = "bar.groups.left", .label = "Left group", .kind = .text },
-    .{ .path = "bar.groups.center", .label = "Center group", .kind = .text },
-    .{ .path = "bar.groups.right", .label = "Right group", .kind = .text },
     .{ .path = "dock.enabled", .label = "Show dock", .kind = .toggle },
     .{ .path = "dock.edge", .label = "Dock edge", .kind = .choice, .choices = edges },
     .{ .path = "dock.mode", .label = "Dock visibility", .kind = .choice, .choices = &.{ "always", "autohide", "intelligent" } },
@@ -39,15 +36,23 @@ pub const View = struct {
     filling: bool = false,
     editing: bool = false,
     own_invalid: ?[64]u8 = null,
-    pub fn create(host: *gtk.Box, editor: *Editor, idle: bool) !*View {
+    bar: ?*@import("bar_view.zig").View = null,
+    pub fn create(host: *gtk.Box, editor: *Editor, idle: bool, context: *anyopaque, invalidate: *const fn (*anyopaque, @import("../desktop/settings_navigation.zig").Route) void) !*View {
         const self = try a.create(View);
         const specs: []const Spec = if (idle) &idle_fields else &bar_fields;
         self.* = .{ .editor = editor, .host = host, .fields = try a.alloc(Field, specs.len) };
-        if (!idle) host.append(w.label("Group items are comma-separated. Pins and per-output overrides are available in Advanced.", "pearl-secondary").as(gtk.Widget));
-        const card = w.column(0);
+        var card = w.column(0);
         card.as(gtk.Widget).addCssClass("settings-card");
         host.append(card.as(gtk.Widget));
-        for (specs, self.fields) |spec, *field| {
+        for (specs, self.fields, 0..) |spec, *field, index| {
+            if (!idle and (index == 3 or index == 8)) {
+                if (index == 3) self.bar = try @import("bar_view.zig").View.create(host, editor, context, invalidate);
+                const expander = gtk.Expander.new(if (index == 3) "Dock" else "Flyouts");
+                card = w.column(0);
+                card.as(gtk.Widget).addCssClass("settings-card");
+                expander.setChild(card.as(gtk.Widget));
+                host.append(expander.as(gtk.Widget));
+            }
             const row = w.flow(2);
             row.setHomogeneous(0);
             row.as(gtk.Widget).addCssClass("settings-form-row");
@@ -84,11 +89,13 @@ pub const View = struct {
         return self;
     }
     pub fn destroy(self: *View) void {
+        if (self.bar) |bar| bar.destroy();
         for (self.fields) |field| object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
         a.free(self.fields);
         a.destroy(self);
     }
     pub fn update(self: *View) void {
+        if (self.bar) |bar| bar.update();
         if (self.editing) return;
         self.filling = true;
         defer self.filling = false;
@@ -96,10 +103,10 @@ pub const View = struct {
         defer arena.deinit();
         const alloc = arena.allocator();
         const document = formDocument(alloc, self.editor.text(), self.own_invalid) catch {
-            self.host.as(gtk.Widget).setSensitive(0);
+            for (self.fields) |field| field.widget.setSensitive(0);
             return;
         };
-        self.host.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable()));
+        for (self.fields) |field| field.widget.setSensitive(@intFromBool(self.editor.editable()));
         for (self.fields) |field| {
             const value = lookup(document, field.spec.path) orelse continue;
             // Acknowledgments must not reset the cursor in an active entry.

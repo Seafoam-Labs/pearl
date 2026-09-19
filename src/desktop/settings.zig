@@ -28,7 +28,7 @@ pub const View = struct {
     density: *gtk.DropDown,
     edge: *gtk.DropDown,
     placement: *gtk.DropDown,
-    entries: [7]*gtk.Entry,
+    entries: [5]*gtk.Entry,
     wallpaper_button: *gtk.Button = undefined,
     wallpaper_picker: ?*gtk.FileChooserDialog = null,
     font_size: *gtk.SpinButton,
@@ -94,9 +94,9 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(qt_settings, *View, openQtSettings, self, .{});
         self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences, false);
         bar.append(w.label("Default layout for every output. Connector overrides are available in Advanced.", "pearl-secondary").as(gtk.Widget));
-        self.entries[5] = entry(bar, "Left widgets", "launcher,workspaces,title");
-        self.entries[6] = entry(bar, "Right widgets", "media,tray,audio,network,battery,notifications,keyboard,control");
-        bar.append(w.label("The center group, per-output layouts and export templates can be edited in Advanced. Widget names are comma-separated; launcher is required.", "pearl-secondary").as(gtk.Widget));
+        const bar_editor = gtk.Button.newWithLabel("Arrange bar widgets…");
+        bar.append(bar_editor.as(gtk.Widget));
+        _ = gtk.Button.signals.clicked.connect(bar_editor, *View, openBarSettings, self, .{});
         self.edge = dropdown(bar, "Bar edge", &.{ "Top", "Right", "Bottom", "Left" });
         self.bar_size = spin(bar, "Bar minimum size", 32, 160);
         self.islands = gtk.CheckButton.newWithLabel("Separate rounded bar islands");
@@ -246,7 +246,7 @@ pub const View = struct {
         self.revision = if (self.service.draft.text != null) self.service.draft.base_revision else self.service.revision;
         self.draft_serial = self.service.draft.revision;
         const p = self.base;
-        for (self.entries, [_][]const u8{ p.theme.gtk_name, p.theme.seed, p.wallpaper.path, p.wallpaper.color, p.font, p.bar.groups.left, p.bar.groups.right }) |e, value| e.as(gtk.Editable).setText(alloc.dupeZ(u8, value) catch "");
+        for (self.entries, [_][]const u8{ p.theme.gtk_name, p.theme.seed, p.wallpaper.path, p.wallpaper.color, p.font }) |e, value| e.as(gtk.Editable).setText(alloc.dupeZ(u8, value) catch "");
         self.mode.setSelected(switch (p.theme.mode) {
             .static => 0,
             .dynamic => 1,
@@ -294,8 +294,6 @@ pub const View = struct {
         p.wallpaper.path = text(self.entries[2]);
         p.wallpaper.color = text(self.entries[3]);
         p.font = text(self.entries[4]);
-        p.bar.groups.left = text(self.entries[5]);
-        p.bar.groups.right = text(self.entries[6]);
         p.idle.ac = .{ .lock_seconds = @intCast(self.idle_spins[0].getValueAsInt()), .suspend_seconds = @intCast(self.idle_spins[1].getValueAsInt()) };
         p.idle.battery = .{ .lock_seconds = @intCast(self.idle_spins[2].getValueAsInt()), .suspend_seconds = @intCast(self.idle_spins[3].getValueAsInt()) };
         p.font_size = @intCast(self.font_size.getValueAsInt());
@@ -337,6 +335,13 @@ pub const View = struct {
         var qt_buffer: [256]u8 = undefined;
         const status = self.service.qt_status;
         self.qt_status.setText(std.fmt.bufPrintZ(&qt_buffer, "Qt 5: {s} · Qt 6: {s}{s}", .{ @tagName(status.qt5.state), @tagName(status.qt6.state), if (status.restart_session) " · Sign out to update the session environment" else "" }) catch "Qt appearance status unavailable");
+    }
+    fn openBarSettings(_: *gtk.Button, self: *View) callconv(.c) void {
+        const context = self.host.as(gtk.Widget).getDisplay().getAppLaunchContext();
+        defer context.unref();
+        @import("../settings/launch.zig").open(.{ .page = .bar }, context.as(gio.AppLaunchContext), null) catch {
+            self.message.setText("Could not open Pearl Settings. Bar preferences remain available in Advanced.");
+        };
     }
     fn openQtSettings(_: *gtk.Button, self: *View) callconv(.c) void {
         const display = self.host.as(gtk.Widget).getDisplay();
@@ -429,7 +434,7 @@ pub const View = struct {
     pub fn probe(self: *View, window: *gtk.Window) void {
         const focused = window.getFocus() orelse return;
         var name: []const u8 = "settings-other";
-        for (self.entries, [_][]const u8{ "settings-gtk-name", "settings-seed", "settings-wallpaper", "settings-color", "settings-font", "settings-left", "settings-right" }) |e, n| if (focused == e.as(gtk.Widget) or focused.isAncestor(e.as(gtk.Widget)) != 0) {
+        for (self.entries, [_][]const u8{ "settings-gtk-name", "settings-seed", "settings-wallpaper", "settings-color", "settings-font" }) |e, n| if (focused == e.as(gtk.Widget) or focused.isAncestor(e.as(gtk.Widget)) != 0) {
             name = n;
         };
         if (focused == self.apply_button.as(gtk.Widget)) name = "settings-apply";

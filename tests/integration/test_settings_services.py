@@ -163,11 +163,11 @@ def main():
         assert answer['result']['state']=='succeeded',answer
         wait_for(lambda:not peer.page()['live']['pending'])
         checks['bluetooth-owned-pairing-confirmation-completes']=True
-        # Pearl form changes retain their invalid intermediate values for repair.
-        navigate(s,ipc,'bar');click(s,ipc,'bar.groups.left');type_text(s,'invalid_item');time.sleep(.4)
-        assert not peer.state()['valid']
-        click(s,ipc,'bar.groups.left');type_text(s,'launcher,workspaces');time.sleep(.4)
-        assert peer.state()['valid'];checks['bar-invalid-intermediate-value-remains-editable']=True
+        # Bar selections share the Pearl draft without invalid text intermediates.
+        from test_settings_bar_editor import action as bar_action
+        navigate(s,ipc,'bar');bar_action(s,ipc,'title','remove')
+        wait_for(lambda:'title' not in json.loads(peer.document())['bar']['groups']['left'])
+        assert peer.state()['valid'];checks['bar-selection-edits-remain-valid']=True
         navigate(s,ipc,'sound');assert peer.state()['dirty'];peer.action('discard')
         checks['bar-shares-pearl-draft-across-service-pages']=True
         # Normal-window Aqueous field edits use the backend draft authority.

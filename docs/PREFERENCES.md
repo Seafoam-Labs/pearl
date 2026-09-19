@@ -104,9 +104,26 @@ The file is `$XDG_CONFIG_HOME/pearl/preferences.json`, falling back to
 `~/.config/pearl/preferences.json`. Opening settings does not create this file.
 The validated recovery snapshot is `pearl/last-good.json` in the same directory.
 
-The Appearance and Bar & behavior pages edit a shared draft. Advanced exposes
-all fields as JSON, including center widgets, per-connector overrides, popup
-limits and export templates. Closing a popup, output removal, or lock hides the
+The standalone Appearance, Bar & dock, Plugins and Advanced pages edit one shared
+Pearl draft. Bar & dock uses ordered widget selections: **Add widget** opens a
+searchable picker, and each widget's actions menu supports reordering, moving
+between groups and removal. Launcher is required but movable. Used widgets
+cannot be added twice. Left/right bar edges show Top / Center / Bottom groups;
+the saved field names remain `left / center / right`. The preview is a schematic
+of the draft; the desktop changes only after Apply & save. Dock and Flyouts
+controls are in expandable sections. The legacy Bar & behavior page links to
+this standalone widget editor.
+
+This form edits the default bar. Per-connector overrides continue to take
+priority and remain in Advanced, along with pinned applications and export
+templates. Existing plugin references are retained even if the plugin is
+unavailable; adding a discovered plugin requires it to be enabled, approved and
+configured for bar placement in Plugins. Removing a widget changes its placement
+only. Invalid Advanced text disables structured editing and offers a repair link.
+The storage format and version are unchanged; group strings remain comma-separated.
+See the [bar editor implementation](BAR_EDITOR_IMPLEMENTATION_PLAN.md).
+
+Closing a popup, output removal, or lock hides the
 view while retaining the draft in memory. Drafts do not survive process exit.
 Apply validates the entire candidate before replacing the file. Invalid JSON,
 missing images/themes, failed generators and failed saves retain the draft and

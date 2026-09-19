@@ -1,0 +1,25 @@
+{
+  "scope": "Browser mockup only; native application unchanged",
+  "browser": "Local Chromium via Playwright",
+  "desktop_viewport": [
+    1440,
+    1120
+  ],
+  "checks": {
+    "default_layout_and_clean_draft": "passed",
+    "search_add_duplicate_prevention_and_focus": "passed",
+    "cross_group_move_reorder_boundaries_and_empty_group": "passed",
+    "launcher_required_but_movable": "passed",
+    "remove_widget": "passed",
+    "discard_restores_saved_groups": "passed",
+    "vertical_groups_islands_and_exact_size": "passed",
+    "apply_updates_in_memory_baseline": "passed",
+    "keyboard_open_dialog_focus_trap_escape_restore": "passed",
+    "picker_destination_and_sample_plugin": "passed",
+    "light_theme": "passed",
+    "narrow_560_navigation_and_picker": "passed",
+    "narrow_390_navigation_and_picker": "passed",
+    "javascript_errors": "none"
+  },
+  "errors": []
+}

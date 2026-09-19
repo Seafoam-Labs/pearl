@@ -1,0 +1,6 @@
+/home/zoey/Pearl/tests/fixtures/settings_launcher.py:24: PyGIDeprecationWarning: GLib.unix_signal_add is deprecated; use GLibUnix.signal_add instead
+  GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, 15, lambda: (app.quit(), False)[1])
+event=launcher-ready
+event=settings-launched
+info: event=settings-launch activation_context=true
+info: event=settings-forward activation_context=true

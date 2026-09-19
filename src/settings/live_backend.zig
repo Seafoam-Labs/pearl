@@ -247,6 +247,15 @@ pub const Live = struct {
         }
     }
     pub fn page(self: *Live, alloc: std.mem.Allocator, scope: *Scope, route: nav.Route, _: u64, offset: usize) !ui.Page {
+        if (route == .bar) {
+            var widgets: std.ArrayList(@import("bar_model.zig").Plugin) = .empty;
+            if (self.plugins) |plugins| for (plugins.slots.items) |slot| {
+                if (widgets.items.len == @import("../plugins/model.zig").Limits.packages) break;
+                const manifest = slot.entry.package.manifest;
+                try widgets.append(alloc, .{ .id = manifest.id, .name = manifest.name, .digest = &slot.entry.package.digest, .available = slot.discovery_error == null, .status = @tagName(slot.status) });
+            };
+            return .{ .summary = "Default bar layout", .rows = &.{}, .offset = p.num(0), .bar_widgets = widgets.items };
+        }
         if (route == .plugins) {
             const plugins = self.plugins orelse return .{ .summary = "Plugin service unavailable", .rows = &.{}, .offset = p.num(0) };
             var infos: std.ArrayList(ui.PluginInfo) = .empty;

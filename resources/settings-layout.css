@@ -80,3 +80,14 @@
 .settings-window.display-confirmation .pearl-title { font-size: 1.25em; }
 .settings-window.display-confirmation button { border-radius: 10px; padding: 8px 16px; }
 .settings-window .display-editor .linked button { border-radius: 6px; }
+
+/* Ordered bar selections use wrapping GTK groups, never comma-separated entries. */
+.settings-window .bar-group { padding: 12px; }
+.settings-window .bar-group > label { margin: 4px 0; }
+.settings-window .bar-widget-row { padding: 6px 0; }
+.settings-window .bar-widget-row button { padding: 4px 8px; }
+.settings-window .bar-preview { padding: 14px; }
+.settings-window .bar-preview > label { margin: 0; }
+.settings-window .bar-island { border-radius: 12px; background: alpha(currentColor, 0.06); }
+.settings-window .bar-menu { padding: 10px; }
+.settings-window .bar-menu button { padding: 8px 10px; }

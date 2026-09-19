@@ -1,0 +1,6 @@
+info: event=settings-launch activation_context=false
+info: event=settings-instance-ready session=6bc83cdbe2764c30aec1eb09596bb63a
+info: event=settings-page page=overview
+info: event=settings-page page=power
+info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
+info: event=settings-connection-unavailable error=Unavailable

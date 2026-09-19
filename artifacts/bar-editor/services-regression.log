@@ -1,0 +1,22 @@
+action failed apply {'version': '2', 'revision': '3', 'review_version': '1', 'report_version': '3', 'review_revision': '3', 'live': True, 'draft': True, 'busy': False, 'locked': False, 'can_record': True, 'can_reload': True, 'conflict': False, 'unresolved': False, 'outcome': 'validated', 'reload_state': 'not_requested', 'toolkit': 'not_requested', 'save_state': None, 'receipt': None, 'display_state': 'not_requested', 'impact_route': 'runtime', 'error_code': None, 'detail': '', 'phase': 0, 'seconds': 0, 'owns_preview': False} {'online': True, 'ready': True, 'recovery': False, 'dirty': False, 'version': 2, 'revision': 3, 'backend_version': 2, 'mode': 'idle', 'phase': 0, 'busy': False, 'receipt_pending': False, 'recording': False, 'shared_review': False, 'display_changes': 0, 'display_blocked': False, 'fields': 221, 'err': None, 'detail': ''}
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_settings_services.py", line 330, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_services.py", line 212, in main
+    try:wait_for(lambda:peer.aqueous()['outcome']==('validated' if action=='validate' else 'saved') and not peer.aqueous()['busy'],45)
+        ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 23, in wait_for
+    raise TimeoutError('private session condition timed out')
+TimeoutError: private session condition timed out
+test-settings-services
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_services.py --settings ./.zig-cache/o/6b9133cb4b42cbd60766aeb5dc77951d/pearl-settings-test --pearl ./.zig-cache/o/798874cac0942e655de8bf3ebdc0273b/pearl --ctl ./.zig-cache/o/154bc761b5606e1c58ce1e92a7359322/pearlctl --spike ./.zig-cache/o/1657a1a937000a4f24f1ec92ed3eeec5/pearl-t00 --output artifacts/bar-editor/regressions/services-serial
+
+Build Summary: 11/13 steps succeeded (1 failed)
+test-settings-services transitive failure
++- run python3 failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/78d0584598e9b2307fcf734dff7f3f59/build /usr/bin/zig /usr/lib/zig /home/zoey/Pearl .zig-cache .cache/zig --seed 0x746c679d -Z81976a8bcfa9c4df test-settings-services -Doptimize=ReleaseSafe -- --output artifacts/bar-editor/regressions/services-serial

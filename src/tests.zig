@@ -1,4 +1,5 @@
 test {
+    _ = @import("settings/bar_model.zig");
     _ = @import("theme/package_model.zig");
     _ = @import("theme/style.zig");
     _ = @import("plugins/model.zig");

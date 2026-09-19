@@ -1,0 +1,32 @@
+PASS opening-is-read-only-and-unavailable-plugin-is-retained
+PASS plugin-catalog-placement-and-refresh-revalidate-approval
+PASS native-picker-search-add-and-duplicate-prevention
+PASS launcher-protection-and-atomic-move-reorder
+PASS remove-and-navigation-preserve-unrelated-shared-draft
+PASS discard-apply-and-reopen-persist-selections
+PASS stale-menu-cannot-overwrite-a-newer-layout
+PASS invalid-advanced-draft-is-retained-and-structured-edits-disabled
+PASS keyboard-escape-restores-focus-without-editing
+PASS all-edge-labels-and-exact-size-roundtrip
+PASS narrow-light-dark-and-large-text-menus
+{
+  "status": "passed",
+  "checks": {
+    "opening-is-read-only-and-unavailable-plugin-is-retained": true,
+    "plugin-catalog-placement-and-refresh-revalidate-approval": true,
+    "native-picker-search-add-and-duplicate-prevention": true,
+    "launcher-protection-and-atomic-move-reorder": true,
+    "remove-and-navigation-preserve-unrelated-shared-draft": true,
+    "discard-apply-and-reopen-persist-selections": true,
+    "stale-menu-cannot-overwrite-a-newer-layout": true,
+    "invalid-advanced-draft-is-retained-and-structured-edits-disabled": true,
+    "keyboard-escape-restores-focus-without-editing": true,
+    "all-edge-labels-and-exact-size-roundtrip": true,
+    "narrow-light-dark-and-large-text-menus": true
+  },
+  "binaries": {
+    "settings": "d51b58027c898290fd037d0e2a158e01014820603f7919a3ecf0ae19d274cf0f",
+    "pearl": "40e08903ac8a80da0d4c35fbe702edb02fa69971b6d0c500808e6b31abccc03d",
+    "ctl": "e82763147e342f408d4b4c8443ad83fa19f62d7ff0ace461575bd43fff431be9"
+  }
+}
