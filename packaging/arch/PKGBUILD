@@ -42,8 +42,9 @@ sha256sums=('@SOURCE_SHA256@'
 
 prepare() {
     cd "$srcdir/pearl-$pkgver"
-    # Fetch locked Rust dependencies here; build() is entirely offline.
-    CARGO_HOME="$PWD/.cache/plugin-cargo" cargo fetch --locked --target wasm32-wasip2 \
+    # Fetch the complete lockfile: target-filtered fetches can omit crates
+    # (such as libc) that the subsequent offline build still needs to resolve.
+    CARGO_HOME="$PWD/.cache/plugin-cargo" cargo fetch --locked \
         --manifest-path plugins/examples/counter-rust/Cargo.toml
 }
 

@@ -339,11 +339,12 @@ python3 plugins/build-examples.py \
 
 For the Rust example, also provision a Rust toolchain with the `wasm32-wasip2`
 target. The compiler used for the initial tests was Rust 1.96.0. Prefetch its
-locked dependencies, then run the builder without `--skip-rust`:
+complete locked dependency set (without filtering by target), then run the builder
+without `--skip-rust`:
 
 ```sh
 CARGO_HOME="$PWD/.cache/plugin-cargo" cargo fetch --locked \
-  --target wasm32-wasip2 --manifest-path plugins/examples/counter-rust/Cargo.toml
+  --manifest-path plugins/examples/counter-rust/Cargo.toml
 
 python3 plugins/build-examples.py \
   --wit-bindgen "$WIT_BINDGEN" --wasm-tools "$WASM_TOOLS"

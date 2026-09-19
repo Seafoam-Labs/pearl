@@ -56,8 +56,9 @@ prepare() {
     # The instrumented locker continues to use its private test PAM fixture.
     sed -i 's/pearl-lock"/pearl-lock-git"/g' src/services/lifecycle.zig
     sed -i 's/pam_start("pearl",/pam_start("pearl-git",/' src/lock/pam.zig
-    # Fetch locked Rust dependencies here; build() is entirely offline.
-    CARGO_HOME="$PWD/.cache/plugin-cargo" cargo fetch --locked --target wasm32-wasip2 \
+    # Fetch the complete lockfile: target-filtered fetches can omit crates
+    # (such as libc) that the subsequent offline build still needs to resolve.
+    CARGO_HOME="$PWD/.cache/plugin-cargo" cargo fetch --locked \
         --manifest-path plugins/examples/counter-rust/Cargo.toml
 }
 
