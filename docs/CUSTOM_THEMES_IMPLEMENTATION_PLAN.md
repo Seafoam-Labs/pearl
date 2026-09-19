@@ -310,11 +310,12 @@ enumerated choices in the preferences schema. Resolution rules:
    final precedence over package styling. User GTK CSS keeps its existing
    highest priority. Document this precedence in the author guide.
 
-The picker changes the active package in the shared draft and proposes package
-colors. Preserve explicit overrides; provide a separate **Use theme defaults**
-action that clears palette/style overrides. Label the effective choices so a
-retained override cannot make a new package appear broken. Style-only packages
-retain the current color source and cannot be selected as a palette source.
+**Use theme** changes the active package in the shared draft and selects its
+colors and style, clearing prior overrides. **Use colors** and **Use style**
+change only their respective choices. **Use theme defaults** clears overrides
+for the selected package. Label the effective choices. Style-only packages
+retain the current effective color source and cannot be selected as a palette
+source. A package preview uses the same selection rules without editing the draft.
 
 Old documents load unchanged. Old binaries reject the new enum/fields; document
 switching to a legacy mode and removing the new fields before downgrading.

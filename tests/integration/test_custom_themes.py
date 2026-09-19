@@ -75,6 +75,34 @@ def main():
         assert json.loads(peer.document())['theme']['mode']=='static'
         click(s,ipc,'discard');ready(s,ipc)
         assert json.loads(peer.document('committed'))==committed
+        # Exercise the actual picker and Apply button, not just backend edits.
+        click(s,ipc,'themes.builtin.0');ready(s,ipc)
+        click(s,ipc,'apply')
+        wait_for(lambda: not peer.state()['dirty'] and not peer.state()['busy'],25)
+        assert json.loads(peer.document('committed'))['theme']['mode']=='static'
+        ready(s,ipc)
+        # Separate color/style choices must not mask a later whole-theme choice.
+        click(s,ipc,'themes.colors.0');ready(s,ipc)
+        click(s,ipc,'themes.default_style.0');ready(s,ipc)
+        click(s,ipc,'apply')
+        wait_for(lambda: not peer.state()['dirty'] and not peer.state()['busy'],25)
+        check=Peer(s,ipc)
+        assert check.appearance['palette']==PALETTE
+        assert check.appearance['style_tokens']['card_radius']!=4
+        check.close()
+        ready(s,ipc)
+        click(s,ipc,'themes.select.0');ready(s,ipc)
+        assert json.loads(peer.document())['theme']['package_id']==manifest['id']
+        assert json.loads(peer.document())['theme']['palette_id']==''
+        assert json.loads(peer.document())['theme']['style_id']==''
+        assert peer.state()['dirty']
+        click(s,ipc,'apply')
+        wait_for(lambda: not peer.state()['dirty'] and not peer.state()['busy'],25)
+        check=Peer(s,ipc)
+        assert check.appearance['palette']==PALETTE
+        assert check.appearance['style_tokens']['card_radius']==4
+        check.close()
+        committed=json.loads(peer.document('committed'))
         capture(s,'custom-palette',output['name'])
         assert probe(s,ipc)['style']=='dark'
         enlarged=json.loads(peer.document('committed'))
@@ -137,7 +165,7 @@ def main():
         assert peer.document('committed')==saved
         assert not list((Path(s.env['XDG_CACHE_HOME'])/'pearl/theme-previews').iterdir())
         peer.close();shell.stop();clean(shell)
-        report.update(status='passed',checks=['backend_jobs','exact_palette','independent_preview','gui_draft_discard','light_compact_large_text','stale_catalog_rejection','bounded_snapshot_rotation','package_removal_restart_snapshot','builtin_recovery','no_matugen_for_fixed_palette','cancellable_generated_preview'])
+        report.update(status='passed',checks=['backend_jobs','exact_palette','independent_preview','gui_draft_discard','gui_theme_apply_replaces_overrides','light_compact_large_text','stale_catalog_rejection','bounded_snapshot_rotation','package_removal_restart_snapshot','builtin_recovery','no_matugen_for_fixed_palette','cancellable_generated_preview'])
         (args.output/'acceptance.json').write_text(json.dumps(report,indent=2)+'\n')
         print('PASS native theme jobs, fixed/generated previews, cancellation, exact live palette/style, bounded snapshots, restart and built-in recovery')
 

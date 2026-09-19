@@ -12,7 +12,10 @@ and local archives** to add a repository ID, name and GitHub repository URL
 (or an HTTPS index URL). Open
 **Community · refresh**, download a release, then open **Installed**. **Use
 theme**, **Use colors** and **Use style** edit the shared draft. **Preview**
-does not change the committed appearance; **Apply & save** activates the draft.
+does not select a theme or change the committed appearance; **Apply & save**
+activates the draft. **Use theme** selects the package's colors and widget style,
+clearing previous color/style overrides. A style-only package keeps the current
+colors. Use **Use colors** or **Use style** afterward to mix packages.
 **Preview current draft** resolves the current palette/style combination. Dynamic
 colors generate only on explicit preview, with cancellation and a 15-second
 deadline, using private temporary files rather than application configuration.

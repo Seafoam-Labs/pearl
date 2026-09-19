@@ -57,7 +57,7 @@ pub const View = struct {
         root.append(w.label("Community themes", "pearl-card-title").as(gtk.Widget));
         self.selection = w.label("", "pearl-secondary");
         root.append(self.selection.as(gtk.Widget));
-        root.append(w.label("Download a community theme, preview it, then use Apply & save. Colors and widget styling can come from different themes.", "pearl-secondary").as(gtk.Widget));
+        root.append(w.label("Download a community theme, choose Use theme, then Apply & save. Preview shows a sample without selecting it. Use colors and Use style let you mix themes.", "pearl-secondary").as(gtk.Widget));
         const actions = w.column(8);
         root.append(actions.as(gtk.Widget));
         try self.button(actions, "Installed", .installed, 0, false);
@@ -219,8 +219,16 @@ pub const View = struct {
                         p.theme.palette_id = e.id;
                         p.theme.mode = .package;
                     } else {
+                        // A whole-theme selection replaces separate overrides.
+                        // Style-only packages retain the effective color source.
+                        if (e.dark or e.light) {
+                            p.theme.palette_id = "";
+                            p.theme.mode = .package;
+                        } else if (p.theme.mode == .package and p.theme.palette_id.len == 0) {
+                            p.theme.palette_id = p.theme.package_id;
+                        } else if (p.theme.mode == .gtk) p.theme.mode = .static;
                         p.theme.package_id = e.id;
-                        if (e.dark or e.light) p.theme.mode = .package else if (p.theme.mode == .gtk) p.theme.mode = .static;
+                        p.theme.style_id = "";
                     }
                 }
                 if (kind == .preview) {
@@ -394,7 +402,7 @@ pub const View = struct {
                 const template = try std.fmt.allocPrint(alloc, "{s}\n{s}\n{s}", .{ @embedFile("settings_base_style"), tokens, resolved.css });
                 self.provider.loadFromString(try theme.scopedCss(alloc, template, "pearl-theme-preview", p));
                 self.preview_root.as(gtk.Widget).setVisible(1);
-                self.status.setText(if (resolved.palette == null) "Style preview uses default dark colors; generated colors apply on save." else "Preview only · committed appearance is unchanged");
+                self.status.setText(if (resolved.palette == null) "Style preview uses default dark colors; generated colors apply on save." else "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save.");
             },
             .install, .import_archive, .remove, .rollback, .source_add, .source_remove, .source_default => try self.send(.{ .action = .catalog }),
             else => self.status.setText("Operation complete."),
