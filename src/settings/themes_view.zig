@@ -78,7 +78,7 @@ pub const View = struct {
         const box = w.column(8);
         sources.setChild(box.as(gtk.Widget));
         root.append(sources.as(gtk.Widget));
-        for ([_]*gtk.Entry{ self.source_id, self.source_name, self.source_url, self.archive_path }, [_][:0]const u8{ "Repository ID", "Repository name", "HTTPS index URL", "Local .tar.gz archive path" }) |control, title| {
+        for ([_]*gtk.Entry{ self.source_id, self.source_name, self.source_url, self.archive_path }, [_][:0]const u8{ "Repository ID", "Repository name", "GitHub repository or HTTPS index URL", "Local .tar.gz archive path" }) |control, title| {
             control.setPlaceholderText(title);
             w.name(control.as(gtk.Widget), title);
             box.append(control.as(gtk.Widget));
@@ -369,7 +369,7 @@ pub const View = struct {
                     self.source_name.as(gtk.Editable).setText(try alloc.dupeZ(u8, result.sources[0].name));
                     self.source_url.as(gtk.Editable).setText(try alloc.dupeZ(u8, result.sources[0].url));
                 }
-                self.status.setText(if (result.diagnostics.len > 0) try std.fmt.allocPrintSentinel(alloc, "Package unavailable: {s} ({s})", .{ result.diagnostics[0].path, result.diagnostics[0].error_code }, 0) else if (result.entries.len == 0) "No themes installed. Add a community repository or import an archive." else "Installed themes. Choose colors and widget style, then Apply & save.");
+                self.status.setText(if (result.diagnostics.len > 0) try std.fmt.allocPrintSentinel(alloc, "Package unavailable: {s} ({s})", .{ result.diagnostics[0].path, result.diagnostics[0].error_code }, 0) else if (result.entries.len == 0) "No themes installed. Choose Community · refresh to browse themes." else "Installed themes. Choose colors and widget style, then Apply & save.");
                 try self.render();
                 if (self.editor.theme_discovery_degraded) self.status.setText("Automatic discovery is degraded. Use Installed to refresh available themes.");
             },

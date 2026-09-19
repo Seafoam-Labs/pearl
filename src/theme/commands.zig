@@ -181,10 +181,14 @@ pub fn runWithAssets(a: std.mem.Allocator, request: Request, cancel: *gio.Cancel
             const release = found orelse return error.ThemeReleaseChanged;
             if (!release.requires.supported()) return error.UnsupportedThemeApi;
             if (report) |p| p.set(.downloading);
-            const bytes = try repository.download(a, release.url, model.max_bytes, cancel, report);
-            if (bytes.len != release.size or !std.mem.eql(u8, &model.hash(bytes), release.sha256)) return error.ThemeDownloadDigestMismatch;
-            if (report) |p| p.set(.validating);
-            const package = try store.unpack(bytes, cancel);
+            const package = if (release.github != null)
+                try @import("github.zig").load(a, release, cancel, report)
+            else blk: {
+                const bytes = try repository.download(a, release.url, model.max_bytes, cancel, report);
+                if (bytes.len != release.size or !std.mem.eql(u8, &model.hash(bytes), release.sha256)) return error.ThemeDownloadDigestMismatch;
+                if (report) |p| p.set(.validating);
+                break :blk try store.unpack(bytes, cancel);
+            };
             const m = package.manifest;
             inline for (.{ .{ "id", "id" }, .{ "name", "name" }, .{ "author", "author" }, .{ "license", "license" }, .{ "source", "source" }, .{ "version", "asset_version" } }) |pair| {
                 if (!std.mem.eql(u8, @field(release, pair[0]), @field(m, pair[1]))) return error.ThemeReleaseManifestMismatch;

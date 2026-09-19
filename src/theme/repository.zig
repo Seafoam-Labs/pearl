@@ -15,8 +15,8 @@ fn initializeCurl() callconv(.c) void {
 }
 pub const Source = struct { id: []const u8, name: []const u8, url: []const u8 };
 pub const Sources = struct { schema_version: u32 = 1, sources: []const Source = &.{} };
-pub const default_enabled = if (@hasDecl(@import("build_options"), "community_theme_repository")) @import("build_options").community_theme_repository else false;
-pub const default_source: Source = .{ .id = "seafoam-community", .name = "Pearl community themes", .url = "https://raw.githubusercontent.com/Seafoam-Labs/pearl-community-themes/main/index.json" };
+pub const default_enabled = if (@hasDecl(@import("build_options"), "community_theme_repository")) @import("build_options").community_theme_repository else true;
+pub const default_source: Source = .{ .id = "seafoam-community", .name = "Pearl community themes", .url = "https://github.com/Seafoam-Labs/pearl-community-themes" };
 pub const Release = struct {
     id: []const u8,
     name: []const u8,
@@ -31,6 +31,19 @@ pub const Release = struct {
     variants: []const []const u8,
     style: bool,
     description: []const u8 = "",
+    github: ?@import("github.zig").Snapshot = null,
+
+    pub fn jsonStringify(self: Release, writer: *std.json.Stringify) !void {
+        try writer.beginObject();
+        // Archive indexes retain their schema-1/2 wire format for older clients.
+        inline for (std.meta.fields(Release)) |field| {
+            if (!std.mem.eql(u8, field.name, "github") or self.github != null) {
+                try writer.objectField(field.name);
+                try writer.write(@field(self, field.name));
+            }
+        }
+        try writer.endObject();
+    }
 };
 pub const Index = struct { schema_version: u32, repository_id: []const u8, releases: []const Release, next: ?[]const u8 = null };
 pub const Page = struct { index: Index, offline: bool = false, error_code: ?[]const u8 = null };
@@ -67,7 +80,7 @@ pub fn saveSources(a: std.mem.Allocator, value: Sources) !void {
 }
 pub fn parseIndex(a: std.mem.Allocator, bytes: []const u8, source: Source) !Index {
     const value = try model.parse(Index, a, bytes, 1048576);
-    if (value.schema_version != 1 and value.schema_version != 2) return error.UnsupportedRepositorySchema;
+    if (value.schema_version != 1 and value.schema_version != 2 and value.schema_version != 3) return error.UnsupportedRepositorySchema;
     if (!std.mem.eql(u8, value.repository_id, source.id)) return error.RepositoryIdentityMismatch;
     // Worst-case metadata must fit in one bounded Settings response. Repositories
     // publish additional pages through `next`, rather than silently truncating.
@@ -80,6 +93,10 @@ pub fn parseIndex(a: std.mem.Allocator, bytes: []const u8, source: Source) !Inde
         _ = try model.version(release.version);
         for ([_][]const u8{ release.name, release.author, release.license, release.source }) |s| try model.text(s, 256);
         if (release.description.len > 0) try model.text(release.description, 1024);
+        if (release.github) |snapshot| {
+            if (value.schema_version != 3) return error.UnsupportedRepositorySchema;
+            try @import("github.zig").validate(snapshot, release, source);
+        }
         try model.digest(release.sha256);
         try url(release.url);
         if (release.size == 0 or release.size > model.max_bytes or release.variants.len > 2) return error.InvalidThemeRelease;
@@ -129,6 +146,7 @@ pub fn download(a: std.mem.Allocator, address: []const u8, max: usize, cancel: *
         }
     }
     if (c.curl_easy_setopt(handle, c.CURLOPT_URL, address_z.ptr) != c.CURLE_OK or
+        c.curl_easy_setopt(handle, c.CURLOPT_USERAGENT, @as([*:0]const u8, "Pearl/1.0")) != c.CURLE_OK or
         c.curl_easy_setopt(handle, c.CURLOPT_PROTOCOLS_STR, @as([*:0]const u8, "https")) != c.CURLE_OK or
         c.curl_easy_setopt(handle, c.CURLOPT_REDIR_PROTOCOLS_STR, @as([*:0]const u8, "https")) != c.CURLE_OK or
         c.curl_easy_setopt(handle, c.CURLOPT_FOLLOWLOCATION, @as(c_long, 1)) != c.CURLE_OK or
@@ -171,15 +189,18 @@ fn quota(directory: [:0]const u8, maximum: usize, additions: usize) !void {
 }
 pub fn refresh(a: std.mem.Allocator, source: Source, address: []const u8, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress) !Page {
     const path = try cachePath(a, source, address);
-    const bytes = download(a, address, 1048576, cancel, report) catch |err| {
+    const bytes = fetchIndex(a, source, address, cancel, report) catch |err| {
         if (err == error.Cancelled) return err;
+        if (try @import("github.zig").location(source.url) != null and err != error.ThemeDownloadFailed and err != error.NetworkUnavailable) return err;
         const cached = try io.read(a, path, 1048576, cancel);
         if (cached.missing) return err;
         return .{ .index = try parseIndex(a, cached.bytes, source), .offline = true, .error_code = @errorName(err) };
     };
     const value = try parseIndex(a, bytes, source);
     // Release identity survives removal from an index and movement across pages.
-    const history = try std.fmt.allocPrintSentinel(a, "{s}/pearl/theme-repository-history/{s}", .{ std.mem.span(glib.getUserStateDir()), model.hash(source.url) }, 0);
+    // Git tree identities are independent of the old archive publication hashes.
+    const history_key = if (try @import("github.zig").location(source.url) != null) try std.fmt.allocPrint(a, "github:{s}", .{source.url}) else source.url;
+    const history = try std.fmt.allocPrintSentinel(a, "{s}/pearl/theme-repository-history/{s}", .{ std.mem.span(glib.getUserStateDir()), model.hash(history_key) }, 0);
     var additions: usize = 0;
     for (value.releases) |release| {
         const record = try std.fmt.allocPrintSentinel(a, "{s}/{s}-{s}.sha256", .{ history, release.id, release.version }, 0);
@@ -195,6 +216,7 @@ pub fn refresh(a: std.mem.Allocator, source: Source, address: []const u8, cancel
     if (!prior.missing) {
         const old = try parseIndex(a, prior.bytes, source);
         for (old.releases) |previous| for (value.releases) |release| {
+            if (previous.github == null and release.github != null and std.mem.eql(u8, source.url, @import("github.zig").legacy_url)) continue;
             if (std.mem.eql(u8, previous.id, release.id) and std.mem.eql(u8, previous.version, release.version) and !std.mem.eql(u8, previous.sha256, release.sha256)) return error.MutableThemeRelease;
         };
     }
@@ -206,4 +228,11 @@ pub fn refresh(a: std.mem.Allocator, source: Source, address: []const u8, cancel
     }
     try io.atomic(path, bytes, false);
     return .{ .index = value };
+}
+
+fn fetchIndex(a: std.mem.Allocator, source: Source, address: []const u8, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress) ![]const u8 {
+    if (try @import("github.zig").location(source.url) != null) {
+        return std.json.Stringify.valueAlloc(a, try @import("github.zig").index(a, source, address, cancel), .{});
+    }
+    return download(a, address, 1048576, cancel, report);
 }

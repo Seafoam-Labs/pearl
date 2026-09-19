@@ -17,7 +17,7 @@ def main():
                 assert r.returncode and error in r.stderr,(action,r.stdout,r.stderr);return
             assert r.returncode==0,(action,r.stdout,r.stderr)
             return json.loads(r.stdout)
-        default=dict(id='seafoam-community',name='Pearl community themes',url='https://raw.githubusercontent.com/Seafoam-Labs/pearl-community-themes/main/index.json')
+        default=dict(id='seafoam-community',name='Pearl community themes',url='https://github.com/Seafoam-Labs/pearl-community-themes')
         assert run('catalog')['sources']==([default] if args.default_enabled else [])
         sources=root/'config/pearl/theme-repositories.json';sources.parent.mkdir(parents=True,exist_ok=True)
         sources.write_text('{"schema_version":1,"sources":[]}')

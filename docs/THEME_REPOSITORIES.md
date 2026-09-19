@@ -1,15 +1,26 @@
 # Publishing community theme repositories · schemas 1 and 2
 
-A community repository is an HTTPS index plus immutable tar.gz releases. A new
-package ID needs no Pearl release. Repository operators choose their own hosting
-and contribution policies; there is currently no default hosted repository.
+Pearl includes the public GitHub repository
+`https://github.com/Seafoam-Labs/pearl-community-themes` by default. Other public
+GitHub repositories can be added by their `https://github.com/OWNER/REPO` URL.
+Commit each complete theme under `themes/<folder>/`, with `theme.json` and all
+referenced assets. No `index.json`, ZIP, tarball or GitHub release is needed.
 
-The intended default GitHub project is `Seafoam-Labs/pearl-community-themes`,
-which does not exist yet. The [completion plan](CUSTOM_THEMES_COMPLETION_PLAN.md)
-defines its proposed index endpoint, native Zig publishing tools, contribution
-checks and default-source rollout. Both index schemas are supported. Use schema 2 for image/profile requirements.
-The [reviewable scaffold](../community-repository/README.md) includes two original
-packages, contribution policy and a read-only CI workflow.
+On explicit refresh, Pearl resolves the default branch to a commit and discovers
+`themes/*/theme.json` through GitHub's tree API. Results have sixteen themes per
+page; pagination retains that commit even if the branch moves. Installation
+fetches ordinary raw files at that commit, checks every file against its Git blob
+SHA-1 and size, and uses the normal package validator and atomic installer.
+Symlinks, submodules, traversal, oversized packages and truncated trees are
+rejected. Published package IDs and versions remain immutable: increase
+`asset_version` when changing a theme. Metadata is cached for offline browsing;
+installing a theme still requires its files to be reachable. Public GitHub API
+rate limits apply; Pearl does not request credentials or run Git locally.
+
+Custom HTTPS index repositories with immutable tar.gz releases remain supported.
+The following index and publication instructions apply to that optional format.
+Use schema 2 for image/profile requirements. Schema 3 is Pearl's cached direct
+GitHub catalog format and contains the repository, commit, folder and tree ID.
 
 Use [the author guide](CUSTOM_THEMES.md) and native `pearl-themes validate` and
 `pack` operations. Include source/license attribution and preview evidence for
@@ -105,11 +116,11 @@ before committing index pages together. Keep old immutable archives/pages. The
 CI validator binary URL/hash must be pinned by actual maintainers before launch;
 contribution workflows receive no publishing credentials. See scaffold PUBLISHING.md.
 
-The built-in source is gated by `-Dcommunity-theme-repository=true` (default false).
-Enable only after the GitHub project exists and real download/Apply/offline checks
-pass. Its stable URL is
-`https://raw.githubusercontent.com/Seafoam-Labs/pearl-community-themes/main/index.json`,
-ID `seafoam-community`. Merely configuring it makes no startup network request.
+The built-in GitHub source is enabled by default. Distributors may disable it
+with `-Dcommunity-theme-repository=false`. Its ID is `seafoam-community` and its
+URL is `https://github.com/Seafoam-Labs/pearl-community-themes`. Merely configuring
+it makes no startup network request. The old Seafoam raw `main/index.json` URL
+is recognized as an alias for direct discovery, without requiring that file.
 
 When enabled, an absent source file means the released default. An existing file,
 including an empty list, is the complete authoritative user list. Add/remove saves

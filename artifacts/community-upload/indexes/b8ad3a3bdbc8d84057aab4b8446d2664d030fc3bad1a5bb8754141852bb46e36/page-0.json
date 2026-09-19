@@ -1,0 +1,53 @@
+{
+  "schema_version": 2,
+  "repository_id": "seafoam-community",
+  "releases": [
+    {
+      "id": "community.riverstone",
+      "name": "Riverstone",
+      "author": "Pearl contributors",
+      "license": "CC0-1.0",
+      "source": "https://github.com/Seafoam-Labs/pearl-community-themes",
+      "version": "1.0.0",
+      "url": "https://github.com/Seafoam-Labs/pearl-community-themes/releases/download/community.riverstone-1.0.0/community.riverstone-1.0.0.tar.gz",
+      "sha256": "25e7f0dab895dd3831484851d9d6c1d7ea2fcb13de8bfe66173092ed5b0c6173",
+      "size": 849,
+      "requires": {
+        "palette_api": 1,
+        "style_api": null,
+        "profile_api": null,
+        "render_data_api": null
+      },
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "style": false,
+      "description": "Original Pearl example"
+    },
+    {
+      "id": "seafoam.mist",
+      "name": "Mist",
+      "author": "Pearl contributors",
+      "license": "CC0-1.0",
+      "source": "https://github.com/Seafoam-Labs/pearl-community-themes",
+      "version": "1.0.0",
+      "url": "https://github.com/Seafoam-Labs/pearl-community-themes/releases/download/seafoam.mist-1.0.0/seafoam.mist-1.0.0.tar.gz",
+      "sha256": "92efa0b1818556bd73c6a1edcefd9bacc69bc1d397ff6ca658326bb78adde711",
+      "size": 3882,
+      "requires": {
+        "palette_api": 1,
+        "style_api": 2,
+        "profile_api": 1,
+        "render_data_api": 1
+      },
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "style": true,
+      "description": "Original Pearl example"
+    }
+  ],
+  "next": null
+}

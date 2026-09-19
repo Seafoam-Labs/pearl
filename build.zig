@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
         @panic("Pearl requires Zig 0.16.0; see .zigversion");
     const plugin_examples = b.option([]const u8, "plugin-examples", "Prebuilt plugin examples and failure fixtures") orelse ".cache/plugin-examples";
     const wasm_plugins = b.option(bool, "wasm-plugins", "Build the experimental WebAssembly plugin helper") orelse false;
-    const community_theme_repository = b.option(bool, "community-theme-repository", "Enable the launched Seafoam community repository") orelse false;
+    const community_theme_repository = b.option(bool, "community-theme-repository", "Include the Seafoam GitHub community repository by default") orelse true;
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const release = b.option(bool, "release", "Strip production artifacts for reproducible ReleaseSafe packages") orelse false;
@@ -39,6 +39,10 @@ pub fn build(b: *std.Build) void {
             b.installArtifact(tool);
             b.step("build-themes", "Build native theme author and repository tools").dependOn(&b.addInstallArtifact(tool, .{}).step);
         } else {
+            const github_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_theme_github.py", "--tool" });
+            github_test.addArtifactArg(tool);
+            if (community_theme_repository) github_test.addArg("--default-enabled");
+            b.step("test-theme-github", "Verify direct GitHub theme discovery and installation in private storage").dependOn(&github_test.step);
             for ([_][]const u8{ "packages", "repository" }) |suite| {
                 const test_ = b.addSystemCommand(&.{ "python3", "tests/integration/test_theme_packages.py", "--suite", suite, "--tool" });
                 test_.addArtifactArg(tool);

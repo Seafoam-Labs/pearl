@@ -8,7 +8,8 @@ implemented in Zig. libcurl supplies HTTPS, libarchive supplies archive IO and l
 Python is used only by development tests; it is not installed with this feature.
 
 In Settings → Appearance → Community themes, expand **Community repositories
-and local archives** to add a repository ID, name and HTTPS index URL. Open
+and local archives** to add a repository ID, name and GitHub repository URL
+(or an HTTPS index URL). Open
 **Community · refresh**, download a release, then open **Installed**. **Use
 theme**, **Use colors** and **Use style** edit the shared draft. **Preview**
 does not change the committed appearance; **Apply & save** activates the draft.
@@ -18,12 +19,18 @@ deadline, using private temporary files rather than application configuration.
 Repository buttons select among configured sources. Search filters the current
 page by name or author; use the next-page button to browse more packages.
 
-The repository list currently starts empty. The intended default project is
-`Seafoam-Labs/pearl-community-themes` on GitHub; it does not exist yet and is not
-configured as a source. The [repository scaffold](../community-repository/README.md) and native publication builder are ready for review; hosting remains a launch gate.
-Image assets, local discovery and application profiles are described below. An arbitrary
-compatible HTTPS repository works without rebuilding Pearl. The `example.org`
-addresses in the author fixtures are placeholders.
+Pearl includes `https://github.com/Seafoam-Labs/pearl-community-themes` by default.
+Open **Community · refresh** to browse it. Authors commit ordinary theme files
+under `themes/<folder>/theme.json`; no generated index or release archive is
+needed. Pearl discovers the folders on the default branch and downloads files
+from a fixed commit, verifies their Git blob hashes, and validates each package
+before installation. Images, CSS, palettes and application profiles use the same
+package format as local themes.
+
+Existing source lists, including an explicitly empty list, remain authoritative.
+Use **Add default community repository** to restore the default after removal.
+The previously documented Seafoam raw `main/index.json` URL also uses direct
+GitHub discovery. Custom HTTPS indexes and local archives remain supported.
 
 Installation and activation are separate. Downloading/updating/rolling back a
 package never changes the current appearance. Refresh Installed and select/apply
