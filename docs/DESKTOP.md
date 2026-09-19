@@ -13,6 +13,39 @@ This page records T06. [T07 services](SERVICES.md) now supply audio, battery,
 brightness, power profiles and confirmed power actions; their bar groups and
 control-center contents supersede the unavailable T06 placeholders below.
 
+## Running applications in the bar
+
+Add **Running applications** in Settings → Bar & dock → Add widget. Its builtin
+layout token is `running_apps`. Existing layouts stay unchanged until you add it.
+It groups taskbar windows across **all workspaces and displays**, including
+minimized windows. `skip_taskbar` windows are excluded; `skip_switcher` alone
+has no effect. Applications without windows are not included.
+
+Click a single-window application to activate it. Click an application with
+multiple windows, or secondary-click any application, to choose a window by
+title, workspace and display. Activation restores a minimized window and
+switches to its own workspace/display without relocating it. Unavailable
+activation stays visible with a disabled window row. Focus is highlighted and
+multi-window groups show a count; a hollow marker means all windows are minimized.
+
+The strip fits the remaining bar length on any edge. Its overflow button opens
+additional application groups; if space is very limited it opens the entire
+list. All windows remain reachable. Long chooser lists load in batches of 50
+through **Show more**. Focus changes preserve application order; new applications
+append after existing groups. The strip disappears when no taskbar windows exist.
+
+For a keyboard binding, use `pearlctl running-apps show [--output ID]`. The
+chooser owns keyboard input; arrows/Tab navigate, Enter activates and Escape
+dismisses it. The bar retains keyboard mode `none`. This command works even
+without a widget in the selected output's bar. The chooser shares the normal
+single-popup lifecycle, anchoring and dismissal policy.
+
+The dock retains its own per-output groups, pins, cycling and visibility policy.
+See [the implementation plan](RUNNING_APPLICATIONS_BAR_WIDGET_PLAN.md) for the
+model and verification details. Before downgrading to a Pearl version without
+this widget, remove `running_apps` from saved layouts; older versions reject
+unknown widget tokens.
+
 ## Compact settings navigation
 
 Speaker, Network, Bluetooth and Battery open **Sound**, **Network**,
@@ -83,7 +116,16 @@ Backdrop clicks dismiss without activating an application underneath.
 Workspaces are identified by their Aqueous runtime IDs. Number/name is only the
 label: the same number on another output remains a different target. The active
 workspace has a purple pill, and urgent workspaces have an outline. The workspace
-strip includes every available workspace on its output. Horizontal bars wrap
+strip defaults to **Large**, showing every available workspace on its output.
+In **Settings → Bar & dock → Workspaces → ⋯ → Display mode**, select **Small**
+(active plus one neighbor on each side), **Medium** (two neighbors on each side),
+or **Large** (all), then Apply. For workspace 5 of 1–9, Small shows 4, **5**, 6;
+Medium shows 3, 4, **5**, 6, 7. At workspace 1, Small shows only **1**, 2.
+Neighbors follow the sorted existing list even when numbers have gaps. Each
+display follows its own active workspace immediately, including external shortcut
+switches. Missing active state temporarily shows all; urgent workspaces outside
+the selected range stay hidden. The Settings example reflects the draft and is
+not live workspace state. Horizontal bars wrap
 buttons into rows when space is tight. Vertical bars keep one workspace column
 and stack widget icons and values, preserving the configured edge thickness.
 If the output is too short for all controls, the vertical bar scrolls along its

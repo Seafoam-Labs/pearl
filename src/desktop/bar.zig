@@ -4,15 +4,20 @@ const gtk = @import("gtk4");
 const glib = @import("glib2");
 const object = @import("gobject2");
 const Client = @import("../aqueous/client.zig").Client;
+const workspace_policy = @import("workspace_policy.zig");
 const policy = @import("policy.zig");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
-pub const Pane = enum { clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray };
-pub const Event = union(enum) { pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview };
+const Running = @import("running_apps.zig");
+pub const Pane = enum { running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray };
+pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
     host: *gtk.Box,
+    tasks: *const @import("task_model.zig").Snapshot,
+    app_index: *@import("apps.zig").Index,
+    running_apps: ?*Running.Strip = null,
     audio_service: *@import("../services/audio.zig").Audio,
     power_service: *@import("../services/power.zig").Power,
     network_service: *@import("../services/network.zig").Network,
@@ -35,7 +40,8 @@ pub const Bar = struct {
     widgets: [@typeInfo(policy.Item).@"enum".fields.len]?*gtk.Widget = @splat(null),
     handlers: std.ArrayList(*Button) = .empty,
     workspace_handlers: std.ArrayList(*Button) = .empty,
-    workspace_hash: u64 = 0,
+    workspace_hash: ?u64 = null,
+    workspace_mode: workspace_policy.Mode = .large,
     title: ?*gtk.Label = null,
     clock: ?*gtk.Label = null,
     clock_date: ?*gtk.Label = null,
@@ -45,9 +51,10 @@ pub const Bar = struct {
     vertical: bool = false,
     compact: bool = false,
     length: i32 = 1280,
-    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager) !*Bar {
+    thickness: i32 = 48,
+    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager, tasks: *const @import("task_model.zig").Snapshot, app_index: *@import("apps.zig").Index) !*Bar {
         const self = try a.create(Bar);
-        self.* = .{ .host = host, .plugins = plugins, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
+        self.* = .{ .host = host, .tasks = tasks, .app_index = app_index, .plugins = plugins, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
         self.groups = .{ try a.dupeZ(u8, "launcher,workspaces,title"), try a.dupeZ(u8, "clock"), try a.dupeZ(u8, (policy.Groups{}).right) };
         try self.build();
         return self;
@@ -66,6 +73,8 @@ pub const Bar = struct {
         list.* = .empty;
     }
     fn clear(self: *Bar) void {
+        if (self.running_apps) |view| view.destroy();
+        self.running_apps = null;
         for (self.plugin_views.items) |view| view.destroy();
         self.plugin_views.deinit(a);
         self.plugin_views = .empty;
@@ -86,7 +95,7 @@ pub const Bar = struct {
         self.battery_label = null;
         self.network_label = null;
         self.bluetooth_label = null;
-        self.workspace_hash = 0;
+        self.workspace_hash = null;
     }
     pub fn configure(self: *Bar, groups: policy.Groups) !void {
         try groups.validate();
@@ -100,6 +109,12 @@ pub const Bar = struct {
         for (self.groups) |g| a.free(g);
         self.groups = next;
         try self.build();
+    }
+    pub fn setWorkspaceMode(self: *Bar, mode: workspace_policy.Mode) void {
+        if (self.workspace_mode == mode) return;
+        self.workspace_mode = mode;
+        self.workspace_hash = null;
+        self.update();
     }
     pub fn setIslands(self: *Bar, enabled: bool) void {
         if (self.islands != enabled) {
@@ -181,6 +196,11 @@ pub const Bar = struct {
                 }
                 const item = std.meta.stringToEnum(policy.Item, part) orelse continue;
                 const widget: *gtk.Widget = switch (item) {
+                    .running_apps => blk: {
+                        const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
+                        self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.vertical, self, runningAction);
+                        break :blk host.as(gtk.Widget);
+                    },
                     .tray => blk: {
                         const tray_host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
                         self.tray = try @import("tray.zig").Bar.create(tray_host, &self.session_services.tray, self, openTray);
@@ -305,6 +325,7 @@ pub const Bar = struct {
             self.fit();
         }
         self.layoutWorkspaces();
+        self.fitTasks();
     }
     fn fit(self: *Bar) void {
         if (self.tray) |tray| tray.setLimit(if (self.compact or self.vertical) 2 else 4);
@@ -313,6 +334,44 @@ pub const Bar = struct {
         if (self.widgets[@intFromEnum(policy.Item.overview)]) |v| v.setVisible(@intFromBool(!self.compact));
         self.layoutWorkspaces();
         // Primary controls survive; overview also lives in the control center.
+    }
+    fn runningAction(data: *anyopaque, event: Running.Event) void {
+        const self: *Bar = @ptrCast(@alignCast(data));
+        self.action(self.context, .{ .running_apps = event });
+    }
+    fn fitTasks(self: *Bar) void {
+        const view = self.running_apps orelse return;
+        view.compact = self.thickness < 40;
+        const orientation: gtk.Orientation = if (self.vertical) .vertical else .horizontal;
+        var used: c_int = 64;
+        for (self.sections) |maybe| if (maybe) |section| {
+            var child = section.getFirstChild();
+            while (child) |widget| : (child = widget.getNextSibling()) {
+                if (widget == view.host.as(gtk.Widget) or widget.getVisible() == 0) continue;
+                var minimum: c_int = 0;
+                var natural: c_int = 0;
+                widget.measure(orientation, -1, &minimum, &natural, null, null);
+                used += (if (widget == self.widgets[@intFromEnum(policy.Item.title)]) minimum else natural) + 4;
+            }
+        };
+        var cell: c_int = 40;
+        var child = view.host.as(gtk.Widget).getFirstChild();
+        while (child) |widget| : (child = widget.getNextSibling()) {
+            var natural: c_int = 0;
+            widget.measure(orientation, -1, null, &natural, null, null);
+            cell = @max(cell, natural);
+        }
+        view.slots = @intCast(@max(1, @divTrunc(self.length - used, cell + 2)));
+        view.update() catch {};
+        // An otherwise empty island must not reserve a blank input/blur region.
+        for (self.sections) |maybe| if (maybe) |section| {
+            var visible = false;
+            child = section.getFirstChild();
+            while (child) |widget| : (child = widget.getNextSibling()) {
+                visible = visible or widget.getVisible() != 0;
+            }
+            section.setVisible(@intFromBool(visible));
+        };
     }
     fn openTray(data: *anyopaque) void {
         const self: *Bar = @ptrCast(@alignCast(data));
@@ -400,19 +459,32 @@ pub const Bar = struct {
         if (self.widgets[@intFromEnum(policy.Item.workspaces)]) |host| {
             const list = self.client.model.workspaces(a, self.output) catch return;
             defer a.free(list);
+            const active = self.client.model.activeWorkspace(self.output);
+            var active_index: ?usize = null;
+            if (active) |current| for (list, 0..) |ws, i| {
+                if (std.mem.eql(u8, ws.id, current.id)) {
+                    active_index = i;
+                    break;
+                }
+            };
+            const range = workspace_policy.visibleRange(list.len, active_index, self.workspace_mode);
+            const visible = list[range.start..range.end];
             var hash = std.hash.Wyhash.init(0);
-            for (list) |ws| {
-                hash.update(ws.id);
-                hash.update(ws.name);
+            hash.update(@tagName(self.workspace_mode));
+            if (active) |current| std.hash.autoHashStrat(&hash, current.id, .Deep);
+            for (visible) |ws| {
+                std.hash.autoHashStrat(&hash, ws.id, .Deep);
+                std.hash.autoHashStrat(&hash, ws.name, .Deep);
+                std.hash.autoHash(&hash, ws.number);
                 hash.update(&.{ @intFromBool(ws.active), @intFromBool(ws.urgent) });
             }
             const value = hash.final();
-            if (value != self.workspace_hash) {
+            if (self.workspace_hash == null or value != self.workspace_hash.?) {
                 self.workspace_hash = value;
                 const box = object.ext.cast(gtk.Grid, host).?;
                 while (host.getFirstChild()) |child| box.remove(child);
                 freeHandlers(&self.workspace_handlers);
-                for (list, 0..) |ws, i| {
+                for (visible, 0..) |ws, i| {
                     var buffer: [20]u8 = undefined;
                     const number = std.fmt.bufPrintZ(&buffer, "{d}", .{ws.number}) catch unreachable;
                     const button = self.makeButton(.{ .workspace = ws.id }, null, number, true) catch continue;
@@ -427,6 +499,7 @@ pub const Bar = struct {
             }
         }
         self.layoutWorkspaces();
+        self.fitTasks();
     }
     fn layoutWorkspaces(self: *Bar) void {
         const host = self.widgets[@intFromEnum(policy.Item.workspaces)] orelse return;
@@ -481,6 +554,7 @@ pub const Bar = struct {
             widget.setTooltipText(detail);
             w.name(widget, detail);
         }
+        self.fitTasks();
     }
     fn serviceName(widget: *gtk.Widget, action: [:0]const u8, detail: [:0]const u8) void {
         w.name(widget, action);
@@ -511,7 +585,9 @@ pub const Bar = struct {
             }
             try items.append(alloc, .{ .name = @tagName(@as(policy.Item, @enumFromInt(i))), .rect = allocation.read(widget, self.host.as(gtk.Widget)), .parts = try parts.toOwnedSlice(alloc) });
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .keyboard_mode = keyboard_mode }, .{});
+        var workspace_ids: std.ArrayList([]const u8) = .empty;
+        for (self.workspace_handlers.items) |handler| try workspace_ids.append(alloc, handler.id.?);
+        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .keyboard_mode = keyboard_mode, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
     }
     fn clicked(_: *gtk.Button, button: *Button) callconv(.c) void {
         button.owner.action(button.owner.context, button.event);

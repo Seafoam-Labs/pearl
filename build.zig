@@ -328,15 +328,6 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| settings_window_test.addArgs(args);
     b.step("test-settings-app", "Verify standalone window, process isolation, activation and presentation").dependOn(&settings_window_test.step);
 
-    const bar_editor = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_bar_editor.py", "--settings" });
-    bar_editor.addArtifactArg(settings_test_app);
-    bar_editor.addArg("--pearl");
-    bar_editor.addArtifactArg(app);
-    bar_editor.addArg("--ctl");
-    bar_editor.addArtifactArg(ctl);
-    if (b.args) |args| bar_editor.addArgs(args);
-    b.step("test-settings-bar-editor", "Verify native bar selections, shared drafts and persistence").dependOn(&bar_editor.step);
-
     const settings_appearance = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_appearance.py", "--settings" });
     settings_appearance.addArtifactArg(settings_test_app);
     settings_appearance.addArg("--pearl");
@@ -589,6 +580,22 @@ pub fn build(b: *std.Build) void {
     surfaces.addArtifactArg(spike);
     if (b.args) |args| surfaces.addArgs(args);
     b.step("test-surfaces", "Verify surfaces, CLI isolation and native blur in private Aqueous").dependOn(&surfaces.step);
+
+    const running_apps = b.addSystemCommand(&.{ "python3", "tests/integration/test_running_apps.py", "--pearl" });
+    running_apps.addArtifactArg(integration_app);
+    running_apps.addArg("--ctl");
+    running_apps.addArtifactArg(ctl);
+    if (b.args) |args| running_apps.addArgs(args);
+    b.step("test-running-apps", "Verify global taskbar grouping, activation and chooser lifecycle").dependOn(&running_apps.step);
+
+    const bar_editor = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_bar_editor.py", "--settings" });
+    bar_editor.addArtifactArg(settings_test_app);
+    bar_editor.addArg("--pearl");
+    bar_editor.addArtifactArg(integration_app);
+    bar_editor.addArg("--ctl");
+    bar_editor.addArtifactArg(ctl);
+    if (b.args) |args| bar_editor.addArgs(args);
+    b.step("test-settings-bar-editor", "Verify native bar selections, shared drafts and persistence").dependOn(&bar_editor.step);
 
     const dock = b.addSystemCommand(&.{ "python3", "tests/integration/test_dock_islands.py", "--pearl" });
     dock.addArtifactArg(integration_app);

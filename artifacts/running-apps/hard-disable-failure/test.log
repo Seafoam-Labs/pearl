@@ -1,0 +1,44 @@
+PASS empty-widget-collapses-and-default-layout-roundtrips
+PASS global-groups-include-inactive-workspaces-other-output-and-minimized-windows
+CLICK group desktop:Tasks0.desktop {'x': 496, 'y': 7, 'width': 24, 'height': 34} {'x': 0, 'y': 0, 'width': 1280, 'height': 720}
+PASS bar-group-click-selects-restores-and-focuses-exact-remote-window
+CLICK group app:org.pearl.Tasks1 {'x': 534, 'y': 7, 'width': 24, 'height': 34} {'x': 0, 'y': 0, 'width': 1280, 'height': 720}
+PASS single-window-click-activates-without-chooser
+PASS cli-keyboard-entry-arrows-escape-and-bar-focus-policy
+PASS open-chooser-refreshes-after-window-close-without-stale-callback
+PASS taskbar-exclusion-does-not-confuse-switcher-exclusion
+PASS all-four-bar-edges-and-clamped-chooser
+PASS per-output-placement-preserves-global-window-scope
+PASS gtk-theme-large-text-and-mixed-scale
+CLICK overflow None {'x': 914, 'y': 7, 'width': 25, 'height': 34} {'x': 0, 'y': 0, 'width': 1280, 'height': 720}
+PASS more-than-32-apps-and-64-windows-remain-reachable
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_running_apps.py", line 143, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_running_apps.py", line 136, in main
+    wait_for(lambda:len(status(s,args.ctl)['outputs'])==1 and probe()['popup_output'] is None)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 19, in wait_for
+    value = check()
+  File "/home/zoey/Pearl/tests/integration/test_running_apps.py", line 136, in <lambda>
+    wait_for(lambda:len(status(s,args.ctl)['outputs'])==1 and probe()['popup_output'] is None)
+                        ~~~~~~^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 58, in status
+    return ctl(session, binary, 'status')['result']
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 53, in ctl
+    assert result.returncode == code, (args, result.returncode, result.stdout, result.stderr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('status',), 3, '{"pearl":1,"ok":false,"err":{"code":"Connect"}}\n', '')
+test-running-apps
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_running_apps.py --pearl ./.zig-cache/o/57b4959fb70eadb89dcfea24b9e230af/pearl-integration --ctl ./.zig-cache/o/6d7681f1272d2efd2dc86d2bc6756910/pearlctl --output /home/zoey/Pearl/artifacts/running-apps
+
+Build Summary: 8/10 steps succeeded (1 failed)
+test-running-apps transitive failure
++- run python3 failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/e79d7f8e8a198d4f5fe7592940005121/build /usr/bin/zig /usr/lib/zig /home/zoey/Pearl .zig-cache .cache/zig --seed 0xebdd28a5 -Zd13a6e84d522fa43 test-running-apps -Doptimize=ReleaseSafe -- --output /home/zoey/Pearl/artifacts/running-apps

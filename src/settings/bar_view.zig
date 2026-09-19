@@ -4,6 +4,7 @@ const gtk = @import("gtk4");
 const object = @import("gobject2");
 const glib = @import("glib2");
 const prefs = @import("../config/preferences.zig");
+const workspace_policy = @import("../desktop/workspace_policy.zig");
 const policy = @import("../desktop/policy.zig");
 const model = @import("bar_model.zig");
 const protocol = @import("editor_protocol.zig");
@@ -11,7 +12,7 @@ const Editor = @import("editor.zig").Editor;
 const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Group = model.Group;
-const Intent = union(enum) { picker: Group, actions, change: model.Action, focus: Group, advanced, plugins };
+const Intent = union(enum) { picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, focus: Group, advanced, plugins };
 const Binding = struct { view: *View, id: []const u8, intent: Intent };
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
 const Choice = struct { widget: *gtk.Widget, text: []const u8 };
@@ -34,6 +35,7 @@ pub const View = struct {
     popup_closed: bool = false,
     popup_hash: [64]u8 = undefined,
     popup_error: ?*gtk.Label = null,
+    popup_workspace_mode: prefs.WorkspaceMode = .large,
     destination: ?*gtk.DropDown = null,
     search: ?*gtk.Entry = null,
     signature: ?[64]u8 = null,
@@ -235,8 +237,18 @@ pub const View = struct {
             b.as(gtk.Widget).setTooltipText(try alloc.dupeZ(u8, try std.mem.join(alloc, " → ", descriptions)));
             w.name(b.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Edit {s} widgets", .{model.groupLabel(group, document.bar.edge)}, 0));
         }
+        if (layout.find("workspaces") != null) {
+            const mode = document.bar.workspace_mode;
+            const range = workspace_policy.visibleRange(9, 4, mode);
+            var numbers: [9][]const u8 = undefined;
+            for (range.start..range.end, 0..) |index, i| numbers[i] = try std.fmt.allocPrint(alloc, "{s}{d}{s}", .{ if (index == 4) "[" else "", index + 1, if (index == 4) "]" else "" });
+            const example = try std.mem.join(alloc, "  ", numbers[0 .. range.end - range.start]);
+            const label = w.label(try std.fmt.allocPrintSentinel(alloc, "Workspace example · {s} · 5 active\n{s}", .{ mode.label(), example }, 0), "pearl-secondary");
+            preview.append(label.as(gtk.Widget));
+            try self.controls.append(a, .{ .id = "bar.workspace.preview", .widget = label.as(gtk.Widget) });
+        }
         self.content.append(w.label("Widgets", "settings-row-title").as(gtk.Widget));
-        self.content.append(w.label("Add a widget to a group. Use its actions menu to move, reorder or remove it.", "pearl-secondary").as(gtk.Widget));
+        self.content.append(w.label("Add a widget to a group. Use its actions menu to configure, move, reorder or remove it.", "pearl-secondary").as(gtk.Widget));
         const flow = w.flow(3);
         self.content.append(flow.as(gtk.Widget));
         for (model.groups) |group| {
@@ -268,6 +280,7 @@ pub const View = struct {
                 title_label.setMaxWidthChars(16);
                 labels.append(title_label.as(gtk.Widget));
                 if (std.mem.eql(u8, id, "launcher")) labels.append(w.label("Required", "pearl-secondary").as(gtk.Widget));
+                if (builtin == .workspaces) labels.append(w.label(document.bar.workspace_mode.label(), "pearl-secondary").as(gtk.Widget));
                 if (builtin == null) {
                     const detail = w.label(try pluginDetail(alloc, document, id, plugins), "pearl-secondary");
                     detail.setMaxWidthChars(18);
@@ -340,6 +353,27 @@ pub const View = struct {
             const title = try name(alloc, id, plugins);
             box.append(w.label(title, "settings-row-title").as(gtk.Widget));
             box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · Position {d} of {d}", .{ model.groupLabel(pos.group, document.bar.edge), pos.index + 1, layout.items[@intFromEnum(pos.group)].items.len }, 0), "pearl-secondary").as(gtk.Widget));
+            if (std.mem.eql(u8, id, "workspaces")) {
+                box.append(w.label("Display mode", "settings-row-title").as(gtk.Widget));
+                self.popup_workspace_mode = document.bar.workspace_mode;
+                var first: ?*gtk.CheckButton = null;
+                for (std.enums.values(prefs.WorkspaceMode)) |mode| {
+                    const choice_ = gtk.CheckButton.new();
+                    const label = w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ mode.label(), mode.description() }, 0), null);
+                    label.setMaxWidthChars(28);
+                    label.as(gtk.Widget).setCanTarget(0);
+                    choice_.as(gtk.Widget).setSizeRequest(-1, 32);
+                    choice_.setChild(label.as(gtk.Widget));
+                    if (first) |leader| choice_.setGroup(leader) else first = choice_;
+                    choice_.setActive(@intFromBool(mode == document.bar.workspace_mode));
+                    box.append(choice_.as(gtk.Widget));
+                    w.name(choice_.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "{s}: {s}", .{ mode.label(), mode.description() }, 0));
+                    const binding = try alloc.create(Binding);
+                    binding.* = .{ .view = self, .id = "workspaces", .intent = .{ .workspace_mode = mode } };
+                    _ = gtk.CheckButton.signals.toggled.connect(choice_, *Binding, modeToggled, binding, .{});
+                    try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.workspace.mode.{s}", .{@tagName(mode)}), .widget = choice_.as(gtk.Widget) });
+                }
+            }
             const earlier = try self.button(box, "Move earlier", "bar.action.earlier", id, .{ .change = .earlier }, true);
             earlier.as(gtk.Widget).setSensitive(@intFromBool(pos.index != 0));
             const later = try self.button(box, "Move later", "bar.action.later", id, .{ .change = .later }, true);
@@ -429,12 +463,42 @@ pub const View = struct {
         self.popup.?.popdown();
         self.queue();
     }
+    fn mutateWorkspaceMode(self: *View, mode: prefs.WorkspaceMode) !void {
+        if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const alloc = temp.allocator();
+        const document = try prefs.parse(alloc, self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
+        const next = try model.patchWorkspaceMode(alloc, self.editor.text(), mode);
+        self.editing = true;
+        defer self.editing = false;
+        try self.editor.edit(next);
+        self.host.as(gtk.Accessible).announce(try std.fmt.allocPrintSentinel(alloc, "Workspaces: {s}. Unsaved changes.", .{mode.label()}, 0), .medium);
+        self.rememberFocus("bar.widget.workspaces");
+        self.popup.?.popdown();
+        self.queue();
+    }
+    fn modeToggled(choice_: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
+        const self = binding.view;
+        if (choice_.getActive() == 0 or self.editing) return;
+        self.mutateWorkspaceMode(binding.intent.workspace_mode) catch |err| {
+            self.report(err);
+            // A rejected draft edit must not leave a falsely selected mode.
+            self.editing = true;
+            defer self.editing = false;
+            for (self.menu_controls.items) |control| if (std.mem.endsWith(u8, control.id, @tagName(self.popup_workspace_mode))) {
+                if (object.ext.cast(gtk.CheckButton, control.widget)) |previous| previous.setActive(1);
+            };
+        };
+    }
     fn clicked(button_: *gtk.Button, binding: *Binding) callconv(.c) void {
         const self = binding.view;
         switch (binding.intent) {
             .picker => |group| self.showMenu(button_.as(gtk.Widget), "", group) catch |err| self.report(err),
             .actions => self.showMenu(button_.as(gtk.Widget), binding.id, null) catch |err| self.report(err),
             .change => |action| self.mutate(binding.id, action) catch |err| self.report(err),
+            .workspace_mode => |mode| self.mutateWorkspaceMode(mode) catch |err| self.report(err),
             .focus => |group| if (self.cards[@intFromEnum(group)]) |card| {
                 _ = card.grabFocus();
             },

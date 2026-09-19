@@ -21,3 +21,10 @@
 .pearl-root.pearl-gtk .pearl-bar-vertical .pearl-bar-value { font-size: 0.8em; }
 .pearl-root.pearl-gtk .pearl-dock { padding: 6px; border-radius: 14px; }
 .pearl-root.pearl-gtk .pearl-dock button { padding: 3px; min-height: 24px; }
+
+.pearl-root.pearl-gtk .pearl-bar-panel button.pearl-task-button { min-width: 24px; min-height: 24px; padding: 2px 5px; }
+.pearl-root.pearl-gtk .pearl-task-count { font-size: 9px; min-height: 10px; }
+.pearl-root.pearl-gtk .pearl-bar-panel.pearl-bar-vertical button.pearl-task-button { min-width: 0; padding: 3px 1px; }
+
+.pearl-root.pearl-gtk .pearl-bar-panel button.pearl-task-compact { min-width: 20px; min-height: 20px; padding: 1px 3px; }
+.pearl-root.pearl-gtk .pearl-task-badge { background: @theme_bg_color; color: @theme_fg_color; border-radius: 3px; }

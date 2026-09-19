@@ -1,0 +1,33 @@
+{
+  "checks_passed": 26,
+  "checks": [
+    "Six application groups and nine windows across four workspaces",
+    "Grouped chooser includes remote display and inactive workspaces",
+    "Choosing remote window switches workspace/output and preserves all apps",
+    "Secondary click exposes minimized state",
+    "Single minimized window restores and activates",
+    "Switching workspace retains global groups",
+    "Draft placement leaves saved bar unchanged",
+    "Apply places only task strip in center",
+    "Reorder works in target group",
+    "Discard restores saved order",
+    "Removing widget hides runtime apps",
+    "Picker adds widget back and applies",
+    "Duplicate addition disabled",
+    "Overflow includes every hidden app",
+    "Last overflow window activates",
+    "Empty runtime collapses but Settings retains widget",
+    "Dialog wraps keyboard focus",
+    "Escape closes chooser and restores trigger focus",
+    "No horizontal overflow at 390px",
+    "All applications reachable at 390px",
+    "Narrow chooser fits viewport",
+    "No horizontal overflow at 560px",
+    "All applications reachable at 560px",
+    "No horizontal overflow at 850px",
+    "All applications reachable at 850px",
+    "No JavaScript errors"
+  ],
+  "javascript_errors": [],
+  "scope": "HTML mockup only; no native compositor or preferences integration tested"
+}

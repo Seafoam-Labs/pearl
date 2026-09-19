@@ -1059,7 +1059,7 @@ pub const Window = struct {
             const item = &self.links[(if (self.narrow) @as(usize, navigation_count) else 0) + i];
             link.* = .{ .page = item.target.page, .section = item.target.section, .visible = item.button.as(gtk.Widget).getVisible() != 0, .focused = self.window.getFocus() == item.button.as(gtk.Widget), .active = item.button.getActive() != 0, .bounds = self.bounds(item.button.as(gtk.Widget)) };
         }
-        const ControlProbe = struct { field: []const u8, focused: bool, enabled: bool = true, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
+        const ControlProbe = struct { field: []const u8, focused: bool, enabled: bool = true, selected: ?bool = null, text: ?[]const u8 = null, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
         var controls: std.ArrayList(ControlProbe) = .empty;
         const focus = self.window.getFocus();
         if (self.preferences_view) |view| {
@@ -1102,7 +1102,7 @@ pub const Window = struct {
         if (self.preference_pages[0]) |view| if (view.bar) |bar| {
             if (bar.repair.as(gtk.Widget).getMapped() != 0) try controls.append(alloc, .{ .field = "bar.repair", .focused = focus == bar.repair.as(gtk.Widget), .enabled = true, .bounds = self.bounds(bar.repair.as(gtk.Widget)) });
             for ([_][]const @import("bar_view.zig").Control{ bar.controls.items, bar.menu_controls.items }) |list| for (list) |control| {
-                if (control.widget.getMapped() != 0) try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |f| f == control.widget or f.isAncestor(control.widget) != 0 else false, .enabled = control.widget.isSensitive() != 0, .bounds = self.bounds(control.widget) });
+                if (control.widget.getMapped() != 0) try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |f| f == control.widget or f.isAncestor(control.widget) != 0 else false, .enabled = control.widget.isSensitive() != 0, .bounds = self.bounds(control.widget), .selected = if (object.ext.cast(gtk.CheckButton, control.widget)) |choice| choice.getActive() != 0 else null, .text = if (object.ext.cast(gtk.Label, control.widget)) |label| std.mem.span(label.getText()) else null });
             };
         };
         for (self.preference_pages) |item| if (item) |view| for (view.fields) |field| {

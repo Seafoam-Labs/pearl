@@ -12,6 +12,7 @@ const protocol = @import("../../cli/protocol.zig");
 const policy = @import("policy.zig");
 const Bar = @import("../../desktop/bar.zig");
 const Apps = @import("../../desktop/apps.zig");
+const Running = @import("../../desktop/running_apps.zig");
 const Launcher = @import("../../desktop/launcher.zig").Launcher;
 const Panels = @import("../../desktop/panels.zig");
 const navigation = @import("../../desktop/settings_navigation.zig");
@@ -34,6 +35,7 @@ const Surface = struct {
     edge: Edge = .top,
     bar: ?*Bar.Bar = null,
     launcher: ?*Launcher = null,
+    running_apps: ?*Running.Chooser = null,
     control: ?*Panels.Control = null,
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
     media: ?*@import("../../desktop/media.zig").View = null,
@@ -53,6 +55,7 @@ const Surface = struct {
         if (self.tray) |view| view.destroy();
         if (self.bar) |bar| bar.destroy();
         if (self.launcher) |launcher| launcher.destroy();
+        if (self.running_apps) |view| view.destroy();
         if (self.clipboard_capture) |view| view.destroy();
         if (self.control) |control| control.destroy();
         if (self.measure_clock) |clock| {
@@ -132,6 +135,7 @@ pub const Manager = struct {
     osd_pending: @import("../../services/policy.zig").Text(512) = .{},
     osd_flush: c_uint = 0,
     index: Apps.Index = undefined,
+    tasks: @import("../../desktop/task_apps.zig").Store = .{},
     layout: ?Layout = null,
     layout_stamp: u64 = 0,
     clock_source: c_uint = 0,
@@ -213,6 +217,8 @@ pub const Manager = struct {
         self.unwatchMonitors();
         self.monitor_watches.deinit(a);
         self.clear();
+        self.tasks.deinit();
+        self.tasks = .{};
         if (self.plugins) |plugins| plugins.stop();
         self.plugins = null;
         if (self.services_started) {
@@ -248,6 +254,7 @@ pub const Manager = struct {
         self.hideNotifications();
         for (self.outputs.items) |o| o.destroy();
         self.outputs.clearRetainingCapacity();
+        self.tasks.snapshot.reset();
     }
     fn aqueousSettingsChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -585,6 +592,7 @@ pub const Manager = struct {
             self.clear();
             return error.SessionDisplayMismatch;
         }
+        try self.tasks.update(&self.client.model, &self.index);
         for (self.outputs.items) |o| o.seen = false;
         const monitors = self.display.getMonitors();
         var values = self.client.model.entities.valueIterator();
@@ -635,10 +643,12 @@ pub const Manager = struct {
             const o = output.?;
             o.seen = true;
             if (o.preferences_revision != self.preferences.appearance) {
+                if (self.popup != null and self.pane == .running_apps) self.hidePopup();
                 const pref = self.preferences.prefs().forOutput(o.connector);
                 try o.reservations.bar(pref.edge, pref.size);
                 o.bar.?.edge = pref.edge;
                 sizeEdge(o.bar.?, pref.edge, pref.size);
+                o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
                 o.bar.?.bar.?.setIslands(pref.islands);
                 try o.bar.?.bar.?.configure(pref.groups);
                 self.preferences.style(o.bar.?.window.as(gtk.Widget), o.bar.?.panel);
@@ -658,6 +668,8 @@ pub const Manager = struct {
             };
             const gate = self.lifecycle.gate;
             const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active));
+            if (dock_locked and self.pane == .running_apps) self.hidePopup();
+            if (suspendTasks(o)) |host| host.setSensitive(@intFromBool(!dock_locked));
             if (o.dock) |dock| try dock.update(self.preferences.prefs().dockForOutput(o.connector), o.reservations.bar_edge, bounds, dock_locked);
             try self.syncPluginOverlays(o, dock_locked);
             if (changed and self.popup != null and self.popup.?.output == o) self.positionPopup();
@@ -676,6 +688,7 @@ pub const Manager = struct {
             } else i += 1;
         }
         if (self.popup) |popup| {
+            if (popup.running_apps) |view| try view.update();
             if (popup.launcher) |launcher| launcher.refresh();
             if (popup.clipboard_capture) |view| view.update();
             if (popup.control) |panel| panel.update();
@@ -744,6 +757,7 @@ pub const Manager = struct {
         errdefer {
             if (s.bar) |bar| bar.destroy();
             if (s.launcher) |launcher| launcher.destroy();
+            if (s.running_apps) |view| view.destroy();
             if (s.clipboard_capture) |view| view.destroy();
             if (s.control) |panel_control| panel_control.destroy();
             if (s.notifications) |view| view.destroy();
@@ -768,7 +782,7 @@ pub const Manager = struct {
             .bar => {
                 panel_widget.addCssClass("pearl-bar-panel");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, 4);
-                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins);
+                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -807,6 +821,7 @@ pub const Manager = struct {
                 switch (self.pane) {
                     .aqueous_settings => s.aqueous_settings = try @import("../../desktop/aqueous_settings.zig").View.create(panel, &self.aqueous_settings, window),
                     .settings => s.settings = try @import("../../desktop/settings.zig").View.create(panel, &self.preferences),
+                    .running_apps => s.running_apps = try Running.Chooser.create(panel, &self.tasks.snapshot, &self.index, s, runningAction),
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
                     .calendar => Panels.calendar(panel),
                     .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
@@ -967,10 +982,15 @@ pub const Manager = struct {
         if (panel.page != page) return error.Unavailable;
         return (panel.connection orelse return error.Unavailable).owner;
     }
+    fn suspendTasks(output: *Output) ?*gtk.Widget {
+        const bar = (output.bar orelse return null).bar orelse return null;
+        return if (bar.running_apps) |view| view.host.as(gtk.Widget) else null;
+    }
     pub fn showPane(self: *Manager, output: *Output, pane: Bar.Pane) !void {
         return self.showPaneAt(output, pane, .overview);
     }
     fn showPaneAt(self: *Manager, output: *Output, pane: Bar.Pane, page: navigation.Route) !void {
+        if (pane == .running_apps and (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or self.auth.request != null)) return error.Locked;
         if (pane == .clipboard_capture) {
             self.syncClipboardPrivacy();
             if (self.clipboard.locked) return error.Locked;
@@ -994,6 +1014,7 @@ pub const Manager = struct {
                 surface.measure_signal = gdk.FrameClock.signals.after_paint.connect(clock, *Surface, serviceProbe, surface, .{});
             }
         }
+        if (self.popup.?.running_apps) |view| view.focus();
         if (self.popup.?.launcher) |launcher| {
             if (self.popup.?.window.as(gtk.Widget).getFrameClock()) |clock| launcher.observeFrame(clock);
             _ = launcher.search.as(gtk.Widget).grabFocus();
@@ -1149,6 +1170,38 @@ pub const Manager = struct {
         if (request.op == .session_status) {
             self.session_services.notifications.setLocked(self.client.availability != .ready or (if (self.client.model.get(.session, "session")) |session| session.locked else true));
             return self.session_services.status(alloc, request.offset orelse 0);
+        }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.startsWith(u8, request.text orelse "", "test-running-apps")) {
+            const text = request.text.?;
+            if (std.mem.startsWith(u8, text, "test-running-apps:bar:")) {
+                const output = try self.selected(text["test-running-apps:bar:".len..]);
+                const surface = output.bar orelse return error.Unavailable;
+                const strip = surface.bar.?.running_apps orelse return error.Unavailable;
+                return std.json.Stringify.valueAlloc(alloc, try strip.report(alloc, surface.window.as(gtk.Widget)), .{});
+            }
+            if (std.mem.startsWith(u8, text, "test-running-apps:rows:")) {
+                const offset = try std.fmt.parseInt(usize, text["test-running-apps:rows:".len..], 10);
+                const surface = self.popup orelse return error.Unavailable;
+                const view = surface.running_apps orelse return error.Unavailable;
+                const rows = try view.report(alloc, surface.window.as(gtk.Widget));
+                const begin = @min(offset, rows.len);
+                return std.json.Stringify.valueAlloc(alloc, rows[begin..@min(begin + 20, rows.len)], .{});
+            }
+            const Group = struct { key: []const u8, name: []const u8, count: usize };
+            var groups: std.ArrayList(Group) = .empty;
+            for (self.tasks.snapshot.groups) |g| try groups.append(alloc, .{ .key = g.key, .name = g.name, .count = g.windows.items.len });
+            const Strip = struct { output: []const u8, shown: usize, slots: usize, keyboard_mode: []const u8 };
+            var strips: std.ArrayList(Strip) = .empty;
+            for (self.outputs.items) |o| if (o.bar) |surface| if (surface.bar.?.running_apps) |strip| {
+                try strips.append(alloc, .{ .output = o.id, .shown = strip.shown, .slots = strip.slots, .keyboard_mode = @tagName(layer.getKeyboardMode(surface.window)) });
+            };
+            var rows: []const Running.ProbeRow = &.{};
+            var popup_output: ?[]const u8 = null;
+            if (self.popup) |surface| if (surface.running_apps) |view| {
+                rows = try view.report(alloc, surface.window.as(gtk.Widget));
+                popup_output = surface.output.id;
+            };
+            return std.json.Stringify.valueAlloc(alloc, .{ .revision = self.tasks.snapshot.revision, .groups = groups.items, .strips = strips.items, .row_count = rows.len, .popup_output = popup_output }, .{});
         }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-focus")) {
             const popup = self.popup orelse return error.Unavailable;
@@ -1342,9 +1395,10 @@ pub const Manager = struct {
                 self.hidePopup();
             },
             .control_show, .control_toggle => try self.settingsAction(request.output, request.compactPage(), if (request.op == .control_toggle) .toggle else .show),
-            .launcher_show, .launcher_toggle, .calendar_toggle => {
+            .running_apps_show, .launcher_show, .launcher_toggle, .calendar_toggle => {
                 const output = try self.selected(request.output);
                 const pane: Bar.Pane = switch (request.op) {
+                    .running_apps_show => .running_apps,
                     .calendar_toggle => .calendar,
                     else => .launcher,
                 };
@@ -1473,6 +1527,7 @@ fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     anchors(s.window, edge);
     const horizontal = edge == .top or edge == .bottom;
     if (s.bar) |bar| {
+        bar.thickness = size;
         bar.geometry(!horizontal, if (horizontal) s.output.bounds.width else s.output.bounds.height);
         if (!horizontal and s.viewport == null) {
             // Retain the panel's existing reference while changing parents.
@@ -1516,6 +1571,7 @@ fn barAction(context: *anyopaque, event: Bar.Event) void {
     const s: *Surface = @ptrCast(@alignCast(context));
     const self = s.manager;
     switch (event) {
+        .running_apps => |task| runningAction(s, task),
         .settings => |page| self.settingsAction(s.output.id, page, .toggle) catch {},
         .pane => |pane| {
             if (pane == .control) {
@@ -1537,6 +1593,29 @@ fn barAction(context: *anyopaque, event: Bar.Event) void {
         .overview => {
             self.enqueueAction(.{ .overview_toggle = .{ .output = s.output.id } });
             self.hidePopup();
+        },
+    }
+}
+fn runningAction(context: *anyopaque, event: Running.Event) void {
+    const surface: *Surface = @ptrCast(@alignCast(context));
+    const self = surface.manager;
+    switch (event) {
+        .activate => |id| {
+            // enqueue copies opaque IDs and validates current model/capabilities.
+            self.enqueueAction(.{ .window_activate = .{ .id = id } });
+            self.hidePopup();
+        },
+        .group => |group| {
+            const owned = a.dupe(u8, group) catch return;
+            defer a.free(owned);
+            const output = surface.output;
+            self.showPane(output, .running_apps) catch return;
+            self.popup.?.running_apps.?.select(owned, 0) catch {};
+        },
+        .overflow => |skip| {
+            const output = surface.output;
+            self.showPane(output, .running_apps) catch return;
+            self.popup.?.running_apps.?.select(null, skip) catch {};
         },
     }
 }

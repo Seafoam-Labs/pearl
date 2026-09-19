@@ -11,6 +11,16 @@ later services. The bar currently has one Pearl button; the popup has a title,
 explanatory text and Close button. There is no application launcher, complete
 control center, audio service or persistent surface configuration yet.
 
+## Running applications chooser
+
+`running-apps show [--output ID]` opens a keyboard-capable principal popup listing
+all taskbar application groups. The bar widget opens the same surface filtered
+to an application or its overflow list. It uses existing usable-area placement,
+exclusive keyboard input, Escape/backdrop dismissal and single-popup ownership.
+Bar keyboard mode remains `none`. Lock, session/IPC loss, output removal and
+bar preference reconstruction dismiss the chooser. Window rows retain copied
+opaque IDs and validate activation against the current model.
+
 ## Compact settings flyout
 
 The settings flyout uses the existing principal popup surface, usable-area limits,

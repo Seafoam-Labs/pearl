@@ -70,6 +70,58 @@ def main():
                     label = f'{theme}-{islands}-{font}-{size}-{edge}'
                     capture(s, label, first['connector'])
                     report['cases'].append(dict(name=label, bar_size=current['bar_size'], widgets=widgets))
+            # Display modes use exact output-local identities and follow external activation.
+            ipc = IPC(s)
+            def workspace_probe(oid=first['id']):
+                return ctl(s, args.ctl, 'aqueous', 'status', '--text', 'test-bar-layout:' + oid)['result']
+            local = sorted([e for e in ipc.state() if e['kind'] == 'workspace' and e['output'] == first['id']], key=lambda e: (e['number'], e['id']))
+            def activate(index):
+                ipc.call('command', action='workspace.activate', fields=dict(id=local[index]['id']))
+                wait_for(lambda: ipc.outputs()[first['id']]['active_workspace'] == local[index]['id'])
+            def expect_ids(expected, oid=first['id']):
+                value = wait_for(lambda: (lambda v: v if v['workspace_ids'] == expected else False)(workspace_probe(oid)))
+                assert value['keyboard_mode'] == 'none'
+                cells = next(v['parts'] for v in value['items'] if v['name'] == 'workspaces')
+                assert len(cells) == len(expected)
+                return value
+            for edge in ('top', 'bottom', 'left', 'right'):
+                for mode, radius in [('small', 1), ('medium', 2), ('large', len(local))]:
+                    prefs = copy.deepcopy(base)
+                    prefs['bar'].update(edge=edge, workspace_mode=mode)
+                    prefs['outputs'] = []
+                    if edge == 'right': prefs['font_size'] = 20
+                    apply(s, args.ctl, prefs)
+                    for index in (0, 1, len(local)-2, len(local)-1, 4):
+                        activate(index)
+                        expected = [w['id'] for w in local[max(0,index-radius):index+radius+1]]
+                        current = expect_ids(expected)
+                        assert current['workspace_mode'] == mode
+                    time.sleep(.3)
+                    capture(s, 'workspace-' + mode + '-' + edge, first['connector'])
+                    report['cases'].append(dict(name='workspace-' + mode + '-' + edge, workspace_ids=current['workspace_ids']))
+            # A click on a filtered neighbor must activate its copied opaque ID.
+            prefs = copy.deepcopy(base); prefs['bar'].update(edge='top', workspace_mode='small'); prefs['outputs']=[]
+            apply(s, args.ctl, prefs); activate(4)
+            current=expect_ids([w['id'] for w in local[3:6]])
+            time.sleep(.3)
+            current=workspace_probe()
+            cells=next(v['parts'] for v in current['items'] if v['name']=='workspaces')
+            cell=cells[-1]; bounds=ipc.outputs()[first['id']]['bounds']
+            click(s, bounds['x']+cell['x']+cell['width']/2, bounds['y']+cell['y']+cell['height']/2, ipc.outputs())
+            wait_for(lambda: ipc.outputs()[first['id']]['active_workspace']==local[5]['id'])
+            expect_ids([w['id'] for w in local[4:7]])
+            second=next(o for o in status(s,args.ctl)['outputs'] if o['id']!=first['id'])
+            remote=sorted([e for e in ipc.state() if e['kind']=='workspace' and e['output']==second['id']],key=lambda e:(e['number'],e['id']))
+            prefs['outputs']=[dict(connector=second['connector'],bar=dict(workspace_mode='medium'))]
+            apply(s,args.ctl,prefs)
+            ipc.call('command',action='workspace.activate',fields=dict(id=remote[4]['id']))
+            expect_ids([w['id'] for w in remote[2:7]],second['id'])
+            expect_ids([w['id'] for w in local[4:7]])
+            # Omitted mode in a complete display override must default to Large.
+            del prefs['outputs'][0]['bar']['workspace_mode']; apply(s,args.ctl,prefs)
+            expect_ids([w['id'] for w in remote],second['id'])
+            report['cases'].append(dict(name='filtered-click-and-independent-display-overrides'))
+            ipc.close()
             # Direct CLI rotation must rebuild immediately, including after scaling.
             apply(s, args.ctl, base)
             s.run(['wlr-randr', '--output', first['connector'], '--scale', '1.5'])
@@ -105,7 +157,23 @@ def main():
                     wait_for(lambda: status(s, args.ctl)['popup'] is not None)
                     assert status(s, args.ctl)['popup']['pane'] == 'control'
                     ctl(s, args.ctl, 'popup', 'hide'); ipc.close()
+            # Saved mode survives a shell restart, including a scaled display.
+            restart_prefs=copy.deepcopy(base)
+            restart_prefs['bar'].update(workspace_mode='medium',edge='top')
+            restart_prefs['outputs']=[]
+            apply(s,args.ctl,restart_prefs)
+            ipc=IPC(s)
+            activate(4)
+            expect_ids([w['id'] for w in local[2:7]])
             ctl(s, args.ctl, 'quit'); clean(app)
+            app=s.child('pearl-restarted',[args.pearl],G_DEBUG='fatal-warnings')
+            app.expect('event=control-ready')
+            expect_ids([w['id'] for w in local[2:7]])
+            assert workspace_probe()['workspace_mode']=='medium'
+            capture(s,'workspace-medium-restarted-scaled',first['connector'])
+            report['cases'].append(dict(name='workspace-mode-persists-after-shell-restart-at-mixed-scale'))
+            ipc.close()
+            ctl(s,args.ctl,'quit');clean(app)
         report['status'] = 'passed'
     except Exception as error:
         report.update(status='failed', error=str(error)); raise

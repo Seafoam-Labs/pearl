@@ -21,6 +21,14 @@ top/bottom edge restores horizontal widgets and full keyboard-layout labels.
 `zig build test-bar-layout -Drelease=true -Doptimize=ReleaseSafe` checks actual GTK
 allocations across edges, themes, text sizes and mixed-scale output changes.
 
+## Global bar task widget
+
+The optional `running_apps` bar widget uses the same application matching as
+the dock with a global window source. It includes every workspace and display,
+has no pins, and opens a window chooser for multi-window applications. The dock
+continues to filter by output and cycle windows on primary click. Configuring
+one does not configure the other. See [DESKTOP.md](DESKTOP.md#running-applications-in-the-bar).
+
 ## Dock behavior
 
 Each output has its own running application groups and the same ordered list of

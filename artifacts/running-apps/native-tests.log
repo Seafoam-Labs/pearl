@@ -1,0 +1,15 @@
+PASS empty-widget-collapses-and-default-layout-roundtrips
+PASS global-groups-include-inactive-workspaces-other-output-and-minimized-windows
+PASS bar-group-click-selects-restores-and-focuses-exact-remote-window
+PASS single-window-click-activates-without-chooser
+PASS cli-keyboard-entry-arrows-escape-and-bar-focus-policy
+PASS open-chooser-refreshes-after-window-close-without-stale-callback
+PASS catalog-rescan-reclassifies-group-without-losing-chooser
+PASS taskbar-exclusion-does-not-confuse-switcher-exclusion
+PASS all-four-bar-edges-and-clamped-chooser
+PASS compact-bar-keeps-application-counts-without-growing-the-edge
+PASS per-output-placement-preserves-global-window-scope
+PASS gtk-theme-large-text-and-mixed-scale
+PASS more-than-32-apps-and-64-windows-remain-reachable
+PASS powered-off-output-removes-surfaces-and-dismisses-chooser
+PASS teardown-with-fatal-gtk-warnings-enabled

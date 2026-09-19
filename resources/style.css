@@ -111,3 +111,15 @@
 .pearl-root.$scope popover > contents { background: $container$; color: $text$; border: 1px solid alpha($outline$, 0.3); border-radius: 14px; padding: 8px; }
 
 .pearl-root.$scope .pearl-plugin-label { color: $text$; }
+
+/* Application task strip inherits the bar's theme and edge. */
+.pearl-root.$scope .pearl-running-apps .pearl-task-button { min-width: 24px; min-height: 24px; padding: 2px 5px; }
+.pearl-root.$scope .pearl-task-count { font-size: 9px; min-height: 10px; }
+.pearl-root.$scope .pearl-bar-vertical .pearl-running-apps .pearl-task-button { padding: 3px 1px; }
+
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-task-button { padding: 2px 5px; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-task-button.suggested-action { background: $primary$; color: $on_primary$; }
+.pearl-root.$scope.pearl-shell .pearl-bar-panel.pearl-bar-vertical button.pearl-task-button { padding: 3px 1px; }
+
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-task-compact { min-width: 20px; min-height: 20px; padding: 1px 3px; }
+.pearl-root.$scope .pearl-task-badge { background: $container$; color: $text$; border-radius: 3px; }

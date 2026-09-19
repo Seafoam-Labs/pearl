@@ -23,7 +23,8 @@ pub const Wallpaper = struct {
     color: []const u8 = "#141218",
 };
 pub const Dock = @import("../desktop/dock_policy.zig").Config;
-pub const Bar = struct { islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
+pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
+pub const Bar = struct { workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
 pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
@@ -188,4 +189,29 @@ test "dock preferences preserve inherited settings and reject duplicate or unsaf
     try t.expectError(error.InvalidDesktopId, p.validate());
     p.pinned_apps = &.{"org.example.App.desktop"};
     try p.validate();
+}
+
+test "workspace mode defaults, strict values and complete output overrides" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try std.testing.expectEqual(.large, (try parse(a, "{}")).bar.workspace_mode);
+    try std.testing.expectError(error.InvalidEnumTag, parse(a,
+        \\{"bar":{"workspace_mode":"tiny"}}
+    ));
+    const omitted = try parse(a,
+        \\{"bar":{"workspace_mode":"small"},"outputs":[{"connector":"DP-1","bar":{}}]}
+    );
+    try std.testing.expectEqual(.large, omitted.forOutput("DP-1").workspace_mode);
+    try std.testing.expectEqual(.small, omitted.forOutput("DP-2").workspace_mode);
+    for (std.enums.values(WorkspaceMode)) |mode| {
+        const original: Preferences = .{ .bar = .{ .workspace_mode = mode }, .outputs = &.{
+            .{ .connector = "DP-1" },
+            .{ .connector = "DP-2", .bar = .{ .workspace_mode = .medium } },
+        } };
+        const parsed = try parse(a, try std.json.Stringify.valueAlloc(a, original, .{}));
+        try std.testing.expectEqual(mode, parsed.forOutput("HDMI-1").workspace_mode);
+        try std.testing.expectEqual(.large, parsed.forOutput("DP-1").workspace_mode);
+        try std.testing.expectEqual(.medium, parsed.forOutput("DP-2").workspace_mode);
+    }
 }

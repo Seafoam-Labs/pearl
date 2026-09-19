@@ -7,6 +7,7 @@ pub const groups = std.enums.values(Group);
 pub const Metadata = struct { name: [:0]const u8, description: [:0]const u8, icon: [:0]const u8 };
 pub fn metadata(item: policy.Item) Metadata {
     return switch (item) {
+        .running_apps => .{ .name = "Running applications", .description = "Open windows across all workspaces and displays", .icon = "pearl-application-x-executable-symbolic" },
         .launcher => .{ .name = "Launcher", .description = "Open your applications · Required", .icon = "pearl-view-grid-symbolic" },
         .workspaces => .{ .name = "Workspaces", .description = "Switch between workspaces", .icon = "pearl-view-grid-symbolic" },
         .title => .{ .name = "Window title", .description = "Name of the active window", .icon = "pearl-window-symbolic" },
@@ -100,6 +101,16 @@ pub fn patch(a: std.mem.Allocator, text: []const u8, id: []const u8, action: Act
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
     return result;
 }
+pub fn patchWorkspaceMode(a: std.mem.Allocator, text: []const u8, mode: prefs.WorkspaceMode) ![]const u8 {
+    var document = try prefs.parse(a, text);
+    const layout = try Layout.parse(a, document.bar.groups);
+    if (layout.find("workspaces") == null) return error.WidgetNotFound;
+    document.bar.workspace_mode = mode;
+    try document.validate();
+    const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
+    if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
+    return result;
+}
 /// Small optional backend catalog. Existing references do not depend on discovery.
 pub const Plugin = struct { id: []const u8, name: []const u8, digest: []const u8, available: bool, status: []const u8 };
 pub const Catalog = struct { bar_widgets: ?[]const Plugin = null };
@@ -183,4 +194,35 @@ test "bar catalog is optional and unavailable or unapproved plugins cannot be ad
     config.digest = "";
     try std.testing.expect(!eligible(.{ .plugins = .{ .entries = (&config)[0..1] } }, plugin));
     try std.testing.expect(!eligible(.{}, plugin));
+}
+
+test "running applications is an optional singleton preserved across groups and overrides" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const input = "{\"bar\":{\"groups\":{\"left\":\"launcher\",\"center\":\"clock\",\"right\":\"control\"}},\"outputs\":[{\"connector\":\"OTHER\",\"bar\":{\"groups\":{\"left\":\"launcher,running_apps\",\"center\":\"clock\",\"right\":\"control\"}}}]}";
+    const added = try patch(a, input, "running_apps", .{ .add = .left });
+    try t.expectError(error.AlreadyPlaced, patch(a, added, "running_apps", .{ .add = .right }));
+    const moved = try patch(a, added, "running_apps", .{ .move = .center });
+    const parsed = try prefs.parse(a, moved);
+    try t.expectEqualStrings("clock,running_apps", parsed.bar.groups.center);
+    try t.expectEqualStrings("launcher,running_apps", parsed.outputs[0].bar.groups.left);
+}
+
+test "workspace mode patch preserves layout and unrelated preferences and survives removal" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var expected: prefs.Preferences = .{ .font_size = 19, .outputs = &.{.{ .connector = "DP-1", .bar = .{ .workspace_mode = .small } }} };
+    const text = try std.json.Stringify.valueAlloc(a, expected, .{});
+    for (std.enums.values(prefs.WorkspaceMode)) |mode| {
+        expected.bar.workspace_mode = mode;
+        const changed = try patchWorkspaceMode(a, text, mode);
+        try std.testing.expectEqualDeep(expected, try prefs.parse(a, changed));
+        const removed = try patch(a, changed, "workspaces", .remove);
+        try std.testing.expectError(error.WidgetNotFound, patchWorkspaceMode(a, removed, .large));
+        const restored = try patch(a, removed, "workspaces", .{ .add = .center });
+        try std.testing.expectEqual(mode, (try prefs.parse(a, restored)).bar.workspace_mode);
+    }
 }

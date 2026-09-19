@@ -94,6 +94,57 @@ def main():
             assert path.read_bytes()==disk and not peer.state()['dirty']
             capture(s,'bar-editor-desktop',output['name'])
             passed('opening-is-read-only-and-unavailable-plugin-is-retained')
+            def live_mode():
+                return ctl(s,args.ctl,'aqueous','status','--text','test-bar-layout:' + output['id'])['result']['workspace_mode']
+            assert live_mode() == 'large'
+            def mode_control(mode):
+                return next(c for c in probe(s, ipc)['controls'] if c['field'] == 'bar.workspace.mode.' + mode)
+            def preview_text():
+                return next(c['text'] for c in probe(s, ipc)['controls'] if c['field'] == 'bar.workspace.preview')
+            for mode, example in [('small', '4  [5]  6'), ('medium', '3  4  [5]  6  7'), ('large', '1  2  3  4  [5]  6  7  8  9')]:
+                click(s, ipc, 'bar.widget.workspaces')
+                old_mode = json.loads(peer.document())['bar']['workspace_mode']
+                assert mode_control(old_mode)['selected']
+                menu_click(s, ipc, 'bar.workspace.mode.' + mode)
+                menu_closed(s, ipc)
+                wait_for(lambda: json.loads(peer.document())['bar']['workspace_mode'] == mode)
+                ready(s, ipc)
+                assert preview_text().endswith(example), preview_text()
+                candidate = copy.deepcopy(baseline); candidate['bar']['workspace_mode'] = mode
+                assert json.loads(peer.document()) == candidate
+                assert path.read_bytes() == disk
+                assert live_mode() == 'large'
+                click(s, ipc, 'bar.widget.workspaces')
+                assert mode_control(mode)['selected']
+                capture(s, 'workspace-mode-' + mode, output['name'])
+                keys(s, 'Escape'); menu_closed(s, ipc)
+            click(s, ipc, 'discard'); ready(s, ipc)
+            assert json.loads(peer.document()) == baseline
+            passed('workspace-mode-radio-selection-preview-and-discard')
+            click(s, ipc, 'bar.widget.workspaces')
+            # A selected radio receives focus; Up chooses Medium from Large.
+            menu_click(s, ipc, 'bar.workspace.mode.large')
+            keys(s, 'Up'); menu_closed(s, ipc); ready(s, ipc)
+            assert json.loads(peer.document())['bar']['workspace_mode'] == 'medium'
+            click(s, ipc, 'apply'); ready(s, ipc)
+            wait_for(lambda: not peer.state()['dirty'] and not peer.state()['busy'])
+            assert json.loads(path.read_text())['bar']['workspace_mode'] == 'medium'
+            wait_for(lambda: live_mode() == 'medium')
+            app.stop(); clean(app)
+            app=s.child('settings-workspace-reopened',[args.settings,'--page','bar'],G_DEBUG='fatal-warnings')
+            app.expect('event=settings-window-created'); ready(s,ipc)
+            click(s, ipc, 'bar.widget.workspaces')
+            assert mode_control('medium')['selected']
+            external=copy.deepcopy(baseline); external['bar']['workspace_mode']='small'
+            keep(json.dumps(external))
+            menu_click(s, ipc, 'bar.workspace.mode.large')
+            assert json.loads(peer.document()) == external
+            assert mode_control('medium')['selected']  # Rejected choice was restored.
+            keys(s, 'Escape'); menu_closed(s, ipc)
+            keep(json.dumps(baseline)); assert peer.action('apply')['state'] == 'succeeded'; ready(s, ipc)
+            disk=path.read_bytes()
+            wait_for(lambda: live_mode() == 'large')
+            passed('workspace-keyboard-apply-reopen-and-stale-mode-rejection')
             choose(s,ipc,'left','Editor fixture','plugin:editor.fixture/main')
             wait_for(lambda:'plugin:editor.fixture/main' in json.loads(peer.document())['bar']['groups']['left'])
             action(s,ipc,'plugin:editor.fixture/main','remove')
@@ -147,16 +198,26 @@ def main():
             click(s,ipc,'discard');ready(s,ipc)
             wait_for(lambda:not peer.state()['dirty'])
             assert json.loads(peer.document())==baseline
+            choose(s,ipc,'left','Running applications','running_apps')
+            wait_for(lambda:'running_apps' in json.loads(peer.document())['bar']['groups']['left'])
+            action(s,ipc,'running_apps','move.center')
+            action(s,ipc,'running_apps','earlier')
+            action(s,ipc,'running_apps','remove')
+            click(s,ipc,'discard');ready(s,ipc)
+            choose(s,ipc,'left','Running applications','running_apps')
+            passed('running-apps-picker-move-reorder-remove-and-discard')
             choose(s,ipc,'center','Bluetooth','bluetooth')
             wait_for(lambda:'bluetooth' in json.loads(peer.document())['bar']['groups']['center'])
             click(s,ipc,'apply');ready(s,ipc)
             wait_for(lambda:not peer.state()['dirty'] and not peer.state()['busy'])
             committed=json.loads(path.read_text())
             assert committed['bar']['groups']['center'].endswith(',bluetooth')
+            assert 'running_apps' in committed['bar']['groups']['left']
             app.stop();clean(app)
             app=s.child('settings-reopened',[args.settings,'--page','bar'],G_DEBUG='fatal-warnings')
             app.expect('event=settings-window-created');ready(s,ipc)
             assert 'bar.widget.bluetooth' in {c['field'] for c in probe(s,ipc)['controls']}
+            assert 'bar.widget.running_apps' in {c['field'] for c in probe(s,ipc)['controls']}
             passed('discard-apply-and-reopen-persist-selections')
             click(s,ipc,'bar.widget.clock')
             external=copy.deepcopy(committed);external['bar']['groups']['center']='plugin:missing/main,bluetooth'
@@ -200,6 +261,11 @@ def main():
                 wait_for(lambda:'overview' in json.loads(peer.document())['bar']['groups']['left'])
                 click(s,ipc,'discard');ready(s,ipc)
                 capture(s,f'bar-editor-{variant}-{font}-{width}',output['name'])
+                click(s,ipc,'bar.widget.workspaces')
+                capture(s,f'workspace-menu-{variant}-{font}-{width}',output['name'])
+                menu_click(s,ipc,'bar.workspace.mode.small');menu_closed(s,ipc);ready(s,ipc)
+                assert json.loads(peer.document())['bar']['workspace_mode']=='small'
+                click(s,ipc,'discard');ready(s,ipc)
             passed('narrow-light-dark-and-large-text-menus')
             app.stop();clean(app);peer.close();ipc.close()
             ctl(s,args.ctl,'quit');clean(shell)

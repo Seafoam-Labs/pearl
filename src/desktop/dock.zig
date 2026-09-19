@@ -137,21 +137,7 @@ pub const Dock = struct {
         return null;
     }
     fn match(self: *Dock, win: *const e.Window) ?[]const u8 {
-        var result: ?[]const u8 = null;
-        if (self.index.catalog) |catalog| for (catalog.entries.items) |entry| {
-            if (entry.action != null) continue;
-            const desktop = object.ext.cast(unix.DesktopAppInfo, entry.info) orelse continue;
-            const wmclass = desktop.getStartupWmClass();
-            var matches = false;
-            for ([_]?[]const u8{ win.app_id, win.class }) |maybe| if (maybe) |id| {
-                if (std.mem.eql(u8, p.stem(entry.id), p.stem(id)) or (wmclass != null and std.mem.eql(u8, id, std.mem.span(wmclass.?)))) matches = true;
-            };
-            if (matches) {
-                if (result != null) return null;
-                result = entry.id;
-            }
-        };
-        return result;
+        return @import("task_apps.zig").match(self.index, win.*);
     }
     pub fn update(self: *Dock, config: p.Config, bar_edge: placement.Edge, bounds: placement.Rect, locked: bool) !void {
         var next = config;

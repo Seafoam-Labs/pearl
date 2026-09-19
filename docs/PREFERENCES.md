@@ -205,10 +205,27 @@ Aqueous's temporary output IDs. For example:
 }
 ```
 
+`bar.workspace_mode` accepts `small`, `medium`, or `large` (default). Configure it
+through **Bar & dock → Workspaces → ⋯ → Display mode**, then Apply. Small shows
+the active workspace and one existing neighbor on each side; Medium shows two
+on each side; Large shows all workspaces on that display. Ranges stop at the
+first/last workspace without wrapping or filling from the other side. This
+setting controls button count, independently of `bar.size` (thickness).
+
+For example, merge `"workspace_mode": "medium"` into the global `bar` object
+or an `outputs[].bar` override. An override omitting this field defaults to Large,
+even when the global mode is Small. Existing version-1 files remain valid. Older
+binaries reject the new field; remove it from global and output bar objects before
+downgrading. Removing and re-adding the widget retains its selected mode.
+
 Each override is a complete bar policy with its own schema defaults; it does
 not partially inherit the global bar object. Absent connectors retain their
 preferences for later hotplug. Widget groups require one launcher and reject
-duplicates and unknown names. The supported names are documented in
+duplicates and unknown names. `running_apps` is the optional **Running applications**
+widget; add it through the selection editor to any group. Its scope is all
+workspaces and displays, even in a per-output layout. There are no additional
+widget preferences. Older binaries reject this token, so remove it before a
+downgrade. The supported names are documented in
 [DESKTOP.md](DESKTOP.md). The minimum bar size is 32–160 logical pixels; GTK's
 actual measurement remains the reservation authority. Existing frame
 reservations are checked before applying a conflicting bar edge. The older
