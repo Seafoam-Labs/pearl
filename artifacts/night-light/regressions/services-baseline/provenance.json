@@ -1,0 +1,6 @@
+{
+  "revision": "3e74ec13a90c2f40ecbb30695c1392d0523356f4",
+  "source": "git archive HEAD into /tmp/pearl-night-baseline; no source edits",
+  "command": "zig build test-settings-services -Doptimize=ReleaseSafe",
+  "result": "same Apply timeout as modified tree, after the same 15 passing groups"
+}

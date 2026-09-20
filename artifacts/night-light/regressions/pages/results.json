@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "checks": {
+    "five-separate-pages-horizontal-and-vertical": true,
+    "selected-service-interest-only-and-no-implicit-scans": true,
+    "application-streams-and-overview-control-coverage": true,
+    "overview-power-confirmation-cancel-and-page-departure": true,
+    "scrolling-body-keeps-fixed-header-and-single-category": true,
+    "overview-links-open-existing-task-controls": true,
+    "page-departure-clears-prompt-and-stops-owned-discovery": true,
+    "unavailable-service-pages-and-no-battery": true
+  },
+  "pearl_sha256": "2712627a695b7687b7009f215dcc6e86a5bc687338c3965f4319a9fca32568b7",
+  "ctl_sha256": "891a09adba873aba0228ba6bdde0f10efcbe2d4787c6c89f2233a79c6c9d702a"
+}

@@ -1,4 +1,5 @@
 test {
+    _ = @import("services/night_light_policy.zig");
     _ = @import("desktop/workspace_policy.zig");
     _ = @import("desktop/task_model.zig");
     _ = @import("settings/bar_model.zig");

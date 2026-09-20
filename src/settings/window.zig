@@ -1069,6 +1069,9 @@ pub const Window = struct {
             }
         }
         if (self.preferences_view) |view| {
+            for ([_]*gtk.Widget{ view.night_enabled.as(gtk.Widget), view.night_temperature.as(gtk.Widget), view.night_schedule.as(gtk.Widget), view.night_times[0].as(gtk.Widget), view.night_times[1].as(gtk.Widget), view.night_times[2].as(gtk.Widget), view.night_times[3].as(gtk.Widget) }, [_][]const u8{ "night_enabled", "night_temperature", "night_schedule", "night_start_hour", "night_start_minute", "night_end_hour", "night_end_minute" }) |widget, name| {
+                try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            }
             try controls.append(alloc, .{ .field = "sync_borders", .focused = if (focus) |f| f == view.sync_borders.as(gtk.Widget) else false, .bounds = self.bounds(view.sync_borders.as(gtk.Widget)) });
             for ([_][]const @import("themes_view.zig").Control{ view.themes.controls.items, view.themes.row_controls.items }) |bindings| for (bindings) |binding| {
                 try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget else false, .enabled = binding.widget.isSensitive() != 0, .bounds = self.bounds(binding.widget) });

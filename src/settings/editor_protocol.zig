@@ -56,6 +56,7 @@ pub fn hash(value: []const u8) ![64]u8 {
 /// Snapshot metadata is independent of page, so one shared draft badge/footer
 /// remains available while the user visits another category.
 pub const Snapshot = struct {
+    night_light: ?@import("../services/night_light_policy.zig").Snapshot = null,
     revision: []const u8,
     theme_catalog_generation: []const u8 = "0",
     theme_discovery_degraded: bool = false,

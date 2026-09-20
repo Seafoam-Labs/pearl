@@ -54,3 +54,9 @@ ext-image XMLs are pinned to wayland-protocols 1.49; color XML is pinned to Aque
 capture-source identity; the desktop window model continues to use canonical IPC.
 Per-frame color metadata is mandatory on the native capture path. Interfaces,
 listeners and lifetimes live entirely in Zig on GTK's Wayland connection.
+
+`wlr-gamma-control-unstable-v1.xml` is pinned from the wlroots 0.20.2 archive for
+the private Night Light C contract probe. It is not included in production Zig
+bindings: production observes advertisement without acquiring controls until
+Aqueous supplies validated output color eligibility. The copyright notice is
+retained in the XML and `../licenses/wlr-gamma-control-v1-notice.txt`.

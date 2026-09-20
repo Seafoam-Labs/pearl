@@ -1,0 +1,22 @@
+action failed apply {'version': '2', 'revision': '3', 'review_version': '1', 'report_version': '3', 'review_revision': '3', 'live': True, 'draft': True, 'busy': False, 'locked': False, 'can_record': True, 'can_reload': True, 'conflict': False, 'unresolved': False, 'outcome': 'validated', 'reload_state': 'not_requested', 'toolkit': 'not_requested', 'save_state': None, 'receipt': None, 'display_state': 'not_requested', 'impact_route': 'runtime', 'error_code': None, 'detail': '', 'phase': 0, 'seconds': 0, 'owns_preview': False} {'online': True, 'ready': True, 'recovery': False, 'dirty': False, 'version': 2, 'revision': 3, 'backend_version': 2, 'mode': 'idle', 'phase': 0, 'busy': False, 'receipt_pending': False, 'recording': False, 'shared_review': False, 'display_changes': 0, 'display_blocked': False, 'fields': 221, 'err': None, 'detail': ''}
+Traceback (most recent call last):
+  File "/tmp/pearl-night-baseline/tests/integration/test_settings_services.py", line 330, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/tmp/pearl-night-baseline/tests/integration/test_settings_services.py", line 212, in main
+    try:wait_for(lambda:peer.aqueous()['outcome']==('validated' if action=='validate' else 'saved') and not peer.aqueous()['busy'],45)
+        ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/pearl-night-baseline/scripts/pearl_session.py", line 23, in wait_for
+    raise TimeoutError('private session condition timed out')
+TimeoutError: private session condition timed out
+test-settings-services
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_services.py --settings ./.zig-cache/o/eda9e1880752c15326e2d517fbb82f02/pearl-settings-test --pearl ./.zig-cache/o/eb9d211c192e8870e8510ff5fa91ee73/pearl --ctl ./.zig-cache/o/c117c689151f11e9035f74c3d7c46b5d/pearlctl --spike ./.zig-cache/o/97bb917d4439a991f06484531d93f702/pearl-t00 --output /home/zoey/Pearl/artifacts/night-light/regressions/services-baseline
+
+Build Summary: 11/13 steps succeeded (1 failed)
+test-settings-services transitive failure
++- run python3 failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/6a79bdf79660d1594a5fb865c1c0ec24/build /usr/bin/zig /usr/lib/zig /tmp/pearl-night-baseline .zig-cache /home/zoey/Pearl/.cache/zig --seed 0x22b1faa6 -Z9fccebc40dcd9620 test-settings-services -Doptimize=ReleaseSafe -- --output /home/zoey/Pearl/artifacts/night-light/regressions/services-baseline

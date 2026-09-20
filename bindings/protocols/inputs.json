@@ -76,6 +76,10 @@
     "aqueous-input-activity-v1.xml": {
       "source": "Aqueous 88587243059d58d72dd0fe2146d0ebdb64f26474: compositor/protocol/aqueous-input-activity-v1.xml",
       "sha256": "a564fe42e852247fb7c7c2acb06702b0d35aad0444076beb30b09eded01f0cc4"
+    },
+    "wlr-gamma-control-unstable-v1.xml": {
+      "source": "wlroots 0.20.2: protocol/wlr-gamma-control-unstable-v1.xml (private contract probe only; not generated into production Zig bindings)",
+      "sha256": "4065cbc291a80348b7ef311168fbfb5cf245efe977a6dc32211291ef1a9529a1"
     }
   },
   "generated_sha256": "88c449f52b2c5ba95c65d5818a550781c5edfe93c181a7d01eb02acf0b900559"

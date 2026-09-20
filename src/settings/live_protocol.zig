@@ -25,6 +25,7 @@ pub const PluginPage = struct { refresh_available: bool = false, pending: bool =
 pub const Page = struct { bar_widgets: ?[]const @import("bar_model.zig").Plugin = null, refresh_available: bool = false, discovery_revision: p.Number = p.num(0), requested: p.Number = p.num(0), completed: p.Number = p.num(0), monitoring: []const u8 = "", plugins: []const PluginInfo = &.{}, summary: []const u8, pending: bool = false, truncated: bool = false, rows: []const Row, offset: p.Number, next_offset: ?p.Number = null, prompt: ?Prompt = null };
 pub const List = struct { view: []const u8, list: enum { items }, revision: []const u8, offset: []const u8 };
 pub const Audio = struct { view: []const u8, operation: []const u8, generation: []const u8, device: u32, kind: @import("../services/policy.zig").Kind, volume: ?u8 = null, mute: ?bool = null, make_default: ?bool = null, target: ?u32 = null };
+pub const NightLight = struct { view: []const u8, operation: []const u8, generation: []const u8, action: @import("../services/night_light_policy.zig").Action };
 pub const Brightness = struct { view: []const u8, operation: []const u8, generation: []const u8, percent: u8 };
 pub const Profile = struct { view: []const u8, operation: []const u8, generation: []const u8, profile: []const u8 };
 pub const Network = struct { view: []const u8, operation: []const u8, generation: []const u8, path: []const u8, action: enum { scan, connect, connect_saved, disconnect, enable, disable, cancel } };

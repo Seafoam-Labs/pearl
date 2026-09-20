@@ -1,5 +1,11 @@
 # Preferences, wallpaper and themes
 
+**Appearance → Night Light** adds a disabled-by-default `night_light` block to the
+shared draft. Temperature and custom local-time schedules save through Apply & save.
+Screen warming remains unavailable until Aqueous supplies validated output color
+eligibility. See [Night Light](NIGHT_LIGHT.md) for fields, temporary-off overrides,
+CLI controls and the upstream prerequisite.
+
 Community package mode and independent `theme.package_id`, `palette_id` and
 `style_id` selections are documented in [Community themes](CUSTOM_THEMES.md).
 Their catalog/snapshot hashes are backend-managed. Installing a package does

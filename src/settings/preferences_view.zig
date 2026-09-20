@@ -61,6 +61,12 @@ pub const View = struct {
     qt_review: *gtk.Button,
     qt_reapply: *gtk.Button,
     qt_comparison: *gtk.Label,
+    night_enabled: *gtk.Switch = undefined,
+    night_temperature: *gtk.SpinButton = undefined,
+    night_schedule: *gtk.DropDown = undefined,
+    night_times: [4]*gtk.SpinButton = undefined,
+    night_status: *gtk.Label = undefined,
+    night_resume: *gtk.Button = undefined,
     german: bool,
     themes: *@import("themes_view.zig").View = undefined,
     profiles: *@import("profiles_view.zig").View = undefined,
@@ -146,6 +152,35 @@ pub const View = struct {
         w.name(raw_view.as(gtk.Widget), if (german) "Vollständige Pearl-Einstellungen als JSON" else "Full Pearl preferences JSON");
         // The caller installs raw_view directly in Advanced's sole viewport.
         self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison };
+        const night = card(host);
+        night.append(w.label(self.t("Night Light", "Nachtlicht"), "settings-row-title").as(gtk.Widget));
+        night.append(w.label(self.t("Warmer screen colors. Display support is unavailable until Aqueous can verify the active color path. You can save a schedule; it will not change screen colors yet.", "Wärmere Bildschirmfarben. Die Anzeigeunterstützung fehlt, bis Aqueous den aktiven Farbpfad prüfen kann. Ein Zeitplan kann gespeichert werden; die Bildschirmfarben ändern sich noch nicht."), "pearl-secondary").as(gtk.Widget));
+        self.night_enabled = toggle(night, self.t("Enable Night Light", "Nachtlicht aktivieren"));
+        self.night_temperature = gtk.SpinButton.newWithRange(2500, 6500, 100);
+        row(night, self.t("Color temperature (K) · lower is warmer", "Farbtemperatur (K) · niedriger ist wärmer"), self.night_temperature.as(gtk.Widget));
+        self.night_schedule = dropdown(night, self.t("Schedule", "Zeitplan"), if (german) &.{ "Manuell", "Eigene Zeiten" } else &.{ "Manual", "Custom times" });
+        for (0..2) |i| {
+            const time_row = w.row(4);
+            const hour = gtk.SpinButton.newWithRange(0, 23, 1);
+            const minute = gtk.SpinButton.newWithRange(0, 59, 1);
+            w.name(hour.as(gtk.Widget), if (i == 0) self.t("Start hour", "Startstunde") else self.t("End hour", "Endstunde"));
+            w.name(minute.as(gtk.Widget), if (i == 0) self.t("Start minute", "Startminute") else self.t("End minute", "Endminute"));
+            time_row.append(hour.as(gtk.Widget));
+            time_row.append(w.label(":", null).as(gtk.Widget));
+            time_row.append(minute.as(gtk.Widget));
+            row(night, if (i == 0) self.t("Start (local time)", "Beginn (Ortszeit)") else self.t("End (local time)", "Ende (Ortszeit)"), time_row.as(gtk.Widget));
+            self.night_times[i * 2] = hour;
+            self.night_times[i * 2 + 1] = minute;
+        }
+        self.night_status = w.label("", "pearl-secondary");
+        night.append(self.night_status.as(gtk.Widget));
+        self.night_resume = w.wrappingButton(self.t("Resume saved policy", "Gespeicherte Einstellungen fortsetzen"));
+        night.append(self.night_resume.as(gtk.Widget));
+        _ = gtk.Button.signals.clicked.connect(self.night_resume, *View, resumeNight, self, .{});
+        _ = object.Object.signals.notify.connect(self.night_enabled.as(object.Object), *View, selected, self, .{ .detail = "active" });
+        _ = object.Object.signals.notify.connect(self.night_schedule.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        _ = gtk.SpinButton.signals.value_changed.connect(self.night_temperature, *View, spun, self, .{});
+        for (self.night_times) |control| _ = gtk.SpinButton.signals.value_changed.connect(control, *View, spun, self, .{});
         self.themes = try @import("themes_view.zig").View.create(host, editor);
         self.profiles = try @import("profiles_view.zig").View.create(host, editor);
         host.reorderChildAfter(self.themes.root.as(gtk.Widget), appearance.as(gtk.Widget));
@@ -200,6 +235,8 @@ pub const View = struct {
         return if (self.german) de else en;
     }
     pub fn update(self: *View) void {
+        self.night_status.setText(self.editor.night_summary.z());
+        self.night_resume.as(gtk.Widget).setVisible(@intFromBool(self.editor.night_override));
         self.themes.update();
         self.profiles.update();
         const text_ = self.editor.text();
@@ -228,6 +265,7 @@ pub const View = struct {
         self.qt_status.setText(self.editor.qt_summary.z());
         self.qt_comparison.setText(self.editor.qt_review_text.z());
         self.qt_reapply.as(gtk.Widget).setVisible(@intFromBool(self.editor.qt_review_digest.len == 64 and self.editor.qt_review_text.len != 0));
+        for (self.night_times) |control| control.as(gtk.Widget).setSensitive(@intFromBool(self.night_schedule.getSelected() == 1));
         const editable = self.editor.editable();
         self.host.as(gtk.Widget).setSensitive(@intFromBool(editable and !self.raw_invalid));
         self.raw_view.setEditable(@intFromBool(self.editor.online and self.editor.ready and !self.editor.state.locked and self.editor.download == .none));
@@ -243,6 +281,11 @@ pub const View = struct {
         self.message.setText(if (self.raw_invalid) self.t("Advanced JSON is invalid. Correct it there to use these controls.", "Das JSON ist ungültig. Korrigiere es unter Erweitert, um diese Regler zu nutzen.") else "");
     }
     fn fill(self: *View, prefs: model.Preferences) void {
+        self.night_enabled.setActive(@intFromBool(prefs.night_light.enabled));
+        self.night_temperature.setValue(@floatFromInt(prefs.night_light.temperature_kelvin));
+        self.night_schedule.setSelected(@intFromEnum(prefs.night_light.schedule));
+        const night_times = [_]u16{ prefs.night_light.start_minute / 60, prefs.night_light.start_minute % 60, prefs.night_light.end_minute / 60, prefs.night_light.end_minute % 60 };
+        for (self.night_times, night_times) |control, number| control.setValue(@floatFromInt(number));
         self.mode.setSelected(switch (prefs.theme.mode) {
             .static => 0,
             .dynamic => 1,
@@ -271,6 +314,13 @@ pub const View = struct {
     fn saveForm(self: *View) void {
         if (self.filling or !self.editor.editable()) return;
         var prefs = self.prefs;
+        prefs.night_light = .{
+            .enabled = self.night_enabled.getActive() != 0,
+            .temperature_kelvin = @intCast(self.night_temperature.getValueAsInt()),
+            .schedule = @enumFromInt(self.night_schedule.getSelected()),
+            .start_minute = @intCast(self.night_times[0].getValueAsInt() * 60 + self.night_times[1].getValueAsInt()),
+            .end_minute = @intCast(self.night_times[2].getValueAsInt() * 60 + self.night_times[3].getValueAsInt()),
+        };
         prefs.theme.mode = switch (self.mode.getSelected()) {
             1 => .dynamic,
             2 => .gtk,
@@ -314,6 +364,16 @@ pub const View = struct {
         self.filling = false;
         self.editor.error_code.set("OutOfMemory");
         self.editor.notify(self.editor.context, .changed);
+    }
+    fn resumeNight(_: *gtk.Button, self: *View) callconv(.c) void {
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const alloc = arena.allocator();
+        const params = std.json.Stringify.valueAlloc(alloc, .{ .generation = @import("editor_protocol.zig").num(self.editor.night_generation), .action = "resume" }, .{}) catch return;
+        const value = std.json.parseFromSliceLeaky(std.json.Value, alloc, params, .{}) catch return;
+        self.editor.liveAction(.@"night-light.action", value) catch |err| {
+            self.editor.error_code.set(@errorName(err));
+        };
     }
     fn retryQt(_: *gtk.Button, self: *View) callconv(.c) void {
         self.editor.retryQt(.@"qt.retry");

@@ -1,0 +1,54 @@
+{
+  "status": "passed",
+  "checks": {
+    "advertised-gamma-does-not-imply-output-support": true,
+    "unavailable-actions-fail-without-retaining-an-override": true,
+    "shared-draft-applies-only-on-save-with-truthful-output-state": true,
+    "frontend-generation-checks-operation-deduplication-and-runtime-only-overrides": true,
+    "unrelated-saves-preserve-override-night-light-saves-clear-it": true,
+    "invalid-temperature-retains-working-configuration": true,
+    "native-temperature-edit-retains-draft-without-changing-saved-policy": true,
+    "keyboard-handoff-opens-appearance-from-night-light": true,
+    "settings-and-compact-controls-create-with-fatal-gtk-warnings": true,
+    "lock-rejects-interactive-mutations-and-preserves-saved-policy": true,
+    "restart-restores-saved-policy-and-clears-temporary-overrides": true,
+    "unverified-output-path-never-acquires-exclusive-gamma-control": true
+  },
+  "physical_color_validation": "pending",
+  "output_writes": "blocked: OutputColorEligibilityUnavailable",
+  "binaries": {
+    "pearl": "2712627a695b7687b7009f215dcc6e86a5bc687338c3965f4319a9fca32568b7",
+    "ctl": "891a09adba873aba0228ba6bdde0f10efcbe2d4787c6c89f2233a79c6c9d702a",
+    "settings": "56c0c11169df51a8f6af3ebaf7197521e9e07589bd05c77d219826a1d9742e0d"
+  },
+  "gamma_probe": {
+    "protocol": true,
+    "gamma_size": 0,
+    "failed": true,
+    "identity_uploaded": false,
+    "second_failed": false,
+    "after_release_failed": true
+  },
+  "final": {
+    "generation": "4",
+    "state": "unavailable",
+    "available": false,
+    "requested": true,
+    "temperature_kelvin": 4100,
+    "override": null,
+    "gamma_protocol": true,
+    "reason": "OutputColorEligibilityUnavailable",
+    "outputs": [
+      {
+        "connector": "HEADLESS-2",
+        "available": false,
+        "reason": "OutputColorEligibilityUnavailable"
+      },
+      {
+        "connector": "HEADLESS-1",
+        "available": false,
+        "reason": "OutputColorEligibilityUnavailable"
+      }
+    ]
+  }
+}

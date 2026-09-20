@@ -14,8 +14,9 @@ const focus_state = @import("focus_state.zig");
 const Text = @import("../services/policy.zig").Text;
 
 pub const Control = struct {
-    pub const Task = enum { media, overview, settings, aqueous_settings, full_settings, close };
+    pub const Task = enum { media, overview, settings, aqueous_settings, full_settings, night_settings, close };
     pub const Models = struct {
+        night_light: ?*@import("../services/night_light.zig").NightLight = null,
         audio: *@import("../services/audio.zig").Audio,
         power: *@import("../services/power.zig").Power,
         network: *@import("../services/network.zig").Network,
@@ -23,6 +24,9 @@ pub const Control = struct {
         lifecycle: *@import("../services/lifecycle.zig").Lifecycle,
         auth: *@import("../services/polkit.zig").Agent,
     };
+    night_label: ?*gtk.Label = null,
+    night_toggle: ?*gtk.Button = null,
+    night_resume: ?*gtk.Button = null,
     handoff: *gtk.Button,
     handoff_box: *gtk.Box,
     handoff_message: *gtk.Label,
@@ -181,6 +185,23 @@ pub const Control = struct {
             _ = gtk.Button.signals.clicked.connect(button, *Link, linkClicked, &self.links[i], .{});
             sections.insert(button.as(gtk.Widget), -1);
         }
+        if (self.models.night_light != null) {
+            const night = w.card();
+            night.append(w.label(tr("Night Light", "Nachtlicht"), "pearl-card-title").as(gtk.Widget));
+            self.night_label = w.label("", "pearl-secondary");
+            night.append(self.night_label.?.as(gtk.Widget));
+            self.night_toggle = w.wrappingButton(tr("Toggle Night Light", "Nachtlicht umschalten"));
+            night.append(self.night_toggle.?.as(gtk.Widget));
+            _ = gtk.Button.signals.clicked.connect(self.night_toggle.?, *Control, nightToggled, self, .{});
+            self.night_resume = w.wrappingButton(tr("Resume saved policy", "Gespeicherte Einstellungen fortsetzen"));
+            night.append(self.night_resume.?.as(gtk.Widget));
+            _ = gtk.Button.signals.clicked.connect(self.night_resume.?, *Control, nightResumed, self, .{});
+            const settings = w.wrappingButton(tr("Night Light settings", "Nachtlicht-Einstellungen"));
+            settings.as(gtk.Widget).setSensitive(@intFromBool(@import("../settings/launch.zig").available()));
+            night.append(settings.as(gtk.Widget));
+            _ = gtk.Button.signals.clicked.connect(settings, *Control, nightSettings, self, .{});
+            body.append(night.as(gtk.Widget));
+        }
         const tasks = w.flow(2);
         body.append(tasks.as(gtk.Widget));
         for ([_]Task{ .media, .overview, .settings, .aqueous_settings }, [_][:0]const u8{ tr("Media controls", "Mediensteuerung"), tr("Window overview", "Fensterübersicht"), tr("Pearl settings", "Pearl-Einstellungen"), tr("Aqueous settings", "Aqueous-Einstellungen") }, 0..) |task, label, i| {
@@ -225,6 +246,9 @@ pub const Control = struct {
         self.power = null;
         self.connection = null;
         self.label = null;
+        self.night_label = null;
+        self.night_toggle = null;
+        self.night_resume = null;
         if (lifecycle) |view| view.destroy();
         if (sound) |view| view.destroy();
         if (power) |view| view.destroy();
@@ -337,8 +361,25 @@ pub const Control = struct {
         self.handoff_box.as(object.Object).unref();
         a.destroy(self);
     }
+    fn nightToggled(_: *gtk.Button, self: *Control) callconv(.c) void {
+        self.models.night_light.?.act(.toggle) catch {};
+        self.update();
+    }
+    fn nightResumed(_: *gtk.Button, self: *Control) callconv(.c) void {
+        self.models.night_light.?.act(.@"resume") catch {};
+        self.update();
+    }
+    fn nightSettings(_: *gtk.Button, self: *Control) callconv(.c) void {
+        self.task(self.context, .night_settings);
+    }
     pub fn update(self: *Control) void {
         if (self.changing) return;
+        if (self.night_label) |label| {
+            const night = self.models.night_light.?;
+            label.setText(if (night.model.override != null) tr("Temporarily off. Returns to the saved policy at the next schedule boundary, or when Pearl restarts in manual mode.", "Vorübergehend aus. Die gespeicherten Einstellungen gelten ab dem nächsten Zeitwechsel oder im manuellen Modus nach einem Neustart.") else tr("Unavailable: Aqueous cannot yet verify display color support. Saved schedules will not change screen colors.", "Nicht verfügbar: Aqueous kann die Farbunterstützung noch nicht prüfen. Gespeicherte Zeitpläne ändern die Bildschirmfarben nicht."));
+            self.night_toggle.?.as(gtk.Widget).setSensitive(@intFromBool(night.interactive and night.requested));
+            self.night_resume.?.as(gtk.Widget).setVisible(@intFromBool(night.model.override != null));
+        }
         if (self.lifecycle) |view| view.update();
         if (self.sound) |view| view.update();
         if (self.power) |view| view.update();

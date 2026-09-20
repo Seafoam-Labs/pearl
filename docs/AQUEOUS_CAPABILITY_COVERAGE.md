@@ -476,7 +476,7 @@ The JSON companion records source, consumer, entry point, test owner and disposi
 | `aqueous_xkb_bindings_v1` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 3 |
 | `aqueous_layer_shell_v1` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 1 |
 | `zwlr_layer_shell_v1` | Ghostty GTK layer-shell bindings — Bar, islands, dock, popup surfaces | library-owned: Registry version 4 |
-| `zwlr_gamma_control_manager_v1` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 1 |
+| `zwlr_gamma_control_manager_v1` | Pearl Night Light — Appearance and compact status; display writes gated | application-owned: advertised version 1; output color eligibility unavailable |
 | `wp_presentation` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 2 |
 | `zxdg_output_manager_v1` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 3 |
 | `zwlr_output_manager_v1` | Compositor / canonical helper — Display edits use native preview leases; old guardian removed | intentionally-unselected: Registry version 4 |

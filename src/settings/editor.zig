@@ -31,6 +31,9 @@ pub const Editor = struct {
     error_code: Text(128) = .{},
     validation: Text(128) = .{},
     export_error: Text(128) = .{},
+    night_summary: Text(4096) = .{},
+    night_generation: u64 = 0,
+    night_override: bool = false,
     qt_summary: Text(1024) = .{},
     qt_review_text: Text(16385) = .{},
     qt_review_digest: Text(65) = .{},
@@ -732,6 +735,29 @@ pub const Editor = struct {
                 });
                 defer a.free(summary);
                 self.qt_summary.set(summary);
+                self.night_summary = .{};
+                self.night_override = false;
+                if (snapshot.night_light) |night| {
+                    self.night_generation = try p.number(night.generation);
+                    self.night_override = night.override != null;
+                    var lines: std.ArrayList(u8) = .empty;
+                    defer lines.deinit(a);
+                    const tr = @import("../desktop/text.zig").tr;
+                    const state_text = switch (night.state) {
+                        .off => tr("Off", "Aus"),
+                        .scheduled => tr("Scheduled", "Geplant"),
+                        .unavailable => tr("Unavailable", "Nicht verfügbar"),
+                    };
+                    const header = try std.fmt.allocPrint(a, "{s} · {d} K\n", .{ state_text, night.temperature_kelvin });
+                    defer a.free(header);
+                    try lines.appendSlice(a, header);
+                    for (night.outputs) |output| {
+                        const line = try std.fmt.allocPrint(a, "{s}: {s}\n", .{ output.connector, tr("Display color support unavailable", "Farbunterstützung nicht verfügbar") });
+                        defer a.free(line);
+                        try lines.appendSlice(a, line);
+                    }
+                    self.night_summary.set(lines.items);
+                }
                 self.qt_review_text.set(snapshot.qt_review_text);
                 self.qt_review_digest.set(snapshot.qt_review_digest orelse "");
                 if (snapshot.error_code) |code| self.error_code.set(code);
@@ -790,7 +816,7 @@ pub const Editor = struct {
                 self.clear(&self.live);
                 self.live = encoded;
             },
-            .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => {
+            .@"night-light.action", .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => {
                 const outcome = try field([]const u8, v, "state");
                 if (std.mem.eql(u8, outcome, "pending")) {
                     const operation = try field([]const u8, v, "operation");

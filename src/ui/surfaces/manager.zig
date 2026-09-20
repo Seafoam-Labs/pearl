@@ -113,6 +113,7 @@ pub const Manager = struct {
     audio: @import("../../services/audio.zig").Audio = undefined,
     lifecycle: @import("../../services/lifecycle.zig").Lifecycle = undefined,
     auth: @import("../../services/polkit.zig").Agent = undefined,
+    night_light: @import("../../services/night_light.zig").NightLight = undefined,
     power: @import("../../services/power.zig").Power = undefined,
     network: @import("../../services/network.zig").Network = undefined,
     bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
@@ -171,6 +172,7 @@ pub const Manager = struct {
         self.layout.?.start();
         self.index.start();
         self.audio = .{ .context = self, .changed = audioChanged };
+        self.night_light = .{ .display = self.display, .context = self, .changed = nightLightChanged };
         self.power = .{ .app = self.app.as(gio.Application), .context = self, .changed = powerChanged };
         if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_BACKLIGHT")) |root| self.power.backlight_root.set(std.mem.span(root));
         self.network = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
@@ -183,6 +185,8 @@ pub const Manager = struct {
         self.aqueous_settings = .{ .app = self.app.as(gio.Application), .context = self, .changed = aqueousSettingsChanged, .reload = aqueousReload, .can_reload = aqueousCanReload, .can_record = aqueousCanRecord, .identify_outputs = identifyDisplays, .peer_pid = aqueousPeerPid };
         self.aqueous_settings.start();
         self.services_started = true;
+        self.night_light.start();
+        self.night_light.configure(self.preferences.prefs().night_light);
         self.audio.start();
         self.lifecycle = .{ .app = self.app.as(gio.Application), .display = self.display, .client = self.client, .context = self, .changed = lifecycleChanged, .request_logout = logoutRequested, .activity_broker = self.activity };
         self.auth = .{ .app = self.app.as(gio.Application), .context = self, .changed = authChanged, .activity_broker = self.activity };
@@ -227,6 +231,7 @@ pub const Manager = struct {
             self.audio.stop();
             self.lifecycle.stop();
             self.auth.stop();
+            self.night_light.stop();
             self.power.stop();
             self.network.stop();
             self.bluetooth.stop();
@@ -356,6 +361,7 @@ pub const Manager = struct {
         const gate = self.lifecycle.gate;
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
         const locked = (if (self.activity) |broker| broker.inhibited() else false) or !matched or self.client.availability != .ready or !gate.available or !gate.active or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
+        self.night_light.interactive = !locked;
         self.clipboard.setLocked(locked);
         self.capture.setLocked(locked);
         if (self.plugins) |plugins| plugins.setLocked(locked);
@@ -531,6 +537,10 @@ pub const Manager = struct {
         }
         self.schedule();
     }
+    fn nightLightChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.servicesChanged();
+    }
     fn nativeChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.schedule();
@@ -569,6 +579,8 @@ pub const Manager = struct {
         return 0;
     }
     fn sync(self: *Manager) !void {
+        self.night_light.configure(self.preferences.prefs().night_light);
+        self.night_light.refresh();
         if (self.capture_hide) {
             self.capture_hide = false;
             if (self.pane == .clipboard_capture) self.hidePopup();
@@ -837,7 +849,7 @@ pub const Manager = struct {
                     .tray => s.tray = try @import("../../desktop/tray.zig").View.create(panel, &self.session_services.tray),
                     .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested),
                     .control => {
-                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, controlTask, settingsNavigate, self.settings_page.?, window, .{ .audio = &self.audio, .power = &self.power, .network = &self.network, .bluetooth = &self.bluetooth, .lifecycle = &self.lifecycle, .auth = &self.auth });
+                        s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, controlTask, settingsNavigate, self.settings_page.?, window, .{ .audio = &self.audio, .power = &self.power, .night_light = &self.night_light, .network = &self.network, .bluetooth = &self.bluetooth, .lifecycle = &self.lifecycle, .auth = &self.auth });
                     },
                 }
                 const keys = gtk.EventControllerKey.new();
@@ -1228,13 +1240,19 @@ pub const Manager = struct {
         if (request.op == .preferences_status) return self.preferences.status(alloc);
         if (request.op == .status) return self.status(alloc);
         if (request.op == .connectivity_status) return @import("../../services/connectivity_status.zig").encode(alloc, &self.network, &self.bluetooth, request.offset orelse 0);
+        if (request.op == .night_light_status) return std.json.Stringify.valueAlloc(alloc, try self.night_light.snapshot(alloc), .{});
         if (request.op == .services_status) return std.json.Stringify.valueAlloc(alloc, try self.serviceStatus(alloc, request.offset orelse 0), .{});
         if (self.client.availability != .ready) return error.Unavailable;
         if (request.op != .quit and self.client.model.get(.session, "session").?.locked) return error.Locked;
         if (@import("build_options").test_hooks and request.op == .aqueous_draft and std.mem.startsWith(u8, request.text orelse "", "{\"test_owner\":"))
             return self.owner_probe.command(alloc, request.text.?, &self.network, &self.bluetooth, &self.power);
         switch (request.op) {
-            .plugin_refresh, .plugin_list, .plugin_inspect, .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .night_light_action => {
+                self.syncClipboardPrivacy();
+                try self.night_light.act(std.meta.stringToEnum(@import("../../services/night_light_policy.zig").Action, request.text.?).?);
+                return std.json.Stringify.valueAlloc(alloc, try self.night_light.snapshot(alloc), .{});
+            },
+            .night_light_status, .plugin_refresh, .plugin_list, .plugin_inspect, .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
             .dock_show, .dock_hide, .dock_pin, .dock_unpin => {
                 const dock = (try self.selected(request.output)).dock orelse return error.Unavailable;
                 if (dock.locked) return error.Locked;
@@ -1636,9 +1654,9 @@ fn settingsNavigate(context: *anyopaque, page: navigation.Route) anyerror!void {
 fn controlTask(context: *anyopaque, task: Panels.Control.Task) void {
     const s: *Surface = @ptrCast(@alignCast(context));
     switch (task) {
-        .full_settings => {
+        .full_settings, .night_settings => {
             const manager = s.manager;
-            const page = manager.settings_page orelse .overview;
+            const page: navigation.Route = if (task == .night_settings) .appearance else manager.settings_page orelse .overview;
             manager.openSettings(.{ .page = page }, null) catch |err| {
                 s.control.?.launchFailed(err);
                 return;

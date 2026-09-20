@@ -1,5 +1,20 @@
 # Settings frontend API, version 1
 
+## Night Light extension
+
+Optional handshake capability `night_light` advertises saved configuration and
+runtime controls, not output support. The shared Pearl snapshot includes an
+optional `night_light` object with decimal-string `generation`, `requested`,
+`available`, `state`, `temperature_kelvin`, `override`, `gamma_protocol`, `reason`
+and at most 16 `outputs`. Clients must consult availability before offering On.
+
+`night-light.action` accepts `view`, `operation`, decimal-string `generation`, and
+`action` (`on`, `off`, `toggle`, `resume`, `retry`) on Appearance or Overview.
+Existing session/lock checks, view identity and operation receipts apply. A stale
+generation fails without mutation; an identical operation ID returns its existing
+receipt. Unsupported activation fails without retaining an override. Current
+output support is deliberately unavailable; see [Night Light](NIGHT_LIGHT.md).
+
 ## Community themes
 
 The backend advertises `community_themes:true`. `theme.start` accepts

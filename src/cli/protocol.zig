@@ -7,7 +7,7 @@ pub const max_frame = 8192;
 pub const ConnectivityService = enum { network, bluetooth };
 pub const ConnectivityAction = enum { scan, connect, connect_saved, disconnect, enable, disable, cancel, pair, trust, untrust, discover, stop_discovery };
 pub const SessionAction = enum { dnd_on, dnd_off, clear_history, dismiss, invoke, select, play_pause, play, pause, stop, next, previous, seek, tray_activate, tray_secondary, tray_menu, tray_click };
-pub const Op = enum { running_apps_show, plugin_refresh, plugin_list, plugin_inspect, plugin_enable, plugin_disable, plugin_reload, wm_action, dock_show, dock_hide, dock_pin, dock_unpin, clipboard_status, clipboard_show, clipboard_clear, clipboard_delete, clipboard_select, capture_status, capture_show, capture_output, capture_region, capture_window, capture_windows, capture_copy, capture_save, capture_cancel, lifecycle_status, lifecycle_action, aqueous_reload, aqueous_keep, aqueous_revert, aqueous_rebase, aqueous_record, aqueous_show, aqueous_status, aqueous_refresh, aqueous_draft, aqueous_validate, aqueous_apply, aqueous_discard, preferences_status, preferences_apply, preferences_reload, settings_show, session_status, session_action, notifications_toggle, media_toggle, tray_toggle, connectivity_status, connectivity_action, status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit, launcher_show, launcher_hide, launcher_toggle, control_show, control_toggle, calendar_toggle, bar_groups, layout_get, layout_set, overview_toggle, services_status, audio_set, brightness_set, profile_set };
+pub const Op = enum { night_light_status, night_light_action, running_apps_show, plugin_refresh, plugin_list, plugin_inspect, plugin_enable, plugin_disable, plugin_reload, wm_action, dock_show, dock_hide, dock_pin, dock_unpin, clipboard_status, clipboard_show, clipboard_clear, clipboard_delete, clipboard_select, capture_status, capture_show, capture_output, capture_region, capture_window, capture_windows, capture_copy, capture_save, capture_cancel, lifecycle_status, lifecycle_action, aqueous_reload, aqueous_keep, aqueous_revert, aqueous_rebase, aqueous_record, aqueous_show, aqueous_status, aqueous_refresh, aqueous_draft, aqueous_validate, aqueous_apply, aqueous_discard, preferences_status, preferences_apply, preferences_reload, settings_show, session_status, session_action, notifications_toggle, media_toggle, tray_toggle, connectivity_status, connectivity_action, status, popup_show, popup_hide, popup_toggle, bar_set, frame_set, osd_show, quit, launcher_show, launcher_hide, launcher_toggle, control_show, control_toggle, calendar_toggle, bar_groups, layout_get, layout_set, overview_toggle, services_status, audio_set, brightness_set, profile_set };
 pub const Request = struct {
     pearl: u32 = 1,
     id: []const u8 = "1",
@@ -94,6 +94,8 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
         const key = field.key_ptr.*;
         if (std.mem.eql(u8, key, "pearl") or std.mem.eql(u8, key, "id") or std.mem.eql(u8, key, "session") or std.mem.eql(u8, key, "display") or std.mem.eql(u8, key, "op")) continue;
         const allowed = switch (r.op) {
+            .night_light_status => &[_][]const u8{},
+            .night_light_action => &[_][]const u8{"text"},
             .lifecycle_status, .aqueous_reload, .aqueous_keep, .aqueous_revert, .aqueous_rebase, .aqueous_refresh, .aqueous_validate, .aqueous_apply, .aqueous_discard, .preferences_status, .preferences_reload, .status, .popup_hide, .launcher_hide, .quit => &[_][]const u8{},
             .clipboard_status, .clipboard_clear, .capture_status, .capture_cancel => &[_][]const u8{},
             .dock_pin, .dock_unpin => &[_][]const u8{ "output", "text" },
@@ -150,6 +152,9 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
         if (r.activation) |token| if (token.len == 0 or token.len > 4096 or std.mem.indexOfScalar(u8, token, 0) != null) return error.InvalidRequest;
     }
     switch (r.op) {
+        .night_light_action => {
+            _ = std.meta.stringToEnum(@import("../services/night_light_policy.zig").Action, r.text orelse return error.InvalidRequest) orelse return error.InvalidRequest;
+        },
         .dock_pin, .dock_unpin => {
             if (!@import("../desktop/dock_policy.zig").desktopId(r.text orelse return error.InvalidRequest)) return error.InvalidRequest;
         },

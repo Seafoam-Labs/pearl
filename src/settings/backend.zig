@@ -132,6 +132,7 @@ pub const Backend = struct {
             .conflict = s.draft.text != null and s.draft.base_revision != s.revision,
             .busy = s.job != null or s.pending_reload,
             .error_code = if (s.err) |err| @errorName(err) else null,
+            .night_light = if (self.live) |live| if (live.night_light) |service| try service.snapshot(alloc) else null else null,
             .qt = s.qt_status,
             .applications = s.application_status,
             .qt_review_text = s.qt_review_text.slice(),
@@ -258,7 +259,7 @@ pub const Backend = struct {
                 if (offset > 128) return error.InvalidOffset;
                 return std.json.Stringify.valueAlloc(alloc, try live.page(alloc, &peer.scope, peer.target.?.page, self.revision, @intCast(offset)), .{});
             },
-            .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => return self.liveMutate(peer, request, alloc),
+            .@"night-light.action", .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => return self.liveMutate(peer, request, alloc),
             .@"document.get" => {
                 const v = try p.fields(p.GetDocument, alloc, params);
                 if (peer.transfer != null) return error.TransferBusy;
@@ -356,8 +357,9 @@ pub const Backend = struct {
         try self.allowed(self.context);
         if (try p.number(view) != peer.view or peer.target == null) return error.StaleView;
         const canonical = switch (request.op) {
-            inline .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => |op| blk: {
+            inline .@"night-light.action", .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => |op| blk: {
                 const T = switch (op) {
+                    .@"night-light.action" => ui.NightLight,
                     .@"plugin.refresh" => ui.PluginRefresh,
                     .@"plugin.action" => ui.Plugin,
                     .@"audio.set" => ui.Audio,

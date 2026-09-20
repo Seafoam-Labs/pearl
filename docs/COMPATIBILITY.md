@@ -1,5 +1,10 @@
 # Pearl compatibility record
 
+Night Light configuration and scheduling are available, but screen warming is
+gated on an upstream output color-eligibility contract. The pinned Aqueous
+pixman/headless probe advertises gamma control while rejecting acquisition.
+Physical SDR/HDR/calibration behavior remains unverified. See [Night Light](NIGHT_LIGHT.md).
+
 Optional **QtEngine + Darkly** integration is verified against native Qt 5.15.19
 and Qt 6.11.2 Widgets consumers with the supplied application-only Darkly package.
 KWin decorations are excluded. QtEngine uses one JSON configuration and KDE color

@@ -3,6 +3,18 @@ const std = @import("std");
 pub const Groups = @import("../desktop/policy.zig").Groups;
 pub const Edge = @import("../ui/surfaces/policy.zig").Edge;
 pub const max_bytes = 65536;
+test "old preferences default night light off and new invalid policies are rejected" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    try std.testing.expect(!(try parse(alloc, "{\"version\":1}")).night_light.enabled);
+    try std.testing.expect(!(try parse(alloc, "{\"version\":0,\"dark\":false}")).night_light.enabled);
+    const saved = try parse(alloc, "{\"night_light\":{\"enabled\":true,\"schedule\":\"custom\",\"start_minute\":1200,\"end_minute\":420}}");
+    const encoded = try std.json.Stringify.valueAlloc(alloc, saved, .{});
+    try std.testing.expect(std.meta.eql(saved.night_light, (try parse(alloc, encoded)).night_light));
+    try std.testing.expectError(error.InvalidNightLightInterval, parse(alloc, "{\"night_light\":{\"schedule\":\"custom\",\"start_minute\":60,\"end_minute\":60}}"));
+    try std.testing.expectError(error.UnknownField, parse(alloc, "{\"night_light\":{\"force\":true}}"));
+}
 pub const Theme = struct {
     mode: enum { static, dynamic, gtk, package } = .static,
     package_id: []const u8 = "",
@@ -29,6 +41,7 @@ pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock =
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
+    night_light: @import("../services/night_light_policy.zig").Config = .{},
     plugins: @import("../plugins/model.zig").Preferences = .{},
     idle: @import("../services/idle_policy.zig").Config = .{},
     theme: Theme = .{},
@@ -55,6 +68,7 @@ pub const Preferences = struct {
         return self.dock;
     }
     pub fn validate(self: Preferences) !void {
+        try self.night_light.validate();
         try self.plugins.validate();
         try self.qt.validate();
         try self.matugen.validate();

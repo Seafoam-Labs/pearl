@@ -1,0 +1,71 @@
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=905127184131505512b1d39c0aaa3bea
+info(pearl): event=control-ready session=905127184131505512b1d39c0aaa3bea
+info: event=app-index-ready entries=160 truncated=false
+info: event=popup-opened output=1
+info: event=settings-focus target=body
+info: event=settings-focus target=heading
+info: event=settings-focus target=body
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=section-chooser
+info: event=settings-page page=sound
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=heading
+info: event=settings-focus target=body
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=section-chooser
+info: event=settings-focus target=section-chooser
+info: event=settings-page page=network
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=heading
+info: event=connectivity-focus target=other
+info: event=settings-focus target=body
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=settings-page page=bluetooth
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=heading
+info: event=connectivity-focus target=other
+info: event=settings-focus target=body
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=connectivity-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=settings-page page=power
+info: event=services-focus target=other
+info: event=settings-focus target=section-chooser
+info: event=services-focus target=other
+info: event=settings-focus target=heading
+info(pearl): event=stopping reason=control-quit pending=false
+info: event=popup-closed
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

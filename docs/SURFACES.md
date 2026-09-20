@@ -23,6 +23,11 @@ opaque IDs and validate activation against the current model.
 
 ## Compact settings flyout
 
+The Overview contains Night Light status, a temporary-off control and a link to
+Appearance. `pearlctl night-light status|on|off|toggle|resume|retry` exposes the same
+service. Screen warming is currently unavailable pending validated Aqueous output
+color eligibility; see [Night Light](NIGHT_LIGHT.md).
+
 The settings flyout uses the existing principal popup surface, usable-area limits,
 output anchoring, blur and exclusive keyboard/dismissal behavior. A typed shared
 route selects Overview, Sound, Network, Bluetooth or Power & battery. Same-output

@@ -1,6 +1,16 @@
 const std = @import("std");
 const protocol = @import("protocol.zig");
 pub const Options = union(enum) { help, version, request: protocol.Request };
+test "night light commands are explicit and reject unrelated flags" {
+    try std.testing.expectEqual(protocol.Op.night_light_status, (try parse(&.{ "night-light", "status" })).request.op);
+    for ([_][]const u8{ "on", "off", "toggle", "resume", "retry" }) |action| {
+        const request = (try parse(&.{ "night-light", action })).request;
+        try std.testing.expectEqual(protocol.Op.night_light_action, request.op);
+        try std.testing.expectEqualStrings(action, request.text.?);
+    }
+    try std.testing.expectError(error.Usage, parse(&.{ "night-light", "enable" }));
+    try std.testing.expectError(error.Usage, parse(&.{ "night-light", "on", "--output", "1" }));
+}
 pub fn parse(args: []const []const u8) !Options {
     if (args.len == 1 and std.mem.eql(u8, args[0], "--help")) return .help;
     if (args.len == 1 and std.mem.eql(u8, args[0], "--version")) return .version;
@@ -12,11 +22,18 @@ pub fn parse(args: []const []const u8) !Options {
         if (std.mem.eql(u8, args[0], "quit")) break :blk .quit;
         if (args.len < 2) return error.Usage;
         index = 2;
+        if (std.mem.eql(u8, args[0], "night-light")) {
+            if (args.len != 2) return error.Usage;
+            if (std.mem.eql(u8, args[1], "status")) break :blk .night_light_status;
+            _ = std.meta.stringToEnum(@import("../services/night_light_policy.zig").Action, args[1]) orelse return error.Usage;
+            break :blk .night_light_action;
+        }
         const pairs = .{ .{ "running-apps", "show", protocol.Op.running_apps_show }, .{ "plugins", "refresh", protocol.Op.plugin_refresh }, .{ "plugins", "list", protocol.Op.plugin_list }, .{ "plugins", "inspect", protocol.Op.plugin_inspect }, .{ "plugins", "enable", protocol.Op.plugin_enable }, .{ "plugins", "disable", protocol.Op.plugin_disable }, .{ "plugins", "reload", protocol.Op.plugin_reload }, .{ "wm", "action", protocol.Op.wm_action }, .{ "dock", "show", protocol.Op.dock_show }, .{ "dock", "hide", protocol.Op.dock_hide }, .{ "dock", "pin", protocol.Op.dock_pin }, .{ "dock", "unpin", protocol.Op.dock_unpin }, .{ "clipboard", "status", protocol.Op.clipboard_status }, .{ "clipboard", "show", protocol.Op.clipboard_show }, .{ "clipboard", "clear", protocol.Op.clipboard_clear }, .{ "clipboard", "delete", protocol.Op.clipboard_delete }, .{ "clipboard", "select", protocol.Op.clipboard_select }, .{ "capture", "status", protocol.Op.capture_status }, .{ "capture", "show", protocol.Op.capture_show }, .{ "capture", "output", protocol.Op.capture_output }, .{ "capture", "region", protocol.Op.capture_region }, .{ "capture", "window", protocol.Op.capture_window }, .{ "capture", "windows", protocol.Op.capture_windows }, .{ "capture", "copy", protocol.Op.capture_copy }, .{ "capture", "save", protocol.Op.capture_save }, .{ "capture", "cancel", protocol.Op.capture_cancel }, .{ "lifecycle", "status", protocol.Op.lifecycle_status }, .{ "lifecycle", "action", protocol.Op.lifecycle_action }, .{ "aqueous", "reload", protocol.Op.aqueous_reload }, .{ "aqueous", "keep", protocol.Op.aqueous_keep }, .{ "aqueous", "revert", protocol.Op.aqueous_revert }, .{ "aqueous", "rebase", protocol.Op.aqueous_rebase }, .{ "aqueous", "record", protocol.Op.aqueous_record }, .{ "aqueous", "show", protocol.Op.aqueous_show }, .{ "aqueous", "status", protocol.Op.aqueous_status }, .{ "aqueous", "refresh", protocol.Op.aqueous_refresh }, .{ "aqueous", "draft", protocol.Op.aqueous_draft }, .{ "aqueous", "validate", protocol.Op.aqueous_validate }, .{ "aqueous", "apply", protocol.Op.aqueous_apply }, .{ "aqueous", "discard", protocol.Op.aqueous_discard }, .{ "settings", "show", protocol.Op.settings_show }, .{ "preferences", "status", protocol.Op.preferences_status }, .{ "preferences", "apply", protocol.Op.preferences_apply }, .{ "preferences", "reload", protocol.Op.preferences_reload }, .{ "session", "status", protocol.Op.session_status }, .{ "session", "action", protocol.Op.session_action }, .{ "notifications", "toggle", protocol.Op.notifications_toggle }, .{ "media", "toggle", protocol.Op.media_toggle }, .{ "tray", "toggle", protocol.Op.tray_toggle }, .{ "connectivity", "status", protocol.Op.connectivity_status }, .{ "connectivity", "action", protocol.Op.connectivity_action }, .{ "services", "status", protocol.Op.services_status }, .{ "audio", "set", protocol.Op.audio_set }, .{ "brightness", "set", protocol.Op.brightness_set }, .{ "profile", "set", protocol.Op.profile_set }, .{ "popup", "show", protocol.Op.popup_show }, .{ "popup", "hide", protocol.Op.popup_hide }, .{ "popup", "toggle", protocol.Op.popup_toggle }, .{ "bar", "set", protocol.Op.bar_set }, .{ "frame", "set", protocol.Op.frame_set }, .{ "osd", "show", protocol.Op.osd_show }, .{ "launcher", "show", protocol.Op.launcher_show }, .{ "launcher", "hide", protocol.Op.launcher_hide }, .{ "launcher", "toggle", protocol.Op.launcher_toggle }, .{ "control-center", "show", protocol.Op.control_show }, .{ "control-center", "toggle", protocol.Op.control_toggle }, .{ "calendar", "toggle", protocol.Op.calendar_toggle }, .{ "bar", "groups", protocol.Op.bar_groups }, .{ "layout", "get", protocol.Op.layout_get }, .{ "layout", "set", protocol.Op.layout_set }, .{ "overview", "toggle", protocol.Op.overview_toggle } };
         inline for (pairs) |p| if (std.mem.eql(u8, args[0], p[0]) and std.mem.eql(u8, args[1], p[1])) break :blk p[2];
         return error.Usage;
     };
     var r: protocol.Request = .{ .op = op };
+    if (op == .night_light_action) r.text = args[1];
     if (std.mem.eql(u8, args[0], "lock")) r.text = "lock";
     while (index < args.len) : (index += 2) {
         if (index + 1 >= args.len) return error.Usage;
@@ -95,6 +112,7 @@ pub fn parse(args: []const []const u8) !Options {
 }
 pub const usage =
     \\Usage: pearlctl status | quit | lock
+    \\       pearlctl night-light status|on|off|toggle|resume|retry
     \\       pearlctl clipboard status|show|clear
     \\       pearlctl clipboard select|delete --generation ENTRY_ID
     \\       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]

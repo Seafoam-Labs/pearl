@@ -5059,11 +5059,11 @@
     {
       "kind": "wayland-global",
       "name": "zwlr_gamma_control_manager_v1",
-      "source": "Captured matching-master registry; XML where vendored",
-      "consumer": "GTK/GDK, compositor or application client",
-      "owner": "GTK/GDK, compositor or application client",
-      "entry": "Protocol service; no additional standalone shell control",
-      "test": "tests/integration/test_surfaces.py",
+      "source": "Pinned Aqueous registry and private gamma probe; wlroots 0.20.2 XML",
+      "consumer": "Pearl Night Light capability observer",
+      "owner": "Existing color service; Pearl does not acquire control",
+      "entry": "Appearance / Night Light; unavailable pending output color eligibility",
+      "test": "tests/integration/test_night_light.py",
       "status": "application-owned",
       "required_capability": "zwlr_gamma_control_manager_v1",
       "note": "Registry version 1"

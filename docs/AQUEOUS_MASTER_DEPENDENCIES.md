@@ -22,6 +22,11 @@ See also [input activity integration](AQUEOUS_PLUGIN_ACTIVITY.md) and its
 
 ## Physical display acceptance
 
+Night Light also requires live, output-bound color eligibility with enforcement
+at application time. Current gamma advertisement lacks HDR/calibration state and
+cannot guard writes against a changing color path. Pearl exposes preferences and
+status but acquires no gamma controls. See [the required contract](NIGHT_LIGHT.md#aqueous-prerequisite).
+
 `compositor/aqueous/display_preview_policy.zig` still has no production DRM
 acceptance. The separate `-Ddisplay-preview-acceptance=true` build and exact
 `AQUEOUS_DISPLAY_PREVIEW_ACCEPTANCE_OUTPUTS` selection permit SDR acceptance tests.

@@ -16,6 +16,7 @@ pub const Scope = struct {
 };
 pub const Pending = enum { none, audio, network, scan, bluetooth, discovery, brightness, profile, power, media, lifecycle, layout };
 pub const Live = struct {
+    night_light: ?*@import("../services/night_light.zig").NightLight = null,
     plugins: ?*@import("../plugins/manager.zig").Manager = null,
     audio: *@import("../services/audio.zig").Audio,
     network: *@import("../services/network.zig").Network,
@@ -84,6 +85,15 @@ pub const Live = struct {
     }
     pub fn perform(self: *Live, scope: *Scope, route: nav.Route, revision: u64, op: ui.Op, params: std.json.Value, alloc: std.mem.Allocator) !Pending {
         switch (op) {
+            .@"night-light.action" => {
+                if (route != .appearance and route != .overview) return error.WrongPage;
+                const v = try p.fields(ui.NightLight, alloc, params);
+                const service = self.night_light orelse return error.Unsupported;
+                service.refresh();
+                if (try p.number(v.generation) != service.generation) return error.Stale;
+                try service.act(v.action);
+                return .none;
+            },
             .@"plugin.refresh" => {
                 if (route != .plugins) return error.WrongPage;
                 _ = try p.fields(ui.PluginRefresh, alloc, params);
