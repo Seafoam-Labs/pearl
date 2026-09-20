@@ -113,7 +113,12 @@ policy; the chooser, page controls, Close and Escape use actual keyboard input.
 
 ## Use the desktop
 
-The launcher button opens a shared search surface on its output. Type to search,
+The launcher button opens a shared search surface on its output. Its icon can be
+changed in **Settings → Bar & dock → Launcher actions → Change icon…**, with
+bundled icons, installed theme names, or a local static PNG. Apply & save updates
+it live; unavailable artwork uses the bundled fallback. See
+[launcher icon preferences](PREFERENCES.md#launcher-button-icon) for limits, Retry,
+and per-output behavior. Type to search,
 use Up/Down to select, Enter to open and Escape to dismiss. Pointer activation
 also works. The clock opens a local calendar; the settings icon opens the
 control center. Opening another principal popup replaces the previous one.

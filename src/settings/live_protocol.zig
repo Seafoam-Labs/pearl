@@ -50,3 +50,5 @@ test "plugin page wire snapshot accepts decimal offsets and omitted optional err
     try std.testing.expectEqual(@as(usize, 1), snapshot.plugins.len);
     try std.testing.expect(snapshot.plugins[0].error_code == null);
 }
+
+pub const LauncherIconRetry = struct { view: []const u8, operation: []const u8, selection: @import("../desktop/launcher_icon_policy.zig").Config };

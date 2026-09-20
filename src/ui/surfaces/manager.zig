@@ -510,6 +510,16 @@ pub const Manager = struct {
         if (self.running) self.armClock();
         return 0;
     }
+    pub fn settingsLauncherIconRetry(context: *anyopaque, selection: @import("../../desktop/launcher_icon_policy.zig").Config) !void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        // Retry only artwork already committed for a display. An unsaved
+        // preview can never change that display's selected artwork.
+        for (self.outputs.items) |output| {
+            if (output.bar) |surface| if (surface.bar) |bar| {
+                if (bar.launcher_icon.selection.eql(selection)) try bar.launcher_icon.want(selection, true);
+            };
+        }
+    }
     pub fn settingsLayoutRows(context: *anyopaque, alloc: std.mem.Allocator) ![]const @import("../../settings/live_protocol.zig").Row {
         const self: *Manager = @ptrCast(@alignCast(context));
         const ui = @import("../../settings/live_protocol.zig");
@@ -671,6 +681,7 @@ pub const Manager = struct {
                 try o.reservations.bar(pref.edge, pref.size);
                 o.bar.?.edge = pref.edge;
                 sizeEdge(o.bar.?, pref.edge, pref.size);
+                try o.bar.?.bar.?.launcher_icon.want(pref.launcher_icon, false);
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
                 o.bar.?.bar.?.setIslands(pref.islands);
                 try o.bar.?.bar.?.configure(pref.groups);

@@ -822,7 +822,7 @@ pub const Editor = struct {
                 self.clear(&self.live);
                 self.live = encoded;
             },
-            .@"night-light.action", .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => {
+            .@"launcher-icon.retry", .@"night-light.action", .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => {
                 const outcome = try field([]const u8, v, "state");
                 if (std.mem.eql(u8, outcome, "pending")) {
                     const operation = try field([]const u8, v, "operation");

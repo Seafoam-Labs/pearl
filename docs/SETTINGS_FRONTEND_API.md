@@ -506,3 +506,12 @@ Page state includes theme_catalog_generation and discovery degradation. Generati
 changes refresh metadata while preserving the shared draft and search. Content
 revision checks at Apply remain authoritative. Discovery never triggers network
 fetching or template generation.
+
+### Launcher icon reload
+
+The `launcher_icon` capability advertises `launcher-icon.retry`, a Bar & dock
+live operation with `{ view, operation, selection: { kind, value } }`. It uses
+normal operation receipts, page ownership, and lock/session checks. It reloads
+only live bars whose committed selection equals the requested selection; it
+never saves or applies the shared draft. The frontend independently reloads its
+preview, so unsaved artwork remains confined to Settings.

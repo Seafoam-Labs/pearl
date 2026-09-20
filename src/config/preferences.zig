@@ -36,7 +36,7 @@ pub const Wallpaper = struct {
 };
 pub const Dock = @import("../desktop/dock_policy.zig").Config;
 pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
-pub const Bar = struct { workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
+pub const Bar = struct { launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
 pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
@@ -116,6 +116,7 @@ pub const Preferences = struct {
     }
 };
 fn barValid(b: Bar) !void {
+    try b.launcher_icon.validate();
     if (b.size < 32 or b.size > 160) return error.InvalidBarSize;
     try b.groups.validate();
 }

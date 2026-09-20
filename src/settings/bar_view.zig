@@ -12,11 +12,17 @@ const Editor = @import("editor.zig").Editor;
 const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Group = model.Group;
-const Intent = union(enum) { picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, focus: Group, advanced, plugins };
+const Icon = @import("../ui/components/launcher_icon.zig");
+const Intent = union(enum) { picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
 const Binding = struct { view: *View, id: []const u8, intent: Intent };
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
 const Choice = struct { widget: *gtk.Widget, text: []const u8 };
 pub const View = struct {
+    icon: Icon.Renderer = .{},
+    candidate: Icon.Renderer = .{},
+    icon_entry: ?*gtk.Entry = null,
+    picker: ?*gtk.FileChooserDialog = null,
+    picker_hash: [64]u8 = undefined,
     editor: *Editor,
     host: *gtk.Box,
     content: *gtk.Box,
@@ -64,6 +70,8 @@ pub const View = struct {
         if (self.idle != 0) _ = glib.Source.remove(self.idle);
         self.clearPopup();
         self.clear();
+        self.icon.deinit();
+        self.candidate.deinit();
         self.controls.deinit(a);
         self.menu_controls.deinit(a);
         self.choices.deinit(a);
@@ -73,6 +81,7 @@ pub const View = struct {
         a.destroy(self);
     }
     fn clear(self: *View) void {
+        self.icon.clearTargets();
         self.invalidate(self.context, .bar);
         self.controls.clearRetainingCapacity();
         self.cards = @splat(null);
@@ -81,6 +90,9 @@ pub const View = struct {
         _ = self.arena.reset(.retain_capacity);
     }
     fn clearPopup(self: *View) void {
+        self.closePicker();
+        self.candidate.deinit();
+        self.icon_entry = null;
         if (self.popup) |popup| {
             // Detach before freeing callback storage. closed() only queues work.
             self.popup = null;
@@ -100,7 +112,10 @@ pub const View = struct {
     fn refresh(data: ?*anyopaque) callconv(.c) c_int {
         const self: *View = @ptrCast(@alignCast(data.?));
         self.idle = 0;
-        if (self.popup_closed) self.clearPopup();
+        if (self.popup_closed) {
+            if (self.picker != null or self.candidate.job != null) return 0;
+            self.clearPopup();
+        }
         self.update();
         if (self.focus_id) |id| {
             for (self.controls.items) |control| if (std.mem.eql(u8, control.id, id)) {
@@ -125,6 +140,15 @@ pub const View = struct {
     }
     pub fn update(self: *View) void {
         if (self.editing) return;
+        if (self.picker != null or self.candidate.job != null) {
+            if (!self.editor.editable() or self.editor.target.page != .bar or !std.mem.eql(u8, &self.picker_hash, &protocol.digest(self.editor.text()))) {
+                self.closePicker();
+                self.candidate.deinit();
+                if (self.host.as(gtk.Widget).getRoot()) |root| if (object.ext.cast(gtk.Window, root)) |window| window.present();
+                self.rememberFocus("bar.widget.launcher");
+                self.queue();
+            }
+        }
         if (self.editor.target.page != .bar and self.signature != null) {
             if (self.popup) |popup| popup.popdown();
             return;
@@ -202,6 +226,7 @@ pub const View = struct {
     fn render(self: *View, document: prefs.Preferences, plugins: model.Catalog) !void {
         const alloc = self.arena.allocator();
         const layout = try model.Layout.parse(alloc, document.bar.groups);
+        try self.icon.want(document.bar.launcher_icon, false);
         self.notice.setText("Default bar layout. Display overrides take priority and remain in Advanced.");
         const preview = w.column(8);
         preview.as(gtk.Widget).addCssClass("settings-card");
@@ -223,7 +248,7 @@ pub const View = struct {
             const icons = w.row(3);
             for (items) |id| {
                 const item = std.meta.stringToEnum(policy.Item, id);
-                const glyph = w.icon(if (item) |builtin| model.metadata(builtin).icon else "pearl-application-x-executable-symbolic");
+                const glyph = if (item == .launcher) try self.icon.image(14) else w.icon(if (item) |builtin| model.metadata(builtin).icon else "pearl-application-x-executable-symbolic");
                 glyph.setPixelSize(14);
                 icons.append(glyph.as(gtk.Widget));
             }
@@ -247,6 +272,9 @@ pub const View = struct {
             preview.append(label.as(gtk.Widget));
             try self.controls.append(a, .{ .id = "bar.workspace.preview", .widget = label.as(gtk.Widget) });
         }
+        const icon_status = self.icon.label();
+        preview.append(icon_status.as(gtk.Widget));
+        try self.controls.append(a, .{ .id = "bar.icon.status", .widget = icon_status.as(gtk.Widget) });
         self.content.append(w.label("Widgets", "settings-row-title").as(gtk.Widget));
         self.content.append(w.label("Add a widget to a group. Use its actions menu to configure, move, reorder or remove it.", "pearl-secondary").as(gtk.Widget));
         const flow = w.flow(3);
@@ -272,7 +300,7 @@ pub const View = struct {
                 row.as(gtk.Widget).addCssClass("bar-widget-row");
                 card.append(row.as(gtk.Widget));
                 const builtin = std.meta.stringToEnum(policy.Item, id);
-                row.append(w.icon(if (builtin) |item| model.metadata(item).icon else "pearl-application-x-executable-symbolic").as(gtk.Widget));
+                row.append((if (builtin == .launcher) try self.icon.image(20) else w.icon(if (builtin) |item| model.metadata(item).icon else "pearl-application-x-executable-symbolic")).as(gtk.Widget));
                 const labels = w.column(2);
                 labels.as(gtk.Widget).setHexpand(1);
                 const title = try name(alloc, id, plugins);
@@ -348,11 +376,15 @@ pub const View = struct {
                 }
             } else list.append(w.label("Plugin discovery unavailable. Existing placements are retained.", "pearl-secondary").as(gtk.Widget));
             box.append(w.label("Enable additional widgets in Plugins.", "pearl-secondary").as(gtk.Widget));
+        } else if (std.mem.eql(u8, id, "launcher-icon")) {
+            box.append(w.label("Launcher icon", "settings-row-title").as(gtk.Widget));
+            try self.iconControls(box, document.bar.launcher_icon);
         } else {
             const pos = layout.find(id) orelse return error.WidgetNotFound;
             const title = try name(alloc, id, plugins);
             box.append(w.label(title, "settings-row-title").as(gtk.Widget));
             box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · Position {d} of {d}", .{ model.groupLabel(pos.group, document.bar.edge), pos.index + 1, layout.items[@intFromEnum(pos.group)].items.len }, 0), "pearl-secondary").as(gtk.Widget));
+            if (std.mem.eql(u8, id, "launcher")) _ = try self.button(box, "Change icon…", "bar.icon.expand", "", .icon_open, true);
             if (std.mem.eql(u8, id, "workspaces")) {
                 box.append(w.label("Display mode", "settings-row-title").as(gtk.Widget));
                 self.popup_workspace_mode = document.bar.workspace_mode;
@@ -386,6 +418,7 @@ pub const View = struct {
             if (std.mem.eql(u8, id, "launcher")) box.append(w.label("Launcher is required. It can be moved to any group.", "pearl-secondary").as(gtk.Widget));
         }
         box.append(self.popup_error.?.as(gtk.Widget));
+        if (std.mem.eql(u8, id, "launcher-icon")) try self.menu_controls.append(a, .{ .id = "bar.icon.error", .widget = self.popup_error.?.as(gtk.Widget) });
         popup.popup();
         if (self.search) |search| _ = search.as(gtk.Widget).grabFocus();
     }
@@ -421,6 +454,7 @@ pub const View = struct {
     }
     fn report(self: *View, err: anyerror) void {
         const message: [:0]const u8 = switch (err) {
+            error.InvalidLauncherIcon => "Enter an icon name using letters, digits, dots, underscores or hyphens (up to 128 characters).",
             error.StaleBar => "The bar changed while this menu was open. Close it and try again.",
             error.PluginUnavailable => "This plugin is no longer available for the bar. Review Plugins.",
             error.InvalidGroups => "This group is full or the widget limit was reached. Remove or move a widget first.",
@@ -479,6 +513,140 @@ pub const View = struct {
         self.popup.?.popdown();
         self.queue();
     }
+    fn iconControls(self: *View, box: *gtk.Box, config: Icon.Config) !void {
+        const alloc = self.menu_arena.allocator();
+        const controls = box;
+        const source = w.label(try std.fmt.allocPrintSentinel(alloc, "Selected: {s}", .{if (config.kind == .default) "Default" else config.value}, 0), "pearl-secondary");
+        source.setMaxWidthChars(30);
+        controls.append(source.as(gtk.Widget));
+        const presets = w.row(4);
+        controls.append(presets.as(gtk.Widget));
+        for ([_][:0]const u8{ "pearl-application-x-executable-symbolic", "pearl-view-grid-symbolic", "pearl-emblem-system-symbolic" }, [_][:0]const u8{ "Applications", "Grid", "System" }, 0..) |symbol, title, i| {
+            const b = try self.button(presets, title, try std.fmt.allocPrint(alloc, "bar.icon.preset.{d}", .{i}), symbol, .icon_preset, true);
+            b.setChild(w.icon(symbol).as(gtk.Widget));
+            w.name(b.as(gtk.Widget), title);
+            b.as(gtk.Widget).setTooltipText(title);
+        }
+        controls.append(w.label("Icon theme name", null).as(gtk.Widget));
+        const entry = gtk.Entry.new();
+        self.icon_entry = entry;
+        entry.setMaxLength(128);
+        entry.as(gtk.Editable).setWidthChars(20);
+        if (config.kind == .theme) entry.as(gtk.Editable).setText(try alloc.dupeZ(u8, config.value));
+        w.name(entry.as(gtk.Widget), "Icon theme name");
+        controls.append(entry.as(gtk.Widget));
+        try self.menu_controls.append(a, .{ .id = "bar.icon.name", .widget = entry.as(gtk.Widget) });
+        _ = try self.button(controls, "Use icon name", "bar.icon.use", "", .icon_theme, true);
+        _ = try self.button(controls, "Choose PNG…", "bar.icon.file", "", .icon_file, true);
+        const note = w.label("Keep the PNG at its selected location. Display overrides remain in Advanced.", "pearl-secondary");
+        note.setMaxWidthChars(30);
+        controls.append(note.as(gtk.Widget));
+        _ = try self.button(controls, "Retry", "bar.icon.retry", "", .icon_retry, true);
+        _ = try self.button(controls, "Reset to default", "bar.icon.reset", "", .icon_reset, true);
+    }
+    fn mutateIcon(self: *View, config: Icon.Config) !void {
+        if (!self.editor.editable() or self.editor.target.page != .bar or self.popup == null) return error.Unavailable;
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const alloc = temp.allocator();
+        const document = try prefs.parse(alloc, self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
+        const next = try model.patchLauncherIcon(alloc, self.editor.text(), config);
+        self.editing = true;
+        defer self.editing = false;
+        try self.editor.edit(next);
+        self.host.as(gtk.Accessible).announce("Launcher icon changed. Apply & save to update the bar.", .medium);
+        self.rememberFocus("bar.widget.launcher");
+        self.popup.?.popdown();
+        self.queue();
+    }
+    fn retryIcon(self: *View) !void {
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const doc = try prefs.parse(temp.allocator(), self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(temp.allocator(), doc.bar))) return error.StaleBar;
+        try self.icon.want(doc.bar.launcher_icon, true);
+        if (self.editor.client.capabilities.launcher_icon) {
+            const params = try std.json.parseFromSliceLeaky(std.json.Value, temp.allocator(), try std.json.Stringify.valueAlloc(temp.allocator(), .{ .selection = doc.bar.launcher_icon }, .{}), .{});
+            try self.editor.liveAction(.@"launcher-icon.retry", params);
+        }
+        self.popup.?.popdown();
+        self.rememberFocus("bar.widget.launcher");
+        self.queue();
+    }
+    fn closePicker(self: *View) void {
+        if (self.picker) |picker| {
+            self.picker = null;
+            picker.as(gtk.Window).destroy();
+            picker.unref();
+        }
+    }
+    fn chooseIcon(self: *View) !void {
+        if (!self.editor.editable() or self.picker != null) return;
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const doc = try prefs.parse(temp.allocator(), self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(temp.allocator(), doc.bar))) return error.StaleBar;
+        self.picker_hash = protocol.digest(self.editor.text());
+        const picker = object.ext.newInstance(gtk.FileChooserDialog, .{ .title = "Choose launcher PNG", .action = gtk.FileChooserAction.open, .use_header_bar = @as(c_int, 1) });
+        self.picker = picker;
+        _ = picker.ref();
+        const window = picker.as(gtk.Window);
+        if (self.host.as(gtk.Widget).getRoot()) |root| window.setTransientFor(object.ext.cast(gtk.Window, root));
+        window.setModal(1);
+        window.setDefaultSize(680, 520);
+        const dialog = picker.as(gtk.Dialog);
+        _ = dialog.addButton("_Cancel", @intFromEnum(gtk.ResponseType.cancel));
+        _ = dialog.addButton("_Select", @intFromEnum(gtk.ResponseType.accept));
+        dialog.setDefaultResponse(@intFromEnum(gtk.ResponseType.accept));
+        const filter = gtk.FileFilter.new();
+        filter.setName("Static PNG images (up to 2 MiB, 2048 × 2048)");
+        filter.addMimeType("image/png");
+        picker.as(gtk.FileChooser).addFilter(filter);
+        _ = gtk.Dialog.signals.response.connect(dialog, *View, iconChosen, self, .{});
+        self.popup.?.popdown();
+        window.present();
+    }
+    fn iconChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
+        defer {
+            self.closePicker();
+            if (self.host.as(gtk.Widget).getRoot()) |root| if (object.ext.cast(gtk.Window, root)) |window| window.present();
+            self.rememberFocus("bar.widget.launcher");
+            self.queue();
+        }
+        if (response != @intFromEnum(gtk.ResponseType.accept) or !self.editor.editable()) return;
+        if (!std.mem.eql(u8, &self.picker_hash, &protocol.digest(self.editor.text()))) {
+            self.report(error.StaleBar);
+            return;
+        }
+        const file = object.ext.cast(gtk.FileChooser, dialog).?.getFile() orelse return;
+        defer file.unref();
+        const path = file.getPath() orelse return;
+        defer glib.free(path);
+        self.candidate.context = self;
+        self.candidate.changed = candidateLoaded;
+        self.candidate.want(.{ .kind = .file, .value = std.mem.span(path) }, true) catch |err| {
+            self.report(err);
+            return;
+        };
+        if (self.popup_error) |label| label.setText("Checking PNG…");
+    }
+    fn candidateLoaded(context: *anyopaque) void {
+        const self: *View = @ptrCast(@alignCast(context));
+        if (!std.mem.eql(u8, &self.picker_hash, &protocol.digest(self.editor.text()))) {
+            self.report(error.StaleBar);
+            return;
+        }
+        if (self.candidate.failed) {
+            if (self.focus_id) |id| a.free(id);
+            self.focus_id = null;
+            self.popup_closed = false;
+            if (self.popup) |popup| popup.popup();
+            if (self.popup_error) |label| label.setText("Could not load PNG. Choose a regular local static PNG up to 2 MiB and 2048 × 2048 pixels.");
+            return;
+        }
+        self.mutateIcon(self.candidate.selection) catch |err| self.report(err);
+    }
     fn modeToggled(choice_: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
         const self = binding.view;
         if (choice_.getActive() == 0 or self.editing) return;
@@ -495,6 +663,16 @@ pub const View = struct {
     fn clicked(button_: *gtk.Button, binding: *Binding) callconv(.c) void {
         const self = binding.view;
         switch (binding.intent) {
+            .icon_open => {
+                const anchor = self.popup.?.as(gtk.Widget).getParent().?;
+                self.clearPopup();
+                self.showMenu(anchor, "launcher-icon", null) catch |err| self.report(err);
+            },
+            .icon_reset => self.mutateIcon(.{}) catch |err| self.report(err),
+            .icon_preset => self.mutateIcon(.{ .kind = .theme, .value = binding.id }) catch |err| self.report(err),
+            .icon_theme => self.mutateIcon(.{ .kind = .theme, .value = std.mem.span(self.icon_entry.?.as(gtk.Editable).getText()) }) catch |err| self.report(err),
+            .icon_file => self.chooseIcon() catch |err| self.report(err),
+            .icon_retry => self.retryIcon() catch |err| self.report(err),
             .picker => |group| self.showMenu(button_.as(gtk.Widget), "", group) catch |err| self.report(err),
             .actions => self.showMenu(button_.as(gtk.Widget), binding.id, null) catch |err| self.report(err),
             .change => |action| self.mutate(binding.id, action) catch |err| self.report(err),

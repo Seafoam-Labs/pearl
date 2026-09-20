@@ -14,6 +14,7 @@ pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueou
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
+    launcher_icon: @import("../ui/components/launcher_icon.zig").Renderer = .{},
     host: *gtk.Box,
     tasks: *const @import("task_model.zig").Snapshot,
     app_index: *@import("apps.zig").Index,
@@ -61,6 +62,7 @@ pub const Bar = struct {
     }
     pub fn destroy(self: *Bar) void {
         self.clear();
+        self.launcher_icon.deinit();
         for (self.groups) |g| a.free(g);
         a.destroy(self);
     }
@@ -73,6 +75,7 @@ pub const Bar = struct {
         list.* = .empty;
     }
     fn clear(self: *Bar) void {
+        self.launcher_icon.clearTargets();
         if (self.running_apps) |view| view.destroy();
         self.running_apps = null;
         for (self.plugin_views.items) |view| view.destroy();
@@ -220,7 +223,11 @@ pub const Bar = struct {
                         w.name(button.as(gtk.Widget), if (item == .media) "Media" else "Notifications");
                         break :blk button.as(gtk.Widget);
                     },
-                    .launcher => (try self.makeButton(.{ .pane = .launcher }, "pearl-application-x-executable-symbolic", tr("Applications", "Programme"), false)).as(gtk.Widget),
+                    .launcher => blk: {
+                        const button = try self.makeButton(.{ .pane = .launcher }, @import("launcher_icon_policy.zig").default_icon, tr("Applications", "Programme"), false);
+                        button.setChild((try self.launcher_icon.image(20)).as(gtk.Widget));
+                        break :blk button.as(gtk.Widget);
+                    },
                     .overview => (try self.makeButton(.overview, "pearl-view-grid-symbolic", tr("Overview", "Übersicht"), false)).as(gtk.Widget),
                     .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", tr("Clipboard & capture", "Zwischenablage & Bildschirmfoto"), false)).as(gtk.Widget),
                     .control => (try self.makeButton(.{ .settings = .overview }, "pearl-emblem-system-symbolic", tr("Open settings Overview", "Einstellungsübersicht öffnen"), false)).as(gtk.Widget),
@@ -587,7 +594,7 @@ pub const Bar = struct {
         };
         var workspace_ids: std.ArrayList([]const u8) = .empty;
         for (self.workspace_handlers.items) |handler| try workspace_ids.append(alloc, handler.id.?);
-        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .keyboard_mode = keyboard_mode, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .keyboard_mode = keyboard_mode, .launcher_icon = self.launcher_icon.selection, .launcher_icon_loading = self.launcher_icon.job != null, .launcher_icon_failed = self.launcher_icon.failed, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
     }
     fn clicked(_: *gtk.Button, button: *Button) callconv(.c) void {
         button.owner.action(button.owner.context, button.event);

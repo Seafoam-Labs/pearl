@@ -152,7 +152,48 @@ templates. Existing plugin references are retained even if the plugin is
 unavailable; adding a discovered plugin requires it to be enabled, approved and
 configured for bar placement in Plugins. Removing a widget changes its placement
 only. Invalid Advanced text disables structured editing and offers a repair link.
-The storage format and version are unchanged; group strings remain comma-separated.
+### Launcher button icon
+
+In **Bar & dock**, open the Launcher's actions menu, then **Change icon…**.
+Choose Applications, Grid or System, enter an installed icon-theme name, or use
+**Choose PNG…**. The preview reflects the draft; **Apply & save** updates the bar
+without restarting. **Discard** restores the saved choice. **Reset to default**
+is also a draft edit and restores the original Applications artwork when applied.
+
+Local PNGs must be static, at most 2 MiB, and at most 2048 × 2048 pixels. Keep the
+file at the selected absolute path. Pearl preserves its aspect ratio, colors and
+transparency; symbolic theme icons use the current theme colors. Missing or
+invalid images fall back to the bundled Applications icon and show a warning in
+Settings. **Retry** reloads the preview and any live bar already using that same
+saved selection, without saving the draft. Files are not watched automatically.
+
+```json
+{
+  "bar": {
+    "launcher_icon": { "kind": "theme", "value": "pearl-view-grid-symbolic" }
+  },
+  "outputs": [{
+    "connector": "DP-1",
+    "bar": {
+      "edge": "top", "size": 48, "islands": true, "workspace_mode": "large",
+      "groups": { "left": "launcher,workspaces,title", "center": "clock", "right": "control" },
+      "launcher_icon": { "kind": "file", "value": "/home/user/Pictures/launcher.png" }
+    }
+  }]
+}
+```
+
+An omitted icon field means `{ "kind": "default", "value": "" }`. Each output's
+bar replaces the default bar completely: an output override with no icon field
+uses the bundled icon, not the default bar's custom icon. Per-output editing stays
+in Advanced. The feature changes the Applications button only; application icons
+inside the launcher and dock retain their desktop-entry artwork.
+
+Schema version remains 1. Before downgrading to a version without launcher icon
+support, remove `launcher_icon` from the default bar and every output bar in the
+saved configuration; older parsers reject unknown fields.
+
+Bar group strings remain comma-separated.
 See the [bar editor implementation](BAR_EDITOR_IMPLEMENTATION_PLAN.md).
 
 Closing a popup, output removal, or lock hides the

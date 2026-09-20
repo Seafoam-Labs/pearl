@@ -27,6 +27,7 @@ pub const Live = struct {
     layout: ?*@import("../platform/wayland/layout.zig").Layout = null,
     layout_context: ?*anyopaque = null,
     layout_rows: ?*const fn (*anyopaque, std.mem.Allocator) anyerror![]const ui.Row = null,
+    launcher_icon_retry: ?*const fn (*anyopaque, @import("../desktop/launcher_icon_policy.zig").Config) anyerror!void = null,
     layout_action: ?*const fn (*anyopaque, ui.Layout) anyerror!void = null,
     pub fn release(self: *Live, scope: *Scope) void {
         const previous = scope.*;
@@ -85,6 +86,13 @@ pub const Live = struct {
     }
     pub fn perform(self: *Live, scope: *Scope, route: nav.Route, revision: u64, op: ui.Op, params: std.json.Value, alloc: std.mem.Allocator) !Pending {
         switch (op) {
+            .@"launcher-icon.retry" => {
+                if (route != .bar) return error.WrongPage;
+                const v = try p.fields(ui.LauncherIconRetry, alloc, params);
+                try v.selection.validate();
+                try (self.launcher_icon_retry orelse return error.Unsupported)(self.layout_context.?, v.selection);
+                return .none;
+            },
             .@"night-light.action" => {
                 if (route != .appearance and route != .overview) return error.WrongPage;
                 const v = try p.fields(ui.NightLight, alloc, params);

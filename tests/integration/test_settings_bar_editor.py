@@ -6,6 +6,7 @@ import hashlib
 import json
 import time
 from pathlib import Path
+from PIL import Image
 from test_settings_app import (ROOT, PrivateSession, IPC, wait_for, ctl, capture,
                                clean, request, probe, click_widget, keys, resize)
 from test_settings_appearance import ready, click, control, type_text
@@ -19,7 +20,7 @@ def menu_click(s, ipc, field):
 
 
 def menu_closed(s, ipc):
-    wait_for(lambda: not any(c['field'].startswith(('bar.action.', 'bar.pick.')) for c in probe(s, ipc)['controls']))
+    wait_for(lambda: not any(c['field'].startswith(('bar.action.', 'bar.pick.', 'bar.icon.preset.')) for c in probe(s, ipc)['controls']))
 
 
 def choose(s, ipc, group, name, identifier):
@@ -111,6 +112,106 @@ def main():
             assert path.read_bytes()==disk and not peer.state()['dirty']
             capture(s,'bar-editor-desktop',output['name'])
             passed('opening-is-read-only-and-unavailable-plugin-is-retained')
+            def icon_state():
+                return ctl(s,args.ctl,'aqueous','status','--text','test-bar-layout:' + output['id'])['result']
+            def open_icon():
+                click(s, ipc, 'bar.widget.launcher')
+                menu_click(s, ipc, 'bar.icon.expand')
+                time.sleep(.3)
+                capture(s, 'launcher-icon-menu', output['name'])
+            def icon_action(field):
+                open_icon(); menu_click(s, ipc, 'bar.icon.' + field)
+                menu_closed(s, ipc); ready(s, ipc)
+            def icon_status():
+                return next(c['text'] for c in probe(s, ipc)['controls'] if c['field'] == 'bar.icon.status')
+            icon_action('preset.1')
+            selected = dict(kind='theme', value='pearl-view-grid-symbolic')
+            assert json.loads(peer.document())['bar']['launcher_icon'] == selected
+            assert icon_state()['launcher_icon']['kind'] == 'default'
+            assert path.read_bytes() == disk
+            click(s, ipc, 'discard'); ready(s, ipc)
+            assert json.loads(peer.document()) == baseline
+            icon_action('preset.1')
+            click(s, ipc, 'apply'); ready(s, ipc)
+            wait_for(lambda: icon_state()['launcher_icon'] == selected)
+            assert json.loads(path.read_text())['bar']['launcher_icon'] == selected
+            open_icon(); menu_click(s, ipc, 'bar.icon.name')
+            type_text(s, 'pearl-missing-test-icon')
+            menu_click(s, ipc, 'bar.icon.use'); menu_closed(s, ipc); ready(s, ipc)
+            wait_for(lambda: 'unavailable' in icon_status())
+            assert icon_state()['launcher_icon'] == selected
+            click(s, ipc, 'discard'); ready(s, ipc)
+            open_icon(); menu_click(s, ipc, 'bar.icon.file')
+            wait_for(lambda: probe(s, ipc)['launcher_icon_picker'])
+            time.sleep(.5); keys(s, 'Escape')
+            wait_for(lambda: not probe(s, ipc)['launcher_icon_picker'])
+            ready(s, ipc)
+            assert not peer.state()['dirty']
+            menu_closed(s, ipc)
+            image = s.base/'launcher with spaces.png'
+            Image.new('RGBA', (80, 40), (35, 180, 110, 180)).save(image)
+            open_icon(); menu_click(s, ipc, 'bar.icon.file')
+            s.run(['wtype','-s','300','-M','ctrl','l','-m','ctrl',str(image),'-k','Return'])
+            wait_for(lambda: json.loads(peer.document())['bar']['launcher_icon'] == dict(kind='file',value=str(image)))
+            menu_closed(s, ipc); ready(s, ipc)
+            wait_for(lambda: icon_status() == '')
+            click(s, ipc, 'apply'); ready(s, ipc)
+            wait_for(lambda: icon_state()['launcher_icon']['kind'] == 'file' and not icon_state()['launcher_icon_loading'])
+            assert not icon_state()['launcher_icon_failed']
+            capture(s, 'launcher-icon-png', output['name'])
+            image.unlink()
+            icon_action('retry')
+            wait_for(lambda: icon_state()['launcher_icon_failed'])
+            wait_for(lambda: 'unavailable' in icon_status())
+            Image.new('RGBA', (80, 40), (180, 100, 35, 180)).save(image)
+            icon_action('retry')
+            wait_for(lambda: not icon_state()['launcher_icon_loading'] and not icon_state()['launcher_icon_failed'])
+            wait_for(lambda: icon_status() == '')
+            assert not peer.state()['dirty']
+            before_icon=json.loads(peer.document())
+            bad=s.base/'invalid.png'; bad.write_bytes(image.read_bytes()[:-1] + b'0')
+            open_icon(); menu_click(s, ipc, 'bar.icon.file')
+            wait_for(lambda: probe(s, ipc)['launcher_icon_picker'])
+            s.run(['wtype','-s','300','-M','ctrl','l','-m','ctrl',str(bad),'-s','500','-k','Return'])
+            time.sleep(.5)
+            if probe(s, ipc)['launcher_icon_picker']: keys(s, 'Return')
+            wait_for(lambda: any(c['field']=='bar.icon.error' and 'Could not load PNG' in (c['text'] or '') for c in probe(s, ipc)['controls']))
+            assert json.loads(peer.document())==before_icon
+            keys(s, 'Escape'); menu_closed(s, ipc)
+            # A newer draft cancels the chooser; its old callback cannot apply.
+            open_icon(); menu_click(s, ipc, 'bar.icon.file')
+            wait_for(lambda: probe(s, ipc)['launcher_icon_picker'])
+            external=copy.deepcopy(before_icon); external['bar']['size']=52
+            keep(json.dumps(external))
+            wait_for(lambda: not probe(s, ipc)['launcher_icon_picker'])
+            menu_closed(s, ipc)
+            assert json.loads(peer.document())==external
+            click(s, ipc, 'discard'); ready(s, ipc)
+            icon_action('reset')
+            assert json.loads(peer.document())['bar']['launcher_icon']['kind'] == 'default'
+            # Changing the draft while a menu is open rejects the old selection.
+            open_icon()
+            external=copy.deepcopy(baseline); external['bar']['size']=52
+            keep(json.dumps(external))
+            menu_click(s, ipc, 'bar.icon.preset.1')
+            assert json.loads(peer.document()) == external
+            keys(s, 'Escape'); menu_closed(s, ipc)
+            keep(json.dumps(baseline)); assert peer.action('apply')['state'] == 'succeeded'; ready(s, ipc)
+            disk=path.read_bytes()
+            passed('launcher-icons-preview-discard-apply-file-cancel-retry-reset-and-stale-edit')
+            # This expanded suite exceeds the backend's bounded ten-minute
+            # receipt ledger. Start a fresh shell for the remaining independent
+            # editor cases, keeping the saved baseline and isolated session.
+            app.stop(); clean(app); peer.close()
+            ctl(s,args.ctl,'quit'); clean(shell)
+            shell=s.child('pearl-icons-restarted',[args.pearl],G_DEBUG='fatal-warnings')
+            shell.expect('event=control-ready')
+            peer=EditorPeer(s,ipc)
+            wait_for(lambda:not peer.state()['busy'])
+            app=s.child('settings-icons-restarted',[args.settings,'--page','bar'],G_DEBUG='fatal-warnings')
+            app.expect('event=settings-window-created'); ready(s,ipc)
+            assert json.loads(peer.document())==baseline
+            disk=path.read_bytes()
             def live_mode():
                 return ctl(s,args.ctl,'aqueous','status','--text','test-bar-layout:' + output['id'])['result']['workspace_mode']
             assert live_mode() == 'large'

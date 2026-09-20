@@ -8,7 +8,7 @@ pub const Metadata = struct { name: [:0]const u8, description: [:0]const u8, ico
 pub fn metadata(item: policy.Item) Metadata {
     return switch (item) {
         .running_apps => .{ .name = "Running applications", .description = "Open windows across all workspaces and displays", .icon = "pearl-application-x-executable-symbolic" },
-        .launcher => .{ .name = "Launcher", .description = "Open your applications · Required", .icon = "pearl-view-grid-symbolic" },
+        .launcher => .{ .name = "Launcher", .description = "Open your applications · Required", .icon = @import("../desktop/launcher_icon_policy.zig").default_icon },
         .workspaces => .{ .name = "Workspaces", .description = "Switch between workspaces", .icon = "pearl-view-grid-symbolic" },
         .title => .{ .name = "Window title", .description = "Name of the active window", .icon = "pearl-window-symbolic" },
         .clock => .{ .name = "Clock", .description = "Time, date and calendar", .icon = "pearl-content-loading-symbolic" },
@@ -224,5 +224,29 @@ test "workspace mode patch preserves layout and unrelated preferences and surviv
         try std.testing.expectError(error.WidgetNotFound, patchWorkspaceMode(a, removed, .large));
         const restored = try patch(a, removed, "workspaces", .{ .add = .center });
         try std.testing.expectEqual(mode, (try prefs.parse(a, restored)).bar.workspace_mode);
+    }
+}
+
+pub fn patchLauncherIcon(a: std.mem.Allocator, text: []const u8, icon: @import("../desktop/launcher_icon_policy.zig").Config) ![]const u8 {
+    var document = try prefs.parse(a, text);
+    document.bar.launcher_icon = icon;
+    try document.validate();
+    const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
+    if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
+    return result;
+}
+test "launcher icon patch roundtrips and preserves unrelated preferences and output replacement" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var expected: prefs.Preferences = .{ .font_size = 19, .outputs = &.{.{ .connector = "DP-1" }} };
+    const text = try std.json.Stringify.valueAlloc(a, expected, .{});
+    try std.testing.expectEqualDeep(@import("../desktop/launcher_icon_policy.zig").Config{}, (try prefs.parse(a, "{}")).bar.launcher_icon);
+    for ([_]@import("../desktop/launcher_icon_policy.zig").Config{ .{}, .{ .kind = .theme, .value = "pearl-view-grid-symbolic" }, .{ .kind = .file, .value = "/tmp/icon.png" } }) |cfg| {
+        expected.bar.launcher_icon = cfg;
+        const changed = try prefs.parse(a, try patchLauncherIcon(a, text, cfg));
+        try std.testing.expectEqualDeep(expected, changed);
+        try std.testing.expectEqualDeep(cfg, changed.forOutput("OTHER").launcher_icon);
+        try std.testing.expectEqualDeep(@import("../desktop/launcher_icon_policy.zig").Config{}, changed.forOutput("DP-1").launcher_icon);
     }
 }

@@ -1,0 +1,8 @@
+Build Summary: 6/6 steps succeeded; 205/205 tests passed
+test success
++- run test 164 pass (164 total) 350ms MaxRSS:10M
+   +- compile test Debug native cached 11ms MaxRSS:58M
+test-theme-assets success
++- run test 41 pass (41 total) 12ms MaxRSS:13M
+   +- compile test Debug native cached 18ms MaxRSS:58M
+

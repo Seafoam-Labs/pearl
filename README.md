@@ -39,6 +39,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Aqueous 0.8.2 integration evidence](artifacts/aqueous-082/README.md) and [previous master UI gallery](artifacts/aqueous-master/README.md).
 - [Release and packaging](docs/RELEASE.md) and [DMS migration / switch-back](docs/MIGRATION.md).
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
+- [Launcher button icons](docs/PREFERENCES.md#launcher-button-icon): choose bundled or installed theme icons, or a local PNG, with draft preview, live Apply, Reset and Retry. [Implementation plan](docs/LAUNCHER_ICON_IMPLEMENTATION_PLAN.md).
 - [Custom launcher selection](docs/DOCK_ISLANDS.md#custom-application-launchers): choose a custom desktop entry for running applications, preserve its icon and launch arguments, and correct existing pins. [Implementation and tests](docs/DOCK_DESKTOP_OVERRIDES_IMPLEMENTATION_PLAN.md) for issue #3.
 - [Experimental WebAssembly plugins](docs/PLUGINS.md): C, Zig and Rust components, native widgets and companion overlays, with controls in the main Settings app. [Implementation roadmap](docs/WASM_PLUGIN_IMPLEMENTATION_PLAN.md).
 - [Plugin development guide](docs/PLUGIN_DEVELOPMENT.md): build your first clickable widget, install and test it, then add settings, timers or an animated companion.

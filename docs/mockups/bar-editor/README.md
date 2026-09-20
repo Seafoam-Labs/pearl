@@ -16,6 +16,10 @@ contains actual Settings screenshots and test results.
   then select a widget. Already placed widgets are listed separately.
 - Open a widget's **•••** menu to move it earlier/later, move it to another
   group, or remove it. Launcher is required but movable.
+- Open **Launcher → Change icon…** to choose a bundled icon, enter a theme
+  name, preview a local PNG, or reset. Apply/Discard include the artwork choice.
+  The browser uses placeholders for installed theme names; native Pearl validates
+  static PNGs and offers Retry for missing files.
 - Change the edge to Left or Right to see Top / Center / Bottom labels. Change
   the bar size or Separate islands toggle to update the schematic preview.
 - **Apply & save** updates only the demo's in-memory baseline. **Discard**
@@ -25,8 +29,7 @@ contains actual Settings screenshots and test results.
   compact sidebar.
 - Use Tab/Enter for buttons and Escape to cancel a picker or action dialog.
 
-The search field filters choices; widget configuration itself requires no text
-entry. The Focus timer plugin is illustrative. Other sidebar destinations link
+The search field filters choices. Launcher icon names are optional text input. The Focus timer plugin is illustrative. Other sidebar destinations link
 to the plan, and the reduced Dock/Flyouts sections demonstrate retained settings
 rather than a complete implementation of those pages.
 

@@ -22,10 +22,11 @@ fn equal(a: V, b: V) bool {
         },
     };
 }
-const Scope = enum { normal, plugins, entries, entry, settings };
+const Scope = enum { normal, plugins, entries, entry, settings, launcher_icon };
 fn merge(a: std.mem.Allocator, base: V, ours: V, theirs: V, scope: Scope) anyerror!V {
     if (equal(ours, base)) return theirs;
     if (equal(theirs, base) or equal(ours, theirs)) return ours;
+    if (scope == .launcher_icon) return error.MergeConflict;
     if (scope == .entries or scope == .settings) return keyed(a, base, ours, theirs, if (scope == .entries) "id" else "key", if (scope == .entries) .entry else .normal);
     if (scope == .entry and (!equal(base.object.get("digest").?, ours.object.get("digest").?) or !equal(base.object.get("digest").?, theirs.object.get("digest").?))) return error.MergeConflict;
     if (base != .object or ours != .object or theirs != .object) return error.MergeConflict;
@@ -34,7 +35,7 @@ fn merge(a: std.mem.Allocator, base: V, ours: V, theirs: V, scope: Scope) anyerr
     var it = ours.object.iterator();
     while (it.next()) |field| {
         const key = field.key_ptr.*;
-        const next: Scope = if (scope == .normal and std.mem.eql(u8, key, "plugins")) .plugins else if (scope == .plugins and std.mem.eql(u8, key, "entries")) .entries else if (scope == .entry and std.mem.eql(u8, key, "settings")) .settings else .normal;
+        const next: Scope = if (std.mem.eql(u8, key, "launcher_icon")) .launcher_icon else if (scope == .normal and std.mem.eql(u8, key, "plugins")) .plugins else if (scope == .plugins and std.mem.eql(u8, key, "entries")) .entries else if (scope == .entry and std.mem.eql(u8, key, "settings")) .settings else .normal;
         try result.object.put(a, key, try merge(a, base.object.get(key) orelse return error.MergeConflict, field.value_ptr.*, theirs.object.get(key) orelse return error.MergeConflict, next));
     }
     return result;
@@ -109,4 +110,23 @@ test "launcher choices merge with unrelated changes but conflicting lists retain
     try std.testing.expectEqual(@as(u8, 18), merged.font_size);
     try std.testing.expectEqualStrings("Custom.desktop", merged.application_launchers[0].desktop_id);
     try std.testing.expectError(error.MergeConflict, json(a, "{}", ours, theirs));
+}
+
+test "launcher icon selections merge atomically and preserve disjoint changes" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const base =
+        \\{"bar":{"launcher_icon":{"kind":"theme","value":"old-icon"}}}
+    ;
+    const ours =
+        \\{"bar":{"launcher_icon":{"kind":"file","value":"/tmp/icon.png"}}}
+    ;
+    const theirs =
+        \\{"bar":{"launcher_icon":{"kind":"theme","value":"new-icon"}}}
+    ;
+    try std.testing.expectError(error.MergeConflict, json(a, base, ours, theirs));
+    const merged = try @import("preferences.zig").parse(a, try json(a, "{}", ours, "{\"font_size\":18}"));
+    try std.testing.expectEqual(@as(u8, 18), merged.font_size);
+    try std.testing.expectEqualStrings("/tmp/icon.png", merged.bar.launcher_icon.value);
 }

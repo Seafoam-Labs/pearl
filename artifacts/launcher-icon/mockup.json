@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "browser": "Chromium",
+  "checks": [
+    "selection",
+    "preview",
+    "apply",
+    "discard",
+    "no-page-errors"
+  ]
+}

@@ -2,6 +2,7 @@
 """Measure vertical bar allocations on private outputs, including live rotation."""
 import argparse, copy, json, sys, time
 from pathlib import Path
+from PIL import Image
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,6 +18,7 @@ def main():
     parser.add_argument('--pearl', type=Path, required=True)
     parser.add_argument('--ctl', type=Path, required=True)
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/bar-layout')
+    parser.add_argument('--icon-hotplug', action='store_true', help='Exercise output disable/enable (requires compositor with working output-management disable)')
     args = parser.parse_args()
     args.pearl = args.pearl.resolve(); args.ctl = args.ctl.resolve(); args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=True)
@@ -41,15 +43,39 @@ def main():
             custom = Path(s.env['XDG_DATA_HOME']) / 'themes/Pearl-Bar-Test/gtk-4.0'
             custom.mkdir(parents=True)
             (custom / 'gtk.css').write_text('.background {background:#203040;color:#ffffff;} button {color:#ffffff;background:#304050;}')
+            icon_file = s.base/'launcher-transparent.png'
+            Image.new('RGBA', (96, 48), (30, 180, 125, 180)).save(icon_file)
+            def icon_probe():
+                return ctl(s,args.ctl,'aqueous','status','--text','test-bar-layout:' + first['id'])['result']
+            def icon_settled():
+                return wait_for(lambda: (lambda v: v if not v['launcher_icon_loading'] else False)(icon_probe()))
+            missing = s.base/'missing.png'
+            corrupt = s.base/'corrupt.png'; corrupt.write_bytes(b'not a PNG')
+            oversized = s.base/'oversized.png'; oversized.write_bytes(b'x' * (2*1024*1024 + 1))
+            large = s.base/'large.png'; Image.new('RGBA',(2049,1)).save(large)
+            animated = s.base/'animated.png'
+            frames=[Image.new('RGBA',(8,8),color) for color in ('red','blue')]
+            frames[0].save(animated,save_all=True,append_images=frames[1:],duration=100,loop=0)
+            for name in (missing, corrupt, oversized, large, animated):
+                prefs=copy.deepcopy(base); prefs['outputs']=[]
+                prefs['bar']['launcher_icon']=dict(kind='file',value=str(name))
+                apply(s,args.ctl,prefs)
+                value=icon_settled()
+                assert value['launcher_icon_failed'] and 'launcher' in layout(), value
+            prefs['bar']['launcher_icon']=dict(kind='theme',value='pearl-no-such-icon')
+            apply(s,args.ctl,prefs)
+            assert icon_settled()['launcher_icon_failed']
+            report['cases'].append(dict(name='launcher-icon-missing-corrupt-oversized-animated-fallback'))
             for theme, islands, font, size in [('static', True, 14, 48), ('static', False, 14, 48), ('gtk', True, 14, 48), ('static', True, 20, 48), ('gtk', False, 20, 64)]:
                 for edge in ('left', 'right', 'top', 'bottom'):
                     prefs = copy.deepcopy(base)
                     prefs['theme'].update(mode=theme, gtk_name='Pearl-Bar-Test')
                     prefs['font_size'] = font
-                    prefs['outputs'] = [dict(connector=first['connector'], bar=dict(edge=edge, size=size, islands=islands, groups=base['bar']['groups']))]
+                    prefs['outputs'] = [dict(connector=first['connector'], bar=dict(edge=edge, size=size, islands=islands, groups=base['bar']['groups'], launcher_icon=dict(kind='file',value=str(icon_file))))]
                     apply(s, args.ctl, prefs)
                     wait_for(lambda: output()['bar_edge'] == edge)
                     time.sleep(.25)
+                    assert not icon_settled()['launcher_icon_failed']
                     current = output(); widgets = layout()
                     assert len(widgets['workspaces']['parts']) == workspace_count, widgets
                     vertical = edge in ('left', 'right')
@@ -112,6 +138,7 @@ def main():
             expect_ids([w['id'] for w in local[4:7]])
             second=next(o for o in status(s,args.ctl)['outputs'] if o['id']!=first['id'])
             remote=sorted([e for e in ipc.state() if e['kind']=='workspace' and e['output']==second['id']],key=lambda e:(e['number'],e['id']))
+            prefs['bar']['launcher_icon']=dict(kind='file',value=str(icon_file))
             prefs['outputs']=[dict(connector=second['connector'],bar=dict(workspace_mode='medium'))]
             apply(s,args.ctl,prefs)
             ipc.call('command',action='workspace.activate',fields=dict(id=remote[4]['id']))
@@ -120,8 +147,32 @@ def main():
             # Omitted mode in a complete display override must default to Large.
             del prefs['outputs'][0]['bar']['workspace_mode']; apply(s,args.ctl,prefs)
             expect_ids([w['id'] for w in remote],second['id'])
-            report['cases'].append(dict(name='filtered-click-and-independent-display-overrides'))
+            assert icon_settled()['launcher_icon'] == dict(kind='file',value=str(icon_file))
+            assert workspace_probe(second['id'])['launcher_icon']['kind'] == 'default'
+            if args.icon_hotplug:
+                s.run(['wlr-randr','--output',second['connector'],'--off'])
+                wait_for(lambda: len(status(s,args.ctl)['outputs']) == 1)
+                s.run(['wlr-randr','--output',second['connector'],'--on'])
+                wait_for(lambda: len(status(s,args.ctl)['outputs']) == 2)
+                restored=next(o for o in status(s,args.ctl)['outputs'] if o['connector']==second['connector'])
+                assert workspace_probe(restored['id'])['launcher_icon']['kind'] == 'default'
+                report['cases'].append(dict(name='launcher-icon-output-hotplug'))
+            else:
+                report['limitations']=['Icon output hotplug requires --icon-hotplug; pinned Aqueous asserts in OutputManager.validateConfigCoordinates when disabling a head.']
+            report['cases'].append(dict(name='filtered-click-and-independent-display-icon-overrides'))
             ipc.close()
+            for variant in ('dark','light'):
+                compact=copy.deepcopy(base)
+                compact['bar'].update(size=32,launcher_icon=dict(kind='default',value=''))
+                compact['theme']['variant']=variant
+                compact['outputs']=[]
+                apply(s,args.ctl,compact)
+                default_size=output()['bar_size']
+                compact['bar']['launcher_icon']=dict(kind='file',value=str(icon_file))
+                apply(s,args.ctl,compact)
+                assert not icon_settled()['launcher_icon_failed']
+                assert output()['bar_size']==default_size
+                capture(s,'launcher-icon-minimum-'+variant,first['connector'])
             # Direct CLI rotation must rebuild immediately, including after scaling.
             apply(s, args.ctl, base)
             s.run(['wlr-randr', '--output', first['connector'], '--scale', '1.5'])
@@ -159,7 +210,7 @@ def main():
                     ctl(s, args.ctl, 'popup', 'hide'); ipc.close()
             # Saved mode survives a shell restart, including a scaled display.
             restart_prefs=copy.deepcopy(base)
-            restart_prefs['bar'].update(workspace_mode='medium',edge='top')
+            restart_prefs['bar'].update(workspace_mode='medium',edge='top',launcher_icon=dict(kind='file',value=str(icon_file)))
             restart_prefs['outputs']=[]
             apply(s,args.ctl,restart_prefs)
             ipc=IPC(s)
@@ -170,6 +221,8 @@ def main():
             app.expect('event=control-ready')
             expect_ids([w['id'] for w in local[2:7]])
             assert workspace_probe()['workspace_mode']=='medium'
+            assert not icon_settled()['launcher_icon_failed']
+            assert icon_probe()['launcher_icon'] == dict(kind='file',value=str(icon_file))
             capture(s,'workspace-medium-restarted-scaled',first['connector'])
             report['cases'].append(dict(name='workspace-mode-persists-after-shell-restart-at-mixed-scale'))
             ipc.close()
