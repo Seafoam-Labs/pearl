@@ -1,6 +1,15 @@
 # Dome design and implementation plan
 
-Status: proposed · September 20, 2026. Implementation has not started.
+Status: native implementation delivered · September 20, 2026. See the
+[implementation report](IMPLEMENTATION_STATUS.md) for delivered functionality,
+measured evidence, deviations and remaining qualification gates. The milestone
+criteria below remain the design baseline; they are not all certified complete.
+
+Review the [interactive prototype](mockups/index.html) and its
+[screen gallery, interactions and verification](mockups/README.md). The prototype
+covers resource pages, processes, services, compact summary, responsive layouts
+and unavailable/loading/permission states using fictional data. It provides a
+visual reference for D1, not evidence that the native D1 milestone is complete.
 
 ## 1. Product direction
 
@@ -230,13 +239,15 @@ stock palettes as the standalone fallback.
 
 ## 7. Proposed project structure
 
-Only README and this plan exist initially. Create implementation files as their
-milestones begin, rather than adding nonfunctional placeholder build targets.
+README, this plan and the browser mockup exist. Create native implementation
+files as their milestones begin, rather than adding nonfunctional placeholder
+build targets.
 
 ```text
 subprojects/dome/
   README.md
   docs/IMPLEMENTATION_PLAN.md
+  docs/mockups/               # Offline browser study, captures and verification
   .zigversion                 # Pin 0.16.0
   build.zig / build.zig.zon    # Independent build; pinned GObject dependency
   src/main.zig                # Application lifecycle

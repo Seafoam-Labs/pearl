@@ -1,0 +1,584 @@
+{
+  "status": "passed",
+  "binary_sha256": "2cc75b1197e8098608f95566ca1f53479b3007609993c914ee7eef66e1a1a7b8",
+  "checks": [
+    "All nine native pages render using live collectors; optional systemd absence remains usable",
+    "CPU overall/core views switch without restarting sampling",
+    "Process search, recovery, selection and recycled table cells",
+    "Pause stops periodic collection; manual sampling preserves pause state",
+    "pidfd termination confirmation cancels safely and targets only a disposable child",
+    "Asynchronous service discovery, stop/start and state refresh use an isolated mock manager",
+    "Preferences/summary and clean shutdown with fatal GTK warnings enabled",
+    "Light/native theme and narrow navigation/detail layout",
+    "200% text scaling and native high contrast render with fatal GTK warnings enabled",
+    "10,000 synthetic process rows use bounded recycled cells; update timings recorded",
+    "A hung GPU helper is killed while core sampling and shutdown stay responsive"
+  ],
+  "captures": [
+    {
+      "file": "overview-dark.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 0,
+        "sample": 2,
+        "processes": 774,
+        "visible": 774,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1468,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "cpu.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 1,
+        "sample": 2,
+        "processes": 774,
+        "visible": 774,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1468,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "memory.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 2,
+        "sample": 3,
+        "processes": 772,
+        "visible": 772,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1592,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "disks.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 3,
+        "sample": 3,
+        "processes": 772,
+        "visible": 772,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1592,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "network.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 4,
+        "sample": 4,
+        "processes": 773,
+        "visible": 773,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 998,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "gpu.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 5,
+        "sample": 4,
+        "processes": 773,
+        "visible": 773,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 998,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "sensors.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 6,
+        "sample": 5,
+        "processes": 772,
+        "visible": 772,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1082,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "processes.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 7,
+        "sample": 5,
+        "processes": 772,
+        "visible": 772,
+        "realized_cells": 1230,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1082,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "services.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 8,
+        "sample": 5,
+        "processes": 772,
+        "visible": 772,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1082,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "cpu-cores.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 1,
+        "sample": 6,
+        "processes": 774,
+        "visible": 774,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1128,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "process-selected.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 7,
+        "sample": 7,
+        "processes": 775,
+        "visible": 775,
+        "realized_cells": 1230,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 18095,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 2607,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "service-denied.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 8,
+        "sample": 14,
+        "processes": 775,
+        "visible": 775,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 3,
+        "service_visible": 1,
+        "update_us": 1421,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": true,
+        "dialog": false
+      }
+    },
+    {
+      "file": "service-fixture.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 8,
+        "sample": 15,
+        "processes": 775,
+        "visible": 775,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 3,
+        "service_visible": 3,
+        "update_us": 1444,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": true,
+        "dialog": false
+      }
+    },
+    {
+      "file": "summary.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 420,
+        "height": 560
+      },
+      "state": {
+        "page": 0,
+        "sample": 16,
+        "processes": 775,
+        "visible": 775,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": false,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1362,
+        "width": 420,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": true,
+        "dialog": false
+      }
+    },
+    {
+      "file": "overview-light.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 0,
+        "sample": 2,
+        "processes": 774,
+        "visible": 774,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1886,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "native-theme.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 0,
+        "sample": 2,
+        "processes": 774,
+        "visible": 774,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1562,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "narrow.png",
+      "geometry": {
+        "x": 560,
+        "y": 150,
+        "width": 480,
+        "height": 800
+      },
+      "state": {
+        "page": 0,
+        "sample": 2,
+        "processes": 771,
+        "visible": 771,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": false,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1086,
+        "width": 480,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "text-200-percent.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 0,
+        "sample": 2,
+        "processes": 771,
+        "visible": 771,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1353,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "high-contrast.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 0,
+        "sample": 2,
+        "processes": 771,
+        "visible": 771,
+        "realized_cells": 0,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 1551,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    },
+    {
+      "file": "processes-10000.png",
+      "geometry": {
+        "x": 240,
+        "y": 150,
+        "width": 1120,
+        "height": 800
+      },
+      "state": {
+        "page": 7,
+        "sample": 2,
+        "processes": 10000,
+        "visible": 10000,
+        "realized_cells": 1230,
+        "paused": false,
+        "sidebar": true,
+        "selected_pid": 0,
+        "services": 0,
+        "service_visible": 0,
+        "update_us": 10571,
+        "width": 1120,
+        "gpu_provider_count": 1,
+        "gpu_timeouts": 0,
+        "service_error": false,
+        "dialog": false
+      }
+    }
+  ],
+  "narrow_actual_width": 480,
+  "process_stress": {
+    "rows": 10000,
+    "realized_cells": 1230,
+    "update_us": [
+      10116,
+      10176,
+      10202,
+      9720,
+      9594,
+      9307,
+      8932,
+      9350
+    ],
+    "key_ack_ms": [
+      7.06,
+      6.74,
+      7.0,
+      6.58,
+      7.0,
+      6.79,
+      7.24,
+      6.48
+    ]
+  }
+}

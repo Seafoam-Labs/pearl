@@ -1,0 +1,69 @@
+/* Dome's GTK4 stylesheet. All colors are scoped to the application. */
+/* Inherit the GTK font so user text scaling remains effective. */
+.dome-root.dark { background: #141218; color: #e6e0e9; }
+.dome-root.light { background: #fdf7ff; color: #1d1b20; }
+.dome-root headerbar { min-height: 42px; box-shadow: none; }
+.dome-root.dark headerbar { background: #211f26; }
+.dome-root.light headerbar { background: #f3edf7; }
+.dome-root button { border-radius: 10px; padding: 8px 12px; min-height: 28px; box-shadow: none; }
+.dome-root .icon-button { min-width: 24px; padding: 8px; }
+.dome-root .sidebar { padding: 16px 12px; border-right: 1px solid alpha(currentColor,.12); }
+.dome-root .nav { padding: 9px 12px; }
+.dome-root.dark .sidebar { background: #1d1b20; }
+.dome-root.light .sidebar { background: #f7f2fa; }
+.dome-root.dark .active { background: #4f378b; color: #eaddff; }
+.dome-root.light .active { background: #eaddff; color: #21005d; }
+.dome-root .toolbar { padding: 10px 16px; border-bottom: 1px solid alpha(currentColor,.12); }
+.dome-root .content { padding: 20px; }
+.dome-root .heading { font-size: 1.500em; font-weight: 500; }
+.dome-root .title { font-size: 1.143em; font-weight: 600; }
+.dome-root .secondary { opacity: .75; font-size: 0.857em; }
+.dome-root .eyebrow { font-size: 0.714em; font-weight: 600; letter-spacing: 1.2px; margin: 12px 8px; opacity: .7; }
+.dome-root .card { padding: 16px; border-radius: 12px; border: 1px solid alpha(currentColor,.12); }
+.dome-root.dark .card { background: #211f26; }
+.dome-root.light .card { background: #f3edf7; }
+.dome-root .value { font-size: 1.929em; font-weight: 400; }
+.dome-root .stat { padding: 12px 8px; }
+.dome-root .status { padding: 10px 20px; border-top: 1px solid alpha(currentColor,.12); font-size: 0.786em; opacity: .8; }
+.dome-root .detail { padding: 18px; border-radius: 12px; }
+.dome-root.dark .detail { background: #211f26; }
+.dome-root.light .detail { background: #f3edf7; }
+.dome-root .fact { padding: 8px 0; border-bottom: 1px solid alpha(currentColor,.1); }
+.dome-root .empty { padding: 40px 16px; }
+.dome-root.dark .error { color: #e99188; }
+.dome-root.light .error { color: #9b2a21; }
+.dome-root columnview { border-radius: 10px; }
+.dome-root.dark columnview { background: #1d1b20; }
+.dome-root.light columnview { background: #f7f2fa; }
+.dome-root columnview cell { padding: 8px; font-size: 0.857em; }
+.dome-root.compact columnview cell { padding: 3px 8px; }
+.dome-root .search { min-height: 36px; }
+.dome-root .graph { min-width: 100px; }
+.dome-root.dark .toolbar, .dome-root.dark .status { background: #141218; color: #e6e0e9; }
+.dome-root.light .toolbar, .dome-root.light .status { background: #fdf7ff; color: #1d1b20; }
+.dome-root.dark button { color: #e6e0e9; background: transparent; background-image: none; border: 1px solid transparent; }
+.dome-root.light button { color: #1d1b20; background: transparent; background-image: none; border: 1px solid transparent; }
+.dome-root.dark button:hover { background: alpha(#e6e0e9,.08); }
+.dome-root.light button:hover { background: alpha(#1d1b20,.08); }
+.dome-root.dark button.active { background: #4f378b; color: #eaddff; }
+.dome-root.light button.active { background: #eaddff; color: #21005d; }
+.dome-root.dark button.card { background: #211f26; border-color: alpha(#cac4d0,.15); }
+.dome-root.light button.card { background: #f3edf7; border-color: alpha(#49454f,.15); }
+.dome-root.dark entry, .dome-root.dark dropdown > button { background: #211f26; color: #e6e0e9; border-color: alpha(#cac4d0,.2); }
+.dome-root.light entry, .dome-root.light dropdown > button { background: #f3edf7; color: #1d1b20; border-color: alpha(#49454f,.2); }
+.dome-root.dark columnview, .dome-root.dark columnview listview, .dome-root.dark columnview row { background: #1d1b20; color: #e6e0e9; }
+.dome-root.light columnview, .dome-root.light columnview listview, .dome-root.light columnview row { background: #f7f2fa; color: #1d1b20; }
+.dome-root.dark columnview header { background: #211f26; color: #cac4d0; }
+.dome-root.light columnview header { background: #f3edf7; color: #49454f; }
+.dome-root.dark columnview row:selected { background: #4f378b; color: #eaddff; }
+.dome-root.light columnview row:selected { background: #eaddff; color: #21005d; }
+.dome-root.dark .destructive-action { background: #601410; color: #ffb4ab; }
+.dome-root.light .destructive-action { background: #f9dedc; color: #9b2a21; }
+.dome-root.narrow .content { padding: 12px; }
+.dome-root.narrow .toolbar { padding: 8px; }
+.dome-root.narrow .value { font-size: 1.643em; }
+.dome-root.narrow .stat { padding: 8px 2px; }
+.dome-root.narrow .card { padding: 12px; }
+.dome-root .pill { border: 1px solid alpha(currentColor,.15); border-radius: 12px; padding: 3px 10px; font-size: 0.786em; }
+.dome-root.dark popover contents { background: #211f26; color: #e6e0e9; }
+.dome-root.light popover contents { background: #f3edf7; color: #1d1b20; }

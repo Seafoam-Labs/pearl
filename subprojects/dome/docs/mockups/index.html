@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dome · Design review</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mockup.js" defer></script>
+</head>
+<body>
+  <header class="review">
+    <div><span class="eyebrow">PEARL / APPLICATION DESIGN</span><h1>Dome <span>A clear view of your system.</span></h1></div>
+    <div class="review-tools">
+      <label class="sr-only" for="scene">Review scenario</label>
+      <select id="scene">
+        <option value="overview">Overview</option><option value="cpu">CPU</option><option value="memory">Memory</option>
+        <option value="disks">Disks</option><option value="network">Network</option><option value="gpu">GPU</option>
+        <option value="sensors">Sensors</option><option value="processes">Processes</option><option value="services">Services</option>
+        <option value="summary">Compact summary</option><option value="permission">Permission denied</option>
+        <option value="unavailable">Unsupported GPU</option><option value="offline">Disconnected network</option>
+        <option value="loading">Loading</option><option value="empty">No search results</option><option value="no-services">Services unavailable</option>
+      </select>
+      <button id="theme" aria-label="Switch to light appearance">Light</button>
+      <button id="density" aria-pressed="false">Compact rows</button>
+    </div>
+  </header>
+
+  <main class="window" aria-label="Dome system monitor prototype">
+    <header class="titlebar">
+      <div class="brand"><span id="brand-icon"></span>Dome</div>
+      <span class="window-title">System monitor</span>
+      <div class="window-controls" aria-hidden="true"><span>−</span><span>□</span><span>×</span></div>
+    </header>
+    <div class="workspace">
+      <button id="drawer-shade" aria-label="Close navigation" hidden></button>
+      <aside class="sidebar" id="sidebar" aria-label="Monitor navigation">
+        <div id="navigation"></div>
+        <div class="machine"><div class="machine-icon" id="machine-icon"></div><div><strong>Pearl workstation</strong><small>Linux · x86_64</small></div><span class="status-dot"></span></div>
+      </aside>
+      <section class="monitor">
+        <header class="toolbar">
+          <button id="navigation-toggle" class="icon mobile-nav" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"></button>
+          <div class="page-title"><h2 id="page-title">Overview</h2><span class="live-badge" id="live-badge"><i></i> Live</span></div>
+          <div class="toolbar-actions">
+            <button id="pause" aria-label="Pause sampling" aria-pressed="false"></button>
+            <label class="sr-only" for="interval">Sampling interval</label><select id="interval" title="Sampling interval"><option value="0.5">0.5 s</option><option value="1" selected>1 s</option><option value="2">2 s</option><option value="5">5 s</option></select>
+            <button id="search-toggle" class="icon" aria-label="Search processes" title="Search · Ctrl+F"></button>
+            <button id="more" class="icon" aria-label="Preferences" title="Preferences"></button>
+          </div>
+        </header>
+        <div class="viewport" id="viewport" tabindex="-1"><div id="content"></div></div>
+        <footer class="statusbar"><span id="sample-status">Sample 01 · Just updated</span><span id="status-right">120 seconds of history</span></footer>
+      </section>
+    </div>
+  </main>
+
+  <footer class="review-note">
+    <div><span class="review-number" id="scene-number">01</span><span id="scene-note">The whole picture, without the noise.</span></div>
+    <a href="../IMPLEMENTATION_PLAN.md">Read the implementation plan ↗</a>
+    <small>Interactive design study · Fictional readings and simulated actions · Planned native Zig + GTK4 application</small>
+  </footer>
+  <dialog id="modal" aria-labelledby="modal-title"></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

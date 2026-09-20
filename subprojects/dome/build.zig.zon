@@ -1,0 +1,7 @@
+.{
+    .name = .dome,
+    .fingerprint = 0x3b00b368b19bab05,
+    .version = "0.1.0",
+    .minimum_zig_version = "0.16.0",
+    .paths = .{ "build.zig", "build.zig.zon", ".zigversion", "src", "resources", "packaging", "tests", "README.md", "docs" },
+}

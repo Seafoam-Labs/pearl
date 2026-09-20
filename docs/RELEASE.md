@@ -47,6 +47,14 @@ with application ID `org.aqueous.Phyto.Git`, allowing stable/Git coexistence.
 The source archive includes Phyto and excludes its caches and generated artifacts.
 Installing the package does not change the default file manager.
 
+All three Pearl recipes also build and test [Dome](../subprojects/dome/README.md)
+with ReleaseSafe and the baseline CPU. They install its executable, desktop entry,
+AppStream metadata and icon. Release packages provide `dome` with application ID
+`org.aqueous.Dome`; both Git variants provide `dome-git` with application ID
+`org.aqueous.Dome.Git`. The source archive includes Dome's source and build files
+and excludes its caches and generated artifacts. `nvidia-utils` is optional for
+NVIDIA metrics; Dome runs without it. Installation does not launch Dome.
+
 Separate Intel-compatible generic x86-64 baseline Git packages are available:
 
 - [`pearl-intel-git`](../packaging/arch-intel-git/PKGBUILD)

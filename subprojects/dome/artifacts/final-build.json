@@ -1,0 +1,21 @@
+{
+  "src/app.zig": "db1bb4cdd16fe206f7871c0b349a528e27e7f979b0d1f1215cc85b4c8773f303",
+  "src/benchmark.zig": "242068cb5d7482d4023fd28ca54d0c7bf77eac595be6c9d0ce8ba77acfdc1504",
+  "src/collectors/linux.zig": "aa68867fe42e1ae099dd2e59eaa33a8c01ce13c97cee87a75efb8e1d1c1ba093",
+  "src/core/model.zig": "099651fa13ad85bc68936ad31fa0aeff31f528b360b66a420dc2ed4d2a929e41",
+  "src/main.zig": "030d034616fbe12e92982e3984fd92df04c57cf31d1c7586d097577c9d0ef105",
+  "src/platform/actions.zig": "1918092e1236023fea6b0ebbfa3fdd9760dbf5db3e5e5763aba8e637dfc0803a",
+  "src/platform/c.zig": "552633afea6cc7a135ae4891db49e4ce456bf51555ef1cd4efc35c40e45d98dd",
+  "src/platform/io.zig": "09b46ed23265b15f6c82d3f054b30d7dc822c762532c149df20ce030ab91a131",
+  "src/platform/nvml.zig": "eb6a034acd88440e82072d9e1774cbbbaa36b7703dc83446861fb6352a43df43",
+  "src/platform/preferences.zig": "11a72d045245a72a800f177613cd5982ef75cb8dcd90193b8b89192dea74e1c6",
+  "src/platform/services.zig": "8cb44d6e5c16fb32b54abcf9517f40f32275aa3ada98be5da78fea16fa69c48d",
+  "src/tests.zig": "9a35321d816a197e109dccbf53dbe4ba855114c99647b61e5ee8f90618c448c5",
+  "src/ui/graph.zig": "509deea8240346373162da2215588571760582770cc8dc4d2b1194551cb8f4b0",
+  "src/ui/table.zig": "784d0f0311c9d934eeea6de85d8555cebe14574cdbe4208856ace6587a6d443f",
+  "src/ui/widgets.zig": "fe6ba2314b08733e8bf374e3fa4f5ee7c31b2d331af8980e70b6df962daf1578",
+  "build.zig": "a3ee8af890ca5eabefeea8dfa23605848afa0446c97bb4a8dce9c1b855d39355",
+  "build.zig.zon": "53b8c28a49c3a158626d9ee4c717b3e228ec598990ce93105199b5dcaead21be",
+  "resources/style.css": "376956cf3f9e35a9277fa403df2528adbbc9823d4175aafef771fe1a4fc473b3",
+  "zig-out/bin/dome": "80bd1478494fdbb66d7b3fc63c6a2099a1a9c462f1796576cf6e6426601dc70a"
+}

@@ -1,0 +1,229 @@
+{
+  "status": "passed",
+  "browser": "153.0.8010.52",
+  "scenario_count": 16,
+  "widths": [
+    390,
+    480,
+    560,
+    760,
+    980,
+    1360
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "layout_combinations": 192,
+  "checks": [
+    "19 base captures: all pages, special states, light and narrow layouts",
+    "CPU switches between aggregate and 16 logical processors",
+    "Disk, network and GPU selectors change device readings and metadata",
+    "Search, no results, reset, numeric sorting, user filter and application grouping",
+    "Process selection, cancel, Escape and simulated termination",
+    "Denied actions stay disabled; GPU capability, reconnect and loading states respond",
+    "Service stop/start, scope switch, filter and system authentication messaging",
+    "Pause/resume, manual sample while paused, interval, preferences and summary round-trip",
+    "Simulated live timer advances samples and stops when paused",
+    "Narrow navigation drawer, Escape, detail dialog and retained selection on resize",
+    "192 scenario/theme/width combinations without document or content overflow",
+    "Larger base-text layout stress and reduced-motion keyboard smoke check"
+  ],
+  "captures": [
+    {
+      "file": "overview-dark.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=overview&theme=dark&freeze=1"
+    },
+    {
+      "file": "overview-light.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=overview&theme=light&freeze=1"
+    },
+    {
+      "file": "cpu.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=cpu&theme=dark&freeze=1"
+    },
+    {
+      "file": "memory.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=memory&theme=dark&freeze=1"
+    },
+    {
+      "file": "disks.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=disks&theme=dark&freeze=1"
+    },
+    {
+      "file": "network.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=network&theme=dark&freeze=1"
+    },
+    {
+      "file": "gpu.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=gpu&theme=dark&freeze=1"
+    },
+    {
+      "file": "sensors.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=sensors&theme=dark&freeze=1"
+    },
+    {
+      "file": "processes.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=processes&theme=dark&freeze=1"
+    },
+    {
+      "file": "services.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=services&theme=dark&freeze=1"
+    },
+    {
+      "file": "summary.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=summary&theme=dark&freeze=1"
+    },
+    {
+      "file": "permission.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=permission&theme=dark&freeze=1"
+    },
+    {
+      "file": "unavailable.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=unavailable&theme=dark&freeze=1"
+    },
+    {
+      "file": "offline.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=offline&theme=dark&freeze=1"
+    },
+    {
+      "file": "loading.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=loading&theme=dark&freeze=1"
+    },
+    {
+      "file": "empty.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=empty&theme=dark&freeze=1"
+    },
+    {
+      "file": "no-services.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=no-services&theme=dark&freeze=1"
+    },
+    {
+      "file": "narrow.png",
+      "viewport": {
+        "width": 480,
+        "height": 1030
+      },
+      "url_query": "view=overview&theme=dark&freeze=1"
+    },
+    {
+      "file": "processes-narrow.png",
+      "viewport": {
+        "width": 480,
+        "height": 1030
+      },
+      "url_query": "view=processes&theme=light&freeze=1"
+    },
+    {
+      "file": "cpu-cores.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=cpu&theme=dark&freeze=1"
+    },
+    {
+      "file": "force-stop.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=overview&theme=dark&freeze=1"
+    },
+    {
+      "file": "service-confirmation.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=services&theme=dark&freeze=1"
+    },
+    {
+      "file": "preferences.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "url_query": "view=overview&theme=dark&freeze=1"
+    },
+    {
+      "file": "process-details-narrow.png",
+      "viewport": {
+        "width": 480,
+        "height": 1030
+      },
+      "url_query": "view=overview&theme=dark&freeze=1"
+    }
+  ],
+  "javascript_errors": [],
+  "external_requests": [],
+  "limitations": "Browser prototype with fictional data only; no native GTK, host monitoring, real process/service actions or full accessibility validation."
+}

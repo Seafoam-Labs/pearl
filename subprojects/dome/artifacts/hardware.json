@@ -1,0 +1,46 @@
+{
+  "kernel": "7.2.6-1-cachyos",
+  "machine": "x86_64",
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "gtk": "4.22.5",
+  "glib": "2.88.3",
+  "zig": "0.16.0",
+  "snapshot": {
+    "processes": 751,
+    "logical_cpus": 32,
+    "memory_total": 64913539072,
+    "disks": 3,
+    "networks": 7,
+    "gpus": 2,
+    "sensors": 19,
+    "collection_us": 47931
+  },
+  "nvml_probe": [
+    "0000:01:00.0\tNVIDIA GeForce RTX 5090\t14\t7521435648\t34190917632\t47\t101257\t0\t0"
+  ],
+  "drm_adapters": [
+    {
+      "vendor": "0x10de",
+      "device": "0x2b85",
+      "gpu_busy_percent": null,
+      "mem_info_vram_used": null,
+      "mem_info_vram_total": null,
+      "card": "card1",
+      "driver": "nvidia",
+      "hwmon": {}
+    },
+    {
+      "vendor": "0x1002",
+      "device": "0x13c0",
+      "gpu_busy_percent": "0",
+      "mem_info_vram_used": "16736256",
+      "mem_info_vram_total": "2147483648",
+      "card": "card2",
+      "driver": "amdgpu",
+      "hwmon": {
+        "freq1_input": "600000000",
+        "temp1_input": "45000"
+      }
+    }
+  ]
+}

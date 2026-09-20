@@ -1,0 +1,304 @@
+{
+  "status": "passed",
+  "kernel": "7.2.6-1-cachyos",
+  "binary_sha256": "a9c70ed8ead40a1f02117a6ead65b6e0e2c92740f603bd7dbcf7ac4a6336eb50",
+  "requested_seconds": 600,
+  "samples": [
+    {
+      "seconds": 0.07,
+      "rss_kib": 55100,
+      "fds": 11,
+      "threads": 8,
+      "cpu_one_core_percent": null
+    },
+    {
+      "seconds": 15.07,
+      "rss_kib": 66676,
+      "fds": 11,
+      "threads": 8,
+      "cpu_one_core_percent": 1.733
+    },
+    {
+      "seconds": 30.08,
+      "rss_kib": 67604,
+      "fds": 11,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 45.08,
+      "rss_kib": 68112,
+      "fds": 11,
+      "threads": 8,
+      "cpu_one_core_percent": 1.733
+    },
+    {
+      "seconds": 60.09,
+      "rss_kib": 68828,
+      "fds": 11,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 75.1,
+      "rss_kib": 69204,
+      "fds": 11,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 90.1,
+      "rss_kib": 69600,
+      "fds": 11,
+      "threads": 8,
+      "cpu_one_core_percent": 1.599
+    },
+    {
+      "seconds": 105.11,
+      "rss_kib": 76760,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 2.666
+    },
+    {
+      "seconds": 120.12,
+      "rss_kib": 76760,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.599
+    },
+    {
+      "seconds": 135.12,
+      "rss_kib": 76760,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.599
+    },
+    {
+      "seconds": 150.13,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 165.13,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 180.14,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 195.15,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 210.15,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.599
+    },
+    {
+      "seconds": 225.16,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 240.16,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 255.17,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 270.18,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.799
+    },
+    {
+      "seconds": 285.18,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.733
+    },
+    {
+      "seconds": 300.19,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 315.2,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.799
+    },
+    {
+      "seconds": 330.2,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.799
+    },
+    {
+      "seconds": 345.21,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.799
+    },
+    {
+      "seconds": 360.21,
+      "rss_kib": 76960,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.866
+    },
+    {
+      "seconds": 375.22,
+      "rss_kib": 76968,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.933
+    },
+    {
+      "seconds": 390.23,
+      "rss_kib": 77292,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.733
+    },
+    {
+      "seconds": 405.23,
+      "rss_kib": 77484,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.733
+    },
+    {
+      "seconds": 420.24,
+      "rss_kib": 77868,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.799
+    },
+    {
+      "seconds": 435.24,
+      "rss_kib": 78220,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 450.25,
+      "rss_kib": 78752,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 465.26,
+      "rss_kib": 79124,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 480.26,
+      "rss_kib": 79504,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.733
+    },
+    {
+      "seconds": 495.27,
+      "rss_kib": 79884,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.733
+    },
+    {
+      "seconds": 510.28,
+      "rss_kib": 84728,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 3.199
+    },
+    {
+      "seconds": 525.28,
+      "rss_kib": 84728,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 2.399
+    },
+    {
+      "seconds": 540.29,
+      "rss_kib": 84728,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 2.666
+    },
+    {
+      "seconds": 555.29,
+      "rss_kib": 84728,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 2.332
+    },
+    {
+      "seconds": 570.3,
+      "rss_kib": 85108,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    },
+    {
+      "seconds": 585.31,
+      "rss_kib": 85108,
+      "fds": 8,
+      "threads": 8,
+      "cpu_one_core_percent": 1.666
+    }
+  ],
+  "window_mapped_seconds": 0.06565584800046054,
+  "elapsed_seconds": 600.01,
+  "clean_shutdown": true,
+  "summary": {
+    "sample_mean_cpu_one_core_percent": 1.827,
+    "max_rss_mib": 83.11,
+    "final_rss_mib": 83.11,
+    "fd_range": [
+      8,
+      11
+    ],
+    "last_five_minutes_rss_mib_range": [
+      75.16,
+      83.11
+    ]
+  }
+}

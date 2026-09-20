@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Dome
+Comment=Monitor system resources, processes and services
+Exec=dome
+Icon=org.aqueous.Dome
+Terminal=false
+Categories=System;Monitor;GTK;
+Keywords=CPU;Memory;GPU;Processes;System;Monitor;
+StartupNotify=true

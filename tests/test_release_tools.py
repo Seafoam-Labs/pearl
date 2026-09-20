@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Release tooling must fail closed and archives must exclude local state."""
 import hashlib, importlib.util, json, os, shutil, subprocess, tempfile, unittest, tarfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 def module(name):
@@ -39,8 +40,12 @@ class ReleaseTools(unittest.TestCase):
             write(root,'plugins/examples/rust/target/generated.wasm',{'excluded':True})
             write(root,'subprojects/phyto/src/main.zig',{'included':True})
             write(root,'subprojects/phyto/packaging/org.aqueous.Phyto.desktop',{'included':True})
+            write(root,'subprojects/dome/build.zig',{'included':True})
+            write(root,'subprojects/dome/src/main.zig',{'included':True})
+            write(root,'subprojects/dome/packaging/org.aqueous.Dome.desktop',{'included':True})
             for directory in ('zig-out', 'zig-pkg', '.zig-cache', '.cache', 'artifacts', '__pycache__'):
                 write(root,f'subprojects/phyto/{directory}/local',{'excluded':True})
+                write(root,f'subprojects/dome/{directory}/local',{'excluded':True})
             write(root,'subprojects/unrelated/src/main.zig',{'excluded':True})
             first=source.archive(root,Path(t)/'one');write(root,'artifacts/private.json',{'ignored':True});second=source.archive(root,Path(t)/'two')
             with tarfile.open(Path(t)/'one'/first['archive']) as archive:
@@ -49,11 +54,14 @@ class ReleaseTools(unittest.TestCase):
                 self.assertEqual({name for name in archive.getnames() if '/subprojects/' in name}, {
                     'pearl-1/subprojects/phyto/src/main.zig',
                     'pearl-1/subprojects/phyto/packaging/org.aqueous.Phyto.desktop',
+                    'pearl-1/subprojects/dome/build.zig',
+                    'pearl-1/subprojects/dome/src/main.zig',
+                    'pearl-1/subprojects/dome/packaging/org.aqueous.Dome.desktop',
                 })
             self.assertEqual(first,second);self.assertIn(first['sha256'],(Path(t)/'one/PKGBUILD').read_text())
             (root/'src').mkdir();(root/'src/link').symlink_to(root/'README.md')
             with self.assertRaises(ValueError):source.archive(root,Path(t)/'three')
-    def test_phyto_payload_in_each_pearl_package(self):
+    def test_standalone_app_payloads_in_each_pearl_package(self):
         # Run real package() functions with inert build outputs in a private root.
         with tempfile.TemporaryDirectory() as t:
             work=Path(t);root=work/'pearl';root.mkdir()
@@ -71,6 +79,26 @@ class ReleaseTools(unittest.TestCase):
             license_file.parent.mkdir(parents=True);license_file.write_text('fixture')
             phyto=root/'subprojects/phyto/zig-out/bin/phyto'
             phyto.parent.mkdir(parents=True);phyto.write_bytes(b'Phyto production fixture\n')
+            # Populate both Dome variants so a recipe cannot accidentally install
+            # an executable or launcher from the other build identity.
+            dome=root/'subprojects/dome/zig-out'
+            for git in (False,True):
+                command='dome-git' if git else 'dome'
+                identity='org.aqueous.Dome.Git' if git else 'org.aqueous.Dome'
+                executable=dome/'bin'/command
+                executable.parent.mkdir(parents=True,exist_ok=True)
+                executable.write_bytes(f'{command} production fixture\n'.encode())
+                for source_name,destination in (
+                    ('packaging/org.aqueous.Dome.desktop',f'share/applications/{identity}.desktop'),
+                    ('packaging/org.aqueous.Dome.metainfo.xml',f'share/metainfo/{identity}.metainfo.xml'),
+                    ('resources/org.aqueous.Dome.svg',f'share/icons/hicolor/scalable/apps/{identity}.svg'),
+                ):
+                    content=(ROOT/'subprojects/dome'/source_name).read_text()
+                    content=content.replace('org.aqueous.Dome',identity)
+                    content=content.replace('Exec=dome',f'Exec={command}')
+                    content=content.replace('<binary>dome</binary>',f'<binary>{command}</binary>')
+                    target=dome/destination;target.parent.mkdir(parents=True,exist_ok=True)
+                    target.write_text(content)
             for example in ('timer-c','counter-zig','counter-rust','companion-c'):
                 for member in ('plugin.json','plugin.wasm'):
                     write(root,f'.cache/plugin-examples/{example}/{member}',{})
@@ -100,6 +128,25 @@ class ReleaseTools(unittest.TestCase):
                     if git:
                         self.assertFalse((stage/'usr/share/applications/org.aqueous.Phyto.desktop').exists())
                         self.assertFalse((stage/'usr/share/icons/hicolor/scalable/apps/org.aqueous.Phyto.svg').exists())
+                    if shutil.which('desktop-file-validate'):
+                        subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True)
+                    command='dome-git' if git else 'dome'
+                    identity='org.aqueous.Dome.Git' if git else 'org.aqueous.Dome'
+                    opposite='org.aqueous.Dome' if git else 'org.aqueous.Dome.Git'
+                    installed=stage/'usr/bin'/command
+                    self.assertEqual(installed.read_bytes(),(dome/'bin'/command).read_bytes())
+                    self.assertEqual(installed.stat().st_mode&0o7777,0o755)
+                    self.assertFalse((stage/'usr/bin'/('dome' if git else 'dome-git')).exists())
+                    desktop=stage/f'usr/share/applications/{identity}.desktop'
+                    for line in (f'Exec={command}',f'Icon={identity}'):
+                        self.assertIn(line,desktop.read_text().splitlines())
+                    for directory,extension in (('applications','desktop'),('icons/hicolor/scalable/apps','svg'),('metainfo','metainfo.xml')):
+                        self.assertTrue((stage/f'usr/share/{directory}/{identity}.{extension}').is_file())
+                        self.assertFalse((stage/f'usr/share/{directory}/{opposite}.{extension}').exists())
+                    metadata=ET.parse(stage/f'usr/share/metainfo/{identity}.metainfo.xml').getroot()
+                    self.assertEqual(metadata.findtext('id'),identity)
+                    self.assertEqual(metadata.findtext('launchable'),f'{identity}.desktop')
+                    self.assertEqual(metadata.findtext('provides/binary'),command)
                     if shutil.which('desktop-file-validate'):
                         subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True)
 if __name__=='__main__':unittest.main()

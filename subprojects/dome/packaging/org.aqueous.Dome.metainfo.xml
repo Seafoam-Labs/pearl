@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.aqueous.Dome</id><name>Dome</name>
+  <summary>Monitor system resources, processes and services</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-Pearl-Unlicensed</project_license>
+  <developer id="org.aqueous"><name>Pearl contributors</name></developer>
+  <url type="homepage">https://github.com/Seafoam-Labs/pearl</url>
+  <description><p>A native Zig and GTK4 Linux system monitor with resource history, process inspection and optional hardware and service providers.</p></description>
+  <launchable type="desktop-id">org.aqueous.Dome.desktop</launchable>
+  <provides><binary>dome</binary></provides>
+  <content_rating type="oars-1.1"/>
+</component>

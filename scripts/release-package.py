@@ -19,17 +19,19 @@ def main():
             package_paths=subprocess.check_output(['makepkg','--packagelist'],cwd=work,env=env,text=True).splitlines();assert len(package_paths)==1
             package=Path(package_paths[0]);report['package']=package.name;report['sha256']=hashlib.sha256(package.read_bytes()).hexdigest()
             with tarfile.open(package) as tar:
-                names=set(tar.getnames());assert {n for n in names if n.startswith('usr/bin/') and not n.endswith('/')}=={'usr/bin/pearl','usr/bin/pearlctl','usr/bin/pearl-lock','usr/bin/pearl-settings','usr/bin/pearl-themes','usr/bin/pearl-plugin-host','usr/bin/phyto'}
+                names=set(tar.getnames());assert {n for n in names if n.startswith('usr/bin/') and not n.endswith('/')}=={'usr/bin/pearl','usr/bin/pearlctl','usr/bin/pearl-lock','usr/bin/pearl-settings','usr/bin/pearl-themes','usr/bin/pearl-plugin-host','usr/bin/phyto','usr/bin/dome'}
                 plugin_files={f'usr/share/pearl/plugins/{example}/{member}' for example in ('timer-c','counter-zig','counter-rust','companion-c') for member in ('plugin.json','plugin.wasm')}
                 plugin_files.update({'usr/share/pearl/plugins/companion-c/cat.png','usr/share/pearl/plugins/companion-c/LICENSE.assets'})
                 assert {n for n in names if n.startswith('usr/share/pearl/plugins/') and tar.getmember(n).isfile()}==plugin_files
                 assert {'usr/share/pearl/plugins-sdk/plugin.wit','usr/share/licenses/pearl/Wasmtime-LICENSE'} <= names
                 report['plugin_payload_sha256']={n:hashlib.sha256(tar.extractfile(n).read()).hexdigest() for n in sorted(plugin_files | {'usr/bin/pearl-plugin-host'})}
                 assert 'etc/pam.d/pearl' in names and 'usr/lib/systemd/user/pearl.service' in names
-                for resource in ('applications/org.aqueous.Pearl.Settings.desktop','icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg','metainfo/org.aqueous.Pearl.Settings.metainfo.xml','applications/org.aqueous.Phyto.desktop','icons/hicolor/scalable/apps/org.aqueous.Phyto.svg'):
+                for resource in ('applications/org.aqueous.Pearl.Settings.desktop','icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg','metainfo/org.aqueous.Pearl.Settings.metainfo.xml','applications/org.aqueous.Phyto.desktop','icons/hicolor/scalable/apps/org.aqueous.Phyto.svg','applications/org.aqueous.Dome.desktop','icons/hicolor/scalable/apps/org.aqueous.Dome.svg','metainfo/org.aqueous.Dome.metainfo.xml'):
                     assert 'usr/share/'+resource in names
                 assert b'Exec=pearl-settings\n' in tar.extractfile('usr/share/applications/org.aqueous.Pearl.Settings.desktop').read()
                 assert b'Exec=phyto %u\n' in tar.extractfile('usr/share/applications/org.aqueous.Phyto.desktop').read()
+                assert b'Exec=dome\n' in tar.extractfile('usr/share/applications/org.aqueous.Dome.desktop').read()
+                report['dome_sha256']=hashlib.sha256(tar.extractfile('usr/bin/dome').read()).hexdigest()
                 report['phyto_sha256']=hashlib.sha256(tar.extractfile('usr/bin/phyto').read()).hexdigest()
                 assert not any('.wants/' in n or 'pam-fixture' in n or 'pearl-lock-test' in n for n in names)
                 report['binary_sha256']={n:hashlib.sha256(tar.extractfile('usr/bin/'+n).read()).hexdigest() for n in ('pearl','pearlctl','pearl-lock','pearl-settings')}

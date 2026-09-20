@@ -1,0 +1,7 @@
+/home/zoey/Pearl/subprojects/dome/tests/service_fixture.py:44: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
+  connection.register_object('/org/freedesktop/systemd1', node.interfaces[0], method, None, None)
+READY
+ACTION StopUnit dome-fixture.service inactive
+ACTION StartUnit dome-fixture.service active
+ACTION RestartUnit dome-fixture.service active
+DENIED
