@@ -2,7 +2,7 @@
 # scripts/release-source.py. Nothing is enabled or started during installation.
 pkgname=pearl
 pkgver=1.0.0rc2
-pkgrel=3
+pkgrel=4
 pkgdesc='GTK desktop shell exclusively for Aqueous (release candidate)'
 arch=('x86_64')
 license=('LicenseRef-Pearl-Unlicensed')
@@ -56,6 +56,8 @@ build() {
         --wasm-tools "$srcdir/wasm-tools-$_wasm_tools-x86_64-linux/wasm-tools"
     zig build -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline \
         -Dwasm-plugins=true -Dwasmtime-prefix="$srcdir/wasmtime-v$_wasmtime-x86_64-linux-c-api"
+    cd subprojects/phyto
+    zig build -Doptimize=ReleaseSafe -Dcpu=baseline
 }
 
 check() {
@@ -64,6 +66,8 @@ check() {
     zig build test test-adapter-unit test-bindings test-release-tools test-plugin-host \
         -Doptimize=ReleaseSafe -Dcpu=baseline \
         -Dwasm-plugins=true -Dwasmtime-prefix="$srcdir/wasmtime-v$_wasmtime-x86_64-linux-c-api"
+    cd subprojects/phyto
+    zig build test -Doptimize=ReleaseSafe -Dcpu=baseline
 }
 
 package() {
@@ -71,4 +75,9 @@ package() {
     # Includes the standalone Settings binary, desktop identity, icon and metadata.
     PEARL_PLUGIN_EXAMPLES_DIR="$PWD/.cache/plugin-examples" \
         DESTDIR="$pkgdir" bash packaging/install.sh
+    install -Dm755 subprojects/phyto/zig-out/bin/phyto "$pkgdir/usr/bin/phyto"
+    install -Dm644 subprojects/phyto/packaging/org.aqueous.Phyto.desktop \
+        "$pkgdir/usr/share/applications/org.aqueous.Phyto.desktop"
+    install -Dm644 subprojects/phyto/resources/org.aqueous.Phyto.svg \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.aqueous.Phyto.svg"
 }

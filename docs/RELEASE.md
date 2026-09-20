@@ -39,6 +39,14 @@ recipe, or use the private package script. Neither path installs the package or
 enables services. Do not use the template PKGBUILD before replacing its hash via
 the source generator.
 
+The release, Git and Intel Git Pearl recipes also build and test
+[Phyto](../subprojects/phyto/README.md) with ReleaseSafe and the baseline CPU.
+They install its executable, file-manager desktop entry and icon. Release packages
+provide `phyto` (**Phyto**); both Git variants provide `phyto-git` (**Phyto Git**)
+with application ID `org.aqueous.Phyto.Git`, allowing stable/Git coexistence.
+The source archive includes Phyto and excludes its caches and generated artifacts.
+Installing the package does not change the default file manager.
+
 Separate Intel-compatible generic x86-64 baseline Git packages are available:
 
 - [`pearl-intel-git`](../packaging/arch-intel-git/PKGBUILD)

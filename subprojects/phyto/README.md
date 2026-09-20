@@ -24,6 +24,13 @@ Within this Pearl checkout, the existing dependency cache can be reused with
 window size. Build installation stages a desktop entry and icon under `zig-out/`;
 no MIME defaults or system packages are changed.
 
+## Arch packages
+
+Phyto is included in Pearl's release, `pearl-git`, and `pearl-intel-git`
+PKGBUILDs. Launch `phyto` from the release package, or `phyto-git` from either
+Git package. Both include a desktop launcher and icon; Git uses a separate
+application identity so release and Git installs can coexist.
+
 ## Implemented
 
 - Independent application windows, with no Pearl process or Aqueous API dependency.

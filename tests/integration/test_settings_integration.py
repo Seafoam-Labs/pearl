@@ -149,6 +149,8 @@ def main():
           close_window(s,ipc)
           checks['spawned-frontend-survives-backend-exit']=True
           # Exercise the actual Git package() function against a private staging root.
+          # The Pearl packages also carry the standalone Phyto build.
+          subprocess.run(['zig','build','-Doptimize=ReleaseSafe','-Dcpu=baseline'],cwd=ROOT/'subprojects/phyto',check=True)
           git_source=root/'git-source';git_source.mkdir();(git_source/'pearl').symlink_to(ROOT)
           git_stage=root/'git-stage'
           subprocess.run(['bash','-c','source "$1"; srcdir="$2"; pkgdir="$3"; export PEARL_BINARY_DIR="$4"; package','stage',str(ROOT/'packaging/arch-git/PKGBUILD'),str(git_source),str(git_stage),str(source)],check=True)

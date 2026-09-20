@@ -1,7 +1,7 @@
 pkgbase = pearl-intel-git
 	pkgdesc = GTK desktop shell exclusively for Aqueous (Intel baseline, Git version)
 	pkgver = 1.0.0rc2.r22.ga002d24
-	pkgrel = 3
+	pkgrel = 4
 	url = https://github.com/Seafoam-Labs/pearl
 	install = pearl-intel-git.install
 	arch = x86_64
@@ -16,6 +16,9 @@ pkgbase = pearl-intel-git
 	makedepends = rust
 	makedepends = rust-wasm
 	makedepends = librsvg
+	depends = curl
+	depends = libarchive
+	depends = libpng
 	depends = gtk4>=1:4.22.5
 	depends = glib2>=2.88.3
 	depends = gtk4-layer-shell>=1.3.0
