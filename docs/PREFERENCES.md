@@ -109,8 +109,8 @@ normal XDG theme search paths and `~/.themes`. GTK3-only themes cannot style GTK
 a theme's name alone (for example, one containing “gtk3”) does not determine its
 compatibility. Missing themes and CSS parsing errors reject the candidate.
 GTK reports deprecated theme syntax separately from parser errors. Native
-Aqueous blur remains supported; GTK themes determine their surface opacity, so
-an opaque theme hides the blur behind it.
+Aqueous blur remains supported; GTK themes determine their surface opacity in
+Automatic mode, so an opaque theme hides the blur behind it.
 
 [GTK theme lookup](https://docs.gtk.org/gtk4/class.CssProvider.html),
 [GTK named theme loading](https://docs.gtk.org/gtk4/method.CssProvider.load_named.html),
@@ -152,6 +152,31 @@ templates. Existing plugin references are retained even if the plugin is
 unavailable; adding a discovered plugin requires it to be enabled, approved and
 configured for bar placement in Plugins. Removing a widget changes its placement
 only. Invalid Advanced text disables structured editing and offers a repair link.
+### Bar background opacity
+
+**Bar & dock → Background opacity** offers Automatic and Custom. Automatic is
+the default: Pearl palettes use 86% background opacity when native blur is
+available and 100% otherwise; GTK themes retain their own backgrounds. Custom
+provides synchronized slider and numeric controls from 0% (transparent) to 100%
+(opaque). Text, icons and control states keep their existing rendering, and
+the bar remains interactive at 0%.
+
+The field is `bar.background_opacity`, for example
+`{"mode":"custom","percent":75}`. The percentage is absolute background alpha,
+including without blur. Changes take effect with **Apply & save**; Discard
+restores the saved setting. Switching to Automatic retains the last custom
+percentage (initially 86) and restores theme backgrounds.
+
+Custom uses a flat background in the active palette's container color. GTK
+mode uses the theme's `theme_bg_color` RGB when defined, otherwise the selected
+light/dark Pearl container color. Theme background images and existing alpha
+are replaced on the bar background in Custom. Other shell surfaces keep their
+appearance. Blur remains controlled by the compositor.
+
+Each `outputs[].bar` can contain the same field. These are complete overrides:
+omitting `background_opacity` there selects Automatic, even if the default bar
+uses Custom. Display overrides remain editable in Advanced.
+
 ### Launcher button icon
 
 In **Bar & dock**, open the Launcher's actions menu, then **Change icon…**.

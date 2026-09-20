@@ -90,6 +90,7 @@ const Output = struct {
     frames: [4]?*Surface = .{ null, null, null, null },
     seen: bool = false,
     preferences_revision: u64 = 0,
+    bar_content_hash: ?u64 = null,
     fn destroy(self: *Output) void {
         for (self.plugin_overlays.items) |overlay| overlay.destroy();
         self.plugin_overlays.deinit(a);
@@ -154,6 +155,7 @@ pub const Manager = struct {
     osd_source: c_uint = 0,
     sync_source: c_uint = 0,
     monitor_signal: c_ulong = 0,
+    gtk_settings_signal: c_ulong = 0,
     monitor_watches: std.ArrayList(struct { monitor: *gdk.Monitor, signal: c_ulong }) = .empty,
     running: bool = false,
     context: ?*anyopaque = null,
@@ -214,6 +216,7 @@ pub const Manager = struct {
         self.armClock();
         gtk.IconTheme.getForDisplay(self.display).addResourcePath("/org/aqueous/Pearl/icons");
         self.monitor_signal = gio.ListModel.signals.items_changed.connect(self.display.getMonitors(), *Manager, monitorsChanged, self, .{});
+        self.gtk_settings_signal = object.Object.signals.notify.connect(gtk.Settings.getForDisplay(self.display).as(object.Object), *Manager, gtkSettingsChanged, self, .{});
         self.watchMonitors();
         self.schedule();
     }
@@ -226,6 +229,7 @@ pub const Manager = struct {
         if (self.sync_source != 0) _ = glib.Source.remove(self.sync_source);
         self.sync_source = 0;
         if (self.monitor_signal != 0) object.signalHandlerDisconnect(self.display.getMonitors().as(object.Object), self.monitor_signal);
+        if (self.gtk_settings_signal != 0) object.signalHandlerDisconnect(gtk.Settings.getForDisplay(self.display).as(object.Object), self.gtk_settings_signal);
         self.unwatchMonitors();
         self.monitor_watches.deinit(a);
         self.clear();
@@ -259,6 +263,9 @@ pub const Manager = struct {
     }
     pub fn schedule(self: *Manager) void {
         if (self.running and self.sync_source == 0) self.sync_source = glib.idleAdd(syncIdle, self);
+    }
+    fn gtkSettingsChanged(_: *object.Object, _: *object.ParamSpec, self: *Manager) callconv(.c) void {
+        self.schedule();
     }
     pub fn clear(self: *Manager) void {
         self.hideIdentifiers();
@@ -754,7 +761,13 @@ pub const Manager = struct {
                 try o.bar.?.bar.?.launcher_icon.want(pref.launcher_icon, false);
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
                 o.bar.?.bar.?.setIslands(pref.islands);
-                try o.bar.?.bar.?.configure(pref.groups);
+                const content = try std.json.Stringify.valueAlloc(a, .{ .groups = pref.groups, .plugins = self.preferences.prefs().plugins }, .{});
+                defer a.free(content);
+                const content_hash = std.hash.Wyhash.hash(0, content);
+                if (o.bar_content_hash == null or o.bar_content_hash.? != content_hash) {
+                    try o.bar.?.bar.?.configure(pref.groups);
+                    o.bar_content_hash = content_hash;
+                }
                 self.preferences.style(o.bar.?.window.as(gtk.Widget), o.bar.?.panel);
                 o.bar.?.bar.?.styleIslands();
                 o.bar.?.effects.islands = if (pref.islands) &o.bar.?.bar.?.sections else null;
@@ -768,6 +781,7 @@ pub const Manager = struct {
             if (o.bar) |s| if (s.bar) |bar| {
                 const vertical = s.edge == .left or s.edge == .right;
                 bar.geometry(vertical, if (vertical) bounds.height else bounds.width);
+                try bar.setBackgroundOpacity(self.preferences.prefs().forOutput(o.connector).background_opacity, self.preferences.barBackgroundColor(s.panel));
                 bar.update();
             };
             const gate = self.lifecycle.gate;

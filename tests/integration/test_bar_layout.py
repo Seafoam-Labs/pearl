@@ -39,6 +39,9 @@ def main():
             workspace_count = len(baseline['workspaces']['parts'])
             assert workspace_count >= 9, baseline
             original_keyboard = output()['keyboard']
+            from bar_opacity import verify, verify_missing_color
+            verify(s, args, base, first, report)
+            verify_missing_color(args, report)
             assert len(original_keyboard) > 2, original_keyboard
             custom = Path(s.env['XDG_DATA_HOME']) / 'themes/Pearl-Bar-Test/gtk-4.0'
             custom.mkdir(parents=True)
@@ -71,11 +74,12 @@ def main():
                     prefs = copy.deepcopy(base)
                     prefs['theme'].update(mode=theme, gtk_name='Pearl-Bar-Test')
                     prefs['font_size'] = font
-                    prefs['outputs'] = [dict(connector=first['connector'], bar=dict(edge=edge, size=size, islands=islands, groups=base['bar']['groups'], launcher_icon=dict(kind='file',value=str(icon_file))))]
+                    prefs['outputs'] = [dict(connector=first['connector'], bar=dict(edge=edge, size=size, islands=islands, background_opacity=dict(mode='custom',percent=50), groups=base['bar']['groups'], launcher_icon=dict(kind='file',value=str(icon_file))))]
                     apply(s, args.ctl, prefs)
                     wait_for(lambda: output()['bar_edge'] == edge)
                     time.sleep(.25)
                     assert not icon_settled()['launcher_icon_failed']
+                    assert icon_probe()['background_opacity'] == dict(mode='custom',percent=50)
                     current = output(); widgets = layout()
                     assert len(widgets['workspaces']['parts']) == workspace_count, widgets
                     vertical = edge in ('left', 'right')

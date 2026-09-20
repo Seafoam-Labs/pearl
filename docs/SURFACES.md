@@ -134,7 +134,11 @@ Bar, popup and OSD request rounded, surface-local blur regions through
 allocation. Changes update blur/input regions and queue one GTK draw for the
 next double-buffered commit. Unchanged geometry produces no extra frame. The
 capability event controls background alpha: unavailable/disabled effects use
-opaque panel tokens. Global removal destroys owned effect objects. Wallpaper
+opaque panel tokens in Automatic mode. A user-selected Custom bar background
+opacity applies its absolute alpha independently of blur availability, including
+0% and 100%; it changes only the continuous bar panel or individual island
+backgrounds. Foregrounds and input regions retain their existing behavior.
+Other surfaces retain the automatic fallback. Global removal destroys owned effect objects. Wallpaper
 and frame surfaces never request blur.
 
 Pearl does not write Aqueous rules or set global widget opacity. A native request

@@ -1022,6 +1022,15 @@ pub const Service = struct {
         if (p.reduced_motion) widget.addCssClass("pearl-reduced-motion");
         if (p.theme.mode == .gtk) panel.addCssClass("background") else panel.removeCssClass("background");
     }
+    pub fn barBackgroundColor(self: *Service, panel: *gtk.Widget) gdk.RGBA {
+        var color: gdk.RGBA = undefined;
+        if (self.prefs().theme.mode == .gtk and panel.getStyleContext().lookupColor("theme_bg_color", &color) != 0) return color;
+        const palette = if (self.live) |job| job.palette else theme.dark;
+        var buffer: [8]u8 = undefined;
+        const hex = std.fmt.bufPrintZ(&buffer, "{s}", .{palette.container}) catch unreachable;
+        _ = color.parse(hex);
+        return color;
+    }
 };
 fn cssError(_: *gtk.CssProvider, _: *gtk.CssSection, err: *glib.Error, failed: *bool) callconv(.c) void {
     // Deprecated CSS warnings in otherwise usable third party themes aren't errors.

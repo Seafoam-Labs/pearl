@@ -1116,6 +1116,7 @@ pub const Window = struct {
             };
         };
         for (self.preference_pages) |item| if (item) |view| for (view.fields) |field| {
+            if (field.slider) |slider| if (slider.as(gtk.Widget).getMapped() != 0) try controls.append(alloc, .{ .field = "bar.background_opacity.slider", .focused = slider.as(gtk.Widget).hasFocus() != 0, .bounds = self.bounds(slider.as(gtk.Widget)) });
             if (field.widget.getMapped() != 0) try controls.append(alloc, .{ .field = field.spec.path, .focused = if (focus) |f| f == field.widget or f.isAncestor(field.widget) != 0 else false, .bounds = self.bounds(field.widget) });
         };
         if (self.live_pages[@intFromEnum(self.target.page)]) |view| for (view.bindings.items) |binding| {

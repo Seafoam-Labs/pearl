@@ -36,7 +36,7 @@ pub const Wallpaper = struct {
 };
 pub const Dock = @import("../desktop/dock_policy.zig").Config;
 pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
-pub const Bar = struct { launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
+pub const Bar = struct { background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
 pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
@@ -116,6 +116,7 @@ pub const Preferences = struct {
     }
 };
 fn barValid(b: Bar) !void {
+    try b.background_opacity.validate();
     try b.launcher_icon.validate();
     if (b.size < 32 or b.size > 160) return error.InvalidBarSize;
     try b.groups.validate();
@@ -243,4 +244,27 @@ test "application launcher preferences default empty and roundtrip distinct IDs"
     const again = try parse(alloc, try std.json.Stringify.valueAlloc(alloc, prefs, .{}));
     try std.testing.expectEqualStrings("Custom.desktop", again.application_launchers[0].desktop_id);
     try std.testing.expectEqualStrings("Custom.desktop", again.pinned_apps[0]);
+}
+
+test "bar opacity preserves legacy defaults, overrides and strict validation" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try t.expectEqual(.automatic, (try parse(a, "{}")).bar.background_opacity.mode);
+    try t.expectEqual(@as(u8, 86), (try parse(a, "{}")).bar.background_opacity.percent);
+    for ([_]u8{ 0, 86, 100 }) |percent| {
+        const original: Preferences = .{ .bar = .{ .background_opacity = .{ .mode = .custom, .percent = percent } }, .outputs = &.{ .{ .connector = "DP-1" }, .{ .connector = "DP-2", .bar = .{ .background_opacity = .{ .mode = .custom, .percent = 50 } } } } };
+        const roundtrip = try parse(a, try std.json.Stringify.valueAlloc(a, original, .{}));
+        try t.expectEqualDeep(original.bar, roundtrip.bar);
+        try t.expectEqual(.automatic, roundtrip.forOutput("DP-1").background_opacity.mode);
+        try t.expectEqual(@as(u8, 50), roundtrip.forOutput("DP-2").background_opacity.percent);
+        try t.expectEqual(percent, roundtrip.forOutput("OTHER").background_opacity.percent);
+    }
+    for ([_][]const u8{ "101", "-1", "256", "1.5", "true", "\"50\"" }) |invalid| {
+        const text = try std.fmt.allocPrint(a, "{{\"bar\":{{\"background_opacity\":{{\"percent\":{s}}}}}}}", .{invalid});
+        if (parse(a, text)) |_| return error.InvalidOpacityAccepted else |_| {}
+    }
+    try t.expectError(error.InvalidBarOpacity, parse(a, "{\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{\"background_opacity\":{\"percent\":101}}}]}"));
+    if (parse(a, "{\"bar\":{\"background_opacity\":{\"mode\":\"unknown\"}}}")) |_| return error.InvalidModeAccepted else |_| {}
 }

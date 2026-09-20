@@ -172,11 +172,27 @@ def basic(args, checks):
             checks['outside-click-dismissal-does-not-leak-and-frame-interior-passes-input'] = True
             plain.proc.stdin.write('quit\n'); plain.proc.stdin.flush(); clean(plain)
 
+            from test_preferences import apply, settled
+            ctl(s, args.ctl, 'frame', 'set', '--output', target['id'], '--edge', 'top', '--size', '0')
+            saved_preferences = settled(s, args.ctl)['preferences']
+            hotplug_preferences = json.loads(json.dumps(saved_preferences))
+            hotplug_preferences['wallpaper'].update(mode='solid', color='#e08020')
+            hotplug_preferences['outputs'] = [dict(connector=other['connector'], bar=dict(edge='top', size=48, islands=False, background_opacity=dict(mode='custom', percent=50)))]
+            apply(s, args.ctl, hotplug_preferences)
+            time.sleep(.2)
+            sample = (int(7*other['scale']), int(24*other['scale']))
+            opacity_before = capture(s, 'bar-opacity-before-hotplug', other['connector']).getpixel(sample)
             ctl(s, args.ctl, 'popup', 'show', '--output', other['id'])
             s.run(['wlr-randr', '--output', other['connector'], '--off'])
             eventually_status(s, args.ctl, lambda v: len(v['outputs']) == 1 and v['popup'] is None)
             s.run(['wlr-randr', '--output', other['connector'], '--on'])
             eventually_status(s, args.ctl, lambda v: len(v['outputs']) == 2)
+            time.sleep(.2)
+            opacity_after = capture(s, 'bar-opacity-after-hotplug', other['connector']).getpixel(sample)
+            assert max(abs(a-b) for a,b in zip(opacity_before, opacity_after)) <= 3, (opacity_before, opacity_after)
+            assert opacity_after != (224,128,32), opacity_after
+            checks['custom-bar-opacity-restored-after-output-hotplug'] = True
+            apply(s, args.ctl, saved_preferences)
             checks['hotplug-invalidates-mapping-and-dismisses-target-popup'] = True
             s.run(['wlr-randr', '--output', other['connector'], '--transform', '90'])
             rotated = eventually_status(s, args.ctl, lambda v: next(o for o in v['outputs'] if o['connector'] == other['connector'])['bounds']['height'] > 700)
@@ -315,10 +331,26 @@ def blur(args, checks):
         assert restored < diff / 2, (diff, restored)
         checks['native-blur-pixel-difference-under-rule-veto'] = diff
         checks['rule-restored-pixel-difference'] = restored
+        from test_preferences import apply, settled
+        import copy
+        saved_preferences = settled(s, args.ctl)['preferences']
+        opacity_preferences = copy.deepcopy(saved_preferences)
+        opacity_preferences['bar'].update(islands=False, background_opacity=dict(mode='custom', percent=50))
+        opacity_preferences['outputs'] = []
+        opacity_preferences['wallpaper'].update(mode='solid', color='#e08020')
+        apply(s, args.ctl, opacity_preferences)
+        time.sleep(.2)
+        custom_blur = capture(s, 'bar-opacity-with-blur', target['connector']).getpixel((7,24))
         config = Path(s.env['AQUEOUS_CONFIG'])
         text = config.read_text()
         config.write_text(text.replace('[blur]\nenabled = true', '[blur]\nenabled = false'))
         eventually_status(s, args.ctl, lambda v: not v['blur'])
+        time.sleep(.2)
+        custom_plain = capture(s, 'bar-opacity-without-blur', target['connector']).getpixel((7,24))
+        assert max(abs(a-b) for a,b in zip(custom_blur, custom_plain)) <= 3, (custom_blur, custom_plain)
+        assert custom_plain != (224,128,32), custom_plain
+        checks['custom-bar-opacity-survives-blur-capability-change'] = True
+        apply(s, args.ctl, saved_preferences)
         capture(s, 'opaque-fallback', target['connector'])
         config.write_text(text)
         eventually_status(s, args.ctl, lambda v: v['blur'])

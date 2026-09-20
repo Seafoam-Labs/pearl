@@ -94,7 +94,7 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(qt_settings, *View, openQtSettings, self, .{});
         self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences, false);
         bar.append(w.label("Default layout for every output. Connector overrides are available in Advanced.", "pearl-secondary").as(gtk.Widget));
-        const bar_editor = gtk.Button.newWithLabel("Arrange bar widgets…");
+        const bar_editor = gtk.Button.newWithLabel("Bar opacity and widgets…");
         bar.append(bar_editor.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(bar_editor, *View, openBarSettings, self, .{});
         self.edge = dropdown(bar, "Bar edge", &.{ "Top", "Right", "Bottom", "Left" });

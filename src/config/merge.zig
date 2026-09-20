@@ -130,3 +130,16 @@ test "launcher icon selections merge atomically and preserve disjoint changes" {
     try std.testing.expectEqual(@as(u8, 18), merged.font_size);
     try std.testing.expectEqualStrings("/tmp/icon.png", merged.bar.launcher_icon.value);
 }
+
+test "bar opacity merges with unrelated changes and conflicts on competing percentages" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const base = "{\"bar\":{\"background_opacity\":{\"mode\":\"custom\",\"percent\":86}}}";
+    const ours = "{\"bar\":{\"background_opacity\":{\"mode\":\"custom\",\"percent\":50}}}";
+    const theirs = "{\"font_size\":18,\"bar\":{\"background_opacity\":{\"mode\":\"custom\",\"percent\":86}}}";
+    const result = try @import("preferences.zig").parse(a, try json(a, base, ours, theirs));
+    try std.testing.expectEqual(@as(u8, 18), result.font_size);
+    try std.testing.expectEqual(@as(u8, 50), result.bar.background_opacity.percent);
+    try std.testing.expectError(error.MergeConflict, json(a, base, ours, "{\"bar\":{\"background_opacity\":{\"mode\":\"custom\",\"percent\":75}}}"));
+}

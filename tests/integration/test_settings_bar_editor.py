@@ -114,6 +114,45 @@ def main():
             passed('opening-is-read-only-and-unavailable-plugin-is-retained')
             def icon_state():
                 return ctl(s,args.ctl,'aqueous','status','--text','test-bar-layout:' + output['id'])['result']
+            # Opacity uses the shared draft, and the scale and spin share a value.
+            def opacity():
+                return json.loads(peer.document())['bar']['background_opacity']
+            click(s, ipc, 'bar.background_opacity.mode')
+            keys(s, 'End', 'Return'); ready(s, ipc)
+            assert opacity() == dict(mode='custom', percent=86), opacity()
+            click(s, ipc, 'bar.background_opacity.percent')
+            type_text(s, '50'); keys(s, 'Return'); ready(s, ipc)
+            assert opacity()['percent'] == 50, opacity()
+            assert icon_state()['background_opacity']['mode'] == 'automatic'
+            assert path.read_bytes() == disk
+            click(s, ipc, 'bar.background_opacity.slider')
+            keys(s, 'Home'); ready(s, ipc)
+            assert opacity()['percent'] == 0, opacity()
+            keys(s, 'End'); ready(s, ipc)
+            assert opacity()['percent'] == 100, opacity()
+            click(s, ipc, 'discard'); ready(s, ipc)
+            assert opacity() == baseline['bar']['background_opacity']
+            click(s, ipc, 'bar.background_opacity.mode')
+            keys(s, 'End', 'Return'); ready(s, ipc)
+            click(s, ipc, 'bar.background_opacity.percent')
+            type_text(s, '50'); keys(s, 'Return'); ready(s, ipc)
+            click(s, ipc, 'apply'); ready(s, ipc)
+            wait_for(lambda: icon_state()['background_opacity'] == dict(mode='custom', percent=50))
+            assert json.loads(path.read_text())['bar']['background_opacity'] == opacity()
+            assert json.loads(path.read_text())['outputs'] == baseline['outputs']
+            capture(s, 'bar-opacity-custom-settings', output['name'])
+            click(s, ipc, 'bar.background_opacity.mode')
+            keys(s, 'Home', 'Return'); ready(s, ipc)
+            assert opacity() == dict(mode='automatic', percent=50)
+            click(s, ipc, 'apply'); ready(s, ipc)
+            wait_for(lambda: icon_state()['background_opacity']['mode'] == 'automatic')
+            # Reopening restores the saved mode and remembered custom percentage.
+            request(s, ipc, page='appearance'); ready(s, ipc)
+            request(s, ipc, page='bar'); ready(s, ipc)
+            assert opacity() == dict(mode='automatic', percent=50)
+            peer.keep(json.dumps(baseline)); assert peer.action('apply')['state'] == 'succeeded'; ready(s, ipc)
+            disk = path.read_bytes()
+            passed('bar-opacity-slider-number-draft-discard-save-and-reopen')
             def open_icon():
                 click(s, ipc, 'bar.widget.launcher')
                 menu_click(s, ipc, 'bar.icon.expand')

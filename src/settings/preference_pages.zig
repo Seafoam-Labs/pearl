@@ -6,12 +6,14 @@ const model = @import("../config/preferences.zig");
 const w = @import("../ui/components/widgets.zig");
 const Editor = @import("editor.zig").Editor;
 const a = std.heap.c_allocator;
-const Spec = struct { path: []const u8, label: [:0]const u8, kind: enum { text, number, toggle, choice }, choices: []const [:0]const u8 = &.{}, min: f64 = 0, max: f64 = 86400 };
+const Spec = struct { path: []const u8, label: [:0]const u8, kind: enum { text, number, percent, toggle, choice }, choices: []const [:0]const u8 = &.{}, min: f64 = 0, max: f64 = 86400 };
 const edges: []const [:0]const u8 = &.{ "top", "bottom", "left", "right" };
 const bar_fields = [_]Spec{
     .{ .path = "bar.edge", .label = "Bar edge", .kind = .choice, .choices = edges },
     .{ .path = "bar.size", .label = "Bar size", .kind = .number, .min = 32, .max = 160 },
     .{ .path = "bar.islands", .label = "Separate bar islands", .kind = .toggle },
+    .{ .path = "bar.background_opacity.mode", .label = "Background opacity", .kind = .choice, .choices = &.{ "automatic", "custom" } },
+    .{ .path = "bar.background_opacity.percent", .label = "Background opacity (%)", .kind = .percent, .min = 0, .max = 100 },
     .{ .path = "dock.enabled", .label = "Show dock", .kind = .toggle },
     .{ .path = "dock.edge", .label = "Dock edge", .kind = .choice, .choices = edges },
     .{ .path = "dock.mode", .label = "Dock visibility", .kind = .choice, .choices = &.{ "always", "autohide", "intelligent" } },
@@ -28,7 +30,7 @@ const idle_fields = [_]Spec{
     .{ .path = "idle.battery.lock_seconds", .label = "On battery · Lock after seconds (0 disables)", .kind = .number },
     .{ .path = "idle.battery.suspend_seconds", .label = "On battery · Suspend after seconds (0 disables)", .kind = .number },
 };
-const Field = struct { view: *View, spec: Spec, widget: *gtk.Widget, signal: c_ulong };
+const Field = struct { view: *View, spec: Spec, widget: *gtk.Widget, signal: c_ulong, slider: ?*gtk.Scale = null };
 pub const View = struct {
     editor: *Editor,
     host: *gtk.Box,
@@ -45,10 +47,11 @@ pub const View = struct {
         var card = w.column(0);
         card.as(gtk.Widget).addCssClass("settings-card");
         host.append(card.as(gtk.Widget));
-        for (specs, self.fields, 0..) |spec, *field, index| {
-            if (!idle and (index == 3 or index == 8)) {
-                if (index == 3) self.bar = try @import("bar_view.zig").View.create(host, editor, context, invalidate);
-                const expander = gtk.Expander.new(if (index == 3) "Dock" else "Flyouts");
+        for (specs, self.fields) |spec, *field| {
+            const dock_start = std.mem.eql(u8, spec.path, "dock.enabled");
+            if (!idle and (dock_start or std.mem.eql(u8, spec.path, "popup.dismiss_outside"))) {
+                if (dock_start) self.bar = try @import("bar_view.zig").View.create(host, editor, context, invalidate);
+                const expander = gtk.Expander.new(if (dock_start) "Dock" else "Flyouts");
                 card = w.column(0);
                 card.as(gtk.Widget).addCssClass("settings-card");
                 expander.setChild(card.as(gtk.Widget));
@@ -65,11 +68,15 @@ pub const View = struct {
                     entry.as(gtk.Editable).setWidthChars(16);
                     break :blk entry.as(gtk.Widget);
                 },
-                .number => gtk.SpinButton.newWithRange(spec.min, spec.max, 1).as(gtk.Widget),
+                .number, .percent => gtk.SpinButton.newWithRange(spec.min, spec.max, 1).as(gtk.Widget),
                 .toggle => gtk.Switch.new().as(gtk.Widget),
                 .choice => blk: {
                     var names: [8]?[*:0]const u8 = @splat(null);
                     for (spec.choices, 0..) |choice, i| names[i] = choice;
+                    if (std.mem.eql(u8, spec.path, "bar.background_opacity.mode")) {
+                        names[0] = "Automatic";
+                        names[1] = "Custom";
+                    }
                     break :blk gtk.DropDown.newFromStrings(@ptrCast(&names)).as(gtk.Widget);
                 },
             };
@@ -79,9 +86,32 @@ pub const View = struct {
             row.insert(widget, -1);
             card.append(row.as(gtk.Widget));
             field.* = .{ .view = self, .spec = spec, .widget = widget, .signal = 0 };
+            if (spec.kind == .percent) {
+                const slider = gtk.Scale.new(.horizontal, object.ext.cast(gtk.SpinButton, widget).?.getAdjustment());
+                slider.setDrawValue(0);
+                slider.setDigits(0);
+                slider.as(gtk.Widget).setHexpand(1);
+                w.name(slider.as(gtk.Widget), "Background opacity slider (%)");
+                const slider_row = w.row(8);
+                slider_row.as(gtk.Widget).addCssClass("settings-form-row");
+                const transparent = w.label("Transparent", "pearl-secondary");
+                transparent.as(gtk.Widget).setHexpand(0);
+                slider_row.append(transparent.as(gtk.Widget));
+                slider_row.append(slider.as(gtk.Widget));
+                const opaque_label = w.label("Opaque", "pearl-secondary");
+                opaque_label.as(gtk.Widget).setHexpand(0);
+                slider_row.append(opaque_label.as(gtk.Widget));
+                card.append(slider_row.as(gtk.Widget));
+                const hint = w.label("Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable.", "pearl-secondary").as(gtk.Widget);
+                hint.setMarginStart(20);
+                hint.setMarginEnd(20);
+                hint.setMarginBottom(16);
+                card.append(hint);
+                field.slider = slider;
+            }
             field.signal = switch (spec.kind) {
                 .text => gtk.Editable.signals.changed.connect(object.ext.cast(gtk.Entry, widget).?.as(gtk.Editable), *Field, textChanged, field, .{}),
-                .number => gtk.SpinButton.signals.value_changed.connect(object.ext.cast(gtk.SpinButton, widget).?, *Field, numberChanged, field, .{}),
+                .number, .percent => gtk.SpinButton.signals.value_changed.connect(object.ext.cast(gtk.SpinButton, widget).?, *Field, numberChanged, field, .{}),
                 .toggle => object.Object.signals.notify.connect(widget.as(object.Object), *Field, changed, field, .{ .detail = "active" }),
                 .choice => object.Object.signals.notify.connect(widget.as(object.Object), *Field, changed, field, .{ .detail = "selected" }),
             };
@@ -107,17 +137,31 @@ pub const View = struct {
         defer arena.deinit();
         const alloc = arena.allocator();
         const document = formDocument(alloc, self.editor.text(), self.own_invalid) catch {
-            for (self.fields) |field| field.widget.setSensitive(0);
+            for (self.fields) |field| {
+                field.widget.setSensitive(0);
+                if (field.slider) |slider| slider.as(gtk.Widget).setSensitive(0);
+            }
             return;
         };
         for (self.fields) |field| field.widget.setSensitive(@intFromBool(self.editor.editable()));
         for (self.fields) |field| {
             const value = lookup(document, field.spec.path) orelse continue;
+            if (field.slider) |slider| {
+                const mode = lookup(document, "bar.background_opacity.mode");
+                const custom = mode != null and mode.? == .string and std.mem.eql(u8, mode.?.string, "custom");
+                const sensitive = @intFromBool(custom and self.editor.editable());
+                field.widget.setSensitive(sensitive);
+                slider.as(gtk.Widget).setSensitive(sensitive);
+            }
             // Acknowledgments must not reset the cursor in an active entry.
-            if (field.widget.hasFocus() != 0 or (field.widget.getRoot() != null and field.spec.kind == .text and field.widget.getFocusChild() != null)) continue;
+            if (field.spec.kind != .percent and (field.widget.hasFocus() != 0 or (field.widget.getRoot() != null and field.spec.kind == .text and field.widget.getFocusChild() != null))) continue;
             switch (field.spec.kind) {
                 .text => object.ext.cast(gtk.Entry, field.widget).?.as(gtk.Editable).setText(alloc.dupeZ(u8, value.string) catch continue),
                 .number => object.ext.cast(gtk.SpinButton, field.widget).?.setValue(@floatFromInt(value.integer)),
+                .percent => {
+                    const spin = object.ext.cast(gtk.SpinButton, field.widget).?;
+                    if (spin.getValueAsInt() != value.integer) spin.setValue(@floatFromInt(value.integer));
+                },
                 .toggle => object.ext.cast(gtk.Switch, field.widget).?.setActive(@intFromBool(value.bool)),
                 .choice => for (field.spec.choices, 0..) |choice, i| {
                     if (std.mem.eql(u8, choice, value.string)) object.ext.cast(gtk.DropDown, field.widget).?.setSelected(@intCast(i));
@@ -129,13 +173,16 @@ pub const View = struct {
         const self = field.view;
         if (self.filling or !self.editor.editable()) return;
         self.editing = true;
-        defer self.editing = false;
+        defer {
+            self.editing = false;
+            self.update();
+        }
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
         const alloc = arena.allocator();
         const value: std.json.Value = switch (field.spec.kind) {
             .text => .{ .string = std.mem.span(object.ext.cast(gtk.Entry, field.widget).?.as(gtk.Editable).getText()) },
-            .number => .{ .integer = object.ext.cast(gtk.SpinButton, field.widget).?.getValueAsInt() },
+            .number, .percent => .{ .integer = object.ext.cast(gtk.SpinButton, field.widget).?.getValueAsInt() },
             .toggle => .{ .bool = object.ext.cast(gtk.Switch, field.widget).?.getActive() != 0 },
             .choice => .{ .string = field.spec.choices[object.ext.cast(gtk.DropDown, field.widget).?.getSelected()] },
         };

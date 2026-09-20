@@ -157,7 +157,8 @@ def main():
             checks['failed-save-retains-working-file']=True
             external(path,{'version':0,'dark':False});wait_for(lambda:state(s,args.ctl)['preferences']['density']=='normal');v=settled(s,args.ctl)
             assert v['preferences']['version']==1 and v['preferences']['theme']['variant']=='light' and json.loads(path.read_text())['version']==0
-            p=v['preferences'];apply(s,args.ctl,p);assert json.loads(path.read_text())['version']==1
+            p=v['preferences'];p['bar']['background_opacity']=dict(mode='custom',percent=50)
+            apply(s,args.ctl,p);assert json.loads(path.read_text())['version']==1
             checks['legacy-migration-is-validated-and-only-written-on-apply']=True
             large=copy.deepcopy(p);large['exports']=[{'name':'large.txt','template':'x'*6000}];external(path,large)
             wait_for(lambda:state(s,args.ctl)['preferences_truncated']);v=settled(s,args.ctl);assert v['preferences'] is None and json.loads(path.read_text())==large
@@ -168,6 +169,8 @@ def main():
             ctl(s,args.ctl,'quit');clean(app)
             external(path,'{broken');app=s.child('recovered',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready');v=settled(s,args.ctl)
             assert v['recovered'] and v['preferences']==p and path.read_text()=='{broken',v
+            assert v['preferences']['bar']['background_opacity']==dict(mode='custom',percent=50)
+            checks['custom-bar-opacity-persists-through-restart-and-recovery']=True
             checks['restart-uses-last-good-without-overwriting-corruption']=True
             ctl(s,args.ctl,'quit');clean(app)
             invalid=copy.deepcopy(p);invalid['theme'].update(mode='gtk',gtk_name='Pearl-Broken');external(path,invalid)

@@ -1,6 +1,7 @@
 //! Live per-output bar; callbacks carry opaque IDs, never workspace numbers/titles.
 const std = @import("std");
 const gtk = @import("gtk4");
+const gdk = @import("gdk4");
 const glib = @import("glib2");
 const object = @import("gobject2");
 const Client = @import("../aqueous/client.zig").Client;
@@ -14,6 +15,9 @@ pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueou
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
+    background_opacity: @import("bar_opacity.zig").Config = .{},
+    background_css: ?*gtk.CssProvider = null,
+    background_color: ?gdk.RGBA = null,
     launcher_icon: @import("../ui/components/launcher_icon.zig").Renderer = .{},
     host: *gtk.Box,
     tasks: *const @import("task_model.zig").Snapshot,
@@ -62,6 +66,10 @@ pub const Bar = struct {
     }
     pub fn destroy(self: *Bar) void {
         self.clear();
+        if (self.background_css) |provider| {
+            self.host.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
+            provider.unref();
+        }
         self.launcher_icon.deinit();
         for (self.groups) |g| a.free(g);
         a.destroy(self);
@@ -119,6 +127,24 @@ pub const Bar = struct {
         self.workspace_hash = null;
         self.update();
     }
+    pub fn setBackgroundOpacity(self: *Bar, config: @import("bar_opacity.zig").Config, color: gdk.RGBA) !void {
+        const alpha = config.alpha();
+        var resolved = color;
+        resolved.f_alpha = alpha orelse 1;
+        if (std.meta.eql(self.background_opacity, config) and (alpha == null or (self.background_color != null and std.meta.eql(self.background_color.?, resolved)))) return;
+        if (alpha != null) {
+            const css = try std.fmt.allocPrintSentinel(a, ".pearl-bar-panel:not(.pearl-islands), .pearl-island {{ background: rgba({d}, {d}, {d}, {d:.2}); }}", .{ @as(u8, @intFromFloat(@round(resolved.f_red * 255))), @as(u8, @intFromFloat(@round(resolved.f_green * 255))), @as(u8, @intFromFloat(@round(resolved.f_blue * 255))), resolved.f_alpha }, 0);
+            defer a.free(css);
+            if (self.background_css == null) {
+                self.background_css = gtk.CssProvider.new();
+                self.host.as(gtk.Widget).getStyleContext().addProvider(self.background_css.?.as(gtk.StyleProvider), 602);
+                for (self.sections) |section| if (section) |widget| widget.getStyleContext().addProvider(self.background_css.?.as(gtk.StyleProvider), 602);
+            }
+            self.background_css.?.loadFromString(css);
+        } else if (self.background_css) |provider| provider.loadFromString("");
+        self.background_color = if (alpha != null) resolved else null;
+        self.background_opacity = config;
+    }
     pub fn setIslands(self: *Bar, enabled: bool) void {
         if (self.islands != enabled) {
             self.islands = enabled;
@@ -170,6 +196,7 @@ pub const Bar = struct {
         for (self.groups, 0..) |group, section| {
             const box = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 4);
             self.sections[section] = if (group.len != 0) box.as(gtk.Widget) else null;
+            if (self.background_css) |provider| box.as(gtk.Widget).getStyleContext().addProvider(provider.as(gtk.StyleProvider), 602);
             if (self.vertical) box.as(gtk.Widget).setVexpand(@intFromBool(!self.islands and section != 1)) else box.as(gtk.Widget).setHexpand(@intFromBool(!self.islands and section != 1));
             box.as(gtk.Widget).setHalign(if (self.vertical) .fill else if (section == 2) .end else .fill);
             box.as(gtk.Widget).setValign(if (self.vertical and section == 2) .end else .fill);
@@ -594,7 +621,7 @@ pub const Bar = struct {
         };
         var workspace_ids: std.ArrayList([]const u8) = .empty;
         for (self.workspace_handlers.items) |handler| try workspace_ids.append(alloc, handler.id.?);
-        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .keyboard_mode = keyboard_mode, .launcher_icon = self.launcher_icon.selection, .launcher_icon_loading = self.launcher_icon.job != null, .launcher_icon_failed = self.launcher_icon.failed, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .background_opacity = self.background_opacity, .background_color = self.background_color, .keyboard_mode = keyboard_mode, .launcher_icon = self.launcher_icon.selection, .launcher_icon_loading = self.launcher_icon.job != null, .launcher_icon_failed = self.launcher_icon.failed, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
     }
     fn clicked(_: *gtk.Button, button: *Button) callconv(.c) void {
         button.owner.action(button.owner.context, button.event);
