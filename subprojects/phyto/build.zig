@@ -1,0 +1,34 @@
+const std = @import("std");
+
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+    const bindings = b.dependency("gobject", .{});
+    const options = b.addOptions();
+    options.addOption(bool, "test_hooks", b.option(bool, "test-hooks", "Enable test-only state inspection") orelse false);
+    const module = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1" }) |name| module.addImport(name, bindings.module(name));
+    module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    module.addOptions("build_options", options);
+    module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    const exe = b.addExecutable(.{ .name = "phyto", .root_module = module });
+    b.installArtifact(exe);
+    b.installFile("packaging/org.aqueous.Phyto.desktop", "share/applications/org.aqueous.Phyto.desktop");
+    b.installFile("resources/org.aqueous.Phyto.svg", "share/icons/hicolor/scalable/apps/org.aqueous.Phyto.svg");
+    const run = b.addRunArtifact(exe);
+    if (b.args) |args| run.addArgs(args);
+    b.step("run", "Launch the native Phyto application").dependOn(&run.step);
+    const tests = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/core/model.zig"), .target = target, .optimize = optimize }) });
+    b.step("test", "Test navigation history and file-name validation").dependOn(&b.addRunArtifact(tests).step);
+    const test_module = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1" }) |name| test_module.addImport(name, bindings.module(name));
+    test_module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    const test_options = b.addOptions();
+    test_options.addOption(bool, "test_hooks", true);
+    test_module.addOptions("build_options", test_options);
+    test_module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    const test_exe = b.addExecutable(.{ .name = "phyto-test", .root_module = test_module });
+    const integration = b.addSystemCommand(&.{ "python3", "tests/native.py", "--binary" });
+    integration.addArtifactArg(test_exe);
+    b.step("integration", "Exercise native GTK in a private Aqueous session and capture evidence").dependOn(&integration.step);
+}

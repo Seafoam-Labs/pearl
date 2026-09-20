@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Phyto
+GenericName=File Manager
+Comment=Browse files with Pearl
+Exec=phyto %u
+Icon=org.aqueous.Phyto
+Terminal=false
+Categories=System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupNotify=true
+StartupWMClass=org.aqueous.Phyto

@@ -1,0 +1,4 @@
+.zig-cache/
+zig-out/
+__pycache__/
+zig-pkg/

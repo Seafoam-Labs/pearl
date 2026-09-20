@@ -1,0 +1,13 @@
+.{
+    .name = .phyto,
+    .fingerprint = 0x0c1c5bdaf1c65e40,
+    .version = "0.1.0",
+    .minimum_zig_version = "0.16.0",
+    .paths = .{ "build.zig", "build.zig.zon", ".zigversion", "src", "resources", "packaging", "tests", "README.md", "docs" },
+    .dependencies = .{
+        .gobject = .{
+            .url = "https://deps.files.ghostty.org/gobject-2026-07-28-36-1.tar.zst",
+            .hash = "gobject-0.3.2-Skun7F6HogCMynX2JqeSHS7xr-8pK4ob-qRFIcEasVi3",
+        },
+    },
+}

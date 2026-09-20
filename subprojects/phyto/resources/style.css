@@ -1,0 +1,88 @@
+/* Layout shared by Material and native GTK mode. Semantic colors below mirror
+ * Pearl src/theme/theme.zig; this stylesheet is scoped to this application. */
+.phyto-root { font-family: Inter, sans-serif; font-size: 14px; }
+.phyto-root headerbar { min-height: 48px; padding: 0 16px; }
+.phyto-root .brand { font-weight: 600; }
+.phyto-root button { border-radius: 12px; padding: 6px 12px; min-height: 30px; box-shadow: none; }
+.phyto-root button:focus-visible, .phyto-root entry:focus-within { outline: 2px solid currentColor; outline-offset: -2px; }
+.phyto-root .icon-button { min-width: 30px; min-height: 30px; padding: 7px; }
+.phyto-root .toolbar { padding: 8px 16px; min-height: 48px; }
+.phyto-root .breadcrumb { padding: 8px 12px; }
+.phyto-root .segmented { border-radius: 12px; padding: 2px; }
+.phyto-root .segmented button { border-radius: 9px; min-width: 26px; padding: 6px; }
+.phyto-root .places { padding: 12px; }
+.phyto-root .place { min-height: 32px; padding: 6px 12px; }
+.phyto-root .section-label { font-size: 10px; font-weight: 600; letter-spacing: 1.4px; margin: 16px 12px 8px; }
+.phyto-root .content { margin: 8px 16px 8px; }
+.phyto-root .pane { border-radius: 12px; border: 1px solid alpha(currentColor, 0.14); }
+.phyto-root paned > separator { min-width: 12px; background: transparent; }
+.phyto-root .tabs { padding: 4px 8px 0; border-bottom: 1px solid alpha(currentColor, 0.12); }
+.phyto-root .tab { border-radius: 8px 8px 0 0; min-height: 26px; font-size: 12px; border-bottom: 2px solid transparent; }
+.phyto-root .files-grid { padding: 16px 8px; }
+.phyto-root gridview > child { border-radius: 12px; margin: 4px; padding: 0; }
+.phyto-root .file-card { padding: 12px 4px; min-height: 100px; }
+.phyto-root .file-card label { font-size: 12px; }
+.phyto-root .file-name { padding: 8px 0; }
+.phyto-root columnview { border-radius: 0 0 12px 12px; }
+.phyto-root columnview row { min-height: 44px; }
+.phyto-root columnview cell { padding: 0 12px; }
+.phyto-root columnview header { font-size: 12px; }
+.phyto-root .details { border-radius: 12px; }
+.phyto-root .details-body { padding: 16px; }
+.phyto-root .details-body > box:first-child button { min-height: 16px; min-width: 16px; padding: 4px; }
+.phyto-root .details-art { padding: 24px; margin: 8px 0; border-radius: 12px; }
+.phyto-root .file-title { font-weight: 600; }
+.phyto-root .metadata { margin-bottom: 4px; font-size: 12px; }
+.phyto-root .secondary { font-size: 12px; }
+.phyto-root .status { padding: 4px 24px 12px; font-size: 12px; }
+.phyto-root .search-row { margin: 4px 16px 8px; }
+.phyto-root .empty-state { padding: 24px; }
+.phyto-root .state-title { font-size: 20px; font-weight: 500; }
+.phyto-root .dialog-body { padding: 24px; }
+.phyto-root .dialog-body > * { margin-bottom: 12px; }
+.phyto-root.compact columnview row { min-height: 36px; }
+.phyto-root.compact .file-name { padding: 4px 0; }
+.phyto-root.compact .file-card { min-height: 84px; padding: 8px 4px; }
+.phyto-root.narrow .toolbar { padding: 8px; }
+.phyto-root.narrow .content { margin: 4px 8px 8px; }
+.phyto-root.narrow .status { padding: 4px 12px 12px; }
+
+.phyto-root.dark { color: #e6e0e9; background: #141218; }
+.phyto-root.dark headerbar, .phyto-root.dark .details, .phyto-root.dark .segmented, .phyto-root.dark .tabs { background: #211f26; color: #e6e0e9; }
+.phyto-root.dark .sidebar, .phyto-root.dark .pane, .phyto-root.dark gridview, .phyto-root.dark columnview, .phyto-root.dark columnview header { background: #1d1b20; color: #e6e0e9; }
+.phyto-root.dark .secondary, .phyto-root.dark .section-label, .phyto-root.dark .status { color: #cac4d0; }
+.phyto-root.dark button { background: transparent; color: #e6e0e9; border-color: transparent; }
+.phyto-root.dark button:hover { background: alpha(#e6e0e9, 0.08); }
+.phyto-root.dark button:active { background: alpha(#e6e0e9, 0.12); }
+.phyto-root.dark .breadcrumb, .phyto-root.dark .details-art, .phyto-root.dark .tonal { background: #2b2930; }
+.phyto-root.dark .selected, .phyto-root.dark gridview > child:selected, .phyto-root.dark columnview row:selected { background: #4f378b; color: #eaddff; }
+.phyto-root.dark .selected-tab { background: #1d1b20; border-bottom-color: #d0bcff; }
+.phyto-root.dark .active-pane { border-color: #d0bcff; }
+.phyto-root.dark .file-card image, .phyto-root.dark .file-name image, .phyto-root.dark .details-art image, .phyto-root.dark .brand image { color: #d0bcff; }
+.phyto-root.dark entry, .phyto-root.dark searchentry { background: #211f26; color: #e6e0e9; border: 1px solid #79747e; border-radius: 12px; }
+.phyto-root.dark popover > contents { background: #211f26; color: #e6e0e9; border-radius: 12px; }
+.phyto-root.dark .suggested-action, .phyto-root.dark progress { background: #d0bcff; color: #381e72; }
+.phyto-root.dark .error { color: #ffb4ab; }
+.phyto-root.dark button:focus-visible, .phyto-root.dark entry:focus-within { outline-color: #d0bcff; }
+
+.phyto-root.light { color: #1d1b20; background: #fdf7ff; }
+.phyto-root.light headerbar, .phyto-root.light .details, .phyto-root.light .segmented, .phyto-root.light .tabs { background: #f3edf7; color: #1d1b20; }
+.phyto-root.light .sidebar, .phyto-root.light .pane, .phyto-root.light gridview, .phyto-root.light columnview, .phyto-root.light columnview header { background: #f7f2fa; color: #1d1b20; }
+.phyto-root.light .secondary, .phyto-root.light .section-label, .phyto-root.light .status { color: #49454f; }
+.phyto-root.light button { background: transparent; color: #1d1b20; border-color: transparent; }
+.phyto-root.light button:hover { background: alpha(#1d1b20, 0.08); }
+.phyto-root.light button:active { background: alpha(#1d1b20, 0.12); }
+.phyto-root.light .breadcrumb, .phyto-root.light .details-art, .phyto-root.light .tonal { background: #ece6f0; }
+.phyto-root.light .selected, .phyto-root.light gridview > child:selected, .phyto-root.light columnview row:selected { background: #eaddff; color: #21005d; }
+.phyto-root.light .selected-tab { background: #f7f2fa; border-bottom-color: #6750a4; }
+.phyto-root.light .active-pane { border-color: #6750a4; }
+.phyto-root.light .file-card image, .phyto-root.light .file-name image, .phyto-root.light .details-art image, .phyto-root.light .brand image { color: #6750a4; }
+.phyto-root.light entry, .phyto-root.light searchentry { background: #f3edf7; color: #1d1b20; border: 1px solid #79747e; border-radius: 12px; }
+.phyto-root.light popover > contents { background: #f3edf7; color: #1d1b20; border-radius: 12px; }
+.phyto-root.light .suggested-action, .phyto-root.light progress { background: #6750a4; color: #ffffff; }
+.phyto-root.light .error { color: #8c1d18; }
+.phyto-root.light button:focus-visible, .phyto-root.light entry:focus-within { outline-color: #6750a4; }
+.phyto-root.native .sidebar, .phyto-root.native .details { background: alpha(currentColor, 0.03); }
+
+.phyto-root.dark .browser, .phyto-root.dark .toolbar { background: #141218; color: #e6e0e9; }
+.phyto-root.light .browser, .phyto-root.light .toolbar { background: #fdf7ff; color: #1d1b20; }

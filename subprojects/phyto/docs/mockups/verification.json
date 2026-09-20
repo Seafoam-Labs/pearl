@@ -1,0 +1,92 @@
+{
+  "status": "passed",
+  "scope": "Browser design prototype only; no native GTK or filesystem validation",
+  "browser": "153.0.8010.52",
+  "device_scale_factor": 1,
+  "network": "HTTP/HTTPS blocked during checks",
+  "checks": [
+    "Nine review scenarios render without document overflow",
+    "Grid/list switching preserves selected-file details",
+    "Hidden-file option, sort selector, compact density and light theme respond",
+    "Search filters fixture names, shows no-results state and exits",
+    "Split active pane switches by click/F6; selections and views are independent; narrow mode retains both panes",
+    "Conflict choices and transfer cancellation produce fixture feedback",
+    "Error state retains retry and navigation to Home",
+    "Six scenarios fit widths 390/480/560/760/980/1280; narrow Places navigates"
+  ],
+  "captures": [
+    {
+      "file": "browse-dark.png",
+      "viewport": [
+        1280,
+        984
+      ],
+      "query": ""
+    },
+    {
+      "file": "browse-light.png",
+      "viewport": [
+        1280,
+        984
+      ],
+      "query": "?theme=light"
+    },
+    {
+      "file": "list.png",
+      "viewport": [
+        1280,
+        984
+      ],
+      "query": "?view=list"
+    },
+    {
+      "file": "split.png",
+      "viewport": [
+        1280,
+        984
+      ],
+      "query": "?view=split"
+    },
+    {
+      "file": "search.png",
+      "viewport": [
+        1280,
+        984
+      ],
+      "query": "?view=search"
+    },
+    {
+      "file": "transfer.png",
+      "viewport": [
+        1280,
+        984
+      ],
+      "query": "?view=transfer"
+    },
+    {
+      "file": "narrow.png",
+      "viewport": [
+        560,
+        984
+      ],
+      "query": ""
+    },
+    {
+      "file": "empty.png",
+      "viewport": [
+        1280,
+        984
+      ],
+      "query": "?view=empty"
+    },
+    {
+      "file": "error.png",
+      "viewport": [
+        1280,
+        984
+      ],
+      "query": "?view=error"
+    }
+  ],
+  "javascript_errors": []
+}

@@ -1,0 +1,382 @@
+{
+  "status": "passed",
+  "checks": [
+    "Asynchronous real directory enumeration, selection, grid/list and hidden files",
+    "Current-folder filename filtering, no-results state and Escape recovery",
+    "Independent tab locations and pane views; split switching and tab close",
+    "Missing-location error retains history and Back recovery",
+    "Single-file copy preserves source bytes; name collision skips without overwrite",
+    "Native create-folder and rename dialogs mutate only the selected fixture",
+    "10,000-entry directory uses recycled rows; rapid navigation settles on the final location",
+    "Window closes cleanly with G_DEBUG=fatal-warnings",
+    "Light, compact and system-theme windows; narrow layout retains both split panes"
+  ],
+  "captures": [
+    {
+      "file": "browse-dark.png",
+      "geometry": {
+        "x": 210,
+        "y": 170,
+        "width": 1180,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 12,
+        "focus_name": "GtkListItemWidget",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home",
+        "title": "Home",
+        "query": "",
+        "count": 12,
+        "loading": false,
+        "failed": false,
+        "selected": 1,
+        "selected_name": "Welcome.txt",
+        "list": false,
+        "split": false,
+        "active": 0,
+        "tabs": [
+          1,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": false,
+        "width": 1180,
+        "height": 760,
+        "details": true,
+        "sidebar": true,
+        "busy": false,
+        "conflict": false
+      }
+    },
+    {
+      "file": "list.png",
+      "geometry": {
+        "x": 210,
+        "y": 170,
+        "width": 1180,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 12,
+        "focus_name": "GtkColumnViewRowWidget",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home",
+        "title": "Home",
+        "query": "",
+        "count": 12,
+        "loading": false,
+        "failed": false,
+        "selected": 1,
+        "selected_name": "Welcome.txt",
+        "list": true,
+        "split": false,
+        "active": 0,
+        "tabs": [
+          1,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": false,
+        "width": 1180,
+        "height": 760,
+        "details": true,
+        "sidebar": true,
+        "busy": false,
+        "conflict": false
+      }
+    },
+    {
+      "file": "search.png",
+      "geometry": {
+        "x": 210,
+        "y": 170,
+        "width": 1180,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 1,
+        "focus_name": "GtkText",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home",
+        "title": "Home",
+        "query": "notes",
+        "count": 1,
+        "loading": false,
+        "failed": false,
+        "selected": 0,
+        "selected_name": "",
+        "list": false,
+        "split": false,
+        "active": 0,
+        "tabs": [
+          1,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": false,
+        "width": 1180,
+        "height": 760,
+        "details": true,
+        "sidebar": true,
+        "busy": false,
+        "conflict": false
+      }
+    },
+    {
+      "file": "empty.png",
+      "geometry": {
+        "x": 210,
+        "y": 170,
+        "width": 1180,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 0,
+        "focus_name": "GtkButton",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home/Projects",
+        "title": "Projects",
+        "query": "",
+        "count": 0,
+        "loading": false,
+        "failed": false,
+        "selected": 0,
+        "selected_name": "",
+        "list": false,
+        "split": false,
+        "active": 0,
+        "tabs": [
+          2,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": false,
+        "width": 1180,
+        "height": 760,
+        "details": true,
+        "sidebar": true,
+        "busy": false,
+        "conflict": false
+      }
+    },
+    {
+      "file": "split.png",
+      "geometry": {
+        "x": 210,
+        "y": 170,
+        "width": 1180,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 12,
+        "focus_name": "GtkButton",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home",
+        "title": "Home",
+        "query": "",
+        "count": 12,
+        "loading": false,
+        "failed": false,
+        "selected": 0,
+        "selected_name": "",
+        "list": false,
+        "split": true,
+        "active": 0,
+        "tabs": [
+          1,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": true,
+        "width": 1180,
+        "height": 760,
+        "details": false,
+        "sidebar": true,
+        "busy": false,
+        "conflict": false
+      }
+    },
+    {
+      "file": "error.png",
+      "geometry": {
+        "x": 210,
+        "y": 170,
+        "width": 1180,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 0,
+        "focus_name": "GtkButton",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home/does-not-exist",
+        "title": "does-not-exist",
+        "query": "",
+        "count": 0,
+        "loading": false,
+        "failed": true,
+        "selected": 0,
+        "selected_name": "",
+        "list": false,
+        "split": false,
+        "active": 0,
+        "tabs": [
+          1,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": false,
+        "width": 1180,
+        "height": 760,
+        "details": true,
+        "sidebar": true,
+        "busy": false,
+        "conflict": false
+      }
+    },
+    {
+      "file": "browse-light.png",
+      "geometry": {
+        "x": 210,
+        "y": 170,
+        "width": 1180,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 13,
+        "focus_name": "GtkListItemWidget",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home",
+        "title": "Home",
+        "query": "",
+        "count": 13,
+        "loading": false,
+        "failed": false,
+        "selected": 1,
+        "selected_name": "Welcome.txt",
+        "list": false,
+        "split": false,
+        "active": 0,
+        "tabs": [
+          1,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": false,
+        "width": 1180,
+        "height": 760,
+        "details": true,
+        "sidebar": true,
+        "busy": false,
+        "conflict": false
+      }
+    },
+    {
+      "file": "compact.png",
+      "geometry": {
+        "x": 210,
+        "y": 170,
+        "width": 1180,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 13,
+        "focus_name": "GtkButton",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home",
+        "title": "Home",
+        "query": "",
+        "count": 13,
+        "loading": false,
+        "failed": false,
+        "selected": 0,
+        "selected_name": "",
+        "list": true,
+        "split": false,
+        "active": 0,
+        "tabs": [
+          1,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": false,
+        "width": 1180,
+        "height": 760,
+        "details": true,
+        "sidebar": true,
+        "busy": false,
+        "conflict": false
+      }
+    },
+    {
+      "file": "native-theme.png",
+      "geometry": {
+        "x": 210,
+        "y": 170,
+        "width": 1180,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 13,
+        "focus_name": "GtkButton",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home",
+        "title": "Home",
+        "query": "",
+        "count": 13,
+        "loading": false,
+        "failed": false,
+        "selected": 0,
+        "selected_name": "",
+        "list": false,
+        "split": false,
+        "active": 0,
+        "tabs": [
+          1,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": false,
+        "width": 1180,
+        "height": 760,
+        "details": true,
+        "sidebar": true,
+        "busy": false,
+        "conflict": false
+      }
+    },
+    {
+      "file": "narrow.png",
+      "geometry": {
+        "x": 520,
+        "y": 170,
+        "width": 560,
+        "height": 760
+      },
+      "state": {
+        "realized_grid_children": 13,
+        "focus_name": "GtkToggleButton",
+        "uri": "file:///tmp/pearl-dev-9wbepnm9/home",
+        "title": "Home",
+        "query": "",
+        "count": 13,
+        "loading": false,
+        "failed": false,
+        "selected": 0,
+        "selected_name": "",
+        "list": false,
+        "split": false,
+        "active": 0,
+        "tabs": [
+          1,
+          1
+        ],
+        "left_visible": true,
+        "right_visible": false,
+        "width": 560,
+        "height": 760,
+        "details": false,
+        "sidebar": false,
+        "busy": false,
+        "conflict": false
+      }
+    }
+  ],
+  "binary_sha256": "761cd6b80f195c6d1d818d28ba953b93b476771979e4e2eb2cf3621f747a2b2e",
+  "scope": "Native design and local browsing/action slice; not full Nemo parity",
+  "large_directory": {
+    "entries": 10000,
+    "realized_grid_children": 513
+  }
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phyto · Design review</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mockup.js" defer></script>
+</head>
+<body>
+  <header class="review">
+    <div><span class="eyebrow">PEARL / APPLICATION DESIGN</span><h1>Phyto <span>Files, with room to work.</span></h1></div>
+    <div class="review-tools">
+      <label class="sr-only" for="scene">Review scenario</label>
+      <select id="scene"><option value="grid">Browse</option><option value="list">Detailed list</option><option value="split">Split panes</option><option value="search">Search</option><option value="transfer">Transfer conflict</option><option value="empty">Empty folder</option><option value="error">Permission denied</option></select>
+      <button id="theme" aria-label="Toggle light appearance">Light</button>
+      <button id="density" aria-pressed="false">Compact</button>
+    </div>
+  </header>
+  <main class="window" aria-label="Phyto file explorer prototype">
+    <header class="titlebar"><div class="brand"><span id="brand-icon"></span>Phyto</div><span class="window-title">Home</span><div class="window-controls" aria-hidden="true"><span>−</span><span>□</span><span>×</span></div></header>
+    <div class="workspace">
+      <aside class="sidebar" aria-label="Places"><div id="places"></div><div class="storage"><span class="storage-label">This computer</span><div class="storage-meter"><i></i></div><small>184 GB available of 512 GB</small></div></aside>
+      <section class="browser">
+        <nav class="toolbar" aria-label="Folder navigation">
+          <button class="icon mobile-places" id="places-toggle" aria-label="Open Places" title="Places"></button>
+          <div class="history"><button class="icon" id="back" aria-label="Back" title="Back · Alt+Left"></button><button class="icon" disabled id="forward" aria-label="Forward"></button><button class="icon" id="up" aria-label="Parent folder" title="Parent folder · Alt+Up"></button></div>
+          <div class="breadcrumbs" id="breadcrumbs"></div>
+          <button class="icon" id="search-toggle" aria-label="Search files" title="Search · Ctrl+F"></button>
+          <button class="icon" id="jobs" aria-label="Show file operations" title="File operations"></button>
+          <div class="view-actions"><button id="split-toggle" class="icon" aria-label="Toggle split panes" title="Split panes · F3"></button><div class="segmented"><button id="grid-view" class="icon" aria-label="Icon view" aria-pressed="true"></button><button id="list-view" class="icon" aria-label="List view" aria-pressed="false"></button></div><button id="details-toggle" class="icon" aria-label="Toggle file details" aria-pressed="true" title="Details"></button></div>
+          <button class="icon" id="more" aria-label="More options" title="More options"></button>
+        </nav>
+        <div class="searchbar" hidden><label class="sr-only" for="query">Search filenames</label><input id="query" placeholder="Search filenames…"><span>In Home · Including subfolders</span><button id="clear-search" class="icon" aria-label="Close search">×</button></div>
+        <div class="content-area"><div id="panes"></div><aside id="details" aria-label="Selected file details"></aside></div>
+        <footer class="status"><span id="status-text">12 items · 1 selected</span><span id="status-right">184 GB available</span></footer>
+      </section>
+    </div>
+  </main>
+  <footer class="review-note"><span><b id="scenario-number">01</b><span id="scenario-note">Familiar places. A quieter workspace. Details when you need them.</span></span><a href="../IMPLEMENTATION_PLAN.md">Read the implementation plan ↗</a><small>Interactive design study · Fictional files · Planned native Zig + GTK4 application</small></footer>
+  <dialog id="operation-dialog" aria-labelledby="operation-title"></dialog>
+  <dialog id="options-dialog" aria-labelledby="options-title"><h2 id="options-title">View options</h2><label class="option-row"><span>Show hidden files</span><input id="hidden-files" type="checkbox"></label><label class="option-row"><span>Sort by</span><select id="sort"><option value="name">Name</option><option value="type">Type</option></select></label><p class="muted">View options affect the fictional files in this preview.</p><button class="primary" id="options-done">Done</button></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
