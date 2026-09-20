@@ -747,12 +747,18 @@ pub const Editor = struct {
                         .off => tr("Off", "Aus"),
                         .scheduled => tr("Scheduled", "Geplant"),
                         .unavailable => tr("Unavailable", "Nicht verfügbar"),
+                        .pending => tr("Applying", "Wird angewendet"),
+                        .active => tr("Active", "Aktiv"),
+                        .partial => tr("Active on some displays", "Auf einigen Bildschirmen aktiv"),
+                        .restoring => tr("Restoring colors", "Farben werden wiederhergestellt"),
+                        .failed => tr("Application failed", "Anwendung fehlgeschlagen"),
                     };
                     const header = try std.fmt.allocPrint(a, "{s} · {d} K\n", .{ state_text, night.temperature_kelvin });
                     defer a.free(header);
                     try lines.appendSlice(a, header);
                     for (night.outputs) |output| {
-                        const line = try std.fmt.allocPrint(a, "{s}: {s}\n", .{ output.connector, tr("Display color support unavailable", "Farbunterstützung nicht verfügbar") });
+                        const output_text = if (std.mem.eql(u8, output.state, "committed")) tr("Active", "Aktiv") else if (std.mem.eql(u8, output.state, "pending")) tr("Applying", "Wird angewendet") else if (std.mem.eql(u8, output.state, "restoring")) tr("Restoring colors", "Farben werden wiederhergestellt") else if (std.mem.eql(u8, output.state, "busy")) tr("Another color service is active", "Ein anderer Farbdienst ist aktiv") else if (std.mem.eql(u8, output.state, "failed")) tr("Application failed", "Anwendung fehlgeschlagen") else if (output.available) tr("Available", "Verfügbar") else tr("Display color support unavailable", "Farbunterstützung nicht verfügbar");
+                        const line = try std.fmt.allocPrint(a, "{s}: {s}\n", .{ output.connector, output_text });
                         defer a.free(line);
                         try lines.appendSlice(a, line);
                     }

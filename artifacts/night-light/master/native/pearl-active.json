@@ -1,0 +1,26 @@
+{
+  "generation": "17",
+  "state": "active",
+  "available": true,
+  "requested": true,
+  "temperature_kelvin": 4000,
+  "override": null,
+  "gamma_protocol": true,
+  "reason": "NativeOutputWarming",
+  "outputs": [
+    {
+      "connector": "HEADLESS-2",
+      "available": true,
+      "reason": "Owned",
+      "state": "committed",
+      "committed_kelvin": 4000
+    },
+    {
+      "connector": "HEADLESS-1",
+      "available": true,
+      "reason": "Owned",
+      "state": "committed",
+      "committed_kelvin": 4000
+    }
+  ]
+}

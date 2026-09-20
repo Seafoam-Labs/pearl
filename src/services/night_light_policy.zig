@@ -21,10 +21,16 @@ pub const Config = struct {
 };
 pub const Action = enum { on, off, toggle, @"resume", retry };
 pub const Override = struct { enabled: bool, expires: ?i64 };
-pub const OutputStatus = struct { connector: []const u8, available: bool = false, reason: []const u8 = "OutputColorEligibilityUnavailable" };
+pub const OutputStatus = struct {
+    connector: []const u8,
+    available: bool = false,
+    reason: []const u8 = "OutputColorEligibilityUnavailable",
+    state: []const u8 = "unavailable",
+    committed_kelvin: u32 = 0,
+};
 pub const Snapshot = struct {
     generation: []const u8 = "0",
-    state: enum { off, scheduled, unavailable } = .unavailable,
+    state: enum { off, scheduled, unavailable, pending, active, partial, restoring, failed } = .unavailable,
     available: bool = false,
     requested: bool = false,
     temperature_kelvin: u16 = 4500,

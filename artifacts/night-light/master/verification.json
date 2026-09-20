@@ -1,0 +1,19 @@
+{
+  "verified_utc": "2026-09-20T02:54:22.902432+00:00",
+  "aqueous_master": "cf6c4dcd649421184611d399f19cbeeb4acb4a0e",
+  "master_verified_with": "git ls-remote origin refs/heads/master",
+  "pearl_head": "cb4cb780276e4058f8b32455d3e98edf83e9d042",
+  "pearl_working_tree": "Existing native adapter changes included; not a clean committed release",
+  "source_hashes_match_upstream_validation": true,
+  "protocol_copies_identical": true,
+  "physical_acceptance": false,
+  "build_steps_passed": 31,
+  "tests_passed": 162,
+  "private_night_light_groups_passed": 12,
+  "binary_sha256": {
+    "zig-out/bin/pearl": "b5a68b191c6f1f2f3490c0be5d24e347aac4fa9d3923f50b92677334268f7ba5",
+    "/tmp/aqueous-warming/private-compositor/bin/aqueous": "d111fbc3f5cd212aa9bb79aa2db87b463e18bf110370659847c7a3ea87f370dc",
+    "/tmp/aqueous-warming/compositor/bin/aqueous": "d9c0a3abdb92bbf706fbceb155deb2a07ffeb27f932cac1fc7d267c0f610bf92",
+    "/tmp/aqueous-warming/prefix/lib/libwlroots-0.20.so": "f7a730cdfe2fbf392a1a17414a701a1a7199ae7b7b2643c20362ca76fcd439be"
+  }
+}

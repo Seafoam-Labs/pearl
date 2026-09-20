@@ -17,9 +17,9 @@
   "physical_color_validation": "pending",
   "output_writes": "blocked: OutputColorEligibilityUnavailable",
   "binaries": {
-    "pearl": "2712627a695b7687b7009f215dcc6e86a5bc687338c3965f4319a9fca32568b7",
-    "ctl": "891a09adba873aba0228ba6bdde0f10efcbe2d4787c6c89f2233a79c6c9d702a",
-    "settings": "56c0c11169df51a8f6af3ebaf7197521e9e07589bd05c77d219826a1d9742e0d"
+    "pearl": "0896d861ece001d7529744976ef6cb143bad4b568cb52d8402b5f27e245f0943",
+    "ctl": "4a0195228c6cccec49cf1dd0a6b164f5d4f13a6852fa3c06c1f48492ee8dfbf3",
+    "settings": "a716e2918dd379d629cc23d2091fb74c6c2f11e7603b855da4f574e62c23dda1"
   },
   "gamma_probe": {
     "protocol": true,
@@ -42,12 +42,16 @@
       {
         "connector": "HEADLESS-2",
         "available": false,
-        "reason": "OutputColorEligibilityUnavailable"
+        "reason": "OutputColorEligibilityUnavailable",
+        "state": "unavailable",
+        "committed_kelvin": 0
       },
       {
         "connector": "HEADLESS-1",
         "available": false,
-        "reason": "OutputColorEligibilityUnavailable"
+        "reason": "OutputColorEligibilityUnavailable",
+        "state": "unavailable",
+        "committed_kelvin": 0
       }
     ]
   }

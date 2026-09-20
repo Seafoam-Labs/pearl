@@ -92,6 +92,8 @@ pub fn build(b: *std.Build) void {
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-foreign-toplevel-list-v1.xml"));
     scanner.generate("aqueous_window_info_manager_v1", 3);
     scanner.generate("aqueous_shell_manager_v1", 2);
+    scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-output-warming-v1.xml"));
+    scanner.generate("aqueous_output_warming_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-input-activity-v1.xml"));
     scanner.generate("aqueous_input_activity_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/wlr-output-management-unstable-v1.xml"));

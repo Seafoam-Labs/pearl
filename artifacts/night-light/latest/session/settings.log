@@ -1,5 +1,5 @@
 info: event=settings-launch activation_context=false
-info: event=settings-instance-ready session=649037bdb0a0f029a595592f44851ec4
+info: event=settings-instance-ready session=0e50e271aa66b5506e977ea21ca597f3
 info: event=settings-page page=overview
 info: event=settings-page page=appearance
 info: event=settings-window-created app_id=org.aqueous.Pearl.Settings

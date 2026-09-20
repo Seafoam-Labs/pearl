@@ -1,12 +1,14 @@
 # Pearl implementation progress
 
-## Night Light — configuration implemented, output writes blocked, September 19, 2026
+## Night Light — native integration verified, physical acceptance pending, September 19, 2026
 
 Added disabled-by-default preferences, local-time scheduling, temporary-off policy,
 Appearance controls, compact status and CLI/Settings actions. Runtime actions use
-session/lock gates and Settings generations/operation receipts. Aqueous gamma
-advertisement does not prove output eligibility: screen warming remains disabled
-pending a live compositor color-state contract and physical acceptance. See
+session/lock gates and Settings generations/operation receipts. Aqueous master
+now provides output-warming-v1; Pearl uses native leases and per-output commit
+status. Private headless Vulkan checks verify warming and restoration. Physical
+output qualification remains empty and the release still pins the older Aqueous.
+See [master verification](../artifacts/night-light/master-verification.md),
 [Night Light](NIGHT_LIGHT.md) and [the remaining plan](NIGHT_MODE_IMPLEMENTATION_PLAN.md).
 
 ## QtEngine + Darkly application style — September 16, 2026

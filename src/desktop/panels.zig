@@ -376,8 +376,17 @@ pub const Control = struct {
         if (self.changing) return;
         if (self.night_label) |label| {
             const night = self.models.night_light.?;
-            label.setText(if (night.model.override != null) tr("Temporarily off. Returns to the saved policy at the next schedule boundary, or when Pearl restarts in manual mode.", "Vorübergehend aus. Die gespeicherten Einstellungen gelten ab dem nächsten Zeitwechsel oder im manuellen Modus nach einem Neustart.") else tr("Unavailable: Aqueous cannot yet verify display color support. Saved schedules will not change screen colors.", "Nicht verfügbar: Aqueous kann die Farbunterstützung noch nicht prüfen. Gespeicherte Zeitpläne ändern die Bildschirmfarben nicht."));
-            self.night_toggle.?.as(gtk.Widget).setSensitive(@intFromBool(night.interactive and night.requested));
+            label.setText(switch (night.state()) {
+                .active => tr("Night Light is active.", "Nachtlicht ist aktiv."),
+                .partial => tr("Night Light is active on some displays.", "Nachtlicht ist auf einigen Bildschirmen aktiv."),
+                .pending => tr("Applying warmer colors…", "Wärmere Farben werden angewendet…"),
+                .restoring => tr("Restoring display colors…", "Bildschirmfarben werden wiederhergestellt…"),
+                .failed => tr("Display colors could not be updated.", "Bildschirmfarben konnten nicht aktualisiert werden."),
+                .scheduled => tr("Waiting for the saved schedule.", "Warten auf den gespeicherten Zeitplan."),
+                .off => tr("Night Light is off.", "Nachtlicht ist aus."),
+                .unavailable => tr("Warming is unavailable on these displays.", "Nachtlicht ist auf diesen Bildschirmen nicht verfügbar."),
+            });
+            self.night_toggle.?.as(gtk.Widget).setSensitive(@intFromBool(night.interactive and (night.requested or night.warming.available())));
             self.night_resume.?.as(gtk.Widget).setVisible(@intFromBool(night.model.override != null));
         }
         if (self.lifecycle) |view| view.update();

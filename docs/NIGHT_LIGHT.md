@@ -1,12 +1,15 @@
 # Night Light
 
-Night Light preferences, scheduling, shared status and temporary-off controls
-are implemented. **Screen warming is not enabled on the current Aqueous contract.**
-The shell reports unavailable support and never acquires exclusive gamma control.
+Night Light uses Aqueous's experimental output-warming-v1 contract when available.
+It binds each GTK monitor to its live Wayland output, acquires an exclusive native
+lease only for an eligible output, and reports successful backend commits.
+**No physical output path is production-qualified yet.** The pinned older Aqueous
+build remains unavailable; Pearl never falls back to acquiring legacy gamma.
 
 Open **Settings → Appearance → Night Light** to configure the saved policy.
 Changes join the existing shared draft and take effect only after **Apply & save**.
-Saving an enabled policy currently changes its requested state, not screen colors.
+Saving an enabled policy changes its requested state. Only outputs reporting native
+eligibility can apply it. Advertisement alone never enables display writes.
 The control-center section links to Appearance and explains this limitation.
 
 ## Preferences and runtime controls
@@ -48,10 +51,13 @@ Timezone or wall-clock changes may shorten an override to the newly computed
 next boundary; they never extend its original deadline.
 
 `on`, `toggle` when it would enable warming, and `retry` return
-`OutputColorEligibilityUnavailable` until a validated output backend is available.
+`OutputColorEligibilityUnavailable` when no native output is available.
 Rejected requests do not create an override. `status` separates `requested`,
 `available`, `state`, `gamma_protocol`, and per-output unavailability reasons.
-It does not claim that a request changed pixels. Settings exposes the same snapshot
+Per-output status distinguishes unavailable, busy, pending, committed, restoring
+and failed, with the last known committed temperature. Aggregate status can be
+active or partial; extra monitors beyond the 16-observation limit stay unavailable.
+Commit acknowledgment is not a presentation event or physical measurement. Settings exposes the same snapshot
 and generation-checked, deduplicated actions over its authenticated transport.
 Its `night_light` capability means the configuration/control API exists; consult
 `available` for display support.
@@ -80,22 +86,26 @@ provides exclusive control and generic failure, but no positive per-write applie
 acknowledgement or explanation of a failure. Its XML is vendored for the private
 probe only; production currently observes advertisement without binding a manager.
 
-Before enabling screen warming, Aqueous needs a live, output-bound contract that:
+The local Aqueous implementation now supplies the native contract described above:
+versioned complete snapshots, generation checks at acquisition/render/commit,
+shared ownership with legacy gamma, renderer composition, restoration, and
+correlated commit results. Its production qualification set is empty. Private
+headless Vulkan builds alone can exercise warming; HDR, arbitrary calibration,
+mirroring and physical qualification remain unsupported. Ship the new compositor
+and its patched wlroots together before repinning this dependency.
 
-1. Identifies output/color-state generation and whether a validated SDR path is
-   eligible, including HDR, calibration, renderer, scanout and mode changes.
-2. Enforces eligibility at acquisition/application time and revokes unsafe controls
-   before committing a conflicting color-state change. Observation alone is racy.
-3. Defines composition with existing calibration, restoration on release/crash,
-   and ownership conflicts without taking over another color service.
-4. Gives Pearl truthful application status, or explicitly documents the weaker
-   status it can establish when using legacy gamma requests.
+The new `src/platform/wayland/warming_control.zig` keeps GTK as the only reader of
+its display connection. Targets are coalesced while a request is outstanding.
+Generation changes/revocation stop stale work, competing color services are left
+alone, and off/stop/disconnect release ownership through compositor restoration.
+Schedules and authenticated settings actions retain their existing policy.
 
-Then implement the bounded ramp writer and resource lifecycle, prove acquisition,
-coalescing, contention, hotplug, failure and restoration with protocol fixtures,
-and validate each enabled physical renderer/output path. Mixed-output operation,
-actual warming, HDR/calibration compatibility and physical acceptance remain open.
-There is no production environment-variable bypass for this gate.
+The native runtime suite lives in Aqueous as
+`compositor/scripts/test-output-warming-runtime.py`. Supply `--pearl` and
+`--pearl-source` to test saved policy, per-output commit status, off/on and crash
+restoration with isolated D-Bus services. It also verifies actual renderer pixels,
+output isolation, contention, forced commit fallback and virtual modeset
+revocation. This evidence does not qualify physical displays.
 
 ## Verification
 

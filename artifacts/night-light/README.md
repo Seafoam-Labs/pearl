@@ -1,5 +1,8 @@
 # Night Light verification
 
+For the newer native adapter, see [Aqueous master verification](master-verification.md).
+The original evidence below concerns the pinned older compositor.
+
 `zig build test-night-light -Doptimize=ReleaseSafe` writes the private-session
 report to `latest/results.json` and logs/captures to `latest/session/`.
 `zig build test-night-light-clock -Doptimize=ReleaseSafe` runs the native GLib

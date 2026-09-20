@@ -1,6 +1,6 @@
 # Remaining Aqueous dependencies
 
-Current source: `88587243059d58d72dd0fe2146d0ebdb64f26474`, helper 0.8.2,
+Pinned release source: `88587243059d58d72dd0fe2146d0ebdb64f26474`, helper 0.8.2,
 protocol 1. See [implementation](AQUEOUS_082_UPDATE_PLAN.md) and
 [integration evidence](../artifacts/aqueous-082/README.md).
 
@@ -22,10 +22,13 @@ See also [input activity integration](AQUEOUS_PLUGIN_ACTIVITY.md) and its
 
 ## Physical display acceptance
 
-Night Light also requires live, output-bound color eligibility with enforcement
-at application time. Current gamma advertisement lacks HDR/calibration state and
-cannot guard writes against a changing color path. Pearl exposes preferences and
-status but acquires no gamma controls. See [the required contract](NIGHT_LIGHT.md#aqueous-prerequisite).
+Night Light's live, output-bound eligibility contract landed on Aqueous master
+`cf6c4dcd649421184611d399f19cbeeb4acb4a0e`. Pearl's native adapter passes private
+headless Vulkan application/restoration checks and acquires no legacy gamma
+controls. Production qualification remains empty; physical acceptance and shipping
+the matching compositor plus patched wlroots are still required. The release pin
+above is unchanged. See [the contract](NIGHT_LIGHT.md#aqueous-prerequisite) and
+[verification](../artifacts/night-light/master-verification.md).
 
 `compositor/aqueous/display_preview_policy.zig` still has no production DRM
 acceptance. The separate `-Ddisplay-preview-acceptance=true` build and exact

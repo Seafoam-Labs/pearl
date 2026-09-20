@@ -1,0 +1,5 @@
+{
+  "renderer": "vulkan",
+  "status": "passed",
+  "physical_acceptance": false
+}

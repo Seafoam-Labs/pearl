@@ -1,9 +1,12 @@
 # Night mode implementation plan
 
-Status: partially implemented September 19, 2026. Saved configuration, schedule
-policy, shared status and controls are implemented. Stage 1 identified an upstream
-output-eligibility dependency; the display-write adapter and physical acceptance
-remain blocked. See [Night Light](NIGHT_LIGHT.md) for the exact contract and behavior.
+Status: software integration verified against Aqueous master
+`cf6c4dcd649421184611d399f19cbeeb4acb4a0e` on September 19, 2026.
+Saved configuration, scheduling, shared controls and the native display-write
+adapter are implemented. Private headless Vulkan tests verify warming and
+restoration. The complete plan is not yet delivered: physical qualification and
+release dependency integration remain open. See [Night Light](NIGHT_LIGHT.md)
+and [verification evidence](../artifacts/night-light/master-verification.md).
 
 Scope assumption: “night mode” means **Night Light**, which warms display colors.
 Pearl already supports manual dark/light appearance. Automatic theme switching
@@ -13,11 +16,15 @@ is a separate feature and is not required by this plan.
 
 | Stage | Status |
 | --- | --- |
-| 1: Display-control contract | Source and private probe inspected; output eligibility and physical acceptance remain upstream prerequisites. |
+| 1: Display-control contract | Native output-warming-v1 landed on Aqueous master; production output qualification remains empty. |
 | 2: Preferences and policy | Implemented, including validation, retained drafts, local schedules, overrides and clock-change tests. |
-| 3: Service and adapter | Shared service and read-only capability observation implemented; gamma writer, ramps and physical lifecycle tests deferred behind Stage 1. |
-| 4: UI and CLI | Implemented with truthful unavailable status; activation rejects without retaining an override. |
-| 5: Verification | Build, pure/clock tests, private feature tests and affected UI/persistence checks run; no physical warming claim. |
+| 3: Service and adapter | Native leases, coalesced targets, per-output commit status and restoration implemented; physical lifecycle acceptance remains open. |
+| 4: UI and CLI | Implemented with active/partial/pending/restoring/failure status and unavailable-output gating. |
+| 5: Verification | Build, pure/clock tests, older-compositor feature tests and native headless runtime checks pass; physical acceptance and release repinning remain open. |
+
+The stages below retain the original implementation requirements. The selected
+backend is now the native warming protocol: Aqueous owns temperature conversion
+and baseline composition, so Pearl does not generate or write legacy gamma ramps.
 
 ## Starting point before implementation
 
