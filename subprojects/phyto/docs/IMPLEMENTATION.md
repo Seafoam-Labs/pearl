@@ -1,6 +1,9 @@
 # Native design implementation
 
-September 20, 2026 · Native design and local-browsing slice.
+September 20, 2026 · Native design, browsing and context-menu implementation.
+
+The [context-menu report](CONTEXT_MENUS_IMPLEMENTATION.md) supersedes the original
+single-file operation scope below and records current validation and differences.
 
 The revised reference is now a standalone Zig/GTK4 application. The large location
 heading/subtitle has been removed from all native browsing states. Navigation,
@@ -15,7 +18,7 @@ optional toolbar controls and retain secondary actions in More options.
 | `src/main.zig` | CLI, GtkApplication lifecycle, scoped CSS provider, independent windows |
 | `src/window.zig` | Native layout, Places, tabs/panes, navigation, keyboard, details and dialogs |
 | `src/tab.zig` | GtkDirectoryList → filter → sort → GtkMultiSelection; GtkGridView / GtkColumnView factories |
-| `src/operations.zig` | Async GIO create, rename, Trash and non-overwriting single-file copy |
+| `src/operations.zig` | Explicit-target dialogs, recursive worker jobs, conflicts and undo/redo |
 | `src/core/model.zig` | Bounded history and filename validation, with allocator-checked tests |
 | `src/ui.zig` | Widget constructors and metadata formatting |
 | `resources/style.css` | Scoped Material dark/light and native-theme layout rules |
@@ -48,7 +51,7 @@ not link layer-shell, Cinnamon, Nemo or Pearl services.
   labeled as such; recursive search remains in the roadmap.
 - Places includes real XDG locations and GIO URI entry points. Fictional devices
   and storage-capacity numbers are not shown.
-- Transfer UI is backed by actual single-file GIO copy. Collisions offer Skip and
+- Transfer UI is backed by recursive batch GIO worker jobs. Collisions offer Skip and
   Keep both. Replace remains out of scope until replacement recovery is implemented.
 - Appearance uses the stock Pearl palettes with explicit light/compact/native
   choices. It does not yet subscribe to the Pearl committed-appearance protocol.
@@ -68,11 +71,11 @@ The suite checks real enumeration, selection, view switching, hidden files, sear
 and empty results, tab/pane independence, errors and history, copy byte integrity,
 collision handling, folder creation, rename, rapid navigation, clean teardown,
 large-directory row recycling, and dark/light/compact/native/narrow layouts.
-These checks do not establish recursive-transfer safety or complete Nemo parity.
+The newer context-menu suite adds explicit-target, clipboard, recursive transfer,
+undo, collision, provider and Trash coverage; see its report for current evidence.
 
 Accessibility roles and labels use native GTK widgets. Physical screen-reader,
 RTL/localization, mixed-DPI, remote mounts, power interruption and broad filesystem
-fault-injection remain release qualification work. Single-file copy cancellation
-can leave an incomplete destination according to the GIO backend; the source is
-retained and the failure is reported. No rollback or crash-resume guarantee is
-claimed for this slice.
+fault-injection remain release qualification work. Failed/cancelled copy jobs attempt to remove destinations they created.
+Filesystem changes by other processes, backend failures and power loss cannot
+provide transactional rollback or crash-resume guarantees.

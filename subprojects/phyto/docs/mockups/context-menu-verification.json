@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "browser": "153.0.8010.52",
+  "scenario_count": 10,
+  "widths": [
+    390,
+    560,
+    1280
+  ],
+  "scopes": [
+    "m1",
+    "target"
+  ],
+  "checks": [
+    "60 context/scope/width combinations",
+    "submenu and preview feedback",
+    "secondary click",
+    "keyboard open/dismiss/navigation",
+    "read-only Paste",
+    "multi-selection and M1 limits",
+    "dark/light/compact captures"
+  ],
+  "limitations": "Browser design prototype only; no native GTK or filesystem-operation validation."
+}

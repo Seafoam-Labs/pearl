@@ -12,7 +12,7 @@ const Operations = @import("operations.zig").Operations;
 
 pub const Options = struct { light: bool = false, compact: bool = false, native: bool = false, width: c_int = 1180, height: c_int = 760 };
 const Pane = struct { host: *gtk.Box, tabs_row: *gtk.Box, stack: *gtk.Stack, tabs: std.ArrayList(*Tab) = .empty, selected: usize = 0 };
-const Command = enum { back, forward, up, home, location, search, refresh, grid, list, split, switch_pane, details, hidden, new_tab, close_tab, new_window, light, compact, native, new_folder, rename, trash, copy, paste, operations, properties };
+const Command = @import("actions.zig").Command;
 const Action = struct { owner: *Window, command: Command };
 
 pub const Window = struct {
@@ -20,6 +20,8 @@ pub const Window = struct {
     window: *gtk.Window,
     root: *gtk.Box,
     sidebar: *gtk.ScrolledWindow,
+    sidebar_content: *gtk.Box,
+    popup_content: *gtk.Box,
     places_button: *gtk.MenuButton,
     places_popover: *gtk.Popover,
     location_button: *gtk.Button,
@@ -54,7 +56,13 @@ pub const Window = struct {
     home: *gio.File,
     options: Options,
     actions: [std.enums.values(Command).len]Action = undefined,
-    clipboard: ?*gio.File = null,
+    clipboard: @import("platform/clipboard.zig").Clipboard = undefined,
+    context: @import("context_menu.zig").Menu = undefined,
+    preferences: *@import("platform/preferences.zig").Preferences = undefined,
+    next_tab_id: u64 = 0,
+    background_cancel: *gio.Cancellable = undefined,
+    volume_monitor: *gio.VolumeMonitor = undefined,
+    volume_signals: [6]c_ulong = undefined,
     operations: Operations = undefined,
     message_dialog: ?*gtk.Dialog = null,
     status_message: ?[:0]u8 = null,
@@ -195,12 +203,21 @@ pub const Window = struct {
         const status = u.label("Loading folder…", "status");
         status.setEllipsize(.end);
         browser.append(status.as(gtk.Widget));
-        self.* = .{ .app = app, .window = win, .root = root, .sidebar = sidebar, .places_button = places_button, .places_popover = popover, .location_button = location, .path = path, .search = search, .search_row = search_row, .search_scope = search_scope, .navigation = navigation, .details = details, .details_body = details_body, .status = status, .pane_switch = pane_switch, .grid_button = grid_button, .list_button = list_button, .back_button = back, .forward_button = forward, .up_button = up, .home_button = home_button, .details_button = details_button, .split_button = split_button, .jobs_button = jobs_button, .paned = paned, .panes = panes, .options = opts, .home = gio.File.newForPath(glib.getHomeDir()), .width = opts.width };
+        self.* = .{ .app = app, .window = win, .root = root, .sidebar = sidebar, .sidebar_content = sidebar_box, .popup_content = popup_places, .places_button = places_button, .places_popover = popover, .location_button = location, .path = path, .search = search, .search_row = search_row, .search_scope = search_scope, .navigation = navigation, .details = details, .details_body = details_body, .status = status, .pane_switch = pane_switch, .grid_button = grid_button, .list_button = list_button, .back_button = back, .forward_button = forward, .up_button = up, .home_button = home_button, .details_button = details_button, .split_button = split_button, .jobs_button = jobs_button, .paned = paned, .panes = panes, .options = opts, .home = gio.File.newForPath(glib.getHomeDir()), .width = opts.width };
+        self.preferences = @import("platform/preferences.zig").Preferences.acquire();
         self.operations = Operations.init(self);
+        self.background_cancel = gio.Cancellable.new();
+        self.clipboard = @import("platform/clipboard.zig").Clipboard.init(self);
+        self.context = @import("context_menu.zig").Menu.init(self);
+        self.context.start();
+        self.volume_monitor = gio.VolumeMonitor.get();
+        inline for (.{ "mount-added", "mount-removed", "mount-changed", "volume-added", "volume-removed", "volume-changed" }, 0..) |name, i| {
+            self.volume_signals[i] = object.signalConnectData(self.volume_monitor.as(object.Object), name, @ptrCast(&volumesChanged), self, null, .{});
+        }
         for (std.enums.values(Command)) |command| {
             const idx = @intFromEnum(command);
             self.actions[idx] = .{ .owner = self, .command = command };
-            const action = gio.SimpleAction.new(@tagName(command), null);
+            const action = if (command == .advanced or command == .allow_delete) gio.SimpleAction.newStateful(@tagName(command), null, glib.Variant.newBoolean(@intFromBool(if (command == .advanced) self.preferences.advanced else self.preferences.allow_delete))) else gio.SimpleAction.new(@tagName(command), null);
             _ = gio.SimpleAction.signals.activate.connect(action, *Action, actionActivated, &self.actions[idx], .{});
             object.ext.cast(gtk.ApplicationWindow, win).?.as(gio.ActionMap).addAction(action.as(gio.Action));
             action.unref();
@@ -219,7 +236,7 @@ pub const Window = struct {
         self.connect(list_button, .list);
         self.connect(details_button, .details);
         const menu = gio.Menu.new();
-        inline for (.{ .{ "New tab", "new_tab" }, .{ "Close tab", "close_tab" }, .{ "New window", "new_window" }, .{ "Split panes", "split" }, .{ "New folder…", "new_folder" }, .{ "Rename…", "rename" }, .{ "Copy file", "copy" }, .{ "Paste file", "paste" }, .{ "Move to Trash…", "trash" }, .{ "File operations", "operations" }, .{ "Properties", "properties" }, .{ "Show / hide hidden files", "hidden" }, .{ "Refresh", "refresh" }, .{ "Light / dark appearance", "light" }, .{ "Compact density", "compact" }, .{ "Use system GTK theme", "native" } }) |entry| menu.append(entry[0], "win." ++ entry[1]);
+        inline for (.{ .{ "New tab", "new_tab" }, .{ "Close tab", "close_tab" }, .{ "New window", "new_window" }, .{ "Split panes", "split" }, .{ "New folder…", "new_folder" }, .{ "Rename…", "rename" }, .{ "Cut", "cut" }, .{ "Copy", "copy" }, .{ "Paste", "paste" }, .{ "Undo", "undo" }, .{ "Redo", "redo" }, .{ "Context menu options…", "menu_settings" }, .{ "Move to Trash…", "trash" }, .{ "File operations", "operations" }, .{ "Properties", "properties" }, .{ "Show / hide hidden files", "hidden" }, .{ "Refresh", "refresh" }, .{ "Light / dark appearance", "light" }, .{ "Compact density", "compact" }, .{ "Use system GTK theme", "native" } }) |entry| menu.append(entry[0], "win." ++ entry[1]);
         menu_button.setMenuModel(menu.as(gio.MenuModel));
         menu.unref();
         self.fillPlaces(sidebar_box);
@@ -233,11 +250,16 @@ pub const Window = struct {
         keys.as(gtk.EventController).setPropagationPhase(.capture);
         _ = gtk.EventControllerKey.signals.key_pressed.connect(keys, *Window, keyPressed, self, .{});
         win.as(gtk.Widget).addController(keys.as(gtk.EventController));
+        const location_click = gtk.GestureClick.new();
+        location_click.as(gtk.GestureSingle).setButton(3);
+        _ = gtk.GestureClick.signals.pressed.connect(location_click, *Window, locationContext, self, .{});
+        location.as(gtk.Widget).addController(location_click.as(gtk.EventController));
         self.addTab(0, initial);
         self.addTab(1, initial);
         self.applyTheme();
         self.sync();
         self.layout();
+        self.clipboard.start();
         win.present();
         return self;
     }
@@ -254,7 +276,7 @@ pub const Window = struct {
         const p = &self.panes[self.active];
         return p.tabs.items[p.selected];
     }
-    fn addTab(self: *Window, pane: usize, file: *gio.File) void {
+    pub fn addTab(self: *Window, pane: usize, file: *gio.File) void {
         const p = &self.panes[pane];
         if (p.tabs.items.len >= 32) {
             self.message("Tab limit reached", "Close an unused tab before opening another.");
@@ -268,6 +290,7 @@ pub const Window = struct {
         self.rebuildTabs(pane);
     }
     pub fn rebuildTabs(self: *Window, pane: usize) void {
+        self.context.close();
         const p = &self.panes[pane];
         u.clear(p.tabs_row);
         for (p.tabs.items, 0..) |tab, i| {
@@ -278,6 +301,11 @@ pub const Window = struct {
             object.ext.cast(gtk.Label, b.getChild().?).?.setMaxWidthChars(20);
             b.as(gtk.Widget).setTooltipText(tab.uri);
             _ = gtk.Button.signals.clicked.connect(b, *Tab, tabClicked, tab, .{});
+            b.as(object.Object).setData("phyto-tab", tab);
+            const right = gtk.GestureClick.new();
+            right.as(gtk.GestureSingle).setButton(3);
+            _ = gtk.GestureClick.signals.pressed.connect(right, *Tab, tabContext, tab, .{});
+            b.as(gtk.Widget).addController(right.as(gtk.EventController));
             p.tabs_row.append(b.as(gtk.Widget));
         }
         const add = u.iconButton("list-add-symbolic", "New tab · Ctrl+T");
@@ -290,6 +318,7 @@ pub const Window = struct {
     }
     fn tabClicked(_: *gtk.Button, tab: *Tab) callconv(.c) void {
         const self = tab.owner;
+        self.context.close();
         const p = &self.panes[tab.pane];
         for (p.tabs.items, 0..) |t, i| if (t == tab) {
             p.selected = i;
@@ -302,6 +331,7 @@ pub const Window = struct {
     }
     pub fn activatePane(self: *Window, pane: usize) void {
         if (self.active != pane) {
+            self.context.close();
             self.active = pane;
             self.sync();
         }
@@ -318,6 +348,10 @@ pub const Window = struct {
         file.ref();
         button.as(object.Object).setDataFull("phyto-file", file, unrefFile);
         _ = gtk.Button.signals.clicked.connect(button, *Window, placeClicked, self, .{});
+        const right = gtk.GestureClick.new();
+        right.as(gtk.GestureSingle).setButton(3);
+        _ = gtk.GestureClick.signals.pressed.connect(right, *Window, placeContext, self, .{});
+        button.as(gtk.Widget).addController(right.as(gtk.EventController));
         container.append(button.as(gtk.Widget));
     }
     fn unrefFile(data: ?*anyopaque) callconv(.c) void {
@@ -342,11 +376,267 @@ pub const Window = struct {
         const network = gio.File.newForUri("network:///");
         defer network.unref();
         self.place(container, "Network", "network-workgroup-symbolic", network);
+        inline for (.{ .{ "bookmarks", "BOOKMARKS" }, .{ "favorites", "FAVORITES" } }) |group| {
+            if (self.preferences.strings(group[0])) |values| {
+                defer glib.strfreev(values);
+                if (values[0] != null) container.append(u.label(group[1], "section-label").as(gtk.Widget));
+                for (std.mem.span(values)) |uri| {
+                    const f = gio.File.newForUri(uri.?);
+                    defer f.unref();
+                    const name_ = self.preferences.bookmarkName(f);
+                    defer glib.free(name_);
+                    self.place(container, name_, if (std.mem.eql(u8, group[0], "favorites")) "starred-symbolic" else "folder-symbolic", f);
+                }
+            }
+        }
+        const mounts = g_volume_monitor_get_mounts(self.volume_monitor);
+        if (mounts) |head| {
+            defer head.free();
+            var node: ?*glib.List = head;
+            while (node) |n| : (node = n.f_next) {
+                const mount_: *gio.Mount = @ptrCast(@alignCast(n.f_data.?));
+                const f = mount_.getRoot();
+                defer f.unref();
+                const name_ = mount_.getName();
+                defer glib.free(name_);
+                self.place(container, name_, "drive-removable-media-symbolic", f);
+                container.as(gtk.Widget).getLastChild().?.as(object.Object).setDataFull("phyto-mount", mount_, unrefObject);
+            }
+        }
+        const volumes = g_volume_monitor_get_volumes(self.volume_monitor);
+        if (volumes) |head| {
+            defer head.free();
+            var node: ?*glib.List = head;
+            while (node) |n| : (node = n.f_next) {
+                const v: *gio.Volume = @ptrCast(@alignCast(n.f_data.?));
+                if (v.getMount()) |mounted| {
+                    mounted.unref();
+                    v.unref();
+                    continue;
+                }
+                const f = v.getActivationRoot() orelse gio.File.newForUri("computer:///");
+                defer f.unref();
+                const name_ = v.getName();
+                defer glib.free(name_);
+                self.place(container, name_, "drive-removable-media-symbolic", f);
+                container.as(gtk.Widget).getLastChild().?.as(object.Object).setDataFull("phyto-volume", v, unrefObject);
+            }
+        }
+    }
+    fn locationContext(gesture: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Window) callconv(.c) void {
+        var c = @import("context.zig").Context.init(self.current(), .location);
+        c.add(c.directory, self.current().directory_info);
+        self.context.show(c, gesture.as(gtk.EventController).getWidget().?, x, y);
+        _ = gesture.as(gtk.Gesture).setState(.claimed);
+    }
+    fn tabContext(gesture: *gtk.GestureClick, _: c_int, x: f64, y: f64, tab: *Tab) callconv(.c) void {
+        const c = @import("context.zig").Context.init(tab, .tab);
+        tab.owner.context.show(c, gesture.as(gtk.EventController).getWidget().?, x, y);
+        _ = gesture.as(gtk.Gesture).setState(.claimed);
+    }
+    fn placeContext(gesture: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Window) callconv(.c) void {
+        const widget = gesture.as(gtk.EventController).getWidget().?;
+        self.showPlaceContext(widget, x, y);
+        _ = gesture.as(gtk.Gesture).setState(.claimed);
+    }
+    fn showPlaceContext(self: *Window, widget: *gtk.Widget, x: f64, y: f64) void {
+        const file: *gio.File = @ptrCast(@alignCast(widget.as(object.Object).getData("phyto-file").?));
+        var c = @import("context.zig").Context.init(self.current(), if (self.preferences.contains("bookmarks", file)) .bookmark else .place);
+        c.add(file, null);
+        if (widget.as(object.Object).getData("phyto-mount")) |raw| {
+            const m: *gio.Mount = @ptrCast(@alignCast(raw));
+            m.ref();
+            c.mount = m;
+            c.kind = .device;
+        }
+        if (widget.as(object.Object).getData("phyto-volume")) |raw| {
+            const v: *gio.Volume = @ptrCast(@alignCast(raw));
+            v.ref();
+            c.volume = v;
+            c.kind = .device;
+        }
+        self.context.show(c, widget, x, y);
+    }
+    fn volumesChanged(_: *gio.VolumeMonitor, _: *object.Object, self: *Window) callconv(.c) void {
+        if (!self.closed) self.refreshPlaces();
+    }
+    fn unrefObject(data: ?*anyopaque) callconv(.c) void {
+        const obj: *object.Object = @ptrCast(@alignCast(data.?));
+        obj.unref();
+    }
+    pub fn refreshPlaces(self: *Window) void {
+        if (self.closed) return;
+        self.context.close();
+        u.clear(self.sidebar_content);
+        self.fillPlaces(self.sidebar_content);
+        u.clear(self.popup_content);
+        self.fillPlaces(self.popup_content);
+        self.queueUpdate();
+        if (self.preferences.save_error) self.message("Preferences were not saved", "The preferences file could not be written. Check the configuration directory permissions.");
+    }
+    pub fn findTab(self: *Window, id: u64) ?*Tab {
+        for (self.panes) |pane| for (pane.tabs.items) |tab| if (tab.id == id) return tab;
+        return null;
+    }
+    pub fn setStatus(self: *Window, text: []const u8) void {
+        if (self.status_message) |old| a.free(old);
+        self.status_message = a.dupeZ(u8, text) catch unreachable;
+        self.queueUpdate();
+    }
+    pub fn resort(self: *Window) void {
+        self.context.close();
+        for (self.panes) |pane| for (pane.tabs.items) |tab| {
+            var selected = @import("context.zig").Context.capture(tab);
+            defer selected.deinit();
+            tab.sorter.as(gtk.Sorter).changed(.different);
+            const model_ = tab.selection.as(gio.ListModel);
+            const selection = tab.selection.as(gtk.SelectionModel);
+            _ = selection.unselectAll();
+            var i: c_uint = 0;
+            while (i < model_.getNItems()) : (i += 1) {
+                const info: *gio.FileInfo = @ptrCast(model_.getItem(i).?);
+                defer info.unref();
+                for (selected.items.items) |item| if (item.file.equal(u.file(info)) != 0) {
+                    _ = selection.selectItem(i, 0);
+                    break;
+                };
+            }
+        };
+        self.preferences.save();
+        self.queueUpdate();
+    }
+    pub fn tabCommand(self: *Window, tab: *Tab, command: Command) void {
+        self.context.close();
+        const pane = tab.pane;
+        const p = &self.panes[pane];
+        var index: usize = 0;
+        for (p.tabs.items, 0..) |t, i| if (t == tab) {
+            index = i;
+            break;
+        };
+        switch (command) {
+            .tab_duplicate => {
+                const file = gio.File.newForUri(tab.uri);
+                defer file.unref();
+                self.addTab(pane, file);
+            },
+            .tab_left, .tab_right => {
+                const other = if (command == .tab_left) (if (index == 0) return else index - 1) else (if (index + 1 == p.tabs.items.len) return else index + 1);
+                std.mem.swap(*Tab, &p.tabs.items[index], &p.tabs.items[other]);
+                if (p.selected == index) p.selected = other else if (p.selected == other) p.selected = index;
+            },
+            .tab_other => {
+                if (!self.split or self.panes[1 - pane].tabs.items.len >= 32) return;
+                if (p.tabs.items.len == 1) self.addTab(pane, self.home);
+                _ = p.tabs.orderedRemove(index);
+                p.stack.remove(tab.root.as(gtk.Widget));
+                p.selected = @min(p.selected, p.tabs.items.len - 1);
+                p.stack.setVisibleChild(p.tabs.items[p.selected].root.as(gtk.Widget));
+                const other = &self.panes[1 - pane];
+                tab.pane = 1 - pane;
+                other.tabs.append(a, tab) catch unreachable;
+                _ = other.stack.addChild(tab.root.as(gtk.Widget));
+                other.selected = other.tabs.items.len - 1;
+                other.stack.setVisibleChild(tab.root.as(gtk.Widget));
+                self.active = 1 - pane;
+                self.rebuildTabs(1 - pane);
+            },
+            .tab_close_others => {
+                var i = p.tabs.items.len;
+                while (i > 0) {
+                    i -= 1;
+                    if (p.tabs.items[i] == tab) continue;
+                    const old = p.tabs.orderedRemove(i);
+                    p.stack.remove(old.root.as(gtk.Widget));
+                    old.destroy();
+                }
+                p.selected = 0;
+                p.stack.setVisibleChild(tab.root.as(gtk.Widget));
+            },
+            .close_tab => {
+                if (p.tabs.items.len == 1) {
+                    if (self.split) {
+                        self.split = false;
+                        self.active = 1 - pane;
+                        self.sync();
+                    } else self.window.close();
+                    return;
+                }
+                const selected_tab = p.tabs.items[p.selected];
+                _ = p.tabs.orderedRemove(index);
+                p.stack.remove(tab.root.as(gtk.Widget));
+                tab.destroy();
+                if (selected_tab == tab) p.selected = @min(index, p.tabs.items.len - 1) else {
+                    for (p.tabs.items, 0..) |t, i| if (t == selected_tab) {
+                        p.selected = i;
+                        break;
+                    };
+                }
+                p.stack.setVisibleChild(p.tabs.items[p.selected].root.as(gtk.Widget));
+            },
+            else => {},
+        }
+        self.rebuildTabs(pane);
+        self.sync();
     }
     fn placeClicked(button: *gtk.Button, self: *Window) callconv(.c) void {
         const f: *gio.File = @ptrCast(@alignCast(button.as(object.Object).getData("phyto-file").?));
-        self.current().navigate(f, true);
+        if (button.as(object.Object).getData("phyto-volume")) |raw| {
+            const volume: *gio.Volume = @ptrCast(@alignCast(raw));
+            var c = @import("context.zig").Context.init(self.current(), .device);
+            defer c.deinit();
+            c.add(f, null);
+            volume.ref();
+            c.volume = volume;
+            @import("platform/applications.zig").volume(self, &c, .mount);
+        } else if (self.preferences.contains("favorites", f)) {
+            self.app.as(gio.Application).hold();
+            const request = a.create(FavoriteRequest) catch unreachable;
+            request.* = .{ .owner = self, .tab_id = self.current().id, .generation = self.current().generation };
+            f.queryInfoAsync("standard::*,access::*", .{}, 0, self.background_cancel, favoriteQueried, request);
+        } else self.current().navigate(f, true);
         self.places_popover.popdown();
+    }
+    const FavoriteRequest = struct { owner: *Window, tab_id: u64, generation: u64 };
+    fn favoriteQueried(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const request: *FavoriteRequest = @ptrCast(@alignCast(data.?));
+        const self = request.owner;
+        defer {
+            self.app.as(gio.Application).release();
+            a.destroy(request);
+        }
+        const file: *gio.File = @ptrCast(source.?);
+        var err: ?*glib.Error = null;
+        const info = file.queryInfoFinish(result, &err);
+        defer if (err) |e| e.free();
+        defer if (info) |i| i.unref();
+        if (self.closed) return;
+        const tab = self.findTab(request.tab_id) orelse return;
+        if (tab.generation != request.generation) return;
+        if (info) |i| {
+            if (i.getFileType() == .directory) tab.navigate(file, true) else self.openFile(file, i);
+        } else self.message("Favorite is unavailable", if (err) |e| e.f_message orelse "The item could not be opened." else "The item could not be opened.");
+    }
+    fn keyboardContext(self: *Window) void {
+        var node = self.window.getFocus();
+        while (node) |widget| : (node = widget.getParent()) {
+            if (widget.as(object.Object).getData("phyto-file") != null) {
+                self.showPlaceContext(widget, 8, @floatFromInt(widget.getHeight()));
+                return;
+            }
+            if (widget.as(object.Object).getData("phyto-tab")) |raw| {
+                const tab: *Tab = @ptrCast(@alignCast(raw));
+                self.context.show(@import("context.zig").Context.init(tab, .tab), widget, 8, @floatFromInt(widget.getHeight()));
+                return;
+            }
+            if (widget == self.location_button.as(gtk.Widget)) {
+                var c = @import("context.zig").Context.init(self.current(), .location);
+                c.add(c.directory, self.current().directory_info);
+                self.context.show(c, widget, 8, @floatFromInt(widget.getHeight()));
+                return;
+            }
+        }
+        self.context.keyboard(self.current());
     }
     pub fn sync(self: *Window) void {
         if (self.closed or self.panes[0].tabs.items.len == 0 or self.panes[1].tabs.items.len == 0) return;
@@ -408,6 +698,13 @@ pub const Window = struct {
         defer a.free(text);
         self.status.setText(if (self.status_message) |msg| msg else text);
         self.updateDetails();
+        self.context.update();
+        var current_context = @import("context.zig").Context.capture(tab);
+        defer current_context.deinit();
+        for (std.enums.values(Command)) |cmd| if (@import("actions.zig").fileAction(cmd)) {
+            const action: *gio.SimpleAction = @ptrCast(object.ext.cast(gtk.ApplicationWindow, self.window).?.as(gio.ActionMap).lookupAction(@tagName(cmd)).?);
+            action.setEnabled(@intFromBool(self.context.allowed(&current_context, cmd)));
+        };
         return 0;
     }
     fn updateDetails(self: *Window) void {
@@ -481,7 +778,7 @@ pub const Window = struct {
         self.search_scope.as(gtk.Widget).setVisible(@intFromBool(!narrow));
         self.pane_switch.as(gtk.Widget).setVisible(@intFromBool(self.split));
         for (&self.panes, 0..) |*p, i| {
-            const visible = if (!self.split) i == 0 else if (self.width < 980) i == self.active else true;
+            const visible = if (!self.split) i == self.active else if (self.width < 980) i == self.active else true;
             p.host.as(gtk.Widget).setVisible(@intFromBool(visible));
             for (p.tabs.items) |t| {
                 const columns = t.list.getColumns();
@@ -540,8 +837,13 @@ pub const Window = struct {
         self.current().setQuery("");
         self.sync();
     }
-    fn dispatch(self: *Window, command: Command) void {
+    pub fn dispatch(self: *Window, command: Command) void {
         if (self.closed) return;
+        if (@import("actions.zig").fileAction(command)) {
+            self.context.fresh(command);
+            return;
+        }
+        self.context.close();
         if (self.status_message) |msg| {
             a.free(msg);
             self.status_message = null;
@@ -605,20 +907,7 @@ pub const Window = struct {
                 self.addTab(self.active, f);
                 self.sync();
             },
-            .close_tab => {
-                const p = &self.panes[self.active];
-                if (p.tabs.items.len == 1) {
-                    if (self.split) self.dispatch(.split) else self.window.close();
-                    return;
-                }
-                const removed = p.tabs.orderedRemove(p.selected);
-                p.stack.remove(removed.root.as(gtk.Widget));
-                removed.destroy();
-                p.selected = @min(p.selected, p.tabs.items.len - 1);
-                p.stack.setVisibleChild(p.tabs.items[p.selected].root.as(gtk.Widget));
-                self.rebuildTabs(self.active);
-                self.sync();
-            },
+            .close_tab => self.tabCommand(t, .close_tab),
             .new_window => {
                 const f = gio.File.newForUri(t.uri);
                 defer f.unref();
@@ -637,34 +926,45 @@ pub const Window = struct {
                 self.options.native = !self.options.native;
                 self.applyTheme();
             },
-            .new_folder => self.operations.nameDialog(false),
-            .rename => self.operations.nameDialog(true),
-            .trash => self.operations.trashDialog(),
-            .copy => self.operations.copySelection(),
-            .paste => self.operations.paste(),
             .operations => self.operations.present(),
-            .properties => {
-                const info = t.selected() orelse {
-                    self.message("Properties", "Select a file or folder first.");
-                    return;
+            .sort_name, .sort_size, .sort_type, .sort_modified => {
+                self.preferences.sort = switch (command) {
+                    .sort_size => .size,
+                    .sort_type => .type,
+                    .sort_modified => .modified,
+                    else => .name,
                 };
-                defer info.unref();
-                const uri = u.file(info).getParseName();
-                defer glib.free(uri);
-                const size = u.sizeText(info);
-                defer glib.free(size);
-                const date = u.dateText(info);
-                defer glib.free(date);
-                const value = u.format("{s}\n\nSize: {s}\nModified: {s}", .{ uri, size, date });
-                defer a.free(value);
-                self.message(info.getDisplayName(), value);
+                self.resort();
             },
+            .reverse => {
+                self.preferences.reverse = !self.preferences.reverse;
+                self.resort();
+            },
+            .folders_first => {
+                self.preferences.folders_first = !self.preferences.folders_first;
+                self.resort();
+            },
+            .advanced, .allow_delete => {
+                if (command == .advanced) self.preferences.advanced = !self.preferences.advanced else self.preferences.allow_delete = !self.preferences.allow_delete;
+                self.preferences.save();
+                const action: *gio.SimpleAction = @ptrCast(object.ext.cast(gtk.ApplicationWindow, self.window).?.as(gio.ActionMap).lookupAction(@tagName(command)).?);
+                action.setState(glib.Variant.newBoolean(@intFromBool(if (command == .advanced) self.preferences.advanced else self.preferences.allow_delete)));
+            },
+            else => {},
         }
     }
-    fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, mods: gdk.ModifierType, self: *Window) callconv(.c) c_int {
+    pub fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, mods: gdk.ModifierType, self: *Window) callconv(.c) c_int {
         if (@import("build_options").test_hooks and key == gdk.KEY_F12) {
             self.probe();
             return 1;
+        }
+        if (self.context.active) {
+            if (key == gdk.KEY_Escape) {
+                self.context.close();
+                return 1;
+            }
+            // Let the native menu process arrows, activation and mnemonics.
+            if (!mods.control_mask and !mods.alt_mask) return 0;
         }
         if (mods.control_mask) {
             const command: ?Command = switch (key) {
@@ -707,6 +1007,26 @@ pub const Window = struct {
         const focus = self.window.getFocus();
         const editing = self.navigation.getVisibleChild() == self.path.as(gtk.Widget) or (if (focus) |f| f == self.search.as(gtk.Widget) or f.isAncestor(self.search.as(gtk.Widget)) != 0 else false);
         if (!editing) {
+            if (key == gdk.KEY_Menu or (key == gdk.KEY_F10 and mods.shift_mask)) {
+                self.keyboardContext();
+                return 1;
+            }
+            if (mods.control_mask and key == gdk.KEY_x) {
+                self.dispatch(.cut);
+                return 1;
+            }
+            if (mods.control_mask and (key == gdk.KEY_z or key == gdk.KEY_Z)) {
+                self.dispatch(if (mods.shift_mask) .redo else .undo);
+                return 1;
+            }
+            if (mods.control_mask and key == gdk.KEY_o) {
+                self.dispatch(.open);
+                return 1;
+            }
+            if (key == gdk.KEY_F4 and mods.shift_mask) {
+                self.dispatch(.terminal);
+                return 1;
+            }
             if (mods.control_mask and key == gdk.KEY_c) {
                 self.dispatch(.copy);
                 return 1;
@@ -720,7 +1040,7 @@ pub const Window = struct {
                 return 1;
             }
             if (key == gdk.KEY_Delete) {
-                self.dispatch(.trash);
+                self.dispatch(if (mods.shift_mask) .delete else .trash);
                 return 1;
             }
         }
@@ -744,6 +1064,27 @@ pub const Window = struct {
         }
         return 0;
     }
+    const ProbeWidget = struct { label: []const u8, kind: []const u8, x: f64, y: f64, width: c_int, height: c_int, menu: bool, sensitive: bool };
+    fn probeWidgets(self: *Window, widget: *gtk.Widget, result: *std.ArrayList(ProbeWidget)) void {
+        if (widget.getMapped() == 0) return;
+        var label: ?[*:0]const u8 = null;
+        var kind: []const u8 = "label";
+        if (widget.as(object.Object).getData("phyto-item")) |raw| {
+            const item: *gtk.ListItem = @ptrCast(@alignCast(raw));
+            if (item.getItem()) |obj| {
+                const info = object.ext.cast(gio.FileInfo, obj).?;
+                label = info.getDisplayName();
+                kind = "file";
+            }
+        } else if (object.ext.cast(gtk.Label, widget)) |text| label = text.getText();
+        if (label) |text| if (text[0] != 0) {
+            var x: f64 = 0;
+            var y: f64 = 0;
+            if (widget.translateCoordinates(self.window.as(gtk.Widget), 0, 0, &x, &y) != 0) result.append(a, .{ .label = std.mem.span(text), .kind = kind, .x = x, .y = y, .width = widget.getWidth(), .height = widget.getHeight(), .menu = if (self.context.popover) |p| widget.isAncestor(p.as(gtk.Widget)) != 0 else false, .sensitive = widget.isSensitive() != 0 }) catch unreachable;
+        };
+        var child = widget.getFirstChild();
+        while (child) |w| : (child = w.getNextSibling()) self.probeWidgets(w, result);
+    }
     fn probe(self: *Window) void {
         const t = self.current();
         const selection = t.selection.as(gtk.SelectionModel).getSelection();
@@ -755,6 +1096,9 @@ pub const Window = struct {
         while (child) |c| : (child = c.getNextSibling()) {
             realized_rows += 1;
         }
+        var widgets: std.ArrayList(ProbeWidget) = .empty;
+        defer widgets.deinit(a);
+        self.probeWidgets(self.window.as(gtk.Widget), &widgets);
         const json = std.json.Stringify.valueAlloc(a, .{
             .realized_grid_children = realized_rows,
             .focus_name = if (self.window.getFocus()) |f| std.mem.span(f.getName()) else "none",
@@ -776,6 +1120,16 @@ pub const Window = struct {
             .height = self.window.as(gtk.Widget).getHeight(),
             .details = self.details.as(gtk.Widget).getVisible() != 0,
             .sidebar = self.sidebar.as(gtk.Widget).getVisible() != 0,
+            .widgets = widgets.items,
+            .write_capable = if (t.directory_info) |i| i.getAttributeBoolean("access::can-write") != 0 else false,
+            .operation_result = self.operations.result,
+            .context_open = self.context.active,
+            .context_count = if (self.context.snapshot) |c| c.items.items.len else 0,
+            .context_kind = if (self.context.snapshot) |c| @tagName(c.kind) else "none",
+            .clipboard_count = self.clipboard.files.items.len,
+            .clipboard_cut = self.clipboard.cut,
+            .undo_count = self.operations.undo_stack.items.len,
+            .redo_count = self.operations.redo_stack.items.len,
             .busy = self.operations.busy,
             .conflict = self.operations.conflict,
         }, .{}) catch return;
@@ -790,7 +1144,7 @@ pub const Window = struct {
         const dialog = gtk.Dialog.new();
         self.message_dialog = dialog;
         dialog.as(gtk.Widget).addCssClass("phyto-root");
-        dialog.as(gtk.Widget).addCssClass(if (self.options.light) "light" else "dark");
+        dialog.as(gtk.Widget).addCssClass(if (self.options.native) "native" else if (self.options.light) "light" else "dark");
         dialog.as(gtk.Window).setTitle(title);
         dialog.as(gtk.Window).setTransientFor(self.window);
         dialog.as(gtk.Window).setModal(1);
@@ -803,7 +1157,10 @@ pub const Window = struct {
         caption.setWrapMode(.word_char);
         caption.setMaxWidthChars(50);
         caption.setSelectable(1);
-        body.append(caption.as(gtk.Widget));
+        const scroll = u.scroll(caption.as(gtk.Widget));
+        scroll.setMaxContentHeight(420);
+        scroll.setPropagateNaturalHeight(1);
+        body.append(scroll.as(gtk.Widget));
         _ = dialog.addButton("Close", @intFromEnum(gtk.ResponseType.close));
         _ = gtk.Dialog.signals.response.connect(dialog, *Window, messageResponse, self, .{});
         dialog.as(gtk.Window).present();
@@ -838,6 +1195,10 @@ pub const Window = struct {
             self.operations.present();
             return 1;
         }
+        self.context.stop();
+        self.clipboard.stop();
+        self.background_cancel.cancel();
+        for (self.volume_signals) |signal| object.signalHandlerDisconnect(self.volume_monitor.as(object.Object), signal);
         self.closed = true;
         if (self.update_id != 0) {
             _ = glib.Source.remove(self.update_id);
@@ -881,8 +1242,15 @@ pub const Window = struct {
         }
         self.operations.deinit();
         self.home.unref();
-        if (self.clipboard) |f| f.unref();
+        self.context.deinit();
+        self.clipboard.deinit();
+        self.preferences.release();
+        self.volume_monitor.unref();
+        self.background_cancel.unref();
         if (self.status_message) |msg| a.free(msg);
         a.destroy(self);
     }
 };
+
+extern "c" fn g_volume_monitor_get_mounts(*gio.VolumeMonitor) ?*glib.List;
+extern "c" fn g_volume_monitor_get_volumes(*gio.VolumeMonitor) ?*glib.List;

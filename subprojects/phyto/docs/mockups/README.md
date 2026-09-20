@@ -6,6 +6,22 @@ See the [native implementation report](../IMPLEMENTATION.md) for the working
 Zig/GTK4 app and its scope, and the [implementation plan](../IMPLEMENTATION_PLAN.md)
 for the full roadmap.
 
+## Context menu proposal
+
+Open [context-menus.html](context-menus.html) for the proposed Nemo-style menus.
+Compare the M1 foundation with the target menus, switch contexts, theme and density,
+and right-click a file tile or background. Actions only show review feedback.
+The [context-menu implementation plan](../CONTEXT_MENUS_PLAN.md) specifies backend
+requirements, menu availability, milestones and validation. This is separate from
+the existing browsing prototype and does not change the native app.
+
+Captures: [dark](context-menu-dark.png), [light](context-menu-light.png),
+[narrow/compact](context-menu-narrow.png). The
+[verification report](context-menu-verification.json) covers 60 combinations of
+context, scope and width, plus submenu, pointer and keyboard checks. Reproduce
+with `python3 subprojects/phyto/docs/mockups/verify_context_menus.py`; it uses the
+same local Playwright/Chromium setup described below.
+
 ## Screens
 
 | Mockup | Capture | Direct prototype state |

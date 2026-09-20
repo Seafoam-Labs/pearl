@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "scope": "Working Phyto workflows; exact Nemo parity is not required",
+  "build": "zig build -Doptimize=ReleaseSafe",
+  "unit_tests": 8,
+  "native_context_groups": 15,
+  "native_browsing_groups": 9,
+  "packaging_tests": 6,
+  "production_binary_sha256": "dca27f7dab88c6f97c0db46c024e871fa5009b3719533a413a452472dd539e55",
+  "production_test_probe": false,
+  "cross_filesystem_fixture": "/tmp and project working directory had distinct device IDs",
+  "manual_qualification": [
+    "physical removable devices",
+    "remote and administrative backends",
+    "archive and Bulky provider GUIs",
+    "screen reader, touch, RTL and mixed DPI"
+  ]
+}

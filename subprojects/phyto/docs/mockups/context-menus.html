@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phyto · Context menu review</title>
+<style>
+:root{font:14px Inter,"Noto Sans",sans-serif;color-scheme:dark;--surface:#141218;--pane:#1d1b20;--container:#211f26;--text:#e6e0e9;--secondary:#cac4d0;--primary:#d0bcff;--selected:#4f378b;--outline:#79747e;--error:#ffb4ab}
+:root.light{color-scheme:light;--surface:#fdf7ff;--pane:#f7f2fa;--container:#f3edf7;--text:#1d1b20;--secondary:#49454f;--primary:#6750a4;--selected:#eaddff;--outline:#79747e;--error:#8c1d18}
+*{box-sizing:border-box}body{margin:0;background:var(--surface);color:var(--text)}main{max-width:1200px;margin:auto;padding:24px}h1{font-size:22px;font-weight:550;margin:0 0 8px}p{color:var(--secondary);line-height:1.55}a{color:var(--primary)}.review{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:20px 0}label{display:grid;gap:6px;color:var(--secondary)}select,button{font:inherit;color:var(--text);background:var(--container);border:1px solid var(--outline);border-radius:8px;padding:10px}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:2px solid var(--primary);outline-offset:2px}.window{border:1px solid var(--outline);border-radius:16px;overflow:hidden}.title{display:flex;justify-content:space-between;padding:16px 20px;background:var(--container)}.title strong{font-weight:550}.decorative{color:var(--secondary)}.toolbar{display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:1px solid var(--container);height:64px}.crumb{padding:10px 14px;background:var(--container);border-radius:12px}.tools{margin-left:auto;color:var(--secondary)}.body{display:grid;grid-template-columns:190px 1fr;min-height:730px}aside{padding:20px 12px;background:var(--pane)}.place{padding:12px;border-radius:10px;margin-bottom:4px}.place.active{background:var(--selected)}.caption{font-size:12px;color:var(--secondary);padding:4px 12px 12px}.browser{position:relative;min-width:0;background:var(--pane);padding:0 16px 36px}.tabs{height:46px;display:flex;gap:22px;align-items:center;border-bottom:1px solid var(--container);margin:0 -16px 18px;padding:0 20px}.tab{border-bottom:2px solid var(--primary);height:100%;display:flex;align-items:center}.files{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px}.file{border:0;background:transparent;min-height:112px;display:grid;justify-items:center;gap:12px;padding:16px 6px;overflow-wrap:anywhere}.file.selected{background:var(--selected)}.file svg{width:38px;height:38px;fill:none;stroke:var(--primary);stroke-width:1.5}.menu{position:absolute;right:32px;top:120px;width:300px;max-width:calc(100% - 24px);max-height:600px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--outline) transparent;background:var(--container);padding:6px;border:1px solid color-mix(in srgb,var(--outline) 55%,transparent);border-radius:12px;box-shadow:0 12px 36px #0005;z-index:2}.menu[hidden]{display:none}.menu button{display:flex;align-items:center;justify-content:space-between;text-align:left;gap:16px;width:100%;min-height:44px;border:0;border-radius:6px;background:transparent;padding:8px 12px}.menu button:hover,.menu button:focus-visible{background:color-mix(in srgb,var(--text) 8%,transparent)}.menu button:disabled{color:var(--secondary);cursor:default;opacity:.65}.menu .danger{color:var(--error)}.menu .shortcut{font-size:12px;color:var(--secondary);white-space:nowrap}.menu hr{border:0;border-top:1px solid color-mix(in srgb,var(--outline) 35%,transparent);margin:6px 8px}.compact .menu button{min-height:36px}.status{border-top:1px solid var(--container);padding:10px 20px;font-size:12px;color:var(--secondary)}#note{min-height:44px}#feedback{color:var(--primary)}.foot{font-size:12px}.legend{display:flex;gap:18px;flex-wrap:wrap}.badge{border:1px solid var(--outline);border-radius:20px;padding:4px 10px;font-size:12px}@media(max-width:650px){main{padding:12px}.body{grid-template-columns:1fr}aside{display:none}.toolbar{gap:12px;padding:12px}.tools{font-size:12px}.menu{right:12px;top:150px;max-height:570px;width:286px}.body{min-height:750px}.file{min-height:96px}.review label{width:100%}.review select{width:100%}.decorative{display:none}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<main>
+<h1>Phyto context menus</h1>
+<p>Design proposal · <a href="../CONTEXT_MENUS_PLAN.md">Implementation plan</a> · All files and actions below are illustrative.</p>
+<div class="review">
+<label>Context<select id="scenario"><option value="file">One file</option><option value="folder">One folder</option><option value="background">Folder background</option><option value="multi">Multiple items</option><option value="trash">Items in Trash</option><option value="trashBackground">Trash background</option><option value="readonly">Read-only folder</option><option value="bookmark">Bookmark</option><option value="device">Mounted removable drive</option><option value="tab">Tab</option></select></label>
+<label>Delivery scope<select id="scope"><option value="target">Target · advanced options enabled</option><option value="m1">M1 · existing operation limits</option></select></label>
+<button id="theme" aria-pressed="false">Light theme</button><button id="density" aria-pressed="false">Compact</button><button id="reopen">Open menu</button>
+</div>
+<p id="note"></p>
+<div class="window">
+<div class="title"><strong>Phyto</strong><span class="decorative" aria-hidden="true">− &nbsp; □ &nbsp; ×</span></div>
+<div class="toolbar"><span aria-hidden="true">‹ &nbsp; › &nbsp; ↑</span><span class="crumb" id="location">Home</span><span class="tools" aria-hidden="true">⌕ &nbsp; ▦ &nbsp; ☰</span></div>
+<div class="body"><aside aria-label="Illustrative Places"><div class="caption">PLACES</div><div class="place active">Home</div><div class="place">Documents</div><div class="place">Downloads</div><div class="place">Pictures</div><div class="place">Trash</div><div class="caption" style="margin-top:20px">BOOKMARKS</div><div class="place">Projects</div></aside>
+<div class="browser" id="browser" tabindex="0" aria-label="Illustrative file area; right click or press Shift F10"><div class="tabs"><span class="tab" id="tabname">Home</span><span aria-hidden="true">+</span></div><div class="files" id="files"></div><div class="menu" id="menu" role="menu" aria-label="File context menu"></div></div></div>
+<div class="status" id="status">1 item selected</div>
+</div>
+<p id="feedback" role="status">Right-click a tile or empty space, or choose a review scenario. Escape closes the menu.</p>
+<div class="legend"><span class="badge">Native GTK implementation planned</span><span class="badge">44 px rows · 36 px compact</span><span class="badge">No Home heading or subtitle</span></div>
+<p class="foot">Menus preview M1 and the M2–M5 target. Optional providers, pin/favorite, preferences and other context variants are specified in the plan. This prototype does not perform file operations, use the system clipboard, or establish native accessibility behavior.</p>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const group=(...items)=>items;
+const menus={
+ file:[group('Open|Enter','Open with >'),group('Cut|Ctrl+X','Copy|Ctrl+C','Copy to >','Move to >'),group('Rename…|F2','Duplicate','Make link'),group('Move to Trash|Delete','Delete permanently…|Shift+Delete'),group('Properties|Alt+Enter')],
+ folder:[group('Open|Enter','Open in new tab','Open in new window'),group('Open in terminal'),group('Cut|Ctrl+X','Copy|Ctrl+C','Paste into folder','Copy to >','Move to >'),group('Rename…|F2','Duplicate','Make link','Add bookmark'),group('Move to Trash|Delete','Delete permanently…|Shift+Delete'),group('Properties|Alt+Enter')],
+ background:[group('New folder…|Ctrl+Shift+N','New document >'),group('Paste|Ctrl+V'),group('Undo copy|Ctrl+Z','!Redo|Ctrl+Shift+Z'),group('Open in terminal'),group('View >','Sort by >','Show hidden files|Ctrl+H'),group('Properties|Alt+Enter')],
+ multi:[group('Open 3 items'),group('Cut|Ctrl+X','Copy|Ctrl+C','Copy to >','Move to >'),group('Duplicate'),group('Move to Trash|Delete','Delete permanently…|Shift+Delete'),group('Properties|Alt+Enter')],
+ trash:[group('Restore','Restore to…'),group('Delete permanently…|Shift+Delete'),group('Properties|Alt+Enter')],
+ trashBackground:[group('Empty Trash…'),group('View >','Sort by >'),group('Properties|Alt+Enter')],
+ readonly:[group('!New folder…|Ctrl+Shift+N','!New document >'),group('!Paste|Ctrl+V'),group('Open in terminal'),group('View >','Sort by >','Show hidden files|Ctrl+H'),group('Properties|Alt+Enter')],
+ bookmark:[group('Open','Open in new tab','Open in new window'),group('Open in terminal'),group('Rename bookmark…','Remove bookmark'),group('Properties')],
+ device:[group('Open','Open in new tab','Open in new window'),group('Eject'),group('Properties')],
+ tab:[group('New tab|Ctrl+T','Duplicate tab'),group('!Move tab left','Move tab right','Move to other pane'),group('Close tab|Ctrl+W','Close other tabs')]
+};
+const initial={
+ file:[group('Open|Enter'),group('Copy file|Ctrl+C'),group('Rename…|F2','Move to Trash…|Delete'),group('Properties|Alt+Enter')],
+ folder:[group('Open|Enter','Open in new tab','Open in new window'),group('Rename…|F2','Move to Trash…|Delete'),group('Properties|Alt+Enter')],
+ background:[group('New folder…|Ctrl+Shift+N'),group('Paste file|Ctrl+V'),group('Show hidden files|Ctrl+H'),group('Properties|Alt+Enter')],
+ multi:[group('Open 3 items'),group('Properties|Alt+Enter')],
+ readonly:[group('!New folder…|Ctrl+Shift+N'),group('!Paste file|Ctrl+V'),group('Show hidden files|Ctrl+H'),group('Properties|Alt+Enter')],
+ trash:[group('Properties|Alt+Enter')],trashBackground:[group('Properties|Alt+Enter')]
+};
+const submenus={
+ 'Open with':[group('Text editor','Other application…')],
+ 'Copy to':[group('Other pane','Documents','Choose folder…')],
+ 'Move to':[group('Other pane','Documents','Choose folder…')],
+ 'New document':[group('Empty document','Project notes template')],
+ 'View':[group('✓ Icon view|Ctrl+1','Detailed list|Ctrl+2')],
+ 'Sort by':[group('✓ Name','Size','Type','Modified'),group('✓ Ascending','Descending'),group('✓ Folders first')]
+};
+const notes={file:'Regular file · “Notes.md”. Application choices depend on the file type.',folder:'Folder · “Projects”. Paste targets this folder, even while Home remains open.',background:'Background · actions target Home. Clipboard and an undo receipt are available in this fixture.',multi:'Three selected files · the same actions apply to the entire selection. No single-item Rename.',trash:'Trash · restore and permanent deletion replace ordinary file mutations.',trashBackground:'Trash background · Empty Trash requires a separate confirmation.',readonly:'Read-only folder · creation and paste are disabled. Properties remains available.',bookmark:'Saved bookmark · removing it never deletes the directory.',device:'Mounted removable drive · this fixture supports eject, which includes unmounting.',tab:'Clicked tab · actions must not accidentally close the active tab in the other pane.'};
+const names=['Projects','Documents','Downloads','Pictures','Notes.md','Budget.ods','Readme.txt','Archive.zip'];
+let focusOrigin=null;let clickedName=null;
+function renderMenu(groups,back=false){
+ const menu=$('#menu');menu.replaceChildren();menu.hidden=false;
+ if(back){const b=document.createElement('button');b.textContent='‹ Back';b.setAttribute('role','menuitem');b.onclick=()=>{render();$('#menu button:not(:disabled)').focus()};menu.append(b)}
+ for(const [i,items] of groups.entries()){
+  if(i)menu.append(document.createElement('hr'));
+  for(let item of items){const disabled=item.startsWith('!');item=item.replace(/^!/,'');const [label,shortcut]=item.split('|');const b=document.createElement('button');b.disabled=disabled;b.setAttribute('role','menuitem');b.dataset.label=label;const title=document.createElement('span');title.textContent=label.replace(' >','');b.append(title);const suffix=document.createElement('span');suffix.className='shortcut';suffix.setAttribute('aria-hidden','true');suffix.textContent=label.endsWith(' >')?'›':shortcut||'';b.append(suffix);if(label.endsWith(' >'))b.setAttribute('aria-haspopup','menu');if(label.startsWith('Delete permanently')||label==='Empty Trash…')b.classList.add('danger');b.onclick=()=>{const sub=submenus[label.replace(' >','')];if(sub){renderMenu(sub,true);$('#menu button').focus()}else{$('#feedback').textContent=`Preview: ${label} — ${notes[$('#scenario').value]} No action was performed.`;menu.hidden=true;$('#browser').focus()}};menu.append(b)}
+ }
+ menu.scrollTop=0;
+}
+function render(){
+ $('#feedback').textContent='Right-click a tile or empty space, or choose a review scenario. Long menus scroll. Escape closes the menu.';
+ const key=$('#scenario').value,m1=$('#scope').value==='m1';
+ $('#note').textContent=notes[key]+(m1?' M1 scope: batch mutations and system clipboard support arrive later.':' Target scope: advanced menu options are enabled for review.');
+ $('#location').textContent=key.startsWith('trash')?'Trash':key==='readonly'?'Read-only share':'Home';$('#tabname').textContent=$('#location').textContent;
+ $('#files').replaceChildren();
+ for(const [i,name]of names.entries()){const b=document.createElement('button');b.className='file';b.dataset.context=i<4?'folder':'file';if(key==='multi'&&i>=4&&i<=6||key==='file'&&name===(clickedName||'Notes.md')||key==='folder'&&name===(clickedName||'Projects')||key==='trash'&&i===4)b.classList.add('selected');b.innerHTML=`<svg aria-hidden="true" viewBox="0 0 40 40"><path d="${i<4?'M4 10h12l4 4h16v20H4Z':'M10 5h14l7 7v24H10ZM24 5v9h7'}"/></svg>`;const l=document.createElement('span');l.textContent=name;b.append(l);b.onclick=()=>{clickedName=name;$('#scenario').value=b.dataset.context;render()};$('#files').append(b)}
+ $('#status').textContent=key==='multi'?'3 items selected':key==='file'||key==='folder'||key==='trash'?'1 item selected':'8 items';
+ if(m1&&!initial[key]){renderMenu([['Available in M4']]);$('#menu button').disabled=true}else renderMenu((m1?initial:menus)[key]);
+}
+$('#scenario').onchange=()=>{clickedName=null;render()};$('#scope').onchange=render;$('#reopen').onclick=()=>{render();$('#menu button:not(:disabled)').focus()};
+$('#theme').onclick=()=>{const on=document.documentElement.classList.toggle('light');$('#theme').setAttribute('aria-pressed',on);$('#theme').textContent=on?'Dark theme':'Light theme'};
+$('#density').onclick=()=>{const on=document.documentElement.classList.toggle('compact');$('#density').setAttribute('aria-pressed',on)};
+$('#browser').addEventListener('contextmenu',e=>{if(e.target.closest('#menu'))return;e.preventDefault();focusOrigin=e.target.closest('.file')||$('#browser');const preserve=$('#scenario').value==='multi'&&focusOrigin.classList.contains('selected');clickedName=focusOrigin.classList.contains('file')?focusOrigin.innerText:null;if(!preserve)$('#scenario').value=focusOrigin.dataset.context||'background';render();$('#menu button:not(:disabled)').focus()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();$('#menu').hidden=true;const origin=focusOrigin?.isConnected?focusOrigin:$('#browser');origin.focus()}if((e.key==='F10'&&e.shiftKey||e.key==='ContextMenu')&&e.target.closest('#browser')){e.preventDefault();render();$('#menu button:not(:disabled)').focus()}if((e.key==='ArrowDown'||e.key==='ArrowUp')&&e.target.closest('#menu')){e.preventDefault();const rows=[...$('#menu').querySelectorAll('button:not(:disabled)')],i=rows.indexOf(document.activeElement);rows[(i+(e.key==='ArrowDown'?1:rows.length-1))%rows.length].focus()}});
+render();
+</script>
+</html>

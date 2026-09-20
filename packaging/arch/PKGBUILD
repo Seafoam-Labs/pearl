@@ -2,7 +2,7 @@
 # scripts/release-source.py. Nothing is enabled or started during installation.
 pkgname=pearl
 pkgver=1.0.0rc2
-pkgrel=4
+pkgrel=5
 pkgdesc='GTK desktop shell exclusively for Aqueous (release candidate)'
 arch=('x86_64')
 license=('LicenseRef-Pearl-Unlicensed')
@@ -17,7 +17,9 @@ depends=('curl' 'libarchive' 'libpng' 'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-lay
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
 makedepends=('zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
              'rust' 'rust-wasm' 'librsvg')
-optdepends=('qtengine: shared Qt 5/6 application appearance management'
+optdepends=('gvfs: Trash, remote locations, and administrative filesystems in Phyto'
+            'file-roller: archive context menu actions in Phyto'
+            'qtengine: shared Qt 5/6 application appearance management'
             'pearl-darkly-style: Darkly Qt application styles without KWin decorations'
             'matugen>=4.2.0: dynamic Material colors'
             'networkmanager>=1.58.1: network controls'

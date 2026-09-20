@@ -1,5 +1,4 @@
-//! A bounded set of asynchronous GIO actions for the native design slice.
-//! Copy never overwrites; full recursive transfers/undo remain a separate milestone.
+//! Main-thread dialogs and worker jobs. Every operation owns its original targets.
 const std = @import("std");
 const u = @import("ui.zig");
 const gtk = u.gtk;
@@ -8,44 +7,46 @@ const glib = u.glib;
 const object = u.object;
 const a = u.a;
 const Window = @import("window.zig").Window;
-
+const Context = @import("context.zig").Context;
+pub const engine = @import("operations/engine.zig");
 pub const Operations = struct {
     owner: *Window,
     busy: bool = false,
-    kind: enum { mkdir, rename, trash, copy } = .copy,
-    source: ?*gio.File = null,
-    destination: ?*gio.File = null,
-    cancel: ?*gio.Cancellable = null,
+    conflict: bool = false,
     dialog: ?*gtk.Dialog = null,
     entry: ?*gtk.Entry = null,
     error_label: ?*gtk.Label = null,
-    progress: ?*gtk.ProgressBar = null,
     progress_text: ?*gtk.Label = null,
-    fraction: f64 = 0,
-    last_progress: i64 = 0,
-    result: [:0]const u8 = "No file operations are running.",
-    conflict: bool = false,
+    timer: c_uint = 0,
+    active: ?*engine.Job = null,
+    pending: ?Context = null,
+    naming: enum { folder, document, rename, bookmark } = .folder,
+    confirm_kind: engine.Kind = .trash,
+    undo_stack: std.ArrayList(*engine.Job) = .empty,
+    redo_stack: std.ArrayList(*engine.Job) = .empty,
+    journal_origin: ?*engine.Job = null,
+    result: [:0]u8,
     pub fn init(owner: *Window) Operations {
-        return .{ .owner = owner };
+        return .{ .owner = owner, .result = a.dupeZ(u8, "No file operations are running.") catch unreachable };
     }
     pub fn deinit(self: *Operations) void {
         self.closeDialogs();
-        self.clearFiles();
+        self.clearPending();
+        for (self.undo_stack.items) |j| j.destroy();
+        self.undo_stack.deinit(a);
+        for (self.redo_stack.items) |j| j.destroy();
+        self.redo_stack.deinit(a);
+        a.free(self.result);
     }
-    fn clearFiles(self: *Operations) void {
-        if (self.source) |f| f.unref();
-        if (self.destination) |f| f.unref();
-        if (self.cancel) |c| c.unref();
-        self.source = null;
-        self.destination = null;
-        self.cancel = null;
+    fn clearPending(self: *Operations) void {
+        if (self.pending) |*c| c.deinit();
+        self.pending = null;
     }
     pub fn closeDialogs(self: *Operations) void {
         if (self.dialog) |d| d.as(gtk.Window).destroy();
         self.dialog = null;
         self.entry = null;
         self.error_label = null;
-        self.progress = null;
         self.progress_text = null;
     }
     fn newDialog(self: *Operations, title: [*:0]const u8) *gtk.Dialog {
@@ -57,48 +58,49 @@ pub const Operations = struct {
         d.as(gtk.Window).setModal(1);
         d.as(gtk.Window).setDefaultSize(460, -1);
         d.as(gtk.Widget).addCssClass("phyto-root");
-        d.as(gtk.Widget).addCssClass(if (self.owner.options.light) "light" else "dark");
+        d.as(gtk.Widget).addCssClass(if (self.owner.options.native) "native" else if (self.owner.options.light) "light" else "dark");
         d.getContentArea().as(gtk.Widget).addCssClass("dialog-body");
-        d.getContentArea().append(u.label(title, "state-title").as(gtk.Widget));
         return d;
     }
-    fn oneSelected(self: *Operations) ?*gio.FileInfo {
-        const selection = self.owner.current().selection.as(gtk.SelectionModel).getSelection();
-        defer selection.unref();
-        if (selection.getSize() != 1) {
-            self.owner.message("Select one item", "This version performs these file actions one item at a time.");
-            return null;
-        }
-        return self.owner.current().selected();
-    }
     pub fn nameDialog(self: *Operations, rename: bool) void {
+        var c = Context.capture(self.owner.current());
+        defer c.deinit();
+        self.name(&c, if (rename) .rename else .folder);
+    }
+    pub fn name(self: *Operations, c: *const Context, kind: @FieldType(Operations, "naming")) void {
         if (self.busy) {
             self.present();
             return;
         }
-        self.clearFiles();
-        self.kind = if (rename) .rename else .mkdir;
-        const info = if (rename) self.oneSelected() orelse return else null;
-        defer if (info) |i| i.unref();
-        self.source = if (info) |i| blk: {
-            const f = u.file(i);
-            f.ref();
-            break :blk f;
-        } else gio.File.newForUri(self.owner.current().uri);
-        const d = self.newDialog(if (rename) "Rename item" else "New folder");
+        if (kind == .rename and c.items.items.len != 1) return;
+        self.clearPending();
+        self.pending = c.clone();
+        self.naming = kind;
+        const title: [:0]const u8 = switch (kind) {
+            .folder => "New folder",
+            .document => "New document",
+            .rename => "Rename item",
+            .bookmark => "Rename bookmark",
+        };
+        const d = self.newDialog(title);
         const e = gtk.Entry.new();
         self.entry = e;
         u.name(e.as(gtk.Widget), "Name");
-        if (info) |i| e.as(gtk.Editable).setText(i.getDisplayName());
+        if (kind == .rename or kind == .bookmark) {
+            const name_ = c.target().getBasename();
+            if (name_) |n| {
+                e.as(gtk.Editable).setText(n);
+                glib.free(n);
+            }
+        }
         e.setActivatesDefault(1);
         d.getContentArea().append(e.as(gtk.Widget));
-        const error_label = u.label("", "error");
-        error_label.setWrap(1);
-        self.error_label = error_label;
-        d.getContentArea().append(error_label.as(gtk.Widget));
+        const err = u.label("", "error");
+        err.setWrap(1);
+        self.error_label = err;
+        d.getContentArea().append(err.as(gtk.Widget));
         _ = d.addButton("Cancel", 0);
-        const ok = d.addButton(if (rename) "Rename" else "Create", 1);
-        ok.addCssClass("suggested-action");
+        _ = d.addButton(if (kind == .rename or kind == .bookmark) "Rename" else "Create", 1);
         d.setDefaultResponse(1);
         _ = gtk.Dialog.signals.response.connect(d, *Operations, nameResponse, self, .{});
         d.as(gtk.Window).present();
@@ -107,208 +109,359 @@ pub const Operations = struct {
     fn nameResponse(_: *gtk.Dialog, response: c_int, self: *Operations) callconv(.c) void {
         if (response != 1) {
             self.closeDialogs();
-            self.clearFiles();
+            self.clearPending();
             return;
         }
-        const text = self.entry.?.as(gtk.Editable).getText();
-        if (!@import("core/model.zig").validName(std.mem.span(text))) {
+        const raw = self.entry.?.as(gtk.Editable).getText();
+        if (!@import("core/model.zig").validName(std.mem.span(raw))) {
             self.error_label.?.setText("Enter a name without /; . and .. are not allowed.");
             return;
         }
-        const name = a.dupeZ(u8, std.mem.span(text)) catch unreachable;
-        defer a.free(name);
-        if (self.kind == .mkdir) self.destination = self.source.?.getChildForDisplayName(name, null);
-        if (self.kind == .mkdir and self.destination == null) {
-            self.error_label.?.setText("This filesystem does not accept that name.");
+        const name_ = a.dupeZ(u8, std.mem.span(raw)) catch unreachable;
+        defer a.free(name_);
+        const c = &self.pending.?;
+        if (self.naming == .bookmark) {
+            self.owner.preferences.renameBookmark(c.target(), name_);
+            self.owner.refreshPlaces();
+            self.closeDialogs();
+            self.clearPending();
             return;
         }
-        self.closeDialogs();
-        self.begin();
-        if (self.kind == .mkdir) self.destination.?.makeDirectoryAsync(0, self.cancel, completed, self) else self.source.?.setDisplayNameAsync(name, 0, self.cancel, completed, self);
-    }
-    pub fn trashDialog(self: *Operations) void {
-        if (self.busy) {
-            self.present();
-            return;
-        }
-        const info = self.oneSelected() orelse return;
-        defer info.unref();
-        self.clearFiles();
-        self.kind = .trash;
-        self.source = u.file(info);
-        self.source.?.ref();
-        const d = self.newDialog("Move to Trash?");
-        const text = u.format("Move “{s}” to Trash? If this location does not support Trash, the item will remain in place.", .{info.getDisplayName()});
-        defer a.free(text);
-        const caption = u.label(text, null);
-        caption.setWrap(1);
-        caption.setMaxWidthChars(50);
-        d.getContentArea().append(caption.as(gtk.Widget));
-        _ = d.addButton("Cancel", 0);
-        _ = d.addButton("Move to Trash", 1);
-        d.setDefaultResponse(0);
-        _ = gtk.Dialog.signals.response.connect(d, *Operations, trashResponse, self, .{});
-        d.as(gtk.Window).present();
-    }
-    fn trashResponse(_: *gtk.Dialog, response: c_int, self: *Operations) callconv(.c) void {
-        self.closeDialogs();
-        if (response != 1) {
-            self.clearFiles();
-            return;
-        }
-        self.begin();
-        self.source.?.trashAsync(0, self.cancel, completed, self);
-    }
-    pub fn copySelection(self: *Operations) void {
-        const info = self.oneSelected() orelse return;
-        defer info.unref();
-        if (info.getFileType() != .regular) {
-            self.owner.message("Copy files", "This version copies individual regular files. Recursive folder transfers are planned separately.");
-            return;
-        }
-        if (self.owner.clipboard) |old| old.unref();
-        const source = u.file(info);
-        source.ref();
-        self.owner.clipboard = source;
-        self.owner.status_message = u.format("Copied “{s}” · Navigate to a destination, then Paste file", .{info.getDisplayName()});
-        self.owner.queueUpdate();
-    }
-    pub fn paste(self: *Operations) void {
-        if (self.busy) {
-            self.present();
-            return;
-        }
-        const copied = self.owner.clipboard orelse {
-            self.owner.message("Nothing to paste", "Select one file and use Copy file first. The copy buffer is local to this window.");
+        const rename = self.naming == .rename;
+        const parent = if (rename) c.target().getParent() orelse return else blk: {
+            c.directory.ref();
+            break :blk c.directory;
+        };
+        defer parent.unref();
+        var err: ?*glib.Error = null;
+        const dest = parent.getChildForDisplayName(name_, &err) orelse {
+            if (err) |e| {
+                self.error_label.?.setText(e.f_message orelse "Invalid filename");
+                e.free();
+            }
             return;
         };
-        self.clearFiles();
-        self.kind = .copy;
-        self.source = copied;
-        copied.ref();
-        const parent = gio.File.newForUri(self.owner.current().uri);
-        defer parent.unref();
-        const name = copied.getBasename() orelse return;
-        defer glib.free(name);
-        self.destination = parent.getChild(name);
-        self.begin();
-        self.copy();
-        self.present();
+        defer dest.unref();
+        const j = engine.Job.create(if (rename) .move else if (self.naming == .document) .document else .mkdir);
+        j.add(if (rename) c.target() else dest, dest);
+        self.closeDialogs();
+        self.clearPending();
+        self.start(j);
     }
-    fn begin(self: *Operations) void {
-        self.busy = true;
-        self.fraction = 0;
-        self.conflict = false;
-        self.cancel = gio.Cancellable.new();
-        self.owner.app.as(gio.Application).hold();
+    pub fn trashDialog(self: *Operations) void {
+        var c = Context.capture(self.owner.current());
+        defer c.deinit();
+        self.confirm(&c, .trash);
     }
-    fn copy(self: *Operations) void {
-        self.conflict = false;
-        self.source.?.copyAsync(self.destination.?, .{ .nofollow_symlinks = true }, 0, self.cancel, copyProgress, self, completed, self);
-    }
-    fn copyProgress(current: i64, total: i64, data: ?*anyopaque) callconv(.c) void {
-        const self: *Operations = @ptrCast(@alignCast(data.?));
-        self.fraction = if (total > 0) @as(f64, @floatFromInt(current)) / @as(f64, @floatFromInt(total)) else 0;
-        const now = glib.getMonotonicTime();
-        if (now - self.last_progress < 100000 and current != total) return;
-        self.last_progress = now;
-        if (self.progress) |bar| bar.setFraction(self.fraction);
-    }
-    fn completed(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
-        const self: *Operations = @ptrCast(@alignCast(data.?));
-        var err: ?*glib.Error = null;
-        const f: *gio.File = @ptrCast(source.?);
-        switch (self.kind) {
-            .mkdir => _ = f.makeDirectoryFinish(result, &err),
-            .trash => _ = f.trashFinish(result, &err),
-            .rename => if (f.setDisplayNameFinish(result, &err)) |renamed| renamed.unref(),
-            .copy => _ = f.copyFinish(result, &err),
+    pub fn confirm(self: *Operations, c: *const Context, kind: engine.Kind) void {
+        if (self.busy) {
+            self.present();
+            return;
         }
-        if (err) |e| {
-            defer e.free();
-            if (self.kind == .copy and e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.exists)) != 0) {
-                self.conflict = true;
-                self.present();
-                return;
-            }
-            self.finish("Operation did not complete");
-            self.owner.message("Operation did not complete", e.f_message orelse "Unknown I/O error");
-        } else self.finish("Operation complete");
+        if (c.items.items.len == 0 and kind != .empty_trash) return;
+        self.clearPending();
+        self.pending = c.clone();
+        self.confirm_kind = kind;
+        const title: [:0]const u8 = switch (kind) {
+            .trash => "Move to Trash?",
+            .empty_trash => "Empty Trash?",
+            else => "Delete permanently?",
+        };
+        const d = self.newDialog(title);
+        var description: std.ArrayList(u8) = .empty;
+        defer description.deinit(a);
+        description.appendSlice(a, if (kind == .trash) "Items that cannot be trashed will stay in place.\n\n" else "This cannot be undone.\n\n") catch unreachable;
+        if (kind == .empty_trash) description.appendSlice(a, "All items currently in Trash will be permanently deleted.") catch unreachable;
+        for (c.items.items[0..@min(c.items.items.len, 8)]) |item| {
+            const path = item.file.getParseName();
+            defer glib.free(path);
+            description.appendSlice(a, std.mem.span(path)) catch unreachable;
+            description.append(a, '\n') catch unreachable;
+        }
+        if (c.items.items.len > 8) {
+            const count = u.format("… and {d} more items", .{c.items.items.len - 8});
+            defer a.free(count);
+            description.appendSlice(a, count) catch unreachable;
+        }
+        description.append(a, 0) catch unreachable;
+        const label = u.label(@ptrCast(description.items.ptr), null);
+        label.setWrap(1);
+        label.setWrapMode(.word_char);
+        label.setMaxWidthChars(50);
+        d.getContentArea().append(label.as(gtk.Widget));
+        _ = d.addButton("Cancel", 0);
+        const ok = d.addButton(if (kind == .trash) "Move to Trash" else "Delete permanently", 1);
+        if (kind != .trash) ok.addCssClass("destructive-action");
+        d.setDefaultResponse(0);
+        _ = gtk.Dialog.signals.response.connect(d, *Operations, confirmed, self, .{});
+        d.as(gtk.Window).present();
     }
-    fn finish(self: *Operations, result: [:0]const u8) void {
+    fn confirmed(_: *gtk.Dialog, response: c_int, self: *Operations) callconv(.c) void {
+        self.closeDialogs();
+        if (response == 1) {
+            const j = engine.Job.create(self.confirm_kind);
+            const c = &self.pending.?;
+            if (self.confirm_kind == .empty_trash) j.add(c.directory, null) else for (c.items.items) |item| j.add(item.file, null);
+            self.clearPending();
+            self.start(j);
+        } else self.clearPending();
+    }
+    pub fn transfer(self: *Operations, c: *const Context, destination: ?*gio.File, kind: engine.Kind) void {
+        const j = engine.Job.create(kind);
+        for (c.items.items) |item| {
+            var dest: ?*gio.File = null;
+            if (destination) |parent| {
+                const original = if (kind == .restore) (if (item.info) |i| i.getAttributeByteString("trash::orig-path") else null) else null;
+                const basename = if (original) |path| glib.pathGetBasename(path) else item.file.getBasename() orelse continue;
+                defer glib.free(basename);
+                dest = parent.getChild(basename);
+            }
+            defer if (dest) |d| d.unref();
+            j.add(item.file, dest);
+        }
+        self.start(j);
+    }
+    pub fn duplicate(self: *Operations, c: *const Context, link: bool) void {
+        const j = engine.Job.create(if (link) .link else .copy);
+        for (c.items.items) |item| {
+            const parent = item.file.getParent() orelse continue;
+            defer parent.unref();
+            const base = item.file.getBasename() orelse continue;
+            defer glib.free(base);
+            const id = glib.uuidStringRandom();
+            defer glib.free(id);
+            const name_ = u.format("{s} ({s} {s})", .{ base, if (link) "link" else "copy", std.mem.span(id)[0..8] });
+            defer a.free(name_);
+            const dest = parent.getChild(name_);
+            defer dest.unref();
+            j.add(item.file, dest);
+        }
+        self.start(j);
+    }
+    pub fn copySelection(self: *Operations) void {
+        var c = Context.capture(self.owner.current());
+        defer c.deinit();
+        self.copy(&c, false);
+    }
+    pub fn copy(self: *Operations, c: *const Context, cut: bool) void {
+        var files: std.ArrayList(*gio.File) = .empty;
+        defer files.deinit(a);
+        for (c.items.items) |item| files.append(a, item.file) catch unreachable;
+        self.owner.clipboard.write(files.items, cut);
+        self.owner.setStatus(if (cut) "Cut · Choose a destination and Paste" else "Copied · Choose a destination and Paste");
+    }
+    pub fn paste(self: *Operations) void {
+        const dir = gio.File.newForUri(self.owner.current().uri);
+        defer dir.unref();
+        self.pasteInto(dir);
+    }
+    pub fn pasteInto(self: *Operations, dir: *gio.File) void {
+        const cb = &self.owner.clipboard;
+        if (!cb.available()) return;
+        const j = engine.Job.create(if (cb.cut) .move else .copy);
+        j.cut = cb.cut;
+        j.clipboard_serial = cb.serial;
+        for (cb.files.items) |f| {
+            const basename = f.getBasename() orelse continue;
+            defer glib.free(basename);
+            const dest = dir.getChild(basename);
+            defer dest.unref();
+            j.add(f, dest);
+        }
+        self.start(j);
+    }
+    pub fn start(self: *Operations, j: *engine.Job) void {
+        if (self.busy) {
+            j.destroy();
+            self.present();
+            return;
+        }
+        if (j.pairs.items.len == 0) {
+            j.destroy();
+            return;
+        }
+        self.active = j;
+        self.busy = true;
+        self.conflict = false;
+        self.owner.context.close();
+        self.owner.app.as(gio.Application).hold();
+        self.owner.queueUpdate();
+        self.timer = glib.timeoutAdd(250, tick, self);
+        self.run();
+    }
+    fn run(self: *Operations) void {
+        const j = self.active.?;
+        const task = gio.Task.new(null, null, completed, self);
+        defer task.unref();
+        task.setTaskData(j, null);
+        task.runInThread(worker);
+    }
+    fn worker(task: *gio.Task, _: *object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
+        const j: *engine.Job = @ptrCast(@alignCast(data.?));
+        j.run();
+        task.returnBoolean(1);
+    }
+    fn tick(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Operations = @ptrCast(@alignCast(data.?));
+        if (!self.busy) return 0;
+        if (self.progress_text) |label| {
+            const size = glib.formatSize(self.active.?.bytes.load(.monotonic));
+            defer glib.free(size);
+            label.setText(size);
+        }
+        return 1;
+    }
+    fn completed(_: ?*object.Object, _: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Operations = @ptrCast(@alignCast(data.?));
+        const j = self.active.?;
+        if (j.conflict) {
+            self.conflict = true;
+            self.present();
+            return;
+        }
+        self.finish();
+    }
+    fn finish(self: *Operations) void {
+        const j = self.active.?;
         self.busy = false;
         self.conflict = false;
-        self.result = result;
+        self.active = null;
+        if (self.timer != 0) {
+            _ = glib.Source.remove(self.timer);
+            self.timer = 0;
+        }
         self.closeDialogs();
-        self.clearFiles();
-        if (self.owner.status_message) |m| a.free(m);
-        self.owner.status_message = a.dupeZ(u8, result) catch unreachable;
+        var successful: usize = 0;
+        var skipped: usize = 0;
+        for (j.pairs.items) |p| {
+            if (p.completed) successful += 1;
+            if (p.skipped) skipped += 1;
+        }
+        a.free(self.result);
+        self.result = u.format("{d} completed · {d} skipped{s}{s}", .{ successful, skipped, if (j.cancelled) " · Cancelled" else "", if (j.failures.items.len != 0) " · Some items failed" else "" });
+        self.owner.setStatus(self.result);
+        self.owner.clipboard.remaining(j);
+        var relocated = false;
+        if (j.kind == .move or j.kind == .restore) for (j.pairs.items) |p| {
+            if (p.completed and p.destination != null) relocated = self.owner.preferences.relocated(p.source, p.destination.?) or relocated;
+        };
+        if (relocated) self.owner.refreshPlaces();
+        if (j.failures.items.len > 0) {
+            const msg = a.dupeZ(u8, j.failures.items) catch unreachable;
+            defer a.free(msg);
+            self.owner.message("Some items did not complete", msg);
+        }
+        if (self.journal_origin) |origin| {
+            for (j.pairs.items) |p| if (p.completed) {
+                const old = &origin.pairs.items[p.original_index];
+                old.undone = j.undo;
+                if (j.redo or j.kind == .move) old.fingerprint = p.fingerprint;
+            };
+            var all = true;
+            for (origin.pairs.items) |p| if (p.completed and p.fingerprint != null and p.undone != j.undo) {
+                all = false;
+            };
+            if (all) {
+                if (j.undo) {
+                    _ = self.undo_stack.pop();
+                    self.redo_stack.append(a, origin) catch unreachable;
+                } else {
+                    _ = self.redo_stack.pop();
+                    self.undo_stack.append(a, origin) catch unreachable;
+                }
+            }
+            self.journal_origin = null;
+            j.destroy();
+        } else {
+            if (successful > 0) {
+                for (self.redo_stack.items) |old| old.destroy();
+                self.redo_stack.clearRetainingCapacity();
+            }
+            const reversible = switch (j.kind) {
+                .copy, .move, .mkdir, .document, .link => successful > 0,
+                else => false,
+            };
+            if (reversible) {
+                if (self.undo_stack.items.len >= 32) self.undo_stack.orderedRemove(0).destroy();
+                self.undo_stack.append(a, j) catch unreachable;
+            } else j.destroy();
+        }
         self.owner.queueUpdate();
         self.owner.app.as(gio.Application).release();
+    }
+    pub fn undo(self: *Operations, redo: bool) void {
+        if (self.busy) return;
+        const stack = if (redo) &self.redo_stack else &self.undo_stack;
+        if (stack.items.len == 0) return;
+        const origin = stack.items[stack.items.len - 1];
+        const job = engine.Job.create(if (redo) origin.kind else if (origin.kind == .move) .move else .delete);
+        job.undo = !redo;
+        job.redo = redo;
+        var n = origin.pairs.items.len;
+        while (n > 0) {
+            n -= 1;
+            const p = origin.pairs.items[n];
+            if (!p.completed or p.fingerprint == null or p.undone != redo) continue;
+            if (redo) job.add(p.source, p.destination) else job.add(p.destination.?, if (origin.kind == .move) p.source else null);
+            const added = &job.pairs.items[job.pairs.items.len - 1];
+            added.original_index = n;
+            if (!redo or origin.kind == .move) added.expected = p.fingerprint;
+        }
+        if (job.pairs.items.len == 0) {
+            job.destroy();
+            return;
+        }
+        self.journal_origin = origin;
+        self.start(job);
     }
     pub fn present(self: *Operations) void {
         if (!self.busy) {
             self.owner.message("File operations", self.result);
             return;
         }
+        const j = self.active.?;
         const d = self.newDialog(if (self.conflict) "A file with this name already exists" else "File operations");
-        if (self.source) |source| {
-            const src = source.getParseName();
-            defer glib.free(src);
-            const name = u.label(src, "secondary");
-            name.setWrap(1);
-            name.setWrapMode(.word_char);
-            name.setMaxWidthChars(48);
-            d.getContentArea().append(name.as(gtk.Widget));
-        }
-        if (self.destination) |dest| {
-            const dst = dest.getParseName();
-            defer glib.free(dst);
-            const text = u.format("To: {s}", .{dst});
-            defer a.free(text);
-            const name = u.label(text, null);
-            name.setWrap(1);
-            name.setWrapMode(.word_char);
-            name.setMaxWidthChars(48);
-            d.getContentArea().append(name.as(gtk.Widget));
-        }
         if (self.conflict) {
-            const explanation = u.label("The existing file will be kept. Skip this copy or give the new copy a different name.", "secondary");
-            explanation.setWrap(1);
-            explanation.setMaxWidthChars(48);
-            d.getContentArea().append(explanation.as(gtk.Widget));
+            const p = j.pairs.items[j.index];
+            const path = if (p.destination) |dest| dest.getParseName() else p.source.getParseName();
+            defer glib.free(path);
+            const label = u.label(path, null);
+            label.setWrap(1);
+            label.setWrapMode(.word_char);
+            label.setMaxWidthChars(50);
+            d.getContentArea().append(label.as(gtk.Widget));
+            d.getContentArea().append(u.label("The existing item will be kept.", "secondary").as(gtk.Widget));
+            _ = d.addButton("Cancel operation", -1);
             _ = d.addButton("Skip", 0);
-            _ = d.addButton("Keep both", 2);
+            if (!j.undo and !j.redo) _ = d.addButton("Keep both", 2);
             d.setDefaultResponse(0);
         } else {
-            const bar = gtk.ProgressBar.new();
-            bar.setFraction(self.fraction);
-            self.progress = bar;
-            d.getContentArea().append(bar.as(gtk.Widget));
+            const label = u.label("Working…", "secondary");
+            self.progress_text = label;
+            d.getContentArea().append(label.as(gtk.Widget));
             _ = d.addButton("Cancel operation", 0);
             _ = d.addButton("Keep working", 1);
         }
         _ = gtk.Dialog.signals.response.connect(d, *Operations, jobResponse, self, .{});
         d.as(gtk.Window).present();
+        if (self.conflict) if (d.getWidgetForResponse(0)) |skip| {
+            _ = skip.grabFocus();
+        };
     }
     fn jobResponse(_: *gtk.Dialog, response: c_int, self: *Operations) callconv(.c) void {
         self.closeDialogs();
+        const j = self.active orelse return;
         if (self.conflict) {
-            if (response == 2) {
-                const old = self.destination.?;
-                const parent = old.getParent().?;
-                defer parent.unref();
-                const basename = old.getBasename().?;
-                defer glib.free(basename);
-                const unique = glib.uuidStringRandom();
-                defer glib.free(unique);
-                const name = u.format("{s} (copy {s})", .{ basename, std.mem.span(unique)[0..8] });
-                defer a.free(name);
-                self.destination = parent.getChild(name);
-                old.unref();
-                self.copy();
-                self.present();
-            } else self.finish("Copy skipped · Existing file kept");
-        } else if (response == 0) self.cancel.?.cancel();
+            if (response == 2) j.keepBoth() else if (response == 0) {
+                j.pairs.items[j.index].skipped = true;
+                j.index += 1;
+            } else {
+                j.cancelled = true;
+                self.finish();
+                return;
+            }
+            self.conflict = false;
+            self.run();
+        } else if (response != 1) j.cancel.cancel();
     }
 };

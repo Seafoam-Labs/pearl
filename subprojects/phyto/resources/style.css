@@ -86,3 +86,12 @@
 
 .phyto-root.dark .browser, .phyto-root.dark .toolbar { background: #141218; color: #e6e0e9; }
 .phyto-root.light .browser, .phyto-root.light .toolbar { background: #fdf7ff; color: #1d1b20; }
+
+/* Native GMenu/GActions provide focus, scrolling and submenu navigation. */
+.phyto-root popover.context-menu > contents { padding: 6px; border-radius: 12px; }
+.phyto-root popover.context-menu modelbutton { min-height: 28px; padding: 8px 12px; border-radius: 6px; }
+.phyto-root.compact popover.context-menu modelbutton { min-height: 20px; }
+.phyto-root popover.context-menu separator { margin: 6px 8px; }
+.phyto-root popover.context-menu modelbutton:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.phyto-root.dark popover.context-menu modelbutton:hover { background: alpha(#e6e0e9, 0.08); }
+.phyto-root.light popover.context-menu modelbutton:hover { background: alpha(#1d1b20, 0.08); }

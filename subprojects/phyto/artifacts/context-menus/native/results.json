@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "checks": [
+    "System clipboard and explicit-destination copy",
+    "Copy undo and redo",
+    "Secondary-click and keyboard context menu",
+    "Preserved multi-selection, recursive batch copy and collision Skip",
+    "Cut/paste moves sources only after successful transfer",
+    "Move undo restores the original path",
+    "Paste into folder uses the clicked destination",
+    "Background menu clears selection and creates a folder",
+    "New document template uses the captured destination and preserves content",
+    "Folder bookmark is persisted",
+    "Cross-process clipboard copy and exported Cut intent preserve quoted Unicode filenames",
+    "Installed custom provider receives literal Unicode and shell-metacharacter arguments",
+    "Trash confirmation defaults to Cancel; Restore recovers original path and bytes",
+    "Directory monitor invalidates stale menu targets",
+    "Clean native teardown with fatal GTK warnings"
+  ],
+  "binary_sha256": "e1566103322776eed42f1b0f020974ce44258408fd6e20a9b714fbc6185f1d9c",
+  "clipboard_formats": [
+    "x-special/gnome-copied-files",
+    "text/uri-list"
+  ]
+}

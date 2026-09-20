@@ -43,10 +43,17 @@ application identity so release and Git installs can coexist.
 - Unicode case-insensitive filename filtering of the **current directory**, hidden
   files, native multi-selection, opening files through the default application,
   metadata details and Properties.
-- Asynchronous create folder, rename and Trash. Single-file copy/paste uses a
-  **window-local copy buffer**, with progress, cancellation and Skip/Keep both
-  conflict choices. Existing files are never overwritten. Actions explain
-  unsupported selections instead of silently doing something different.
+- Native right-click, Menu-key and Shift+F10 menus for files, background,
+  Places/bookmarks, devices, location and tabs. Targets remain tied to the clicked
+  files and originating tab; multi-selection works in grid and list views.
+- System Copy/Cut/Paste, folder-specific paste, recursive batch copy/move,
+  collision Skip/Keep both, cancellation, duplicate/link, and guarded session
+  undo/redo. Existing destinations are never silently overwritten.
+- Open with, terminal, empty documents/templates, aggregate Properties, Trash
+  restore and permanent deletion with confirmation. GIO capabilities govern
+  availability; optional integrations depend on installed providers.
+- Persisted bookmarks, pinning/favorites, sorting and menu preferences. Archive,
+  bulk rename and user-installed script/sharing actions have provider adapters.
 - Pearl stock dark/light colors, compact density and optional native GTK theme.
   System GTK animation preferences remain respected; Phyto adds no animation loop.
 - Native icon labels/tooltips, keyboard focus and adaptive Places navigation.
@@ -65,8 +72,11 @@ application identity so release and Git installs can coexist.
 | Ctrl+N | New window |
 | F3 / F6 | Toggle split / switch active pane |
 | Ctrl+Shift+N; F2 | Create folder; rename selected item |
-| Ctrl+C / Ctrl+V | Copy / paste one regular file within this window |
-| Delete | Confirm moving the selected item to Trash |
+| Ctrl+C / Ctrl+X / Ctrl+V | System clipboard Copy / Cut / Paste |
+| Ctrl+Z / Ctrl+Shift+Z | Undo / redo completed reversible operations |
+| Menu / Shift+F10 | Context menu for the focused target |
+| Shift+F4 | Open local folder in an available terminal |
+| Delete / Shift+Delete | Confirm Trash / permanent deletion (when enabled) |
 | Alt+Enter | Properties |
 
 More options contains the same file actions, appearance choices and split control.
@@ -79,24 +89,29 @@ launched by double-click.
 - [Native implementation report](docs/IMPLEMENTATION.md) and [native results](artifacts/native/results.json).
 - [Native dark capture](artifacts/native/browse-dark.png), [split](artifacts/native/split.png),
   [light](artifacts/native/browse-light.png), [narrow](artifacts/native/narrow.png).
+- [Context-menu implementation and differences](docs/CONTEXT_MENUS_IMPLEMENTATION.md),
+  [native menu captures](artifacts/context-menus/native/file-menu-dark.png), and [custom providers](docs/PROVIDERS.md).
+- [Nemo-style context menu plan](docs/CONTEXT_MENUS_PLAN.md) and [menu review mockup](docs/mockups/context-menus.html).
 - [Longer-term implementation plan](docs/IMPLEMENTATION_PLAN.md).
 - [Browser design reference](docs/mockups/index.html) and [mockup guide](docs/mockups/README.md).
 
 ```sh
 zig build test
 zig build integration -Doptimize=ReleaseSafe
+zig build test-context-menus -Doptimize=ReleaseSafe
 ```
 
 The native suite uses Pearl's private Aqueous test harness, Python, `wtype`, `grim`,
-`wlr-randr`, and the verified `.cache/aqueous-activity-production` tools. It runs on
+`wlr-randr`, `wlrctl`, `wl-copy`/`wl-paste`, GVfs, and the verified `.cache/aqueous-activity-production` tools. It runs on
 its own display and D-Bus with disposable home/config/data directories. The app
 itself has no such test dependencies. `integration` builds a separate instrumented
 binary; the normal build contains no F12 test inspection shortcut.
 
-This is the native design and local-browsing slice, not the complete planned
-Nemo replacement. Recursive transfers/search, move/cut, undo, drag/drop, system
-clipboard interoperability, replacement/merge, thumbnails, bookmarks, mount/eject
-management, Trash restore, persisted preferences, localization, FileManager1 and
-live Pearl appearance integration remain future work. Optional `trash:///` and
-`network:///` browsing depends on installed GIO/GVfs support. Assistive technology,
-physical mixed-DPI and remote-backend qualification remain manual release gates.
+Recursive search, drag/drop, replacement/merge, thumbnails, localization,
+FileManager1 and live Pearl appearance integration remain future work. Optional
+Trash/network/admin support requires the relevant GIO/GVfs backends; file-roller
+provides archive actions. Menu preferences live in
+`$XDG_CONFIG_HOME/phyto/preferences.ini`; optional actions are described in
+[PROVIDERS.md](docs/PROVIDERS.md). Full Nemo extension ABI compatibility is not
+claimed. See the implementation report for operation limits and manual release
+qualification still required.

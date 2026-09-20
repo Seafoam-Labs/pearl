@@ -10,6 +10,11 @@ const History = @import("core/model.zig").History;
 
 pub const Tab = struct {
     owner: *Window,
+    id: u64,
+    generation: u64 = 0,
+    directory_info: ?*gio.FileInfo = null,
+    metadata_cancel: ?*gio.Cancellable = null,
+    sorter: *gtk.CustomSorter,
     pane: usize,
     root: *gtk.Stack,
     views: *gtk.Stack,
@@ -37,14 +42,15 @@ pub const Tab = struct {
         _ = root.as(object.Object).refSink();
         root.as(gtk.Widget).setVexpand(1);
         root.as(gtk.Widget).setHexpand(1);
-        const directory = gtk.DirectoryList.new("standard::*,time::modified,access::*", null);
+        const directory = gtk.DirectoryList.new("standard::*,time::modified,access::*,trash::*", null);
         directory.setIoPriority(200);
         directory.setMonitored(1);
         const filter = gtk.CustomFilter.new(matches, self, null);
         directory.ref();
         filter.ref();
         const filtered = gtk.FilterListModel.new(directory.as(gio.ListModel), filter.as(gtk.Filter));
-        const sorter = gtk.CustomSorter.new(compare, null, null);
+        const sorter = gtk.CustomSorter.new(compare, self, null);
+        sorter.ref();
         const sorted = gtk.SortListModel.new(filtered.as(gio.ListModel), sorter.as(gtk.Sorter));
         const selection = gtk.MultiSelection.new(sorted.as(gio.ListModel));
         selection.ref();
@@ -90,7 +96,8 @@ pub const Tab = struct {
         retry.as(gtk.Widget).setHalign(.center);
         empty.append(retry.as(gtk.Widget));
         _ = root.addNamed(empty.as(gtk.Widget), "empty");
-        self.* = .{ .owner = owner, .pane = pane, .root = root, .views = views, .grid = grid, .list = list, .directory = directory, .filter = filter, .selection = selection, .error_label = error_label, .error_title = error_title, .uri = a.dupeZ(u8, "") catch unreachable, .title = a.dupeZ(u8, "") catch unreachable, .query = a.dupeZ(u8, "") catch unreachable };
+        owner.next_tab_id += 1;
+        self.* = .{ .id = owner.next_tab_id, .sorter = sorter, .owner = owner, .pane = pane, .root = root, .views = views, .grid = grid, .list = list, .directory = directory, .filter = filter, .selection = selection, .error_label = error_label, .error_title = error_title, .uri = a.dupeZ(u8, "") catch unreachable, .title = a.dupeZ(u8, "") catch unreachable, .query = a.dupeZ(u8, "") catch unreachable };
         _ = object.Object.signals.notify.connect(directory.as(object.Object), *Tab, directoryChanged, self, .{});
         _ = gtk.SelectionModel.signals.selection_changed.connect(selection.as(gtk.SelectionModel), *Tab, selectionChanged, self, .{});
         _ = gio.ListModel.signals.items_changed.connect(selection.as(gio.ListModel), *Tab, itemsChanged, self, .{});
@@ -100,12 +107,28 @@ pub const Tab = struct {
         click.as(gtk.EventController).setPropagationPhase(.capture);
         _ = gtk.GestureClick.signals.pressed.connect(click, *Tab, pressed, self, .{});
         root.as(gtk.Widget).addController(click.as(gtk.EventController));
+        const secondary = gtk.GestureClick.new();
+        secondary.as(gtk.GestureSingle).setButton(3);
+        secondary.as(gtk.EventController).setPropagationPhase(.capture);
+        _ = gtk.GestureClick.signals.pressed.connect(secondary, *Tab, secondaryPressed, self, .{});
+        root.as(gtk.Widget).addController(secondary.as(gtk.EventController));
+        const touch = gtk.GestureLongPress.new();
+        touch.as(gtk.GestureSingle).setTouchOnly(1);
+        _ = gtk.GestureLongPress.signals.pressed.connect(touch, *Tab, longPressed, self, .{});
+        root.as(gtk.Widget).addController(touch.as(gtk.EventController));
         self.navigate(file, true);
         self.ready = true;
         return self;
     }
     pub fn destroy(self: *Tab) void {
+        self.invalidate();
         self.alive = false;
+        if (self.metadata_cancel) |c| {
+            c.cancel();
+            c.unref();
+        }
+        if (self.directory_info) |i| i.unref();
+        self.sorter.unref();
         self.directory.setFile(null);
         self.root.unref();
         self.selection.unref();
@@ -118,6 +141,19 @@ pub const Tab = struct {
         a.destroy(self);
     }
     pub fn navigate(self: *Tab, file: *gio.File, add_history: bool) void {
+        self.invalidate();
+        self.generation += 1;
+        if (self.directory_info) |i| i.unref();
+        self.directory_info = null;
+        if (self.metadata_cancel) |c| {
+            c.cancel();
+            c.unref();
+        }
+        self.metadata_cancel = gio.Cancellable.new();
+        const request = a.create(Metadata) catch unreachable;
+        request.* = .{ .owner = self.owner, .id = self.id, .generation = self.generation };
+        self.owner.app.as(gio.Application).hold();
+        file.queryInfoAsync("standard::*,access::*", .{}, 0, self.metadata_cancel, metadataReady, request);
         const uri = file.getUri();
         defer glib.free(uri);
         if (add_history) self.history.visit(std.mem.span(uri)) catch return;
@@ -136,18 +172,21 @@ pub const Tab = struct {
         }
     }
     pub fn refresh(self: *Tab) void {
+        self.invalidate();
         const f = gio.File.newForUri(self.uri);
         defer f.unref();
         self.directory.setFile(null);
         self.directory.setFile(f);
     }
     pub fn setQuery(self: *Tab, query: []const u8) void {
+        self.invalidate();
         a.free(self.query);
         self.query = a.dupeZ(u8, query) catch unreachable;
         self.filter.as(gtk.Filter).changed(.different);
         self.owner.queueUpdate();
     }
     pub fn setView(self: *Tab, list: bool) void {
+        self.invalidate();
         self.list_mode = list;
         self.views.setVisibleChildName(if (list) "list" else "grid");
         self.owner.sync();
@@ -194,25 +233,102 @@ pub const Tab = struct {
         defer glib.free(needle);
         return @intFromBool(std.mem.indexOf(u8, std.mem.span(folded), std.mem.span(needle)) != null);
     }
-    fn compare(left: ?*const anyopaque, right: ?*const anyopaque, _: ?*anyopaque) callconv(.c) c_int {
+    fn compare(left: ?*const anyopaque, right: ?*const anyopaque, data: ?*anyopaque) callconv(.c) c_int {
         const l: *gio.FileInfo = @ptrCast(@alignCast(@constCast(left.?)));
         const r: *gio.FileInfo = @ptrCast(@alignCast(@constCast(right.?)));
         const ld = l.getFileType() == .directory;
         const rd = r.getFileType() == .directory;
-        if (ld != rd) return if (ld) -1 else 1;
-        return glib.utf8Collate(l.getDisplayName(), r.getDisplayName());
+        const self: *Tab = @ptrCast(@alignCast(data.?));
+        const pref = self.owner.preferences;
+        const lp = pref.contains("pinned", u.file(l));
+        const rp = pref.contains("pinned", u.file(r));
+        if (lp != rp) return if (lp) -1 else 1;
+        if (pref.folders_first and ld != rd) return if (ld) -1 else 1;
+        var order: c_int = switch (pref.sort) {
+            .name => glib.utf8Collate(l.getDisplayName(), r.getDisplayName()),
+            .size => if (l.getSize() < r.getSize()) -1 else if (l.getSize() > r.getSize()) 1 else 0,
+            .type => glib.strcmp0(l.getContentType(), r.getContentType()),
+            .modified => if (l.getAttributeUint64("time::modified") < r.getAttributeUint64("time::modified")) -1 else if (l.getAttributeUint64("time::modified") > r.getAttributeUint64("time::modified")) 1 else 0,
+        };
+        if (order == 0) order = glib.utf8Collate(l.getDisplayName(), r.getDisplayName());
+        return if (pref.reverse) -std.math.sign(order) else std.math.sign(order);
     }
     fn directoryChanged(_: *object.Object, _: *object.ParamSpec, self: *Tab) callconv(.c) void {
         if (self.alive and self.ready) self.owner.queueUpdate();
     }
     fn selectionChanged(_: *gtk.SelectionModel, _: c_uint, _: c_uint, self: *Tab) callconv(.c) void {
+        self.invalidate();
         if (self.alive and self.ready) self.owner.queueUpdate();
     }
     fn itemsChanged(_: *gio.ListModel, _: c_uint, _: c_uint, _: c_uint, self: *Tab) callconv(.c) void {
+        self.invalidate();
         if (self.alive and self.ready) self.owner.queueUpdate();
     }
     fn pressed(_: *gtk.GestureClick, _: c_int, _: f64, _: f64, self: *Tab) callconv(.c) void {
         self.owner.activatePane(self.pane);
+    }
+    pub fn invalidate(self: *Tab) void {
+        if (self.owner.context.snapshot) |c| if (c.tab_id == self.id) self.owner.context.close();
+    }
+    const Metadata = struct { owner: *Window, id: u64, generation: u64 };
+    fn metadataReady(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const r: *Metadata = @ptrCast(@alignCast(data.?));
+        defer {
+            r.owner.app.as(gio.Application).release();
+            a.destroy(r);
+        }
+        const f: *gio.File = @ptrCast(source.?);
+        var err: ?*glib.Error = null;
+        const info = f.queryInfoFinish(result, &err);
+        if (err) |e| e.free();
+        const tab = r.owner.findTab(r.id);
+        if (tab == null or tab.?.generation != r.generation or r.owner.closed) {
+            if (info) |i| i.unref();
+            return;
+        }
+        if (tab.?.directory_info) |i| i.unref();
+        tab.?.directory_info = info;
+        r.owner.queueUpdate();
+    }
+    pub fn itemAt(widget: *gtk.Widget, boundary: *gtk.Widget) ?*gtk.ListItem {
+        var node: ?*gtk.Widget = widget;
+        while (node) |w| : (node = w.getParent()) {
+            if (w.as(object.Object).getData("phyto-item")) |data| return @ptrCast(@alignCast(data));
+            if (w == boundary) break;
+        }
+        return null;
+    }
+    pub fn itemWithin(widget: *gtk.Widget) ?*gtk.ListItem {
+        if (widget.as(object.Object).getData("phyto-item")) |data| return @ptrCast(@alignCast(data));
+        var child = widget.getFirstChild();
+        while (child) |w| : (child = w.getNextSibling()) if (itemWithin(w)) |item| return item;
+        return null;
+    }
+    fn secondaryPressed(gesture: *gtk.GestureClick, count: c_int, x: f64, y: f64, self: *Tab) callconv(.c) void {
+        if (count != 1) return;
+        if (self.popupAt(x, y)) _ = gesture.as(gtk.Gesture).setState(.claimed);
+    }
+    fn longPressed(gesture: *gtk.GestureLongPress, x: f64, y: f64, self: *Tab) callconv(.c) void {
+        if (self.popupAt(x, y)) _ = gesture.as(gtk.Gesture).setState(.claimed);
+    }
+    fn popupAt(self: *Tab, x: f64, y: f64) bool {
+        const root = self.root.as(gtk.Widget);
+        const picked = root.pick(x, y, .{}) orelse return false;
+        // Headers and scrollbars retain their own interaction behavior.
+        var ancestor: ?*gtk.Widget = picked;
+        while (ancestor) |w| : (ancestor = w.getParent()) {
+            if (object.ext.cast(gtk.Scrollbar, w) != null or object.ext.cast(gtk.Button, w) != null or w.as(gtk.Accessible).getAccessibleRole() == .column_header) return false;
+            if (w == root) break;
+        }
+        self.owner.activatePane(self.pane);
+        const selection = self.selection.as(gtk.SelectionModel);
+        if (itemAt(picked, root)) |item| {
+            const pos = item.getPosition();
+            if (pos == std.math.maxInt(c_uint)) return false;
+            if (selection.isSelected(pos) == 0) _ = selection.selectItem(pos, 1);
+        } else _ = selection.unselectAll();
+        self.owner.context.show(@import("context.zig").Context.capture(self), root, x, y);
+        return true;
     }
     fn refreshClicked(_: *gtk.Button, self: *Tab) callconv(.c) void {
         self.refresh();
@@ -236,6 +352,7 @@ fn factory(kind: Column) *gtk.SignalListItemFactory {
     const f = gtk.SignalListItemFactory.new();
     _ = gtk.SignalListItemFactory.signals.setup.connect(f, ?*anyopaque, setup, @ptrFromInt(@intFromEnum(kind)), .{});
     _ = gtk.SignalListItemFactory.signals.bind.connect(f, ?*anyopaque, bind, @ptrFromInt(@intFromEnum(kind)), .{});
+    _ = gtk.SignalListItemFactory.signals.unbind.connect(f, ?*anyopaque, unbind, null, .{});
     return f;
 }
 fn setup(_: *gtk.SignalListItemFactory, item_object: *object.Object, data: ?*anyopaque) callconv(.c) void {
@@ -266,6 +383,9 @@ fn bind(_: *gtk.SignalListItemFactory, item_object: *object.Object, data: ?*anyo
     const info = object.ext.cast(gio.FileInfo, item.getItem().?).?;
     const kind: Column = @enumFromInt(@intFromPtr(data));
     item.setAccessibleLabel(info.getDisplayName());
+    item.getChild().?.as(object.Object).setData("phyto-item", item);
+    item.getChild().?.setVexpand(1);
+    item.getChild().?.setHexpand(1);
     if (kind == .grid or kind == .name) {
         const row = item.getChild().?;
         const image = object.ext.cast(gtk.Image, row.getFirstChild().?).?;
@@ -277,4 +397,9 @@ fn bind(_: *gtk.SignalListItemFactory, item_object: *object.Object, data: ?*anyo
         defer glib.free(value);
         object.ext.cast(gtk.Label, item.getChild().?).?.setText(value);
     }
+}
+
+fn unbind(_: *gtk.SignalListItemFactory, obj: *object.Object, _: ?*anyopaque) callconv(.c) void {
+    const item = object.ext.cast(gtk.ListItem, obj).?;
+    if (item.getChild()) |child| child.as(object.Object).setData("phyto-item", null);
 }
