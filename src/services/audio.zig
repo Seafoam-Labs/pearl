@@ -3,6 +3,7 @@ const std = @import("std");
 const glib = @import("glib2");
 const p = @import("pulse");
 const policy = @import("policy.zig");
+const feedback_policy = @import("audio_feedback.zig");
 pub const Kind = policy.Kind;
 pub const Key = policy.Key;
 pub const Write = policy.Write;
@@ -45,6 +46,9 @@ pub const Audio = struct {
     queue: policy.Queue = .{},
     active: ?Write = null,
     feedback: ?Key = null,
+    feedback_write: ?Write = null,
+    observed: feedback_policy.Observer = .{},
+    snapshot_change: ?feedback_policy.Change = null,
     err: ?[]const u8 = null,
     pub fn start(self: *Audio) void {
         self.running = true;
@@ -85,6 +89,9 @@ pub const Audio = struct {
         self.queue.len = 0;
         self.active = null;
         self.feedback = null;
+        self.feedback_write = null;
+        self.observed = .{};
+        self.snapshot_change = null;
         self.default_sink = .{};
         self.default_source = .{};
     }
@@ -115,6 +122,9 @@ pub const Audio = struct {
         self.subscription = null;
         self.phase = 0;
         self.feedback = null;
+        self.feedback_write = null;
+        self.observed = .{};
+        self.snapshot_change = null;
         self.ready = false;
         self.count = 0;
         self.queue.len = 0;
@@ -267,8 +277,11 @@ pub const Audio = struct {
             @memcpy(self.devices[0..self.count], self.staging[0..self.count]);
             self.default_sink = self.scan_sink;
             self.default_source = self.scan_source;
+            self.snapshot_change = self.observed.observe(if (self.default(.sink)) |d| feedback_policy.Volume.from(d) else null);
             self.changed(self.context, if (self.feedback != null) .applied else .state);
+            self.snapshot_change = null;
             self.feedback = null;
+            self.feedback_write = null;
         }
         self.arm();
     }
@@ -384,6 +397,7 @@ pub const Audio = struct {
             self.changed(self.context, .failure);
         } else if (self.active) |write| {
             self.feedback = write.key;
+            self.feedback_write = write;
             self.err = null;
         }
         self.active = null;

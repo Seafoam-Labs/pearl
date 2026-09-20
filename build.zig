@@ -647,6 +647,8 @@ pub fn build(b: *std.Build) void {
     services.addArtifactArg(integration_app);
     services.addArg("--ctl");
     services.addArtifactArg(ctl);
+    services.addArg("--spike");
+    services.addArtifactArg(spike);
     if (b.args) |args| services.addArgs(args);
     b.step("test-services", "Verify audio and power on private synthetic services").dependOn(&services.step);
 

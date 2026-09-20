@@ -49,8 +49,13 @@ the backoff. Initial absence updates availability without repeatedly showing OSD
 
 A libpulse success callback is followed by authoritative enumeration. Service
 errors remain visible; local accepted changes produce OSD feedback after the
-refreshed snapshot is published. External audio changes update rows/bar without
-creating a startup or subscription-notification OSD storm.
+refreshed snapshot is published. Changes to the default output's displayed
+volume or mute state show a volume card, including changes made by external
+clients and existing media-key bindings. Complete snapshots are compared by
+connection generation and device identity: startup, reconnection, default-device
+switches, and unchanged subscription events establish or retain a silent baseline.
+External changes to other devices and application streams only update rows/bar.
+Explicit Pearl changes to those targets retain text feedback.
 
 ## Battery, logind and profiles
 
@@ -150,12 +155,22 @@ capabilities and errors; brightness includes device/range/readback state. Pages
 are current snapshots, not a transaction across multiple queries; consumers must
 revalidate identity/generation when acting.
 
-OSD keeps **one surface, one label and one expiry source**. Repeated updates on
-the same output replace its text and reset expiry. Service feedback coalesces
-for 80 ms; a newer direct OSD request cancels older queued feedback. Output
-changes replace the surface. `status.osd_text` exposes the current text. Existing
-layer-shell keyboard mode/input-region policies keep it non-focusable and
-click-through. OSD never queues an unbounded history or replays across lock/loss.
+OSD keeps **one surface, one pending payload and one expiry source**. Text and
+volume content reuse that surface. The volume card shows a speaker/mute icon,
+ellipsized device name, percentage, and level meter. Muting retains the stored
+percentage with a subdued meter; zero volume without mute displays `0%`.
+Service feedback coalesces for 80 ms and expires 1,800 ms after its latest
+displayed update. Unchanged observations do not extend expiry. A newer direct
+OSD request cancels older queued feedback.
+
+Service bursts stay on their initially selected display. Cards are centered at
+the bottom with 24 logical pixels of clearance above Pearl's bottom reservation.
+Output changes replace the surface; removal discards pending feedback.
+`status.osd_text` remains a readable summary. Additive `status.osd_detail` reports
+the content kind, display, and (for volume) device key/name, percent, and mute.
+Existing layer-shell keyboard mode/input-region policies keep it non-focusable
+and click-through. Lock, inactive session, and compositor loss dismiss and discard
+feedback. OSD never queues an unbounded history or replays across lock/loss.
 
 ## Validation and physical release checklist
 

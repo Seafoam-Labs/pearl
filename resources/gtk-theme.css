@@ -3,6 +3,9 @@
 .pearl-root.pearl-gtk .pearl-surface-panel { border-radius: 14px; }
 .pearl-root.pearl-gtk .pearl-popup-panel { padding: 20px; }
 .pearl-root.pearl-gtk .pearl-osd-panel { padding: 14px; }
+.pearl-root.pearl-gtk .pearl-volume-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.pearl-root.pearl-gtk .pearl-volume-osd progressbar trough, .pearl-root.pearl-gtk .pearl-volume-osd progressbar progress { min-height: 6px; border-radius: 999px; }
+.pearl-root.pearl-gtk .pearl-volume-muted progressbar { opacity: 0.45; }
 .pearl-root.pearl-gtk .pearl-bar-panel { padding: 0 6px; }
 .pearl-root.pearl-gtk .pearl-bar-panel button { padding: 2px 8px; min-height: 24px; }
 .pearl-root.pearl-gtk .pearl-card { padding: 16px; border-radius: 16px; }

@@ -44,7 +44,7 @@ def burst(s,binary,op,values,**fields):
             reply=json.loads(sock.makefile('rb').readline()); assert reply['ok'],reply
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__); p.add_argument('--pearl',type=Path,required=True); p.add_argument('--ctl',type=Path,required=True); p.add_argument('--output',type=Path,default=ROOT/'artifacts/t07/latest'); args=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__); p.add_argument('--pearl',type=Path,required=True); p.add_argument('--ctl',type=Path,required=True); p.add_argument('--spike',type=Path,required=True); p.add_argument('--output',type=Path,default=ROOT/'artifacts/t07/latest'); args=p.parse_args()
     args.pearl=args.pearl.resolve(); args.ctl=args.ctl.resolve(); args.output=args.output.resolve(); args.output.mkdir(parents=True,exist_ok=True)
     checks={}; result=dict(status='running',checks=checks,pearl_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest(),ctl_sha256=hashlib.sha256(args.ctl.read_bytes()).hexdigest())
     try:
@@ -75,6 +75,8 @@ def main():
             live=await_services(s,args.ctl,lambda v:v['audio']['ready'] and v['audio']['count']>=4 and v['power']['can_reboot'] and v['brightness']['available'] and all(v['power']['profiles']))
             assert live['power']['battery_present'] and live['power']['percentage']==72.5 and live['brightness']['percent']==42,live
             checks['initial-audio-battery-logind-profiles-and-validated-backlight']=True
+            assert not status(s,args.ctl)['osd'], 'Initial audio enumeration must be silent'
+            checks['audio-startup-baseline-is-silent']=True
             ui_output=status(s,args.ctl)['outputs'][0]
             show_page(s,args.ctl,'sound',ui_output['id']); time.sleep(.4); capture(s,'sound',ui_output['connector']); choose_page(s,args.ctl,'power')
             (s.output/'initial-state.json').write_text(json.dumps(services(s,args.ctl),indent=2)+'\n')
@@ -89,8 +91,12 @@ def main():
             ctl(s,args.ctl,'popup','hide'); show_page(s,args.ctl,'power',ui_output['id'])
             devices=live['audio']['devices']; first=next(d for d in devices if d['name']=='test_output_a'); second=next(d for d in devices if d['name']=='test_output_b')
             gen=live['audio']['generation']
+            from volume_osd import exercise
+            exercise(s,args.ctl,pearl,power,command,checks,args.spike.resolve())
+            show_page(s,args.ctl,'power',ui_output['id'])
             burst(s,args.ctl,'audio_set',[{'volume':n} for n in range(5,81)],kind='sink',device=first['index'],generation=gen)
             final=await_services(s,args.ctl,lambda v:not v['audio']['pending'] and any(d['index']==first['index'] and d['kind']=='sink' and d['volume']==80 for d in v['audio']['devices']))
+            eventually_status(s,args.ctl,lambda v:v.get('osd_detail') and v['osd_detail']['kind']=='volume' and v['osd_detail']['percent']==80)
             assert '80%' in s.run(['pactl','get-sink-volume','test_output_a']).stdout
             ctl(s,args.ctl,'audio','set','--kind','sink','--mute','true')
             await_services(s,args.ctl,lambda v:any(d['name']=='test_output_a' and d['mute'] for d in v['audio']['devices']))
@@ -120,6 +126,7 @@ def main():
                 burst(s,args.ctl,'audio_set',[{'volume':n} for n in range(30,74)],kind='sink',device=first['index'],generation=gen)
             finally: pulse.proc.send_signal(signal.SIGCONT)
             await_services(s,args.ctl,lambda v:not v['audio']['pending'] and any(d['name']=='test_output_a' and d['volume']==73 for d in v['audio']['devices']))
+            eventually_status(s,args.ctl,lambda v:v.get('osd_detail') and v['osd_detail']['kind']=='volume' and v['osd_detail']['percent']==73)
             checks['rapid-volume-final-value-mute-balance-and-default-change-bind-identity']=True
             # Pulse-compatible playback and recording streams are real separate clients.
             playback=s.child('playback',['pacat','--playback','--raw','--device=test_output_b','/dev/zero'])

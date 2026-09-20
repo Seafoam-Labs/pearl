@@ -11,6 +11,7 @@ const adapter = @import("../../aqueous/client.zig");
 const protocol = @import("../../cli/protocol.zig");
 const policy = @import("policy.zig");
 const Bar = @import("../../desktop/bar.zig");
+const Osd = @import("osd.zig");
 const Apps = @import("../../desktop/apps.zig");
 const Running = @import("../../desktop/running_apps.zig");
 const LauncherPicker = @import("../../desktop/launcher_picker.zig");
@@ -136,8 +137,11 @@ pub const Manager = struct {
     border_theme: @import("../../config/border_theme.zig").Sync = .{},
     identifiers: std.ArrayList(*Surface) = .empty,
     identify_timer: c_uint = 0,
-    osd_label: ?*gtk.Label = null,
-    osd_pending: @import("../../services/policy.zig").Text(512) = .{},
+    osd_view: ?Osd.View = null,
+    osd_content: ?Osd.Content = null,
+    osd_text: @import("../../services/policy.zig").Text(512) = .{},
+    osd_pending: ?Osd.Content = null,
+    osd_pending_output: ?*Output = null,
     osd_flush: c_uint = 0,
     index: Apps.Index = undefined,
     tasks: @import("../../desktop/task_apps.zig").Store = .{},
@@ -378,6 +382,7 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
         self.syncClipboardPrivacy();
+        if (!self.osdAllowed()) self.hideOsd();
         if (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or (self.lifecycle.session_id.slice().len != 0 and !self.lifecycle.gate.active)) self.hideIdentifiers();
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
@@ -458,13 +463,39 @@ pub const Manager = struct {
     fn audioChanged(context: *anyopaque, event: @import("../../services/audio.zig").Event) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.servicesChanged();
-        if (event == .failure and self.audio.err != null) self.queueOsd(self.audio.err.?) else if (event == .applied) {
-            if (self.audio.feedback) |key| if (self.audio.find(key)) |d| {
+        // Invalidate stale cards even on service loss, before considering new feedback.
+        if (self.osd_content) |content| if (content == .volume and !self.validVolume(&content.volume)) self.hideOsd();
+        if (self.osd_pending) |content| if (content == .volume and !self.validVolume(&content.volume)) self.cancelPendingOsd();
+        if (event == .failure and self.audio.err != null) {
+            self.queueOsd(self.audio.err.?);
+            return;
+        }
+        if (self.audio.snapshot_change == .volume) {
+            if (self.audio.observed.baseline) |volume| self.queueOsdContent(.{ .volume = volume });
+        }
+        if (event == .applied) {
+            if (self.audio.feedback_write) |write| if (self.audio.find(write.key)) |d| {
+                const default = self.audio.default(.sink);
+                // The complete-snapshot observer owns default-output volume/mute feedback.
+                if (default != null and std.meta.eql(default.?.key, write.key) and (write.volume != null or write.mute != null)) return;
                 var buffer: [512]u8 = undefined;
                 self.queueOsd(std.fmt.bufPrint(&buffer, "{s} · {d}%{s}", .{ d.label.slice(), d.volume, if (d.mute) " · Muted" else "" }) catch "Audio updated");
             };
         }
     }
+    fn validVolume(self: *Manager, volume: *const Osd.Volume) bool {
+        const device = self.audio.default(.sink) orelse return false;
+        const current = Osd.Volume.from(device);
+        return self.audio.ready and volume.sameDevice(&current);
+    }
+    fn osdAllowed(self: *Manager) bool {
+        if (!self.running or self.client.availability != .ready) return false;
+        const session = self.client.model.get(.session, "session") orelse return false;
+        const gate = self.lifecycle.gate;
+        return !session.locked and !gate.locked and !gate.requesting and !gate.preparing and
+            (self.lifecycle.session_id.slice().len == 0 or (gate.available and gate.active));
+    }
+
     fn powerChanged(context: *anyopaque, event: @import("../../services/power.zig").Event) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.servicesChanged();
@@ -474,17 +505,55 @@ pub const Manager = struct {
         }
     }
     fn queueOsd(self: *Manager, text: []const u8) void {
-        if (!self.running) return;
-        self.osd_pending.set(text);
+        var content: Osd.Content = .{ .text = .{} };
+        content.text.set(text);
+        self.queueOsdContent(content);
+    }
+    fn queueOsdContent(self: *Manager, content: Osd.Content) void {
+        if (!self.osdAllowed()) return;
+        const output = if (self.osd) |surface| surface.output else self.osd_pending_output orelse (self.selected(null) catch return);
+        self.osd_pending = content;
+        self.osd_pending_output = output;
         if (self.osd_flush == 0) self.osd_flush = glib.timeoutAdd(80, flushOsd, self);
+    }
+    fn cancelPendingOsd(self: *Manager) void {
+        if (self.osd_flush != 0) _ = glib.Source.remove(self.osd_flush);
+        self.osd_flush = 0;
+        self.osd_pending = null;
+        self.osd_pending_output = null;
     }
     fn flushOsd(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Manager = @ptrCast(@alignCast(data.?));
         self.osd_flush = 0;
-        var arena = std.heap.ArenaAllocator.init(a);
-        defer arena.deinit();
-        _ = self.control(.{ .op = .osd_show, .text = self.osd_pending.slice(), .duration_ms = 1800 }, arena.allocator()) catch "";
+        const content = self.osd_pending orelse return 0;
+        const output = self.osd_pending_output orelse return 0;
+        self.osd_pending = null;
+        self.osd_pending_output = null;
+        if (content == .volume and !self.validVolume(&content.volume)) return 0;
+        self.showOsd(output, content, 1800) catch {};
         return 0;
+    }
+    fn positionOsd(surface: *Surface) void {
+        const output = surface.output;
+        // A zero exclusive zone already places the surface inside the compositor's
+        // usable area. Adding our reservation again would double the bottom gap.
+        layer.setMargin(surface.window, .bottom, @min(24, @max(0, output.usable.height - 100)));
+        surface.window.setDefaultSize(@max(1, @min(320, output.usable.width - 32)), -1);
+    }
+    fn showOsd(self: *Manager, output: *Output, content: Osd.Content, duration: u32) !void {
+        if (!self.osdAllowed()) return error.Unavailable;
+        _ = try self.selected(output.id);
+        if (self.osd != null and self.osd.?.output != output) self.hideOsd();
+        const surface = self.osd orelse try self.create(output, .osd);
+        self.osd = surface;
+        if (self.osd_view == null) self.osd_view = Osd.View.init(object.ext.cast(gtk.Box, surface.panel).?);
+        self.osd_content = content;
+        self.osd_text = content.summary();
+        self.osd_view.?.update(&content);
+        positionOsd(surface);
+        surface.window.present();
+        if (self.osd_source != 0) _ = glib.Source.remove(self.osd_source);
+        self.osd_source = glib.timeoutAdd(duration, osdExpired, self);
     }
     fn chooseLauncher(context: *anyopaque, output_id: []const u8, request: LauncherPicker.Request) !void {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -609,6 +678,7 @@ pub const Manager = struct {
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
         if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
         self.syncClipboardPrivacy();
+        if (!self.osdAllowed()) self.hideOsd();
         if (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or (self.lifecycle.session_id.slice().len != 0 and !self.lifecycle.gate.active)) self.hideIdentifiers();
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
@@ -706,6 +776,7 @@ pub const Manager = struct {
             if (suspendTasks(o)) |host| host.setSensitive(@intFromBool(!dock_locked));
             if (o.dock) |dock| try dock.update(self.preferences.prefs().dockForOutput(o.connector), o.reservations.bar_edge, bounds, dock_locked);
             try self.syncPluginOverlays(o, dock_locked);
+            if (self.osd) |surface| if (surface.output == o) positionOsd(surface);
             if (changed and self.popup != null and self.popup.?.output == o) self.positionPopup();
         }
         var i: usize = 0;
@@ -715,7 +786,7 @@ pub const Manager = struct {
                 if (self.capture.target) |target| if (std.mem.eql(u8, target.name.slice(), o.connector)) self.capture.cancel();
                 if (self.popup != null and self.popup.?.output == o) self.hidePopup();
                 self.hideIdentifiers();
-                if (self.osd != null and self.osd.?.output == o) self.hideOsd();
+                if ((self.osd != null and self.osd.?.output == o) or self.osd_pending_output == o) self.hideOsd();
                 if (self.notification != null and self.notification.?.output == o) self.hideNotifications();
                 _ = self.outputs.orderedRemove(i);
                 o.destroy();
@@ -1161,9 +1232,15 @@ pub const Manager = struct {
         self.identifiers = .empty;
     }
     fn hideOsd(self: *Manager) void {
+        self.cancelPendingOsd();
+        self.dismissOsd();
+    }
+    fn dismissOsd(self: *Manager) void {
         if (self.osd_source != 0) _ = glib.Source.remove(self.osd_source);
         self.osd_source = 0;
-        self.osd_label = null;
+        self.osd_view = null;
+        self.osd_content = null;
+        self.osd_text = .{};
         if (self.osd) |s| {
             self.osd = null;
             s.destroy();
@@ -1501,26 +1578,23 @@ pub const Manager = struct {
                 }
             },
             .osd_show => {
-                if (self.osd_flush != 0) _ = glib.Source.remove(self.osd_flush);
-                self.osd_flush = 0;
-                const o = try self.selected(request.output);
-                if (self.osd != null and self.osd.?.output != o) self.hideOsd();
-                const s = self.osd orelse try self.create(o, .osd);
-                self.osd = s;
-                const text = try alloc.dupeZ(u8, request.text.?);
-                const label = self.osd_label orelse gtk.Label.new(text);
-                label.setText(text);
-                label.setWrap(1);
-                label.setWrapMode(.word_char);
-                label.setMaxWidthChars(40);
-                if (self.osd_label == null) object.ext.cast(gtk.Box, s.panel).?.append(label.as(gtk.Widget));
-                self.osd_label = label;
-                s.window.present();
-                if (self.osd_source != 0) _ = glib.Source.remove(self.osd_source);
-                self.osd_source = glib.timeoutAdd(request.duration_ms orelse 2000, osdExpired, self);
+                self.cancelPendingOsd();
+                const output = try self.selected(request.output);
+                var content: Osd.Content = .{ .text = .{} };
+                content.text.set(request.text.?);
+                try self.showOsd(output, content, request.duration_ms orelse 2000);
             },
         }
         return "{\"applied\":true}";
+    }
+    const OsdStatus = struct { kind: enum { text, volume }, output: []const u8, device: ?@import("../../services/policy.zig").Key = null, name: ?[]const u8 = null, percent: ?u8 = null, muted: ?bool = null };
+    fn osdStatus(self: *Manager) ?OsdStatus {
+        const surface = self.osd orelse return null;
+        const content = if (self.osd_content) |*value| value else return null;
+        return switch (content.*) {
+            .text => .{ .kind = .text, .output = surface.output.id },
+            .volume => |*v| .{ .kind = .volume, .output = surface.output.id, .device = v.key, .name = v.name.slice(), .percent = v.percent, .muted = v.muted },
+        };
     }
     const ServiceStatus = struct {
         audio: struct { ready: bool, generation: u64, count: usize, truncated: bool, pending: bool, in_flight: bool, err: ?[]const u8, default_sink: ?u32, default_source: ?u32, devices: []const DeviceStatus, next_offset: ?usize },
@@ -1549,7 +1623,7 @@ pub const Manager = struct {
         const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, frames: [4]u16, islands: bool, island_rects: [3]?Rect, dock: struct { reason: @import("../../desktop/dock_policy.zig").Reason, groups: usize, truncated: bool, rect: Rect, edge: Edge } };
         var items: std.ArrayList(Item) = .empty;
         for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .frames = o.reservations.frames, .islands = o.bar.?.bar.?.islands, .island_rects = o.bar.?.effects.last_shapes, .dock = .{ .reason = o.dock.?.reason, .groups = o.dock.?.count, .truncated = o.dock.?.truncated, .rect = o.dock.?.rect, .edge = o.dock.?.config.edge } });
-        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .identifying = self.identifiers.items.len, .osd = self.osd != null, .osd_text = if (self.osd_label) |label| std.mem.span(label.getText()) else "" }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .identifying = self.identifiers.items.len, .osd = self.osd != null, .osd_text = self.osd_text.slice(), .osd_detail = self.osdStatus() }, .{});
     }
 };
 fn rectangle(r: anytype) !Rect {
@@ -1721,7 +1795,7 @@ fn outsideReleased(_: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Manage
 fn osdExpired(data: ?*anyopaque) callconv(.c) c_int {
     const self: *Manager = @ptrCast(@alignCast(data.?));
     self.osd_source = 0;
-    self.hideOsd();
+    self.dismissOsd();
     return 0;
 }
 

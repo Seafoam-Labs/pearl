@@ -70,6 +70,10 @@
 .pearl-root.$scope.pearl-shell.pearl-blur .pearl-surface-panel:not(.pearl-islands) { background: alpha($container$, 0.86); }
 .pearl-root.$scope.pearl-shell .pearl-popup-panel { padding: 20px; }
 .pearl-root.$scope.pearl-shell .pearl-osd-panel { padding: 14px; }
+.pearl-root.$scope.pearl-shell .pearl-volume-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.pearl-root.$scope.pearl-shell .pearl-volume-osd progressbar trough { min-height: 6px; border-radius: 999px; background: $high$; border: none; box-shadow: none; }
+.pearl-root.$scope.pearl-shell .pearl-volume-osd progressbar progress { min-height: 6px; min-width: 0; margin: 0; padding: 0; border-radius: 999px; background: $primary$; border: none; box-shadow: none; }
+.pearl-root.$scope.pearl-shell .pearl-volume-muted progressbar { opacity: 0.45; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button { padding: 2px 12px; min-height: 24px; background: transparent; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button:hover { background: $high$; }
 
