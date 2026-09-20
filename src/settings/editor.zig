@@ -712,6 +712,11 @@ pub const Editor = struct {
                 self.theme_discovery_degraded = snapshot.theme_discovery_degraded;
                 var app_summary: std.ArrayList(u8) = .empty;
                 defer app_summary.deinit(a);
+                if (snapshot.applications.busy) try app_summary.appendSlice(a, "Updating application colors…\n");
+                if (snapshot.applications.watcher_error) |err| {
+                    try app_summary.appendSlice(a, err);
+                    try app_summary.appendSlice(a, " · use preferences reload to retry watching.\n");
+                }
                 for (snapshot.applications.targets, std.enums.values(@import("../theme/matugen_profiles.zig").Application)) |status, application| {
                     const line = try std.fmt.allocPrint(a, "{s}: {s} · {s} · {s}{s}{s}\n{s}\n{s}\n", .{ @tagName(application), @tagName(status.state), status.profile, status.origin, if (status.error_code != null) " · " else "", status.error_code orelse "", status.output, status.instructions });
                     defer a.free(line);

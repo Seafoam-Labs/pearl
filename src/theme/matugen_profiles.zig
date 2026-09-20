@@ -61,6 +61,7 @@ pub const Config = struct {
     }
 };
 pub const Target = struct {
+    applied_generation: u64 = 0,
     state: enum { unmanaged, pending, generated, activation_required, applied, unavailable, unsupported, conflict, failed } = .unmanaged,
     profile: []const u8 = "",
     origin: []const u8 = "",
@@ -69,6 +70,10 @@ pub const Target = struct {
     instructions: []const u8 = "",
 };
 pub const Status = struct {
+    desired_generation: u64 = 0,
+    applied_generation: u64 = 0,
+    busy: bool = false,
+    watcher_error: ?[]const u8 = null,
     desired_revision: u64 = 0,
     applied_revision: u64 = 0,
     targets: [5]Target = @splat(.{}),

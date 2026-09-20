@@ -14,11 +14,27 @@ const qt = @import("../theme/qt.zig");
 const qt_integration = @import("qt_integration.zig");
 const generator = @import("../theme/generator.zig");
 const a = std.heap.c_allocator;
+const applications = @import("../theme/application_profiles.zig");
+const app_provider = @import("../theme/theme_provider.zig");
 pub const Job = struct {
     service: *Service,
     arena: std.heap.ArenaAllocator,
     cancel: *gio.Cancellable,
-    stage: enum { prepare, recover, persist, integrate } = .prepare,
+    stage: enum { prepare, recover, persist, applications, integrate } = .prepare,
+    generation: u64 = 0,
+    image_event: bool = false,
+    image_hash: ?[64]u8 = null,
+    verify_image: bool = false,
+    image_changed: bool = false,
+    watch_path: []const u8 = "",
+    application_digest: []const u8 = "",
+    disk_application_digest: []const u8 = "",
+    renderer: generator.Context = .{},
+    started_us: i64 = 0,
+    timed_out: bool = false,
+    previous_desired_generation: u64 = 0,
+    previous_applied_generation: u64 = 0,
+    previous_target_generations: [5]u64 = @splat(0),
     requested: ?[]const u8 = null,
     draft_revision: ?u64 = null,
     expected: [64]u8,
@@ -38,6 +54,7 @@ pub const Job = struct {
     application_snapshot: @import("../theme/theme_provider.zig").Snapshot = .{},
     application_result: @import("../theme/matugen_profiles.zig").Status = .{},
     application_error: ?anyerror = null,
+    applications_unchanged: bool = false,
     failure: ?anyerror = null,
     warning: ?anyerror = null,
     export_error: ?anyerror = null,
@@ -77,6 +94,15 @@ pub const Service = struct {
     path: [:0]u8 = undefined,
     good_path: [:0]u8 = undefined,
     monitor: ?*gio.FileMonitor = null,
+    wallpaper_watch: @import("wallpaper_watch.zig").Watch = .{},
+    candidate_watch: @import("wallpaper_watch.zig").Watch = .{},
+    publication: @import("../theme/publication.zig").Gate = .{},
+    publication_initialized: bool = false,
+    integration_retry: bool = false,
+    pending_image: bool = false,
+    image_retry: bool = false,
+    watcher_error: ?[]const u8 = null,
+    application_action_generation: u64 = 0,
     live: ?*Job = null,
     job: ?*Job = null,
     running: bool = false,
@@ -146,6 +172,12 @@ pub const Service = struct {
         defer file.unref();
         self.monitor = file.monitorDirectory(.{ .watch_moves = true }, null, null) orelse return error.MonitorUnavailable;
         if (self.monitor) |m| _ = gio.FileMonitor.signals.changed.connect(m, *Service, fileChanged, self, .{});
+        self.wallpaper_watch.context = self;
+        self.wallpaper_watch.changed = wallpaperChanged;
+        self.candidate_watch.context = self;
+        self.candidate_watch.changed = candidateWallpaperChanged;
+        self.publication.mutex.init();
+        self.publication_initialized = true;
         self.running = true;
         self.theme_jobs.context = self;
         self.theme_jobs.finished = themeJobFinished;
@@ -155,6 +187,9 @@ pub const Service = struct {
     pub fn stop(self: *Service) void {
         if (!self.running) return;
         self.running = false;
+        self.wallpaper_watch.stop();
+        self.candidate_watch.stop();
+        _ = self.publication.advance();
         self.theme_jobs.stop();
         if (self.theme_discovery.active) self.theme_discovery.stop();
         self.draft.deinit(a);
@@ -178,10 +213,17 @@ pub const Service = struct {
         if (self.job == null) self.freePaths();
     }
     fn freePaths(self: *Service) void {
+        self.clearPublication();
         a.free(self.dir);
         a.free(self.path);
         a.free(self.good_path);
         a.free(self.cache_dir);
+    }
+    fn clearPublication(self: *Service) void {
+        if (!self.running and self.job == null and self.theme_jobs.job == null and self.publication_initialized) {
+            self.publication.mutex.clear();
+            self.publication_initialized = false;
+        }
     }
     fn themeCatalogChanged(context: *anyopaque) void {
         const self: *Service = @ptrCast(@alignCast(context));
@@ -189,12 +231,36 @@ pub const Service = struct {
     }
     fn themeJobFinished(context: *anyopaque) void {
         const self: *Service = @ptrCast(@alignCast(context));
-        if (!self.running) return;
+        if (!self.running) {
+            self.clearPublication();
+            return;
+        }
         self.updateApplicationJob();
+        if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(1, debounced, self);
         if (self.theme_jobs.error_code == null) switch (self.theme_jobs.last_action) {
             .catalog, .install, .import_archive, .remove, .rollback => self.theme_discovery.request(),
             else => {},
         };
+    }
+    pub fn setIntegrationAllowed(self: *Service, allowed: bool) void {
+        const was_allowed = self.integration_allowed;
+        self.integration_allowed = allowed;
+        if (!allowed) {
+            if (self.job) |j| if (j.stage == .integrate or j.stage == .applications) {
+                _ = self.publication.advance();
+                j.cancel.cancel();
+                self.integration_retry = true;
+            };
+        } else if (!was_allowed) {
+            self.integration_retry = true;
+            self.resumeIntegration();
+        }
+    }
+    fn resumeIntegration(self: *Service) void {
+        if (self.running and self.integration_allowed and self.integration_retry and self.job == null and !self.pending_reload and self.live != null) {
+            self.integration_retry = false;
+            self.retryQt(self.revision, false, null) catch {};
+        }
     }
     pub fn retryQt(self: *Service, revision: u64, review_only: bool, reviewed: ?[64]u8) !void {
         if (!self.running or !self.integration_allowed) return error.Unavailable;
@@ -208,7 +274,18 @@ pub const Service = struct {
         j.qt_review_only = review_only;
         j.qt_reviewed = reviewed;
         j.qt_review = null;
-        j.stage = .integrate;
+        j.timed_out = false;
+        j.stage = if (review_only) .integrate else .applications;
+        if (!review_only) {
+            j.previous_applied_generation = self.application_status.applied_generation;
+            for (self.application_status.targets, &j.previous_target_generations) |target, *generation| generation.* = target.applied_generation;
+            j.generation = self.publication.advance();
+            j.renderer = .{};
+            j.applications_unchanged = false;
+            self.application_status.busy = true;
+            self.application_status.desired_generation = j.generation;
+        }
+        j.started_us = glib.getMonotonicTime();
         self.job = j;
         self.qt_status.busy = true;
         self.deadline = glib.timeoutAdd(15000, timedOut, self);
@@ -218,22 +295,58 @@ pub const Service = struct {
     pub fn reload(self: *Service) void {
         self.queueReload(true);
     }
+    fn wallpaperChanged(context: *anyopaque, invalid: bool) void {
+        const self: *Service = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        if (invalid) {
+            self.watcher_error = "WallpaperMonitorUnavailable";
+            self.application_status.watcher_error = self.watcher_error;
+            self.wallpaper_watch.stop();
+        }
+        self.pending_image = true;
+        self.image_retry = false;
+        std.log.info("event=wallpaper-changed", .{});
+        self.queueReload(true);
+    }
+    fn candidateWallpaperChanged(context: *anyopaque, _: bool) void {
+        const self: *Service = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        self.pending_image = true;
+        self.image_retry = false;
+        self.queueReload(true);
+    }
     fn queueReload(self: *Service, force: bool) void {
         if (!self.running) return;
         self.cancelApplicationAction();
+        if (force) _ = self.publication.advance();
         self.force_reload = self.force_reload or force;
         self.pending_reload = true;
-        if (self.job) |j| if (j.requested == null and j.stage != .integrate) {
-            j.obsolete = true;
-            j.cancel.cancel();
-        };
+        if (self.job) |j| {
+            if (j.stage == .applications or j.stage == .integrate) {
+                if (force) j.cancel.cancel();
+            } else if (j.requested == null) {
+                self.force_reload = self.force_reload or !j.skip_unchanged;
+                self.pending_image = self.pending_image or j.image_event;
+                j.obsolete = true;
+                j.cancel.cancel();
+            }
+        }
         if (self.debounce != 0) _ = glib.Source.remove(self.debounce);
         self.debounce = glib.timeoutAdd(180, debounced, self);
     }
     fn debounced(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Service = @ptrCast(@alignCast(data.?));
         self.debounce = 0;
-        if (self.job == null and self.pending_reload) {
+        // Preferences writes may be our own commit. Interrupt only after the
+        // burst settles; the next read distinguishes an external edit from an
+        // unchanged document and resumes integration without another shell swap.
+        if (self.pending_reload) if (self.job) |j| {
+            if (j.stage == .applications or j.stage == .integrate) {
+                _ = self.publication.advance();
+                j.cancel.cancel();
+            }
+        };
+        if (self.job == null and self.pending_reload and !self.cancelApplicationActionBusy()) {
             self.pending_reload = false;
             self.launch(null) catch |err| {
                 self.err = err;
@@ -253,6 +366,7 @@ pub const Service = struct {
     }
     fn cancelApplicationActionBusy(self: *Service) bool {
         if (self.theme_jobs.job) |job| if (job.request.action == .application_install or job.request.action == .application_retry or job.request.action == .application_review) {
+            _ = self.publication.advance();
             job.cancel.cancel();
             return true;
         };
@@ -262,7 +376,7 @@ pub const Service = struct {
         _ = self.cancelApplicationActionBusy();
     }
     pub fn updateApplicationJob(self: *Service) void {
-        if (self.theme_jobs.job != null or self.theme_jobs.error_code != null or self.application_job_serial == self.theme_jobs.serial or self.theme_jobs.application_revision != self.revision) return;
+        if (self.theme_jobs.job != null or self.theme_jobs.error_code != null or self.application_job_serial == self.theme_jobs.serial or self.theme_jobs.application_revision != self.revision or self.application_action_generation != self.appearance or self.pending_reload) return;
         const bytes = self.theme_jobs.result orelse return;
         const job = self.live orelse return;
         const alloc = job.arena.allocator();
@@ -270,13 +384,22 @@ pub const Service = struct {
             const Result = struct { application_status: @import("../theme/matugen_profiles.zig").Status };
             const result = @import("../theme/package_model.zig").parse(Result, alloc, bytes, 120000) catch return;
             self.application_status = result.application_status;
+            for (&self.application_status.targets) |*target| if (target.applied_generation != 0) {
+                target.applied_generation = job.generation;
+            };
+            job.application_result = self.application_status;
+            self.application_status.watcher_error = self.watcher_error;
+            self.application_status.desired_generation = job.generation;
             self.application_status.desired_revision = self.revision;
             var successful = true;
             for (self.application_status.targets) |target| switch (target.state) {
                 .failed, .conflict, .unavailable, .unsupported => successful = false,
                 else => {},
             };
-            if (successful) self.application_status.applied_revision = self.revision;
+            if (successful) {
+                self.application_status.applied_revision = self.revision;
+                self.application_status.applied_generation = job.generation;
+            }
         } else if (self.theme_jobs.last_action == .application_install) {
             self.application_status.targets[@intFromEnum(@import("../theme/matugen_profiles.zig").Application.starship)].state = .applied;
         } else return;
@@ -287,6 +410,15 @@ pub const Service = struct {
         const j = try a.create(Job);
         j.* = .{ .service = self, .arena = std.heap.ArenaAllocator.init(a), .cancel = gio.Cancellable.new(), .expected = self.observed, .skip_unchanged = !self.force_reload };
         errdefer j.destroy();
+        j.generation = self.publication.advance();
+        j.previous_desired_generation = self.application_status.desired_generation;
+        j.previous_applied_generation = self.application_status.applied_generation;
+        for (self.application_status.targets, &j.previous_target_generations) |target, *generation| generation.* = target.applied_generation;
+        self.application_status.desired_generation = j.generation;
+        self.application_status.busy = true;
+        j.image_event = self.pending_image;
+        j.started_us = glib.getMonotonicTime();
+        self.pending_image = false;
         if (requested) |json| {
             j.requested = try j.arena.allocator().dupe(u8, json);
             if (self.draft.text) |draft| {
@@ -312,7 +444,10 @@ pub const Service = struct {
     fn timedOut(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Service = @ptrCast(@alignCast(data.?));
         self.deadline = 0;
-        if (self.job) |j| j.cancel.cancel();
+        if (self.job) |j| {
+            j.timed_out = true;
+            j.cancel.cancel();
+        }
         return 0;
     }
     fn fileChanged(_: *gio.FileMonitor, file: *gio.File, other: ?*gio.File, _: gio.FileMonitorEvent, self: *Service) callconv(.c) void {
@@ -341,6 +476,7 @@ pub const Service = struct {
                 j.prefs.theme.package_id = "";
                 j.prefs.theme.style_id = "";
                 j.prefs.wallpaper.mode = .solid;
+                j.prefs.matugen.enabled = false;
                 prepareAppearance(j) catch |err| {
                     j.failure = err;
                 };
@@ -366,23 +502,36 @@ pub const Service = struct {
                 .qt5 = .{ .state = .failed, .error_code = @errorName(err) },
                 .qt6 = .{ .state = .failed, .error_code = @errorName(err) },
             };
-            if (!j.qt_review_only) {
-                const application_result = @import("../theme/application_profiles.zig").reconcile(scratch.allocator(), std.mem.span(glib.getUserConfigDir()), j.prefs.matugen.enabled, j.application_snapshot, j.cancel) catch |err| blk: {
-                    var failed: @import("../theme/matugen_profiles.zig").Status = .{};
-                    for (&failed.targets) |*target| target.* = .{ .state = .failed, .error_code = @errorName(err) };
-                    break :blk failed;
-                };
-                // Rendering buffers belong to this worker iteration, not the
-                // long-lived appearance arena (Qt retry can reuse this Job).
-                const new_status = std.json.Stringify.valueAlloc(scratch.allocator(), application_result, .{}) catch null;
-                const old_status = std.json.Stringify.valueAlloc(scratch.allocator(), j.application_result, .{}) catch null;
-                if (new_status != null and (old_status == null or !std.mem.eql(u8, new_status.?, old_status.?))) {
-                    j.application_result = @import("../theme/package_model.zig").parse(@import("../theme/matugen_profiles.zig").Status, j.arena.allocator(), new_status.?, 65536) catch .{ .targets = @splat(.{ .state = .failed, .error_code = "ApplicationStatusUnavailable" }) };
-                }
-                if (new_status == null) j.application_result = .{ .targets = @splat(.{ .state = .failed, .error_code = "ApplicationStatusUnavailable" }) };
-                if (j.application_error) |err| for (&j.application_result.targets) |*target| {
-                    target.* = .{ .state = .unavailable, .error_code = @errorName(err) };
-                };
+        } else if (j.stage == .applications) {
+            var scratch = std.heap.ArenaAllocator.init(a);
+            defer scratch.deinit();
+            if (!j.applications_unchanged and j.prefs.matugen.enabled and j.application_snapshot.profiles.len > 0 and j.renderer.version == null)
+                _ = j.renderer.getVersion(j.arena.allocator(), j.cancel) catch {};
+            const application_result = if (j.applications_unchanged) j.application_result else applications.reconcileGuarded(scratch.allocator(), std.mem.span(glib.getUserConfigDir()), j.prefs.matugen.enabled, j.application_snapshot, j.cancel, &j.renderer, .{ .gate = &j.service.publication, .generation = j.generation }) catch |err| blk: {
+                var failed: @import("../theme/matugen_profiles.zig").Status = .{};
+                for (&failed.targets) |*target| target.* = .{ .state = .failed, .error_code = @errorName(err) };
+                break :blk failed;
+            };
+            // Rendering buffers belong to this worker iteration, not the
+            // long-lived appearance arena (Qt retry can reuse this Job).
+            const new_status = std.json.Stringify.valueAlloc(scratch.allocator(), application_result, .{}) catch null;
+            const old_status = std.json.Stringify.valueAlloc(scratch.allocator(), j.application_result, .{}) catch null;
+            if (new_status != null and (old_status == null or !std.mem.eql(u8, new_status.?, old_status.?))) {
+                j.application_result = @import("../theme/package_model.zig").parse(@import("../theme/matugen_profiles.zig").Status, j.arena.allocator(), new_status.?, 65536) catch .{ .targets = @splat(.{ .state = .failed, .error_code = "ApplicationStatusUnavailable" }) };
+            }
+            if (new_status == null) j.application_result = .{ .targets = @splat(.{ .state = .failed, .error_code = "ApplicationStatusUnavailable" }) };
+            if (j.application_error) |err| for (&j.application_result.targets) |*target| {
+                target.* = .{ .state = .unavailable, .error_code = @errorName(err) };
+            };
+            if (j.cancel.isCancelled() == 0 and j.prefs.matugen.enabled and applicationSucceeded(j.application_result)) {
+                const guard: @import("../theme/publication.zig").Guard = .{ .gate = &j.service.publication, .generation = j.generation };
+                if (guard.begin(j.cancel)) |_| {
+                    defer guard.end();
+                    applications.saveRuntime(scratch.allocator(), j.service.dir, j.prefs, j.application_snapshot) catch |err| {
+                        j.application_result.targets[0].error_code = @errorName(err);
+                        j.application_result.targets[0].state = .failed;
+                    };
+                } else |_| {}
             }
         } else persist(j) catch |err| {
             j.failure = err;
@@ -412,6 +561,7 @@ pub const Service = struct {
             j.prefs.theme.package_id = "";
             j.prefs.theme.style_id = "";
             j.prefs.wallpaper.mode = .solid;
+            j.prefs.matugen.enabled = false;
             try prepareAppearance(j);
         };
     }
@@ -439,7 +589,13 @@ pub const Service = struct {
                 break :blk try model.parse(alloc, if (good.missing) "{}" else good.bytes);
             };
         }
+        j.disk_application_digest = j.prefs.matugen.snapshot_digest;
+        j.watch_path = if (usesWallpaper(j.prefs, j.service.shell_appearance)) try alloc.dupe(u8, j.prefs.wallpaper.path) else "";
         try prepareAppearance(j);
+    }
+    fn usesWallpaper(p: model.Preferences, application_colors: bool) bool {
+        return p.wallpaper.mode == .cover or p.wallpaper.mode == .contain or
+            (p.theme.mode == .dynamic and p.theme.source == .wallpaper) or (application_colors and app_provider.wallpaperColors(p));
     }
     fn prepareAppearance(j: *Job) !void {
         const alloc = j.arena.allocator();
@@ -447,16 +603,27 @@ pub const Service = struct {
         j.json = try std.json.Stringify.valueAlloc(alloc, j.prefs, .{ .whitespace = .indent_2 });
         var image_bytes: ?[]const u8 = null;
         const p = j.prefs;
-        if (p.wallpaper.mode == .cover or p.wallpaper.mode == .contain or (p.theme.mode == .dynamic and p.theme.source == .wallpaper)) {
+        if (usesWallpaper(p, self.shell_appearance)) {
             const path = try alloc.dupeZ(u8, p.wallpaper.path);
             const image = try io.read(alloc, path, null, j.cancel);
             if (image.missing or (!std.mem.startsWith(u8, image.bytes, "\x89PNG\r\n\x1a\n") and !std.mem.startsWith(u8, image.bytes, "\xff\xd8\xff"))) return error.InvalidImage;
             image_bytes = image.bytes;
-            const bytes = glib.Bytes.new(image.bytes.ptr, image.bytes.len);
-            defer bytes.unref();
-            const stream = gio.MemoryInputStream.newFromBytes(bytes);
-            defer stream.unref();
-            j.image = pixbuf.Pixbuf.newFromStream(stream.as(gio.InputStream), j.cancel, null) orelse return error.ImageDecodeFailed;
+            j.image_hash = image.hash;
+            if (j.image_event and j.requested == null and self.live != null and !self.live.?.recovered and
+                self.live.?.cancel.isCancelled() == 0 and self.live.?.image_hash != null and
+                std.mem.eql(u8, &self.live.?.image_hash.?, &image.hash) and j.disk != null and
+                std.mem.eql(u8, &j.disk.?.hash, &j.expected))
+            {
+                j.unchanged = true;
+                return;
+            }
+            if (p.wallpaper.mode == .cover or p.wallpaper.mode == .contain) {
+                const bytes = glib.Bytes.new(image.bytes.ptr, image.bytes.len);
+                defer bytes.unref();
+                const stream = gio.MemoryInputStream.newFromBytes(bytes);
+                defer stream.unref();
+                j.image = pixbuf.Pixbuf.newFromStream(stream.as(gio.InputStream), j.cancel, null) orelse return error.ImageDecodeFailed;
+            }
         }
         j.palette = if (p.theme.variant == .dark) theme.dark else theme.light;
         if (p.theme.mode != .gtk and (p.theme.mode == .package or p.theme.package_id.len > 0 or p.theme.style_id.len > 0)) {
@@ -476,7 +643,7 @@ pub const Service = struct {
         } else j.custom = .{};
         if (p.theme.mode == .dynamic) {
             const previous = self.live;
-            const same_source = if (previous) |live| j.requested != null and live.prefs.theme.mode == .dynamic and
+            const same_source = if (previous) |live| live.prefs.theme.mode == .dynamic and
                 p.theme.variant == live.prefs.theme.variant and p.theme.source == live.prefs.theme.source and
                 std.mem.eql(u8, p.theme.seed, live.prefs.theme.seed) and std.mem.eql(u8, p.wallpaper.path, live.prefs.wallpaper.path) else false;
             // Wallpaper content may have changed in place: only seed palettes can
@@ -486,8 +653,9 @@ pub const Service = struct {
                     @field(j.palette, field.name) = try alloc.dupe(u8, @field(previous.?.palette, field.name));
                 j.cache_hit = true;
                 if (previous.?.dynamic_json) |json| j.dynamic_json = try alloc.dupe(u8, json);
+                if (previous.?.renderer.version) |version| j.renderer.version = try alloc.dupe(u8, version);
             } else {
-                const generated = try generator.full(alloc, p, image_bytes, self.cache_dir, j.cancel, &j.cache_hit);
+                const generated = try generator.fullWithContext(alloc, p, image_bytes, self.cache_dir, j.cancel, &j.cache_hit, &j.renderer);
                 j.palette = generated.palette;
                 j.dynamic_json = generated.json;
             }
@@ -516,25 +684,65 @@ pub const Service = struct {
             j.prefs.theme.snapshot_digest = try alloc.dupe(u8, &io.digest(snapshot_bytes));
         } else j.prefs.theme.snapshot_digest = "";
         if (self.shell_appearance and p.matugen.enabled) {
-            j.application_snapshot = if (j.requested == null and p.matugen.snapshot_digest.len > 0)
-                @import("../theme/application_profiles.zig").load(alloc, self.dir, p.matugen.snapshot_digest) catch |err| blk: {
-                    j.application_error = err;
-                    break :blk .{};
-                }
-            else
-                @import("../theme/theme_provider.zig").capture(alloc, p, j.dynamic_json, j.cancel, try std.fmt.allocPrintSentinel(alloc, "{s}/applications", .{self.cache_dir}, 0)) catch |err| blk: {
-                    j.application_error = err;
-                    break :blk .{};
-                };
-            if (j.application_error) |err| j.application_snapshot.error_code = @errorName(err);
-            j.prefs.matugen.snapshot_digest = try alloc.dupe(u8, &io.digest(try std.json.Stringify.valueAlloc(alloc, j.application_snapshot, .{})));
+            prepareApplications(j, image_bytes) catch |err| {
+                j.application_error = err;
+                j.application_snapshot.error_code = @errorName(err);
+            };
         } else if (!p.matugen.enabled) j.prefs.matugen.snapshot_digest = "";
         j.json = try std.json.Stringify.valueAlloc(alloc, j.prefs, .{ .whitespace = .indent_2 });
         if (j.cancel.isCancelled() != 0) return error.Cancelled;
     }
+    fn prepareApplications(j: *Job, image: ?[]const u8) !void {
+        const alloc = j.arena.allocator();
+        const p = j.prefs;
+        const scratch = try std.fmt.allocPrintSentinel(alloc, "{s}/applications", .{j.service.cache_dir}, 0);
+        var reused = false;
+        if (p.matugen.snapshot_digest.len > 0) {
+            j.application_snapshot = try applications.load(alloc, j.service.dir, p.matugen.snapshot_digest);
+            const key = try app_provider.selectionKey(alloc, p);
+            reused = std.mem.eql(u8, j.application_snapshot.selection_key, key) or
+                (j.application_snapshot.selection_key.len == 0 and (j.requested == null or
+                    (j.service.live != null and std.mem.eql(u8, j.service.live.?.prefs.matugen.snapshot_digest, p.matugen.snapshot_digest) and
+                        std.mem.eql(u8, try app_provider.selectionKey(alloc, j.service.live.?.prefs), key))));
+            if (reused) j.application_snapshot.selection_key = key;
+        }
+        const previous = j.service.live;
+        const same_preferences = j.requested == null and j.disk != null and std.mem.eql(u8, &j.disk.?.hash, &j.expected);
+        if (reused and j.image_event and same_preferences and !app_provider.wallpaperColors(p) and previous != null and previous.?.application_digest.len > 0) {
+            j.application_snapshot = try applications.load(alloc, j.service.dir, previous.?.application_digest);
+        } else if (reused) {
+            if (applications.loadRuntime(alloc, j.service.dir, p) catch null) |runtime| j.application_snapshot = runtime;
+            try app_provider.refreshColors(alloc, &j.application_snapshot, p, j.dynamic_json, image, j.cancel, scratch, &j.renderer);
+        } else {
+            j.application_snapshot = try app_provider.capture(alloc, p, j.dynamic_json, image, j.cancel, scratch, &j.renderer);
+            j.prefs.matugen.snapshot_digest = try alloc.dupe(u8, &io.digest(try std.json.Stringify.valueAlloc(alloc, j.application_snapshot, .{})));
+        }
+        j.application_digest = try alloc.dupe(u8, &io.digest(try std.json.Stringify.valueAlloc(alloc, j.application_snapshot, .{})));
+        if (previous) |old| if (old.prefs.matugen.enabled and std.mem.eql(u8, old.application_digest, j.application_digest) and
+            old.cancel.isCancelled() == 0 and applicationSucceeded(old.application_result))
+        {
+            j.applications_unchanged = true;
+            j.application_result = try @import("../theme/package_model.zig").parse(@import("../theme/matugen_profiles.zig").Status, alloc, try std.json.Stringify.valueAlloc(alloc, old.application_result, .{}), 65536);
+        };
+    }
+    fn applicationSucceeded(result: @import("../theme/matugen_profiles.zig").Status) bool {
+        for (result.targets) |target| switch (target.state) {
+            .failed, .conflict, .unavailable, .unsupported => return false,
+            else => {},
+        };
+        return true;
+    }
     fn persist(j: *Job) !void {
         const self = j.service;
-        if (!j.recovered and self.shell_appearance and j.prefs.matugen.enabled) {
+        // The new path was not watched during extraction. With its candidate
+        // watch now attached, close that gap before committing the selection.
+        if (j.verify_image) {
+            var scratch = std.heap.ArenaAllocator.init(a);
+            defer scratch.deinit();
+            const current = io.read(scratch.allocator(), try scratch.allocator().dupeZ(u8, j.watch_path), null, j.cancel) catch null;
+            j.image_changed = current == null or current.?.missing or !std.mem.eql(u8, &current.?.hash, &j.image_hash.?);
+        }
+        if (!j.recovered and self.shell_appearance and j.prefs.matugen.enabled and j.application_error == null) {
             _ = try @import("../theme/application_profiles.zig").save(j.arena.allocator(), self.dir, j.application_snapshot);
         }
         if (!j.recovered and j.custom.digest.len > 0) {
@@ -555,7 +763,10 @@ pub const Service = struct {
             const directory = try std.fmt.allocPrintSentinel(alloc, "{s}/theme-snapshots", .{self.dir}, 0);
             @import("../theme/snapshots.zig").prune(alloc, directory, j.prefs.theme.snapshot_digest, if (self.live) |old| old.prefs.theme.snapshot_digest else "") catch {};
             @import("../theme/asset_store.zig").prune(alloc, try std.fmt.allocPrintSentinel(alloc, "{s}/theme-assets", .{self.dir}, 0), directory) catch {};
-            if (self.shell_appearance) @import("../theme/application_profiles.zig").prune(alloc, self.dir, j.prefs.matugen.snapshot_digest, if (self.live) |old| old.prefs.matugen.snapshot_digest else "") catch {};
+            if (self.shell_appearance) applications.prune(alloc, self.dir, &.{
+                j.prefs.matugen.snapshot_digest,                                j.application_digest,                                j.disk_application_digest,
+                if (self.live) |old| old.prefs.matugen.snapshot_digest else "", if (self.live) |old| old.application_digest else "",
+            }) catch {};
         }
         // Export failure is independent: it must never undo a successful shell save.
         exports(j) catch |err| {
@@ -566,6 +777,49 @@ pub const Service = struct {
         const j: *Job = @ptrCast(@alignCast(data.?));
         const self = j.service;
         defer self.app.release();
+        if (j.stage == .applications) {
+            if (self.running and j.cancel.isCancelled() == 0 and j.generation == self.publication.generation) {
+                self.application_status = j.application_result;
+                self.application_status.desired_revision = self.revision;
+                self.application_status.desired_generation = j.generation;
+                self.application_status.watcher_error = self.watcher_error;
+                self.application_status.applied_generation = j.previous_applied_generation;
+                for (&self.application_status.targets, j.previous_target_generations) |*target, previous| {
+                    if (target.applied_generation == 0) target.applied_generation = previous;
+                }
+                if (j.applications_unchanged) for (&self.application_status.targets) |*target| {
+                    target.applied_generation = j.generation;
+                };
+                if (applicationSucceeded(self.application_status)) {
+                    self.application_status.applied_revision = self.revision;
+                    self.application_status.applied_generation = j.generation;
+                }
+                std.log.info("event=wallpaper-applications-applied generation={d} elapsed_us={d} success={}", .{ j.generation, glib.getMonotonicTime() - j.started_us, applicationSucceeded(self.application_status) });
+                self.notify();
+                if (!self.pending_reload or !self.force_reload) {
+                    j.stage = .integrate;
+                    j.timed_out = false;
+                    if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
+                    self.deadline = glib.timeoutAdd(15000, timedOut, self);
+                    self.dispatch(j);
+                    return;
+                }
+            }
+            if (self.running and j.timed_out and !self.pending_reload) {
+                self.application_status.desired_generation = j.generation;
+                self.application_status.applied_generation = j.previous_applied_generation;
+                for (j.application_snapshot.profiles) |profile| {
+                    self.application_status.targets[@intFromEnum(profile.application)] = .{
+                        .profile = profile.id,
+                        .state = .failed,
+                        .error_code = "ApplicationDeadlineExceeded",
+                    };
+                }
+            }
+            self.application_status.busy = false;
+            self.finishIntegration(j);
+            return;
+        }
         if (j.stage == .integrate) {
             self.job = null;
             if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
@@ -573,6 +827,13 @@ pub const Service = struct {
             if (!self.running) {
                 j.destroy();
                 self.freePaths();
+                return;
+            }
+            if (j.cancel.isCancelled() != 0 and !j.timed_out) {
+                self.qt_status.busy = false;
+                self.resumeIntegration();
+                self.notify();
+                if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(1, debounced, self);
                 return;
             }
             if (j.qt_review_only) {
@@ -588,13 +849,6 @@ pub const Service = struct {
                 if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(180, debounced, self);
                 return;
             }
-            self.application_status = j.application_result;
-            self.application_status.desired_revision = self.revision;
-            var application_success = true;
-            for (self.application_status.targets) |target| if (target.state == .failed or target.state == .conflict or target.state == .unavailable or target.state == .unsupported) {
-                application_success = false;
-            };
-            if (application_success) self.application_status.applied_revision = self.revision;
             self.qt_review_digest = null;
             self.qt_review_text.set("");
             const previously_applied = self.qt_status.applied_revision;
@@ -637,12 +891,15 @@ pub const Service = struct {
                 return;
             }
             if (j.failure == null) {
+                j.verify_image = j.image_hash != null and (self.wallpaper_watch.path == null or !std.mem.eql(u8, self.wallpaper_watch.path.?, j.watch_path));
+                if (j.verify_image) self.candidate_watch.bind(j.watch_path) catch {};
                 j.stage = .persist;
                 self.dispatch(j);
                 return;
             }
         }
         self.job = null;
+        self.candidate_watch.stop();
         if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
         self.deadline = 0;
         if (!self.running) {
@@ -661,13 +918,24 @@ pub const Service = struct {
             };
             self.err = j.failure orelse j.warning;
             if (j.failure == null) {
+                if (j.image_changed) {
+                    _ = self.publication.advance();
+                    self.pending_image = true;
+                    self.force_reload = true;
+                    self.pending_reload = true;
+                }
                 if (j.draft_revision) |expected| {
                     // Completion can clear only the exact draft captured by Apply.
                     self.draft.discard(a, expected) catch {};
                 }
                 self.removeLive();
-                self.application_status = .{ .desired_revision = self.revision };
+                self.application_status = .{ .desired_revision = self.revision, .desired_generation = j.generation, .busy = self.integration_allowed and !j.recovered, .watcher_error = self.watcher_error };
                 self.live = j;
+                self.wallpaper_watch.bind(j.watch_path) catch |err| {
+                    self.watcher_error = @errorName(err);
+                };
+                if (self.wallpaper_watch.monitor != null or j.watch_path.len == 0) self.watcher_error = null;
+                self.application_status.watcher_error = self.watcher_error;
                 self.appearance += 1;
                 if (j.requested != null) {
                     self.observed = io.digest(j.json);
@@ -676,8 +944,12 @@ pub const Service = struct {
                 gtk.StyleContext.addProviderForDisplay(self.display, j.provider.?.as(gtk.StyleProvider), 601);
                 if (j.native_provider) |p| gtk.StyleContext.addProviderForDisplay(self.display, p.as(gtk.StyleProvider), 599);
                 self.export_error = j.export_error;
-                if (!j.recovered and self.integration_allowed) {
-                    j.stage = .integrate;
+                if (!j.recovered and self.integration_allowed and self.pending_reload and self.force_reload) {
+                    j.cancel.cancel();
+                    self.application_status.busy = false;
+                } else if (!j.recovered and self.integration_allowed) {
+                    self.integration_retry = false;
+                    j.stage = .applications;
                     self.job = j;
                     self.qt_status.busy = true;
                     self.qt_status.desired_revision = self.revision;
@@ -686,12 +958,46 @@ pub const Service = struct {
                 }
                 std.log.info("event=preferences-applied revision={d} mode={s} cache={}", .{ self.revision, @tagName(j.prefs.theme.mode), j.cache_hit });
             } else {
+                if (j.image_event and !self.image_retry) {
+                    self.image_retry = true;
+                    self.pending_image = true;
+                    self.force_reload = true;
+                    self.pending_reload = true;
+                }
+                self.application_status.busy = false;
+                if (j.requested != null) self.application_status.desired_generation = j.previous_desired_generation;
                 std.log.info("event=preferences-error detail={s}", .{@errorName(j.failure.?)});
                 j.destroy();
             }
-        } else j.destroy();
+        } else {
+            const resume_integration = j.unchanged and self.live != null and self.live.?.cancel.isCancelled() != 0 and
+                self.integration_allowed and !self.live.?.recovered;
+            if (j.unchanged) {
+                if (j.image_event) self.err = null;
+                self.application_status.desired_generation = j.previous_desired_generation;
+            }
+            self.application_status.busy = false;
+            j.destroy();
+            if (resume_integration) self.retryQt(self.revision, false, null) catch |err| {
+                self.err = err;
+            };
+        }
         self.notify();
         if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(180, debounced, self);
+    }
+    fn finishIntegration(self: *Service, j: *Job) void {
+        self.job = null;
+        if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
+        self.deadline = 0;
+        self.qt_status.busy = false;
+        if (!self.running) {
+            j.destroy();
+            self.freePaths();
+            return;
+        }
+        self.notify();
+        self.resumeIntegration();
+        if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(1, debounced, self);
     }
     fn removeProviders(self: *Service, j: *Job) void {
         if (j.provider) |p| gtk.StyleContext.removeProviderForDisplay(self.display, p.as(gtk.StyleProvider));

@@ -42,9 +42,31 @@ pub fn palette(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]const u8, c
     return (try full(a, p, image, cache_dir, cancel, hit)).palette;
 }
 pub const Full = struct { palette: theme.Palette, json: []const u8, version: []const u8 };
+/// One probe per appearance job, shared by extraction and all profile renders.
+pub const Context = struct {
+    version: ?[]const u8 = null,
+    failure: ?anyerror = null,
+    pub fn getVersion(self: *Context, a: std.mem.Allocator, cancel: *gio.Cancellable) ![]const u8 {
+        if (self.failure) |err| return err;
+        if (self.version) |value| return value;
+        const value = run(a, &.{ "matugen", "--version" }, cancel) catch |err| {
+            self.failure = err;
+            return err;
+        };
+        if (value.len > 256 or !std.mem.startsWith(u8, value, "matugen 4.")) {
+            self.failure = error.UnsupportedMatugenVersion;
+            return error.UnsupportedMatugenVersion;
+        }
+        self.version = value;
+        return value;
+    }
+};
 pub fn full(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]const u8, cache_dir: [:0]const u8, cancel: *gio.Cancellable, hit: *bool) !Full {
-    const version = try run(a, &.{ "matugen", "--version" }, cancel);
-    if (version.len > 256 or !std.mem.startsWith(u8, version, "matugen 4.")) return error.UnsupportedMatugenVersion;
+    var context: Context = .{};
+    return fullWithContext(a, p, image, cache_dir, cancel, hit, &context);
+}
+pub fn fullWithContext(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]const u8, cache_dir: [:0]const u8, cancel: *gio.Cancellable, hit: *bool, context: *Context) !Full {
+    const version = try context.getVersion(a, cancel);
     const identity = try std.fmt.allocPrint(a, "pearl-palette-v1\n{s}\n{s}\n{s}\n{s}", .{ version, @tagName(p.theme.variant), @tagName(p.theme.source), if (p.theme.source == .seed) p.theme.seed else image orelse return error.ImageRequired });
     const key = io.digest(identity);
     const slot = key[0] % 8;

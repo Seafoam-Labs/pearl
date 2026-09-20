@@ -498,9 +498,20 @@ are cancelled. Existing 120,000-byte theme response limits remain.
 and application_retry run backend jobs. Profile pages carry a revision, summaries
 and next_offset. Application actions require the current preferences revision;
 install also supplies the digest returned by review. The backend supplies the
-committed snapshot reference. Status includes per-app desired/applied revisions,
+latest desired render snapshot reference, using committed template bytes and
+current wallpaper colors. Status includes desired/applied preference revisions,
 origin, errors and activation-required states. No frontend reads templates, scans
 packages, invokes Matugen or writes application destinations.
+
+Application status additionally includes `desired_generation`,
+`applied_generation`, `busy`, nullable `watcher_error`, and an
+`applied_generation` on each target. These additive fields default to zero/false/
+null when absent. Generations are session-local counters independent of preference
+revisions: a wallpaper file change can advance them without changing the committed
+document or creating a draft conflict. Partial failures leave the aggregate
+applied generation behind the desired generation. Installed/generated outputs
+still use `activation_required` where a running consumer must be configured or
+reloaded manually. A watcher failure leaves `preferences reload` available.
 
 Page state includes theme_catalog_generation and discovery degradation. Generation
 changes refresh metadata while preserving the shared draft and search. Content

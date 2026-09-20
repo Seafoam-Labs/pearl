@@ -43,6 +43,9 @@ pub const View = struct {
         root.as(gtk.Widget).addCssClass("settings-card");
         host.append(root.as(gtk.Widget));
         root.append(w.label("Application themes · Matugen profiles", "pearl-card-title").as(gtk.Widget));
+        const hint = w.label("Wallpaper colors update automatically after wallpaper changes are committed, including when the image file changes. Some applications still require activation.", "pearl-secondary");
+        hint.setWrap(1);
+        root.append(hint.as(gtk.Widget));
         const enabled = gtk.Switch.new();
         enabled.as(gtk.Widget).setHalign(.start);
         add(root, "Enable application themes", enabled.as(gtk.Widget));

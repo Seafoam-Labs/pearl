@@ -1,0 +1,30 @@
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=14aaef65a690d5ab70dcb2b3f860fded
+info(pearl): event=control-ready session=14aaef65a690d5ab70dcb2b3f860fded
+info: event=app-index-ready entries=160 truncated=false
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=2 elapsed_us=140672 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=6 elapsed_us=144333 success=true
+info: event=preferences-applied revision=2 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=7 elapsed_us=150549 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=2 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=12 elapsed_us=153524 success=true
+info: event=preferences-applied revision=3 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=13 elapsed_us=154870 success=true
+info(pearl): event=stopping reason=signal pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

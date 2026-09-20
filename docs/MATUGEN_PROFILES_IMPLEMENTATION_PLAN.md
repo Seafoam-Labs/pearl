@@ -1,5 +1,8 @@
 # Individual Matugen application themes
 
+Follow-up: [automatic wallpaper-driven updates](MATUGEN_WALLPAPER_LIVE_UPDATE_PLAN.md)
+plans image watching, refreshed color inputs and generation-aware application.
+
 Status: implemented locally with focused acceptance, September 18, 2026.
 The Zig catalog/provider, complete Matugen JSON inputs, worker, adapter journals,
 committed snapshots and shared Settings controls now exist. M1–M6 remain subject

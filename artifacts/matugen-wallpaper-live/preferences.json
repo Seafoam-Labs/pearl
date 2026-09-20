@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "checks": {
+    "wallpaper-picker-selection-cancel-save-and-parent-close": true,
+    "wallpaper-picker-sets-cover-from-every-fit-mode": true,
+    "defaults-atomic-save-and-live-popup-theme": true,
+    "one-theme-updates-bars-popup-wallpaper-and-second-output-osd": true,
+    "corrupt-external-config-and-stale-revision": true,
+    "wallpapers-exceed-former-dimension-pixel-and-file-size-caps": true,
+    "image-validation-fifo-rejection-and-dynamic-palette-cache": true,
+    "missing-font-falls-back": true,
+    "broken-gtk-css-cannot-replace-working-theme-or-config": true,
+    "installed-gtk-theme-and-system-follow-without-material-css": true,
+    "bar-reservation-conflict-is-rejected-before-saving": true,
+    "per-connector-bar-and-popup-policies": true,
+    "gtk-draft-survives-close-external-edit-and-three-way-merge": true,
+    "opt-in-exports-ownership-backup-and-disable": true,
+    "failed-save-retains-working-file": true,
+    "legacy-migration-is-validated-and-only-written-on-apply": true,
+    "large-preferences-preserved-with-bounded-control-status": true,
+    "no-theme-work-at-idle": true,
+    "restart-uses-last-good-without-overwriting-corruption": true,
+    "generator-failure-malformed-output-bounds-and-deadline": true,
+    "rapid-edits-cancel-obsolete-generator-and-coalesce-latest": true,
+    "concurrent-disk-edit-blocks-save-before-atomic-replacement": true,
+    "shutdown-cancels-worker-and-reaps-generator": true,
+    "static-theme-and-last-good-recovery-without-matugen": true
+  },
+  "pearl_sha256": "a691acc83e7d14db0e93286a67a9a912ebf5275f3fa652e96a277346ad0354df",
+  "ctl_sha256": "e52411518f152addf267f6ca09f01c76287a188369529a0ccf8c7502b72a1bf8"
+}

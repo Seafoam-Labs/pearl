@@ -11,6 +11,30 @@ const safe = @import("../config/qt_integration.zig");
 const c = @import("package.zig").c;
 extern fn mkdtemp([*:0]u8) ?[*:0]u8;
 const max_snapshot = 4 * 1024 * 1024;
+const Runtime = struct { schema_version: u32 = 1, key: []const u8, snapshot: provider.Snapshot };
+fn runtimeKey(a: std.mem.Allocator, p: @import("../config/preferences.zig").Preferences) ![]const u8 {
+    return a.dupe(u8, &model.hash(try std.json.Stringify.valueAlloc(a, .{
+        .selection = try provider.selectionKey(a, p),
+        .committed = p.matugen.snapshot_digest,
+        .colors = p.matugen.colors,
+        .source = p.theme.source,
+        .seed = p.theme.seed,
+        .wallpaper = p.wallpaper.path,
+    }, .{})));
+}
+pub fn saveRuntime(a: std.mem.Allocator, root: []const u8, p: @import("../config/preferences.zig").Preferences, snapshot: provider.Snapshot) !void {
+    const bytes = try std.json.Stringify.valueAlloc(a, Runtime{ .key = try runtimeKey(a, p), .snapshot = snapshot }, .{});
+    if (bytes.len > max_snapshot) return error.ProfileSnapshotLimit;
+    try io.atomic(try std.fmt.allocPrintSentinel(a, "{s}/matugen/runtime.json", .{root}, 0), bytes, false);
+}
+pub fn loadRuntime(a: std.mem.Allocator, root: []const u8, p: @import("../config/preferences.zig").Preferences) !?provider.Snapshot {
+    const file = try io.read(a, try std.fmt.allocPrintSentinel(a, "{s}/matugen/runtime.json", .{root}, 0), max_snapshot, null);
+    if (file.missing) return null;
+    const runtime = try model.parse(Runtime, a, file.bytes, max_snapshot);
+    if (runtime.schema_version != 1 or !std.mem.eql(u8, runtime.key, try runtimeKey(a, p))) return null;
+    try validateSnapshot(runtime.snapshot);
+    return runtime.snapshot;
+}
 pub fn snapshotPath(a: std.mem.Allocator, root: []const u8, digest: []const u8) ![:0]const u8 {
     try model.digest(digest);
     return std.fmt.allocPrintSentinel(a, "{s}/matugen/snapshots/{s}.json", .{ root, digest }, 0);
@@ -46,6 +70,10 @@ pub fn load(a: std.mem.Allocator, root: []const u8, digest: []const u8) !provide
     const file = try io.read(a, try snapshotPath(a, root, digest), max_snapshot, null);
     if (file.missing or !std.mem.eql(u8, &file.hash, digest)) return error.ProfileSnapshotCorrupt;
     const result = try model.parse(provider.Snapshot, a, file.bytes, max_snapshot);
+    try validateSnapshot(result);
+    return result;
+}
+fn validateSnapshot(result: provider.Snapshot) !void {
     if (result.schema_version != 1 or result.profiles.len > 5) return error.ProfileSnapshotCorrupt;
     for (result.profiles) |profile| {
         try model.identifier(profile.id);
@@ -58,9 +86,8 @@ pub fn load(a: std.mem.Allocator, root: []const u8, digest: []const u8) !provide
             }
         }
     }
-    return result;
 }
-pub fn prune(a: std.mem.Allocator, root: []const u8, current: []const u8, previous: []const u8) !void {
+pub fn prune(a: std.mem.Allocator, root: []const u8, retained: []const []const u8) !void {
     const path = try std.fmt.allocPrintSentinel(a, "{s}/matugen/snapshots", .{root}, 0);
     const fd = c.open(path, c.O_RDONLY | c.O_DIRECTORY | c.O_NOFOLLOW | c.O_CLOEXEC);
     if (fd < 0) return;
@@ -75,7 +102,11 @@ pub fn prune(a: std.mem.Allocator, root: []const u8, current: []const u8, previo
         count += 1;
         if (count > 34) return error.ProfileSnapshotLimit;
         if (name.len != 69 or !std.mem.endsWith(u8, name, ".json")) continue;
-        if (std.mem.eql(u8, current, name[0..64]) or std.mem.eql(u8, previous, name[0..64])) continue;
+        var keep = false;
+        for (retained) |digest| if (std.mem.eql(u8, digest, name[0..64])) {
+            keep = true;
+        };
+        if (keep) continue;
         model.digest(name[0..64]) catch continue;
         const bytes = @import("package.zig").read(a, fd, name, max_snapshot) catch continue;
         if (std.mem.eql(u8, &model.hash(bytes), name[0..64])) _ = c.unlinkat(fd, @ptrCast(&entry.*.d_name), 0);
@@ -83,14 +114,19 @@ pub fn prune(a: std.mem.Allocator, root: []const u8, current: []const u8, previo
 }
 pub const Output = struct { name: []const u8, bytes: []const u8 };
 pub fn render(a: std.mem.Allocator, captured: provider.Captured, snapshot: provider.Snapshot, scratch_root: [:0]const u8, cancel: *gio.Cancellable) ![]const Output {
+    var context: @import("generator.zig").Context = .{};
+    return renderWithContext(a, captured, snapshot, scratch_root, cancel, &context);
+}
+pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snapshot: provider.Snapshot, scratch_root: [:0]const u8, cancel: *gio.Cancellable, context: *@import("generator.zig").Context) ![]const Output {
     if (captured.error_code != null or captured.descriptor == null) return error.ProfileUnavailable;
     const input = snapshot.render_json orelse return error.CompleteRenderPaletteUnavailable;
-    const version = try @import("generator.zig").run(a, &.{ "matugen", "--version" }, cancel);
-    if (!std.mem.startsWith(u8, version, "matugen 4.")) return error.UnsupportedMatugenVersion;
+    const version = try context.getVersion(a, cancel);
     try io.mkdir(scratch_root);
     const key = model.hash(try std.json.Stringify.valueAlloc(a, .{ .adapter_api = @as(u32, 2), .renderer = version, .captured = captured, .input = input, .variant = snapshot.variant }, .{}));
     const slot = std.fmt.parseInt(u8, key[0..2], 16) catch unreachable;
-    const cache_path = try std.fmt.allocPrintSentinel(a, "{s}/render-cache-{d}.json", .{ scratch_root, slot % 16 }, 0);
+    // Three bounded slots per adapter prevent another application's render from
+    // evicting the current input. Retrying a failed target reuses the others.
+    const cache_path = try std.fmt.allocPrintSentinel(a, "{s}/render-cache-{d}.json", .{ scratch_root, @as(usize, @intFromEnum(captured.application)) * 3 + slot % 3 }, 0);
     const Cache = struct { key: []const u8, outputs: []const Output, digest: []const u8 };
     if (io.read(a, cache_path, 2 * 1024 * 1024, cancel)) |cache| {
         if (!cache.missing) if (model.parse(Cache, a, cache.bytes, 2 * 1024 * 1024)) |value| {
@@ -262,6 +298,9 @@ pub fn reviewStarship(a: std.mem.Allocator, config: []const u8, snapshot: provid
     return .{ .digest = try a.dupe(u8, &model.hash(identity)), .current = current.bytes, .proposed = generated[0].bytes, .profile = profile.id, .destination = path };
 }
 pub fn installStarship(a: std.mem.Allocator, config: []const u8, snapshot: provider.Snapshot, expected: []const u8, cancel: *gio.Cancellable) !void {
+    return installStarshipGuarded(a, config, snapshot, expected, cancel, .{});
+}
+pub fn installStarshipGuarded(a: std.mem.Allocator, config: []const u8, snapshot: provider.Snapshot, expected: []const u8, cancel: *gio.Cancellable, guard: @import("publication.zig").Guard) !void {
     try model.digest(expected);
     const state = try std.fmt.allocPrintSentinel(a, "{s}/pearl/matugen", .{config}, 0);
     const fd = try safe.directory(a, state, true);
@@ -272,9 +311,15 @@ pub fn installStarship(a: std.mem.Allocator, config: []const u8, snapshot: provi
     if (std.os.linux.errno(std.os.linux.flock(lock, 2 | 4)) != .SUCCESS) return error.ProfileWriterBusy;
     const review = try reviewStarship(a, config, snapshot, cancel);
     if (!std.mem.eql(u8, review.digest, expected)) return error.ProfileReviewChanged;
+    try guard.begin(cancel);
+    defer guard.end();
     try install(a, config, state, .starship, &.{.{ .name = "starship.toml", .bytes = review.proposed }}, cancel, true);
 }
 pub fn reconcile(a: std.mem.Allocator, config: []const u8, enabled: bool, snapshot: provider.Snapshot, cancel: *gio.Cancellable) !profiles.Status {
+    var context: @import("generator.zig").Context = .{};
+    return reconcileGuarded(a, config, enabled, snapshot, cancel, &context, .{});
+}
+pub fn reconcileGuarded(a: std.mem.Allocator, config: []const u8, enabled: bool, snapshot: provider.Snapshot, cancel: *gio.Cancellable, context: *@import("generator.zig").Context, guard: @import("publication.zig").Guard) !profiles.Status {
     var status: profiles.Status = .{};
     if (enabled) if (snapshot.error_code) |code| {
         for (&status.targets) |*target| target.* = .{ .state = .unavailable, .error_code = code };
@@ -290,6 +335,7 @@ pub fn reconcile(a: std.mem.Allocator, config: []const u8, enabled: bool, snapsh
     if (std.os.linux.errno(std.os.linux.flock(lock, 2 | 4)) != .SUCCESS) return error.ProfileWriterBusy;
     const scratch = try std.fmt.allocPrintSentinel(a, "{s}/pearl/matugen", .{std.mem.span(glib.getUserCacheDir())}, 0);
     for (std.enums.values(profiles.Application), 0..) |application, i| {
+        if (cancel.isCancelled() != 0) return error.Cancelled;
         var selected: ?provider.Captured = null;
         if (enabled) for (snapshot.profiles) |profile| if (profile.application == application) {
             selected = profile;
@@ -301,11 +347,13 @@ pub fn reconcile(a: std.mem.Allocator, config: []const u8, enabled: bool, snapsh
                 status.targets[i].error_code = err;
                 continue;
             }
-            const generated = render(a, profile, snapshot, scratch, cancel) catch |err| {
+            const generated = renderWithContext(a, profile, snapshot, scratch, cancel, context) catch |err| {
                 status.targets[i].state = if (err == error.CompleteRenderPaletteUnavailable) .unsupported else .failed;
                 status.targets[i].error_code = @errorName(err);
                 continue;
             };
+            try guard.begin(cancel);
+            defer guard.end();
             // Five fixed adapter directories bound durable generated output even
             // when arbitrary community profile IDs are installed and removed.
             const output_root = try std.fmt.allocPrintSentinel(a, "{s}/outputs/{s}", .{ state, @tagName(application) }, 0);
@@ -336,10 +384,18 @@ pub fn reconcile(a: std.mem.Allocator, config: []const u8, enabled: bool, snapsh
                 status.targets[i].state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
                 status.targets[i].error_code = @errorName(err);
             };
-        } else if (application == .zed or application == .equibop or application == .starship) install(a, config, state, application, &.{}, cancel, false) catch |err| {
-            status.targets[i].state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
-            status.targets[i].error_code = @errorName(err);
-        };
+        } else if (application == .zed or application == .equibop or application == .starship) {
+            try guard.begin(cancel);
+            defer guard.end();
+            install(a, config, state, application, &.{}, cancel, false) catch |err| {
+                status.targets[i].state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
+                status.targets[i].error_code = @errorName(err);
+            };
+        }
+        switch (status.targets[i].state) {
+            .failed, .conflict, .unavailable, .unsupported => {},
+            else => status.targets[i].applied_generation = guard.generation,
+        }
     }
     return status;
 }
@@ -370,6 +426,37 @@ test "application ownership preserves edits, restores absence and recovers pendi
     try ledgerSave(a, journal, &.{.{ .name = name, .last = &model.hash("first"), .next = &model.hash("second"), .pending = true }});
     try install(a, root, state, .zed, &.{}, cancel, false);
     try std.testing.expect((try io.read(a, path, 131072, cancel)).missing);
+}
+
+test "runtime colors bind to committed settings and survive snapshot pruning" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const root = try a.dupeZ(u8, "/tmp/pearl-profile-runtime-XXXXXX");
+    try std.testing.expect(mkdtemp(root) != null);
+    defer @import("install.zig").removeTree(a, root) catch {};
+    const original: provider.Snapshot = .{ .render_json = "original" };
+    const digest = try save(a, root, original);
+    var prefs: @import("../config/preferences.zig").Preferences = .{};
+    prefs.matugen.enabled = true;
+    prefs.matugen.snapshot_digest = digest;
+    prefs.matugen.colors.source = .wallpaper;
+    prefs.wallpaper.path = "/wallpaper.png";
+    var runtime = original;
+    runtime.render_json = "latest colors";
+    _ = try save(a, root, runtime);
+    try saveRuntime(a, root, prefs, runtime);
+    try prune(a, root, &.{digest});
+    try std.testing.expectEqualStrings("latest colors", (try loadRuntime(a, root, prefs)).?.render_json.?);
+    try std.testing.expectEqualStrings("original", (try load(a, root, digest)).render_json.?);
+    prefs.wallpaper.path = "/different.png";
+    try std.testing.expect((try loadRuntime(a, root, prefs)) == null);
+    prefs.wallpaper.path = "/wallpaper.png";
+    prefs.matugen.colors.source = .seed;
+    try std.testing.expect((try loadRuntime(a, root, prefs)) == null);
+    const legacy = try model.parse(provider.Snapshot, a, "{\"schema_version\":1,\"render_json\":\"legacy\"}", max_snapshot);
+    try validateSnapshot(legacy);
+    try std.testing.expectEqualStrings("", legacy.selection_key);
 }
 test "Matugen full JSON renders exact colors through private config and caches templates" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);

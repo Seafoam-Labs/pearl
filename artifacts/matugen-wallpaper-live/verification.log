@@ -1,0 +1,138 @@
+PASS native profile outputs: both Zed variants, Starship TOML, and resolved CSS
+{
+  "status": "passed",
+  "checks": {
+    "wallpaper-picker-selection-cancel-save-and-parent-close": true,
+    "wallpaper-picker-sets-cover-from-every-fit-mode": true,
+    "defaults-atomic-save-and-live-popup-theme": true,
+    "one-theme-updates-bars-popup-wallpaper-and-second-output-osd": true,
+    "corrupt-external-config-and-stale-revision": true,
+    "wallpapers-exceed-former-dimension-pixel-and-file-size-caps": true,
+    "image-validation-fifo-rejection-and-dynamic-palette-cache": true,
+    "missing-font-falls-back": true,
+    "broken-gtk-css-cannot-replace-working-theme-or-config": true,
+    "installed-gtk-theme-and-system-follow-without-material-css": true,
+    "bar-reservation-conflict-is-rejected-before-saving": true,
+    "per-connector-bar-and-popup-policies": true,
+    "gtk-draft-survives-close-external-edit-and-three-way-merge": true,
+    "opt-in-exports-ownership-backup-and-disable": true,
+    "failed-save-retains-working-file": true,
+    "legacy-migration-is-validated-and-only-written-on-apply": true,
+    "large-preferences-preserved-with-bounded-control-status": true,
+    "no-theme-work-at-idle": true,
+    "restart-uses-last-good-without-overwriting-corruption": true,
+    "generator-failure-malformed-output-bounds-and-deadline": true,
+    "rapid-edits-cancel-obsolete-generator-and-coalesce-latest": true,
+    "concurrent-disk-edit-blocks-save-before-atomic-replacement": true,
+    "shutdown-cancels-worker-and-reaps-generator": true,
+    "static-theme-and-last-good-recovery-without-matugen": true
+  },
+  "pearl_sha256": "a691acc83e7d14db0e93286a67a9a912ebf5275f3fa652e96a277346ad0354df",
+  "ctl_sha256": "e52411518f152addf267f6ca09f01c76287a188369529a0ccf8c7502b72a1bf8"
+}
+PASS checkbox-saves-only-border-colors
+PASS real-matugen-seed-and-variant-follow
+PASS wallpaper-generated-palette-follows
+PASS manual-drafts-defer-sync-without-applying-other-edits
+PASS generator-failure-keeps-border-colors
+PASS gtk-and-disabled-setting-preserve-colors
+PASS committed-path-renders-all-five-profiles
+PASS in-place-change-shares-extraction-and-preserves-preference-revision
+PASS atomic-replacement
+PASS dirty-draft-survives-refresh
+PASS same-content-no-render-no-output-write-and-idle
+PASS refresh-and-retry-use-committed-template-bytes
+PASS obsolete-extraction-cancelled-latest-generation-wins
+PASS obsolete-template-render-cancelled
+PASS invalid-image-retains-last-good-and-recovers
+PASS application-only-wallpaper-colors-with-solid-shell
+PASS seed-colors-ignore-wallpaper-change
+PASS follow-pearl-static-gtk-and-seed-do-not-use-wallpaper-colors
+PASS independent-wallpaper-colors-in-gtk-mode
+PASS explicit-reload-refreshes-colors-with-committed-snapshot
+PASS deleted-wallpaper-recreation-recovers
+PASS cached-and-cold-latency-measured
+PASS new-path-change-during-extraction-is-rechecked-before-commit
+PASS external-preference-change-cancels-obsolete-render
+PASS lock-cancels-publication-and-unlock-applies-newest-input
+PASS ownership-conflict-isolated-per-application
+PASS retry-uses-current-wallpaper-snapshot
+PASS restart-refreshes-wallpaper-with-removed-profile-assets
+PASS committed-path-change-rebinds-watcher-without-adopting-assets
+PASS external-preference-edit-refreshes-committed-profiles
+PASS missing-image-at-startup-recovers-on-file-recreation
+PASS directory-watch-invalidation-reported-and-explicit-reload-reattaches
+PASS snapshot-and-render-cache-storage-remains-bounded
+PASS disabled-management-does-not-render-templates
+PASS shutdown-cancels-and-reaps-generator
+PASS completion assets, discovery, application profiles and recovery
+Build Summary: 48/48 steps succeeded; 51/51 tests passed
+install success
++- install themes/profiles/seafoam.zed/ cached
++- install themes/profiles/seafoam.equibop/ cached
++- install themes/profiles/seafoam.fluxer/ cached
++- install themes/profiles/seafoam.starship/ cached
++- install themes/profiles/seafoam.steam/ cached
++- install pearl-themes success
+|  +- compile exe pearl-themes ReleaseSafe native success 23s MaxRSS:529M
+|     +- options cached
++- install pearl success
+|  +- compile exe pearl ReleaseSafe native success 49s MaxRSS:1G
+|     +- run pkg-config success 1ms
+|     +- translate-c cached 16ms MaxRSS:52M
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|        +- compile exe zig-wayland-scanner Debug native cached 12ms MaxRSS:53M
++- install pearl-settings success
+|  +- compile exe pearl-settings ReleaseSafe native success 26s MaxRSS:619M
+|     +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+|     +- run glib-compile-resources (pearl.gresource) (reused)
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Settings.desktop to share/applications/org.aqueous.Pearl.Settings.desktop cached
++- install packaging/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg to share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg cached
++- install packaging/metainfo/org.aqueous.Pearl.Settings.metainfo.xml to share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml cached
++- install pearl-lock success
+|  +- compile exe pearl-lock ReleaseSafe native success 20s MaxRSS:550M
+|     +- translate-c (reused)
+|     +- run glib-compile-resources (pearl.gresource) (reused)
+|     +- options cached
+|     +- translate-c cached 13ms MaxRSS:53M
++- install pearl-t00 cached
+|  +- compile exe pearl-t00 ReleaseSafe native cached 17ms MaxRSS:58M
+|     +- run pkg-config (reused)
+|     +- translate-c (reused)
++- install pearlctl cached
+   +- compile exe pearlctl ReleaseSafe native cached 17ms MaxRSS:58M
+test-wallpaper-profiles success
++- run python3 success 35s
+   +- compile exe pearl ReleaseSafe native (+5 more reused dependencies)
+   +- compile exe pearlctl ReleaseSafe native (reused)
+   +- compile exe pearl-t00 ReleaseSafe native (+2 more reused dependencies)
+test-matugen success
++- run test 51 pass (51 total) 1s MaxRSS:31M
+|  +- compile test ReleaseSafe native success 19s MaxRSS:539M
+|     +- options cached
++- run python3 success 155ms
+   +- compile exe pearl-themes ReleaseSafe native (+1 more reused dependencies)
+test-preferences success
++- run python3 success 2m
+   +- compile exe pearl-integration ReleaseSafe native success 47s MaxRSS:1G
+   |  +- run pkg-config (reused)
+   |  +- translate-c (reused)
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+   +- compile exe pearlctl ReleaseSafe native (reused)
+test-theme-completion success
++- run python3 success 6s
+   +- compile exe pearl ReleaseSafe native (+5 more reused dependencies)
+   +- compile exe pearl-settings-test ReleaseSafe native success 27s MaxRSS:640M
+      +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+      +- run glib-compile-resources (pearl.gresource) (reused)
+      +- options cached
+test-border-theme success
++- run python3 success 8s
+   +- compile exe pearl-settings-test ReleaseSafe native (+3 more reused dependencies)
+   +- compile exe pearl ReleaseSafe native (+5 more reused dependencies)
+

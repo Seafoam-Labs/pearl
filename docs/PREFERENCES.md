@@ -321,7 +321,12 @@ at their original resolution off the GTK thread; GPU presentation handles
 display scaling. A current texture and one prepared candidate are retained
 during a swap, with memory use depending on image size. The wallpaper is global;
 output-specific bar settings do not select different images.
-Image contents changed in place can be refreshed with `preferences reload`.
+The active image is watched while it supplies the background or wallpaper-derived
+colors. In-place edits, atomic replacements and deletion/recreation automatically
+refresh it after a 180 ms debounce. Identical contents do not regenerate templates
+or rewrite outputs. `preferences reload` also refreshes image contents and retries
+watch setup. A removed/unavailable watched directory is reported in application
+status; restore it and reload to reattach the watch. No idle polling is used.
 
 There is one GTask worker at a time and a 180 ms event debounce. Obsolete external
 loads are cancelled, with only the latest requested configuration retained.
@@ -417,4 +422,17 @@ management is enabled. Manual and Off choices survive changes to the active them
 The backend owns snapshot_digest; the picker captures catalog_revision. Controls
 share the ordinary draft, Apply/Discard and independent object merge behavior.
 Application reconciliation follows preference commit and reports each app’s state
-separately. See [the author/recovery guide](CUSTOM_THEMES.md).
+separately. Wallpaper-derived application colors update automatically when the
+committed image changes, including with a static/GTK shell and an independent
+wallpaper color source. Follow Pearl reuses the shell's complete dynamic palette;
+seed and fixed package colors do not change with the wallpaper. Uncommitted
+wallpaper selections continue to require Apply.
+
+Automatic refresh preserves committed template bytes and application choices.
+It does not adopt changed profile files, rewrite preferences, advance their
+revision or apply a Settings draft. Runtime snapshots and per-application
+generation counters track color updates separately. Failed input or rendering
+retains last-good outputs; ownership conflicts remain per-application errors.
+Application outputs are published before Qt integration, and newer wallpaper
+events cancel obsolete extraction/rendering. See [application management and
+recovery](CUSTOM_THEMES.md#application-management-and-recovery).

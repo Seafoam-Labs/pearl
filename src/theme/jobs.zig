@@ -14,6 +14,7 @@ pub const Manager = struct {
     blobs: []const @import("assets.zig").Blob = &.{},
     last_action: @FieldType(@import("commands.zig").Request, "action") = .catalog,
     application_revision: u64 = 0,
+    publication_guard: @import("publication.zig").Guard = .{},
     finished: ?*const fn (*anyopaque) void = null,
     context: ?*anyopaque = null,
     pub fn stop(self: *Manager) void {
@@ -31,6 +32,7 @@ pub const Manager = struct {
         const job = try a.create(Job);
         job.* = .{ .manager = self, .app = app, .arena = .init(a), .cancel = gio.Cancellable.new(), .request = undefined };
         errdefer job.destroy();
+        job.publication_guard = self.publication_guard;
         job.request = try @import("package_model.zig").parse(@import("commands.zig").Request, job.arena.allocator(), text, 16384);
         self.last_action = job.request.action;
         self.application_revision = std.fmt.parseInt(u64, job.request.revision, 10) catch 0;
@@ -62,6 +64,7 @@ const Job = struct {
     arena: std.heap.ArenaAllocator,
     cancel: *gio.Cancellable,
     request: @import("commands.zig").Request,
+    publication_guard: @import("publication.zig").Guard = .{},
     result: ?[]const u8 = null,
     failure: ?anyerror = null,
     blobs: []const @import("assets.zig").Blob = &.{},
@@ -82,7 +85,7 @@ fn expired(data: ?*anyopaque) callconv(.c) c_int {
 }
 fn work(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
     const job: *Job = @ptrCast(@alignCast(data.?));
-    job.result = @import("commands.zig").runWithAssets(job.arena.allocator(), job.request, job.cancel, &job.progress, &job.blobs) catch |err| blk: {
+    job.result = @import("commands.zig").runWithAssetsGuarded(job.arena.allocator(), job.request, job.cancel, &job.progress, &job.blobs, job.publication_guard) catch |err| blk: {
         job.failure = err;
         break :blk null;
     };
@@ -103,8 +106,10 @@ fn done(_: ?*object.Object, _: *gio.AsyncResult, data: ?*anyopaque) callconv(.c)
             self.error_code = error.OutOfMemory;
             break :blk null;
         };
-        if (self.finished) |finished| finished(self.context.?);
     }
+    // Also notify after stop: the owner may be waiting to release a publication
+    // gate shared with this worker. All guarded transactions have finished now.
+    if (self.finished) |finished| finished(self.context.?);
     job.app.release();
     job.destroy();
 }

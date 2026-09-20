@@ -1,0 +1,187 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=14aaef65a690d5ab70dcb2b3f860fded
+info(pearl): event=control-ready session=14aaef65a690d5ab70dcb2b3f860fded
+info: event=app-index-ready entries=160 truncated=false
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=wallpaper-applications-applied generation=2 elapsed_us=1562 success=true
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=3 elapsed_us=155541 success=true
+info: event=app-index-ready entries=160 truncated=false
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=8 elapsed_us=146920 success=true
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=10 elapsed_us=152897 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=14 elapsed_us=146487 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=22 elapsed_us=149690 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=28 elapsed_us=153208 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=34 elapsed_us=146944 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-error detail=InvalidImage
+info: event=preferences-error detail=InvalidImage
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=43 elapsed_us=151259 success=true
+info: event=preferences-applied revision=2 mode=static cache=false
+info: event=wallpaper-applications-applied generation=44 elapsed_us=145859 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=2 mode=static cache=false
+info: event=wallpaper-applications-applied generation=49 elapsed_us=147838 success=true
+info: event=preferences-applied revision=3 mode=static cache=false
+info: event=wallpaper-applications-applied generation=50 elapsed_us=153464 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=3 mode=static cache=false
+info: event=wallpaper-applications-applied generation=55 elapsed_us=9351 success=true
+info: event=preferences-applied revision=4 mode=static cache=false
+info: event=wallpaper-applications-applied generation=56 elapsed_us=21566 success=false
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=4 mode=static cache=false
+info: event=wallpaper-applications-applied generation=61 elapsed_us=26041 success=false
+info: event=preferences-applied revision=5 mode=gtk cache=false
+info: event=wallpaper-applications-applied generation=62 elapsed_us=21169 success=false
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=5 mode=gtk cache=false
+info: event=wallpaper-applications-applied generation=67 elapsed_us=23517 success=false
+info: event=preferences-applied revision=6 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=68 elapsed_us=146787 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=6 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=73 elapsed_us=10314 success=true
+info: event=preferences-applied revision=7 mode=gtk cache=false
+info: event=wallpaper-applications-applied generation=74 elapsed_us=154444 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=7 mode=gtk cache=false
+info: event=wallpaper-applications-applied generation=79 elapsed_us=153027 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=7 mode=gtk cache=false
+info: event=wallpaper-applications-applied generation=84 elapsed_us=151577 success=true
+info: event=wallpaper-changed
+info: event=preferences-error detail=InvalidImage
+info: event=preferences-error detail=InvalidImage
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=7 mode=gtk cache=false
+info: event=wallpaper-applications-applied generation=91 elapsed_us=152755 success=true
+info: event=preferences-applied revision=8 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=92 elapsed_us=151722 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=8 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=97 elapsed_us=146508 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=8 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=101 elapsed_us=147681 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=8 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=105 elapsed_us=70105 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=8 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=109 elapsed_us=73408 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=8 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=113 elapsed_us=70664 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=8 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=117 elapsed_us=71378 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=8 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=121 elapsed_us=196797 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=8 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=125 elapsed_us=193462 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=8 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=129 elapsed_us=195406 success=true
+info: event=preferences-applied revision=9 mode=dynamic cache=false
+info: event=preferences-applied revision=9 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=132 elapsed_us=159188 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=9 mode=dynamic cache=false
+info: event=preferences-applied revision=10 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=138 elapsed_us=151689 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=10 mode=dynamic cache=false
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=10 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=149 elapsed_us=121380 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=10 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=153 elapsed_us=143027 success=false
+info(pearl): event=stopping reason=signal pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

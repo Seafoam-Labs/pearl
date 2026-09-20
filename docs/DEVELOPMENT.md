@@ -300,3 +300,12 @@ rendering, automatic discovery, exact fixed app colors and offline recovery.
 `test-theme-publishing` checks deterministic multipage publication and source
 migration in private roots. These require libpng and Matugen 4.2.0; Python remains
 only development orchestration. Evidence is in artifacts/theme-completion.
+
+`zig build test-wallpaper-profiles -Doptimize=ReleaseSafe` runs the live wallpaper
+suite with all five application profiles in private XDG/compositor/D-Bus roots.
+It covers shared extraction, image edits/replacement, draft preservation,
+generation cancellation, independent color sources, ownership conflicts, snapshot
+retry and restart with missing profile assets. Slow extraction/render fixtures
+exercise cancellation; real Matugen produces every successful result. Evidence
+and end-to-end latency samples are written to `artifacts/matugen-wallpaper-live/`.
+The suite requires permission to create local sockets for the private session.

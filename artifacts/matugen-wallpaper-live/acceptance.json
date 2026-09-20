@@ -1,0 +1,70 @@
+{
+  "status": "passed",
+  "checks": [
+    "committed-path-renders-all-five-profiles",
+    "in-place-change-shares-extraction-and-preserves-preference-revision",
+    "atomic-replacement",
+    "dirty-draft-survives-refresh",
+    "same-content-no-render-no-output-write-and-idle",
+    "refresh-and-retry-use-committed-template-bytes",
+    "obsolete-extraction-cancelled-latest-generation-wins",
+    "obsolete-template-render-cancelled",
+    "invalid-image-retains-last-good-and-recovers",
+    "application-only-wallpaper-colors-with-solid-shell",
+    "seed-colors-ignore-wallpaper-change",
+    "follow-pearl-static-gtk-and-seed-do-not-use-wallpaper-colors",
+    "independent-wallpaper-colors-in-gtk-mode",
+    "explicit-reload-refreshes-colors-with-committed-snapshot",
+    "deleted-wallpaper-recreation-recovers",
+    "cached-and-cold-latency-measured",
+    "new-path-change-during-extraction-is-rechecked-before-commit",
+    "external-preference-change-cancels-obsolete-render",
+    "lock-cancels-publication-and-unlock-applies-newest-input",
+    "ownership-conflict-isolated-per-application",
+    "retry-uses-current-wallpaper-snapshot",
+    "restart-refreshes-wallpaper-with-removed-profile-assets",
+    "committed-path-change-rebinds-watcher-without-adopting-assets",
+    "external-preference-edit-refreshes-committed-profiles",
+    "missing-image-at-startup-recovers-on-file-recreation",
+    "directory-watch-invalidation-reported-and-explicit-reload-reattaches",
+    "snapshot-and-render-cache-storage-remains-bounded",
+    "disabled-management-does-not-render-templates",
+    "shutdown-cancels-and-reaps-generator"
+  ],
+  "timings": {
+    "cold_small_ms": [
+      331.2426440006675,
+      358.7800420009444
+    ],
+    "cached_small_ms": [
+      254.03450799967686,
+      280.09255199867766,
+      253.97162700028275,
+      253.89479699879303
+    ],
+    "cold_large_ms": [
+      394.09640399935597,
+      396.14495400019223,
+      398.0310430015379
+    ]
+  },
+  "hardware": "Linux-7.2.6-1-cachyos-x86_64-with-glibc2.44",
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "latency_summary_ms": {
+    "cold_small_ms": {
+      "p50": 345.01134300080594,
+      "p95": 358.7800420009444,
+      "samples": 2
+    },
+    "cached_small_ms": {
+      "p50": 254.0030674999798,
+      "p95": 280.09255199867766,
+      "samples": 4
+    },
+    "cold_large_ms": {
+      "p50": 396.14495400019223,
+      "p95": 398.0310430015379,
+      "samples": 3
+    }
+  }
+}

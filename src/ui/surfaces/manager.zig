@@ -1046,13 +1046,7 @@ pub const Manager = struct {
     fn syncSettingsAccess(self: *Manager) void {
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
         const allowed = matched and self.client.availability == .ready and if (self.client.model.get(.session, "session")) |session| !session.locked else false;
-        const was_allowed = self.preferences.integration_allowed;
-        self.preferences.integration_allowed = allowed;
-        if (!allowed) {
-            if (self.preferences.job) |job| if (job.stage == .integrate) job.cancel.cancel();
-        } else if (!was_allowed and self.preferences.live != null and self.preferences.job == null) {
-            self.preferences.retryQt(self.preferences.revision, false, null) catch {};
-        }
+        self.preferences.setIntegrationAllowed(allowed);
         self.network.interest.enabled = allowed;
         self.bluetooth.interest.enabled = allowed;
         self.power.interest.enabled = allowed;

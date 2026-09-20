@@ -1,0 +1,43 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=14aaef65a690d5ab70dcb2b3f860fded
+info(pearl): event=control-ready session=14aaef65a690d5ab70dcb2b3f860fded
+info: event=app-index-ready entries=160 truncated=false
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=6 elapsed_us=159913 success=true
+info: event=preferences-applied revision=2 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=7 elapsed_us=149631 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-error detail=InvalidImage
+info: event=preferences-error detail=InvalidImage
+info: event=preferences-applied revision=2 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=14 elapsed_us=148128 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=2 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=18 elapsed_us=148296 success=true
+info: event=preferences-applied revision=3 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=19 elapsed_us=23088 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=preferences-applied revision=3 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=24 elapsed_us=41763 success=true
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info: event=wallpaper-changed
+info(pearl): event=stopping reason=signal pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

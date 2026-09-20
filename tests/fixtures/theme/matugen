@@ -13,5 +13,5 @@ if mode=='huge': print('x'*200000);sys.exit(0)
 if mode=='hang':
     os.close(1)
     while True: time.sleep(1)
-if mode=='slow': time.sleep(10)
+if mode=='slow' or (mode=='slow-render' and 'json' in sys.argv): time.sleep(10)
 os.execv('/usr/bin/matugen',['matugen',*sys.argv[1:]])

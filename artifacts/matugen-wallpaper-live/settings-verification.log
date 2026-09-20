@@ -1,0 +1,35 @@
+PASS bounded-full-document-invalid-and-empty-retention
+PASS partial-transfer-and-digest-failure-never-mutate-draft
+PASS shared-cas-and-canonical-operation-deduplication
+PASS real-appearance-form-preserves-full-preference-document
+PASS invalid-advanced-navigation-close-reopen-without-save
+PASS explicit-apply-atomic-save-and-event-driven-theme-refresh
+PASS normal-wallpaper-dialog-cancel-select-preview-and-save
+PASS image-and-native-theme-failure-retain-draft-and-working-settings
+PASS save-failure-retention-and-independent-export-error
+PASS external-change-three-way-merge-and-overlapping-conflict
+PASS in-flight-apply-cannot-clear-newer-equal-text-draft
+PASS lock-denial-hidden-window-and-explicit-unlock-resume
+PASS close-flush-reopen-and-explicit-discard
+PASS real-light-native-and-narrow-large-text-controls
+PASS backend-restart-and-close-failure-never-replay-local-candidate
+S3: 15 groups passed
+Build Summary: 13/13 steps succeeded
+test-settings-appearance success
++- run python3 success 36s
+   +- compile exe pearl-settings-test ReleaseSafe native cached 24s MaxRSS:58M
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |  |  +- compile exe zig-wayland-scanner Debug native cached 12ms MaxRSS:57M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   +- compile exe pearl ReleaseSafe native cached 45s MaxRSS:58M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 15ms MaxRSS:56M
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+   +- compile exe pearlctl ReleaseSafe native cached 17ms MaxRSS:58M
+   +- compile exe pearl-t00 ReleaseSafe native cached 18ms MaxRSS:58M
+      +- run pkg-config (reused)
+      +- translate-c (reused)
+

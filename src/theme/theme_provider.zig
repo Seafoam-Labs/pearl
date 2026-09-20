@@ -116,9 +116,11 @@ pub const Snapshot = struct {
     catalog_revision: []const u8 = "",
     profiles: []const Captured = &.{},
     render_json: ?[]const u8 = null,
+    selection_key: []const u8 = "",
+    color_identity: []const u8 = "",
     variant: enum { dark, light } = .dark,
 };
-pub fn capture(a: std.mem.Allocator, p: @import("../config/preferences.zig").Preferences, dynamic_json: ?[]const u8, cancel: *gio.Cancellable, scratch: [:0]const u8) !Snapshot {
+pub fn capture(a: std.mem.Allocator, p: Preferences, dynamic_json: ?[]const u8, image: ?[]const u8, cancel: *gio.Cancellable, scratch: [:0]const u8, context: *generator.Context) !Snapshot {
     if (!p.matugen.enabled) return .{};
     const themes = try @import("catalog.zig").scan(a);
     const choices = try catalog(a, themes);
@@ -159,6 +161,7 @@ pub fn capture(a: std.mem.Allocator, p: @import("../config/preferences.zig").Pre
         try selected.append(a, .{ .application = application, .id = id, .origin = entry.origin, .descriptor = entry.descriptor, .templates = templates.items });
     }
     var result: Snapshot = .{ .provider = if (active) |package| package.manifest.id else "", .catalog_revision = try a.dupe(u8, &choices.revision), .profiles = selected.items, .variant = if (p.theme.variant == .dark) .dark else .light };
+    result.selection_key = try selectionKey(a, p);
     if (selected.items.len == 0) return result;
     if (p.matugen.colors.source == .follow_pearl) {
         if (p.theme.mode == .dynamic) result.render_json = dynamic_json;
@@ -172,19 +175,107 @@ pub fn capture(a: std.mem.Allocator, p: @import("../config/preferences.zig").Pre
                 }
             }
         }
+    }
+    try refreshColors(a, &result, p, dynamic_json, image, cancel, scratch, context);
+    return result;
+}
+
+const Preferences = @import("../config/preferences.zig").Preferences;
+const generator = @import("generator.zig");
+
+/// The template selection identity deliberately excludes wallpaper bytes/path.
+pub fn selectionKey(a: std.mem.Allocator, p: Preferences) ![]const u8 {
+    var selections: [5]profiles.Selection = undefined;
+    for (std.enums.values(profiles.Application), &selections) |application, *selection|
+        selection.* = p.matugen.applications.map.get(@tagName(application)) orelse .{};
+    return a.dupe(u8, &model.hash(try std.json.Stringify.valueAlloc(a, .{
+        .applications = selections,
+        .catalog = p.matugen.catalog_revision,
+        .provider = p.theme.package_id,
+        .palette = p.theme.palette_id,
+        .mode = p.theme.mode,
+        .variant = p.theme.variant,
+        .source = p.matugen.colors.source,
+    }, .{})));
+}
+
+pub fn wallpaperColors(p: Preferences) bool {
+    return p.matugen.enabled and (p.matugen.colors.source == .wallpaper or
+        (p.matugen.colors.source == .follow_pearl and p.theme.mode == .dynamic and p.theme.source == .wallpaper));
+}
+
+/// Refresh colors without consulting mutable catalogs or template files.
+pub fn refreshColors(a: std.mem.Allocator, result: *Snapshot, p: Preferences, dynamic_json: ?[]const u8, image: ?[]const u8, cancel: *gio.Cancellable, scratch: [:0]const u8, context: *generator.Context) !void {
+    if (result.profiles.len == 0) return;
+    result.error_code = null;
+    if (p.matugen.colors.source == .follow_pearl) {
+        if (p.theme.mode == .dynamic) result.render_json = dynamic_json;
+        // Package render data was captured with the committed templates.
+        if (p.theme.mode == .static or p.theme.mode == .gtk) result.render_json = null;
     } else {
         var source = p;
         source.theme.source = if (p.matugen.colors.source == .seed) .seed else .wallpaper;
         source.theme.seed = p.matugen.colors.seed;
-        var image: ?[]const u8 = null;
-        if (source.theme.source == .wallpaper) {
-            const file = try io.read(a, try a.dupeZ(u8, p.wallpaper.path), 64 * 1024 * 1024, cancel);
-            if (file.missing) return error.ImageRequired;
-            image = file.bytes;
+        if (p.theme.mode == .dynamic and source.theme.source == p.theme.source and
+            (source.theme.source == .wallpaper or std.mem.eql(u8, source.theme.seed, p.theme.seed)))
+        {
+            result.render_json = dynamic_json;
+        } else {
+            try io.mkdir(scratch);
+            var hit = false;
+            result.render_json = (try generator.fullWithContext(a, source, image, scratch, cancel, &hit, context)).json;
         }
-        try io.mkdir(scratch);
-        var hit = false;
-        result.render_json = (try @import("generator.zig").full(a, source, image, scratch, cancel, &hit)).json;
     }
-    return result;
+    result.color_identity = try a.dupe(u8, &model.hash(try std.json.Stringify.valueAlloc(a, .{
+        .api = @as(u32, 1),
+        .source = p.matugen.colors.source,
+        .shell_source = if (p.matugen.colors.source == .follow_pearl) @tagName(p.theme.source) else "",
+        .input = if (wallpaperColors(p)) model.hash(image orelse return error.ImageRequired) else model.hash(if (p.matugen.colors.source == .follow_pearl and p.theme.mode == .dynamic) p.theme.seed else p.matugen.colors.seed),
+        .variant = p.theme.variant,
+        .renderer = context.version orelse "fixed",
+        .render = model.hash(result.render_json orelse ""),
+    }, .{})));
+}
+
+test "wallpaper refresh keeps captured templates and shares the shell render data" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    var p: Preferences = .{};
+    p.matugen.enabled = true;
+    p.theme.mode = .dynamic;
+    p.theme.source = .wallpaper;
+    var snapshot: Snapshot = .{ .render_json = "old", .profiles = &.{.{ .id = "test.zed", .application = .zed, .templates = &.{.{ .path = "theme.json", .bytes = "captured" }} }} };
+    // A populated renderer context proves this path needs no external process.
+    var context: generator.Context = .{ .version = "matugen 4.2.0" };
+    try refreshColors(a, &snapshot, p, "new", "image-a", cancel, "/unused", &context);
+    try std.testing.expectEqualStrings("new", snapshot.render_json.?);
+    try std.testing.expectEqualStrings("captured", snapshot.profiles[0].templates[0].bytes);
+    const first = snapshot.color_identity;
+    p.matugen.colors.source = .wallpaper;
+    try refreshColors(a, &snapshot, p, "next", "image-b", cancel, "/unused", &context);
+    try std.testing.expectEqualStrings("next", snapshot.render_json.?);
+    try std.testing.expect(!std.mem.eql(u8, first, snapshot.color_identity));
+    p.matugen.colors.source = .follow_pearl;
+    p.theme.mode = .package;
+    try refreshColors(a, &snapshot, p, "ignored", "image-c", cancel, "/unused", &context);
+    try std.testing.expectEqualStrings("next", snapshot.render_json.?);
+    p.theme.mode = .gtk;
+    try refreshColors(a, &snapshot, p, "ignored", null, cancel, "/unused", &context);
+    try std.testing.expect(snapshot.render_json == null);
+}
+
+test "selection identity excludes wallpaper path and seed but binds template choices" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var p: Preferences = .{};
+    const first = try selectionKey(a, p);
+    p.wallpaper.path = "/new.png";
+    p.matugen.colors.seed = "#ff0000";
+    try std.testing.expectEqualStrings(first, try selectionKey(a, p));
+    p.theme.variant = .light;
+    try std.testing.expect(!std.mem.eql(u8, first, try selectionKey(a, p)));
 }

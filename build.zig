@@ -323,6 +323,14 @@ pub fn build(b: *std.Build) void {
     theme_completion.addArtifactArg(settings_test_app);
     if (b.args) |args| theme_completion.addArgs(args);
     b.step("test-theme-completion", "Verify image transfer, discovery and committed application profiles in a private session").dependOn(&theme_completion.step);
+    const wallpaper_profiles = b.addSystemCommand(&.{ "python3", "tests/integration/test_wallpaper_profiles.py", "--pearl" });
+    wallpaper_profiles.addArtifactArg(app);
+    wallpaper_profiles.addArg("--ctl");
+    wallpaper_profiles.addArtifactArg(ctl);
+    wallpaper_profiles.addArg("--spike");
+    wallpaper_profiles.addArtifactArg(spike);
+    if (b.args) |args| wallpaper_profiles.addArgs(args);
+    b.step("test-wallpaper-profiles", "Verify live wallpaper colors, committed profiles and cancellation in private XDG roots").dependOn(&wallpaper_profiles.step);
 
     const settings_window_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_app.py", "--settings" });
     settings_window_test.addArtifactArg(settings_test_app);

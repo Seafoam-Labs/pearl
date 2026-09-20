@@ -36,6 +36,9 @@ pub fn run(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, rep
     return runWithAssets(a, request, cancel, report, null);
 }
 pub fn runWithAssets(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress, blobs: ?*[]const @import("assets.zig").Blob) ![]const u8 {
+    return runWithAssetsGuarded(a, request, cancel, report, blobs, .{});
+}
+pub fn runWithAssetsGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress, blobs: ?*[]const @import("assets.zig").Blob, guard: @import("publication.zig").Guard) ![]const u8 {
     if (cancel.isCancelled() != 0) return error.Cancelled;
     switch (request.action) {
         .application_review, .application_install, .application_retry => {
@@ -45,10 +48,29 @@ pub fn runWithAssets(a: std.mem.Allocator, request: Request, cancel: *gio.Cancel
             const snapshot = try @import("application_profiles.zig").load(a, root, request.sha256);
             if (request.action == .application_review) return std.json.Stringify.valueAlloc(a, .{ .application_review = try @import("application_profiles.zig").reviewStarship(a, config, snapshot, cancel) }, .{});
             if (request.action == .application_install) {
-                try @import("application_profiles.zig").installStarship(a, config, snapshot, request.id, cancel);
+                try @import("application_profiles.zig").installStarshipGuarded(a, config, snapshot, request.id, cancel, guard);
                 return "{\"application_action\":true}";
             }
-            return std.json.Stringify.valueAlloc(a, .{ .application_status = try @import("application_profiles.zig").reconcile(a, config, true, snapshot, cancel) }, .{});
+            var context: @import("generator.zig").Context = .{};
+            const application_status = try @import("application_profiles.zig").reconcileGuarded(a, config, true, snapshot, cancel, &context, guard);
+            var successful = true;
+            for (application_status.targets) |target| switch (target.state) {
+                .failed, .conflict, .unavailable, .unsupported => successful = false,
+                else => {},
+            };
+            if (successful) {
+                const preferences = @import("../config/preferences.zig");
+                const file = try io.read(a, try std.fmt.allocPrintSentinel(a, "{s}/preferences.json", .{root}, 0), preferences.max_bytes, cancel);
+                if (!file.missing) {
+                    const p = try preferences.parse(a, file.bytes);
+                    if (p.matugen.enabled and std.mem.eql(u8, snapshot.selection_key, try @import("theme_provider.zig").selectionKey(a, p))) {
+                        try guard.begin(cancel);
+                        defer guard.end();
+                        try @import("application_profiles.zig").saveRuntime(a, root, p, snapshot);
+                    }
+                }
+            }
+            return std.json.Stringify.valueAlloc(a, .{ .application_status = application_status }, .{});
         },
         .profiles_catalog => {
             const choices = try @import("theme_provider.zig").catalog(a, try @import("catalog.zig").scan(a));
