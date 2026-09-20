@@ -1,0 +1,50 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=app-index-ready entries=4 truncated=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=ce485e1bcf925264c19d0d8e9b68edd3
+info(pearl): event=control-ready session=ce485e1bcf925264c19d0d8e9b68edd3
+info: event=preferences-applied revision=1 mode=static cache=false
+event=fixture-ready custom
+info: event=popup-opened output=1
+info: event=preferences-applied revision=2 mode=static cache=false
+info: event=popup-closed
+info: event=preferences-applied revision=3 mode=static cache=false
+info: event=popup-opened output=1
+info: event=preferences-applied revision=4 mode=static cache=false
+info: event=popup-closed
+info: event=popup-opened output=1
+info: event=preferences-applied revision=5 mode=static cache=false
+info: event=popup-closed
+info: event=preferences-applied revision=6 mode=static cache=false
+info: event=dock-action error=StaleApplication
+info: event=preferences-applied revision=7 mode=static cache=false
+info: event=app-index-ready entries=2 truncated=false
+info: event=dock-action error=StaleApplication
+info: event=popup-opened output=1
+info: event=popup-closed
+info: event=app-index-ready entries=4 truncated=false
+event=fixture-ready custom
+info: event=app-index-ready entries=2 truncated=false
+info: event=dock-action error=StaleApplication
+info: event=app-index-ready entries=4 truncated=false
+event=fixture-ready custom
+info: event=popup-opened output=1
+info: event=popup-closed
+info: event=preferences-applied revision=8 mode=static cache=false
+info: event=popup-opened output=1
+info: event=preferences-applied revision=9 mode=static cache=false
+info: event=popup-closed
+info: event=preferences-applied revision=10 mode=static cache=false
+event=fixture-ready custom
+info: event=preferences-applied revision=11 mode=static cache=false
+info: event=popup-opened output=1
+info: event=preferences-applied revision=12 mode=static cache=false
+info: event=popup-closed
+info(pearl): event=stopping reason=signal pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

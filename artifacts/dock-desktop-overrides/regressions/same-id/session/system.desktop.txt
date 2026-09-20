@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Override system
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark system --title "Override system" --custom-argument "system two words"
+Icon=/tmp/pearl-dev-x7giom_q/system.png
+DBusActivatable=false
+StartupWMClass=org.pearl.Override
+Actions=Special;
+
+[Desktop Action Special]
+Name=Special system
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark system-action

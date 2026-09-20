@@ -45,6 +45,35 @@ minimize/restore, maximize/restore and close. Actions retain copied opaque IDs
 and validate against current Aqueous state or the current GIO desktop entry.
 Unavailable or removed pinned applications can still be unpinned.
 
+### Custom application launchers
+
+When a custom `.desktop` file has a different filename from the packaged entry,
+its window may still identify itself as the packaged application. Open the
+running application's dock menu, choose **Use launcher…**, search for the custom
+entry, and select **Use launcher**. Pearl remembers that choice for windows with
+the same Wayland app ID or XWayland class. The dock and Running applications bar
+widget then use the selected entry's icon and name. Pinning and **Open new
+window** use its launch arguments and desktop actions.
+
+Changing an already pinned group also replaces that pin in the same save. If
+the chosen entry is already pinned, Pearl retains its existing position and
+removes the replaced source pin. Choosing a launcher for an unpinned group does
+not pin it automatically.
+
+Use **Reset to automatic** in the picker, or remove the choice under
+**Settings → Bar & dock → Application launchers**, to restore automatic matching.
+Reset preserves saved pins. Settings removals use the normal Apply/Discard draft
+workflow. Missing or hidden selected launchers remain unavailable until restored
+or changed; Pearl never silently launches the packaged entry instead.
+
+The choice applies to every window reporting that application identity,
+including profiles that share it. Automatic detection of the original custom
+launcher is not implemented. A user override with the **same desktop-file ID**
+already follows GIO's XDG precedence and requires no extra choice.
+
+See [implementation and verification](DOCK_DESKTOP_OVERRIDES_IMPLEMENTATION_PLAN.md)
+and [native acceptance evidence](../artifacts/dock-desktop-overrides/README.md).
+
 Dots indicate running windows; a filled dot and highlighted button indicate
 focus. Accessible button labels and tooltips include the application name,
 running count, focus, minimized state and pin status. Native GTK buttons

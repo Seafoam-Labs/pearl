@@ -73,6 +73,7 @@ def main():
             wait_for(lambda:not peer.state()['busy'])
             baseline = json.loads(peer.document('committed'))
             baseline['font_size'] = 15
+            baseline['application_launchers'] = [dict(backend='xdg',identity='org.pearl.Custom',desktop_id='Custom.desktop')]
             baseline['plugins'] = dict(entries=[dict(id='editor.fixture',enabled=True,digest=digest(package))])
             baseline['bar']['groups']['center'] = 'clock,plugin:missing/main'
             baseline['outputs'] = [dict(connector='UNPLUGGED-1',bar=copy.deepcopy(baseline['bar']),dock=dict(enabled=False))]
@@ -83,6 +84,22 @@ def main():
             disk=path.read_bytes()
             app=s.child('settings',[args.settings,'--page','bar'],G_DEBUG='fatal-warnings')
             app.expect('event=settings-window-created');ready(s,ipc)
+            click(s, ipc, 'launchers.expand')
+            click(s, ipc, 'launchers.remove.xdg.org.pearl.Custom')
+            ready(s, ipc)
+            assert json.loads(peer.document())['application_launchers'] == []
+            assert json.loads(peer.document('committed'))['application_launchers'] == baseline['application_launchers']
+            click(s, ipc, 'discard'); ready(s, ipc)
+            assert json.loads(peer.document())['application_launchers'] == baseline['application_launchers']
+            click(s, ipc, 'launchers.remove.xdg.org.pearl.Custom')
+            ready(s, ipc); click(s, ipc, 'apply'); ready(s, ipc)
+            wait_for(lambda:not peer.state()['dirty'] and not peer.state()['busy'])
+            assert json.loads(path.read_text())['application_launchers'] == []
+            assert json.loads(path.read_text())['pinned_apps'] == baseline['pinned_apps']
+            peer.keep(json.dumps(baseline)); assert peer.action('apply')['state'] == 'succeeded'; ready(s, ipc)
+            disk=path.read_bytes()
+            passed('launcher-choice-removal-apply-discard-and-retained-pins')
+
             def keep(text):
                 peer.keep(text)
                 expected=hashlib.sha256(text.encode()).hexdigest()

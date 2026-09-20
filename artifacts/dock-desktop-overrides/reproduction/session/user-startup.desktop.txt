@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Override user-startup
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark user-startup --title "Override user-startup" --custom-argument "user-startup two words"
+Icon=/tmp/pearl-dev-mf72zfbn/user.png
+DBusActivatable=false
+StartupWMClass=org.pearl.Override
+Actions=Special;
+
+[Desktop Action Special]
+Name=Special user-startup
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark user-startup-action

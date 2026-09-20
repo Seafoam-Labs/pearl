@@ -13,6 +13,7 @@ const policy = @import("policy.zig");
 const Bar = @import("../../desktop/bar.zig");
 const Apps = @import("../../desktop/apps.zig");
 const Running = @import("../../desktop/running_apps.zig");
+const LauncherPicker = @import("../../desktop/launcher_picker.zig");
 const Launcher = @import("../../desktop/launcher.zig").Launcher;
 const Panels = @import("../../desktop/panels.zig");
 const navigation = @import("../../desktop/settings_navigation.zig");
@@ -35,6 +36,7 @@ const Surface = struct {
     edge: Edge = .top,
     bar: ?*Bar.Bar = null,
     launcher: ?*Launcher = null,
+    launcher_picker: ?*LauncherPicker.View = null,
     running_apps: ?*Running.Chooser = null,
     control: ?*Panels.Control = null,
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
@@ -55,6 +57,7 @@ const Surface = struct {
         if (self.tray) |view| view.destroy();
         if (self.bar) |bar| bar.destroy();
         if (self.launcher) |launcher| launcher.destroy();
+        if (self.launcher_picker) |view| view.destroy();
         if (self.running_apps) |view| view.destroy();
         if (self.clipboard_capture) |view| view.destroy();
         if (self.control) |control| control.destroy();
@@ -108,6 +111,7 @@ pub const Manager = struct {
     popup: ?*Surface = null,
     popup_rect: ?Rect = null,
     pane: Bar.Pane = .launcher,
+    picker_request: ?LauncherPicker.Request = null,
     settings_page: ?navigation.Route = null,
     owner_probe: if (@import("build_options").test_hooks) @import("../../desktop/settings_owner_probe.zig").Probe else void = if (@import("build_options").test_hooks) .{} else {},
     audio: @import("../../services/audio.zig").Audio = undefined,
@@ -482,6 +486,12 @@ pub const Manager = struct {
         _ = self.control(.{ .op = .osd_show, .text = self.osd_pending.slice(), .duration_ms = 1800 }, arena.allocator()) catch "";
         return 0;
     }
+    fn chooseLauncher(context: *anyopaque, output_id: []const u8, request: LauncherPicker.Request) !void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.picker_request = request;
+        defer self.picker_request = null;
+        try self.showPane(try self.selected(output_id), .launcher_picker);
+    }
     fn appsChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.schedule();
@@ -604,7 +614,7 @@ pub const Manager = struct {
             self.clear();
             return error.SessionDisplayMismatch;
         }
-        try self.tasks.update(&self.client.model, &self.index);
+        try self.tasks.update(&self.client.model, &self.index, self.preferences.prefs().application_launchers);
         for (self.outputs.items) |o| o.seen = false;
         const monitors = self.display.getMonitors();
         var values = self.client.model.entities.valueIterator();
@@ -647,6 +657,7 @@ pub const Manager = struct {
                 o.bar = try self.create(o, .bar);
                 errdefer o.bar.?.destroy();
                 o.dock = try @import("../../desktop/dock.zig").Dock.create(self.app, o.monitor, &self.effects, self.client, &self.index, &self.preferences, o.id, self, appsChanged);
+                o.dock.?.choose_launcher = chooseLauncher;
                 errdefer o.dock.?.destroy();
                 try self.outputs.append(a, o);
                 output = o;
@@ -680,7 +691,7 @@ pub const Manager = struct {
             };
             const gate = self.lifecycle.gate;
             const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active));
-            if (dock_locked and self.pane == .running_apps) self.hidePopup();
+            if (dock_locked and (self.pane == .running_apps or self.pane == .launcher_picker)) self.hidePopup();
             if (suspendTasks(o)) |host| host.setSensitive(@intFromBool(!dock_locked));
             if (o.dock) |dock| try dock.update(self.preferences.prefs().dockForOutput(o.connector), o.reservations.bar_edge, bounds, dock_locked);
             try self.syncPluginOverlays(o, dock_locked);
@@ -699,6 +710,9 @@ pub const Manager = struct {
                 o.destroy();
             } else i += 1;
         }
+        if (self.popup) |popup| if (popup.launcher_picker) |view| {
+            if (view.update()) self.hidePopup();
+        };
         if (self.popup) |popup| {
             if (popup.running_apps) |view| try view.update();
             if (popup.launcher) |launcher| launcher.refresh();
@@ -769,6 +783,7 @@ pub const Manager = struct {
         errdefer {
             if (s.bar) |bar| bar.destroy();
             if (s.launcher) |launcher| launcher.destroy();
+            if (s.launcher_picker) |view| view.destroy();
             if (s.running_apps) |view| view.destroy();
             if (s.clipboard_capture) |view| view.destroy();
             if (s.control) |panel_control| panel_control.destroy();
@@ -817,7 +832,7 @@ pub const Manager = struct {
             .popup => {
                 anchors(window, null);
                 const fixed = gtk.Fixed.new();
-                if (self.pane == .aqueous_settings) {
+                if (self.pane == .aqueous_settings or self.pane == .launcher_picker) {
                     // GtkFixed otherwise allocates the child's natural width,
                     // which can exceed the popup rectangle with enlarged text.
                     const viewport = gtk.ScrolledWindow.new();
@@ -833,6 +848,7 @@ pub const Manager = struct {
                 switch (self.pane) {
                     .aqueous_settings => s.aqueous_settings = try @import("../../desktop/aqueous_settings.zig").View.create(panel, &self.aqueous_settings, window),
                     .settings => s.settings = try @import("../../desktop/settings.zig").View.create(panel, &self.preferences),
+                    .launcher_picker => s.launcher_picker = try LauncherPicker.View.create(panel, &self.index, &self.preferences, self.client, self.picker_request orelse return error.InvalidRequest),
                     .running_apps => s.running_apps = try Running.Chooser.create(panel, &self.tasks.snapshot, &self.index, s, runningAction),
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
                     .calendar => Panels.calendar(panel),
@@ -1002,7 +1018,7 @@ pub const Manager = struct {
         return self.showPaneAt(output, pane, .overview);
     }
     fn showPaneAt(self: *Manager, output: *Output, pane: Bar.Pane, page: navigation.Route) !void {
-        if (pane == .running_apps and (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or self.auth.request != null)) return error.Locked;
+        if ((pane == .running_apps or pane == .launcher_picker) and (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or self.auth.request != null)) return error.Locked;
         if (pane == .clipboard_capture) {
             self.syncClipboardPrivacy();
             if (self.clipboard.locked) return error.Locked;
@@ -1027,6 +1043,7 @@ pub const Manager = struct {
             }
         }
         if (self.popup.?.running_apps) |view| view.focus();
+        if (self.popup.?.launcher_picker) |view| _ = view.search.as(gtk.Widget).grabFocus();
         if (self.popup.?.launcher) |launcher| {
             if (self.popup.?.window.as(gtk.Widget).getFrameClock()) |clock| launcher.observeFrame(clock);
             _ = launcher.search.as(gtk.Widget).grabFocus();
@@ -1038,10 +1055,10 @@ pub const Manager = struct {
         const s = self.popup orelse return;
         const o = s.output;
         const prefs = self.preferences.prefs().popup;
-        var rect = if (self.pane == .launcher) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if ((self.pane == .settings or self.pane == .aqueous_settings)) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else 440, if ((self.pane == .settings or self.pane == .aqueous_settings)) 720 else if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
+        var rect = if (self.pane == .launcher or self.pane == .launcher_picker) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if ((self.pane == .settings or self.pane == .aqueous_settings)) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else 440, if ((self.pane == .settings or self.pane == .aqueous_settings)) 720 else if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
         const width = @min(rect.width, prefs.max_width);
         const height = @min(rect.height, prefs.max_height);
-        rect = if (prefs.placement == .centered or self.pane == .launcher) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, o.usable, width, height, o.reservations.bar_edge, self.pane != .calendar);
+        rect = if (prefs.placement == .centered or self.pane == .launcher or self.pane == .launcher_picker) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, o.usable, width, height, o.reservations.bar_edge, self.pane != .calendar);
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;
         const positioned = if (s.viewport) |viewport| viewport.as(gtk.Widget) else s.panel;
@@ -1182,6 +1199,11 @@ pub const Manager = struct {
         if (request.op == .session_status) {
             self.session_services.notifications.setLocked(self.client.availability != .ready or (if (self.client.model.get(.session, "session")) |session| session.locked else true));
             return self.session_services.status(alloc, request.offset orelse 0);
+        }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-launcher-picker")) {
+            const popup = self.popup orelse return error.Unavailable;
+            const view = popup.launcher_picker orelse return error.Unavailable;
+            return std.json.Stringify.valueAlloc(alloc, .{ .rows = try view.report(alloc, popup.window.as(gtk.Widget)), .selected = view.selected_id, .pending = view.pending != null }, .{});
         }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.startsWith(u8, request.text orelse "", "test-running-apps")) {
             const text = request.text.?;

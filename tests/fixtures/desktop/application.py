@@ -19,6 +19,7 @@ def activated(app):
     record = dict(id=a.id, title=a.title, mark=a.mark, argv=rest,
                   cwd=os.getcwd(), display=os.environ.get('WAYLAND_DISPLAY'),
                   endpoint=os.environ.get('AQUEOUS_SOCKET'))
+    record['desktop_file'] = os.environ.get('GIO_LAUNCHED_DESKTOP_FILE')
     if os.environ.get('PEARL_TEST_LAUNCH_LOG'):
         with Path(os.environ['PEARL_TEST_LAUNCH_LOG']).open('a') as f:
             f.write(json.dumps(record)+'\n')

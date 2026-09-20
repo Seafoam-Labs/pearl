@@ -1,0 +1,270 @@
+{
+  "status": "completed",
+  "cases": [
+    {
+      "case": "system-baseline",
+      "expected_mark": "system",
+      "launch": {
+        "id": "org.pearl.Override",
+        "title": "Override system",
+        "mark": "system",
+        "argv": [
+          "--custom-argument",
+          "system two words"
+        ],
+        "cwd": "/tmp/pearl-dev-x7giom_q",
+        "display": "wayland-1",
+        "endpoint": "/tmp/pearl-dev-x7giom_q/run/aqueous/75aeee45cd193ef65167534b29bc0951/ipc.sock",
+        "desktop_file": "/tmp/pearl-dev-x7giom_q/system-data/applications/org.pearl.Override.desktop"
+      },
+      "icon_pixels": {
+        "system": 1600,
+        "user": 0,
+        "edited": 0
+      },
+      "gio_resolution": {
+        "id": "org.pearl.Override.desktop",
+        "file": "/tmp/pearl-dev-x7giom_q/system-data/applications/org.pearl.Override.desktop",
+        "icon": "/tmp/pearl-dev-x7giom_q/system.png",
+        "command": "/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark system --title \"Override system\" --custom-argument \"system two words\""
+      },
+      "generation": 1,
+      "dock_groups": 1,
+      "launch_matches": true,
+      "icon_matches": true
+    },
+    {
+      "case": "user-added-live",
+      "expected_mark": "user",
+      "launch": {
+        "id": "org.pearl.Override",
+        "title": "Override user",
+        "mark": "user",
+        "argv": [
+          "--custom-argument",
+          "user two words"
+        ],
+        "cwd": "/tmp/pearl-dev-x7giom_q",
+        "display": "wayland-1",
+        "endpoint": "/tmp/pearl-dev-x7giom_q/run/aqueous/75aeee45cd193ef65167534b29bc0951/ipc.sock",
+        "desktop_file": "/tmp/pearl-dev-x7giom_q/data/applications/org.pearl.Override.desktop"
+      },
+      "icon_pixels": {
+        "system": 0,
+        "user": 1600,
+        "edited": 0
+      },
+      "gio_resolution": {
+        "id": "org.pearl.Override.desktop",
+        "file": "/tmp/pearl-dev-x7giom_q/data/applications/org.pearl.Override.desktop",
+        "icon": "/tmp/pearl-dev-x7giom_q/user.png",
+        "command": "/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark user --title \"Override user\" --custom-argument \"user two words\""
+      },
+      "generation": 2,
+      "dock_groups": 1,
+      "launch_matches": true,
+      "icon_matches": true
+    },
+    {
+      "case": "user-atomically-replaced",
+      "expected_mark": "edited",
+      "launch": {
+        "id": "org.pearl.Override",
+        "title": "Override edited",
+        "mark": "edited",
+        "argv": [
+          "--custom-argument",
+          "edited two words"
+        ],
+        "cwd": "/tmp/pearl-dev-x7giom_q",
+        "display": "wayland-1",
+        "endpoint": "/tmp/pearl-dev-x7giom_q/run/aqueous/75aeee45cd193ef65167534b29bc0951/ipc.sock",
+        "desktop_file": "/tmp/pearl-dev-x7giom_q/data/applications/org.pearl.Override.desktop"
+      },
+      "icon_pixels": {
+        "system": 0,
+        "user": 0,
+        "edited": 1600
+      },
+      "gio_resolution": {
+        "id": "org.pearl.Override.desktop",
+        "file": "/tmp/pearl-dev-x7giom_q/data/applications/org.pearl.Override.desktop",
+        "icon": "/tmp/pearl-dev-x7giom_q/edited.png",
+        "command": "/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark edited --title \"Override edited\" --custom-argument \"edited two words\""
+      },
+      "generation": 3,
+      "dock_groups": 1,
+      "launch_matches": true,
+      "icon_matches": true
+    },
+    {
+      "case": "user-edited-in-place",
+      "expected_mark": "in-place",
+      "launch": {
+        "id": "org.pearl.Override",
+        "title": "Override in-place",
+        "mark": "in-place",
+        "argv": [
+          "--custom-argument",
+          "in-place two words"
+        ],
+        "cwd": "/tmp/pearl-dev-x7giom_q",
+        "display": "wayland-1",
+        "endpoint": "/tmp/pearl-dev-x7giom_q/run/aqueous/75aeee45cd193ef65167534b29bc0951/ipc.sock",
+        "desktop_file": "/tmp/pearl-dev-x7giom_q/data/applications/org.pearl.Override.desktop"
+      },
+      "icon_pixels": {
+        "system": 0,
+        "user": 1600,
+        "edited": 0
+      },
+      "gio_resolution": {
+        "id": "org.pearl.Override.desktop",
+        "file": "/tmp/pearl-dev-x7giom_q/data/applications/org.pearl.Override.desktop",
+        "icon": "/tmp/pearl-dev-x7giom_q/user.png",
+        "command": "/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark in-place --title \"Override in-place\" --custom-argument \"in-place two words\""
+      },
+      "generation": 4,
+      "dock_groups": 1,
+      "launch_matches": true,
+      "icon_matches": true
+    },
+    {
+      "case": "user-removed-live",
+      "expected_mark": "system",
+      "launch": {
+        "id": "org.pearl.Override",
+        "title": "Override system",
+        "mark": "system",
+        "argv": [
+          "--custom-argument",
+          "system two words"
+        ],
+        "cwd": "/tmp/pearl-dev-x7giom_q",
+        "display": "wayland-1",
+        "endpoint": "/tmp/pearl-dev-x7giom_q/run/aqueous/75aeee45cd193ef65167534b29bc0951/ipc.sock",
+        "desktop_file": "/tmp/pearl-dev-x7giom_q/system-data/applications/org.pearl.Override.desktop"
+      },
+      "icon_pixels": {
+        "system": 1584,
+        "user": 0,
+        "edited": 0
+      },
+      "gio_resolution": {
+        "id": "org.pearl.Override.desktop",
+        "file": "/tmp/pearl-dev-x7giom_q/system-data/applications/org.pearl.Override.desktop",
+        "icon": "/tmp/pearl-dev-x7giom_q/system.png",
+        "command": "/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark system --title \"Override system\" --custom-argument \"system two words\""
+      },
+      "generation": 5,
+      "dock_groups": 1,
+      "launch_matches": true,
+      "icon_matches": true
+    },
+    {
+      "case": "user-present-at-startup",
+      "expected_mark": "user-startup",
+      "launch": {
+        "id": "org.pearl.Override",
+        "title": "Override user-startup",
+        "mark": "user-startup",
+        "argv": [
+          "--custom-argument",
+          "user-startup two words"
+        ],
+        "cwd": "/tmp/pearl-dev-x7giom_q",
+        "display": "wayland-1",
+        "endpoint": "/tmp/pearl-dev-x7giom_q/run/aqueous/75aeee45cd193ef65167534b29bc0951/ipc.sock",
+        "desktop_file": "/tmp/pearl-dev-x7giom_q/data/applications/org.pearl.Override.desktop"
+      },
+      "icon_pixels": {
+        "system": 0,
+        "user": 1600,
+        "edited": 0
+      },
+      "gio_resolution": {
+        "id": "org.pearl.Override.desktop",
+        "file": "/tmp/pearl-dev-x7giom_q/data/applications/org.pearl.Override.desktop",
+        "icon": "/tmp/pearl-dev-x7giom_q/user.png",
+        "command": "/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark user-startup --title \"Override user-startup\" --custom-argument \"user-startup two words\""
+      },
+      "generation": 1,
+      "dock_groups": 1,
+      "launch_matches": true,
+      "icon_matches": true
+    },
+    {
+      "case": "renamed-running-app-pinned-and-relaunched",
+      "expected_mark": "system",
+      "launch": {
+        "id": "org.pearl.Override",
+        "title": "Override system",
+        "mark": "system",
+        "argv": [
+          "--custom-argument",
+          "system two words"
+        ],
+        "cwd": "/tmp/pearl-dev-x7giom_q",
+        "display": "wayland-1",
+        "endpoint": "/tmp/pearl-dev-x7giom_q/run/aqueous/75aeee45cd193ef65167534b29bc0951/ipc.sock",
+        "desktop_file": "/tmp/pearl-dev-x7giom_q/system-data/applications/org.pearl.Override.desktop"
+      },
+      "icon_pixels": {
+        "system": 1584,
+        "user": 0,
+        "edited": 0
+      },
+      "gio_resolution": {
+        "id": "org.pearl.Override.desktop",
+        "file": "/tmp/pearl-dev-x7giom_q/system-data/applications/org.pearl.Override.desktop",
+        "icon": "/tmp/pearl-dev-x7giom_q/system.png",
+        "command": "/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark system --title \"Override system\" --custom-argument \"system two words\""
+      },
+      "generation": 3,
+      "dock_groups": 1,
+      "launch_matches": true,
+      "icon_matches": true
+    },
+    {
+      "case": "renamed-explicit-pin",
+      "expected_mark": "renamed",
+      "launch": {
+        "id": "org.pearl.Override",
+        "title": "Override renamed",
+        "mark": "renamed",
+        "argv": [
+          "--custom-argument",
+          "renamed two words"
+        ],
+        "cwd": "/tmp/pearl-dev-x7giom_q",
+        "display": "wayland-1",
+        "endpoint": "/tmp/pearl-dev-x7giom_q/run/aqueous/75aeee45cd193ef65167534b29bc0951/ipc.sock",
+        "desktop_file": "/tmp/pearl-dev-x7giom_q/data/applications/CustomOverride.desktop"
+      },
+      "icon_pixels": {
+        "system": 0,
+        "user": 1600,
+        "edited": 0
+      },
+      "gio_resolution": {
+        "id": "CustomOverride.desktop",
+        "file": "/tmp/pearl-dev-x7giom_q/data/applications/CustomOverride.desktop",
+        "icon": "/tmp/pearl-dev-x7giom_q/user.png",
+        "command": "/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark renamed --title \"Override renamed\" --custom-argument \"renamed two words\""
+      },
+      "generation": 3,
+      "dock_groups": 1,
+      "launch_matches": true,
+      "icon_matches": true
+    }
+  ],
+  "pearl_sha256": "f51314873764b20cb0b3e4580c4a07ffe8eb9c97631baaa9484f4056e7a894fd",
+  "renamed_running_pin": {
+    "custom_id": "CustomOverride.desktop",
+    "window_app_id": "org.pearl.Override",
+    "saved_pins": [
+      "org.pearl.Override.desktop"
+    ]
+  },
+  "issue_symptom_reproduced": "Different desktop ID, unchanged window app ID, pinning from the running window"
+}

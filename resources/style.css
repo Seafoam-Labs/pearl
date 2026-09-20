@@ -38,6 +38,10 @@
 .pearl-root.$scope listview row { padding: 0; border-radius: 12px; margin: 2px 3px; }
 .pearl-root.$scope listview row:hover { background: $high$; }
 .pearl-root.$scope listview row:selected { background: $primary_container$; color: $on_container$; }
+.pearl-root.$scope .pearl-launcher-choices { background: transparent; color: $text$; }
+.pearl-root.$scope .pearl-launcher-choices row { padding: 8px 10px; border-radius: 12px; margin: 2px 3px; }
+.pearl-root.$scope .pearl-launcher-choices row:hover { background: $high$; }
+.pearl-root.$scope .pearl-launcher-choices row:selected { background: $primary_container$; color: $on_container$; }
 .pearl-root.$scope .pearl-list-row { padding: 10px 12px; }
 .pearl-root.$scope .pearl-state { background: $low$; border-radius: 16px; padding: 16px; }
 .pearl-root.$scope .pearl-error { background: $error_container$; color: $error_color$; }

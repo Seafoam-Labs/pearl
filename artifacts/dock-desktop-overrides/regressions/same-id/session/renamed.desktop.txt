@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Override renamed
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark renamed --title "Override renamed" --custom-argument "renamed two words"
+Icon=/tmp/pearl-dev-x7giom_q/user.png
+DBusActivatable=false
+Actions=Special;
+
+[Desktop Action Special]
+Name=Special renamed
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark renamed-action

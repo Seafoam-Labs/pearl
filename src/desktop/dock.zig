@@ -16,8 +16,10 @@ const p = @import("dock_policy.zig");
 const placement = @import("../ui/surfaces/policy.zig");
 const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
-const Action = enum { activate, launch, pin, unpin, minimize, maximize, close };
-const Callback = struct { dock: *Dock, action: Action, id: [:0]const u8, value: bool = false, desktop_action: ?[:0]const u8 = null };
+const identity = @import("app_identity.zig");
+const Picker = @import("launcher_picker.zig");
+const Action = enum { activate, launch, pin, unpin, minimize, maximize, close, choose_launcher };
+const Callback = struct { dock: *Dock, action: Action, id: [:0]const u8, value: bool = false, desktop_action: ?[:0]const u8 = null, association_hash: u64 = 0, picker: ?Picker.Request = null };
 const Group = struct { key: []const u8, desktop: ?[]const u8, pinned: bool, windows: std.ArrayList(*const e.Window) = .empty };
 pub const Dock = struct {
     client: *Client,
@@ -48,6 +50,7 @@ pub const Dock = struct {
     appearance: u64 = std.math.maxInt(u64),
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
+    choose_launcher: ?*const fn (*anyopaque, []const u8, Picker.Request) anyerror!void = null,
     pub fn create(app: *gtk.Application, monitor: *gdk.Monitor, effects: *native.Effects, client: *Client, index: *Apps.Index, preferences: *Preferences, output: []const u8, context: *anyopaque, changed: *const fn (*anyopaque) void) !*Dock {
         const self = try a.create(Dock);
         errdefer a.destroy(self);
@@ -137,7 +140,7 @@ pub const Dock = struct {
         return null;
     }
     fn match(self: *Dock, win: *const e.Window) ?[]const u8 {
-        return @import("task_apps.zig").match(self.index, win.*);
+        return @import("task_apps.zig").match(self.index, win.*, self.preferences.prefs().application_launchers);
     }
     pub fn update(self: *Dock, config: p.Config, bar_edge: placement.Edge, bounds: placement.Rect, locked: bool) !void {
         var next = config;
@@ -185,7 +188,7 @@ pub const Dock = struct {
         }
         self.count = groups.items.len;
         var digest = std.hash.Wyhash.init(0);
-        digest.update(try std.json.Stringify.valueAlloc(alloc, .{ self.index.generation, next, self.preferences.appearance }, .{}));
+        digest.update(try std.json.Stringify.valueAlloc(alloc, .{ self.index.generation, next, self.preferences.appearance, @import("app_identity.zig").digest(self.preferences.prefs().application_launchers) }, .{}));
         for (groups.items) |group| {
             digest.update(try std.json.Stringify.valueAlloc(alloc, .{ group.key, group.desktop, group.pinned }, .{}));
             for (group.windows.items) |win| digest.update(try std.json.Stringify.valueAlloc(alloc, .{ win.id, win.title, win.focused, win.minimized, win.maximized, win.visible, win.can_activate, win.can_minimize, win.can_maximize }, .{}));
@@ -322,7 +325,7 @@ pub const Dock = struct {
     fn button(self: *Dock, text: [:0]const u8, action: Action, id: []const u8, value: bool, desktop_action: ?[]const u8) !*gtk.Button {
         const alloc = self.arena.allocator();
         const cb = try alloc.create(Callback);
-        cb.* = .{ .dock = self, .action = action, .id = try alloc.dupeZ(u8, id), .value = value, .desktop_action = if (desktop_action) |v| try alloc.dupeZ(u8, v) else null };
+        cb.* = .{ .dock = self, .association_hash = identity.digest(self.preferences.prefs().application_launchers), .action = action, .id = try alloc.dupeZ(u8, id), .value = value, .desktop_action = if (desktop_action) |v| try alloc.dupeZ(u8, v) else null };
         const button_ = gtk.Button.newWithLabel(text);
         w.name(button_.as(gtk.Widget), text);
         if (button_.getChild()) |child| if (object.ext.cast(gtk.Label, child)) |label| {
@@ -337,7 +340,7 @@ pub const Dock = struct {
         const alloc = self.arena.allocator();
         for (groups) |group| {
             const entry = if (group.desktop) |id| self.installed(id) else null;
-            const title = if (entry) |v| v.name else if (group.windows.items.len > 0) group.windows.items[0].app_id orelse group.windows.items[0].class orelse "Application" else group.key;
+            const title = if (entry) |v| v.name else if (group.desktop) |id| try std.fmt.allocPrintSentinel(alloc, "{s} — launcher unavailable", .{id}, 0) else if (group.windows.items.len > 0) group.windows.items[0].app_id orelse group.windows.items[0].class orelse "Application" else group.key;
             var focused = false;
             var minimized = false;
             var hidden = false;
@@ -355,6 +358,7 @@ pub const Dock = struct {
             const box = gtk.Box.new(.horizontal, 0);
             const primary = try self.button(description, if (target != null) .activate else .launch, if (target) |win| win.id else group.desktop.?, false, null);
             primary.as(gtk.Widget).setTooltipText(description);
+            if (target == null and entry == null) primary.as(gtk.Widget).setSensitive(1); // Keep context menu and Unpin reachable.
             // Keep the icon reachable so unavailable pins can still be unpinned.
             if (focused) primary.as(gtk.Widget).addCssClass("focused");
             const content = gtk.Box.new(.vertical, 0);
@@ -404,6 +408,35 @@ pub const Dock = struct {
                     }
                 };
             }
+            var request: ?Picker.Request = null;
+            if (group.windows.items.len > 0) {
+                const win = group.windows.items[0];
+                if (identity.key(win.*)) |key_| request = .{ .key = key_, .window_id = win.id, .current_desktop = group.desktop, .source_pin = if (group.pinned) group.desktop else null };
+            } else if (group.desktop) |id| {
+                for (self.preferences.prefs().application_launchers) |choice| if (std.mem.eql(u8, choice.desktop_id, id)) {
+                    if (request != null) {
+                        request = null;
+                        break;
+                    }
+                    request = .{ .key = choice.key(), .current_desktop = id, .source_pin = if (group.pinned) id else null };
+                };
+            }
+            const choose = gtk.Button.newWithLabel(@import("text.zig").tr("Use launcher…", "Starter verwenden…"));
+            w.name(choose.as(gtk.Widget), "Use launcher…");
+            items.append(choose.as(gtk.Widget));
+            if (request) |r| {
+                const cb = try alloc.create(Callback);
+                cb.* = .{ .dock = self, .action = .choose_launcher, .id = "", .association_hash = identity.digest(self.preferences.prefs().application_launchers), .picker = .{
+                    .key = .{ .backend = r.key.backend, .identity = try alloc.dupe(u8, r.key.identity) },
+                    .window_id = if (r.window_id) |id| try alloc.dupe(u8, id) else null,
+                    .source_pin = if (r.source_pin) |id| try alloc.dupe(u8, id) else null,
+                    .current_desktop = if (r.current_desktop) |id| try alloc.dupe(u8, id) else null,
+                } };
+                _ = gtk.Button.signals.clicked.connect(choose, *Callback, clicked, cb, .{});
+            } else {
+                choose.as(gtk.Widget).setSensitive(0);
+                choose.as(gtk.Widget).setTooltipText(@import("text.zig").tr("A unique application identity is needed. Existing choices can be removed in Settings.", "Eine eindeutige Anwendungskennung ist erforderlich. Vorhandene Zuordnungen können in den Einstellungen entfernt werden."));
+            }
             for (group.windows.items) |win| {
                 const title_text = win.title orelse "Untitled window";
                 const label = try alloc.dupeZ(u8, title_text);
@@ -438,7 +471,9 @@ pub const Dock = struct {
     }
     fn act(self: *Dock, cb: Callback) !void {
         if (self.locked or self.client.availability != .ready or self.client.model.get(.session, "session").?.locked) return error.Locked;
+        if ((cb.action == .launch or cb.action == .pin or cb.action == .choose_launcher) and cb.association_hash != identity.digest(self.preferences.prefs().application_launchers)) return error.StaleApplication;
         switch (cb.action) {
+            .choose_launcher => try (self.choose_launcher orelse return error.Unavailable)(self.context, self.output, cb.picker.?),
             .pin, .unpin => try self.pin(cb.id, cb.action == .pin),
             .launch => {
                 _ = self.installed(cb.id) orelse return error.StaleApplication;

@@ -98,3 +98,15 @@ test "plugin drafts merge disjoint identities and settings but reject conflictin
     const changed = "{\"plugins\":{\"entries\":[{\"id\":\"one\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}}";
     try std.testing.expectError(error.MergeConflict, json(a, base, ours, changed));
 }
+
+test "launcher choices merge with unrelated changes but conflicting lists retain the draft" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const ours = "{\"application_launchers\":[{\"backend\":\"xdg\",\"identity\":\"App\",\"desktop_id\":\"Custom.desktop\"}]}";
+    const theirs = "{\"application_launchers\":[{\"backend\":\"xdg\",\"identity\":\"App\",\"desktop_id\":\"Other.desktop\"}]}";
+    const merged = try @import("preferences.zig").parse(a, try json(a, "{}", ours, "{\"font_size\":18}"));
+    try std.testing.expectEqual(@as(u8, 18), merged.font_size);
+    try std.testing.expectEqualStrings("Custom.desktop", merged.application_launchers[0].desktop_id);
+    try std.testing.expectError(error.MergeConflict, json(a, "{}", ours, theirs));
+}

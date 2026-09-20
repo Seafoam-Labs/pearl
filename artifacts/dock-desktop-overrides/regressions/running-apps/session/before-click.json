@@ -1,0 +1,113 @@
+{
+  "revision": 8,
+  "groups": [
+    {
+      "key": "desktop:Tasks0.desktop",
+      "name": "Workbench",
+      "count": 3
+    },
+    {
+      "key": "app:org.pearl.Tasks1",
+      "name": "org.pearl.Tasks1",
+      "count": 1
+    },
+    {
+      "key": "app:org.pearl.Tasks2",
+      "name": "org.pearl.Tasks2",
+      "count": 1
+    }
+  ],
+  "strips": [
+    {
+      "output": "1",
+      "shown": 3,
+      "slots": 12,
+      "keyboard_mode": "none",
+      "rows": [
+        {
+          "id": "desktop:Tasks0.desktop",
+          "kind": "group",
+          "rect": {
+            "x": 496,
+            "y": 7,
+            "width": 24,
+            "height": 34
+          },
+          "enabled": true,
+          "focused": false
+        },
+        {
+          "id": "app:org.pearl.Tasks1",
+          "kind": "group",
+          "rect": {
+            "x": 534,
+            "y": 7,
+            "width": 24,
+            "height": 34
+          },
+          "enabled": true,
+          "focused": false
+        },
+        {
+          "id": "app:org.pearl.Tasks2",
+          "kind": "group",
+          "rect": {
+            "x": 572,
+            "y": 7,
+            "width": 24,
+            "height": 34
+          },
+          "enabled": true,
+          "focused": false
+        }
+      ]
+    },
+    {
+      "output": "2",
+      "shown": 3,
+      "slots": 12,
+      "keyboard_mode": "none",
+      "rows": [
+        {
+          "id": "desktop:Tasks0.desktop",
+          "kind": "group",
+          "rect": {
+            "x": 496,
+            "y": 7,
+            "width": 24,
+            "height": 34
+          },
+          "enabled": true,
+          "focused": false
+        },
+        {
+          "id": "app:org.pearl.Tasks1",
+          "kind": "group",
+          "rect": {
+            "x": 534,
+            "y": 7,
+            "width": 24,
+            "height": 34
+          },
+          "enabled": true,
+          "focused": false
+        },
+        {
+          "id": "app:org.pearl.Tasks2",
+          "kind": "group",
+          "rect": {
+            "x": 572,
+            "y": 7,
+            "width": 24,
+            "height": 34
+          },
+          "enabled": true,
+          "focused": false
+        }
+      ]
+    }
+  ],
+  "row_count": 0,
+  "popup_output": null,
+  "rows": []
+}

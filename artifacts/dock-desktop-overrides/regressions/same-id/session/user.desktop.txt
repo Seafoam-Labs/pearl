@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Override user
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark user --title "Override user" --custom-argument "user two words"
+Icon=/tmp/pearl-dev-x7giom_q/user.png
+DBusActivatable=false
+StartupWMClass=org.pearl.Override
+Actions=Special;
+
+[Desktop Action Special]
+Name=Special user
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark user-action

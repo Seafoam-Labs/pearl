@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "checks": {
+    "launcher-choice-removal-apply-discard-and-retained-pins": true,
+    "opening-is-read-only-and-unavailable-plugin-is-retained": true,
+    "workspace-mode-radio-selection-preview-and-discard": true,
+    "workspace-keyboard-apply-reopen-and-stale-mode-rejection": true,
+    "plugin-catalog-placement-and-refresh-revalidate-approval": true,
+    "native-picker-search-add-and-duplicate-prevention": true,
+    "launcher-protection-and-atomic-move-reorder": true,
+    "remove-and-navigation-preserve-unrelated-shared-draft": true,
+    "running-apps-picker-move-reorder-remove-and-discard": true,
+    "discard-apply-and-reopen-persist-selections": true,
+    "stale-menu-cannot-overwrite-a-newer-layout": true,
+    "invalid-advanced-draft-is-retained-and-structured-edits-disabled": true,
+    "keyboard-escape-restores-focus-without-editing": true,
+    "all-edge-labels-and-exact-size-roundtrip": true,
+    "narrow-light-dark-and-large-text-menus": true
+  },
+  "binaries": {
+    "settings": "76127e35e0a1817af2e52f948f79b0c505e1e5404ae48d8268a638d29aeae221",
+    "pearl": "eae9cc7cff4c538ae4c322a59c19f1ac5f9f69073c888f9ee1fd56dd869007bc",
+    "ctl": "77860d107ffddc5edc892965f3ff24cbc6b0951af6d731bc754561f7222123bf"
+  }
+}

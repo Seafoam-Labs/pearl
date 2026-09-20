@@ -14,6 +14,32 @@ not activate it; selection and Apply & save use the existing shared draft.
 [T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
 dock behavior, split bar sections and matching native input/blur regions.
 
+The default-empty `application_launchers` list remembers explicit launcher
+choices made through the dock's **Use launcher…** picker:
+
+```json
+{
+  "application_launchers": [
+    {"backend": "xdg", "identity": "org.example.App", "desktop_id": "CustomApp.desktop"}
+  ]
+}
+```
+
+The key is an exact Wayland app ID (`xdg`) or XWayland class (`xwayland`). A choice
+applies to every window with that identity. Up to 128 choices are supported;
+keys must be unique, nonempty valid UTF-8 of at most 1024 bytes without ASCII
+control characters. Desktop IDs follow the same validator as dock pins.
+
+The picker saves immediately and atomically replaces an initiating pin when
+needed. **Settings → Bar & dock → Application launchers** can remove choices
+through the shared Apply/Discard draft. Resetting a choice preserves explicit
+pins. Conflicting edits to the list retain the draft for conflict resolution.
+Removed or hidden selected entries remain unavailable rather than falling back
+to a different launch command. Existing configuration files default to no
+choices; before downgrading to a version without this field, remove
+`application_launchers` from the saved configuration because older parsers are
+strict about unknown fields.
+
 Open **Pearl Settings** from the launcher or use
 `pearlctl settings show --page appearance`. The compact preference editor remains
 available from **Control center → Pearl settings**. They apply across all output surfaces without restarting

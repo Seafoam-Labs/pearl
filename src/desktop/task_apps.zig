@@ -4,7 +4,8 @@ const object = @import("gobject2");
 const unix = @import("giounix2");
 const Apps = @import("apps.zig");
 const tasks = @import("task_model.zig");
-pub fn match(index: *const Apps.Index, win: @import("../aqueous/entities.zig").Window) ?[]const u8 {
+pub fn match(index: *const Apps.Index, win: @import("../aqueous/entities.zig").Window, choices: []const @import("app_identity.zig").Association) ?[]const u8 {
+    if (@import("app_identity.zig").selected(choices, win)) |id| return id;
     var result: ?[]const u8 = null;
     if (index.catalog) |catalog| for (catalog.entries.items) |entry| {
         if (entry.action != null) continue;
@@ -26,7 +27,7 @@ pub const Store = struct {
         self.snapshot.deinit();
         self.catalog_arena.deinit();
     }
-    pub fn update(self: *Store, model: *const @import("../aqueous/reducer.zig").Model, index: *const Apps.Index) !void {
+    pub fn update(self: *Store, model: *const @import("../aqueous/reducer.zig").Model, index: *const Apps.Index, choices: []const @import("app_identity.zig").Association) !void {
         if (self.generation == null or self.generation.? != index.generation) {
             var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
             errdefer arena.deinit();
@@ -43,6 +44,6 @@ pub const Store = struct {
             self.apps = owned;
             self.generation = index.generation;
         }
-        try self.snapshot.update(model, self.apps, index.generation);
+        try self.snapshot.updateWithLaunchers(model, self.apps, index.generation, choices);
     }
 };

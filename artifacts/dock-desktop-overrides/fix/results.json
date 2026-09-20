@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "checks": {
+    "native-picker-corrects-packaged-pin-and-global-grouping": true,
+    "custom-id-icon-arguments-new-window-and-desktop-action": true,
+    "association-and-pin-survive-restart": true,
+    "reset-keeps-explicit-pin": true,
+    "keyboard-selection-and-existing-target-pin-deduplication": true,
+    "stale-picker-rejects-concurrent-preference-edit": true,
+    "open-menu-rejects-stale-launcher-action": true,
+    "missing-launcher-never-falls-back-and-reinstall-recovers": true,
+    "hidden-selection-does-not-launch-packaged-entry": true,
+    "inactive-session-dismisses-picker": true,
+    "unpinned-choice-then-native-pin-keeps-custom-launcher": true,
+    "association-groups-windows-on-two-outputs": true,
+    "small-output-large-text-keyboard-picker": true
+  },
+  "pearl_sha256": "dd8c1f341b36bbf8bf406570470e594390cd2b0532408b003a50c7ce7904b914"
+}

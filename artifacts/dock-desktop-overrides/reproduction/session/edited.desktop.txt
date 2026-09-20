@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Override edited
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark edited --title "Override edited" --custom-argument "edited two words"
+Icon=/tmp/pearl-dev-mf72zfbn/edited.png
+DBusActivatable=false
+StartupWMClass=org.pearl.Override
+Actions=Special;
+
+[Desktop Action Special]
+Name=Special edited
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark edited-action

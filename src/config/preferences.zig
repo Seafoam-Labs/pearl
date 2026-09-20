@@ -55,6 +55,7 @@ pub const Preferences = struct {
     bar: Bar = .{},
     dock: Dock = .{},
     pinned_apps: []const []const u8 = &.{},
+    application_launchers: []const @import("../desktop/app_identity.zig").Association = &.{},
     outputs: []const Output = &.{},
     popup: struct { dismiss_outside: bool = true, placement: enum { anchored, centered } = .anchored, max_width: u16 = 720, max_height: u16 = 800 } = .{},
     // Only explicitly listed files in Pearl's export directory are managed.
@@ -68,6 +69,7 @@ pub const Preferences = struct {
         return self.dock;
     }
     pub fn validate(self: Preferences) !void {
+        try @import("../desktop/app_identity.zig").validate(self.application_launchers);
         try self.night_light.validate();
         try self.plugins.validate();
         try self.qt.validate();
@@ -228,4 +230,16 @@ test "workspace mode defaults, strict values and complete output overrides" {
         try std.testing.expectEqual(.large, parsed.forOutput("DP-1").workspace_mode);
         try std.testing.expectEqual(.medium, parsed.forOutput("DP-2").workspace_mode);
     }
+}
+
+test "application launcher preferences default empty and roundtrip distinct IDs" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    try std.testing.expectEqual(@as(usize, 0), (try parse(alloc, "{}")).application_launchers.len);
+    const document = "{\"application_launchers\":[{\"backend\":\"xdg\",\"identity\":\"App\",\"desktop_id\":\"Custom.desktop\"}],\"pinned_apps\":[\"Custom.desktop\"]}";
+    const prefs = try parse(alloc, document);
+    const again = try parse(alloc, try std.json.Stringify.valueAlloc(alloc, prefs, .{}));
+    try std.testing.expectEqualStrings("Custom.desktop", again.application_launchers[0].desktop_id);
+    try std.testing.expectEqualStrings("Custom.desktop", again.pinned_apps[0]);
 }

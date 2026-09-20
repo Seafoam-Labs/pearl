@@ -3,6 +3,12 @@
 [T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
 dock behavior, split bar sections and matching native input/blur regions.
 
+Custom launchers with a different desktop ID can be associated with a running
+application through the dock's **Use launcher…** menu. The dock and Running
+applications widget share that saved choice, including its icon and grouping.
+See [custom application launchers](DOCK_ISLANDS.md#custom-application-launchers)
+for pin correction, reset and unavailable-entry behavior.
+
 Pearl session mode now provides a live bar, application/window launcher,
 clock/calendar and control center on Aqueous. It uses the existing T04 state
 adapter and T05 surface/control machinery. All desktop discovery and launch

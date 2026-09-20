@@ -1,0 +1,2 @@
+<string>:1: PyGIDeprecationWarning: Gio.DesktopAppInfo is deprecated; use GioUnix.DesktopAppInfo instead
+event=fixture-ready custom

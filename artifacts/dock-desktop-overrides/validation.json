@@ -1,0 +1,22 @@
+{
+  "build": "passed",
+  "optimize": "ReleaseSafe",
+  "unit_tests": {
+    "passed": 161,
+    "total": 161
+  },
+  "native_suites": [
+    "fix/results.json",
+    "settings/metadata.json",
+    "regressions/dock/report.json",
+    "regressions/desktop/results.json",
+    "regressions/running-apps/metadata.json",
+    "regressions/preferences/metadata.json"
+  ],
+  "same_id_regression": "regressions/same-id/results.json",
+  "production_sha256": {
+    "pearl": "f51314873764b20cb0b3e4580c4a07ffe8eb9c97631baaa9484f4056e7a894fd",
+    "pearl-settings": "a01ce1497061190d34a3790d94c73ab81a58dc35525431d7f453a2c91a3aa5ae",
+    "pearlctl": "8202c1d90001ddedfd64e8cc1dec5ac84a1dc5882eb58faf9d628ce5dc14df83"
+  }
+}

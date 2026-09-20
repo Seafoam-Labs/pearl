@@ -10,7 +10,7 @@ const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
 const Running = @import("running_apps.zig");
-pub const Pane = enum { running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray };
+pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray };
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {

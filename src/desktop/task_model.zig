@@ -3,7 +3,8 @@ const std = @import("std");
 const entities = @import("../aqueous/entities.zig");
 const Model = @import("../aqueous/reducer.zig").Model;
 const Allocator = std.mem.Allocator;
-pub const Application = struct { id: []const u8, name: []const u8, wmclass: ?[]const u8 = null };
+const identity_policy = @import("app_identity.zig");
+pub const Application = struct { id: []const u8, name: []const u8, wmclass: ?[]const u8 = null, available: bool = true };
 pub fn matches(id: []const u8, wmclass: ?[]const u8, win: entities.Window) bool {
     for ([_]?[]const u8{ win.app_id, win.class }) |value| if (value) |v| {
         if (v.len != 0 and (std.mem.eql(u8, @import("dock_policy.zig").stem(id), @import("dock_policy.zig").stem(v)) or (wmclass != null and std.mem.eql(u8, wmclass.?, v)))) return true;
@@ -17,6 +18,13 @@ pub fn match(apps: []const Application, win: entities.Window) ?Application {
         found = app;
     };
     return found;
+}
+pub fn resolve(apps: []const Application, win: entities.Window, choices: []const identity_policy.Association) ?Application {
+    if (identity_policy.selected(choices, win)) |id| {
+        for (apps) |app| if (std.mem.eql(u8, id, app.id)) return app;
+        return .{ .id = id, .name = id, .available = false };
+    }
+    return match(apps, win);
 }
 pub const Window = struct { id: [:0]const u8, title: [:0]const u8, workspace: ?[:0]const u8, output: ?[:0]const u8, focused: bool, minimized: bool, can_activate: bool };
 pub const Group = struct {
@@ -41,6 +49,7 @@ pub const Snapshot = struct {
     session: []const u8 = "",
     sequence: []const u8 = "",
     catalog_generation: u64 = std.math.maxInt(u64),
+    association_hash: u64 = 0,
     pub fn init(a: Allocator) Snapshot {
         return .{ .arena = .init(a) };
     }
@@ -59,27 +68,32 @@ pub const Snapshot = struct {
         return null;
     }
     pub fn update(self: *Snapshot, model: *const Model, apps: []const Application, generation: u64) !void {
+        return self.updateWithLaunchers(model, apps, generation, &.{});
+    }
+    pub fn updateWithLaunchers(self: *Snapshot, model: *const Model, apps: []const Application, generation: u64, choices: []const identity_policy.Association) !void {
         if (!model.ready) {
             if (self.groups.len != 0 or self.sequence.len != 0) self.reset();
             return;
         }
-        if (std.mem.eql(u8, self.session, model.session) and std.mem.eql(u8, self.sequence, model.sequence) and self.catalog_generation == generation) return;
+        const association_hash = identity_policy.digest(choices);
+        if (std.mem.eql(u8, self.session, model.session) and std.mem.eql(u8, self.sequence, model.sequence) and self.catalog_generation == generation and self.association_hash == association_hash) return;
         var next = init(self.arena.child_allocator);
         errdefer next.deinit();
         const a = next.arena.allocator();
         next.session = try a.dupe(u8, model.session);
         next.sequence = try a.dupe(u8, model.sequence);
         next.catalog_generation = generation;
+        next.association_hash = association_hash;
         var groups: std.ArrayList(Group) = .empty;
         var map: std.StringHashMapUnmanaged(usize) = .empty;
         for (try model.windows(a, .{ .purpose = .taskbar })) |win| {
-            const app = match(apps, win.*);
+            const app = resolve(apps, win.*, choices);
             const identity = nonempty(win.app_id) orelse nonempty(win.class);
             const key = if (app) |v| try std.fmt.allocPrintSentinel(a, "desktop:{s}", .{v.id}, 0) else try std.fmt.allocPrintSentinel(a, "{s}:{s}", .{ if (nonempty(win.app_id) != null) "app" else if (identity != null) "class" else "window", identity orelse win.id }, 0);
             const slot = try map.getOrPut(a, key);
             if (!slot.found_existing) {
                 slot.value_ptr.* = groups.items.len;
-                try groups.append(a, .{ .key = key, .desktop = if (app) |v| try a.dupeZ(u8, v.id) else null, .name = try a.dupeZ(u8, if (app) |v| v.name else identity orelse "Application") });
+                try groups.append(a, .{ .key = key, .desktop = if (app) |v| try a.dupeZ(u8, v.id) else null, .name = if (app != null and !app.?.available) try std.fmt.allocPrintSentinel(a, "{s} — launcher unavailable", .{app.?.id}, 0) else try a.dupeZ(u8, if (app) |v| v.name else identity orelse "Application") });
             }
             const ws = if (win.workspace) |id| model.get(.workspace, id) else null;
             const output = if (win.output) |id| model.get(.output, id) else null;
@@ -192,4 +206,31 @@ test "global snapshot retains all windows, exclusions, owned identities and stab
     try t.expectEqualStrings("Shared title", snapshot.find("desktop:Many.desktop").?.windows.items[0].title);
     try snapshot.update(&model, &.{}, 1);
     try t.expectEqual(@as(usize, 0), snapshot.groups.len);
+}
+
+test "explicit launcher overrides identity and missing selections never fall back" {
+    const t = std.testing;
+    const apps = [_]Application{ .{ .id = "App.desktop", .name = "Packaged" }, .{ .id = "Custom.desktop", .name = "Custom" } };
+    const choices = [_]identity_policy.Association{.{ .backend = .xdg, .identity = "App", .desktop_id = "Custom.desktop" }};
+    const win = fixtureWindow("window", "App");
+    try t.expectEqualStrings("Custom.desktop", resolve(&apps, win, &choices).?.id);
+    const missing = resolve(apps[0..1], win, &choices).?;
+    try t.expectEqualStrings("Custom.desktop", missing.id);
+    try t.expect(!missing.available);
+    try t.expectEqualStrings("App.desktop", resolve(&apps, win, &.{}).?.id);
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    var model = try Model.init(t.allocator, (@import("../aqueous/codec.zig").Limits{}).state_bytes);
+    defer model.deinit();
+    // Reuse the same model sequence while only the association changes.
+    model.ready = true;
+    try model.entities.put(model.arena.allocator(), .{ .kind = .window, .id = win.id }, .{ .window = win });
+    var snapshot = Snapshot.init(arena.allocator());
+    defer snapshot.deinit();
+    try snapshot.updateWithLaunchers(&model, &apps, 1, &.{});
+    try t.expect(snapshot.find("desktop:App.desktop") != null);
+    const before = snapshot.revision;
+    try snapshot.updateWithLaunchers(&model, &apps, 1, &choices);
+    try t.expect(snapshot.revision > before);
+    try t.expect(snapshot.find("desktop:Custom.desktop") != null);
 }

@@ -623,6 +623,12 @@ pub fn build(b: *std.Build) void {
     dock.addArtifactArg(ctl);
     if (b.args) |args| dock.addArgs(args);
     b.step("test-dock-islands", "Verify T15 dock and island layouts in private Aqueous").dependOn(&dock.step);
+    const desktop_overrides = b.addSystemCommand(&.{ "python3", "tests/integration/test_desktop_overrides.py", "--pearl" });
+    desktop_overrides.addArtifactArg(integration_app);
+    desktop_overrides.addArg("--ctl");
+    desktop_overrides.addArtifactArg(ctl);
+    if (b.args) |args| desktop_overrides.addArgs(args);
+    b.step("test-desktop-overrides", "Verify custom launcher selection, pin correction and recovery").dependOn(&desktop_overrides.step);
     const bar_layout = b.addSystemCommand(&.{ "python3", "tests/integration/test_bar_layout.py", "--pearl" });
     bar_layout.addArtifactArg(integration_app);
     bar_layout.addArg("--ctl");

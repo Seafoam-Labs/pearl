@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Override in-place
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark in-place --title "Override in-place" --custom-argument "in-place two words"
+Icon=/tmp/pearl-dev-x7giom_q/user.png
+DBusActivatable=false
+StartupWMClass=org.pearl.Override
+Actions=Special;
+
+[Desktop Action Special]
+Name=Special in-place
+Exec=/usr/bin/python3 /home/zoey/Pearl/tests/fixtures/desktop/application.py --id org.pearl.Override --mark in-place-action

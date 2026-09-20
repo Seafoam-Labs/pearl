@@ -1108,6 +1108,13 @@ pub const Window = struct {
                 if (control.widget.getMapped() != 0) try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |f| f == control.widget or f.isAncestor(control.widget) != 0 else false, .enabled = control.widget.isSensitive() != 0, .bounds = self.bounds(control.widget), .selected = if (object.ext.cast(gtk.CheckButton, control.widget)) |choice| choice.getActive() != 0 else null, .text = if (object.ext.cast(gtk.Label, control.widget)) |label| std.mem.span(label.getText()) else null });
             };
         };
+        if (self.preference_pages[0]) |view| if (view.launchers) |launchers| {
+            const header = launchers.expander.getLabelWidget().?;
+            if (header.getMapped() != 0) try controls.append(alloc, .{ .field = "launchers.expand", .focused = false, .bounds = self.bounds(header) });
+            for (launchers.controls.items) |control| if (control.widget.getMapped() != 0) {
+                try controls.append(alloc, .{ .field = control.id, .focused = focus == control.widget, .enabled = control.widget.isSensitive() != 0, .bounds = self.bounds(control.widget) });
+            };
+        };
         for (self.preference_pages) |item| if (item) |view| for (view.fields) |field| {
             if (field.widget.getMapped() != 0) try controls.append(alloc, .{ .field = field.spec.path, .focused = if (focus) |f| f == field.widget or f.isAncestor(field.widget) != 0 else false, .bounds = self.bounds(field.widget) });
         };
