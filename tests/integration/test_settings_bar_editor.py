@@ -112,6 +112,29 @@ def main():
             assert path.read_bytes()==disk and not peer.state()['dirty']
             capture(s,'bar-editor-desktop',output['name'])
             passed('opening-is-read-only-and-unavailable-plugin-is-retained')
+            def bar_mode():
+                return json.loads(peer.document())['bar']['mode']
+            def live_bar():
+                return next(o for o in ctl(s,args.ctl,'status')['result']['outputs'] if o['id'] == output['id'])
+            click(s, ipc, 'bar.mode'); keys(s, 'End', 'Return'); ready(s, ipc)
+            assert bar_mode() == 'autohide'
+            assert live_bar()['bar_mode'] == 'always' and path.read_bytes() == disk
+            click(s, ipc, 'discard'); ready(s, ipc)
+            assert bar_mode() == 'always'
+            click(s, ipc, 'bar.mode'); keys(s, 'End', 'Return'); ready(s, ipc)
+            click(s, ipc, 'apply'); ready(s, ipc)
+            wait_for(lambda: live_bar()['bar_mode'] == 'autohide')
+            assert json.loads(path.read_text())['bar']['mode'] == 'autohide'
+            assert json.loads(path.read_text())['outputs'] == baseline['outputs']
+            request(s, ipc, page='appearance'); ready(s, ipc)
+            request(s, ipc, page='bar'); ready(s, ipc)
+            assert bar_mode() == 'autohide'
+            capture(s, 'bar-autohide-settings', output['name'])
+            click(s, ipc, 'bar.mode'); keys(s, 'Home', 'Return'); ready(s, ipc)
+            click(s, ipc, 'apply'); ready(s, ipc)
+            wait_for(lambda: live_bar()['bar_exclusive_zone'] == live_bar()['bar_size'])
+            disk = path.read_bytes()
+            passed('bar-autohide-draft-discard-apply-override-and-reopen')
             def icon_state():
                 return ctl(s,args.ctl,'aqueous','status','--text','test-bar-layout:' + output['id'])['result']
             # Opacity uses the shared draft, and the scale and spin share a value.

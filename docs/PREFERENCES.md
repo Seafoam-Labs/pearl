@@ -47,6 +47,18 @@ Pearl. The implementation uses Zig 0.16.0 and the pinned Ghostty GTK/GIO binding
 
 ## Standalone editor
 
+**Bar & dock → Bar visibility** offers **Always visible** (default) and
+**Autohide**. Autohide reveals the bar at its screen edge and hides it 450 ms
+after the pointer leaves. An open Pearl flyout keeps its output's bar visible.
+Applications use the full available work area even while the bar is revealed.
+Choose a mode, then **Apply & save**; Discard leaves the live bar unchanged.
+
+The JSON field is `bar.mode`, accepting `always` or `autohide`. Missing fields
+default to `always`. An `outputs[].bar` object replaces the entire default bar:
+if that object omits `mode`, that display uses `always`, even if `bar.mode` is
+`autohide`. Edit display overrides in Advanced. Visibility changes apply live
+and survive restart. See [the implementation plan](BAR_AUTOHIDE_IMPLEMENTATION_PLAN.md).
+
 The Zig `pearl-settings --page appearance` application edits the same session-owned
 Pearl draft as the shell preference popup. Advanced exposes the full JSON,
 including output overrides, pinned applications and export templates. Use **Apply & save** to save all

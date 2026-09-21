@@ -9,6 +9,7 @@ const a = std.heap.c_allocator;
 const Spec = struct { path: []const u8, label: [:0]const u8, kind: enum { text, number, percent, toggle, choice }, choices: []const [:0]const u8 = &.{}, min: f64 = 0, max: f64 = 86400 };
 const edges: []const [:0]const u8 = &.{ "top", "bottom", "left", "right" };
 const bar_fields = [_]Spec{
+    .{ .path = "bar.mode", .label = "Bar visibility", .kind = .choice, .choices = &.{ "always", "autohide" } },
     .{ .path = "bar.edge", .label = "Bar edge", .kind = .choice, .choices = edges },
     .{ .path = "bar.size", .label = "Bar size", .kind = .number, .min = 32, .max = 160 },
     .{ .path = "bar.islands", .label = "Separate bar islands", .kind = .toggle },
@@ -77,6 +78,10 @@ pub const View = struct {
                         names[0] = "Automatic";
                         names[1] = "Custom";
                     }
+                    if (std.mem.eql(u8, spec.path, "bar.mode")) {
+                        names[0] = "Always visible";
+                        names[1] = "Autohide";
+                    }
                     break :blk gtk.DropDown.newFromStrings(@ptrCast(&names)).as(gtk.Widget);
                 },
             };
@@ -85,6 +90,11 @@ pub const View = struct {
             w.name(widget, spec.label);
             row.insert(widget, -1);
             card.append(row.as(gtk.Widget));
+            if (std.mem.eql(u8, spec.path, "bar.mode")) {
+                const hint = w.label("Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority.", "pearl-secondary");
+                hint.setWrap(1);
+                card.append(hint.as(gtk.Widget));
+            }
             field.* = .{ .view = self, .spec = spec, .widget = widget, .signal = 0 };
             if (spec.kind == .percent) {
                 const slider = gtk.Scale.new(.horizontal, object.ext.cast(gtk.SpinButton, widget).?.getAdjustment());

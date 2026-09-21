@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "checks": {
+    "legacy-visible-reservation": true,
+    "top-True-edge-delay-reservation": true,
+    "bottom-True-edge-delay-reservation": true,
+    "left-True-edge-delay-reservation": true,
+    "right-True-edge-delay-reservation": true,
+    "top-False-edge-delay-reservation": true,
+    "bottom-False-edge-delay-reservation": true,
+    "left-False-edge-delay-reservation": true,
+    "right-False-edge-delay-reservation": true,
+    "real-maximized-window-fills-output-without-reveal-resize": true,
+    "fullscreen-real-click-popup-hold": true,
+    "anchored-popup-placement-holds-and-output-replacement": true,
+    "centered-popup-preserves-size-and-position": true,
+    "session-inhibition-and-recovery": true,
+    "scaled-rotated-negative-origin-reveal": true,
+    "frame-ownership-and-cli-sizing-without-reservation": true,
+    "hidden-controls-and-island-gaps-pass-input-through": true,
+    "complete-output-override-defaults": true,
+    "always-mode-restores-measured-reservation": true,
+    "restart-remap-and-clean-shutdown": true
+  },
+  "binaries": {
+    "pearl": "c6d386be7db8845b52567e9b04b38b6ba33f997861fb700e34f3ad29dd3682fa",
+    "ctl": "44d0550934db052ca39a2bbfa0be6b108b760632e3be299f3b39fffe6e38192b"
+  },
+  "limitations": [
+    "Output removal skipped: this compositor build asserts in OutputManager.validateConfigCoordinates. Run against the surface-test baseline without --skip-hotplug."
+  ]
+}

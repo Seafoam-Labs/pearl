@@ -36,7 +36,7 @@ pub const Wallpaper = struct {
 };
 pub const Dock = @import("../desktop/dock_policy.zig").Config;
 pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
-pub const Bar = struct { background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
+pub const Bar = struct { mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
 pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
@@ -244,6 +244,25 @@ test "application launcher preferences default empty and roundtrip distinct IDs"
     const again = try parse(alloc, try std.json.Stringify.valueAlloc(alloc, prefs, .{}));
     try std.testing.expectEqualStrings("Custom.desktop", again.application_launchers[0].desktop_id);
     try std.testing.expectEqualStrings("Custom.desktop", again.pinned_apps[0]);
+}
+
+test "bar autohide defaults, complete output overrides and strict parsing" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    try std.testing.expectEqual(.always, (try parse(alloc, "{}")).bar.mode);
+    const text =
+        \\{"bar":{"mode":"autohide"},"outputs":[{"connector":"DP-1","bar":{}},{"connector":"DP-2","bar":{"mode":"autohide"}}]}
+    ;
+    const prefs = try parse(alloc, text);
+    try std.testing.expectEqual(.autohide, prefs.forOutput("DP-3").mode);
+    try std.testing.expectEqual(.always, prefs.forOutput("DP-1").mode);
+    try std.testing.expectEqual(.autohide, prefs.forOutput("DP-2").mode);
+    const roundtrip = try parse(alloc, try std.json.Stringify.valueAlloc(alloc, prefs, .{}));
+    try std.testing.expectEqualDeep(prefs, roundtrip);
+    for ([_][]const u8{ "{\"bar\":{\"mode\":\"intelligent\"}}", "{\"bar\":{\"mode\":true}}", "{\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{\"mode\":\"invalid\"}}]}" }) |invalid| {
+        if (parse(alloc, invalid)) |_| return error.InvalidModeAccepted else |_| {}
+    }
 }
 
 test "bar opacity preserves legacy defaults, overrides and strict validation" {

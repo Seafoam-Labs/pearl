@@ -3,6 +3,7 @@ const std = @import("std");
 pub const Edge = enum { top, right, bottom, left };
 pub const Rect = struct { x: i32, y: i32, width: i32, height: i32 };
 pub const Reservation = struct {
+    // Edge ownership and measured bar thickness remain valid even without a zone.
     bar_edge: Edge = .top,
     bar_size: u16 = 48,
     frames: [4]u16 = .{ 0, 0, 0, 0 },
@@ -18,6 +19,38 @@ pub const Reservation = struct {
         self.frames[@intFromEnum(edge)] = size;
     }
 };
+/// Intersect usable space with the space beyond the bar, without double subtraction.
+pub fn withBarFootprint(bounds: Rect, usable: Rect, edge: Edge, thickness: u16) Rect {
+    var result = usable;
+    switch (edge) {
+        .top => {
+            const top = @max(usable.y, @min(usable.y + usable.height - 1, bounds.y + thickness));
+            result.height -= top - usable.y;
+            result.y = top;
+        },
+        .left => {
+            const left = @max(usable.x, @min(usable.x + usable.width - 1, bounds.x + thickness));
+            result.width -= left - usable.x;
+            result.x = left;
+        },
+        .bottom => result.height = @max(1, @min(usable.height, bounds.y + bounds.height - thickness - usable.y)),
+        .right => result.width = @max(1, @min(usable.width, bounds.x + bounds.width - thickness - usable.x)),
+    }
+    return result;
+}
+
+test "bar footprint intersects existing reservations on all edges" {
+    const t = std.testing;
+    const bounds: Rect = .{ .x = -800, .y = -100, .width = 800, .height = 600 };
+    for (std.enums.values(Edge)) |edge| {
+        const usable = withBarFootprint(bounds, bounds, edge, 64);
+        try t.expectEqual(usable, withBarFootprint(bounds, usable, edge, 64));
+        try t.expectEqual(@as(i32, if (edge == .left or edge == .right) 736 else 800), usable.width);
+        try t.expectEqual(@as(i32, if (edge == .top or edge == .bottom) 536 else 600), usable.height);
+    }
+    const tiny: Rect = .{ .x = 0, .y = 0, .width = 20, .height = 20 };
+    try t.expectEqual(@as(i32, 1), withBarFootprint(tiny, tiny, .top, 64).height);
+}
 /// Aqueous geometry is global logical; layer margins are output-local logical.
 /// Clamp first, then translate. Scale/rotation are already reflected in bounds.
 pub fn popup(bounds: Rect, usable: Rect, width: i32, height: i32) Rect {

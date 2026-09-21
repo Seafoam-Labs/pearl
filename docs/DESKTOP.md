@@ -1,5 +1,13 @@
 # First desktop slice (T06)
 
+The bar supports optional **Autohide** in **Settings → Bar & dock → Bar
+visibility**. Move the pointer to its screen edge to reveal it; the bar hides
+450 ms after leaving unless a Pearl popup or bar gesture keeps it open. Autohide
+works on every edge and overlays applications without resizing them. Existing
+launcher and flyout commands still work while the bar is hidden. See
+[preferences](PREFERENCES.md#standalone-editor) for Apply/Discard and display
+override behavior.
+
 [T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
 dock behavior, split bar sections and matching native input/blur regions.
 

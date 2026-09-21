@@ -11,6 +11,8 @@ const adapter = @import("../../aqueous/client.zig");
 const protocol = @import("../../cli/protocol.zig");
 const policy = @import("policy.zig");
 const Bar = @import("../../desktop/bar.zig");
+const BarVisibility = @import("../../desktop/bar_visibility.zig");
+const BarAutohide = @import("../../desktop/bar_autohide.zig").Controller;
 const Osd = @import("osd.zig");
 const Apps = @import("../../desktop/apps.zig");
 const Running = @import("../../desktop/running_apps.zig");
@@ -36,6 +38,7 @@ const Surface = struct {
     effects: native.Surface = undefined,
     edge: Edge = .top,
     bar: ?*Bar.Bar = null,
+    autohide: ?*BarAutohide = null,
     launcher: ?*Launcher = null,
     launcher_picker: ?*LauncherPicker.View = null,
     running_apps: ?*Running.Chooser = null,
@@ -51,6 +54,8 @@ const Surface = struct {
     measure_signal: c_ulong = 0,
     measure_clock: ?*gdk.FrameClock = null,
     fn destroy(self: *Surface) void {
+        if (self.autohide) |controller| controller.destroy();
+        self.autohide = null;
         if (self.aqueous_settings) |view| view.destroy();
         if (self.settings) |view| view.destroy();
         if (self.notifications) |view| view.destroy();
@@ -376,6 +381,10 @@ pub const Manager = struct {
         const gate = self.lifecycle.gate;
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
         const locked = (if (self.activity) |broker| broker.inhibited() else false) or !matched or self.client.availability != .ready or !gate.available or !gate.active or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
+        for (self.outputs.items) |output| if (output.bar) |surface| if (surface.autohide) |controller| controller.inhibit(self.barInhibited());
+        // A lock request may originate inside a flyout button callback. Revoke
+        // reveal immediately, but destroy that callback's view from syncIdle.
+        if (self.barInhibited() and self.popup != null) self.schedule();
         self.night_light.interactive = !locked;
         self.clipboard.setLocked(locked);
         self.capture.setLocked(locked);
@@ -495,6 +504,11 @@ pub const Manager = struct {
         const current = Osd.Volume.from(device);
         return self.audio.ready and volume.sameDevice(&current);
     }
+    fn barInhibited(self: *Manager) bool {
+        const gate = self.lifecycle.gate;
+        const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
+        return (if (self.activity) |broker| broker.inhibited() else false) or !matched or self.client.availability != .ready or (self.lifecycle.session_id.len != 0 and (!gate.available or !gate.active)) or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
+    }
     fn osdAllowed(self: *Manager) bool {
         if (!self.running or self.client.availability != .ready) return false;
         const session = self.client.model.get(.session, "session") orelse return false;
@@ -544,7 +558,9 @@ pub const Manager = struct {
         const output = surface.output;
         // A zero exclusive zone already places the surface inside the compositor's
         // usable area. Adding our reservation again would double the bottom gap.
-        layer.setMargin(surface.window, .bottom, @min(24, @max(0, output.usable.height - 100)));
+        const clearance = barPlacementBounds(output);
+        const extra = (output.usable.y + output.usable.height) - (clearance.y + clearance.height);
+        layer.setMargin(surface.window, .bottom, @min(24 + extra, @max(0, output.usable.height - 100)));
         surface.window.setDefaultSize(@max(1, @min(320, output.usable.width - 32)), -1);
     }
     fn showOsd(self: *Manager, output: *Output, content: Osd.Content, duration: u32) !void {
@@ -685,6 +701,7 @@ pub const Manager = struct {
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
         if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
         self.syncClipboardPrivacy();
+        if (self.barInhibited()) self.hidePopup();
         if (!self.osdAllowed()) self.hideOsd();
         if (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or (self.lifecycle.session_id.slice().len != 0 and !self.lifecycle.gate.active)) self.hideIdentifiers();
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
@@ -741,6 +758,8 @@ pub const Manager = struct {
                 errdefer o.monitor.unref();
                 o.wallpaper = try self.create(o, .wallpaper);
                 errdefer o.wallpaper.?.destroy();
+                const bar_pref = self.preferences.prefs().forOutput(o.connector);
+                try o.reservations.bar(bar_pref.edge, bar_pref.size);
                 o.bar = try self.create(o, .bar);
                 errdefer o.bar.?.destroy();
                 o.dock = try @import("../../desktop/dock.zig").Dock.create(self.app, o.monitor, &self.effects, self.client, &self.index, &self.preferences, o.id, self, appsChanged);
@@ -760,11 +779,13 @@ pub const Manager = struct {
                 sizeEdge(o.bar.?, pref.edge, pref.size);
                 try o.bar.?.bar.?.launcher_icon.want(pref.launcher_icon, false);
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
+                if (o.bar.?.bar.?.islands != pref.islands) if (o.bar.?.autohide) |controller| controller.clearGesture();
                 o.bar.?.bar.?.setIslands(pref.islands);
                 const content = try std.json.Stringify.valueAlloc(a, .{ .groups = pref.groups, .plugins = self.preferences.prefs().plugins }, .{});
                 defer a.free(content);
                 const content_hash = std.hash.Wyhash.hash(0, content);
                 if (o.bar_content_hash == null or o.bar_content_hash.? != content_hash) {
+                    if (o.bar.?.autohide) |controller| controller.clearGesture();
                     try o.bar.?.bar.?.configure(pref.groups);
                     o.bar_content_hash = content_hash;
                 }
@@ -788,6 +809,15 @@ pub const Manager = struct {
             const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active));
             if (dock_locked and (self.pane == .running_apps or self.pane == .launcher_picker)) self.hidePopup();
             if (suspendTasks(o)) |host| host.setSensitive(@intFromBool(!dock_locked));
+            if (o.bar.?.autohide) |controller| {
+                var fullscreen = false;
+                var windows = self.client.model.entities.valueIterator();
+                while (windows.next()) |entity_| if (entity_.* == .window) {
+                    const win = entity_.window;
+                    if (win.visible and !win.minimized and win.fullscreen and win.output != null and std.mem.eql(u8, win.output.?, o.id)) fullscreen = true;
+                };
+                controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen);
+            }
             if (o.dock) |dock| try dock.update(self.preferences.prefs().dockForOutput(o.connector), o.reservations.bar_edge, bounds, dock_locked);
             try self.syncPluginOverlays(o, dock_locked);
             if (self.osd) |surface| if (surface.output == o) positionOsd(surface);
@@ -994,14 +1024,16 @@ pub const Manager = struct {
         const effect_panel = if (kind == .popup and s.viewport != null) s.viewport.?.as(gtk.Widget) else panel_widget;
         try s.effects.init(&self.effects, window, effect_panel, kind == .bar or kind == .popup or kind == .osd or kind == .notification, if (kind == .popup) .full else if (kind == .bar or kind == .notification) .panel else .empty);
         if (s.bar) |bar| s.effects.islands = if (bar.islands) &bar.sections else null;
-        if (kind != .popup and kind != .osd and kind != .frame and kind != .notification) window.present();
         if (kind == .bar) {
-            if (window.as(gtk.Widget).getFrameClock()) |clock| {
-                _ = clock.ref();
-                s.measure_clock = clock;
-                s.measure_signal = gdk.FrameClock.signals.after_paint.connect(clock, *Surface, measured, s, .{});
-            }
-        }
+            _ = gtk.Widget.signals.map.connect(window.as(gtk.Widget), *Surface, barMapped, s, .{});
+            s.autohide = BarAutohide.create(window, output.monitor, s, barVisibilityChanged) catch |err| blk: {
+                std.log.err("event=bar-autohide-unavailable error={s}", .{@errorName(err)});
+                break :blk null;
+            };
+            if (s.autohide) |controller| {
+                controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false);
+            } else window.present();
+        } else if (kind != .popup and kind != .osd and kind != .frame and kind != .notification) window.present();
         return s;
     }
     fn selected(self: *Manager, id: ?[]const u8) !*Output {
@@ -1108,6 +1140,7 @@ pub const Manager = struct {
         return self.showPaneAt(output, pane, .overview);
     }
     fn showPaneAt(self: *Manager, output: *Output, pane: Bar.Pane, page: navigation.Route) !void {
+        if (self.barInhibited()) return error.Locked;
         if ((pane == .running_apps or pane == .launcher_picker) and (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or self.auth.request != null)) return error.Locked;
         if (pane == .clipboard_capture) {
             self.syncClipboardPrivacy();
@@ -1122,6 +1155,7 @@ pub const Manager = struct {
         self.settings_page = if (pane == .control) page else null;
         errdefer self.settings_page = null;
         self.popup = try self.create(output, .popup);
+        if (output.bar.?.autohide) |controller| controller.holdPopup(true);
         self.positionPopup();
         self.popup.?.window.present();
         if (@import("build_options").test_hooks and pane != .launcher and pane != .calendar) {
@@ -1145,10 +1179,12 @@ pub const Manager = struct {
         const s = self.popup orelse return;
         const o = s.output;
         const prefs = self.preferences.prefs().popup;
-        var rect = if (self.pane == .launcher or self.pane == .launcher_picker) policy.popup(o.bounds, o.usable, 620, 600) else policy.anchored(o.bounds, o.usable, if ((self.pane == .settings or self.pane == .aqueous_settings)) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else 440, if ((self.pane == .settings or self.pane == .aqueous_settings)) 720 else if (self.pane == .calendar) 480 else 560, o.reservations.bar_edge, self.pane != .calendar);
-        const width = @min(rect.width, prefs.max_width);
-        const height = @min(rect.height, prefs.max_height);
-        rect = if (prefs.placement == .centered or self.pane == .launcher or self.pane == .launcher_picker) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, o.usable, width, height, o.reservations.bar_edge, self.pane != .calendar);
+        const launcher = self.pane == .launcher or self.pane == .launcher_picker;
+        const settings = self.pane == .settings or self.pane == .aqueous_settings;
+        const centered = prefs.placement == .centered or launcher;
+        const width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else 440), prefs.max_width);
+        const height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else 560), prefs.max_height);
+        const rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;
         const positioned = if (s.viewport) |viewport| viewport.as(gtk.Widget) else s.panel;
@@ -1161,6 +1197,7 @@ pub const Manager = struct {
             self.popup = null;
             self.settings_page = null;
             self.popup_rect = null;
+            if (s.output.bar.?.autohide) |controller| controller.holdPopup(false);
             if (self.layout) |*layout| layout.cancel();
             s.destroy();
             self.positionNotifications();
@@ -1172,8 +1209,11 @@ pub const Manager = struct {
         const left = self.popup != null;
         layer.setAnchor(s.window, .right, @intFromBool(!left));
         layer.setAnchor(s.window, .left, @intFromBool(left));
-        layer.setMargin(s.window, .right, if (left) 0 else 16);
-        layer.setMargin(s.window, .left, if (left) 16 else 0);
+        const usable = s.output.usable;
+        const clearance = barPlacementBounds(s.output);
+        layer.setMargin(s.window, .top, 16 + clearance.y - usable.y);
+        layer.setMargin(s.window, .right, if (left) 0 else 16 + usable.x + usable.width - clearance.x - clearance.width);
+        layer.setMargin(s.window, .left, if (left) 16 + clearance.x - usable.x else 0);
     }
     fn hideNotifications(self: *Manager) void {
         if (self.notification) |s| {
@@ -1337,6 +1377,11 @@ pub const Manager = struct {
             const popup = self.popup orelse return error.Unavailable;
             const viewport = if (popup.viewport) |v| v.as(gtk.Widget) else popup.panel;
             return std.json.Stringify.valueAlloc(alloc, .{ .focus = @import("../../desktop/aqueous_settings.zig").View.focusName(popup.window), .width = viewport.getWidth(), .height = viewport.getHeight(), .content_width = popup.panel.getWidth(), .limit = self.popup_rect }, .{});
+        }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.startsWith(u8, request.text orelse "", "test-bar-autohide:")) {
+            const output = try self.selected(request.text.?["test-bar-autohide:".len..]);
+            const c = output.bar.?.autohide orelse return error.Unavailable;
+            return std.json.Stringify.valueAlloc(alloc, .{ .state = c.state, .sensor_mapped = c.sensor.as(gtk.Widget).getMapped() != 0, .sensor_width = c.sensor.as(gtk.Widget).getWidth(), .sensor_height = c.sensor.as(gtk.Widget).getHeight(), .bar_mapped = c.window.as(gtk.Widget).getMapped() != 0, .layer = @tagName(layer.getLayer(c.window)), .keyboard_mode = @tagName(layer.getKeyboardMode(c.window)) }, .{});
         }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and (std.mem.eql(u8, request.text orelse "", "test-bar-layout") or std.mem.startsWith(u8, request.text orelse "", "test-bar-layout:"))) {
             if (self.outputs.items.len == 0) return error.Unavailable;
@@ -1567,6 +1612,7 @@ pub const Manager = struct {
                 const s = o.bar.?;
                 s.edge = request.edge.?;
                 sizeEdge(s, s.edge, request.size.?);
+                if (s.autohide) |controller| controller.configure(controller.state.mode, s.edge, request.size.?, controller.state.inhibited, controller.fullscreen);
             },
             .frame_set => {
                 const o = try self.selected(request.output);
@@ -1628,9 +1674,9 @@ pub const Manager = struct {
         return value[0..end];
     }
     fn status(self: *Manager, alloc: std.mem.Allocator) ![]const u8 {
-        const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, frames: [4]u16, islands: bool, island_rects: [3]?Rect, dock: struct { reason: @import("../../desktop/dock_policy.zig").Reason, groups: usize, truncated: bool, rect: Rect, edge: Edge } };
+        const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, bar_mode: BarVisibility.Mode, bar_visible: bool, bar_visibility_reason: BarVisibility.Reason, bar_sensor_visible: bool, bar_exclusive_zone: i32, frames: [4]u16, islands: bool, island_rects: [3]?Rect, dock: struct { reason: @import("../../desktop/dock_policy.zig").Reason, groups: usize, truncated: bool, rect: Rect, edge: Edge } };
         var items: std.ArrayList(Item) = .empty;
-        for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .frames = o.reservations.frames, .islands = o.bar.?.bar.?.islands, .island_rects = o.bar.?.effects.last_shapes, .dock = .{ .reason = o.dock.?.reason, .groups = o.dock.?.count, .truncated = o.dock.?.truncated, .rect = o.dock.?.rect, .edge = o.dock.?.config.edge } });
+        for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .bar_mode = if (o.bar.?.autohide) |c| c.state.mode else .always, .bar_visible = o.bar.?.window.as(gtk.Widget).getVisible() != 0, .bar_visibility_reason = if (o.bar.?.autohide) |c| c.state.reason else .always, .bar_sensor_visible = if (o.bar.?.autohide) |c| c.sensor.as(gtk.Widget).getVisible() != 0 else false, .bar_exclusive_zone = layer.getExclusiveZone(o.bar.?.window), .frames = o.reservations.frames, .islands = o.bar.?.bar.?.islands, .island_rects = o.bar.?.effects.last_shapes, .dock = .{ .reason = o.dock.?.reason, .groups = o.dock.?.count, .truncated = o.dock.?.truncated, .rect = o.dock.?.rect, .edge = o.dock.?.config.edge } });
         return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .identifying = self.identifiers.items.len, .osd = self.osd != null, .osd_text = self.osd_text.slice(), .osd_detail = self.osdStatus() }, .{});
     }
 };
@@ -1683,7 +1729,7 @@ fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     s.window.setDefaultSize(if (horizontal) 1 else size, if (horizontal) size else 1);
     const content = if (s.kind == .frame) size else size -| 8;
     s.panel.setSizeRequest(if (horizontal) -1 else content, if (horizontal) content else -1);
-    layer.setExclusiveZone(s.window, size);
+    if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, size);
 }
 fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     if (s.settings) |view| view.probe(s.window);
@@ -1692,12 +1738,39 @@ fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     if (s.tray) |view| view.probe(s.window);
     if (s.control) |panel| panel.probe(s.window);
 }
+fn barMapped(_: *gtk.Widget, s: *Surface) callconv(.c) void {
+    if (s.measure_clock) |clock| {
+        if (object.signalHandlerIsConnected(clock.as(object.Object), s.measure_signal) != 0) object.signalHandlerDisconnect(clock.as(object.Object), s.measure_signal);
+        clock.unref();
+        s.measure_clock = null;
+    }
+    if (s.window.as(gtk.Widget).getFrameClock()) |clock| {
+        _ = clock.ref();
+        s.measure_clock = clock;
+        s.measure_signal = gdk.FrameClock.signals.after_paint.connect(clock, *Surface, measured, s, .{});
+    }
+}
+fn barVisibilityChanged(context: *anyopaque) void {
+    const s: *Surface = @ptrCast(@alignCast(context));
+    if (s.manager.popup) |popup| if (popup.output == s.output) s.manager.positionPopup();
+    if (s.manager.osd) |osd| if (osd.output == s.output) Manager.positionOsd(osd);
+    s.manager.positionNotifications();
+}
+fn barPlacementBounds(o: *Output) Rect {
+    const surface = o.bar orelse return o.usable;
+    const controller = surface.autohide orelse return o.usable;
+    if (controller.state.mode != .autohide) return o.usable;
+    return policy.withBarFootprint(o.bounds, o.usable, surface.edge, o.reservations.bar_size);
+}
 fn measured(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     const horizontal = s.edge == .top or s.edge == .bottom;
     const size = if (horizontal) s.window.as(gtk.Widget).getHeight() else s.window.as(gtk.Widget).getWidth();
-    if (size > 0 and size <= 65535 and layer.getExclusiveZone(s.window) != size) {
-        layer.setExclusiveZone(s.window, size);
-        s.output.reservations.bar_size = @intCast(size);
+    if (size > 0 and size <= 65535) {
+        if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, size);
+        if (s.output.reservations.bar_size != size) {
+            s.output.reservations.bar_size = @intCast(size);
+            barVisibilityChanged(s);
+        }
     }
 }
 fn barAction(context: *anyopaque, event: Bar.Event) void {

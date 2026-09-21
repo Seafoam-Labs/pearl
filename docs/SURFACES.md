@@ -88,6 +88,8 @@ Negative origins and rotation do not introduce another scale multiplication.
 | --- | --- | --- | --- |
 | Wallpaper / `pearl:wallpaper` | background | -1, fills output without reserving space | none / empty |
 | Bar / `pearl:bar` | top | measured thickness, default 48 at top | none / rounded panel only |
+| Autohide bar / `pearl:bar` | top; overlay when revealed above fullscreen | -1, no reservation | none / rounded panel or island union while visible |
+| Bar reveal / `pearl:bar-reveal` | overlay | -1, no reservation | none / 2-logical-pixel strip along the configured edge |
 | Popup / `pearl:popup` | overlay | 0 | exclusive while visible / usable-area backdrop |
 | OSD / `pearl:osd` | overlay | 0 | none / empty |
 | Frame / `pearl:frame-exclusion` | top | configured strip thickness | none / empty |
@@ -98,6 +100,22 @@ Frames default to zero and use a transparent texture to ensure GTK attaches a
 buffer: an empty transparent box alone may never map. No full-screen invisible
 reservation surface intercepts desktop input. Killing Pearl releases all zones
 through normal Wayland client destruction.
+
+`bar.mode = "autohide"` unmaps the bar while keeping its content and services.
+Edge entry reveals it immediately; leaving starts a cancellable 450 ms hide
+delay. Principal popups on that output and active bar gestures hold it open.
+Neither the hidden nor revealed autohide bar reserves application work area.
+The bar still owns its configured edge for frame conflicts and dock placement.
+Always visible restores the measured reservation and unmaps the reveal strip.
+Lock, authentication and inactive-session transitions inhibit autohide input;
+output removal destroys the sensor and cancels its timer.
+
+Anchored popups account for the bar footprint without changing Aqueous usable
+bounds or counting existing reservations twice. Centered popups retain centered
+placement. OSD and notifications also leave clearance at the bar edge. Output
+status exposes `bar_mode`, `bar_visible`, `bar_visibility_reason`,
+`bar_sensor_visible` and `bar_exclusive_zone`; `bar_size` remains the measured
+thickness, including when the exclusive zone is `-1`.
 
 The standalone Settings application is a separate xdg toplevel, excluded from the
 shell popup count. Its launch handoff dismisses the compact flyout only after the

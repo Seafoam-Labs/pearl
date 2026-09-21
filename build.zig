@@ -643,6 +643,12 @@ pub fn build(b: *std.Build) void {
     bar_layout.addArtifactArg(ctl);
     if (b.args) |args| bar_layout.addArgs(args);
     b.step("test-bar-layout", "Verify bar thickness and stacked widgets on every edge").dependOn(&bar_layout.step);
+    const bar_autohide = b.addSystemCommand(&.{ "python3", "tests/integration/test_bar_autohide.py", "--pearl" });
+    bar_autohide.addArtifactArg(integration_app);
+    bar_autohide.addArg("--ctl");
+    bar_autohide.addArtifactArg(ctl);
+    if (b.args) |args| bar_autohide.addArgs(args);
+    b.step("test-bar-autohide", "Verify bar reveal, reservations, popup holds and lifecycle in private Aqueous").dependOn(&bar_autohide.step);
 
     const desktop = b.addSystemCommand(&.{ "python3", "tests/integration/test_desktop.py", "--pearl" });
     desktop.addArtifactArg(app);

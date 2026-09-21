@@ -1,0 +1,20 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info: event=app-index-ready entries=162 truncated=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=cdfd4ef1a16bbab2e88d67a20eaa8b83
+info(pearl): event=control-ready session=cdfd4ef1a16bbab2e88d67a20eaa8b83
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=wallpaper-applications-applied generation=2 elapsed_us=1415 success=true
+info: event=preferences-applied revision=1 mode=gtk cache=false
+info: event=wallpaper-applications-applied generation=3 elapsed_us=482 success=true
+info: event=preferences-applied revision=2 mode=gtk cache=false
+info: event=wallpaper-applications-applied generation=5 elapsed_us=567 success=true
+info(pearl): event=stopping reason=control-quit pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

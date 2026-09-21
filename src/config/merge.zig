@@ -143,3 +143,16 @@ test "bar opacity merges with unrelated changes and conflicts on competing perce
     try std.testing.expectEqual(@as(u8, 50), result.bar.background_opacity.percent);
     try std.testing.expectError(error.MergeConflict, json(a, base, ours, "{\"bar\":{\"background_opacity\":{\"mode\":\"custom\",\"percent\":75}}}"));
 }
+
+test "bar autohide merges independently from layout and preserves display overrides" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const base = "{\"bar\":{\"mode\":\"always\"},\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{}}]}";
+    const ours = "{\"bar\":{\"mode\":\"autohide\"},\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{}}]}";
+    const theirs = "{\"bar\":{\"mode\":\"always\",\"edge\":\"left\"},\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{}}]}";
+    const result = try @import("preferences.zig").parse(a, try json(a, base, ours, theirs));
+    try std.testing.expectEqual(.autohide, result.bar.mode);
+    try std.testing.expectEqual(.left, result.bar.edge);
+    try std.testing.expectEqual(.always, result.forOutput("DP-1").mode);
+}
