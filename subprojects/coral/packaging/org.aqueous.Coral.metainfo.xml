@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.aqueous.Coral</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-Pearl-Unlicensed</project_license>
+  <developer id="org.aqueous"><name>Pearl contributors</name></developer>
+  <url type="homepage">https://github.com/Seafoam-Labs/pearl</url>
+  <content_rating type="oars-1.1"/>
+  <name>Coral</name>
+  <summary>A focused text editor with offline spell checking</summary>
+  <description><p>Edit text in tabs, find and replace, highlight syntax, and check spelling with installed dictionaries.</p></description>
+  <launchable type="desktop-id">org.aqueous.Coral.desktop</launchable>
+  <provides><binary>coral</binary></provides>
+  <releases><release version="0.1.0" date="2026-09-21"/></releases>
+</component>

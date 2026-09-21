@@ -43,9 +43,12 @@ class ReleaseTools(unittest.TestCase):
             write(root,'subprojects/dome/build.zig',{'included':True})
             write(root,'subprojects/dome/src/main.zig',{'included':True})
             write(root,'subprojects/dome/packaging/org.aqueous.Dome.desktop',{'included':True})
+            for member in ('build.zig','src/main.zig','packaging/org.aqueous.Coral.desktop','resources/coral-dark.xml','resources/coral-light.xml'):
+                write(root,f'subprojects/coral/{member}',{'included':True})
             for directory in ('zig-out', 'zig-pkg', '.zig-cache', '.cache', 'artifacts', '__pycache__'):
                 write(root,f'subprojects/phyto/{directory}/local',{'excluded':True})
                 write(root,f'subprojects/dome/{directory}/local',{'excluded':True})
+                write(root,f'subprojects/coral/{directory}/local',{'excluded':True})
             write(root,'subprojects/unrelated/src/main.zig',{'excluded':True})
             first=source.archive(root,Path(t)/'one');write(root,'artifacts/private.json',{'ignored':True});second=source.archive(root,Path(t)/'two')
             with tarfile.open(Path(t)/'one'/first['archive']) as archive:
@@ -54,6 +57,11 @@ class ReleaseTools(unittest.TestCase):
                 self.assertEqual({name for name in archive.getnames() if '/subprojects/' in name}, {
                     'pearl-1/subprojects/phyto/src/main.zig',
                     'pearl-1/subprojects/phyto/packaging/org.aqueous.Phyto.desktop',
+                    'pearl-1/subprojects/coral/build.zig',
+                    'pearl-1/subprojects/coral/src/main.zig',
+                    'pearl-1/subprojects/coral/packaging/org.aqueous.Coral.desktop',
+                    'pearl-1/subprojects/coral/resources/coral-dark.xml',
+                    'pearl-1/subprojects/coral/resources/coral-light.xml',
                     'pearl-1/subprojects/dome/build.zig',
                     'pearl-1/subprojects/dome/src/main.zig',
                     'pearl-1/subprojects/dome/packaging/org.aqueous.Dome.desktop',
@@ -79,26 +87,33 @@ class ReleaseTools(unittest.TestCase):
             license_file.parent.mkdir(parents=True);license_file.write_text('fixture')
             phyto=root/'subprojects/phyto/zig-out/bin/phyto'
             phyto.parent.mkdir(parents=True);phyto.write_bytes(b'Phyto production fixture\n')
-            # Populate both Dome variants so a recipe cannot accidentally install
-            # an executable or launcher from the other build identity.
-            dome=root/'subprojects/dome/zig-out'
-            for git in (False,True):
-                command='dome-git' if git else 'dome'
-                identity='org.aqueous.Dome.Git' if git else 'org.aqueous.Dome'
-                executable=dome/'bin'/command
-                executable.parent.mkdir(parents=True,exist_ok=True)
-                executable.write_bytes(f'{command} production fixture\n'.encode())
-                for source_name,destination in (
-                    ('packaging/org.aqueous.Dome.desktop',f'share/applications/{identity}.desktop'),
-                    ('packaging/org.aqueous.Dome.metainfo.xml',f'share/metainfo/{identity}.metainfo.xml'),
-                    ('resources/org.aqueous.Dome.svg',f'share/icons/hicolor/scalable/apps/{identity}.svg'),
-                ):
-                    content=(ROOT/'subprojects/dome'/source_name).read_text()
-                    content=content.replace('org.aqueous.Dome',identity)
-                    content=content.replace('Exec=dome',f'Exec={command}')
-                    content=content.replace('<binary>dome</binary>',f'<binary>{command}</binary>')
-                    target=dome/destination;target.parent.mkdir(parents=True,exist_ok=True)
-                    target.write_text(content)
+            # Populate both identities so recipes cannot pick up stale outputs
+            # from the opposite variant in a reused source tree.
+            for app in ('dome','coral'):
+                output=root/f'subprojects/{app}/zig-out'
+                for git in (False,True):
+                    command=f'{app}-git' if git else app
+                    base=f'org.aqueous.{app.title()}'
+                    identity=f'{base}.Git' if git else base
+                    executable=output/'bin'/command
+                    executable.parent.mkdir(parents=True,exist_ok=True)
+                    executable.write_bytes(f'{command} production fixture\n'.encode())
+                    for source_name,destination in (
+                        (f'packaging/{base}.desktop',f'share/applications/{identity}.desktop'),
+                        (f'packaging/{base}.metainfo.xml',f'share/metainfo/{identity}.metainfo.xml'),
+                        (f'resources/{base}.svg',f'share/icons/hicolor/scalable/apps/{identity}.svg'),
+                    ):
+                        content=(ROOT/f'subprojects/{app}'/source_name).read_text()
+                        content=content.replace(base,identity)
+                        content=content.replace(f'Exec={app}',f'Exec={command}')
+                        content=content.replace(f'<binary>{app}</binary>',f'<binary>{command}</binary>')
+                        target=output/destination;target.parent.mkdir(parents=True,exist_ok=True)
+                        target.write_text(content)
+                    if app=='coral':
+                        for theme in ('dark','light'):
+                            target=output/f'share/{command}/styles/coral-{theme}.xml'
+                            target.parent.mkdir(parents=True,exist_ok=True)
+                            shutil.copy2(ROOT/f'subprojects/coral/resources/coral-{theme}.xml',target)
             for example in ('timer-c','counter-zig','counter-rust','companion-c'):
                 for member in ('plugin.json','plugin.wasm'):
                     write(root,f'.cache/plugin-examples/{example}/{member}',{})
@@ -130,23 +145,32 @@ class ReleaseTools(unittest.TestCase):
                         self.assertFalse((stage/'usr/share/icons/hicolor/scalable/apps/org.aqueous.Phyto.svg').exists())
                     if shutil.which('desktop-file-validate'):
                         subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True)
-                    command='dome-git' if git else 'dome'
-                    identity='org.aqueous.Dome.Git' if git else 'org.aqueous.Dome'
-                    opposite='org.aqueous.Dome' if git else 'org.aqueous.Dome.Git'
-                    installed=stage/'usr/bin'/command
-                    self.assertEqual(installed.read_bytes(),(dome/'bin'/command).read_bytes())
-                    self.assertEqual(installed.stat().st_mode&0o7777,0o755)
-                    self.assertFalse((stage/'usr/bin'/('dome' if git else 'dome-git')).exists())
-                    desktop=stage/f'usr/share/applications/{identity}.desktop'
-                    for line in (f'Exec={command}',f'Icon={identity}'):
-                        self.assertIn(line,desktop.read_text().splitlines())
-                    for directory,extension in (('applications','desktop'),('icons/hicolor/scalable/apps','svg'),('metainfo','metainfo.xml')):
-                        self.assertTrue((stage/f'usr/share/{directory}/{identity}.{extension}').is_file())
-                        self.assertFalse((stage/f'usr/share/{directory}/{opposite}.{extension}').exists())
-                    metadata=ET.parse(stage/f'usr/share/metainfo/{identity}.metainfo.xml').getroot()
-                    self.assertEqual(metadata.findtext('id'),identity)
-                    self.assertEqual(metadata.findtext('launchable'),f'{identity}.desktop')
-                    self.assertEqual(metadata.findtext('provides/binary'),command)
-                    if shutil.which('desktop-file-validate'):
-                        subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True)
+                    for app in ('dome','coral'):
+                        command=f'{app}-git' if git else app
+                        other_command=app if git else f'{app}-git'
+                        base=f'org.aqueous.{app.title()}'
+                        identity=f'{base}.Git' if git else base
+                        opposite=base if git else f'{base}.Git'
+                        installed=stage/'usr/bin'/command
+                        self.assertEqual(installed.read_bytes(),(root/f'subprojects/{app}/zig-out/bin'/command).read_bytes())
+                        self.assertEqual(installed.stat().st_mode&0o7777,0o755)
+                        self.assertFalse((stage/'usr/bin'/other_command).exists())
+                        desktop=stage/f'usr/share/applications/{identity}.desktop'
+                        arguments=' %F' if app=='coral' else ''
+                        for line in (f'Exec={command}{arguments}',f'Icon={identity}'):
+                            self.assertIn(line,desktop.read_text().splitlines())
+                        for directory,extension in (('applications','desktop'),('icons/hicolor/scalable/apps','svg'),('metainfo','metainfo.xml')):
+                            self.assertTrue((stage/f'usr/share/{directory}/{identity}.{extension}').is_file())
+                            self.assertFalse((stage/f'usr/share/{directory}/{opposite}.{extension}').exists())
+                        metadata=ET.parse(stage/f'usr/share/metainfo/{identity}.metainfo.xml').getroot()
+                        self.assertEqual(metadata.findtext('id'),identity)
+                        self.assertEqual(metadata.findtext('launchable'),f'{identity}.desktop')
+                        self.assertEqual(metadata.findtext('provides/binary'),command)
+                        if app=='coral':
+                            for theme in ('dark','light'):
+                                self.assertEqual((stage/f'usr/share/{command}/styles/coral-{theme}.xml').read_bytes(),
+                                                 (ROOT/f'subprojects/coral/resources/coral-{theme}.xml').read_bytes())
+                            self.assertFalse((stage/f'usr/share/{other_command}').exists())
+                        if shutil.which('desktop-file-validate'):
+                            subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True)
 if __name__=='__main__':unittest.main()

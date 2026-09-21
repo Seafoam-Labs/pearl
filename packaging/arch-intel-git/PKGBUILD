@@ -3,14 +3,15 @@
 # installation.
 pkgname=pearl-intel-git
 pkgver=1.0.0rc2.r22.ga002d24
-pkgrel=6
+pkgrel=7
 pkgdesc='GTK desktop shell exclusively for Aqueous (Intel baseline, Git version)'
 arch=('x86_64')
 url='https://github.com/Seafoam-Labs/pearl'
 license=('LicenseRef-Pearl-Unlicensed')
 provides=("pearl-git=$pkgver")
 conflicts=('pearl-git')
-depends=('curl' 'libarchive' 'libpng' 'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
+depends=('curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant' 'hunspell'
+         'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
          'libpulse>=17.0' 'pam>=1.7.2' 'polkit>=127' 'glibc>=2.44'
          'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
          'cairo>=1.18.4' 'systemd>=261.3' 'aqueous>0.7' 'uwsm>=0.26.7')
@@ -23,6 +24,7 @@ makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3
              'rust' 'rust-wasm' 'librsvg')
 optdepends=('gvfs: Trash, remote locations, and administrative filesystems in Phyto'
             'file-roller: archive context menu actions in Phyto'
+            'hunspell-en_us: English spelling dictionary for Coral (other Enchant dictionaries supported)'
             'nvidia-utils: optional NVIDIA GPU metrics in Dome'
             'qtengine: shared Qt 5/6 application appearance management'
             'pearl-darkly-style: Darkly Qt application styles without KWin decorations'
@@ -83,6 +85,8 @@ build() {
     zig build -Doptimize=ReleaseSafe -Dcpu=baseline
     cd ../dome
     zig build -Doptimize=ReleaseSafe -Dcpu=baseline -Dgit-variant=true
+    cd ../coral
+    zig build -Doptimize=ReleaseSafe -Dcpu=baseline -Dgit-variant=true
 }
 
 check() {
@@ -95,12 +99,25 @@ check() {
     zig build test -Doptimize=ReleaseSafe -Dcpu=baseline
     cd ../dome
     zig build test -Doptimize=ReleaseSafe -Dcpu=baseline
+    cd ../coral
+    zig build test -Doptimize=ReleaseSafe -Dcpu=baseline -Dgit-variant=true
 }
 
 package() {
     cd "$srcdir/pearl"
     PEARL_PLUGIN_EXAMPLES_DIR="$PWD/.cache/plugin-examples" \
         DESTDIR="$pkgdir" bash packaging/install.sh
+    install -Dm755 subprojects/coral/zig-out/bin/coral-git "$pkgdir/usr/bin/coral-git"
+    install -Dm644 subprojects/coral/zig-out/share/applications/org.aqueous.Coral.Git.desktop \
+        "$pkgdir/usr/share/applications/org.aqueous.Coral.Git.desktop"
+    install -Dm644 subprojects/coral/zig-out/share/metainfo/org.aqueous.Coral.Git.metainfo.xml \
+        "$pkgdir/usr/share/metainfo/org.aqueous.Coral.Git.metainfo.xml"
+    install -Dm644 subprojects/coral/zig-out/share/icons/hicolor/scalable/apps/org.aqueous.Coral.Git.svg \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.aqueous.Coral.Git.svg"
+    install -Dm644 subprojects/coral/zig-out/share/coral-git/styles/coral-dark.xml \
+        "$pkgdir/usr/share/coral-git/styles/coral-dark.xml"
+    install -Dm644 subprojects/coral/zig-out/share/coral-git/styles/coral-light.xml \
+        "$pkgdir/usr/share/coral-git/styles/coral-light.xml"
     install -Dm755 subprojects/dome/zig-out/bin/dome-git "$pkgdir/usr/bin/dome-git"
     install -Dm644 subprojects/dome/zig-out/share/applications/org.aqueous.Dome.Git.desktop \
         "$pkgdir/usr/share/applications/org.aqueous.Dome.Git.desktop"

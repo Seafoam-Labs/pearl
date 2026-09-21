@@ -55,6 +55,17 @@ AppStream metadata and icon. Release packages provide `dome` with application ID
 and excludes its caches and generated artifacts. `nvidia-utils` is optional for
 NVIDIA metrics; Dome runs without it. Installation does not launch Dome.
 
+All three recipes build and test [Coral](../subprojects/coral/README.md) with
+ReleaseSafe and the baseline CPU, installing its executable, desktop launcher,
+AppStream metadata, icon, and both editor color schemes. Release packages supply
+`coral` (`org.aqueous.Coral`); Git packages supply `coral-git`
+(`org.aqueous.Coral.Git`), with styles under `share/coral` and `share/coral-git`
+respectively. `gtksourceview5`, `enchant`, and the `hunspell` provider are runtime
+dependencies;
+`hunspell-en_us` is an optional English dictionary. Other Enchant dictionaries
+are supported. The release archive includes Coral's sources while excluding
+caches and generated artifacts. Installation does not launch Coral.
+
 Separate Intel-compatible generic x86-64 baseline Git packages are available:
 
 - [`pearl-intel-git`](../packaging/arch-intel-git/PKGBUILD)

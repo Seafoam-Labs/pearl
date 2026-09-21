@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coral · Design review</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mockup.js" defer></script>
+</head>
+<body>
+  <header class="review">
+    <div><span class="eyebrow">PEARL / APPLICATION DESIGN</span><h1>Coral <span>A little space to put your thoughts.</span></h1></div>
+    <div class="review-tools">
+      <label class="sr-only" for="scene">Review scenario</label>
+      <select id="scene"><option value="editor">Everyday writing</option><option value="spelling">Spelling suggestions</option><option value="search">Find & replace</option><option value="empty">New document</option><option value="missing">No dictionary</option><option value="conflict">File changed on disk</option><option value="unsaved">Unsaved changes</option><option value="preferences">Preferences</option></select>
+      <button id="theme">Light</button>
+    </div>
+  </header>
+  <main class="window" aria-label="Coral text editor prototype">
+    <header class="titlebar">
+      <div class="brand"><span data-icon="coral"></span>Coral</div>
+      <span class="window-title">Documents / Personal</span>
+      <div class="window-controls" aria-hidden="true"><span>−</span><span>□</span><span>×</span></div>
+    </header>
+    <div class="toolbar">
+      <button id="open"><span data-icon="folder"></span><span>Open</span><kbd>Ctrl O</kbd></button>
+      <div class="toolbar-center"><span class="document-icon" data-icon="document"></span><span id="document-title">a quieter workspace.md</span><span id="dirty-label" class="dirty-dot" aria-label="Unsaved changes"></span></div>
+      <div class="toolbar-actions"><button id="save" class="tonal"><span data-icon="save"></span><span>Save</span></button><span class="separator"></span><button id="search-toggle" class="icon" aria-label="Find and replace" title="Find · Ctrl+F"><span data-icon="search"></span></button><button id="preferences" class="icon" aria-label="Preferences"><span data-icon="settings"></span></button></div>
+    </div>
+    <nav class="tabs" aria-label="Open documents"><div id="tab-list" role="tablist"></div><button id="new" class="icon" aria-label="New document" title="New · Ctrl+N"><span data-icon="plus"></span></button></nav>
+    <section id="searchbar" aria-label="Find and replace" hidden>
+      <div class="search-row"><span data-icon="search"></span><label class="sr-only" for="query">Find text</label><input id="query" placeholder="Find in this document"><span id="match-count" role="status">0 matches</span><button id="match-prev" class="icon" aria-label="Previous match">↑</button><button id="match-next" class="icon" aria-label="Next match">↓</button><button id="search-close" class="icon" aria-label="Close search">×</button></div>
+      <div class="search-row replace-row"><span data-icon="replace"></span><label class="sr-only" for="replacement">Replace with</label><input id="replacement" placeholder="Replace with"><button id="replace-one">Replace</button><button id="replace-all" class="tonal">Replace all</button></div>
+    </section>
+    <div id="banner" role="status" hidden></div>
+    <section class="editor" aria-label="Document workspace">
+      <div id="gutter" aria-hidden="true"></div>
+      <div class="text-area">
+        <pre id="highlight" aria-hidden="true"></pre>
+        <textarea id="editor" aria-label="Document text" spellcheck="false" wrap="soft"></textarea>
+        <div id="empty-hint" hidden><span data-icon="coral"></span><h2>Make room for an idea.</h2><p>Start typing. The rest can wait.</p><span>Untitled document · Plain text</span></div>
+      </div>
+      <section id="spelling-popover" aria-label="Spelling suggestions" hidden></section>
+    </section>
+    <footer class="statusbar"><span id="position">Ln 1, Col 1</span><span id="word-count">0 words</span><span class="status-spacer"></span><button id="spelling-status"><span data-icon="spell"></span><span id="spelling-label">2 spelling suggestions</span></button><span class="encoding">UTF-8 <i>·</i> LF</span><span id="language">Markdown</span></footer>
+  </main>
+  <footer class="review-note"><div><span class="review-number" id="scene-number">01</span><span id="scene-note">Your words, with room to breathe.</span></div><a href="../IMPLEMENTATION_PLAN.md">Read the implementation plan ↗</a><small>Interactive design study · Sample documents and simulated saves · Planned native Zig + GTK4 application</small></footer>
+  <dialog id="modal" aria-labelledby="modal-title"></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

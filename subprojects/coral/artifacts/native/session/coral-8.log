@@ -1,0 +1,19 @@
+
+(coral:477969): libenchant-WARNING **: 12:23:35.132: broker.vala:159: Error loading plugin: libhspell.so.0: cannot open shared object file: No such file or directory
+
+(coral:477969): libenchant-WARNING **: 12:23:35.132: broker.vala:159: Error loading plugin: libnuspell.so.5: cannot open shared object file: No such file or directory
+
+(coral:477969): libenchant-WARNING **: 12:23:35.132: broker.vala:159: Error loading plugin: libvoikko.so.1: cannot open shared object file: No such file or directory
+CORAL_PROBE {"tabs":2,"id":2,"dirty":false,"busy":false,"revision":1,"chars":11,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":1,"font":14,"lines":true,"bom":true,"newline":1,"check_from":0,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":33}
+CORAL_PROBE {"tabs":2,"id":2,"dirty":false,"busy":false,"revision":1,"chars":11,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":1,"font":14,"lines":true,"bom":true,"newline":1,"check_from":0,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":40}
+CORAL_PROBE {"tabs":2,"id":2,"dirty":false,"busy":false,"revision":1,"chars":11,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":1,"font":14,"lines":true,"bom":true,"newline":1,"check_from":0,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":40}
+CORAL_PROBE {"tabs":2,"id":2,"dirty":false,"busy":false,"revision":1,"chars":11,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":1,"font":14,"lines":true,"bom":true,"newline":1,"check_from":11,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":63}
+CORAL_PROBE {"tabs":2,"id":2,"dirty":true,"busy":false,"revision":15,"chars":13,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":1,"font":14,"lines":true,"bom":true,"newline":1,"check_from":0,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":66}
+CORAL_PROBE {"tabs":2,"id":1,"dirty":false,"busy":false,"revision":1,"chars":184,"spelling":6,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":1,"font":14,"lines":true,"bom":false,"newline":0,"check_from":184,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":66}
+CORAL_PROBE {"tabs":2,"id":1,"dirty":true,"busy":false,"revision":16,"chars":14,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":1,"font":14,"lines":true,"bom":false,"newline":0,"check_from":0,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":66}
+CORAL_COMMAND_DONE
+CORAL_PROBE {"tabs":2,"id":2,"dirty":true,"busy":false,"revision":15,"chars":13,"spelling":2,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":1,"font":14,"lines":true,"bom":true,"newline":1,"check_from":13,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":66}
+CORAL_COMMAND_DONE
+CORAL_PROBE {"tabs":1,"id":1,"dirty":true,"busy":false,"revision":16,"chars":14,"spelling":2,"dictionary":true,"enumerated":true,"search":0,"dialog":0,"popover":false,"theme":1,"font":14,"lines":true,"bom":false,"newline":0,"check_from":14,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":66}
+CORAL_PROBE {"tabs":1,"id":1,"dirty":true,"busy":false,"revision":16,"chars":14,"spelling":2,"dictionary":true,"enumerated":true,"search":0,"dialog":0,"popover":false,"theme":1,"font":14,"lines":true,"bom":false,"newline":0,"check_from":14,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":66}
+CORAL_COMMAND_DONE

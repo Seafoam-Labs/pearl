@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<style-scheme id="coral-dark" name="Coral dark" version="1.0">
+<author>Coral contributors</author>
+<style name="text" foreground="#e6e0e9" background="#141218"/>
+<style name="selection" foreground="#e6e0e9" background="#d0bcff55"/>
+<style name="line-numbers" foreground="#79747e" background="#141218"/>
+<style name="current-line" background="#1b191f"/>
+<style name="cursor" foreground="#d0bcff"/>
+<style name="def:comment" foreground="#79747e"/>
+<style name="def:keyword" foreground="#d0bcff"/>
+<style name="def:string" foreground="#a6d7b5"/>
+<style name="def:number" foreground="#edbca0"/>
+<style name="def:type" foreground="#a7c8fa"/>
+<style name="def:heading" foreground="#d0bcff" bold="true"/>
+<style name="def:link-text" foreground="#a7c8fa"/>
+<style name="def:emphasis" foreground="#edbca0" italic="true"/>
+<style name="def:strong-emphasis" foreground="#d0bcff" bold="true"/>
+<style name="search-match" background="#4f378b" foreground="#eaddff"/>
+</style-scheme>

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Coral
+Comment=Write and edit text with local spelling suggestions
+Exec=coral %F
+Icon=org.aqueous.Coral
+Terminal=false
+Categories=GTK;Utility;TextEditor;
+MimeType=text/plain;text/markdown;text/x-zig;
+StartupNotify=true

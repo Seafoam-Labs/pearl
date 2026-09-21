@@ -1,0 +1,12 @@
+
+(coral:476538): libenchant-WARNING **: 12:23:30.936: broker.vala:159: Error loading plugin: libhspell.so.0: cannot open shared object file: No such file or directory
+
+(coral:476538): libenchant-WARNING **: 12:23:30.937: broker.vala:159: Error loading plugin: libnuspell.so.5: cannot open shared object file: No such file or directory
+
+(coral:476538): libenchant-WARNING **: 12:23:30.937: broker.vala:159: Error loading plugin: libvoikko.so.1: cannot open shared object file: No such file or directory
+CORAL_PROBE {"tabs":1,"id":1,"dirty":false,"busy":false,"revision":1,"chars":184,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":2,"font":14,"lines":true,"bom":false,"newline":0,"check_from":0,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":11}
+CORAL_PROBE {"tabs":1,"id":1,"dirty":false,"busy":false,"revision":1,"chars":184,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":2,"font":14,"lines":true,"bom":false,"newline":0,"check_from":0,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":48}
+CORAL_PROBE {"tabs":1,"id":1,"dirty":false,"busy":false,"revision":1,"chars":184,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":2,"font":14,"lines":true,"bom":false,"newline":0,"check_from":0,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":70}
+CORAL_PROBE {"tabs":1,"id":1,"dirty":false,"busy":false,"revision":1,"chars":184,"spelling":0,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":2,"font":14,"lines":true,"bom":false,"newline":0,"check_from":0,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":70}
+CORAL_PROBE {"tabs":1,"id":1,"dirty":false,"busy":false,"revision":1,"chars":184,"spelling":6,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":2,"font":14,"lines":true,"bom":false,"newline":0,"check_from":184,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":80}
+CORAL_PROBE {"tabs":1,"id":1,"dirty":false,"busy":false,"revision":1,"chars":184,"spelling":6,"dictionary":true,"enumerated":true,"search":0,"dialog":-1,"popover":false,"theme":2,"font":14,"lines":true,"bom":false,"newline":0,"check_from":184,"inflight":false,"checking_enabled":true,"large":false,"max_spell_tick_us":80}

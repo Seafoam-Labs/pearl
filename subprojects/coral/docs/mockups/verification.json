@@ -1,0 +1,124 @@
+{
+  "browser": "153.0.8010.52",
+  "widths": [
+    390,
+    480,
+    760,
+    980,
+    1360
+  ],
+  "checks": [
+    "80 layout checks: eight scenarios in dark/light at 390, 480, 760, 980 and 1360 px",
+    "Spelling suggestion replaces text and ignoring removes the remaining underline",
+    "Preview dictionary addition is explicit and resets on reload",
+    "Find counts, replace-all and no-match actions",
+    "Tabs retain edits and cancelling/discarding an unsaved close behaves correctly",
+    "New document, typing, Save As and dirty indicator",
+    "Missing dictionary leaves editing available and provides an explanation",
+    "Conflict reload requires discard confirmation; saving a copy changes the sample name",
+    "Preferences update appearance, text size, line numbers and spelling",
+    "Keyboard search, Escape, spelling suggestions and tab switching",
+    "Unicode text, wrapping, line-number count and highlight scroll synchronization"
+  ],
+  "captures": [
+    {
+      "file": "editor-dark.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "query": "view=editor&theme=dark"
+    },
+    {
+      "file": "editor-light.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "query": "view=editor&theme=light"
+    },
+    {
+      "file": "spelling.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "query": "view=spelling&theme=dark"
+    },
+    {
+      "file": "search.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "query": "view=search&theme=dark"
+    },
+    {
+      "file": "empty.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "query": "view=empty&theme=dark"
+    },
+    {
+      "file": "missing-dictionary.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "query": "view=missing&theme=dark"
+    },
+    {
+      "file": "file-conflict.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "query": "view=conflict&theme=dark"
+    },
+    {
+      "file": "unsaved.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "query": "view=unsaved&theme=dark"
+    },
+    {
+      "file": "preferences.png",
+      "viewport": {
+        "width": 1360,
+        "height": 1030
+      },
+      "query": "view=preferences&theme=dark"
+    },
+    {
+      "file": "narrow.png",
+      "viewport": {
+        "width": 480,
+        "height": 1030
+      },
+      "query": "view=editor&theme=dark"
+    },
+    {
+      "file": "spelling-narrow.png",
+      "viewport": {
+        "width": 480,
+        "height": 1030
+      },
+      "query": "view=spelling&theme=light"
+    },
+    {
+      "file": "search-narrow.png",
+      "viewport": {
+        "width": 480,
+        "height": 1030
+      },
+      "query": "view=search&theme=dark"
+    }
+  ],
+  "page_errors": [],
+  "network_requests": [],
+  "scope": "Browser mockup only; no native GTK or real spell engine qualification."
+}

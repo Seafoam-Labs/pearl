@@ -1,0 +1,36 @@
+window.coral { background: #141218; color: #e6e0e9; }
+.coral headerbar, .coral .status { background: #211f26; }
+.coral .status { padding: 5px 12px; font-size: 11px; }
+.coral .status label { color: #bcb6c4; }
+.coral .notice { background: #2b2930; padding: 6px 12px; }
+.coral .search { background: #1b191f; padding: 8px 12px; }
+.coral notebook > header { background: #1b191f; }
+.coral notebook > header tab:checked { background: #211f26; border-bottom: 2px solid #d0bcff; }
+.coral button { border-radius: 8px; }
+.coral .suggested-action { background: #d0bcff; color: #381e72; }
+.coral.light { background: #fdf7ff; color: #1d1b20; }
+.coral.light headerbar, .coral.light .status { background: #f3edf7; }
+.coral.light .status label { color: #625b6b; }
+.coral.light .notice { background: #eae4ef; }
+.coral.light .search, .coral.light notebook > header { background: #f7f2fa; }
+.coral.light notebook > header tab:checked { background: #f3edf7; border-bottom-color: #6750a4; }
+.coral.light .suggested-action { background: #6750a4; color: white; }
+.coral { --window-bg-color: #141218; --window-fg-color: #e6e0e9; }
+.coral button { background: #2b2930; background-image: none; color: #e6e0e9; border: 1px solid alpha(#79747e,0.25); box-shadow: none; padding: 6px 10px; }
+.coral button:hover { background: #38343e; }
+.coral button:disabled { opacity: 0.5; }
+.coral button.flat { background: transparent; border-color: transparent; padding: 4px; }
+.coral notebook > header tab { color: #bcb6c4; padding: 6px 10px; }
+.coral notebook > header tab:checked { color: #e6e0e9; }
+.coral entry { background: #211f26; color: #e6e0e9; border-color: #79747e; }
+.coral.light button { background: #eae4ef; color: #1d1b20; }
+.coral.light button:hover { background: #ded6e7; }
+.coral.light notebook > header tab { color: #625b6b; }
+.coral.light notebook > header tab:checked { color: #1d1b20; }
+.coral.light entry { background: #fdf7ff; color: #1d1b20; }
+.coral headerbar { padding: 6px 10px; }
+.coral headerbar windowcontrols button { min-width: 24px; min-height: 24px; padding: 4px; margin: 0 2px; }
+.coral notebook > header tab:checked { box-shadow: inset 0 -2px #d0bcff; }
+.coral.light notebook > header tab:checked { box-shadow: inset 0 -2px #6750a4; }
+.coral spinbutton, .coral combobox button, .coral checkbutton { color: #e6e0e9; }
+.coral.light spinbutton, .coral.light combobox button, .coral.light checkbutton { color: #1d1b20; }
