@@ -1,6 +1,5 @@
 const std = @import("std");
 const gtk = @import("gtk4");
-const glib = @import("glib2");
 const object = @import("gobject2");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
@@ -466,23 +465,3 @@ pub const Control = struct {
         self.action(self.context, null);
     }
 };
-pub fn calendar(host: *gtk.Box) void {
-    const now = glib.DateTime.newNowLocal() orelse return;
-    defer now.unref();
-    const date = now.format("%A, %d %B %Y") orelse return;
-    defer glib.free(date);
-    host.append(w.label(date, "pearl-card-title").as(gtk.Widget));
-    const scroll = gtk.ScrolledWindow.new();
-    scroll.setPolicy(.never, .automatic);
-    scroll.as(gtk.Widget).setVexpand(1);
-    const content = w.column(16);
-    scroll.setChild(content.as(gtk.Widget));
-    host.append(scroll.as(gtk.Widget));
-    const grid = gtk.Calendar.new();
-    grid.setShowDayNames(1);
-    grid.setShowHeading(1);
-    grid.selectDay(now);
-    grid.as(gtk.Widget).setHalign(.center);
-    content.append(grid.as(gtk.Widget));
-    content.append(w.status(.empty, w.label(tr("Your local calendar", "Dein lokaler Kalender"), null), w.label(tr("Browse months and dates. Calendar accounts are not connected.", "Blättere durch Monate und Tage. Kalenderkonten sind nicht verbunden."), "pearl-secondary")).as(gtk.Widget));
-}

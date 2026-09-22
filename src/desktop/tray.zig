@@ -96,10 +96,40 @@ pub const Bar = struct {
         return 1;
     }
 };
-const Choice = struct { view: *View, widget: *gtk.Button, id: i32 = 0, generation: u64 = 0, revision: u64 = 0, submenu: bool = false };
+const Row = struct { button: *gtk.Button, label: *gtk.Label, check: *gtk.Image, arrow: *gtk.Label };
+const Choice = struct { view: *View, row: Row, separator: ?*gtk.Separator = null, slot: ?*gtk.Box = null, id: i32 = 0, generation: u64 = 0, revision: u64 = 0, submenu: bool = false };
+
+/// Compact context-menu row: check gutter, left-aligned label, submenu arrow.
+fn menuRow() Row {
+    const button = gtk.Button.new();
+    button.as(gtk.Widget).addCssClass("pearl-menu-item");
+    button.as(gtk.Widget).setHexpand(1);
+    const box = w.row(8);
+    const check = gtk.Image.newFromIconName("pearl-emblem-ok-symbolic");
+    check.setPixelSize(14);
+    check.as(gtk.Widget).addCssClass("pearl-menu-check");
+    check.as(gtk.Widget).setValign(.center);
+    check.as(gtk.Widget).setVisible(0);
+    const label = gtk.Label.new("");
+    label.setXalign(0);
+    label.setEllipsize(.end);
+    label.setMaxWidthChars(32);
+    label.as(gtk.Widget).setHexpand(1);
+    label.as(gtk.Widget).setValign(.center);
+    const arrow = gtk.Label.new("›");
+    arrow.as(gtk.Widget).addCssClass("pearl-menu-arrow");
+    arrow.as(gtk.Widget).setValign(.center);
+    arrow.as(gtk.Widget).setVisible(0);
+    box.append(check.as(gtk.Widget));
+    box.append(label.as(gtk.Widget));
+    box.append(arrow.as(gtk.Widget));
+    button.setChild(box.as(gtk.Widget));
+    return .{ .button = button, .label = label, .check = check, .arrow = arrow };
+}
 pub const View = struct {
     probe_focus: ?*gtk.Widget = null,
     service: *service.Tray,
+    root: *gtk.Box,
     title: *gtk.Label,
     state: *gtk.Label,
     back: *gtk.Button,
@@ -110,39 +140,48 @@ pub const View = struct {
     revision: u64 = std.math.maxInt(u64),
     pub fn create(host: *gtk.Box, tray: *service.Tray) !*View {
         const self = try a.create(View);
+        // Own wrapper box: the popup panel receives a size request, which would
+        // otherwise feed back into preferred-size measurement.
+        const root = w.column(6);
+        host.append(root.as(gtk.Widget));
+        const header = w.row(8);
+        const back = gtk.Button.newWithLabel("‹");
+        back.as(gtk.Widget).addCssClass("pearl-icon");
+        back.as(gtk.Widget).setTooltipText("Back");
+        w.name(back.as(gtk.Widget), "Back");
         const title = w.label("System tray", "pearl-card-title");
-        host.append(title.as(gtk.Widget));
+        header.append(back.as(gtk.Widget));
+        header.append(title.as(gtk.Widget));
+        root.append(header.as(gtk.Widget));
         const state = w.label("", "pearl-secondary");
-        host.append(state.as(gtk.Widget));
-        const back = gtk.Button.newWithLabel("Back");
-        host.append(back.as(gtk.Widget));
-        self.* = .{ .service = tray, .title = title, .state = state, .back = back };
+        root.append(state.as(gtk.Widget));
+        self.* = .{ .service = tray, .root = root, .title = title, .state = state, .back = back };
         _ = gtk.Button.signals.clicked.connect(back, *View, goBack, self, .{});
         const scroll = gtk.ScrolledWindow.new();
         scroll.setPolicy(.never, .automatic);
+        // Preferred-size measurement drives the popup surface, so the window must
+        // report its content instead of collapsing to min-content.
+        scroll.setPropagateNaturalWidth(1);
+        scroll.setPropagateNaturalHeight(1);
         scroll.as(gtk.Widget).setVexpand(1);
-        const content = w.column(6);
+        const content = w.column(2);
         scroll.setChild(content.as(gtk.Widget));
-        host.append(scroll.as(gtk.Widget));
+        root.append(scroll.as(gtk.Widget));
         for (&self.choices) |*choice| {
-            const button = gtk.Button.newWithLabel("");
-            choice.* = .{ .view = self, .widget = button };
-            if (@import("gobject2").ext.cast(gtk.Label, button.getChild().?)) |label| {
-                label.setEllipsize(.end);
-                label.setMaxWidthChars(32);
-            }
-            _ = gtk.Button.signals.clicked.connect(button, *Choice, choose, choice, .{});
-            content.append(button.as(gtk.Widget));
+            const row = menuRow();
+            choice.* = .{ .view = self, .row = row };
+            _ = gtk.Button.signals.clicked.connect(row.button, *Choice, choose, choice, .{});
+            content.append(row.button.as(gtk.Widget));
         }
         for (&self.nodes) |*node| {
-            const button = gtk.Button.newWithLabel("");
-            node.* = .{ .view = self, .widget = button };
-            if (@import("gobject2").ext.cast(gtk.Label, button.getChild().?)) |label| {
-                label.setEllipsize(.end);
-                label.setMaxWidthChars(32);
-            }
-            _ = gtk.Button.signals.clicked.connect(button, *Choice, clickNode, node, .{});
-            content.append(button.as(gtk.Widget));
+            const row = menuRow();
+            const separator = gtk.Separator.new(.horizontal);
+            const slot = w.column(2);
+            slot.append(separator.as(gtk.Widget));
+            slot.append(row.button.as(gtk.Widget));
+            node.* = .{ .view = self, .row = row, .separator = separator, .slot = slot };
+            _ = gtk.Button.signals.clicked.connect(row.button, *Choice, clickNode, node, .{});
+            content.append(slot.as(gtk.Widget));
         }
         self.update();
         return self;
@@ -151,7 +190,7 @@ pub const View = struct {
         const focus = window.getFocus();
         if (focus == self.probe_focus) return;
         self.probe_focus = focus;
-        for (&self.nodes) |*node| if (focus == node.widget.as(gtk.Widget)) {
+        for (&self.nodes) |*node| if (focus == node.row.button.as(gtk.Widget)) {
             std.log.info("event=session-focus target=tray-{d}", .{node.id});
             return;
         };
@@ -160,6 +199,13 @@ pub const View = struct {
     pub fn destroy(self: *View) void {
         self.service.selected = 0;
         a.destroy(self);
+    }
+    /// Content size of the menu, used to size the popup surface to its entries.
+    pub fn preferred(self: *View) struct { width: i32, height: i32 } {
+        var minimum: gtk.Requisition = undefined;
+        var natural: gtk.Requisition = undefined;
+        self.root.as(gtk.Widget).getPreferredSize(&minimum, &natural);
+        return .{ .width = natural.f_width, .height = natural.f_height };
     }
     pub fn update(self: *View) void {
         if (self.revision == self.service.revision and self.generation == self.service.selected) return;
@@ -176,25 +222,41 @@ pub const View = struct {
             self.state.setText(text.z());
             break :blk self.state.getText();
         } else if (selected) |item| (if (item.menu_error) "Menu unavailable. Go back and reopen to retry." else if (!item.menu_ready) "Loading menu…" else "") else "Choose a tray item");
+        self.state.as(gtk.Widget).setVisible(@intFromBool(std.mem.span(self.state.getText()).len != 0));
         self.back.as(gtk.Widget).setVisible(@intFromBool(selected != null));
         for (&self.choices, &self.service.items) |*choice, *item| {
             choice.generation = item.generation;
-            choice.widget.setLabel(item.title.z());
-            choice.widget.as(gtk.Widget).setVisible(@intFromBool(selected == null and item.ready));
+            choice.row.label.setText(item.title.z());
+            choice.row.button.as(gtk.Widget).setVisible(@intFromBool(selected == null and item.ready));
         }
         for (&self.nodes, 0..) |*choice, i| {
-            const visible = if (selected) |item| item.menu_ready and i < item.node_count and item.nodes[i].parent == self.parent and item.nodes[i].visible else false;
-            choice.widget.as(gtk.Widget).setVisible(@intFromBool(visible));
+            const slot = choice.slot.?;
+            const item = selected orelse {
+                slot.as(gtk.Widget).setVisible(0);
+                continue;
+            };
+            const node = if (i < item.node_count) &item.nodes[i] else {
+                slot.as(gtk.Widget).setVisible(0);
+                continue;
+            };
+            const visible = item.menu_ready and node.parent == self.parent and node.visible;
+            slot.as(gtk.Widget).setVisible(@intFromBool(visible));
             if (!visible) continue;
-            const item = selected.?;
-            const node = &item.nodes[i];
+            const separator = node.separator;
+            choice.separator.?.as(gtk.Widget).setVisible(@intFromBool(separator));
+            choice.row.button.as(gtk.Widget).setVisible(@intFromBool(!separator));
+            if (separator) continue;
             choice.id = node.id;
             choice.generation = item.generation;
             choice.revision = item.menu_revision;
             choice.submenu = node.submenu;
-            var buffer: [320]u8 = undefined;
-            choice.widget.setLabel(std.fmt.bufPrintZ(&buffer, "{s}{s}{s}", .{ if (node.separator) "────────" else if (node.toggle) (if (node.checked) "✓  " else "○  ") else "", node.label.slice(), if (node.submenu) "  ›" else "" }) catch "");
-            choice.widget.as(gtk.Widget).setSensitive(@intFromBool(node.enabled and !node.separator));
+            choice.row.label.setText(node.label.z());
+            choice.row.check.as(gtk.Widget).setVisible(@intFromBool(node.toggle));
+            if (node.toggle) {
+                if (node.checked) choice.row.check.setFromIconName("pearl-emblem-ok-symbolic") else choice.row.check.clear();
+            }
+            choice.row.arrow.as(gtk.Widget).setVisible(@intFromBool(node.submenu));
+            choice.row.button.as(gtk.Widget).setSensitive(@intFromBool(node.enabled));
         }
     }
     fn choose(_: *gtk.Button, choice: *Choice) callconv(.c) void {

@@ -36,6 +36,7 @@ pub const Gallery = struct {
     result_label: *gtk.Label = undefined,
     empty: *gtk.Box = undefined,
     tiles: [3]w.Tile = undefined,
+    calendar: ?*@import("../desktop/calendar.zig").View = null,
     volume: *gtk.Scale = undefined,
     brightness: *gtk.Scale = undefined,
     quiet: *gtk.Switch = undefined,
@@ -196,6 +197,10 @@ pub const Gallery = struct {
         launcher.append(self.empty.as(gtk.Widget));
         launcher.append(w.status(.empty, self.label(.empty, null), self.label(.empty_detail, "pearl-secondary")).as(gtk.Widget));
         panels.insert(launcher.as(gtk.Widget), -1);
+        const calendar_host = w.column(0);
+        calendar_host.as(gtk.Widget).setSizeRequest(400, 480);
+        panels.insert(calendar_host.as(gtk.Widget), -1);
+        self.calendar = try @import("../desktop/calendar.zig").View.create(calendar_host);
         self.remember(self.search.as(gobject.Object), gtk.SearchEntry.signals.search_changed.connect(self.search, *Gallery, searchChanged, self, .{}));
         self.remember(self.search.as(gobject.Object), gtk.SearchEntry.signals.activate.connect(self.search, *Gallery, searchActivated, self, .{}));
         self.remember(self.list.as(gobject.Object), gtk.ListView.signals.activate.connect(self.list, *Gallery, listActivated, self, .{}));

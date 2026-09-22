@@ -86,8 +86,32 @@
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-urgent { border-color: $primary$; }
 .pearl-root.$scope.pearl-shell .pearl-launcher-row { padding: 10px 12px; min-height: 38px; }
 .pearl-root.$scope.pearl-shell button.pearl-selected { background: $primary$; color: $on_primary$; }
-.pearl-root.$scope.pearl-shell calendar { background: $low$; color: $text$; padding: 12px; border-radius: 16px; }
-.pearl-root.$scope.pearl-shell calendar:selected { background: $primary$; color: $on_primary$; }
+/* Calendar pane: GtkCalendar's fixed cells could not take these rounded day pills. */
+.pearl-root.$scope .pearl-calendar { background: $low$; color: $text$; border-radius: 18px; padding: 14px; }
+.pearl-root.$scope .pearl-calendar-heading { font-size: 1.05em; font-weight: 600; letter-spacing: -0.2px; }
+.pearl-root.$scope .pearl-calendar-weekday { color: $secondary$; font-size: 0.72em; font-weight: 600; letter-spacing: 0.8px; }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-nav { background: transparent; color: $secondary$; border-radius: 999px; padding: 2px 9px; min-width: 26px; min-height: 26px; font-size: 1.1em; }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-jump { background: transparent; color: $secondary$; padding: 4px 12px; font-size: 0.85em; font-weight: 600; }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-nav:hover, .pearl-root.$scope .pearl-calendar button.pearl-calendar-jump:hover { background: alpha($outline$, 0.14); color: $text$; }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-day { background: transparent; color: $text$; border: 1px solid transparent; border-radius: 999px; padding: 0; min-width: 34px; min-height: 34px; font-variant-numeric: tabular-nums; font-weight: 500; }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-day:hover { background: alpha($outline$, 0.16); }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-day:active { background: alpha($outline$, 0.26); }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-outside { color: $secondary$; opacity: 0.45; }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-today { border-color: alpha($primary$, 0.65); color: $primary$; font-weight: 700; }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-day:checked { background: $primary$; border-color: transparent; color: $on_primary$; opacity: 1; font-weight: 700; }
+.pearl-root.$scope .pearl-calendar button.pearl-calendar-day:checked:hover { background: mix($primary$, $on_primary$, 0.10); }
+.pearl-root.$scope .pearl-calendar button:focus-visible { outline: 2px solid $primary$; outline-offset: 2px; }
+.pearl-root.$scope.pearl-compact .pearl-calendar { padding: 10px; border-radius: 14px; }
+.pearl-root.$scope.pearl-compact .pearl-calendar button.pearl-calendar-day { min-width: 28px; min-height: 28px; }
+/* Tray menus render as compact context-menu rows rather than shell pills. */
+.pearl-root.$scope.pearl-shell .pearl-menu-panel { padding: 8px; }
+.pearl-root.$scope .pearl-menu-panel button.pearl-icon { padding: 4px; min-width: 20px; min-height: 20px; }
+.pearl-root.$scope .pearl-menu-item { background: transparent; border: none; border-radius: 8px; padding: 5px 10px; min-height: 0; }
+.pearl-root.$scope .pearl-menu-item:hover { background: $high$; }
+.pearl-root.$scope .pearl-menu-item:active { background: mix($high$, $primary$, 0.12); }
+.pearl-root.$scope .pearl-menu-item:disabled { background: transparent; color: $secondary$; opacity: 0.55; }
+.pearl-root.$scope .pearl-menu-check { min-width: 14px; color: $primary$; }
+.pearl-root.$scope .pearl-menu-arrow { color: $secondary$; }
 .pearl-root.$scope.pearl-shell .pearl-layout-card { padding: 14px; }
 
 /* Settings pages must not inherit the system notebook/text editor background. */
