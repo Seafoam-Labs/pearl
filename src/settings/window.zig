@@ -867,7 +867,10 @@ pub const Window = struct {
                 dialog.as(gtk.Window).destroy();
                 dialog.unref();
             }
-            if (self.preferences_view) |view| view.closePicker();
+            if (self.preferences_view) |view| {
+                view.closePicker();
+                view.closeFolderPicker();
+            }
             if (self.close_dialog) |dialog| {
                 self.close_dialog = null;
                 dialog.as(gtk.Window).destroy();
@@ -1073,6 +1076,9 @@ pub const Window = struct {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
             }
             try controls.append(alloc, .{ .field = "sync_borders", .focused = if (focus) |f| f == view.sync_borders.as(gtk.Widget) else false, .bounds = self.bounds(view.sync_borders.as(gtk.Widget)) });
+            for ([_]*gtk.Widget{ view.slideshow_enabled.as(gtk.Widget), view.slideshow_folder.as(gtk.Widget), view.slideshow_choose.as(gtk.Widget), view.slideshow_interval.as(gtk.Widget), view.slideshow_order.as(gtk.Widget), view.slideshow_transition.as(gtk.Widget), view.slideshow_duration.as(gtk.Widget) }, [_][]const u8{ "slideshow_enabled", "slideshow_folder", "slideshow_choose", "slideshow_interval", "slideshow_order", "slideshow_transition", "slideshow_duration" }) |widget, name| {
+                try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            }
             for ([_][]const @import("themes_view.zig").Control{ view.themes.controls.items, view.themes.row_controls.items }) |bindings| for (bindings) |binding| {
                 try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget else false, .enabled = binding.widget.isSensitive() != 0, .bounds = self.bounds(binding.widget) });
             };
@@ -1135,7 +1141,7 @@ pub const Window = struct {
             for (view.buttons, [_][]const u8{ "aqueous.refresh", "aqueous.validate", "aqueous.apply" }) |button, id| try controls.append(alloc, .{ .field = id, .focused = false, .bounds = self.bounds(button.as(gtk.Widget)) });
         };
         defer controls.deinit(alloc);
-        const editor_state = .{ .ready = self.editor.ready, .online = self.editor.online, .recovery = self.editor.recovery, .state = self.editor.state, .local = self.editor.local != null, .upload = self.editor.upload, .download = self.editor.download, .error_code = self.editor.error_code.slice(), .validation = self.editor.validation.slice(), .export_error = self.editor.export_error.slice(), .bytes = self.editor.text().len, .sha256 = @import("editor_protocol.zig").digest(self.editor.text())[0..], .picker = if (self.preferences_view) |view| view.picker != null else false, .preview = if (self.preferences_view) |view| view.preview_ready else false, .close_dialog = self.close_dialog != null, .can_apply = self.save.as(gtk.Widget).getSensitive() != 0, .can_edit = self.editor.editable() };
+        const editor_state = .{ .ready = self.editor.ready, .online = self.editor.online, .recovery = self.editor.recovery, .state = self.editor.state, .local = self.editor.local != null, .upload = self.editor.upload, .download = self.editor.download, .error_code = self.editor.error_code.slice(), .validation = self.editor.validation.slice(), .export_error = self.editor.export_error.slice(), .bytes = self.editor.text().len, .sha256 = @import("editor_protocol.zig").digest(self.editor.text())[0..], .picker = if (self.preferences_view) |view| view.picker != null else false, .folder_picker = if (self.preferences_view) |view| view.folder_picker != null else false, .preview = if (self.preferences_view) |view| view.preview_ready else false, .close_dialog = self.close_dialog != null, .can_apply = self.save.as(gtk.Widget).getSensitive() != 0, .can_edit = self.editor.editable() };
         const focus_name = if (focus == self.heading_anchor) "heading" else blk: {
             for (&self.links) |*link| if (focus == link.button.as(gtk.Widget)) break :blk if (link.target.section) |section| try std.fmt.allocPrint(alloc, "aqueous:{s}", .{section}) else link.target.page.id();
             break :blk "body";

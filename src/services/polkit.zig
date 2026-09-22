@@ -14,6 +14,24 @@ const authority_path = "/org/freedesktop/PolicyKit1/Authority";
 const authority_iface = "org.freedesktop.PolicyKit1.Authority";
 const agent_path = "/org/aqueous/Pearl/AuthenticationAgent";
 const Connection = struct { emitter: *object.Object, signal: c_ulong };
+
+/// Resolves the requesting process name from the local pid polkit reports.
+fn callerName(pid_text: []const u8) [64:0]u8 {
+    var name: [64:0]u8 = @splat(0);
+    const pid = std.fmt.parseInt(u32, pid_text, 10) catch return name;
+    if (pid == 0 or pid > 4194304) return name;
+    var path: [32:0]u8 = undefined;
+    const target = std.fmt.bufPrintZ(&path, "/proc/{d}/comm", .{pid}) catch return name;
+    var contents: [*]u8 = undefined;
+    var length: usize = 0;
+    if (glib.fileGetContents(target, &contents, &length, null) == 0) return name;
+    defer glib.free(contents);
+    const trimmed = std.mem.trim(u8, contents[0..@min(length, 64)], "\r\n");
+    if (trimmed.len == 0) return name;
+    for (trimmed) |byte| if (byte < 0x20 or byte == 0x7f) return name;
+    @memcpy(name[0..trimmed.len], trimmed);
+    return name;
+}
 pub const Agent = struct {
     activity_broker: ?*@import("../platform/wayland/input_activity.zig").Broker = null,
     activity_token: @import("../platform/wayland/input_activity.zig").Token = .{},
@@ -188,7 +206,33 @@ pub const Agent = struct {
         self.panel = panel;
         panel.as(gtk.Widget).setSizeRequest(400, -1);
         window.setChild(panel.as(gtk.Widget));
-        panel.append(w.label("Authentication required", "pearl-title").as(gtk.Widget));
+        const icon_value = params.getChildValue(2);
+        defer icon_value.unref();
+        var safe_icon: db.Text(256) = .{};
+        safe_icon.set(std.mem.span(icon_value.getString(null)));
+        const details = params.getChildValue(3);
+        defer details.unref();
+        var description: db.Text(512) = .{};
+        var vendor: db.Text(256) = .{};
+        var caller: db.Text(16) = .{};
+        for (0..details.nChildren()) |i| {
+            const pair = details.getChildValue(i);
+            defer pair.unref();
+            const detail_key = pair.getChildValue(0);
+            defer detail_key.unref();
+            const detail_value = pair.getChildValue(1);
+            defer detail_value.unref();
+            const name = std.mem.span(detail_key.getString(null));
+            const text = std.mem.span(detail_value.getString(null));
+            if (std.mem.eql(u8, name, "polkit.action.description")) description.set(text) else if (std.mem.eql(u8, name, "polkit.action.vendor")) vendor.set(text) else if (std.mem.eql(u8, name, "polkit.caller.pid")) caller.set(text);
+        }
+        const header = w.row(12);
+        const icon = w.icon(if (safe_icon.slice().len == 0) "pearl-emblem-system-symbolic" else safe_icon.z());
+        icon.setPixelSize(40);
+        icon.as(gtk.Widget).setValign(.start);
+        header.append(icon.as(gtk.Widget));
+        header.append(w.label("Authentication required", "pearl-title").as(gtk.Widget));
+        panel.append(header.as(gtk.Widget));
         const message = params.getChildValue(1);
         defer message.unref();
         var safe_message: db.Text(1024) = .{};
@@ -201,14 +245,46 @@ pub const Agent = struct {
         defer action.unref();
         var safe_action: db.Text(256) = .{};
         safe_action.set(std.mem.span(action.getString(null)));
-        const action_label = w.label(safe_action.z(), "pearl-secondary");
+        const action_label = w.label(if (description.slice().len != 0) description.z() else safe_action.z(), "pearl-secondary");
         action_label.setWrap(1);
         action_label.setMaxWidthChars(44);
         panel.append(action_label.as(gtk.Widget));
-        const selector = gtk.DropDown.newFromStrings(@ptrCast(&label_ptrs));
-        self.selector = selector;
-        panel.append(selector.as(gtk.Widget));
-        self.prompt = w.label("Choose an identity, then authenticate.", "pearl-secondary");
+        const comm = callerName(caller.slice());
+        const comm_text = std.mem.sliceTo(&comm, 0);
+        var provenance: [256:0]u8 = @splat(0);
+        const origin_text: ?[*:0]const u8 = if (comm_text.len != 0 and vendor.slice().len != 0)
+            std.fmt.bufPrintZ(&provenance, "Requested by {s} · {s}", .{ comm_text, vendor.slice() }) catch null
+        else if (comm_text.len != 0)
+            std.fmt.bufPrintZ(&provenance, "Requested by {s}", .{comm_text}) catch null
+        else if (vendor.slice().len != 0)
+            vendor.z()
+        else
+            null;
+        if (origin_text) |text| {
+            const origin = w.label(text, "pearl-auth-provenance");
+            origin.setWrap(1);
+            origin.setMaxWidthChars(44);
+            panel.append(origin.as(gtk.Widget));
+        }
+        // One identity is the signing-in user; only offer a picker when polkit
+        // actually proposes more than one.
+        if (self.identity_count > 1) {
+            const selector = gtk.DropDown.newFromStrings(@ptrCast(&label_ptrs));
+            self.selector = selector;
+            panel.append(selector.as(gtk.Widget));
+            self.prompt = w.label("Choose an identity, then authenticate.", "pearl-secondary");
+        } else {
+            const identity_row = w.row(12);
+            identity_row.as(gtk.Widget).addCssClass("pearl-auth-user");
+            const avatar = w.icon("pearl-avatar-default-symbolic");
+            avatar.setPixelSize(32);
+            avatar.as(gtk.Widget).addCssClass("pearl-avatar");
+            identity_row.append(avatar.as(gtk.Widget));
+            const who = object.ext.cast(polkit.UnixUser, self.identities[0].?).?;
+            identity_row.append(w.label(std.mem.span(who.getName() orelse "User"), null).as(gtk.Widget));
+            panel.append(identity_row.as(gtk.Widget));
+            self.prompt = w.label("Enter your password to continue.", "pearl-secondary");
+        }
         self.prompt.?.setWrap(1);
         self.prompt.?.setMaxWidthChars(44);
         panel.append(self.prompt.?.as(gtk.Widget));
@@ -217,19 +293,23 @@ pub const Agent = struct {
         entry.setVisibility(0);
         entry.setInputPurpose(.password);
         entry.setMaxLength(1023);
-        entry.as(gtk.Widget).setSensitive(0);
+        entry.setPlaceholderText("Password");
+        entry.as(gtk.Widget).setSensitive(1);
+        entry.as(gtk.Widget).setHexpand(1);
         w.name(entry.as(gtk.Widget), "Authentication response");
         panel.append(entry.as(gtk.Widget));
         const actions = w.row(12);
+        actions.as(gtk.Widget).setHalign(.end);
         const cancel_button = gtk.Button.newWithLabel("Cancel");
         const submit_button = gtk.Button.newWithLabel("Authenticate");
+        submit_button.as(gtk.Widget).addCssClass("pearl-primary");
         actions.append(cancel_button.as(gtk.Widget));
         actions.append(submit_button.as(gtk.Widget));
         panel.append(actions.as(gtk.Widget));
         self.remember(cancel_button.as(object.Object), gtk.Button.signals.clicked.connect(cancel_button, *Agent, cancelled, self, .{}));
         self.remember(submit_button.as(object.Object), gtk.Button.signals.clicked.connect(submit_button, *Agent, submitted, self, .{}));
         self.remember(entry.as(object.Object), gtk.Entry.signals.activate.connect(entry, *Agent, entered, self, .{}));
-        self.remember(selector.as(object.Object), object.Object.signals.notify.connect(selector.as(object.Object), *Agent, selected, self, .{ .detail = "selected" }));
+        if (self.selector) |selector| self.remember(selector.as(object.Object), object.Object.signals.notify.connect(selector.as(object.Object), *Agent, selected, self, .{ .detail = "selected" }));
         self.remember(window.as(object.Object), gtk.Window.signals.close_request.connect(window, *Agent, closed, self, .{}));
         const controller = gtk.EventControllerKey.new();
         self.remember(controller.as(object.Object), gtk.EventControllerKey.signals.key_pressed.connect(controller, *Agent, key, self, .{}));
@@ -248,6 +328,7 @@ pub const Agent = struct {
         }
         if (self.window) |window| {
             window.present();
+            if (self.entry) |entry| _ = entry.as(gtk.Widget).grabFocus();
             if (@import("build_options").test_hooks) std.log.info("event=activity-auth-presented", .{});
         }
     }
@@ -322,7 +403,8 @@ pub const Agent = struct {
             return;
         }
         if (self.conversation != null) return;
-        const index = self.selector.?.getSelected();
+        if (self.identity_count == 0) return;
+        const index = if (self.selector) |selector| selector.getSelected() else 0;
         if (index >= self.identity_count) return;
         const session = agent.Session.new(self.identities[index].?, self.cookie.z());
         self.conversation = session;
@@ -341,17 +423,35 @@ pub const Agent = struct {
         self.entry.?.setVisibility(echo);
         self.entry.?.as(gtk.Widget).setSensitive(1);
         _ = self.entry.?.as(gtk.Widget).grabFocus();
+        // The field is live before the conversation starts, so a password typed
+        // early answers the first secret request without a second click.
+        if (echo == 0 and std.mem.span(self.entry.?.as(gtk.Editable).getText()).len != 0) self.submit();
     }
     fn conversationInfo(_: *agent.Session, text: [*:0]u8, self: *Agent) callconv(.c) void {
         var bounded: db.Text(1024) = .{};
         bounded.set(std.mem.span(text));
         if (self.prompt) |p| p.setText(bounded.z());
     }
-    fn completed(session: *agent.Session, _: c_int, self: *Agent) callconv(.c) void {
-        self.activity_token.cancel();
+    fn completed(session: *agent.Session, gained: c_int, self: *Agent) callconv(.c) void {
         for (self.session_signals) |s| object.signalHandlerDisconnect(session.as(object.Object), s);
         self.conversation = null;
+        self.waiting = false;
         session.unref();
+        if (gained == 0) {
+            // A wrong password re-prompts; the authority still awaits its single reply.
+            if (self.request == null) {
+                self.cleanup();
+                return;
+            }
+            if (self.entry) |entry| {
+                entry.as(gtk.Editable).setText("");
+                entry.as(gtk.Widget).setSensitive(1);
+                _ = entry.as(gtk.Widget).grabFocus();
+            }
+            if (self.prompt) |p| p.setText("Authentication failed. Enter your password and try again.");
+            return;
+        }
+        self.activity_token.cancel();
         // The authority receives proof from its trusted helper; this reply grants nothing.
         if (self.request) |invocation| {
             self.request = null;
@@ -362,7 +462,6 @@ pub const Agent = struct {
     }
     fn selected(_: *object.Object, _: *object.ParamSpec, self: *Agent) callconv(.c) void {
         self.stopConversation();
-        if (self.entry) |e| e.as(gtk.Widget).setSensitive(0);
         if (self.prompt) |p| p.setText("Identity changed. Authenticate to continue.");
     }
     fn submitted(_: *gtk.Button, self: *Agent) callconv(.c) void {

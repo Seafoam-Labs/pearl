@@ -23,6 +23,7 @@ const navigation = @import("../../desktop/settings_navigation.zig");
 const Owner = @import("../../services/view_ownership.zig").Owner;
 const Layout = @import("../../platform/wayland/layout.zig").Layout;
 const Groups = @import("../../desktop/policy.zig").Groups;
+const slideshow_policy = @import("../../config/slideshow_policy.zig");
 const tr = @import("../../desktop/text.zig").tr;
 const a = std.heap.c_allocator;
 const Rect = policy.Rect;
@@ -44,13 +45,17 @@ const Surface = struct {
     running_apps: ?*Running.Chooser = null,
     control: ?*Panels.Control = null,
     calendar: ?*@import("../../desktop/calendar.zig").View = null,
+    wallpapers: ?*@import("../../desktop/wallpapers.zig").View = null,
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
     media: ?*@import("../../desktop/media.zig").View = null,
     tray: ?*@import("../../desktop/tray.zig").View = null,
     aqueous_settings: ?*@import("../../desktop/aqueous_settings.zig").View = null,
     clipboard_capture: ?*@import("../../desktop/clipboard_capture.zig").View = null,
     settings: ?*@import("../../desktop/settings.zig").View = null,
-    wallpaper_picture: ?*gtk.Picture = null,
+    wallpaper_stack: ?*gtk.Stack = null,
+    wallpaper_pictures: [2]?*gtk.Picture = .{ null, null },
+    wallpaper_index: u8 = 0,
+    wallpaper_texture: ?*gdk.Texture = null,
     appearance_revision: u64 = std.math.maxInt(u64),
     measure_signal: c_ulong = 0,
     measure_clock: ?*gdk.FrameClock = null,
@@ -69,6 +74,7 @@ const Surface = struct {
         if (self.clipboard_capture) |view| view.destroy();
         if (self.control) |control| control.destroy();
         if (self.calendar) |view| view.destroy();
+        if (self.wallpapers) |view| view.destroy();
         if (self.measure_clock) |clock| {
             if (object.signalHandlerIsConnected(clock.as(object.Object), self.measure_signal) != 0) object.signalHandlerDisconnect(clock.as(object.Object), self.measure_signal);
             clock.unref();
@@ -142,6 +148,7 @@ pub const Manager = struct {
     settings_observer: ?*const fn (*anyopaque) void = null,
     aqueous_settings: @import("../../config/aqueous_client.zig").Client = undefined,
     preferences: @import("../../config/service.zig").Service = undefined,
+    slideshow: @import("../../config/slideshow.zig").Engine = undefined,
     border_theme: @import("../../config/border_theme.zig").Sync = .{},
     identifiers: std.ArrayList(*Surface) = .empty,
     identify_timer: c_uint = 0,
@@ -199,6 +206,8 @@ pub const Manager = struct {
         self.session_services = .{ .app = self.app.as(gio.Application), .context = self, .changed = sessionChanged };
         self.preferences = .{ .app = self.app.as(gio.Application), .display = self.display, .context = self, .changed = preferencesChanged, .validate = validatePreferences, .shell_appearance = true };
         try self.preferences.start();
+        self.slideshow = .{ .service = &self.preferences };
+        self.slideshow.configure();
         self.aqueous_settings = .{ .app = self.app.as(gio.Application), .context = self, .changed = aqueousSettingsChanged, .reload = aqueousReload, .can_reload = aqueousCanReload, .can_record = aqueousCanRecord, .identify_outputs = identifyDisplays, .peer_pid = aqueousPeerPid };
         self.aqueous_settings.start();
         self.services_started = true;
@@ -232,6 +241,7 @@ pub const Manager = struct {
         self.running = false;
         if (self.clock_source != 0) _ = glib.Source.remove(self.clock_source);
         self.clock_source = 0;
+        self.slideshow.stop();
         self.index.stop();
         if (self.sync_source != 0) _ = glib.Source.remove(self.sync_source);
         self.sync_source = 0;
@@ -440,7 +450,9 @@ pub const Manager = struct {
         }
         for ([_]?*Surface{ self.popup, self.osd, self.notification }) |maybe| if (maybe) |surface| self.styleSurface(surface);
         if (self.popup) |surface| if (surface.settings) |view| view.update();
+        if (self.popup) |surface| if (surface.wallpapers) |view| view.update();
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
+        self.slideshow.configure();
         if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
         self.authChangedSelf();
         self.positionPopup();
@@ -455,13 +467,36 @@ pub const Manager = struct {
         self.preferences.style(surface.window.as(gtk.Widget), surface.panel);
         if (surface.kind == .wallpaper or surface.kind == .frame) surface.panel.removeCssClass("background");
         if (surface.bar) |bar| bar.styleIslands();
-        if (surface.wallpaper_picture) |picture| {
+        if (surface.wallpaper_stack) |stack| {
             const prefs = self.preferences.prefs();
+            const transition = prefs.wallpaper.slideshow.transition;
             const image = if (self.preferences.live) |live| live.texture else null;
-            if (image != null and (prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain)) {
+            const shown = image != null and (prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain);
+            // Only a replacement image animates; the first paint must not.
+            const animated = shown and !prefs.reduced_motion and
+                surface.wallpaper_texture != null and image.? != surface.wallpaper_texture.?;
+            // Seeded per change so `.random` re-rolls on every rotation.
+            const animation = if (animated) slideshow_policy.animation(transition, @intFromPtr(image.?) ^ self.preferences.appearance) else null;
+            stack.setTransitionDuration(prefs.wallpaper.slideshow.transition_ms);
+            stack.setTransitionType(if (animation) |kind| switch (kind) {
+                .fade => .crossfade,
+                .slide => .slide_left,
+                .rotate => .rotate_left,
+                .cover => .over_left,
+            } else .none);
+            if (shown) {
+                const index: u8 = if (animated) surface.wallpaper_index ^ 1 else surface.wallpaper_index;
+                const picture = surface.wallpaper_pictures[index].?;
                 picture.setPaintable(image.?.as(gdk.Paintable));
                 picture.setContentFit(if (prefs.wallpaper.mode == .cover) .cover else .contain);
-            } else picture.setPaintable(null);
+                if (animated) {
+                    surface.wallpaper_index = index;
+                    stack.setVisibleChildName(if (index == 0) "a" else "b");
+                }
+            } else {
+                for (surface.wallpaper_pictures) |maybe| if (maybe) |picture| picture.setPaintable(null);
+            }
+            surface.wallpaper_texture = image;
         }
     }
     fn sessionChanged(context: *anyopaque) void {
@@ -917,6 +952,7 @@ pub const Manager = struct {
             if (s.clipboard_capture) |view| view.destroy();
             if (s.control) |panel_control| panel_control.destroy();
             if (s.calendar) |view| view.destroy();
+            if (s.wallpapers) |view| view.destroy();
             if (s.notifications) |view| view.destroy();
             if (s.media) |view| view.destroy();
             if (s.tray) |view| view.destroy();
@@ -928,12 +964,21 @@ pub const Manager = struct {
                 window.as(gtk.Widget).addCssClass("pearl-wallpaper");
                 anchors(window, null);
                 layer.setExclusiveZone(window, -1);
-                const picture = gtk.Picture.new();
-                picture.setCanShrink(1);
-                picture.as(gtk.Widget).setHexpand(1);
-                picture.as(gtk.Widget).setVexpand(1);
-                panel.append(picture.as(gtk.Widget));
-                s.wallpaper_picture = picture;
+                // Two stacked pictures so a wallpaper change can crossfade or slide.
+                const stack = gtk.Stack.new();
+                stack.as(gtk.Widget).setHexpand(1);
+                stack.as(gtk.Widget).setVexpand(1);
+                stack.setVisibleChildName("a");
+                for (0..2) |i| {
+                    const picture = gtk.Picture.new();
+                    picture.setCanShrink(1);
+                    picture.as(gtk.Widget).setHexpand(1);
+                    picture.as(gtk.Widget).setVexpand(1);
+                    _ = stack.addNamed(picture.as(gtk.Widget), if (i == 0) "a" else "b");
+                    s.wallpaper_pictures[i] = picture;
+                }
+                panel.append(stack.as(gtk.Widget));
+                s.wallpaper_stack = stack;
                 window.setChild(panel_widget);
             },
             .bar => {
@@ -983,6 +1028,7 @@ pub const Manager = struct {
                     .running_apps => s.running_apps = try Running.Chooser.create(panel, &self.tasks.snapshot, &self.index, s, runningAction),
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
                     .calendar => s.calendar = try @import("../../desktop/calendar.zig").View.create(panel),
+                    .wallpapers => s.wallpapers = try @import("../../desktop/wallpapers.zig").View.create(panel, &self.preferences),
                     .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
                     .media => {
                         const scroll = gtk.ScrolledWindow.new();
@@ -1187,7 +1233,7 @@ pub const Manager = struct {
         const launcher = self.pane == .launcher or self.pane == .launcher_picker;
         const settings = self.pane == .settings or self.pane == .aqueous_settings;
         const centered = prefs.placement == .centered or launcher;
-        var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else 440), prefs.max_width);
+        var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else if (self.pane == .wallpapers) 640 else 440), prefs.max_width);
         var height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else 560), prefs.max_height);
         if (self.pane == .tray) {
             // Tray menus hug their entries instead of reserving a full pane.
@@ -1197,7 +1243,23 @@ pub const Manager = struct {
                 height = @min(@max(size.height + 16, 160), height);
             }
         }
-        const rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
+        var rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
+        if (self.pane == .wallpapers) {
+            // Sit under the bar icon that opened the pane, the way the calendar
+            // sits under the clock. The bar spans the whole edge, so the
+            // cross-axis coordinate is already output-relative.
+            if (o.bar) |surface| if (surface.bar) |bar| if (bar.pane_anchor) |anchor| {
+                if (o.reservations.bar_edge == .top or o.reservations.bar_edge == .bottom) {
+                    const left = @max(0, o.usable.x - o.bounds.x);
+                    const right = @min(o.bounds.width, o.usable.x - o.bounds.x + o.usable.width) - rect.width;
+                    rect.x = @min(@max(anchor.x + @divTrunc(anchor.width, 2) - @divTrunc(rect.width, 2), left), @max(left, right));
+                } else {
+                    const top = @max(0, o.usable.y - o.bounds.y);
+                    const bottom = @min(o.bounds.height, o.usable.y - o.bounds.y + o.usable.height) - rect.height;
+                    rect.y = @min(@max(anchor.y + @divTrunc(anchor.height, 2) - @divTrunc(rect.height, 2), top), @max(top, bottom));
+                }
+            };
+        }
         if (self.popup_rect) |previous| if (std.meta.eql(previous, rect)) return;
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;

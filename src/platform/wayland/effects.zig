@@ -166,6 +166,10 @@ pub const Surface = struct {
         }
         const available = self.blur and self.owner.available and self.owner.manager != null and self.owner.compositor != null;
         if (available) self.window.as(gtk.Widget).addCssClass("pearl-blur") else self.window.as(gtk.Widget).removeCssClass("pearl-blur");
+        // Window opacity never reaches the compositor's background effect, so a
+        // fading surface would keep a full-strength blur. Drop the region early
+        // in the fade; the theme class follows capability only.
+        const blurred = available and self.window.as(gtk.Widget).getOpacity() >= 0.72;
         var allocation: gtk.Allocation = undefined;
         if (self.panel) |panel| panel.getAllocation(&allocation) else allocation = .{ .f_x = 0, .f_y = 0, .f_width = native.getWidth(), .f_height = native.getHeight() };
         const rect: Rect = .{ .x = allocation.f_x, .y = allocation.f_y, .width = allocation.f_width, .height = allocation.f_height };
@@ -179,17 +183,17 @@ pub const Surface = struct {
                     shapes[i] = .{ .x = @intFromFloat(x), .y = @intFromFloat(y), .width = widget.getWidth(), .height = widget.getHeight() };
             };
         } else shapes[0] = rect;
-        if (self.last) |last| if (std.meta.eql(last, rect) and std.meta.eql(shapes, self.last_shapes) and available == self.last_available) return;
+        if (self.last) |last| if (std.meta.eql(last, rect) and std.meta.eql(shapes, self.last_shapes) and blurred == self.last_available) return;
         self.last_shapes = shapes;
         self.last = rect;
-        self.last_available = available;
+        self.last_available = blurred;
         const region = cairo.Region.create();
         defer region.destroy();
         if (self.input == .panel) for (shapes) |maybe| {
             if (maybe) |r| rounded(region, r, 14);
         };
         if (self.input == .full) native.setInputRegion(null) else native.setInputRegion(region);
-        if (available) {
+        if (blurred) {
             if (self.effect == null) {
                 const wayland = object.ext.cast(backend.WaylandSurface, native) orelse return;
                 const surface: *wl.Surface = @ptrCast(wayland.getWlSurface() orelse return);

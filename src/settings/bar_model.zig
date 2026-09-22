@@ -23,6 +23,7 @@ pub fn metadata(item: policy.Item) Metadata {
         .media => .{ .name = "Media", .description = "Playback and track information", .icon = "pearl-media-symbolic" },
         .tray => .{ .name = "System tray", .description = "Background application icons", .icon = "pearl-view-grid-symbolic" },
         .clipboard => .{ .name = "Clipboard", .description = "Recent copied items", .icon = "pearl-edit-copy-symbolic" },
+        .wallpaper => .{ .name = "Wallpaper", .description = "Browse a folder and set the wallpaper", .icon = "pearl-image-symbolic" },
     };
 }
 pub fn groupLabel(group: Group, edge: prefs.Edge) [:0]const u8 {

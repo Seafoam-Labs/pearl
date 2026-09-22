@@ -44,6 +44,14 @@ pub const View = struct {
     preview_ready: bool = false,
     choose: *gtk.Button,
     picker: ?*gtk.FileChooserDialog = null,
+    slideshow_enabled: *gtk.Switch = undefined,
+    slideshow_folder: *gtk.Entry = undefined,
+    slideshow_choose: *gtk.Button = undefined,
+    slideshow_interval: *gtk.SpinButton = undefined,
+    slideshow_order: *gtk.DropDown = undefined,
+    slideshow_transition: *gtk.DropDown = undefined,
+    slideshow_duration: *gtk.SpinButton = undefined,
+    folder_picker: ?*gtk.FileChooserDialog = null,
     message: *gtk.Label,
     mode_hint: *gtk.Label,
     qt_enabled: *gtk.Switch,
@@ -87,6 +95,7 @@ pub const View = struct {
         const sync_borders = toggle(appearance, if (german) "Fensterrahmen folgen dem Pearl-Design" else "Window borders follow Pearl theme");
         appearance.append(w.label(if (german) "Verwendet Material-Farben für aktive, normale und dringende Fenster. Wartet auf ausstehende Aqueous-Änderungen. Ausschalten behält die letzten Farben; im GTK-Modus pausiert die Synchronisierung." else "Uses Material colors for focused, normal, and urgent windows. Waits for pending Aqueous edits. Turning off keeps the last colors; GTK mode pauses synchronization.", "pearl-secondary").as(gtk.Widget));
         const wallpaper = card(host);
+        wallpaper.append(w.label(self.t("Wallpaper", "Hintergrundbild"), "settings-row-title").as(gtk.Widget));
         const picture = gtk.Picture.new();
         picture.setCanShrink(1);
         picture.setContentFit(.cover);
@@ -105,6 +114,29 @@ pub const View = struct {
         wallpaper.append(choose.as(gtk.Widget));
         const fit = dropdown(wallpaper, if (german) "Hintergrundmodus" else "Wallpaper fit", &.{ "Material gradient", "Solid color", "Cover", "Contain" });
         const color = entry(wallpaper, if (german) "Hintergrundfarbe" else "Background color", 7);
+        // One card owns the whole wallpaper area; the slideshow is a section of it.
+        // Built from locals because `self` is only assigned after every card exists.
+        const slideshow = wallpaper;
+        const divider = gtk.Separator.new(.horizontal);
+        divider.as(gtk.Widget).setMarginTop(16);
+        divider.as(gtk.Widget).setMarginBottom(16);
+        slideshow.append(divider.as(gtk.Widget));
+        slideshow.append(w.label(if (german) "Diashow" else "Slideshow", "settings-row-title").as(gtk.Widget));
+        slideshow.append(w.label(if (german) "Wechselt durch die Bilder eines Ordners. Nur PNG und JPEG werden verwendet. Jeder Wechsel berechnet die Bildfarben neu, wenn das Design dem Bild folgt." else "Rotates through the images in one folder. Only PNG and JPEG are used. Each change re-runs wallpaper colors when the theme follows the image.", "pearl-secondary").as(gtk.Widget));
+        const slideshow_enabled = toggle(slideshow, if (german) "Diashow aktivieren" else "Enable slideshow");
+        const slideshow_folder = entry(slideshow, if (german) "Bildordner" else "Image folder", 1024);
+        slideshow_folder.setPlaceholderText(if (german) "Kein Ordner ausgewählt" else "No folder selected");
+        const slideshow_choose = w.wrappingButton(if (german) "Ordner auswählen…" else "Choose folder…");
+        slideshow_choose.as(gtk.Widget).setHalign(.end);
+        slideshow_choose.as(gtk.Widget).setMarginEnd(20);
+        slideshow_choose.as(gtk.Widget).setMarginBottom(12);
+        slideshow.append(slideshow_choose.as(gtk.Widget));
+        const slideshow_interval = gtk.SpinButton.newWithRange(10, 86400, 10);
+        row(slideshow, if (german) "Wechseln alle (Sekunden)" else "Change every (seconds)", slideshow_interval.as(gtk.Widget));
+        const slideshow_order = dropdown(slideshow, if (german) "Reihenfolge" else "Order", if (german) &.{ "Fortlaufend", "Zufällig" } else &.{ "Sequential", "Random" });
+        const slideshow_transition = dropdown(slideshow, if (german) "Übergang" else "Transition", if (german) &.{ "Keiner", "Überblenden", "Schieben", "Drehen", "Überdecken", "Zufällig" } else &.{ "None", "Fade", "Slide", "Rotate", "Cover", "Random" });
+        const slideshow_duration = gtk.SpinButton.newWithRange(100, 5000, 20);
+        row(slideshow, if (german) "Animationsdauer (ms)" else "Animation length (ms)", slideshow_duration.as(gtk.Widget));
         const typography = card(host);
         const font = entry(typography, if (german) "Schriftfamilie" else "Font family", 96);
         font.setPlaceholderText(if (german) "Systemvorgabe" else "System default");
@@ -151,7 +183,7 @@ pub const View = struct {
         raw_view.setRightMargin(24);
         w.name(raw_view.as(gtk.Widget), if (german) "Vollständige Pearl-Einstellungen als JSON" else "Full Pearl preferences JSON");
         // The caller installs raw_view directly in Advanced's sole viewport.
-        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison };
+        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
         const night = card(host);
         night.append(w.label(self.t("Night Light", "Nachtlicht"), "settings-row-title").as(gtk.Widget));
         night.append(w.label(self.t("Warmer screen colors on supported displays. The status below shows which displays can apply your saved schedule.", "Wärmere Farben auf unterstützten Bildschirmen. Der Status unten zeigt, welche Bildschirme den gespeicherten Zeitplan anwenden können."), "pearl-secondary").as(gtk.Widget));
@@ -200,6 +232,13 @@ pub const View = struct {
         _ = gtk.SpinButton.signals.value_changed.connect(font_size, *View, spun, self, .{});
         _ = object.Object.signals.notify.connect(motion.as(object.Object), *View, selected, self, .{ .detail = "active" });
         _ = gtk.Button.signals.clicked.connect(choose, *View, chooseWallpaper, self, .{});
+        _ = gtk.Button.signals.clicked.connect(self.slideshow_choose, *View, chooseFolder, self, .{});
+        _ = object.Object.signals.notify.connect(self.slideshow_enabled.as(object.Object), *View, selected, self, .{ .detail = "active" });
+        _ = object.Object.signals.notify.connect(self.slideshow_order.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        _ = object.Object.signals.notify.connect(self.slideshow_transition.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        _ = gtk.SpinButton.signals.value_changed.connect(self.slideshow_interval, *View, spun, self, .{});
+        _ = gtk.SpinButton.signals.value_changed.connect(self.slideshow_duration, *View, spun, self, .{});
+        _ = gtk.Editable.signals.changed.connect(self.slideshow_folder.as(gtk.Editable), *View, edited, self, .{});
         self.raw_insert_signal = gtk.TextBuffer.signals.insert_text.connect(self.raw, *View, inserting, self, .{});
         self.raw_changed_signal = gtk.TextBuffer.signals.changed.connect(self.raw, *View, rawEdited, self, .{});
         self.update();
@@ -211,6 +250,7 @@ pub const View = struct {
         self.profiles.destroy();
         self.greeter_sync.destroy();
         self.closePicker();
+        self.closeFolderPicker();
         if (self.preview_idle != 0) _ = glib.Source.remove(self.preview_idle);
         self.cancelPreview();
         gtk.StyleContext.removeProviderForDisplay(self.window.as(gtk.Widget).getDisplay(), self.preview_css.as(gtk.StyleProvider));
@@ -266,6 +306,8 @@ pub const View = struct {
         self.qt_comparison.setText(self.editor.qt_review_text.z());
         self.qt_reapply.as(gtk.Widget).setVisible(@intFromBool(self.editor.qt_review_digest.len == 64 and self.editor.qt_review_text.len != 0));
         for (self.night_times) |control| control.as(gtk.Widget).setSensitive(@intFromBool(self.night_schedule.getSelected() == 1));
+        const slideshow_on = self.slideshow_enabled.getActive() != 0;
+        for ([_]*gtk.Widget{ self.slideshow_folder.as(gtk.Widget), self.slideshow_choose.as(gtk.Widget), self.slideshow_interval.as(gtk.Widget), self.slideshow_order.as(gtk.Widget), self.slideshow_transition.as(gtk.Widget), self.slideshow_duration.as(gtk.Widget) }) |control| control.setSensitive(@intFromBool(slideshow_on));
         const editable = self.editor.editable();
         self.host.as(gtk.Widget).setSensitive(@intFromBool(editable and !self.raw_invalid));
         self.raw_view.setEditable(@intFromBool(self.editor.online and self.editor.ready and !self.editor.state.locked and self.editor.download == .none));
@@ -296,6 +338,12 @@ pub const View = struct {
         self.variant.setSelected(@intFromEnum(prefs.theme.variant));
         self.source.setSelected(@intFromEnum(prefs.theme.source));
         self.fit.setSelected(@intFromEnum(prefs.wallpaper.mode));
+        self.slideshow_enabled.setActive(@intFromBool(prefs.wallpaper.slideshow.enabled));
+        self.slideshow_folder.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, prefs.wallpaper.slideshow.folder) catch "");
+        self.slideshow_interval.setValue(@floatFromInt(prefs.wallpaper.slideshow.interval_seconds));
+        self.slideshow_order.setSelected(@intFromEnum(prefs.wallpaper.slideshow.order));
+        self.slideshow_transition.setSelected(@intFromEnum(prefs.wallpaper.slideshow.transition));
+        self.slideshow_duration.setValue(@floatFromInt(prefs.wallpaper.slideshow.transition_ms));
         self.density.setSelected(@intFromEnum(prefs.density));
         for (self.entries, [_][]const u8{ prefs.theme.gtk_name, prefs.theme.seed, prefs.wallpaper.path, prefs.wallpaper.color, prefs.font }) |control, value| control.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, value) catch "");
         self.font_size.setValue(@floatFromInt(prefs.font_size));
@@ -332,7 +380,23 @@ pub const View = struct {
         prefs.theme.source = @enumFromInt(self.source.getSelected());
         prefs.theme.gtk_name = text(self.entries[0]);
         prefs.theme.seed = text(self.entries[1]);
-        prefs.wallpaper = .{ .mode = @enumFromInt(self.fit.getSelected()), .path = text(self.entries[2]), .color = text(self.entries[3]) };
+        // A rotating image is only visible in an image fit, so enabling the
+        // slideshow moves a gradient or solid fit to cover rather than failing.
+        const slideshow_on = self.slideshow_enabled.getActive() != 0;
+        const chosen_fit = self.fit.getSelected();
+        prefs.wallpaper = .{
+            .mode = @enumFromInt(if (slideshow_on and chosen_fit != 2 and chosen_fit != 3) @as(c_uint, 2) else chosen_fit),
+            .path = text(self.entries[2]),
+            .color = text(self.entries[3]),
+            .slideshow = .{
+                .enabled = slideshow_on,
+                .folder = text(self.slideshow_folder),
+                .interval_seconds = @intCast(self.slideshow_interval.getValueAsInt()),
+                .order = @enumFromInt(self.slideshow_order.getSelected()),
+                .transition = @enumFromInt(self.slideshow_transition.getSelected()),
+                .transition_ms = @intCast(self.slideshow_duration.getValueAsInt()),
+            },
+        };
         prefs.font = text(self.entries[4]);
         prefs.font_size = @intCast(self.font_size.getValueAsInt());
         prefs.density = @enumFromInt(self.density.getSelected());
@@ -494,6 +558,66 @@ pub const View = struct {
         self.filling = true;
         self.entries[2].as(gtk.Editable).setText(path);
         self.fit.setSelected(@intFromEnum(@as(model.Wallpaper, .{ .mode = .cover }).mode));
+        self.filling = false;
+        self.saveForm();
+    }
+    pub fn closeFolderPicker(self: *View) void {
+        if (self.folder_picker) |picker| {
+            self.folder_picker = null;
+            picker.as(gtk.Window).destroy();
+            picker.unref();
+        }
+    }
+    fn chooseFolder(_: *gtk.Button, self: *View) callconv(.c) void {
+        if (!self.editor.editable()) return;
+        if (self.folder_picker) |picker| {
+            picker.as(gtk.Window).present();
+            return;
+        }
+        const picker = object.ext.newInstance(gtk.FileChooserDialog, .{ .title = self.t("Choose wallpaper folder", "Hintergrundbild-Ordner auswählen"), .action = gtk.FileChooserAction.select_folder, .use_header_bar = @as(c_int, 1) });
+        self.folder_picker = picker;
+        _ = picker.ref();
+        const window = picker.as(gtk.Window);
+        window.setTransientFor(self.window);
+        window.setModal(1);
+        window.setDefaultSize(680, 520);
+        const dialog = picker.as(gtk.Dialog);
+        _ = dialog.addButton(self.t("_Cancel", "_Abbrechen"), @intFromEnum(gtk.ResponseType.cancel));
+        _ = dialog.addButton(self.t("_Select", "_Auswählen"), @intFromEnum(gtk.ResponseType.accept));
+        dialog.setDefaultResponse(@intFromEnum(gtk.ResponseType.accept));
+        const current = self.slideshow_folder.as(gtk.Editable).getText();
+        if (current[0] == '/') {
+            const file = gio.File.newForPath(current);
+            defer file.unref();
+            _ = picker.as(gtk.FileChooser).setFile(file, null);
+        }
+        _ = gtk.Dialog.signals.response.connect(dialog, *View, folderChosen, self, .{});
+        window.present();
+    }
+    fn folderChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
+        defer self.closeFolderPicker();
+        if (response != @intFromEnum(gtk.ResponseType.accept) or !self.editor.editable()) return;
+        const file = object.ext.cast(gtk.FileChooser, dialog).?.getFile() orelse return;
+        defer file.unref();
+        const path = file.getPath() orelse {
+            self.message.setText(self.t("Choose a folder stored on this computer.", "Wähle einen lokal gespeicherten Ordner."));
+            return;
+        };
+        defer glib.free(path);
+        const folder = std.mem.span(path);
+        if (folder.len > 1024 or !std.unicode.utf8ValidateSlice(folder)) {
+            self.message.setText(self.t("The folder path is too long or is not valid UTF-8.", "Der Ordnerpfad ist zu lang oder kein gültiges UTF-8."));
+            return;
+        }
+        self.filling = true;
+        self.slideshow_folder.as(gtk.Editable).setText(path);
+        // Validation needs an image fit and an initial image once the slideshow runs.
+        if (self.fit.getSelected() != 2 and self.fit.getSelected() != 3) self.fit.setSelected(@intFromEnum(@as(model.Wallpaper, .{ .mode = .cover }).mode));
+        if (self.entries[2].as(gtk.Editable).getText()[0] != '/') {
+            var arena = std.heap.ArenaAllocator.init(a);
+            defer arena.deinit();
+            if (@import("../config/slideshow.zig").firstImage(arena.allocator(), folder)) |first| self.entries[2].as(gtk.Editable).setText(first.ptr);
+        }
         self.filling = false;
         self.saveForm();
     }

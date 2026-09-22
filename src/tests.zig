@@ -37,6 +37,7 @@ test {
     _ = @import("config/aqueous_display_mutations.zig");
     _ = @import("config/aqueous_display_setup.zig");
     _ = @import("config/preferences.zig");
+    _ = @import("config/slideshow_policy.zig");
     _ = @import("desktop/bar_opacity.zig");
     _ = @import("desktop/bar_visibility.zig");
     _ = @import("config/merge.zig");
