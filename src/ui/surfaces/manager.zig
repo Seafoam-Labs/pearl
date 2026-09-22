@@ -45,6 +45,7 @@ const Surface = struct {
     running_apps: ?*Running.Chooser = null,
     control: ?*Panels.Control = null,
     calendar: ?*@import("../../desktop/calendar.zig").View = null,
+    wallpapers: ?*@import("../../desktop/wallpapers.zig").View = null,
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
     media: ?*@import("../../desktop/media.zig").View = null,
     tray: ?*@import("../../desktop/tray.zig").View = null,
@@ -73,6 +74,7 @@ const Surface = struct {
         if (self.clipboard_capture) |view| view.destroy();
         if (self.control) |control| control.destroy();
         if (self.calendar) |view| view.destroy();
+        if (self.wallpapers) |view| view.destroy();
         if (self.measure_clock) |clock| {
             if (object.signalHandlerIsConnected(clock.as(object.Object), self.measure_signal) != 0) object.signalHandlerDisconnect(clock.as(object.Object), self.measure_signal);
             clock.unref();
@@ -448,6 +450,7 @@ pub const Manager = struct {
         }
         for ([_]?*Surface{ self.popup, self.osd, self.notification }) |maybe| if (maybe) |surface| self.styleSurface(surface);
         if (self.popup) |surface| if (surface.settings) |view| view.update();
+        if (self.popup) |surface| if (surface.wallpapers) |view| view.update();
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
         self.slideshow.configure();
         if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
@@ -949,6 +952,7 @@ pub const Manager = struct {
             if (s.clipboard_capture) |view| view.destroy();
             if (s.control) |panel_control| panel_control.destroy();
             if (s.calendar) |view| view.destroy();
+            if (s.wallpapers) |view| view.destroy();
             if (s.notifications) |view| view.destroy();
             if (s.media) |view| view.destroy();
             if (s.tray) |view| view.destroy();
@@ -1024,6 +1028,7 @@ pub const Manager = struct {
                     .running_apps => s.running_apps = try Running.Chooser.create(panel, &self.tasks.snapshot, &self.index, s, runningAction),
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
                     .calendar => s.calendar = try @import("../../desktop/calendar.zig").View.create(panel),
+                    .wallpapers => s.wallpapers = try @import("../../desktop/wallpapers.zig").View.create(panel, &self.preferences),
                     .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
                     .media => {
                         const scroll = gtk.ScrolledWindow.new();
@@ -1228,7 +1233,7 @@ pub const Manager = struct {
         const launcher = self.pane == .launcher or self.pane == .launcher_picker;
         const settings = self.pane == .settings or self.pane == .aqueous_settings;
         const centered = prefs.placement == .centered or launcher;
-        var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else 440), prefs.max_width);
+        var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else if (self.pane == .wallpapers) 640 else 440), prefs.max_width);
         var height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else 560), prefs.max_height);
         if (self.pane == .tray) {
             // Tray menus hug their entries instead of reserving a full pane.
@@ -1238,7 +1243,23 @@ pub const Manager = struct {
                 height = @min(@max(size.height + 16, 160), height);
             }
         }
-        const rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
+        var rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
+        if (self.pane == .wallpapers) {
+            // Sit under the bar icon that opened the pane, the way the calendar
+            // sits under the clock. The bar spans the whole edge, so the
+            // cross-axis coordinate is already output-relative.
+            if (o.bar) |surface| if (surface.bar) |bar| if (bar.pane_anchor) |anchor| {
+                if (o.reservations.bar_edge == .top or o.reservations.bar_edge == .bottom) {
+                    const left = @max(0, o.usable.x - o.bounds.x);
+                    const right = @min(o.bounds.width, o.usable.x - o.bounds.x + o.usable.width) - rect.width;
+                    rect.x = @min(@max(anchor.x + @divTrunc(anchor.width, 2) - @divTrunc(rect.width, 2), left), @max(left, right));
+                } else {
+                    const top = @max(0, o.usable.y - o.bounds.y);
+                    const bottom = @min(o.bounds.height, o.usable.y - o.bounds.y + o.usable.height) - rect.height;
+                    rect.y = @min(@max(anchor.y + @divTrunc(anchor.height, 2) - @divTrunc(rect.height, 2), top), @max(top, bottom));
+                }
+            };
+        }
         if (self.popup_rect) |previous| if (std.meta.eql(previous, rect)) return;
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;

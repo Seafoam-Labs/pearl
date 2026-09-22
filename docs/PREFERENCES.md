@@ -351,7 +351,10 @@ not partially inherit the global bar object. Absent connectors retain their
 preferences for later hotplug. Widget groups require one launcher and reject
 duplicates and unknown names. `running_apps` is the optional **Running applications**
 widget; add it through the selection editor to any group. Its scope is all
-workspaces and displays, even in a per-output layout. There are no additional
+workspaces and displays, even in a per-output layout. `wallpaper` is the optional
+**Wallpaper** widget; it opens a thumbnail browser for the slideshow folder and
+applies the clicked image immediately, and its **Choose folder…** button sets
+that same folder. There are no additional
 widget preferences. Older binaries reject this token, so remove it before a
 downgrade. The supported names are documented in
 [DESKTOP.md](DESKTOP.md). The minimum bar size is 32–160 logical pixels; GTK's

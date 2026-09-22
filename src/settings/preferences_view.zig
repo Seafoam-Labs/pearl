@@ -115,27 +115,28 @@ pub const View = struct {
         const fit = dropdown(wallpaper, if (german) "Hintergrundmodus" else "Wallpaper fit", &.{ "Material gradient", "Solid color", "Cover", "Contain" });
         const color = entry(wallpaper, if (german) "Hintergrundfarbe" else "Background color", 7);
         // One card owns the whole wallpaper area; the slideshow is a section of it.
+        // Built from locals because `self` is only assigned after every card exists.
         const slideshow = wallpaper;
         const divider = gtk.Separator.new(.horizontal);
         divider.as(gtk.Widget).setMarginTop(16);
         divider.as(gtk.Widget).setMarginBottom(16);
         slideshow.append(divider.as(gtk.Widget));
-        slideshow.append(w.label(self.t("Slideshow", "Diashow"), "settings-row-title").as(gtk.Widget));
-        slideshow.append(w.label(self.t("Rotates through the images in one folder. Only PNG and JPEG are used. Each change re-runs wallpaper colors when the theme follows the image.", "Wechselt durch die Bilder eines Ordners. Nur PNG und JPEG werden verwendet. Jeder Wechsel berechnet die Bildfarben neu, wenn das Design dem Bild folgt."), "pearl-secondary").as(gtk.Widget));
-        self.slideshow_enabled = toggle(slideshow, self.t("Enable slideshow", "Diashow aktivieren"));
-        self.slideshow_folder = entry(slideshow, self.t("Image folder", "Bildordner"), 1024);
-        self.slideshow_folder.setPlaceholderText(self.t("No folder selected", "Kein Ordner ausgewählt"));
-        self.slideshow_choose = w.wrappingButton(self.t("Choose folder…", "Ordner auswählen…"));
-        self.slideshow_choose.as(gtk.Widget).setHalign(.end);
-        self.slideshow_choose.as(gtk.Widget).setMarginEnd(20);
-        self.slideshow_choose.as(gtk.Widget).setMarginBottom(12);
-        slideshow.append(self.slideshow_choose.as(gtk.Widget));
-        self.slideshow_interval = gtk.SpinButton.newWithRange(10, 86400, 10);
-        row(slideshow, self.t("Change every (seconds)", "Wechseln alle (Sekunden)"), self.slideshow_interval.as(gtk.Widget));
-        self.slideshow_order = dropdown(slideshow, self.t("Order", "Reihenfolge"), if (german) &.{ "Fortlaufend", "Zufällig" } else &.{ "Sequential", "Random" });
-        self.slideshow_transition = dropdown(slideshow, self.t("Transition", "Übergang"), if (german) &.{ "Keiner", "Überblenden", "Schieben", "Drehen", "Überdecken", "Zufällig" } else &.{ "None", "Fade", "Slide", "Rotate", "Cover", "Random" });
-        self.slideshow_duration = gtk.SpinButton.newWithRange(100, 5000, 20);
-        row(slideshow, self.t("Animation length (ms)", "Animationsdauer (ms)"), self.slideshow_duration.as(gtk.Widget));
+        slideshow.append(w.label(if (german) "Diashow" else "Slideshow", "settings-row-title").as(gtk.Widget));
+        slideshow.append(w.label(if (german) "Wechselt durch die Bilder eines Ordners. Nur PNG und JPEG werden verwendet. Jeder Wechsel berechnet die Bildfarben neu, wenn das Design dem Bild folgt." else "Rotates through the images in one folder. Only PNG and JPEG are used. Each change re-runs wallpaper colors when the theme follows the image.", "pearl-secondary").as(gtk.Widget));
+        const slideshow_enabled = toggle(slideshow, if (german) "Diashow aktivieren" else "Enable slideshow");
+        const slideshow_folder = entry(slideshow, if (german) "Bildordner" else "Image folder", 1024);
+        slideshow_folder.setPlaceholderText(if (german) "Kein Ordner ausgewählt" else "No folder selected");
+        const slideshow_choose = w.wrappingButton(if (german) "Ordner auswählen…" else "Choose folder…");
+        slideshow_choose.as(gtk.Widget).setHalign(.end);
+        slideshow_choose.as(gtk.Widget).setMarginEnd(20);
+        slideshow_choose.as(gtk.Widget).setMarginBottom(12);
+        slideshow.append(slideshow_choose.as(gtk.Widget));
+        const slideshow_interval = gtk.SpinButton.newWithRange(10, 86400, 10);
+        row(slideshow, if (german) "Wechseln alle (Sekunden)" else "Change every (seconds)", slideshow_interval.as(gtk.Widget));
+        const slideshow_order = dropdown(slideshow, if (german) "Reihenfolge" else "Order", if (german) &.{ "Fortlaufend", "Zufällig" } else &.{ "Sequential", "Random" });
+        const slideshow_transition = dropdown(slideshow, if (german) "Übergang" else "Transition", if (german) &.{ "Keiner", "Überblenden", "Schieben", "Drehen", "Überdecken", "Zufällig" } else &.{ "None", "Fade", "Slide", "Rotate", "Cover", "Random" });
+        const slideshow_duration = gtk.SpinButton.newWithRange(100, 5000, 20);
+        row(slideshow, if (german) "Animationsdauer (ms)" else "Animation length (ms)", slideshow_duration.as(gtk.Widget));
         const typography = card(host);
         const font = entry(typography, if (german) "Schriftfamilie" else "Font family", 96);
         font.setPlaceholderText(if (german) "Systemvorgabe" else "System default");
@@ -182,7 +183,7 @@ pub const View = struct {
         raw_view.setRightMargin(24);
         w.name(raw_view.as(gtk.Widget), if (german) "Vollständige Pearl-Einstellungen als JSON" else "Full Pearl preferences JSON");
         // The caller installs raw_view directly in Advanced's sole viewport.
-        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison };
+        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
         const night = card(host);
         night.append(w.label(self.t("Night Light", "Nachtlicht"), "settings-row-title").as(gtk.Widget));
         night.append(w.label(self.t("Warmer screen colors on supported displays. The status below shows which displays can apply your saved schedule.", "Wärmere Farben auf unterstützten Bildschirmen. Der Status unten zeigt, welche Bildschirme den gespeicherten Zeitplan anwenden können."), "pearl-secondary").as(gtk.Widget));

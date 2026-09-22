@@ -60,6 +60,28 @@ model and verification details. Before downgrading to a Pearl version without
 this widget, remove `running_apps` from saved layouts; older versions reject
 unknown widget tokens.
 
+## Wallpaper in the bar
+
+Add **Wallpaper** in Settings → Bar & dock → Add widget. Its builtin layout
+token is `wallpaper`. Clicking it opens a thumbnail browser for the folder
+configured under Appearance → Wallpaper → Slideshow → Image folder; clicking a
+thumbnail applies that image immediately, with no Apply step, and outlines it as
+the current wallpaper. The folder itself is chosen in Settings, not here.
+
+The pane shows six landscape thumbnails per page in a three-by-two grid, with
+**‹ / ›** and a page counter below the grid to move through longer folders, and a
+refresh button in the header to rescan after adding or removing files. Previews
+are decoded off the main thread at 192×108 and cached on disk under
+`$XDG_CACHE_HOME/pearl/wallpaper-thumbs`, keyed by path, size and mtime, so pages
+you have seen before — in this session or a later one — paint without touching
+the source image again. Only PNG and JPEG are listed, matching what the
+wallpaper pipeline accepts. Applying a wallpaper goes through the normal
+preferences commit, so the wallpaper watch, wallpaper-derived colors and every
+output surface stay consistent; if the theme follows the image, each pick
+regenerates its palette. With no folder set the pane shows a hint instead of a
+grid. Before downgrading to a Pearl version without this widget, remove
+`wallpaper` from saved layouts.
+
 ## Compact settings navigation
 
 Speaker, Network, Bluetooth and Battery open **Sound**, **Network**,

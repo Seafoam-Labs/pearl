@@ -26,5 +26,7 @@
     <file>icons/scalable/actions/pearl-media-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-notifications-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-edit-copy-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-image-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-view-refresh-symbolic.svg</file>
   </gresource>
 </gresources>

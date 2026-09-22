@@ -48,7 +48,7 @@ pub const Engine = struct {
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
         const alloc = arena.allocator();
-        const names = listFolder(alloc, config.folder) catch return;
+        const names = listImages(alloc, config.folder) catch return;
         if (names.len == 0) return;
         const index = policy.next(names, std.fs.path.basename(prefs.wallpaper.path), config.order, seed());
         var buffer: [1300]u8 = undefined;
@@ -74,7 +74,7 @@ fn seed() u64 {
 /// First eligible image in `folder`. The settings form uses it to seed a
 /// wallpaper path when a folder is chosen and nothing is selected yet.
 pub fn firstImage(alloc: std.mem.Allocator, folder: []const u8) ?[:0]u8 {
-    const names = listFolder(alloc, folder) catch return null;
+    const names = listImages(alloc, folder) catch return null;
     if (names.len == 0) return null;
     var buffer: [1300]u8 = undefined;
     const path = std.fmt.bufPrintZ(&buffer, "{s}/{s}", .{ folder, names[0] }) catch return null;
@@ -83,7 +83,7 @@ pub fn firstImage(alloc: std.mem.Allocator, folder: []const u8) ?[:0]u8 {
 
 /// Sorted, decodable image basenames in `folder`. An unreadable directory yields
 /// an error the caller drops; the timer simply retries on the next interval.
-fn listFolder(alloc: std.mem.Allocator, folder: []const u8) ![][]const u8 {
+pub fn listImages(alloc: std.mem.Allocator, folder: []const u8) ![][]const u8 {
     const z = try alloc.dupeZ(u8, folder);
     const root = gio.File.newForPath(z);
     defer root.unref();

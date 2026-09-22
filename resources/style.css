@@ -116,6 +116,11 @@
 .pearl-root.$scope .pearl-auth-user { background: $low$; border-radius: 14px; padding: 10px 12px; }
 .pearl-root.$scope .pearl-auth-user .pearl-avatar { padding: 8px; }
 .pearl-root.$scope .pearl-auth-provenance { color: $secondary$; font-size: 0.85em; }
+/* Bar wallpaper picker thumbnails. */
+.pearl-root.$scope .pearl-wallpaper-thumb { background: $low$; border-radius: 12px; padding: 6px; min-height: 0; }
+.pearl-root.$scope .pearl-wallpaper-thumb:hover { background: $high$; }
+.pearl-root.$scope .pearl-wallpaper-thumb picture { border-radius: 8px; background: alpha($outline$, 0.12); }
+.pearl-root.$scope .pearl-wallpaper-thumb.pearl-wallpaper-selected { outline: 2px solid $primary$; outline-offset: -2px; }
 .pearl-root.$scope.pearl-shell .pearl-layout-card { padding: 14px; }
 
 /* Settings pages must not inherit the system notebook/text editor background. */

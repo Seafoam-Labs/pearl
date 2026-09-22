@@ -11,7 +11,7 @@ const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
 const Running = @import("running_apps.zig");
-pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray };
+pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers };
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
@@ -31,6 +31,8 @@ pub const Bar = struct {
     plugins: ?*@import("../plugins/manager.zig").Manager = null,
     plugin_views: std.ArrayList(*@import("../plugins/view.zig").View) = .empty,
     tray: ?*@import("tray.zig").Bar = null,
+    /// Geometry of the widget that last opened a pane, in bar-window coordinates.
+    pane_anchor: ?struct { x: i32, y: i32, width: i32, height: i32 } = null,
     notification_label: ?*gtk.Label = null,
     media_label: ?*gtk.Label = null,
     network_label: ?*gtk.Label = null,
@@ -257,6 +259,7 @@ pub const Bar = struct {
                     },
                     .overview => (try self.makeButton(.overview, "pearl-view-grid-symbolic", tr("Overview", "Übersicht"), false)).as(gtk.Widget),
                     .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", tr("Clipboard & capture", "Zwischenablage & Bildschirmfoto"), false)).as(gtk.Widget),
+                    .wallpaper => (try self.makeButton(.{ .pane = .wallpapers }, "pearl-image-symbolic", tr("Wallpaper", "Hintergrundbild"), false)).as(gtk.Widget),
                     .control => (try self.makeButton(.{ .settings = .overview }, "pearl-emblem-system-symbolic", tr("Open settings Overview", "Einstellungsübersicht öffnen"), false)).as(gtk.Widget),
                     .clock => blk: {
                         const button = try self.makeButton(.{ .pane = .calendar }, null, "", false);
@@ -623,7 +626,18 @@ pub const Bar = struct {
         for (self.workspace_handlers.items) |handler| try workspace_ids.append(alloc, handler.id.?);
         return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .background_opacity = self.background_opacity, .background_color = self.background_color, .keyboard_mode = keyboard_mode, .launcher_icon = self.launcher_icon.selection, .launcher_icon_loading = self.launcher_icon.job != null, .launcher_icon_failed = self.launcher_icon.failed, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
     }
-    fn clicked(_: *gtk.Button, button: *Button) callconv(.c) void {
-        button.owner.action(button.owner.context, button.event);
+    fn clicked(button: *gtk.Button, data: *Button) callconv(.c) void {
+        if (data.event == .pane) data.owner.recordPaneAnchor(button.as(gtk.Widget));
+        data.owner.action(data.owner.context, data.event);
+    }
+    /// Root-relative geometry of the widget that opened a pane, so the popup can
+    /// sit under the icon that was clicked. The bar spans the whole edge, so the
+    /// cross-axis coordinate is already output-relative.
+    fn recordPaneAnchor(self: *Bar, widget: *gtk.Widget) void {
+        const root = widget.getRoot() orelse return;
+        var x: f64 = 0;
+        var y: f64 = 0;
+        if (widget.translateCoordinates(root.as(gtk.Widget), 0, 0, &x, &y) == 0) return;
+        self.pane_anchor = .{ .x = @intFromFloat(x), .y = @intFromFloat(y), .width = widget.getWidth(), .height = widget.getHeight() };
     }
 };
