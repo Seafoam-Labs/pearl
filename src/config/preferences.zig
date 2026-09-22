@@ -15,6 +15,24 @@ test "old preferences default night light off and new invalid policies are rejec
     try std.testing.expectError(error.InvalidNightLightInterval, parse(alloc, "{\"night_light\":{\"schedule\":\"custom\",\"start_minute\":60,\"end_minute\":60}}"));
     try std.testing.expectError(error.UnknownField, parse(alloc, "{\"night_light\":{\"force\":true}}"));
 }
+test "wallpaper slideshow roundtrips and rejects a non-image fit" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    const policy = @import("slideshow_policy.zig");
+    const saved = try parse(alloc, "{\"wallpaper\":{\"mode\":\"cover\",\"path\":\"/p/a.png\",\"slideshow\":{\"enabled\":true,\"folder\":\"/p\",\"interval_seconds\":60,\"order\":\"random\",\"transition\":\"slide\"}}}");
+    try std.testing.expect(saved.wallpaper.slideshow.enabled);
+    try std.testing.expectEqual(@as(u32, 60), saved.wallpaper.slideshow.interval_seconds);
+    try std.testing.expectEqual(policy.Order.random, saved.wallpaper.slideshow.order);
+    try std.testing.expectEqual(policy.Transition.slide, saved.wallpaper.slideshow.transition);
+    const encoded = try std.json.Stringify.valueAlloc(alloc, saved, .{});
+    try std.testing.expectEqualDeep(saved.wallpaper.slideshow, (try parse(alloc, encoded)).wallpaper.slideshow);
+    try std.testing.expectError(error.SlideshowNeedsImageMode, parse(alloc, "{\"wallpaper\":{\"mode\":\"gradient\",\"slideshow\":{\"enabled\":true,\"folder\":\"/p\"}}}"));
+    try std.testing.expectError(error.SlideshowFolderRequired, parse(alloc, "{\"wallpaper\":{\"mode\":\"cover\",\"path\":\"/p/a.png\",\"slideshow\":{\"enabled\":true}}}"));
+    try std.testing.expectError(error.InvalidSlideshowInterval, parse(alloc, "{\"wallpaper\":{\"slideshow\":{\"interval_seconds\":2}}}"));
+    try std.testing.expectError(error.AbsoluteImagePathRequired, parse(alloc, "{\"wallpaper\":{\"slideshow\":{\"folder\":\"pictures\"}}}"));
+    try std.testing.expectError(error.UnknownField, parse(alloc, "{\"wallpaper\":{\"slideshow\":{\"shuffle\":true}}}"));
+}
 pub const Theme = struct {
     mode: enum { static, dynamic, gtk, package } = .static,
     package_id: []const u8 = "",
@@ -33,6 +51,7 @@ pub const Wallpaper = struct {
     mode: enum { gradient, solid, cover, contain } = .gradient,
     path: []const u8 = "",
     color: []const u8 = "#141218",
+    slideshow: @import("slideshow_policy.zig").Config = .{},
 };
 pub const Dock = @import("../desktop/dock_policy.zig").Config;
 pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
@@ -96,6 +115,11 @@ pub const Preferences = struct {
         try safeText(self.wallpaper.path, 1024);
         if (self.wallpaper.path.len > 0 and self.wallpaper.path[0] != '/') return error.AbsoluteImagePathRequired;
         if ((self.wallpaper.mode == .cover or self.wallpaper.mode == .contain or (self.theme.mode == .dynamic and self.theme.source == .wallpaper)) and self.wallpaper.path.len == 0) return error.ImageRequired;
+        try self.wallpaper.slideshow.validate();
+        try safeText(self.wallpaper.slideshow.folder, 1024);
+        if (self.wallpaper.slideshow.folder.len > 0 and self.wallpaper.slideshow.folder[0] != '/') return error.AbsoluteImagePathRequired;
+        // A rotating image is only visible in an image fit.
+        if (self.wallpaper.slideshow.enabled and self.wallpaper.mode != .cover and self.wallpaper.mode != .contain) return error.SlideshowNeedsImageMode;
         try barValid(self.bar);
         if (self.outputs.len > 16) return error.TooManyOutputs;
         for (self.outputs, 0..) |o, i| {

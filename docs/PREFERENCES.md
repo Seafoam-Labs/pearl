@@ -276,7 +276,13 @@ Omitted fields use these defaults:
     "mode": "static", "variant": "dark", "seed": "#6750a4",
     "source": "seed", "gtk_name": ""
   },
-  "wallpaper": { "mode": "gradient", "path": "", "color": "#141218" },
+  "wallpaper": {
+    "mode": "gradient", "path": "", "color": "#141218",
+    "slideshow": {
+      "enabled": false, "folder": "", "interval_seconds": 900,
+      "order": "sequential", "transition": "fade", "transition_ms": 420
+    }
+  },
   "font": "", "font_size": 14, "density": "normal", "reduced_motion": false,
   "bar": {
     "edge": "top", "size": 48,
@@ -300,6 +306,18 @@ Omitted fields use these defaults:
 its wallpaper surface styled by GTK. `density` is `normal` or `compact`.
 Popup placement is `anchored` or `centered`; all popup rectangles are clamped to
 Aqueous's usable bounds. Escape always dismisses a popup.
+
+`wallpaper.slideshow` rotates the wallpaper through one folder. `folder` is an
+absolute path; only PNG and JPEG files in it are eligible, because the image
+pipeline rejects other formats by magic bytes. `interval_seconds` is 10..86400,
+`order` is `sequential` or `random`, and `transition` is `none`, `fade`, `slide`,
+`rotate`, `cover` or `random` (which re-rolls one animation per change). Enabling
+it requires an image fit (`cover` or `contain`) and a folder, otherwise
+validation fails with `SlideshowNeedsImageMode` or
+`SlideshowFolderRequired`. Each rotation commits preferences through the normal
+apply path, so wallpaper-derived colors and matugen profiles regenerate per
+slide when the theme follows the image. `reduced_motion` suppresses the
+transition. The greeter keeps whatever image was last synced to it.
 
 Per-output entries use stable connector names from `pearlctl status`, never
 Aqueous's temporary output IDs. For example:
@@ -349,6 +367,18 @@ or JPEG. The chooser starts at the current image when one is set. Selecting an
 image sets Wallpaper fit to Cover and updates the draft. You can choose Contain
 after selecting the image. Click **Apply & save** to use it; cancelling the chooser
 keeps the draft unchanged. You can still edit or clear the path directly.
+
+**Slideshow** is a section of the same Wallpaper card, below a divider.
+**Choose folder…**
+browses for a directory; picking one sets Wallpaper fit to Cover when it is not
+already an image fit, and seeds Wallpaper image with the folder's first eligible
+file when no image is set, so the draft validates. Change every, Order,
+Transition and Animation length stay disabled until the switch is on. The folder is rescanned on each
+rotation, so adding or removing images takes effect without reloading
+preferences; an empty or unreadable folder simply keeps the current wallpaper and
+retries at the next interval. A rejected commit (the service is busy, or another
+writer moved the revision) also waits for the next interval rather than retrying
+immediately.
 
 One immutable wallpaper texture is shared across output surfaces and fitted
 independently to their geometry. Input is an absolute, local, regular PNG/JPEG
@@ -429,8 +459,10 @@ Mutations and settings surfaces obey Pearl's existing Aqueous session/lock gate.
 
 Configuration is capped at 64 KiB and eight JSON nesting levels. There are at
 most 16 connector overrides and eight export templates of 8192 bytes each.
-Font and theme names are limited to 96 bytes, image paths to 1024, connector
-names and each widget group to 128. Font size is 10–24; popup maxima are
+Font and theme names are limited to 96 bytes, image and slideshow folder paths
+to 1024, connector names and each widget group to 128. Font size is 10–24;
+slideshow intervals are 10–86400 seconds and animation lengths 100–5000 ms;
+popup maxima are
 320–1280 wide and 320–1600 high, always clamped to the actual output.
 
 The existing control protocol remains limited to 8192-byte frames. CLI Apply's
