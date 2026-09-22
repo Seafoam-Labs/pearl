@@ -25,6 +25,9 @@
 .pearl-root.pearl-gtk .pearl-menu-panel button.pearl-icon { padding: 4px; min-width: 20px; min-height: 20px; }
 .pearl-root.pearl-gtk .pearl-menu-item { padding: 5px 10px; min-height: 0; border-radius: 8px; }
 .pearl-root.pearl-gtk .pearl-menu-check { min-width: 14px; }
+.pearl-root.pearl-gtk .pearl-auth-user { padding: 10px 12px; border-radius: 14px; }
+.pearl-root.pearl-gtk .pearl-auth-user .pearl-avatar { padding: 8px; }
+.pearl-root.pearl-gtk .pearl-auth-provenance { font-size: 0.85em; }
 .pearl-root.pearl-gtk.pearl-reduced-motion * { transition: none; animation: none; }
 .pearl-root.pearl-gtk .pearl-settings-heading:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }
 

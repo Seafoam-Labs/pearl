@@ -8,6 +8,8 @@ const layer = @import("gtk4layershell1");
 const p = @import("bar_visibility.zig");
 const Edge = @import("../ui/surfaces/policy.zig").Edge;
 const a = std.heap.c_allocator;
+const fade_ms: f64 = 180;
+const fade_step_ms: c_uint = 16;
 
 pub const Controller = struct {
     window: *gtk.Window,
@@ -21,6 +23,11 @@ pub const Controller = struct {
     timer: c_uint = 0,
     destroying: bool = false,
     applying: bool = false,
+    shown: bool = false,
+    fade: c_uint = 0,
+    fade_start: i64 = 0,
+    fade_from: f64 = 1,
+    fade_to: f64 = 1,
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
 
@@ -66,6 +73,7 @@ pub const Controller = struct {
     pub fn destroy(self: *Controller) void {
         self.destroying = true;
         self.cancelTimer();
+        self.stopFade();
         self.window.as(gtk.Widget).removeController(self.motion[0].as(gtk.EventController));
         self.window.as(gtk.Widget).removeController(self.events.as(gtk.EventController));
         self.sensor.destroy();
@@ -143,10 +151,52 @@ pub const Controller = struct {
         layer.setExclusiveZone(self.window, self.state.exclusiveZone(self.thickness));
         const overlay = self.state.mode == .autohide and self.state.visible and self.fullscreen;
         layer.setLayer(self.window, if (overlay) .overlay else .top);
-        const changed = (self.window.as(gtk.Widget).getVisible() != 0) != self.state.visible;
-        self.window.as(gtk.Widget).setVisible(@intFromBool(self.state.visible));
         self.sensor.as(gtk.Widget).setVisible(@intFromBool(self.state.sensor()));
-        if (changed) self.changed(self.context);
+        if (self.shown != self.state.visible) {
+            self.shown = self.state.visible;
+            self.animate(self.state.visible);
+            self.changed(self.context);
+        }
+    }
+    /// Fades the bar instead of popping it; only autohide animates, and reduced
+    /// motion keeps the instant switch.
+    fn animate(self: *Controller, show: bool) void {
+        const widget = self.window.as(gtk.Widget);
+        if (self.state.mode != .autohide or widget.hasCssClass("pearl-reduced-motion") != 0) {
+            self.stopFade();
+            widget.setOpacity(1);
+            widget.setVisible(@intFromBool(show));
+            return;
+        }
+        const was_visible = widget.getVisible() != 0;
+        self.fade_from = if (was_visible) widget.getOpacity() else 0;
+        self.fade_to = if (show) 1 else 0;
+        self.fade_start = @divTrunc(glib.getMonotonicTime(), 1000);
+        if (show) {
+            if (!was_visible) widget.setOpacity(0);
+            widget.setVisible(1);
+        }
+        if (self.fade == 0) self.fade = glib.timeoutAdd(fade_step_ms, fadeStep, self);
+    }
+    fn stopFade(self: *Controller) void {
+        if (self.fade != 0) _ = glib.Source.remove(self.fade);
+        self.fade = 0;
+    }
+    fn fadeStep(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Controller = @ptrCast(@alignCast(data.?));
+        self.fade = 0;
+        if (self.destroying) return 0;
+        const widget = self.window.as(gtk.Widget);
+        const elapsed = @divTrunc(glib.getMonotonicTime(), 1000) - self.fade_start;
+        const t = @min(1.0, @max(0.0, @as(f64, @floatFromInt(elapsed)) / fade_ms));
+        const eased = 1 - std.math.pow(f64, 1 - t, 3);
+        widget.setOpacity(self.fade_from + (self.fade_to - self.fade_from) * eased);
+        if (t >= 1.0) {
+            if (self.fade_to == 0) widget.setVisible(0);
+            return 0;
+        }
+        self.fade = glib.timeoutAdd(fade_step_ms, fadeStep, self);
+        return 0;
     }
     fn entered(motion: *gtk.EventControllerMotion, _: f64, _: f64, self: *Controller) callconv(.c) void {
         if (self.destroying or self.state.inhibited) return;
