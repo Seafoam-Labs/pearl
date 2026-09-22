@@ -21,6 +21,10 @@
 .pearl-root.pearl-gtk .pearl-calendar button.pearl-calendar-today { font-weight: 700; }
 .pearl-root.pearl-gtk.pearl-compact .pearl-calendar { padding: 10px; }
 .pearl-root.pearl-gtk.pearl-compact .pearl-calendar button.pearl-calendar-day { min-width: 28px; min-height: 28px; }
+.pearl-root.pearl-gtk .pearl-menu-panel { padding: 8px; }
+.pearl-root.pearl-gtk .pearl-menu-panel button.pearl-icon { padding: 4px; min-width: 20px; min-height: 20px; }
+.pearl-root.pearl-gtk .pearl-menu-item { padding: 5px 10px; min-height: 0; border-radius: 8px; }
+.pearl-root.pearl-gtk .pearl-menu-check { min-width: 14px; }
 .pearl-root.pearl-gtk.pearl-reduced-motion * { transition: none; animation: none; }
 .pearl-root.pearl-gtk .pearl-settings-heading:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }
 

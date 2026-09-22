@@ -849,6 +849,7 @@ pub const Manager = struct {
             if (popup.notifications) |view| view.update();
             if (popup.media) |view| view.update();
             if (popup.tray) |view| view.update();
+            if (self.pane == .tray) self.positionPopup();
             if (popup.control != null and self.layout_stamp != self.workspaceStamp(popup.output)) {
                 self.layout.?.cancel();
                 self.queryLayout(popup.output, null) catch {};
@@ -974,6 +975,7 @@ pub const Manager = struct {
                 } else fixed.put(panel_widget, 0, 0);
                 window.setChild(fixed.as(gtk.Widget));
                 panel_widget.addCssClass("pearl-popup-panel");
+                if (self.pane == .tray) panel_widget.addCssClass("pearl-menu-panel");
                 switch (self.pane) {
                     .aqueous_settings => s.aqueous_settings = try @import("../../desktop/aqueous_settings.zig").View.create(panel, &self.aqueous_settings, window),
                     .settings => s.settings = try @import("../../desktop/settings.zig").View.create(panel, &self.preferences),
@@ -1185,9 +1187,18 @@ pub const Manager = struct {
         const launcher = self.pane == .launcher or self.pane == .launcher_picker;
         const settings = self.pane == .settings or self.pane == .aqueous_settings;
         const centered = prefs.placement == .centered or launcher;
-        const width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else 440), prefs.max_width);
-        const height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else 560), prefs.max_height);
+        var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else 440), prefs.max_width);
+        var height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else 560), prefs.max_height);
+        if (self.pane == .tray) {
+            // Tray menus hug their entries instead of reserving a full pane.
+            if (s.tray) |view| {
+                const size = view.preferred();
+                width = @min(@max(size.width + 16, 220), width);
+                height = @min(@max(size.height + 16, 160), height);
+            }
+        }
         const rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
+        if (self.popup_rect) |previous| if (std.meta.eql(previous, rect)) return;
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;
         const positioned = if (s.viewport) |viewport| viewport.as(gtk.Widget) else s.panel;
@@ -1789,6 +1800,7 @@ fn barAction(context: *anyopaque, event: Bar.Event) void {
             }
             if (pane == .tray and self.popup != null and self.popup.?.output == s.output and self.pane == .tray) {
                 self.popup.?.tray.?.update();
+                self.positionPopup();
                 return;
             }
             if (self.popup != null and self.popup.?.output == s.output and self.pane == pane) self.hidePopup() else self.showPane(s.output, pane) catch {};

@@ -103,6 +103,15 @@
 .pearl-root.$scope .pearl-calendar button:focus-visible { outline: 2px solid $primary$; outline-offset: 2px; }
 .pearl-root.$scope.pearl-compact .pearl-calendar { padding: 10px; border-radius: 14px; }
 .pearl-root.$scope.pearl-compact .pearl-calendar button.pearl-calendar-day { min-width: 28px; min-height: 28px; }
+/* Tray menus render as compact context-menu rows rather than shell pills. */
+.pearl-root.$scope.pearl-shell .pearl-menu-panel { padding: 8px; }
+.pearl-root.$scope .pearl-menu-panel button.pearl-icon { padding: 4px; min-width: 20px; min-height: 20px; }
+.pearl-root.$scope .pearl-menu-item { background: transparent; border: none; border-radius: 8px; padding: 5px 10px; min-height: 0; }
+.pearl-root.$scope .pearl-menu-item:hover { background: $high$; }
+.pearl-root.$scope .pearl-menu-item:active { background: mix($high$, $primary$, 0.12); }
+.pearl-root.$scope .pearl-menu-item:disabled { background: transparent; color: $secondary$; opacity: 0.55; }
+.pearl-root.$scope .pearl-menu-check { min-width: 14px; color: $primary$; }
+.pearl-root.$scope .pearl-menu-arrow { color: $secondary$; }
 .pearl-root.$scope.pearl-shell .pearl-layout-card { padding: 14px; }
 
 /* Settings pages must not inherit the system notebook/text editor background. */
