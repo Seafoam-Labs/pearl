@@ -11,6 +11,16 @@
 .pearl-root.pearl-gtk .pearl-card { padding: 16px; border-radius: 16px; }
 .pearl-root.pearl-gtk.pearl-compact .pearl-card { padding: 12px; }
 .pearl-root.pearl-gtk .pearl-launcher-row { padding: 10px 12px; min-height: 38px; }
+/* Calendar pane: geometry only, GTK renders the checked/today state colors. */
+.pearl-root.pearl-gtk .pearl-calendar { padding: 14px; border-radius: 16px; }
+.pearl-root.pearl-gtk .pearl-calendar-heading { font-weight: 600; }
+.pearl-root.pearl-gtk .pearl-calendar-weekday { font-size: 0.72em; font-weight: 600; letter-spacing: 0.8px; }
+.pearl-root.pearl-gtk .pearl-calendar button.pearl-calendar-nav { padding: 2px 9px; min-width: 26px; min-height: 26px; }
+.pearl-root.pearl-gtk .pearl-calendar button.pearl-calendar-jump { padding: 4px 12px; font-size: 0.85em; }
+.pearl-root.pearl-gtk .pearl-calendar button.pearl-calendar-day { padding: 0; min-width: 34px; min-height: 34px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+.pearl-root.pearl-gtk .pearl-calendar button.pearl-calendar-today { font-weight: 700; }
+.pearl-root.pearl-gtk.pearl-compact .pearl-calendar { padding: 10px; }
+.pearl-root.pearl-gtk.pearl-compact .pearl-calendar button.pearl-calendar-day { min-width: 28px; min-height: 28px; }
 .pearl-root.pearl-gtk.pearl-reduced-motion * { transition: none; animation: none; }
 .pearl-root.pearl-gtk .pearl-settings-heading:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }
 

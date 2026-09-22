@@ -43,6 +43,7 @@ const Surface = struct {
     launcher_picker: ?*LauncherPicker.View = null,
     running_apps: ?*Running.Chooser = null,
     control: ?*Panels.Control = null,
+    calendar: ?*@import("../../desktop/calendar.zig").View = null,
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
     media: ?*@import("../../desktop/media.zig").View = null,
     tray: ?*@import("../../desktop/tray.zig").View = null,
@@ -67,6 +68,7 @@ const Surface = struct {
         if (self.running_apps) |view| view.destroy();
         if (self.clipboard_capture) |view| view.destroy();
         if (self.control) |control| control.destroy();
+        if (self.calendar) |view| view.destroy();
         if (self.measure_clock) |clock| {
             if (object.signalHandlerIsConnected(clock.as(object.Object), self.measure_signal) != 0) object.signalHandlerDisconnect(clock.as(object.Object), self.measure_signal);
             clock.unref();
@@ -913,6 +915,7 @@ pub const Manager = struct {
             if (s.running_apps) |view| view.destroy();
             if (s.clipboard_capture) |view| view.destroy();
             if (s.control) |panel_control| panel_control.destroy();
+            if (s.calendar) |view| view.destroy();
             if (s.notifications) |view| view.destroy();
             if (s.media) |view| view.destroy();
             if (s.tray) |view| view.destroy();
@@ -977,7 +980,7 @@ pub const Manager = struct {
                     .launcher_picker => s.launcher_picker = try LauncherPicker.View.create(panel, &self.index, &self.preferences, self.client, self.picker_request orelse return error.InvalidRequest),
                     .running_apps => s.running_apps = try Running.Chooser.create(panel, &self.tasks.snapshot, &self.index, s, runningAction),
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
-                    .calendar => Panels.calendar(panel),
+                    .calendar => s.calendar = try @import("../../desktop/calendar.zig").View.create(panel),
                     .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
                     .media => {
                         const scroll = gtk.ScrolledWindow.new();
