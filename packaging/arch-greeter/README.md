@@ -41,6 +41,12 @@ login/session settings are preserved. GTK themes must be installed system-wide.
 The new appearance is used on the next greeter start. Install a Pearl desktop build
 containing the sync button to use this action.
 
+To choose the login monitor by identity instead of its current port, set
+`preferred_output_edid` in `/etc/pearl/greeter.json` to the monitor's `edid_sha256`
+from `aqueousctl outputs --json`. `preferred_output` remains a connector fallback.
+See [monitor configuration](../../docs/GREETER.md#configuration-and-sessions) for
+the identity format and duplicate-monitor behavior.
+
 Before installation, an existing `/etc/greetd/config.toml` is copied to
 `/etc/greetd/config.toml.bak`. An existing `.bak` is preserved on upgrades and
 reinstalls. If there is no config, no backup is created. The backup remains after

@@ -138,7 +138,14 @@ pub fn build(b: *std.Build) void {
     _ = resource_command.addDepFileOutputArg("pearl.gresource.d");
 
     const greeter_unit = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/greeter_tests.zig"), .target = target, .optimize = optimize }) });
-    b.step("test-greeter-unit", "Test bounded greetd framing, authority state and desktop parsing").dependOn(&b.addRunArtifact(greeter_unit).step);
+    const greeter_unit_step = b.step("test-greeter-unit", "Test greetd framing, authority state, desktop parsing and monitor identity");
+    greeter_unit_step.dependOn(&b.addRunArtifact(greeter_unit).step);
+    const output_unit_module = greeterModule(b, bindings, target, optimize, "src/greeter_output_tests.zig", true);
+    output_unit_module.addImport("wayland", native);
+    output_unit_module.addImport("gdkwayland4", bindings.module("gdkwayland4"));
+    output_unit_module.linkSystemLibrary("wayland-client", .{});
+    const output_unit = b.addTest(.{ .root_module = output_unit_module });
+    greeter_unit_step.dependOn(&b.addRunArtifact(output_unit).step);
     const greeter_versions = b.addSystemCommand(&.{ "pkg-config", "--exists", "gtk4 >= 4.22.5", "glib-2.0 >= 2.88.3", "gtk4-layer-shell-0 >= 1.3.0" });
     const greeter_build = b.step("build-greeter", "Build optional greeter artifacts without installing or activating a display manager");
     var greeter_test_executable: *std.Build.Step.Compile = undefined;
@@ -146,6 +153,9 @@ pub fn build(b: *std.Build) void {
     for ([_]bool{ false, true }) |instrumented| {
         for ([_][]const u8{ "greeter", "greeter_session", "greeter_host", "greeter_sync" }) |component| {
             const gm = greeterModule(b, bindings, target, optimize, b.fmt("src/{s}_main.zig", .{component}), instrumented);
+            gm.addImport("wayland", native);
+            gm.addImport("gdkwayland4", bindings.module("gdkwayland4"));
+            gm.linkSystemLibrary("wayland-client", .{});
             gm.strip = release and !instrumented;
             const name = std.mem.replaceOwned(u8, b.allocator, component, "_", "-") catch @panic("OOM");
             const exe = b.addExecutable(.{ .name = b.fmt("pearl-{s}{s}", .{ name, if (instrumented) "-test" else "" }), .root_module = gm });
@@ -154,7 +164,7 @@ pub fn build(b: *std.Build) void {
             greeter_build.dependOn(&install.step);
             if (instrumented and std.mem.eql(u8, component, "greeter")) {
                 greeter_test_executable = exe;
-                for ([_][]const u8{ "ipc", "ui", "catalog", "services", "soak" }) |suite| {
+                for ([_][]const u8{ "ipc", "ui", "catalog", "services", "soak", "outputs" }) |suite| {
                     const check = b.addSystemCommand(&.{ "python3", b.fmt("tests/integration/test_greeter_{s}.py", .{suite}), "--greeter" });
                     check.addArtifactArg(exe);
                     if (b.args) |args| check.addArgs(args);

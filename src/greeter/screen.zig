@@ -16,6 +16,8 @@ const Power = @import("power.zig").Power;
 const presentation = @import("../ui/auth/prompt_view.zig");
 const w = @import("../ui/components/widgets.zig");
 const options = @import("build_options");
+const output_identity = @import("output_identity.zig");
+const OutputWatch = @import("output_watch.zig").Watch;
 const a = std.heap.c_allocator;
 const View = struct { window: *gtk.Window, monitor: *gdk.Monitor, picture: *gtk.Picture, clock: *gtk.Label, date: *gtk.Label, active: bool, scroll: ?*gtk.ScrolledWindow = null, monitor_signal: c_ulong };
 const Purpose = enum { refresh, begin, start };
@@ -66,6 +68,7 @@ const Screen = struct {
     selected_kind: [8:0]u8 = @splat(0),
     selecting: bool = false,
     monitor_source: c_uint = 0,
+    output_watch: ?OutputWatch = null,
     tick_source: c_uint = 0,
     keyboard: ?*gdk.Device = null,
     pending_power: ?bool = null,
@@ -537,9 +540,14 @@ const Screen = struct {
     fn scheduleMonitors(self: *Screen) void {
         if (self.monitor_source == 0) self.monitor_source = glib.idleAdd(monitors, self);
     }
+    fn identitiesChanged(context: *anyopaque) void {
+        const self: *Screen = @ptrCast(@alignCast(context));
+        self.scheduleMonitors();
+    }
     fn monitors(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Screen = @ptrCast(@alignCast(data.?));
         self.monitor_source = 0;
+        if (self.output_watch) |*watch| if (!watch.ready) return 0;
         var active = false;
         for (&self.views) |*slot| if (slot.*) |*v| {
             if (v.monitor.isValid() == 0) {
@@ -554,25 +562,33 @@ const Screen = struct {
         const model = self.display.getMonitors();
         const count: usize = @min(model.getNItems(), 64);
         var first: usize = 0;
-        if (!active) if (self.config.preferred_output) |wanted| {
+        if (!active) {
+            var candidates: [64]output_identity.Output = @splat(.{});
             for (0..count) |i| {
                 const item = model.getObject(@intCast(i)) orelse continue;
                 defer item.unref();
                 const monitor = object.ext.cast(gdk.Monitor, item) orelse continue;
-                if (monitor.getConnector()) |name| if (std.mem.eql(u8, std.mem.span(name), wanted)) {
-                    first = i;
-                    break;
-                };
+                if (monitor.isValid() == 0) continue;
+                if (monitor.getConnector()) |name| {
+                    candidates[i].name = std.mem.span(name);
+                    if (self.output_watch) |*watch| candidates[i].digest = watch.digestFor(std.mem.span(name));
+                }
             }
-        };
+            const digest = if (self.config.preferred_output_edid) |value| output_identity.parseHash(value) catch null else null;
+            first = output_identity.select(candidates[0..count], self.config.preferred_output, digest) orelse 0;
+        }
         for (0..count) |offset| {
             const i = (first + offset) % count;
             const item = model.getObject(@intCast(i)) orelse continue;
             defer item.unref();
             const monitor = object.ext.cast(gdk.Monitor, item) orelse continue;
             var present = false;
-            for (self.views) |slot| if (slot) |v| if (v.monitor == monitor) {
+            for (&self.views) |*slot| if (slot.*) |*v| if (v.monitor == monitor) {
                 present = true;
+                if (!active and monitor.isValid() != 0) {
+                    self.attach(v);
+                    active = true;
+                }
             };
             if (present or monitor.isValid() == 0) continue;
             for (&self.views) |*slot| if (slot.* == null) {
@@ -618,6 +634,7 @@ const Screen = struct {
         overlay.addOverlay(scroll.as(gtk.Widget));
         v.scroll = scroll;
         v.active = true;
+        if (options.test_hooks) std.log.info("event=greeter-active-output connector={s}", .{if (v.monitor.getConnector()) |name| std.mem.span(name) else "unknown"});
         layer.setKeyboardMode(v.window, .exclusive);
         self.clear();
         self.update();
@@ -882,6 +899,10 @@ pub fn run() !void {
         Screen.capsChanged(keyboard.as(object.Object), undefined, &self);
     };
     _ = gio.ListModel.signals.items_changed.connect(display.getMonitors(), *Screen, Screen.listChanged, &self, .{});
+    if (config.preferred_output_edid != null) {
+        self.output_watch = OutputWatch.init(display, &self, Screen.identitiesChanged) catch null;
+        if (self.output_watch) |*watch| watch.start();
+    }
     _ = Screen.monitors(&self);
     self.scheduleClock();
     self.refresh(.refresh);

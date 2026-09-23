@@ -18,7 +18,8 @@ def main():
         directory = Path(tmp)
         config = directory/'greeter.json'
         original = dict(version=1, theme='material_dark', gtk_theme='old', allow_uwsm=False,
-                        force_session='wayland:chosen.desktop', power=False, fingerprint_hint=True)
+                        force_session='wayland:chosen.desktop', power=False, fingerprint_hint=True,
+                        preferred_output='DP-1', preferred_output_edid='sha256:'+'ab'*32)
         config.write_text(json.dumps(original))
         def run(request, ok=True):
             result = subprocess.run([str(args.helper.resolve()), '--fixture', str(directory)],
@@ -27,7 +28,7 @@ def main():
             return json.loads(config.read_text())
         solid = dict(theme='gtk', gtk_theme='Adwaita', wallpaper_color='#123456', wallpaper_fit='cover', image=None)
         synced = run(solid)
-        for key in ('allow_uwsm', 'force_session', 'power', 'fingerprint_hint'):
+        for key in ('allow_uwsm', 'force_session', 'power', 'fingerprint_hint', 'preferred_output', 'preferred_output_edid'):
             assert synced[key] == original[key]
         assert synced['wallpaper_color'] == '#123456' and synced['gtk_theme'] == 'Adwaita'
         assert synced['wallpaper'] is None

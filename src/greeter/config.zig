@@ -15,6 +15,7 @@ pub const Config = struct {
     font_size: u8 = 16,
     reduced_motion: bool = true,
     preferred_output: ?[]const u8 = null,
+    preferred_output_edid: ?[]const u8 = null,
     default_session: ?[]const u8 = null,
     force_session: ?[]const u8 = null,
     allow: []const []const u8 = &.{},
@@ -29,6 +30,7 @@ pub const Config = struct {
     fingerprint_hint: bool = false,
     auth_timeout_seconds: u16 = 120,
     pub fn validate(self: Config) !void {
+        if (self.preferred_output_edid) |value| _ = try @import("output_identity.zig").parseHash(value);
         if (self.wallpaper_color) |color| {
             if (color.len != 7 or color[0] != '#') return error.InvalidBackgroundColor;
             for (color[1..]) |c| if (!std.ascii.isHex(c)) return error.InvalidBackgroundColor;

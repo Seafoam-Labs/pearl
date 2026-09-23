@@ -36,6 +36,10 @@ def main():
         entry(high/'example.desktop',name='Changed'); after={e['id']:e for e in catalog()['sessions']}['wayland:example.desktop']['fingerprint']
         assert before!=after
         value['deny']=['wayland:example.desktop'];config.write_text(json.dumps(value));assert 'wayland:example.desktop' not in {e['id'] for e in catalog()['sessions']}
+        for edid in (None, 'ab'*32, 'sha256:'+'AB'*32):
+            value['preferred_output_edid']=edid;config.write_text(json.dumps(value));catalog()
+        for edid in ('', 'DP-1', 'sha256:', 'g'*64, 'a'*63, 'a'*65, 123):
+            value['preferred_output_edid']=edid;config.write_text(json.dumps(value));catalog(False)
         config.write_text('{"version":1,"version":1}');catalog(False)
         print('Catalog: precedence, masking, type identity, metadata, dependencies, Exec rejection, symlinks, fingerprint and policy passed')
 

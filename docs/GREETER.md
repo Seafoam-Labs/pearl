@@ -123,6 +123,7 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `wallpaper_color` | Optional `#RRGGBB` solid background, also visible around a contained image; null retains the theme gradient |
 | `font_size`, `reduced_motion` | 12–32 px base font and animation policy; larger-text button remains available |
 | `preferred_output` | Connector preference for initial card placement; output changes never authorize authentication |
+| `preferred_output_edid` | Monitor identity hash, taking precedence over `preferred_output`; accepts 64 hex digits with an optional `sha256:` prefix |
 | `roots` | Ordered session directories, each with `path` and `type` (`wayland` or `x11`); earlier entries mask later entries with the same ID |
 | `default_session`, `force_session` | Preferred ID, or administrator-enforced ID |
 | `allow`, `deny` | Optional lists of session IDs; deny wins |
@@ -132,6 +133,31 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `accounts`, `power`, `screen_reader` | Optional AccountsService labels, permitted logind controls and fixed Orca launcher |
 | `fingerprint_hint` | Optional generic fingerprint guidance; defaults off and does not enable authentication or inspect enrollment |
 | `auth_timeout_seconds` | 30–300 seconds for the absolute attempt deadline and input inactivity; transport/cancellation and handoff deadlines are separately bounded |
+
+To keep the login card on the same monitor after changing ports, run
+`aqueousctl outputs --json` in your desktop session and copy that monitor's
+`edid_sha256` into `/etc/pearl/greeter.json`, for example:
+
+```json
+"preferred_output_edid": "sha256:daf5f59252c5a28c00c8f13b516d7ccb8afdce47b8f664ff18f3059e18f3057e",
+"preferred_output": "DP-1"
+```
+
+Merge these entries into the existing JSON object and use your own identifier.
+The identifier follows Aqueous's convention: SHA-256 of `make|model|serial`
+as advertised by the compositor, not a checksum of the raw EDID bytes. The
+greeter reads these fields through wlr-output-management v2 or later. No display
+configuration is changed. Hex digits are case-insensitive; `sha256:` is optional.
+The setting applies when the greeter next starts.
+
+An identity match takes priority over the connector preference. If several
+connected monitors have that identity, the configured connector breaks the tie,
+then lexical connector order. If identity metadata or the matching monitor is
+unavailable, the greeter uses `preferred_output`, then the first available monitor.
+Startup waits at most one second for optional identity metadata. An active card
+stays on its current monitor when other monitors appear or metadata arrives late;
+if its monitor disappears, the preferences are applied again to available monitors.
+Monitors with missing or identical serial numbers may share an identifier.
 
 IDs look like `wayland:gnome.desktop` or `x11:xfce.desktop`; display labels use
 localized desktop names and distinguish identical names. Selection memory contains
