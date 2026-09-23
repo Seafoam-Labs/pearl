@@ -45,8 +45,20 @@ multi-window groups show a count; a hollow marker means all windows are minimize
 The strip fits the remaining bar length on any edge. Its overflow button opens
 additional application groups; if space is very limited it opens the entire
 list. All windows remain reachable. Long chooser lists load in batches of 50
-through **Show more**. Focus changes preserve application order; new applications
-append after existing groups. The strip disappears when no taskbar windows exist.
+through **Show more**. The strip disappears when no taskbar windows exist.
+
+Ordering follows the compositor's published layout order (`layout_index`, one
+layout instance per output and workspace) when any window reports one, so
+window and column swaps reorder the strip and the chooser. Where no order is
+published (older compositors, floating, maximized, fullscreen or minimized
+windows, workspaces that were never arranged), the previous ID-based order
+applies: focus changes preserve application order and new applications append
+after existing groups. Focus changes never reorder by themselves.
+
+`bar.running_apps_per_window` (Settings → Bar & behavior → Show one taskbar
+button per window) switches the strip to one button per window in layout
+order, using the window's own icon where the compositor provides pixels and
+the application icon otherwise. The chooser stays grouped in both modes.
 
 For a keyboard binding, use `pearlctl running-apps show [--output ID]`. The
 chooser owns keyboard input; arrows/Tab navigate, Enter activates and Escape

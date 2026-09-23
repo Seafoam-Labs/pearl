@@ -248,6 +248,8 @@ fn aqueousChanged(context: *anyopaque, event: adapter.Event) void {
         }
         if (self.session_source == 0) self.session_source = glib.idleAdd(sessionChanged, self);
     }
+    // Icon pixels land without a model change; redraw so cached entries show.
+    if (event == .icons) if (self.surfaces) |*surfaces| surfaces.schedule();
 }
 fn nativeSessionChanged(context: *anyopaque) void {
     const self: *State = @ptrCast(@alignCast(context));

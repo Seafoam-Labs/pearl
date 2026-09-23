@@ -228,6 +228,45 @@ test "captured sequence jump applies; omitted optional icon clears full entity" 
     try t.expectEqualStrings("9007199254740993", m.sequence);
 }
 
+test "optional layout_index decodes present, null and absent values and rejects bad ranges" {
+    const anchor = "\"layout\":\"floating\"";
+    const window_id = "18446744073709551615";
+    const present = try replace(f.desktop, anchor, anchor ++ ",\"layout_index\":5");
+    defer a.free(present);
+    var d = try decode(present, null);
+    defer d.deinit();
+    try t.expectEqual(@as(?u32, 5), d.message.event.batch.upsert[22].window.layout_index);
+    const explicit_null = try replace(f.desktop, anchor, anchor ++ ",\"layout_index\":null");
+    defer a.free(explicit_null);
+    var nulled = try decode(explicit_null, null);
+    defer nulled.deinit();
+    try t.expectEqual(@as(?u32, null), nulled.message.event.batch.upsert[22].window.layout_index);
+    const negative = try replace(f.desktop, anchor, anchor ++ ",\"layout_index\":-1");
+    defer a.free(negative);
+    try rejects(negative, error.InvalidRange, null);
+    const wide = try replace(f.desktop, anchor, anchor ++ ",\"layout_index\":4294967296");
+    defer a.free(wide);
+    try rejects(wide, error.InvalidRange, null);
+    const typed = try replace(f.desktop, anchor, anchor ++ ",\"layout_index\":\"5\"");
+    defer a.free(typed);
+    try rejects(typed, error.InvalidType, null);
+    // Old payloads without the key decode to null and a delta replacement clears a stored index.
+    var m = try model();
+    defer m.deinit();
+    try install(&m, present);
+    try t.expectEqual(@as(?u32, 5), m.get(.window, window_id).?.layout_index);
+    var old = try decode(f.desktop, null);
+    defer old.deinit();
+    var batch = old.message.event.batch;
+    batch.type = .delta;
+    batch.base_sequence = m.sequence;
+    batch.sequence = "9007199254740993";
+    const window = batch.upsert[22];
+    batch.upsert = &.{window};
+    try m.apply(batch);
+    try t.expectEqual(@as(?u32, null), m.get(.window, window_id).?.layout_index);
+}
+
 test "atomic migration and output removal preserve workspace identities" {
     var m = try model();
     defer m.deinit();

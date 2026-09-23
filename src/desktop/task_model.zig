@@ -86,7 +86,16 @@ pub const Snapshot = struct {
         next.association_hash = association_hash;
         var groups: std.ArrayList(Group) = .empty;
         var map: std.StringHashMapUnmanaged(usize) = .empty;
-        for (try model.windows(a, .{ .purpose = .taskbar })) |win| {
+        const taskbar = try model.windows(a, .{ .purpose = .taskbar });
+        var indexed = false;
+        for (taskbar) |win| if (win.layout_index != null) {
+            indexed = true;
+            break;
+        };
+        // Published layout order wins; without any index the ID-based order and
+        // the previous-rank group comparator below stay in charge.
+        if (indexed) std.mem.sort(*const entities.Window, taskbar, model, layoutOrderLess);
+        for (taskbar) |win| {
             const app = resolve(apps, win.*, choices);
             const identity = nonempty(win.app_id) orelse nonempty(win.class);
             const key = if (app) |v| try std.fmt.allocPrintSentinel(a, "desktop:{s}", .{v.id}, 0) else try std.fmt.allocPrintSentinel(a, "{s}:{s}", .{ if (nonempty(win.app_id) != null) "app" else if (identity != null) "class" else "window", identity orelse win.id }, 0);
@@ -100,7 +109,7 @@ pub const Snapshot = struct {
             try groups.items[slot.value_ptr.*].windows.append(a, .{ .id = try a.dupeZ(u8, win.id), .title = try a.dupeZ(u8, nonempty(win.title) orelse identity orelse "Application"), .workspace = if (ws) |v| try a.dupeZ(u8, v.name) else null, .output = if (output) |v| try a.dupeZ(u8, v.name) else null, .focused = win.focused, .minimized = win.minimized, .can_activate = win.can_activate });
         }
         const previous = if (std.mem.eql(u8, self.session, model.session)) self.groups else &.{};
-        std.mem.sort(Group, groups.items, previous, struct {
+        if (!indexed) std.mem.sort(Group, groups.items, previous, struct {
             fn rank(old: []const Group, key: []const u8) usize {
                 for (old, 0..) |g, i| if (std.mem.eql(u8, g.key, key)) return i;
                 return std.math.maxInt(usize);
@@ -125,6 +134,33 @@ pub const Snapshot = struct {
         self.* = next;
     }
 };
+/// Order key: output scope, workspace scope, index present before null, index
+/// value, window id. Indexes from different scopes are not comparable, so the
+/// scope keys come first and unresolved scopes sort last.
+fn layoutOrderLess(model: *const Model, x: *const entities.Window, y: *const entities.Window) bool {
+    const xo = if (x.output) |id| model.get(.output, id) else null;
+    const yo = if (y.output) |id| model.get(.output, id) else null;
+    if ((xo == null) != (yo == null)) return yo == null;
+    if (xo) |xv| if (yo) |yv| {
+        if (xv.bounds.x != yv.bounds.x) return xv.bounds.x < yv.bounds.x;
+        if (xv.bounds.y != yv.bounds.y) return xv.bounds.y < yv.bounds.y;
+        const name = std.mem.order(u8, xv.name, yv.name);
+        if (name != .eq) return name == .lt;
+        const id = std.mem.order(u8, xv.id, yv.id);
+        if (id != .eq) return id == .lt;
+    };
+    const xw = if (x.workspace) |id| model.get(.workspace, id) else null;
+    const yw = if (y.workspace) |id| model.get(.workspace, id) else null;
+    if ((xw == null) != (yw == null)) return yw == null;
+    if (xw) |xv| if (yw) |yv| {
+        if (xv.number != yv.number) return xv.number < yv.number;
+        const id = std.mem.order(u8, xv.id, yv.id);
+        if (id != .eq) return id == .lt;
+    };
+    if ((x.layout_index == null) != (y.layout_index == null)) return y.layout_index == null;
+    if (x.layout_index) |xv| if (y.layout_index) |yv| if (xv != yv) return xv < yv;
+    return std.mem.lessThan(u8, x.id, y.id);
+}
 fn nonempty(value: ?[]const u8) ?[]const u8 {
     return if (value) |v| if (v.len != 0) v else null else null;
 }
@@ -233,4 +269,232 @@ test "explicit launcher overrides identity and missing selections never fall bac
     try snapshot.updateWithLaunchers(&model, &apps, 1, &choices);
     try t.expect(snapshot.revision > before);
     try t.expect(snapshot.find("desktop:Custom.desktop") != null);
+}
+
+const order_token = "0123456789abcdef0123456789abcdef";
+
+fn fixtureOutput(id: []const u8, name: []const u8, x: i64) entities.Output {
+    return .{ .id = id, .name = name, .bounds = .{ .x = x, .y = 0, .width = 1920, .height = 1080 }, .usable_bounds = .{ .x = x, .y = 0, .width = 1920, .height = 1080 }, .scale = 1, .transform = "normal", .active_workspace = null, .enabled = true, .powered = true };
+}
+fn fixtureWorkspace(id: []const u8, output: []const u8, number: u32) entities.Workspace {
+    return .{ .id = id, .output = output, .name = id, .number = number, .active = false, .urgent = false };
+}
+fn scopedWindow(id: []const u8, app: ?[]const u8, output: ?[]const u8, workspace: ?[]const u8, index: ?u32) entities.Window {
+    var win = fixtureWindow(id, app);
+    win.output = output;
+    win.workspace = workspace;
+    win.layout_index = index;
+    return win;
+}
+fn orderModel(allocator: Allocator, upsert: []const entities.Entity) !Model {
+    var model = try Model.init(allocator, (@import("../aqueous/codec.zig").Limits{}).state_bytes);
+    errdefer model.deinit();
+    var values: std.ArrayList(entities.Entity) = .empty;
+    defer values.deinit(allocator);
+    try values.append(allocator, .{ .session = .{ .id = "session", .locked = false, .default_seat = null, .overview_output = null, .overview_window = null } });
+    try values.appendSlice(allocator, upsert);
+    try model.apply(.{ .type = .snapshot, .session = order_token, .sequence = "1", .base_sequence = null, .upsert = values.items, .removed = &.{} });
+    return model;
+}
+fn orderDelta(model: *Model, sequence: []const u8, upsert: []const entities.Entity, removed: []const entities.Key) !void {
+    try model.apply(.{ .type = .delta, .session = order_token, .sequence = sequence, .base_sequence = model.sequence, .upsert = upsert, .removed = removed });
+}
+fn expectKeys(t: anytype, snapshot: Snapshot, expected: []const []const u8) !void {
+    try t.expectEqual(expected.len, snapshot.groups.len);
+    for (expected, 0..) |key, i| try t.expectEqualStrings(key, snapshot.groups[i].key);
+}
+
+test "swapped layout indexes across applications swap group order" {
+    const t = std.testing;
+    var model = try orderModel(t.allocator, &.{
+        .{ .output = fixtureOutput("o1", "HEADLESS-1", 0) },
+        .{ .workspace = fixtureWorkspace("w1", "o1", 1) },
+        .{ .window = scopedWindow("win-a", "Alpha", "o1", "w1", 1) },
+        .{ .window = scopedWindow("win-b", "Beta", "o1", "w1", 0) },
+    });
+    defer model.deinit();
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    try snapshot.update(&model, &.{}, 0);
+    try expectKeys(t, snapshot, &.{ "app:Beta", "app:Alpha" });
+    const revision = snapshot.revision;
+    try orderDelta(&model, "2", &.{
+        .{ .window = scopedWindow("win-a", "Alpha", "o1", "w1", 0) },
+        .{ .window = scopedWindow("win-b", "Beta", "o1", "w1", 1) },
+    }, &.{});
+    try snapshot.update(&model, &.{}, 0);
+    try expectKeys(t, snapshot, &.{ "app:Alpha", "app:Beta" });
+    try t.expect(snapshot.revision > revision);
+}
+
+test "swapped layout indexes within one application swap window order" {
+    const t = std.testing;
+    var model = try orderModel(t.allocator, &.{
+        .{ .output = fixtureOutput("o1", "HEADLESS-1", 0) },
+        .{ .workspace = fixtureWorkspace("w1", "o1", 1) },
+        .{ .window = scopedWindow("win-a", "Alpha", "o1", "w1", 1) },
+        .{ .window = scopedWindow("win-b", "Alpha", "o1", "w1", 0) },
+    });
+    defer model.deinit();
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    try snapshot.update(&model, &.{}, 0);
+    try expectKeys(t, snapshot, &.{"app:Alpha"});
+    try t.expectEqualStrings("win-b", snapshot.groups[0].windows.items[0].id);
+    try t.expectEqualStrings("win-a", snapshot.groups[0].windows.items[1].id);
+    const revision = snapshot.revision;
+    try orderDelta(&model, "2", &.{
+        .{ .window = scopedWindow("win-a", "Alpha", "o1", "w1", 0) },
+        .{ .window = scopedWindow("win-b", "Alpha", "o1", "w1", 1) },
+    }, &.{});
+    try snapshot.update(&model, &.{}, 0);
+    try t.expectEqual(@as(usize, 1), snapshot.groups.len);
+    try t.expectEqualStrings("win-a", snapshot.groups[0].windows.items[0].id);
+    try t.expectEqualStrings("win-b", snapshot.groups[0].windows.items[1].id);
+    try t.expect(snapshot.revision > revision);
+}
+
+test "an order-only delta bumps revision with focus, counts and state unchanged" {
+    const t = std.testing;
+    var focused_a = scopedWindow("win-a", "Alpha", "o1", "w1", 1);
+    focused_a.focused = true;
+    var model = try orderModel(t.allocator, &.{
+        .{ .output = fixtureOutput("o1", "HEADLESS-1", 0) },
+        .{ .workspace = fixtureWorkspace("w1", "o1", 1) },
+        .{ .window = focused_a },
+        .{ .window = scopedWindow("win-b", "Beta", "o1", "w1", 0) },
+    });
+    defer model.deinit();
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    try snapshot.update(&model, &.{}, 0);
+    const revision = snapshot.revision;
+    try t.expect(snapshot.find("app:Alpha").?.focused());
+    try orderDelta(&model, "2", &.{
+        .{ .window = focused_a },
+        .{ .window = scopedWindow("win-b", "Beta", "o1", "w1", 1) },
+    }, &.{});
+    var bumped = scopedWindow("win-a", "Alpha", "o1", "w1", 0);
+    bumped.focused = true;
+    try model.apply(.{ .type = .delta, .session = order_token, .sequence = "3", .base_sequence = "2", .upsert = &.{.{ .window = bumped }}, .removed = &.{} });
+    try snapshot.update(&model, &.{}, 0);
+    try expectKeys(t, snapshot, &.{ "app:Alpha", "app:Beta" });
+    try t.expectEqual(@as(usize, 1), snapshot.find("app:Alpha").?.windows.items.len);
+    try t.expectEqual(@as(usize, 1), snapshot.find("app:Beta").?.windows.items.len);
+    try t.expect(snapshot.find("app:Alpha").?.focused());
+    try t.expect(!snapshot.find("app:Beta").?.focused());
+    try t.expect(snapshot.revision > revision);
+}
+
+test "equal layout indexes fall back to scope keys then window id" {
+    const t = std.testing;
+    var model = try orderModel(t.allocator, &.{
+        .{ .output = fixtureOutput("o1", "HEADLESS-1", 0) },
+        .{ .output = fixtureOutput("o2", "HEADLESS-2", 1920) },
+        .{ .workspace = fixtureWorkspace("w1", "o1", 1) },
+        .{ .workspace = fixtureWorkspace("w2", "o1", 2) },
+        .{ .workspace = fixtureWorkspace("w3", "o2", 1) },
+        .{ .window = scopedWindow("b", null, "o2", "w3", 0) },
+        .{ .window = scopedWindow("d", null, "o1", "w2", 0) },
+        .{ .window = scopedWindow("m2", null, "o1", "w1", 0) },
+        .{ .window = scopedWindow("m1", null, "o1", "w1", 0) },
+    });
+    defer model.deinit();
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    try snapshot.update(&model, &.{}, 0);
+    try expectKeys(t, snapshot, &.{ "window:m1", "window:m2", "window:d", "window:b" });
+}
+
+test "windows without any layout index keep the previous-rank group order" {
+    const t = std.testing;
+    var model = try orderModel(t.allocator, &.{
+        .{ .window = fixtureWindow("z1", "Zed") },
+        .{ .window = fixtureWindow("a1", "Alpha") },
+    });
+    defer model.deinit();
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    try snapshot.update(&model, &.{}, 0);
+    try expectKeys(t, snapshot, &.{ "app:Alpha", "app:Zed" });
+    try orderDelta(&model, "2", &.{.{ .window = fixtureWindow("m1", "Middle") }}, &.{});
+    try snapshot.update(&model, &.{}, 0);
+    // Previous rank outranks the name comparator: a name sort would put Middle before Zed.
+    try expectKeys(t, snapshot, &.{ "app:Alpha", "app:Zed", "app:Middle" });
+}
+
+test "added and removed windows rebuild the layout order without stale entries" {
+    const t = std.testing;
+    var model = try orderModel(t.allocator, &.{
+        .{ .output = fixtureOutput("o1", "HEADLESS-1", 0) },
+        .{ .workspace = fixtureWorkspace("w1", "o1", 1) },
+        .{ .window = scopedWindow("win-a", "Alpha", "o1", "w1", 1) },
+        .{ .window = scopedWindow("win-b", "Beta", "o1", "w1", 0) },
+    });
+    defer model.deinit();
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    try snapshot.update(&model, &.{}, 0);
+    const revision = snapshot.revision;
+    try orderDelta(&model, "2", &.{
+        .{ .window = scopedWindow("win-c", "Gamma", "o1", "w1", 0) },
+        .{ .window = scopedWindow("win-a", "Alpha", "o1", "w1", 1) },
+    }, &.{.{ .kind = .window, .id = "win-b" }});
+    try snapshot.update(&model, &.{}, 0);
+    try expectKeys(t, snapshot, &.{ "app:Gamma", "app:Alpha" });
+    try t.expect(snapshot.find("app:Beta") == null);
+    try t.expectEqual(@as(usize, 1), snapshot.find("app:Alpha").?.windows.items.len);
+    try t.expect(snapshot.revision > revision);
+}
+
+test "layout order follows scope keys across outputs and workspaces with null scopes last" {
+    const t = std.testing;
+    var model = try orderModel(t.allocator, &.{
+        .{ .output = fixtureOutput("o1", "HEADLESS-1", 0) },
+        .{ .output = fixtureOutput("o2", "HEADLESS-2", 1920) },
+        .{ .workspace = fixtureWorkspace("w1", "o1", 1) },
+        .{ .workspace = fixtureWorkspace("w2", "o1", 2) },
+        .{ .workspace = fixtureWorkspace("w3", "o2", 1) },
+        .{ .window = scopedWindow("n", null, null, null, 0) },
+        .{ .window = scopedWindow("s", null, "o2", "w3", 0) },
+        .{ .window = scopedWindow("d", null, "o1", "w2", 0) },
+        .{ .window = scopedWindow("c", null, "o1", "w1", 1) },
+        .{ .window = scopedWindow("b", null, "o1", "w1", 0) },
+    });
+    defer model.deinit();
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    try snapshot.update(&model, &.{}, 0);
+    try expectKeys(t, snapshot, &.{ "window:b", "window:c", "window:d", "window:s", "window:n" });
+}
+
+test "unindexed special-state windows keep identity and sort after indexed ones" {
+    const t = std.testing;
+    var minimized = scopedWindow("m1", "Alpha", "o1", "w1", null);
+    minimized.minimized = true;
+    var floating = scopedWindow("f1", "Alpha", "o1", "w1", null);
+    floating.floating = true;
+    var inert = scopedWindow("x1", "Alpha", "o1", "w1", null);
+    inert.can_activate = false;
+    var model = try orderModel(t.allocator, &.{
+        .{ .output = fixtureOutput("o1", "HEADLESS-1", 0) },
+        .{ .workspace = fixtureWorkspace("w1", "o1", 1) },
+        .{ .window = scopedWindow("i1", "Alpha", "o1", "w1", 0) },
+        .{ .window = minimized },
+        .{ .window = floating },
+        .{ .window = inert },
+    });
+    defer model.deinit();
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    try snapshot.update(&model, &.{}, 0);
+    try expectKeys(t, snapshot, &.{"app:Alpha"});
+    const windows = snapshot.groups[0].windows.items;
+    try t.expectEqual(@as(usize, 4), windows.len);
+    try t.expectEqualStrings("i1", windows[0].id);
+    try t.expectEqualStrings("f1", windows[1].id);
+    try t.expectEqualStrings("m1", windows[2].id);
+    try t.expectEqualStrings("x1", windows[3].id);
+    try t.expect(windows[2].minimized and !windows[0].minimized);
+    try t.expect(!windows[3].can_activate and windows[0].can_activate);
 }

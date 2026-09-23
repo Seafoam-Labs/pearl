@@ -1,5 +1,44 @@
 # Pearl implementation progress
 
+## Running applications layout order synchronization, September 23, 2026
+
+Aqueous pin moved to `23e9da8313778114b63263de4d1d0f1e1efca8fc`, the first
+revision publishing the optional `window_order` capability and a nullable
+per-window `layout_index` (position in the layout instance of the window's
+output and workspace; column-major for `scrolling`, the order list for the
+list engines; null for floating/maximized/fullscreen/minimized/unmanaged,
+`game_mode`, `composable` and never-arranged scopes). The composite, patched
+wlroots and helper (now reporting 0.8.3) were rebuilt; release hashes,
+compatibility record and master inventory fixtures were re-recorded, and the
+upstream adversarial suites pass, including the native display-preview suite
+through a newly created `test-venv`.
+
+Pearl decodes the optional field with range validation and old payloads keep
+their exact behavior. The task model orders taskbar windows by output scope,
+workspace scope, then index presence, value and window id whenever any window
+publishes an index; grouping follows first appearance in that order. With no
+index anywhere, the previous ID-based order, group comparator and revisions
+are untouched. The new `bar.running_apps_per_window` preference switches the
+strip to one button per window in layout order, with window-icon fetches
+falling back to the application icon; the chooser stays grouped. The dropped
+`.icons` client event now schedules a redraw so fetched pixels land.
+
+Verification: pure codec/model tests (eight order scenarios), and private
+headless `test-running-apps` (20 checks, including builtin window moves in
+`scrolling` and `tile`, a bound `move_column` swap, focus-never-reorders and
+the per-window toggle), `test-settings-bar-editor`, `test-preferences`,
+`aqueous-master-inventory` and `aqueous-master-upstream-tests`. Evidence:
+[running-apps](../artifacts/running-apps/README.md).
+
+Known-bad before this change and still open: `test-bar-layout` fails the
+wallpaper-gap pixel assert in `bar_opacity.py`, reproduced identically on
+unmodified `main` in a baseline worktree, so it is unrelated to the order
+work. A separate pre-existing GtkStack child-name warning (wallpaper
+slideshow creation order) aborted every fatal-warnings session suite; it is
+fixed here by moving `setVisibleChildName` after the named children are added.
+Deferred by plan: `game_mode`/`composable`/whole-output `floating` order and
+HiDPI window-icon scales.
+
 ## Night Light — native integration verified, physical acceptance pending, September 19, 2026
 
 Added disabled-by-default preferences, local-time scheduling, temporary-off policy,

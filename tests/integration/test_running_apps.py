@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
 from t00 import Session as T00Session
-from test_surfaces import IPC, ctl, status, capture, click, clean
+from test_surfaces import IPC, ctl, status, eventually_status, capture, click, clean
 from test_desktop import keys, desktop
 from test_preferences import settled, apply
 
@@ -25,8 +25,8 @@ def main():
         report['checks'][name]=True;print('PASS',name,flush=True)
     try:
         with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
-            T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(ROOT/'.cache/aqueous-activity-production/source'))
+            keyboard=T00Session.input_fixture(s)
             desktop(s,"Tasks0","Workbench","StartupWMClass=org.pearl.Tasks0\nIcon=org.gnome.TextEditor\n")
             ipc=IPC(s)
             shell=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
@@ -45,6 +45,7 @@ def main():
             def windows():return [e for e in ipc.state() if e['kind']=='window' and (e.get('app_id') or '').startswith('org.pearl.Tasks')]
             def window(wid):return next((e for e in windows() if e['id']==wid),None)
             def command(action,**fields):return ipc.call('command',action=action,fields=fields)
+            def chord(text):keyboard.proc.stdin.write(text+'\n');keyboard.proc.stdin.flush();time.sleep(.25)
             def show():ctl(s,args.ctl,'running-apps','show','--output',oid);wait_for(lambda:probe()['popup_output']==oid);time.sleep(.15)
             def close():ctl(s,args.ctl,'popup','hide');wait_for(lambda:probe()['popup_output'] is None)
             def row(kind,id=None):return next((r for r in probe()['rows'] if r['kind']==kind and (id is None or r['id']==id)),None)
@@ -165,6 +166,84 @@ def main():
             s.run([power_dir/'output-power',second['connector'],'off'])
             wait_for(lambda:len(status(s,args.ctl)['outputs'])==1 and probe()['popup_output'] is None)
             passed('powered-off-output-removes-surfaces-and-dismisses-chooser')
+            # Published layout_index drives strip and chooser order; focus never reorders.
+            order=s.child('tasks-order',['python3',ROOT/'tests/fixtures/desktop/task_windows.py']);order.expect('event=tasks-ready')
+            wait_for(lambda:len(windows())==5)
+            order_ws=first_ws[3]
+            pair=[next(w for w in windows() if w['app_id']=='org.pearl.Tasks1'),next(w for w in windows() if w['app_id']=='org.pearl.Tasks2')]
+            for w in pair:command('window.move',id=w['id'],workspace=order_ws['id'])
+            command('workspace.activate',id=order_ws['id'])
+            wait_for(lambda:all((window(w['id']) or {}).get('workspace')==order_ws['id'] for w in pair))
+            def indices():return {w['id']:w.get('layout_index') for w in windows() if w['id'] in (pair[0]['id'],pair[1]['id'])}
+            def group_order(rows):
+                ids=[r['id'] for r in rows if r['id'] in ('app:org.pearl.Tasks1','app:org.pearl.Tasks2')]
+                assert len(ids)==2,rows
+                return ids
+            def expected_groups(values):
+                return ['app:org.pearl.Tasks1','app:org.pearl.Tasks2'] if values[pair[0]['id']]<values[pair[1]['id']] else ['app:org.pearl.Tasks2','app:org.pearl.Tasks1']
+            def focus_first():
+                current=wait_for(lambda:(lambda v:v if len(v)==2 and None not in v.values() else False)(indices()))
+                first=min(current,key=lambda k:current[k])
+                command('window.activate',id=first)
+                wait_for(lambda:window(first)['focused'])
+                return current
+            def swapped(before,tag):
+                # A no-op reorder must fail loudly instead of passing on stale values.
+                values=wait_for(lambda:(lambda v:v if len(v)==2 and None not in v.values() and v!=before and sorted(v.values())==sorted(before.values()) else False)(indices()),timeout=10)
+                assert group_order(strip()['rows'])==expected_groups(values),(tag,strip()['rows'])
+                show();assert group_order(probe()['rows'])==expected_groups(values),(tag,probe()['rows'])
+                capture(s,tag,first['connector']);close()
+                return values
+            def set_layout(name):
+                ctl(s,args.ctl,'layout','set','--output',oid,'--layout',name)
+                eventually_status(s,args.ctl,lambda v:v['layout']['value']==name and not v['layout']['pending'])
+            set_layout('scrolling')
+            start=focus_first()
+            assert group_order(strip()['rows'])==expected_groups(start)
+            chord('chord 106 65')
+            current=swapped(start,'order-scrolling-window-move')
+            other=pair[1]['id'] if window(pair[0]['id'])['focused'] else pair[0]['id']
+            command('window.activate',id=other);wait_for(lambda:window(other)['focused']);time.sleep(.4)
+            assert indices()==current and group_order(strip()['rows'])==expected_groups(current)
+            passed('scrolling-window-move-reorders-strip-and-chooser-focus-does-not')
+            set_layout('tile')
+            start=focus_first()
+            chord('chord 106 65')
+            swapped(start,'order-tile-window-move')
+            passed('tile-window-move-reorders-through-layout-swap')
+            wm=Path(s.env['AQUEOUS_CONFIG']);wm.write_text(wm.read_text()+'\n[keybinds]\nmove_column_left = "Super+Shift+H"\nmove_column_right = "Super+Shift+L"\n')
+            command('session.reload');time.sleep(.4)
+            set_layout('scrolling')
+            start=focus_first()
+            # Guarantee the focused window starts its own left column; a
+            # leftmost single-window column is already expelled and stays put.
+            chord('chord 105 65')
+            assert indices()==start
+            chord('chord 38 65')
+            swapped(start,'order-scrolling-column-move')
+            passed('column-move-reorders-both-windows')
+            per_window=copy.deepcopy(prefs);per_window['bar']['running_apps_per_window']=True;apply(s,args.ctl,per_window)
+            def window_rows():
+                rows=wait_for(lambda:(lambda v:v if v and all(r['kind']=='window' for r in v) else False)([r for r in strip()['rows'] if r['kind'] in ('group','window')]))
+                return rows
+            def pair_rows(rows):return [r['id'] for r in rows if r['id'] in (pair[0]['id'],pair[1]['id'])]
+            def expected_windows():
+                values=wait_for(lambda:(lambda v:v if len(v)==2 and None not in v.values() else False)(indices()))
+                return [pair[0]['id'],pair[1]['id']] if values[pair[0]['id']]<values[pair[1]['id']] else [pair[1]['id'],pair[0]['id']]
+            rows=window_rows()
+            assert len(rows)==5 and pair_rows(rows)==expected_windows(),rows
+            show();assert group_order(probe()['rows'])==expected_groups(indices());close()
+            capture(s,'per-window-strip',first['connector'])
+            before=indices();focus_first();chord('chord 106 65')
+            wait_for(lambda:(lambda v:v!=before and len(v)==2 and None not in v.values())(indices()),timeout=10)
+            wait_for(lambda:pair_rows(window_rows())==expected_windows(),timeout=10)
+            apply(s,args.ctl,prefs)
+            wait_for(lambda:(lambda v:v and all(r['kind']=='group' for r in v))(strip()['rows']))
+            before=indices();other=pair[1]['id'] if window(pair[0]['id'])['focused'] else pair[0]['id']
+            command('window.activate',id=other);wait_for(lambda:window(other)['focused']);time.sleep(.4)
+            assert indices()==before and group_order(strip()['rows'])==expected_groups(before)
+            passed('per-window-toggle-switches-strip-only-and-keeps-chooser-grouped')
+            keyboard.stop();order.stop();wait_for(lambda:len(probe()['groups'])==0)
             shell.stop();clean(shell);ipc.close()
             passed('teardown-with-fatal-gtk-warnings-enabled')
         report['status']='passed'

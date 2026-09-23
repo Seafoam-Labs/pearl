@@ -15,7 +15,8 @@ and physical login remain unverified. See [Qt theming](QT_THEMING.md) and
 [current evidence](../artifacts/qtengine/README.md).
 
 The current integration pins Zig **0.16.0**, Aqueous
-`88587243059d58d72dd0fe2146d0ebdb64f26474` and aqueous-config **0.8.2**.
+`23e9da8313778114b63263de4d1d0f1e1efca8fc` and aqueous-config **0.8.3**
+(floor 0.8.2).
 Matching compositor/helper/aqueousctl and freshly patched wlroots hashes are in
 [release metadata](../packaging/release.json) and the private build metadata
 under `.cache/aqueous-activity-production`. [Activity integration evidence](PLUGIN_INPUT_ACTIVITY_VALIDATION.md)
@@ -141,6 +142,11 @@ session responses.
   delivery and acknowledgement succeed. Advertised capabilities include state,
   commands, keyboard, overview, shortcut inhibition, icon metadata/fetch and
   configuration reload. Advertisement does not mean every command was tested.
+- The current pin additionally advertises the optional `window_order`
+  capability beside icon metadata: each window entity may carry a nullable
+  `layout_index`, its position in the layout instance of its output and
+  workspace. Pearl orders running applications by scope, then index, and
+  falls back to the ID-based order when no index is published.
 - Limits: request 65,536 bytes, frame 4,259,840, state 2,097,152, batch 4,194,304,
   depth 16, one pending request, 16 clients. T02 must implement the complete
   bounded parser/reducer; the Python spike client is not production transport.
