@@ -461,10 +461,18 @@ pub const Manager = struct {
     fn authChangedSelf(self: *Manager) void {
         authChanged(self);
     }
+    /// The reveal sensor is a window of its own; without the scope class the
+    /// transparent `.pearl-shell` rule misses and GTK paints the default background.
+    fn styleReveal(self: *Manager, controller: *BarAutohide) void {
+        const child = controller.sensor.getChild().?;
+        self.preferences.style(controller.sensor.as(gtk.Widget), child);
+        child.removeCssClass("background");
+    }
     fn styleSurface(self: *Manager, surface: *Surface) void {
         if (surface.appearance_revision == self.preferences.appearance) return;
         surface.appearance_revision = self.preferences.appearance;
         self.preferences.style(surface.window.as(gtk.Widget), surface.panel);
+        if (surface.autohide) |controller| self.styleReveal(controller);
         if (surface.kind == .wallpaper or surface.kind == .frame) surface.panel.removeCssClass("background");
         if (surface.bar) |bar| bar.styleIslands();
         if (surface.wallpaper_stack) |stack| {
@@ -1082,6 +1090,7 @@ pub const Manager = struct {
                 break :blk null;
             };
             if (s.autohide) |controller| {
+                self.styleReveal(controller);
                 controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false);
             } else window.present();
         } else if (kind != .popup and kind != .osd and kind != .frame and kind != .notification) window.present();
