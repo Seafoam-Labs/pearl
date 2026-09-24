@@ -1,15 +1,18 @@
 {
-  "revision": "88587243059d58d72dd0fe2146d0ebdb64f26474",
+  "revision": "42943c5272836ac8390ba5f4015c71a18e7138ff",
   "input_activity_testing": false,
+  "bootstrap_testing": false,
   "status": "passed",
   "commands": {
     "compositor": [
       "zig",
       "build",
       "--prefix",
-      "/home/zoey/Pearl/.cache/aqueous-activity-production",
+      "/home/azdanov/Projects/pearl/.cache/aqueous-activity-production",
       "-Dvulkan-effects=true",
       "-Dinput-activity-testing=false",
+      "-Dxwayland=false",
+      "-Dinstance-name=aqueous",
       "-Dman-pages=false",
       "-Doptimize=ReleaseSafe",
       "-Dllvm"
@@ -19,15 +22,15 @@
       "build",
       "config",
       "--prefix",
-      "/home/zoey/Pearl/.cache/aqueous-activity-production",
+      "/home/azdanov/Projects/pearl/.cache/aqueous-activity-production",
       "-Doptimize=ReleaseSafe"
     ]
   },
-  "patched_wlroots_pkgconfig": "/home/zoey/Pearl/.cache/aqueous-activity-production/source/compositor/.deps/wlroots-render-hook/lib/pkgconfig",
+  "patched_wlroots_pkgconfig": "/home/azdanov/Projects/pearl/.cache/aqueous-activity-production/source/compositor/.deps/wlroots-render-hook/lib/pkgconfig",
   "binary_sha256": {
-    "aqueous": "b1cf85ebed53fd6a87132e0170bfefe3ec0cbb721476620dcf81bc5f90178062",
-    "aqueousctl": "9c1ad078de1a72072574455edcf79a1bdf4b5210d5324a45ced9538ed78f1da5",
-    "aqueous-config": "5c8109a0869919d5c51b247635f273416524acaaeb59f258e804e66c7fedc8e7"
+    "aqueous": "2038353124c73bc5a53f81a3a4c519f330bc4902b6830d14a52104cd11226f0c",
+    "aqueousctl": "1ac56ff05a272ed1f933119b5c2f986b12f55f1b76b0137f2f82eaa8e1d37994",
+    "aqueous-config": "9e8840dec36d1719bbcf30455453a845454f239f77a90c886997cbca64ba3637"
   },
   "wlroots_patch_sha256": {
     "0001-aqueous-vulkan-render-hook.patch": "054e6e1b2f3195acc28a647f227561e4e4489b36d62dd409fee305cdc0224de4",
@@ -56,8 +59,10 @@
     "0024-protocol-versions.patch": "ec228e6d770b70841a354843d1346f1f1203df6718c7635b880e25b9a361fc71",
     "0025-drm-color-pipeline.patch": "e0dd981eab372a0e3dc9631ec12161a569b2475470f18d8d3fac99c158aadcdc",
     "0026-scene-color-pipeline.patch": "e32f706123b31b0d273ddb3659eb6633a184499d38759ac08659eb2c05a9cbd4",
-    "0027-xwayland-size-hints.patch": "6afa86c25adccfdf513535653024476db5e822f128d1a724ca2b006b7fe72f7d"
+    "0027-xwayland-size-hints.patch": "6afa86c25adccfdf513535653024476db5e822f128d1a724ca2b006b7fe72f7d",
+    "0028-output-color-guard.patch": "3cb2568e189293f6dd1522f52a932da73b4e79f0bf3d5ee079c130b5844f4b17"
   },
+  "activity_launcher_sha256": "2b2dffa06445faaf1c3efbb0d89f3964d3eab39231bb24c9eb12a9ebe18f2bd7",
   "helper": {
     "ok": true,
     "protocol": 1,
@@ -97,30 +102,30 @@
       "display_declaration_mutations_v1"
     ]
   },
-  "wlroots_sha256": "6126f6d457501aa86f0503b1238fbca3e19c1d66dc873ced9f38793eb2cc199c",
+  "wlroots_sha256": "781fdb2da5a44d541db96faf455ef463e24cc07b17e9ec1d513bb76b6729a5e9",
   "fixture_sha256": {
-    "helper.schema.json": "1cbe03c29259347df3d0b743a547f02f91045326ba46939ff1c944e4bb261dae",
-    "display.schema.json": "bb2f9f139592e48a99dc7941bcfe8d4947e6f4cd134c9363a4b9633a96002d59",
-    "ipc.schema.json": "f3f0352d425d5e008fc26ef1684e8a8a9dc988337bb3fbc51c5547428b04fb3f",
-    "version.json": "5e3377399df718ccc6e259afbf0283c720d39451a5b2cc318d29f778443ec8a3",
-    "snapshot.json": "6a0dcb176b4a533aeb0f94f9331f5686f69511bb9af4604a18e6ec5018693659",
-    "display.json": "3968463b93db0f71e31b1eca394ad213d24bb3b75e66b27f825fda0080ac3ff8",
-    "candidate-offline.json": "f25d44fed1c1f0b4a458da8892db15147029a746e58e02e509ea39c981518d17",
-    "candidate-disabled.json": "3649cb06c3e00ce3d5d1cd462e3e352e11b33176ec6d447cad3300d0726853d2",
-    "candidate-profile.json": "7cce0e4bedab84bf02d672370ec5194602f1f91090a6b9a0167791818bf201f3",
-    "candidate-unknown.json": "75e49fe39f7a144f4298991ef70745d1a1967a0ed3dfb629a66169307c9b571a",
-    "candidate-comments.json": "9747704c61af505931cacc33f6299d152cc57c12d0c978d15a77270b75bda510",
-    "apply-result.json": "573d435688f6322e60d4c3c58b6c9fe56ccb03edf438d276b02aecf1759dd9cb",
-    "receipt.json": "573d435688f6322e60d4c3c58b6c9fe56ccb03edf438d276b02aecf1759dd9cb",
-    "schema-test-requirements.txt": "e99394c278eed0e2ee36f7a1289c0327af0a355b1726472a8296563d5fb0fde6",
     "GPL-3.0-only.txt": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
     "README.md": "7e22670a9b82c06eba2fdc88159c2306c06917fce93f5c7e1a1ef8fb9fd5bce7",
-    "candidate-collections.json": "1ef7d15b58436d80e13c457d9cd096749ebc78126106726504347d3e4f8a4434",
-    "candidate-rejected.json": "9cd6d7aa02083ec08e6468290ebc632a1d82cf3a93ff3480f66800cbc4a83cf6",
+    "apply-result.json": "ddce2cc93de218d56e6bf31ede8ac0a98f3d00245725cd8fa36c06065a7dc199",
+    "candidate-collections.json": "ecc33d523a314d3363b4d5cb8950a7bb3366df17af2f7896109ac26ee7e3434a",
+    "candidate-comments.json": "58955e822f8834b8570368caeb5e1be542e82c4f91f300b0874e58bd5cd636e1",
+    "candidate-declarations.json": "0c9723e982796a7061da78cc4d804c9796f6c6da851e6fd36dba2a08ef6fc2b2",
+    "candidate-disabled.json": "e96efeb53c05db20c0de12c2792e77f18d85257d0c8bb5f6af7e4277d69ff4c9",
+    "candidate-offline.json": "acd82c2a987381307bc681d0e9609167cd90a076efc8ed522c67ade6137bc2cc",
+    "candidate-profile.json": "b91131677476b812ba193386145b84e075fd4ae7972cc8b59876632f760a5ce8",
+    "candidate-protected-collections.json": "de78030f68a5ae5826854166e52237f29ade58f386bd025b9dc3640e8f87df66",
+    "candidate-rejected.json": "977b70c88d1875ca6647883111c1b6f6b1a6a886df16fa8969670d1f2f0848dd",
     "candidate-stale.json": "2767a3854643fa7dc093df0a4f5039c2bc07271afd93444541be57b7eb756e7c",
-    "native-capabilities.json": "04dce3c6c937217dd78627760410a337420c5f7a4f7c7d04621983b07843c937",
-    "registry.txt": "a0ab58d589518bc71304f3df2b058b19caf82c296d4a61c9f38b631efd75d640",
-    "candidate-protected-collections.json": "31c3aed2aa8b5373962873d37af5861c0e6368e02f0c75a03c1f6ba4de966c1b",
-    "candidate-declarations.json": "300a26d55f8e9d5bcf86142aaeb4d855af926c6dbbf1f98a9abd90a6443fe96a"
+    "candidate-unknown.json": "6678d2feb014f23b1f1cc312d1fd65d6fb0d22dc9399c90bd2d192c01b77f97a",
+    "display.json": "42df64edb79beb23b1cfebd584e3274129d8b44756ac65b164de9774ac51c266",
+    "display.schema.json": "f187cc5e5b0e41c27aa4b566536ff4e80240875624282934ffa3ff07ddfa87a3",
+    "helper.schema.json": "2ae608fefb22b9a8b8a5d40e425a5d6740da59ab80567f7c64f35c57cfed1fa4",
+    "ipc.schema.json": "40fbfc0e4ed694715b2f7840b5dfd76010d667131f27d95a9e6c7d077e32c4a3",
+    "native-capabilities.json": "f6037c66fa6b0167afb94dca7f3bd7063f3141d36081fcbf9d10fe20c1344718",
+    "receipt.json": "ddce2cc93de218d56e6bf31ede8ac0a98f3d00245725cd8fa36c06065a7dc199",
+    "registry.txt": "7a14f6e7a612c0aad58e7f0bebfbe3fce2e47d77a14409ba44b5e0127d1db569",
+    "schema-test-requirements.txt": "e99394c278eed0e2ee36f7a1289c0327af0a355b1726472a8296563d5fb0fde6",
+    "snapshot.json": "9bbd1b4cb8683d3499f2468de43c0c42419dd1bb9ac4208124c3bcfd9f0d03f2",
+    "version.json": "5e3377399df718ccc6e259afbf0283c720d39451a5b2cc318d29f778443ec8a3"
   }
 }

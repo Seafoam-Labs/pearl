@@ -2,12 +2,17 @@
 
 ## Running applications layout order synchronization, September 23, 2026
 
-Aqueous pin moved to `23e9da8313778114b63263de4d1d0f1e1efca8fc`, the first
+Aqueous pin moved to `42943c5272836ac8390ba5f4015c71a18e7138ff`, the first
 revision publishing the optional `window_order` capability and a nullable
 per-window `layout_index` (position in the layout instance of the window's
 output and workspace; column-major for `scrolling`, the order list for the
 list engines; null for floating/maximized/fullscreen/minimized/unmanaged,
-`game_mode`, `composable` and never-arranged scopes). The composite, patched
+`game_mode`, `composable` and never-arranged scopes). Upstream amended that
+commit to also carry the position as the `layout_index` event on the
+`aqueous_window_info_v1` v10 snapshot protocol, which supersedes the earlier
+`23e9da8313778114b63263de4d1d0f1e1efca8fc` it was force-replaced from; Pearl
+still consumes the value from the shell batch, so only the pin, release hashes
+and the master inventory fixtures move. The composite, patched
 wlroots and helper (now reporting 0.8.3) were rebuilt; release hashes,
 compatibility record and master inventory fixtures were re-recorded, and the
 upstream adversarial suites pass, including the native display-preview suite

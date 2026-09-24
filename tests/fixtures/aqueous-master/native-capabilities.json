@@ -1,5 +1,5 @@
 {
-  "session": "5ca4f8f659417a60bc8819cef1539fca",
+  "session": "25e643275d3b3c409e1716e4e39dfcaf",
   "schema": 1,
   "max_request_bytes": 65536,
   "max_frame_bytes": 4259840,
@@ -15,7 +15,9 @@
     "overview": true,
     "config_reload": true,
     "shortcut_inhibition": true,
+    "unmanaged_windows": true,
     "icon_metadata": true,
+    "window_order": true,
     "icon_fetch": true,
     "display_observation_v1": true,
     "candidate_impact_v1": true,

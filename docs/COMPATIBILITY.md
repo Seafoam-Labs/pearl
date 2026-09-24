@@ -15,7 +15,7 @@ and physical login remain unverified. See [Qt theming](QT_THEMING.md) and
 [current evidence](../artifacts/qtengine/README.md).
 
 The current integration pins Zig **0.16.0**, Aqueous
-`23e9da8313778114b63263de4d1d0f1e1efca8fc` and aqueous-config **0.8.3**
+`42943c5272836ac8390ba5f4015c71a18e7138ff` and aqueous-config **0.8.3**
 (floor 0.8.2).
 Matching compositor/helper/aqueousctl and freshly patched wlroots hashes are in
 [release metadata](../packaging/release.json) and the private build metadata
