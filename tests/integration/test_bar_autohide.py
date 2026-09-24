@@ -176,7 +176,9 @@ def main():
             passed('centered-popup-preserves-size-and-position')
             reveal(); active(False)
             wait_for(lambda: out()['bar_visibility_reason'] == 'inhibited')
-            assert not out()['bar_sensor_visible'] and not out()['bar_visible']
+            assert not out()['bar_sensor_visible']
+            # Inhibition is immediate; the existing 180 ms hide fade finishes asynchronously.
+            wait_for(lambda: not out()['bar_visible'], 2)
             ctl(s, args.ctl, 'launcher', 'show', '--output', oid, code=4)
             active(True); away(); expect(False)
             wait_for(lambda: out()['bar_sensor_visible'])

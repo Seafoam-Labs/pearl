@@ -152,7 +152,7 @@ The standalone Appearance, Bar & dock, Plugins and Advanced pages edit one share
 Pearl draft. Bar & dock uses ordered widget selections: **Add widget** opens a
 searchable picker, and each widget's actions menu supports reordering, moving
 between groups and removal. Launcher is required but movable. Used widgets
-cannot be added twice. Left/right bar edges show Top / Center / Bottom groups;
+cannot be added twice; Clock supports multiple independent instances. Left/right bar edges show Top / Center / Bottom groups;
 the saved field names remain `left / center / right`. The preview is a schematic
 of the draft; the desktop changes only after Apply & save. Dock and Flyouts
 controls are in expandable sections. The legacy Bar & behavior page links to
@@ -164,6 +164,61 @@ templates. Existing plugin references are retained even if the plugin is
 unavailable; adding a discovered plugin requires it to be enabled, approved and
 configured for bar placement in Plugins. Removing a widget changes its placement
 only. Invalid Advanced text disables structured editing and offers a repair link.
+### Multiple time-zone clocks
+
+In **Bar & dock → Add widget → Add another clock**, choose a time zone using the
+searchable list or enter its installed identifier (for example `Europe/London`).
+`local` follows the system time zone; `UTC` is always available. Each clock has
+an optional label, 12/24-hour format and Show date setting. Empty labels use the
+zone's city name. The original local clock keeps its existing date and appearance.
+Use **Configure clock…** in a clock's actions menu to edit it. **Save to draft**
+updates the draft and **Apply & save** updates the bar; Cancel and Discard work
+as they do elsewhere in Settings.
+
+Clocks can be reordered and moved independently. Removing one from the bar
+retains its settings in the picker. **Delete saved clock** removes an unused
+clock's definition. There are at most eight definitions/instances per bar,
+including an implicit local clock when placed. Each display override has its
+own clock definitions; the default-bar editor preserves those overrides.
+
+`bar.clocks` stores definitions and group strings determine placement:
+
+```json
+{
+  "bar": {
+    "groups": {
+      "left": "launcher,workspaces",
+      "center": "clock,clock:london,clock:tokyo",
+      "right": "control"
+    },
+    "clocks": [
+      {"id":"london","timezone":"Europe/London","label":"London","hour_format":"24h","show_date":false},
+      {"id":"tokyo","timezone":"Asia/Tokyo","label":"Tokyo","hour_format":"12h","show_date":false}
+    ]
+  }
+}
+```
+
+Bare `clock` uses the reserved `local` definition, or the legacy local-time
+configuration if that definition is omitted. To configure that original clock,
+add a definition with `id: "local"`; its zone need not remain local. Added
+instances use `clock:<id>`; `clock:local` is invalid. IDs are unique within a
+bar and contain 1–32 ASCII letters, digits, hyphens or underscores. Labels allow
+up to 64 UTF-8 bytes without control characters; zone identifiers allow up to
+128 bytes. Multiple clocks may use the same zone. Each instance may be placed
+only once across the three groups, and named references require a definition.
+
+Named zones use the installed time-zone database, including daylight-saving
+rules. Missing zones display `—` with an explanation instead of silently using
+local time. The visual editor rejects unavailable new selections. Tooltips
+show the full zone/date/time and current UTC offset. Labels and dates can shorten
+on narrow bars while clock times remain readable. Clicking a clock opens the
+**local calendar**, including when the clock shows another zone.
+
+Old preference files need no migration. Older Pearl binaries reject the new
+`clocks` field and named references because they parse preferences strictly;
+remove those fields/references before downgrading.
+
 ### Bar background opacity
 
 **Bar & dock → Background opacity** offers Automatic and Custom. Automatic is

@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "checks": {
+    "legacy-visible-reservation": true,
+    "top-True-edge-delay-reservation": true,
+    "bottom-True-edge-delay-reservation": true,
+    "left-True-edge-delay-reservation": true,
+    "right-True-edge-delay-reservation": true,
+    "top-False-edge-delay-reservation": true,
+    "bottom-False-edge-delay-reservation": true,
+    "left-False-edge-delay-reservation": true,
+    "right-False-edge-delay-reservation": true,
+    "real-maximized-window-fills-output-without-reveal-resize": true,
+    "fullscreen-real-click-popup-hold": true,
+    "anchored-popup-placement-holds-and-output-replacement": true,
+    "centered-popup-preserves-size-and-position": true,
+    "session-inhibition-and-recovery": true,
+    "scaled-rotated-negative-origin-reveal": true,
+    "frame-ownership-and-cli-sizing-without-reservation": true,
+    "hidden-controls-and-island-gaps-pass-input-through": true,
+    "output-removal-releases-popup-and-restores-autohide": true,
+    "complete-output-override-defaults": true,
+    "always-mode-restores-measured-reservation": true,
+    "restart-remap-and-clean-shutdown": true
+  },
+  "binaries": {
+    "pearl": "2485292bebdae34b59c4585b5ca2bf4c84fbab61e89a9b8942f3824820ed9b49",
+    "ctl": "dda1f79f3d1d12e103e9800c4dcc20e86ab704d9b6423d903a394835054d2d20"
+  }
+}

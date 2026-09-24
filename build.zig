@@ -266,6 +266,12 @@ pub fn build(b: *std.Build) void {
     night_clock_module.addImport("glib2", bindings.module("glib2"));
     night_clock_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .force });
     const night_clock = b.addRunArtifact(b.addTest(.{ .root_module = night_clock_module }));
+    const bar_clock_module = b.createModule(.{ .root_source_file = b.path("src/bar_clock_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    bar_clock_module.addImport("glib2", bindings.module("glib2"));
+    bar_clock_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .force });
+    const bar_clock = b.addRunArtifact(b.addTest(.{ .root_module = bar_clock_module }));
+    bar_clock.setEnvironmentVariable("LC_ALL", "C");
+    b.step("test-bar-clock", "Verify time-zone clocks, DST, formatting and zone discovery").dependOn(&bar_clock.step);
     b.step("test-night-light-clock", "Verify Night Light schedules across timezone and DST transitions").dependOn(&night_clock.step);
     b.step("test", "Run pure lifecycle, startup and Aqueous model tests without GTK or a compositor").dependOn(&b.addRunArtifact(pure).step);
 

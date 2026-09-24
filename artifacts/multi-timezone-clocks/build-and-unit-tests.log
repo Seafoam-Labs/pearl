@@ -1,0 +1,18 @@
+Build Summary: 16/16 steps succeeded; 194/194 tests passed
+build-settings cached
++- install pearl-settings cached
+|  +- compile exe pearl-settings Debug native cached 18ms MaxRSS:57M
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|     |  +- compile exe zig-wayland-scanner Debug native cached 11ms MaxRSS:57M
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Settings.desktop to share/applications/org.aqueous.Pearl.Settings.desktop cached
++- install packaging/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg to share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg cached
++- install packaging/metainfo/org.aqueous.Pearl.Settings.metainfo.xml to share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml cached
+test success
++- run test 189 pass (189 total) 331ms MaxRSS:9M
+   +- compile test Debug native cached 11ms MaxRSS:55M
+test-bar-clock success
++- run test 5 pass (5 total) 8ms MaxRSS:9M
+   +- compile test Debug native cached 16ms MaxRSS:58M
+

@@ -38,6 +38,8 @@ def main():
             baseline = wait_for(lambda: (lambda v: v if v['workspaces']['rect']['width'] > 0 else False)(layout()))
             workspace_count = len(baseline['workspaces']['parts'])
             assert workspace_count >= 9, baseline
+            from bar_clocks import verify_layout
+            verify_layout(s, args, base, first, report)
             original_keyboard = output()['keyboard']
             from bar_opacity import verify, verify_missing_color
             verify(s, args, base, first, report)

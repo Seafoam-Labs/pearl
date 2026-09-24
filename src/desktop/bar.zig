@@ -10,6 +10,8 @@ const policy = @import("policy.zig");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
+const clocks = @import("clock_policy.zig");
+const Clock = @import("clock_view.zig").View;
 const Running = @import("running_apps.zig");
 pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers };
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview };
@@ -50,8 +52,9 @@ pub const Bar = struct {
     workspace_hash: ?u64 = null,
     workspace_mode: workspace_policy.Mode = .large,
     title: ?*gtk.Label = null,
-    clock: ?*gtk.Label = null,
-    clock_date: ?*gtk.Label = null,
+    clock_views: std.ArrayList(Clock) = .empty,
+    clock_arena: std.heap.ArenaAllocator = .init(a),
+    clock_definitions: []const clocks.Definition = &.{},
     keyboard: ?*gtk.Label = null,
     islands: bool = true,
     sections: [3]?*gtk.Widget = @splat(null),
@@ -73,6 +76,7 @@ pub const Bar = struct {
             provider.unref();
         }
         self.launcher_icon.deinit();
+        self.clock_arena.deinit();
         for (self.groups) |g| a.free(g);
         a.destroy(self);
     }
@@ -85,6 +89,10 @@ pub const Bar = struct {
         list.* = .empty;
     }
     fn clear(self: *Bar) void {
+        self.pane_anchor = null;
+        for (self.clock_views.items) |*view| view.deinit();
+        self.clock_views.deinit(a);
+        self.clock_views = .empty;
         self.launcher_icon.clearTargets();
         if (self.running_apps) |view| view.destroy();
         self.running_apps = null;
@@ -101,8 +109,6 @@ pub const Bar = struct {
         freeHandlers(&self.workspace_handlers);
         self.widgets = @splat(null);
         self.title = null;
-        self.clock = null;
-        self.clock_date = null;
         self.keyboard = null;
         self.audio_label = null;
         self.battery_label = null;
@@ -110,8 +116,20 @@ pub const Bar = struct {
         self.bluetooth_label = null;
         self.workspace_hash = null;
     }
-    pub fn configure(self: *Bar, groups: policy.Groups) !void {
+    pub fn configure(self: *Bar, groups: policy.Groups, definitions: []const clocks.Definition) !void {
         try groups.validate();
+        try clocks.validate(definitions, groups);
+        var arena = std.heap.ArenaAllocator.init(a);
+        var transferred = false;
+        defer if (!transferred) arena.deinit();
+        const alloc = arena.allocator();
+        const owned = try alloc.alloc(clocks.Definition, definitions.len);
+        for (definitions, owned) |d, *copy| {
+            copy.* = d;
+            copy.id = try alloc.dupe(u8, d.id);
+            copy.timezone = try alloc.dupe(u8, d.timezone);
+            copy.label = try alloc.dupe(u8, d.label);
+        }
         var next: [3][:0]u8 = undefined;
         var count: usize = 0;
         errdefer for (next[0..count]) |v| a.free(v);
@@ -119,8 +137,14 @@ pub const Bar = struct {
             next[i] = try a.dupeZ(u8, g);
             count += 1;
         }
+        self.clear();
+        self.clock_arena.deinit();
+        self.clock_arena = arena;
+        self.clock_definitions = owned;
+        transferred = true;
         for (self.groups) |g| a.free(g);
         self.groups = next;
+        count = 0;
         try self.build();
     }
     pub fn setWorkspaceMode(self: *Bar, mode: workspace_policy.Mode) void {
@@ -226,6 +250,15 @@ pub const Bar = struct {
                     }
                     continue;
                 }
+                if (clocks.reference(part)) |id| {
+                    const definition = clocks.find(self.clock_definitions, id) orelse continue;
+                    const button = try self.makeButton(.{ .pane = .calendar }, null, "", false);
+                    box.append(button.as(gtk.Widget));
+                    button.as(gtk.Widget).addCssClass("pearl-bar-item");
+                    try self.clock_views.ensureUnusedCapacity(a, 1);
+                    self.clock_views.appendAssumeCapacity(Clock.create(button, definition, part, self.vertical));
+                    continue;
+                }
                 const item = std.meta.stringToEnum(policy.Item, part) orelse continue;
                 const widget: *gtk.Widget = switch (item) {
                     .running_apps => blk: {
@@ -261,23 +294,7 @@ pub const Bar = struct {
                     .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", tr("Clipboard & capture", "Zwischenablage & Bildschirmfoto"), false)).as(gtk.Widget),
                     .wallpaper => (try self.makeButton(.{ .pane = .wallpapers }, "pearl-image-symbolic", tr("Wallpaper", "Hintergrundbild"), false)).as(gtk.Widget),
                     .control => (try self.makeButton(.{ .settings = .overview }, "pearl-emblem-system-symbolic", tr("Open settings Overview", "Einstellungsübersicht öffnen"), false)).as(gtk.Widget),
-                    .clock => blk: {
-                        const button = try self.makeButton(.{ .pane = .calendar }, null, "", false);
-                        self.clock = gtk.Label.new("");
-                        self.clock.?.setJustify(.center);
-                        if (self.vertical) {
-                            const content = gtk.Box.new(.vertical, 4);
-                            self.clock_date = gtk.Label.new("");
-                            self.clock_date.?.setJustify(.center);
-                            self.clock_date.?.setEllipsize(.end);
-                            self.clock_date.?.setMaxWidthChars(3);
-                            self.clock_date.?.as(gtk.Widget).addCssClass("pearl-bar-value");
-                            content.append(self.clock_date.?.as(gtk.Widget));
-                            content.append(self.clock.?.as(gtk.Widget));
-                            button.setChild(content.as(gtk.Widget));
-                        } else button.setChild(self.clock.?.as(gtk.Widget));
-                        break :blk button.as(gtk.Widget);
-                    },
+                    .clock => unreachable,
                     .audio, .battery, .network, .bluetooth => blk: {
                         const button = try self.makeButton(.{ .settings = switch (item) {
                             .audio => .sound,
@@ -551,6 +568,12 @@ pub const Bar = struct {
             widget.measure(orientation, -1, &minimum, &natural, null, null);
             available -= (if (i == @intFromEnum(policy.Item.title)) minimum else natural) + 4;
         };
+        for (self.clock_views.items) |view| {
+            var minimum: c_int = 0;
+            var natural: c_int = 0;
+            view.button.as(gtk.Widget).measure(orientation, -1, &minimum, &natural, null, null);
+            available -= (if (self.compact and !self.vertical) minimum else natural) + 4;
+        }
         var cell: c_int = 1;
         var child = host.getFirstChild();
         while (child) |widget| : (child = widget.getNextSibling()) {
@@ -574,24 +597,19 @@ pub const Bar = struct {
         }
     }
     pub fn tick(self: *Bar) void {
-        if (self.clock) |label| {
-            const now = glib.DateTime.newNowLocal() orelse return;
-            defer now.unref();
-            const text = now.format(if (self.vertical) "%H\n%M" else "%a %d %b · %H:%M") orelse return;
-            defer glib.free(text);
-            label.setText(text);
-            if (self.clock_date) |date| {
-                const day_month = now.format("%a\n%d\n%b") orelse return;
-                defer glib.free(day_month);
-                date.setText(day_month);
-            }
-            const detail = now.format("%A, %d %B %Y · %H:%M") orelse return;
-            defer glib.free(detail);
-            const widget = self.widgets[@intFromEnum(policy.Item.clock)].?;
-            widget.setTooltipText(detail);
-            w.name(widget, detail);
-        }
+        const now = glib.DateTime.newNowUtc() orelse return;
+        defer now.unref();
+        self.tickAt(now);
+    }
+    pub fn tickAt(self: *Bar, now: *glib.DateTime) void {
+        for (self.clock_views.items) |*view| view.update(now);
+        self.layoutWorkspaces();
         self.fitTasks();
+    }
+    pub fn reloadClockZones(self: *Bar) void {
+        // Drop every reference before resolving again, including shared zones.
+        for (self.clock_views.items) |*view| view.deinit();
+        for (self.clock_views.items) |*view| view.reload();
     }
     fn serviceName(widget: *gtk.Widget, action: [:0]const u8, detail: [:0]const u8) void {
         w.name(widget, action);
@@ -622,9 +640,21 @@ pub const Bar = struct {
             }
             try items.append(alloc, .{ .name = @tagName(@as(policy.Item, @enumFromInt(i))), .rect = allocation.read(widget, self.host.as(gtk.Widget)), .parts = try parts.toOwnedSlice(alloc) });
         };
+        for (self.clock_views.items) |view| {
+            const widget = view.button.as(gtk.Widget);
+            var parts: std.ArrayList(Rect) = .empty;
+            var child = view.button.getChild().?.getFirstChild();
+            while (child) |v| : (child = v.getNextSibling()) if (v.getVisible() != 0) {
+                try parts.append(alloc, allocation.read(v, self.host.as(gtk.Widget)));
+            };
+            try items.append(alloc, .{ .name = view.reference, .rect = allocation.read(widget, self.host.as(gtk.Widget)), .parts = try parts.toOwnedSlice(alloc) });
+        }
         var workspace_ids: std.ArrayList([]const u8) = .empty;
         for (self.workspace_handlers.items) |handler| try workspace_ids.append(alloc, handler.id.?);
-        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .background_opacity = self.background_opacity, .background_color = self.background_color, .keyboard_mode = keyboard_mode, .launcher_icon = self.launcher_icon.selection, .launcher_icon_loading = self.launcher_icon.job != null, .launcher_icon_failed = self.launcher_icon.failed, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
+        const ClockReport = struct { reference: []const u8, timezone: []const u8, time: []const u8, detail: []const u8, available: bool };
+        var clock_reports: std.ArrayList(ClockReport) = .empty;
+        for (self.clock_views.items) |view| try clock_reports.append(alloc, .{ .reference = view.reference, .timezone = view.definition.timezone, .time = std.mem.span(view.label.getText()), .detail = std.mem.span(view.button.as(gtk.Widget).getTooltipText() orelse ""), .available = view.zone != null });
+        return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .clocks = clock_reports.items, .background_opacity = self.background_opacity, .background_color = self.background_color, .keyboard_mode = keyboard_mode, .launcher_icon = self.launcher_icon.selection, .launcher_icon_loading = self.launcher_icon.job != null, .launcher_icon_failed = self.launcher_icon.failed, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
     }
     fn clicked(button: *gtk.Button, data: *Button) callconv(.c) void {
         if (data.event == .pane) data.owner.recordPaneAnchor(button.as(gtk.Widget));

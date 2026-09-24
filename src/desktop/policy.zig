@@ -10,6 +10,8 @@ pub const Groups = struct {
     pub fn validate(self: Groups) !void {
         var plugins: [16][]const u8 = undefined;
         var plugin_count: usize = 0;
+        var clocks: [8][]const u8 = undefined;
+        var clock_count: usize = 0;
         var seen = std.EnumSet(Item).initEmpty();
         for ([_][]const u8{ self.left, self.center, self.right }) |group| {
             if (group.len > 512) return error.InvalidGroups;
@@ -21,6 +23,13 @@ pub const Groups = struct {
                     for (plugins[0..plugin_count]) |old| if (std.mem.eql(u8, old, part)) return error.InvalidGroups;
                     plugins[plugin_count] = part;
                     plugin_count += 1;
+                    continue;
+                }
+                if (@import("clock_policy.zig").reference(part)) |id| {
+                    if (clock_count == clocks.len) return error.InvalidGroups;
+                    for (clocks[0..clock_count]) |old| if (std.mem.eql(u8, id, old)) return error.InvalidGroups;
+                    clocks[clock_count] = id;
+                    clock_count += 1;
                     continue;
                 }
                 const item = std.meta.stringToEnum(Item, part) orelse return error.InvalidGroups;

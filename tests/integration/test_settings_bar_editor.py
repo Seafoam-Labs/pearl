@@ -112,6 +112,9 @@ def main():
             assert path.read_bytes()==disk and not peer.state()['dirty']
             capture(s,'bar-editor-desktop',output['name'])
             passed('opening-is-read-only-and-unavailable-plugin-is-retained')
+            from bar_clocks import verify_editor
+            peer, app, shell = verify_editor(s, ipc, peer, args, output, baseline, passed, app, shell)
+            disk = path.read_bytes()
             def bar_mode():
                 return json.loads(peer.document())['bar']['mode']
             def live_bar():

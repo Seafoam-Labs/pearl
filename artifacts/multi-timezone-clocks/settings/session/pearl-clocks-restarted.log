@@ -1,0 +1,35 @@
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=0a8b9efbcc1887256331283c0f93737f
+info(pearl): event=control-ready session=0a8b9efbcc1887256331283c0f93737f
+info: event=app-index-ready entries=162 truncated=false
+info: event=preferences-applied revision=1 mode=static cache=false
+info: event=wallpaper-applications-applied generation=2 elapsed_us=19033 success=true
+info: event=preferences-applied revision=2 mode=static cache=false
+info: event=wallpaper-applications-applied generation=3 elapsed_us=16753 success=true
+info: event=preferences-applied revision=3 mode=static cache=false
+info: event=wallpaper-applications-applied generation=5 elapsed_us=16841 success=true
+info: event=preferences-applied revision=4 mode=static cache=false
+info: event=wallpaper-applications-applied generation=7 elapsed_us=16782 success=true
+info: event=preferences-applied revision=5 mode=static cache=false
+info: event=wallpaper-applications-applied generation=9 elapsed_us=17277 success=true
+info: event=preferences-applied revision=6 mode=static cache=false
+info: event=wallpaper-applications-applied generation=11 elapsed_us=17488 success=true
+info: event=preferences-applied revision=7 mode=static cache=false
+info: event=wallpaper-applications-applied generation=13 elapsed_us=17876 success=true
+info: event=preferences-applied revision=8 mode=static cache=false
+info: event=wallpaper-applications-applied generation=15 elapsed_us=16796 success=true
+info: event=app-index-ready entries=162 truncated=false
+info: event=preferences-applied revision=9 mode=static cache=false
+info: event=wallpaper-applications-applied generation=17 elapsed_us=17009 success=true
+info: event=preferences-applied revision=10 mode=static cache=false
+info: event=wallpaper-applications-applied generation=19 elapsed_us=17235 success=true
+info(pearl): event=stopping reason=control-quit pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

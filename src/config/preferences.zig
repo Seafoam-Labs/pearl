@@ -55,7 +55,7 @@ pub const Wallpaper = struct {
 };
 pub const Dock = @import("../desktop/dock_policy.zig").Config;
 pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
-pub const Bar = struct { mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
+pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
 pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
@@ -144,6 +144,7 @@ fn barValid(b: Bar) !void {
     try b.launcher_icon.validate();
     if (b.size < 32 or b.size > 160) return error.InvalidBarSize;
     try b.groups.validate();
+    try @import("../desktop/clock_policy.zig").validate(b.clocks, b.groups);
 }
 fn safeText(s: []const u8, max: usize) !void {
     if (s.len > max or !std.unicode.utf8ValidateSlice(s)) return error.InvalidText;
@@ -310,4 +311,35 @@ test "bar opacity preserves legacy defaults, overrides and strict validation" {
     }
     try t.expectError(error.InvalidBarOpacity, parse(a, "{\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{\"background_opacity\":{\"percent\":101}}}]}"));
     if (parse(a, "{\"bar\":{\"background_opacity\":{\"mode\":\"unknown\"}}}")) |_| return error.InvalidModeAccepted else |_| {}
+}
+
+test "clock preferences preserve legacy defaults and reject ambiguous or dangling instances" {
+    const t = std.testing;
+    const clock = @import("../desktop/clock_policy.zig");
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const old = try parse(a, "{}");
+    try t.expectEqual(@as(usize, 0), old.bar.clocks.len);
+    try t.expectEqualDeep(clock.legacy, clock.find(old.bar.clocks, "local").?);
+    try t.expectError(error.UnknownClock, parse(a, "{\"bar\":{\"groups\":{\"center\":\"clock:missing\"}}}"));
+    try t.expectError(error.InvalidGroups, parse(a, "{\"bar\":{\"groups\":{\"center\":\"clock:local\"}}}"));
+    try t.expectError(error.InvalidGroups, parse(a, "{\"bar\":{\"groups\":{\"center\":\"clock:a,clock:a\"}}}"));
+    var p: Preferences = .{};
+    p.bar.clocks = &.{ .{ .id = "a" }, .{ .id = "a" } };
+    try t.expectError(error.DuplicateClockId, p.validate());
+    p.bar.clocks = &.{.{ .id = "a", .timezone = "NoSuch/Zone" }};
+    p.bar.groups.center = "clock,clock:a";
+    try p.validate(); // Availability is a runtime concern; saved data stays recoverable.
+    const encoded = try std.json.Stringify.valueAlloc(a, p, .{});
+    try t.expectEqualDeep(p.bar, (try parse(a, encoded)).bar);
+    var definitions: [8]clock.Definition = undefined;
+    for (&definitions, 0..) |*d, i| d.* = .{ .id = try std.fmt.allocPrint(a, "c{d}", .{i}) };
+    p.bar.clocks = &definitions;
+    p.bar.groups.center = "clock";
+    try t.expectError(error.TooManyClocks, p.validate());
+    p.bar.groups.center = "";
+    try p.validate();
+    p.outputs = &.{.{ .connector = "DP-1", .bar = .{ .groups = .{ .center = "clock:c1" } } }};
+    try t.expectError(error.UnknownClock, p.validate());
 }

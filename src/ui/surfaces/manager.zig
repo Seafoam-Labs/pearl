@@ -163,6 +163,10 @@ pub const Manager = struct {
     layout: ?Layout = null,
     layout_stamp: u64 = 0,
     clock_source: c_uint = 0,
+    clock_monitor: c_uint = 0,
+    clock_last_real: i64 = 0,
+    clock_last_monotonic: i64 = 0,
+    clock_zone_stamp: u64 = 0,
     error_pending: bool = false,
     osd: ?*Surface = null,
     notification: ?*Surface = null,
@@ -241,6 +245,8 @@ pub const Manager = struct {
         self.running = false;
         if (self.clock_source != 0) _ = glib.Source.remove(self.clock_source);
         self.clock_source = 0;
+        if (self.clock_monitor != 0) _ = glib.Source.remove(self.clock_monitor);
+        self.clock_monitor = 0;
         self.slideshow.stop();
         self.index.stop();
         if (self.sync_source != 0) _ = glib.Source.remove(self.sync_source);
@@ -634,7 +640,43 @@ pub const Manager = struct {
         self.schedule();
         if (self.running) if (self.popup) |p| if (p.launcher) |launcher| launcher.refresh();
     }
+    fn refreshClocks(self: *Manager, zones_changed: bool) void {
+        const now = glib.DateTime.newNowUtc() orelse return;
+        defer now.unref();
+        // Release zones across all bars before re-resolving GLib's shared objects.
+        if (zones_changed) for (self.outputs.items) |o| if (o.bar) |surface| if (surface.bar) |bar| {
+            for (bar.clock_views.items) |*view| view.deinit();
+        };
+        for (self.outputs.items) |o| if (o.bar) |surface| if (surface.bar) |bar| {
+            if (zones_changed) bar.reloadClockZones();
+            bar.tickAt(now);
+        };
+    }
+    fn monitorClock(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Manager = @ptrCast(@alignCast(data.?));
+        const real = glib.getRealTime();
+        const monotonic = glib.getMonotonicTime();
+        const stamp = @import("../../desktop/clock_time.zig").databaseStamp();
+        const changed = stamp != self.clock_zone_stamp;
+        const gap = monotonic - self.clock_last_monotonic;
+        if (changed or gap > 2000000 or @abs((real - self.clock_last_real) - gap) > 500000) {
+            self.refreshClocks(changed);
+            if (self.clock_source != 0) _ = glib.Source.remove(self.clock_source);
+            self.clock_source = 0;
+            self.armClock();
+        }
+        self.clock_zone_stamp = stamp;
+        self.clock_last_real = real;
+        self.clock_last_monotonic = monotonic;
+        return 1;
+    }
     fn armClock(self: *Manager) void {
+        if (self.clock_monitor == 0) {
+            self.clock_last_real = glib.getRealTime();
+            self.clock_last_monotonic = glib.getMonotonicTime();
+            self.clock_zone_stamp = @import("../../desktop/clock_time.zig").databaseStamp();
+            self.clock_monitor = glib.timeoutAdd(1000, monitorClock, self);
+        }
         const now = glib.DateTime.newNowLocal() orelse return;
         defer now.unref();
         const ms: c_uint = @intCast((60 - now.getSecond()) * 1000);
@@ -643,7 +685,7 @@ pub const Manager = struct {
     fn clockTick(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Manager = @ptrCast(@alignCast(data.?));
         self.clock_source = 0;
-        for (self.outputs.items) |o| if (o.bar) |s| if (s.bar) |bar| bar.tick();
+        self.refreshClocks(false);
         if (self.running) self.armClock();
         return 0;
     }
@@ -826,12 +868,13 @@ pub const Manager = struct {
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
                 if (o.bar.?.bar.?.islands != pref.islands) if (o.bar.?.autohide) |controller| controller.clearGesture();
                 o.bar.?.bar.?.setIslands(pref.islands);
-                const content = try std.json.Stringify.valueAlloc(a, .{ .groups = pref.groups, .plugins = self.preferences.prefs().plugins }, .{});
+                const content = try std.json.Stringify.valueAlloc(a, .{ .groups = pref.groups, .clocks = pref.clocks, .plugins = self.preferences.prefs().plugins }, .{});
                 defer a.free(content);
                 const content_hash = std.hash.Wyhash.hash(0, content);
                 if (o.bar_content_hash == null or o.bar_content_hash.? != content_hash) {
                     if (o.bar.?.autohide) |controller| controller.clearGesture();
-                    try o.bar.?.bar.?.configure(pref.groups);
+                    if (self.popup != null and self.popup.?.output == o) self.hidePopup();
+                    try o.bar.?.bar.?.configure(pref.groups, pref.clocks);
                     o.bar_content_hash = content_hash;
                 }
                 self.preferences.style(o.bar.?.window.as(gtk.Widget), o.bar.?.panel);
@@ -976,7 +1019,6 @@ pub const Manager = struct {
                 const stack = gtk.Stack.new();
                 stack.as(gtk.Widget).setHexpand(1);
                 stack.as(gtk.Widget).setVexpand(1);
-                stack.setVisibleChildName("a");
                 for (0..2) |i| {
                     const picture = gtk.Picture.new();
                     picture.setCanShrink(1);
@@ -985,6 +1027,7 @@ pub const Manager = struct {
                     _ = stack.addNamed(picture.as(gtk.Widget), if (i == 0) "a" else "b");
                     s.wallpaper_pictures[i] = picture;
                 }
+                stack.setVisibleChildName("a");
                 panel.append(stack.as(gtk.Widget));
                 s.wallpaper_stack = stack;
                 window.setChild(panel_widget);
@@ -1673,7 +1716,12 @@ pub const Manager = struct {
             },
             .bar_groups => {
                 const output = try self.selected(request.output);
-                try output.bar.?.bar.?.configure(.{ .left = request.left.?, .center = request.center.?, .right = request.right.? });
+                const bar = output.bar.?.bar.?;
+                const groups: @import("../../desktop/policy.zig").Groups = .{ .left = request.left.?, .center = request.center.?, .right = request.right.? };
+                try groups.validate();
+                try @import("../../desktop/clock_policy.zig").validate(bar.clock_definitions, groups);
+                if (self.popup != null and self.popup.?.output == output) self.hidePopup();
+                try bar.configure(groups, bar.clock_definitions);
             },
             .layout_get, .layout_set => {
                 try self.queryLayout(try self.selected(request.output), request.layout);

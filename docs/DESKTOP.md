@@ -183,7 +183,9 @@ clock when the groups permit it. Narrow outputs hide the optional title and
 bar overview button; overview remains available in the control center. Vertical
 edges change group orientation. GTK measures the resulting bar thickness for
 its exclusive reservation. Each process has one clock timer, aligned to the
-next minute, instead of one timer per widget/output.
+next minute, instead of one timer per widget/output. A shared one-second monitor
+refreshes after suspend, wall-clock jumps and system time-zone/database changes.
+All clocks receive the same sampled UTC instant on a shared refresh.
 
 ```sh
 pearlctl launcher toggle
@@ -197,7 +199,13 @@ pearlctl bar groups --output OUTPUT_ID \
 ```
 
 Get runtime IDs from `pearlctl status`. Groups accept comma-separated `launcher`,
-`workspaces`, `title`, `clock`, `keyboard`, `overview` and `control`. An empty group
+`workspaces`, `title`, `clock`, `keyboard`, `overview` and `control`, plus
+`clock:<id>` for clocks already defined in that output's effective `bar.clocks`.
+Each clock instance has its own zone, label, format and date setting. Use
+Settings → Bar & dock to add/configure clocks persistently; see
+[clock preferences](PREFERENCES.md#multiple-time-zone-clocks). The original bare
+`clock` remains compatible. All clock buttons open the local calendar and anchor
+it to the clicked button. An empty group
 is allowed; duplicate items, unknown items and configurations without a launcher
 are rejected. All three groups are supplied together. These are **runtime
 preferences**: restart or output removal resets them. Persistent preference

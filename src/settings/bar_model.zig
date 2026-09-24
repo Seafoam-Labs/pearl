@@ -251,3 +251,71 @@ test "launcher icon patch roundtrips and preserves unrelated preferences and out
         try std.testing.expectEqualDeep(@import("../desktop/launcher_icon_policy.zig").Config{}, changed.forOutput("DP-1").launcher_icon);
     }
 }
+
+/// Clock edits preserve the full preference draft, including output overrides.
+pub fn patchClock(a: std.mem.Allocator, text: []const u8, definition: @import("../desktop/clock_policy.zig").Definition, add_to: ?Group) ![]const u8 {
+    const clock = @import("../desktop/clock_policy.zig");
+    var document = try prefs.parse(a, text);
+    try clock.validateDefinition(definition);
+    var definitions: std.ArrayList(clock.Definition) = .empty;
+    var replaced = false;
+    for (document.bar.clocks) |old| {
+        const matches = std.mem.eql(u8, old.id, definition.id);
+        try definitions.append(a, if (matches) definition else old);
+        replaced = replaced or matches;
+    }
+    if (!replaced) try definitions.append(a, definition);
+    document.bar.clocks = definitions.items;
+    if (add_to) |group| {
+        const layout = try Layout.parse(a, document.bar.groups);
+        document.bar.groups = try (try layout.change(a, try clock.token(a, definition.id), .{ .add = group })).serialize(a);
+    }
+    try document.validate();
+    const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
+    if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
+    return result;
+}
+pub fn deleteClock(a: std.mem.Allocator, text: []const u8, id: []const u8) ![]const u8 {
+    const clock = @import("../desktop/clock_policy.zig");
+    var document = try prefs.parse(a, text);
+    const layout = try Layout.parse(a, document.bar.groups);
+    if (layout.find(try clock.token(a, id)) != null) return error.ClockStillPlaced;
+    var definitions: std.ArrayList(clock.Definition) = .empty;
+    for (document.bar.clocks) |old| if (!std.mem.eql(u8, old.id, id)) {
+        try definitions.append(a, old);
+    };
+    document.bar.clocks = definitions.items;
+    try document.validate();
+    return std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
+}
+
+test "clock instances are atomic, retain settings on removal, and isolate output overrides" {
+    const t = std.testing;
+    const clock = @import("../desktop/clock_policy.zig");
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const original = "{\"font_size\":17,\"outputs\":[{\"connector\":\"OTHER\"}]}";
+    var text = try patchClock(a, original, .{ .id = "london", .timezone = "Europe/London" }, .center);
+    text = try patchClock(a, text, .{ .id = "tokyo", .timezone = "Asia/Tokyo", .label = "Home", .hour_format = .@"12h" }, .right);
+    var document = try prefs.parse(a, text);
+    try t.expectEqualStrings("clock,clock:london", document.bar.groups.center);
+    try t.expectEqual(@as(u8, 17), document.font_size);
+    try t.expectEqual(@as(usize, 0), document.outputs[0].bar.clocks.len);
+    try t.expectEqualStrings("clock", document.outputs[0].bar.groups.center);
+    text = try patch(a, text, "clock:tokyo", .{ .move = .center });
+    text = try patch(a, text, "clock:tokyo", .earlier);
+    try t.expectEqualStrings("clock,clock:tokyo,clock:london", (try prefs.parse(a, text)).bar.groups.center);
+    try t.expectError(error.ClockStillPlaced, deleteClock(a, text, "tokyo"));
+    text = try patch(a, text, "clock:tokyo", .remove);
+    try t.expectEqualStrings("Home", clock.find((try prefs.parse(a, text)).bar.clocks, "tokyo").?.label);
+    text = try patch(a, text, "clock:tokyo", .{ .add = .left });
+    text = try patchClock(a, text, .{ .id = "tokyo", .timezone = "Europe/London", .label = "Second London" }, null);
+    document = try prefs.parse(a, text);
+    try t.expectEqual(@as(usize, 2), document.bar.clocks.len);
+    try t.expectEqualStrings("Europe/London", clock.find(document.bar.clocks, "tokyo").?.timezone);
+    try t.expectError(error.AlreadyPlaced, patchClock(a, text, .{ .id = "tokyo" }, .right));
+    text = try patch(a, text, "clock:tokyo", .remove);
+    text = try deleteClock(a, text, "tokyo");
+    try t.expectEqual(@as(usize, 1), (try prefs.parse(a, text)).bar.clocks.len);
+}

@@ -164,6 +164,7 @@ pub const usage =
     \\       pearlctl layout get|set --output ID [--layout NAME]
     \\       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS
     \\       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard
+    \\       Also clock:ID for instances defined in the output's effective bar.clocks preferences.
     \\
     \\       pearlctl notifications|media|tray toggle [--output ID]
     \\       pearlctl session status [--offset N]
