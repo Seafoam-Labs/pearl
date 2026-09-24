@@ -28,5 +28,9 @@
     <file>icons/scalable/actions/pearl-edit-copy-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-image-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-view-refresh-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-system-log-out-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-system-reboot-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-system-shutdown-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-microphone-symbolic.svg</file>
   </gresource>
 </gresources>

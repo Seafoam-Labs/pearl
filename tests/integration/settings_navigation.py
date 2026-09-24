@@ -1,8 +1,9 @@
-"""Drive the compact section chooser with real keyboard events."""
+"""Drive the compact section tabs with real keyboard events."""
 from pearl_session import wait_for
 from test_surfaces import ctl
 
 PAGES = ('overview', 'network', 'bluetooth', 'sound', 'power')
+TITLES = dict(overview='Overview', network='Network', bluetooth='Bluetooth', sound='Sound', power='Power & battery')
 
 
 def report(session, binary):
@@ -12,17 +13,13 @@ def report(session, binary):
 def choose_page(session, binary, page):
     # Page restoration runs after GTK allocates the newly mapped viewport.
     wait_for(lambda: not report(session, binary).get('restoring', False))
-    for _ in range(80):
-        if report(session, binary)['focus'] == 'section-chooser':
+    for _ in range(160):
+        if report(session, binary).get('tab') == TITLES[page]:
             break
         session.run(['wtype', '-s', '50', '-k', 'Tab', '-s', '50'])
     else:
-        raise AssertionError('Section chooser is not keyboard reachable')
-    keys = ['space', 'Home', *(['Down'] * PAGES.index(page)), 'Return']
-    argv = ['wtype', '-s', '100']
-    for key in keys:
-        argv += ['-k', key, '-s', '100']
-    session.run(argv)
+        raise AssertionError('Section tab is not keyboard reachable: '+page)
+    session.run(['wtype', '-s', '100', '-k', 'Return', '-s', '100'])
     return wait_for(lambda: (value if (value := report(session, binary))['page'] == page and not value.get('restoring', False) else False))
 
 

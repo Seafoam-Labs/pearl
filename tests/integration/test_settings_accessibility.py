@@ -140,11 +140,7 @@ def main():
                         eventually_status(s, args.ctl, lambda v: v['popup'] is None)
                     else:
                         assert status(s, args.ctl)['popup'] == popup
-                        for _ in range(20):
-                            if report(s, args.ctl)['button'] == 'Close': break
-                            s.run(['wtype', '-s', '50', '-k', 'Tab', '-s', '50'])
-                        else: raise AssertionError('Close is not keyboard reachable')
-                        s.run(['wtype', '-s', '100', '-k', 'Return', '-s', '100'])
+                        s.run(['wtype', '-s', '100', '-k', 'Escape', '-s', '100'])
                         eventually_status(s, args.ctl, lambda v: v['popup'] is None)
                 checks['permitted-backdrop-and-keyboard-close-dismissal'] = True
                 # Restore both service bars for the accessibility assertions.

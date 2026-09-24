@@ -32,6 +32,23 @@
 .pearl-root.pearl-gtk .pearl-wallpaper-thumb picture { border-radius: 8px; }
 .pearl-root.pearl-gtk.pearl-reduced-motion * { transition: none; animation: none; }
 .pearl-root.pearl-gtk .pearl-settings-heading:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }
+/* Control center flyout: geometry only, GTK renders control and state colors. */
+.pearl-root.pearl-gtk .pearl-user-chip { padding: 5px 16px 5px 5px; border-radius: 999px; }
+.pearl-root.pearl-gtk .pearl-user-chip .pearl-avatar { padding: 8px; }
+.pearl-root.pearl-gtk .pearl-user-name { font-weight: 600; }
+.pearl-root.pearl-gtk .pearl-page-title { font-size: 1.25em; font-weight: 700; }
+.pearl-root.pearl-gtk .pearl-quick-card { padding: 16px 18px; }
+.pearl-root.pearl-gtk button.pearl-quick-tile { border-radius: 16px; padding: 12px 14px; }
+.pearl-root.pearl-gtk .pearl-tab-strip { padding: 4px; border-radius: 999px; }
+.pearl-root.pearl-gtk .pearl-tab-strip button.pearl-tab { border-radius: 999px; padding: 7px 10px; }
+.pearl-root.pearl-gtk.pearl-compact .pearl-user-chip { padding: 4px 12px 4px 4px; }
+.pearl-root.pearl-gtk.pearl-compact .pearl-user-chip .pearl-avatar { padding: 6px; }
+.pearl-root.pearl-gtk.pearl-compact .pearl-quick-card { padding: 12px 14px; }
+.pearl-root.pearl-gtk.pearl-compact button.pearl-quick-tile { padding: 9px 10px; }
+.pearl-root.pearl-gtk.pearl-compact .pearl-tab-strip button.pearl-tab { padding: 5px 8px; }
+.pearl-root.pearl-gtk .pearl-row-card { border-radius: 14px; padding: 10px 12px; }
+.pearl-root.pearl-gtk .pearl-section-title { font-weight: 600; }
+.pearl-root.pearl-gtk.pearl-compact .pearl-row-card { padding: 8px 10px; }
 
 /* T15: detached islands share a single edge reservation. */
 .pearl-root.pearl-gtk.pearl-shell .pearl-islands { background: transparent; padding: 0; }

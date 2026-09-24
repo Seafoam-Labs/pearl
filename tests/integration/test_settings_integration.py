@@ -18,10 +18,10 @@ def handoff(s, binary):
     # Use real keyboard input through the flyout's exclusive focus, never a test action.
     for _ in range(150):
         v=ctl(s,binary,'aqueous','status','--text','test-settings-page')['result']
-        if v['button']=='Open full settings':
+        if v.get('header')=='Settings':
             keys(s,'Return');return
         keys(s,'Tab')
-    raise AssertionError('handoff button was not reachable')
+    raise AssertionError('header settings button was not reachable')
 
 
 def main():

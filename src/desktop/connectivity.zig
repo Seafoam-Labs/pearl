@@ -44,9 +44,15 @@ pub const View = struct {
         self.* = .{ .page = page, .owner = owner, .network = network, .bluetooth = bluetooth, .status = undefined, .cancel = undefined, .items = undefined, .expander = undefined, .prompt = undefined };
         const card = w.card();
         host.append(card.as(gtk.Widget));
+        const state_row = w.row(10);
+        state_row.as(gtk.Widget).addCssClass("pearl-state");
+        const state_icon = w.icon(if (page == .network) "pearl-network-wireless-symbolic" else "pearl-bluetooth-active-symbolic");
+        state_icon.as(gtk.Widget).addCssClass("pearl-state-icon");
+        state_row.append(state_icon.as(gtk.Widget));
         self.status = w.label("", "pearl-secondary");
         self.status.setWrap(1);
-        card.append(self.status.as(gtk.Widget));
+        state_row.append(self.status.as(gtk.Widget));
+        card.append(state_row.as(gtk.Widget));
         const actions = w.row(8);
         card.append(actions.as(gtk.Widget));
         if (page == .network) {
@@ -57,7 +63,7 @@ pub const View = struct {
         self.prompt = self.makePrompt(card, page == .network);
         self.items = w.column(12);
         self.expander = gtk.Expander.new(if (page == .network) "Adapters, nearby and saved networks" else "Adapters and devices");
-        self.expander.setLabelWidget(w.label(if (page == .network) "Adapters, nearby and saved networks" else "Adapters and devices", null).as(gtk.Widget));
+        self.expander.setLabelWidget(w.label(if (page == .network) "Adapters, nearby and saved networks" else "Adapters and devices", "pearl-section-title").as(gtk.Widget));
         focus_state.tag(self.expander.as(gtk.Widget), "connectivity-expander", .{});
         self.expander.setChild(self.items.as(gtk.Widget));
         self.expander.setExpanded(1);
@@ -73,6 +79,7 @@ pub const View = struct {
     }
     fn button(self: *View, host: *gtk.Box, title: [:0]const u8, callback: *const fn (*gtk.Button, *View) callconv(.c) void) *gtk.Button {
         const b = w.wrappingButton(title);
+        b.as(gtk.Widget).addCssClass("pearl-pill");
         focus_state.tag(b.as(gtk.Widget), "connectivity:{s}", .{title});
         host.append(b.as(gtk.Widget));
         self.remember(b.as(object.Object), gtk.Button.signals.clicked.connect(b, *View, callback, self, .{}), false);
@@ -113,11 +120,12 @@ pub const View = struct {
     fn add(self: *View, kind: Kind, path: Text(512), epoch: u64) void {
         const row = &self.rows[self.count];
         self.count += 1;
-        const box = w.column(4);
+        const box = w.row(10);
+        box.as(gtk.Widget).addCssClass("pearl-row-card");
         self.items.append(box.as(gtk.Widget));
         const title = w.label("", null);
         box.append(title.as(gtk.Widget));
-        const actions = w.row(8);
+        const actions = w.row(6);
         box.append(actions.as(gtk.Widget));
         const primary = w.wrappingButton("");
         const secondary = w.wrappingButton("");
