@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "config_generation": "edb2f0f0d802b8d7",
-  "session": "5ca4f8f659417a60bc8819cef1539fca",
+  "config_generation": "a0fd0a744ad54ce6",
+  "session": "25e643275d3b3c409e1716e4e39dfcaf",
   "display_revision": "6",
   "observation": "current",
   "active_profile": "",
@@ -71,6 +71,7 @@
         "y": 0,
         "mirror_of": "",
         "adaptive_sync": false,
+        "fullscreen_only_adaptive_sync": false,
         "hdr": false,
         "hdr_level": 1000,
         "sdr_white_level": 200,
@@ -79,6 +80,8 @@
       },
       "actual_hdr": false,
       "actual_vrr": false,
+      "effective_adaptive_sync": false,
+      "adaptive_sync_error": null,
       "primary": false,
       "configured": {
         "enabled": {
@@ -124,6 +127,13 @@
           "inherit_runtime": true
         },
         "adaptive_sync": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "fullscreen_only_adaptive_sync": {
           "value": null,
           "declaration": null,
           "source": null,
@@ -273,6 +283,7 @@
         "y": 0,
         "mirror_of": "",
         "adaptive_sync": false,
+        "fullscreen_only_adaptive_sync": false,
         "hdr": false,
         "hdr_level": 1000,
         "sdr_white_level": 200,
@@ -281,6 +292,8 @@
       },
       "actual_hdr": false,
       "actual_vrr": false,
+      "effective_adaptive_sync": false,
+      "adaptive_sync_error": null,
       "primary": false,
       "configured": {
         "enabled": {
@@ -326,6 +339,13 @@
           "inherit_runtime": true
         },
         "adaptive_sync": {
+          "value": null,
+          "declaration": null,
+          "source": null,
+          "fold_order": null,
+          "inherit_runtime": true
+        },
+        "fullscreen_only_adaptive_sync": {
           "value": null,
           "declaration": null,
           "source": null,

@@ -54,6 +54,7 @@ pub const Bar = struct {
     clock_date: ?*gtk.Label = null,
     keyboard: ?*gtk.Label = null,
     islands: bool = true,
+    running_apps_per_window: bool = false,
     sections: [3]?*gtk.Widget = @splat(null),
     vertical: bool = false,
     compact: bool = false,
@@ -154,6 +155,16 @@ pub const Bar = struct {
         }
         self.styleIslands();
     }
+    /// Task strip mode only; the bar layout itself is untouched.
+    pub fn setRunningAppsPerWindow(self: *Bar, enabled: bool) void {
+        if (self.running_apps_per_window == enabled) return;
+        self.running_apps_per_window = enabled;
+        if (self.running_apps) |view| {
+            view.per_window = enabled;
+            view.update() catch {};
+        }
+        self.fitTasks();
+    }
     pub fn styleIslands(self: *Bar) void {
         const host = self.host.as(gtk.Widget);
         if (self.islands) {
@@ -230,7 +241,7 @@ pub const Bar = struct {
                 const widget: *gtk.Widget = switch (item) {
                     .running_apps => blk: {
                         const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
-                        self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.vertical, self, runningAction);
+                        self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.client, self.vertical, self.running_apps_per_window, self, runningAction);
                         break :blk host.as(gtk.Widget);
                     },
                     .tray => blk: {

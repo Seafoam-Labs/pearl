@@ -50,6 +50,9 @@ pub const Window = struct {
     can_minimize: bool,
     can_maximize: bool,
     can_activate: bool,
+    /// Position within the layout instance of the window's output+workspace scope.
+    /// Null when the window is not part of an arranged layout order.
+    layout_index: ?u32 = null,
     icon: ?Icon = null,
     tag: ?[]const u8 = null,
     description: ?[]const u8 = null,

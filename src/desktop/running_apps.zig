@@ -2,8 +2,10 @@
 const std = @import("std");
 const gtk = @import("gtk4");
 const gdk = @import("gdk4");
+const pixbuf = @import("gdkpixbuf2");
 const tasks = @import("task_model.zig");
 const Apps = @import("apps.zig");
+const Client = @import("../aqueous/client.zig").Client;
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
@@ -37,11 +39,13 @@ fn appIcon(index: *Apps.Index, desktop: ?[]const u8, host: *gtk.Widget) *gtk.Ima
     image.setPixelSize(20);
     return image;
 }
-const StripButton = struct { owner: *Strip, key: [:0]const u8, skip: ?usize = null };
+const StripButton = struct { owner: *Strip, key: [:0]const u8, window: ?[:0]const u8 = null, activate: bool = false, skip: ?usize = null };
+const StripRow = struct { id: []const u8, kind: []const u8 };
 pub const Strip = struct {
     host: *gtk.Box,
     snapshot: *const tasks.Snapshot,
     index: *Apps.Index,
+    client: *Client,
     context: *anyopaque,
     dispatch: Dispatch,
     arena: std.heap.ArenaAllocator = .init(a),
@@ -50,12 +54,15 @@ pub const Strip = struct {
     built_slots: usize = 0,
     digest: ?u64 = null,
     shown: usize = 0,
+    rows: []const StripRow = &.{},
     vertical: bool,
     compact: bool = false,
     built_compact: bool = false,
-    pub fn create(host: *gtk.Box, snapshot: *const tasks.Snapshot, index: *Apps.Index, vertical: bool, context: *anyopaque, dispatch: Dispatch) !*Strip {
+    per_window: bool = false,
+    built_per_window: bool = false,
+    pub fn create(host: *gtk.Box, snapshot: *const tasks.Snapshot, index: *Apps.Index, client: *Client, vertical: bool, per_window: bool, context: *anyopaque, dispatch: Dispatch) !*Strip {
         const self = try a.create(Strip);
-        self.* = .{ .host = host, .snapshot = snapshot, .index = index, .vertical = vertical, .context = context, .dispatch = dispatch };
+        self.* = .{ .host = host, .snapshot = snapshot, .index = index, .client = client, .vertical = vertical, .per_window = per_window, .context = context, .dispatch = dispatch };
         host.setSpacing(2);
         host.as(gtk.Widget).addCssClass("pearl-running-apps");
         return self;
@@ -68,82 +75,162 @@ pub const Strip = struct {
     fn clear(self: *Strip) void {
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         _ = self.arena.reset(.free_all);
+        self.rows = &.{};
+    }
+    /// Cached window pixels; a null result queues the fetch or falls back to the app icon.
+    fn windowPixels(self: *Strip, id: []const u8) ?*pixbuf.Pixbuf {
+        const win = self.client.model.get(.window, id) orelse return null;
+        const icon = win.icon orelse return null;
+        if (!icon.has_pixels) return null;
+        return self.client.icon(.{ .id = id, .revision = icon.revision, .size = if (self.compact) 16 else 20, .scale = 1 }) catch null;
     }
     pub fn update(self: *Strip) !void {
-        if (self.revision == self.snapshot.revision and self.built_slots == self.slots and self.built_compact == self.compact) return;
+        const settled = self.revision == self.snapshot.revision and self.built_slots == self.slots and self.built_compact == self.compact and self.built_per_window == self.per_window;
+        // Per-window mode rehashes even when settled: icon pixels arrive without a revision bump.
+        if (settled and !self.per_window) return;
         const groups = self.snapshot.groups;
         var hash = std.hash.Wyhash.init(self.index.generation);
         hash.update(std.mem.asBytes(&self.slots));
         hash.update(&.{@intFromBool(self.compact)});
-        for (groups) |group| {
-            hash.update(group.key);
-            hash.update(group.name);
-            hash.update(std.mem.asBytes(&group.windows.items.len));
-            hash.update(&.{ @intFromBool(group.focused()), @intFromBool(group.minimized()) });
+        if (self.per_window) {
+            hash.update(&.{1});
+            for (groups) |group| {
+                hash.update(group.key);
+                for (group.windows.items) |win| {
+                    hash.update(win.id);
+                    hash.update(win.title);
+                    hash.update(&.{ @intFromBool(win.focused), @intFromBool(win.minimized), @intFromBool(win.can_activate), @intFromBool(self.windowPixels(win.id) != null) });
+                }
+            }
+        } else {
+            for (groups) |group| {
+                hash.update(group.key);
+                hash.update(group.name);
+                hash.update(std.mem.asBytes(&group.windows.items.len));
+                hash.update(&.{ @intFromBool(group.focused()), @intFromBool(group.minimized()) });
+            }
         }
         const digest = hash.final();
         if (self.digest != null and self.digest.? == digest) {
             self.revision = self.snapshot.revision;
+            self.built_slots = self.slots;
+            self.built_compact = self.compact;
+            self.built_per_window = self.per_window;
             return;
         }
         self.clear();
         const alloc = self.arena.allocator();
-        self.shown = tasks.visibleCount(groups.len, self.slots);
-        self.host.as(gtk.Widget).setVisible(@intFromBool(groups.len > 0));
-        for (groups[0..self.shown]) |group| {
-            const callback = try alloc.create(StripButton);
-            callback.* = .{ .owner = self, .key = try alloc.dupeZ(u8, group.key) };
-            const button = gtk.Button.new();
-            button.as(gtk.Widget).addCssClass("pearl-task-button");
-            if (group.focused()) button.as(gtk.Widget).addCssClass("suggested-action");
-            const image = appIcon(self.index, group.desktop, self.host.as(gtk.Widget));
-            if (self.compact) image.setPixelSize(16);
-            const marker = if (group.focused()) "●" else if (group.minimized()) "◦" else "•";
-            const count = if (group.windows.items.len > 1) try std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ marker, group.windows.items.len }, 0) else marker;
-            const indicator = gtk.Label.new(count);
-            indicator.as(gtk.Widget).addCssClass("pearl-task-count");
-            if (self.compact) {
-                button.as(gtk.Widget).addCssClass("pearl-task-compact");
-                const overlay = gtk.Overlay.new();
-                overlay.setChild(image.as(gtk.Widget));
-                indicator.as(gtk.Widget).setHalign(.end);
-                indicator.as(gtk.Widget).setValign(.end);
-                indicator.as(gtk.Widget).addCssClass("pearl-task-badge");
-                overlay.addOverlay(indicator.as(gtk.Widget));
-                button.setChild(overlay.as(gtk.Widget));
+        var total: usize = 0;
+        if (self.per_window) {
+            for (groups) |group| total += group.windows.items.len;
+        } else total = groups.len;
+        self.shown = tasks.visibleCount(total, self.slots);
+        self.host.as(gtk.Widget).setVisible(@intFromBool(total > 0));
+        var rows: std.ArrayList(StripRow) = .empty;
+        var hidden_group: ?usize = null;
+        var placed: usize = 0;
+        for (groups, 0..) |group, group_index| {
+            if (self.per_window) {
+                for (group.windows.items) |win| {
+                    if (placed >= self.shown) {
+                        if (hidden_group == null) hidden_group = group_index;
+                        continue;
+                    }
+                    placed += 1;
+                    try rows.append(alloc, .{ .id = win.id, .kind = "window" });
+                    const callback = try alloc.create(StripButton);
+                    callback.* = .{ .owner = self, .key = try alloc.dupeZ(u8, group.key), .window = try alloc.dupeZ(u8, win.id), .activate = win.can_activate };
+                    const button = gtk.Button.new();
+                    button.as(gtk.Widget).addCssClass("pearl-task-button");
+                    if (win.focused) button.as(gtk.Widget).addCssClass("suggested-action");
+                    const image = if (self.windowPixels(win.id)) |pixels| blk: {
+                        const widget = gtk.Image.new();
+                        widget.setFromPixbuf(pixels);
+                        break :blk widget;
+                    } else appIcon(self.index, group.desktop, self.host.as(gtk.Widget));
+                    image.setPixelSize(if (self.compact) 16 else 20);
+                    const marker = if (win.focused) "●" else if (win.minimized) "◦" else "•";
+                    const indicator = gtk.Label.new(marker);
+                    indicator.as(gtk.Widget).addCssClass("pearl-task-count");
+                    try self.pack(button, image, indicator);
+                    const name = try localized(alloc, "{s} — 1 {s}, all workspaces{s}{s}", "{s} — 1 {s}, alle Arbeitsflächen{s}{s}", .{ win.title, windowWord(1), if (win.focused) tr(", focused", ", fokussiert") else "", if (win.minimized) tr(", minimized", ", minimiert") else "" });
+                    w.name(button.as(gtk.Widget), name);
+                    button.as(gtk.Widget).setTooltipText(name);
+                    _ = gtk.Button.signals.clicked.connect(button, *StripButton, clicked, callback, .{});
+                    const secondary = gtk.GestureClick.new();
+                    secondary.as(gtk.GestureSingle).setButton(3);
+                    _ = gtk.GestureClick.signals.pressed.connect(secondary, *StripButton, menu, callback, .{});
+                    button.as(gtk.Widget).addController(secondary.as(gtk.EventController));
+                    self.host.append(button.as(gtk.Widget));
+                }
             } else {
-                const content = gtk.Box.new(.vertical, 0);
-                content.append(image.as(gtk.Widget));
-                content.append(indicator.as(gtk.Widget));
-                button.setChild(content.as(gtk.Widget));
+                if (placed >= self.shown) {
+                    if (hidden_group == null) hidden_group = group_index;
+                    continue;
+                }
+                placed += 1;
+                try rows.append(alloc, .{ .id = group.key, .kind = "group" });
+                const callback = try alloc.create(StripButton);
+                callback.* = .{ .owner = self, .key = try alloc.dupeZ(u8, group.key) };
+                const button = gtk.Button.new();
+                button.as(gtk.Widget).addCssClass("pearl-task-button");
+                if (group.focused()) button.as(gtk.Widget).addCssClass("suggested-action");
+                const image = appIcon(self.index, group.desktop, self.host.as(gtk.Widget));
+                if (self.compact) image.setPixelSize(16);
+                const marker = if (group.focused()) "●" else if (group.minimized()) "◦" else "•";
+                const count = if (group.windows.items.len > 1) try std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ marker, group.windows.items.len }, 0) else marker;
+                const indicator = gtk.Label.new(count);
+                indicator.as(gtk.Widget).addCssClass("pearl-task-count");
+                try self.pack(button, image, indicator);
+                const name = try localized(alloc, "{s} — {d} {s}, all workspaces{s}{s}", "{s} — {d} {s}, alle Arbeitsflächen{s}{s}", .{ group.name, group.windows.items.len, windowWord(group.windows.items.len), if (group.focused()) tr(", focused", ", fokussiert") else "", if (group.minimized()) tr(", minimized", ", minimiert") else "" });
+                w.name(button.as(gtk.Widget), name);
+                button.as(gtk.Widget).setTooltipText(name);
+                _ = gtk.Button.signals.clicked.connect(button, *StripButton, clicked, callback, .{});
+                const secondary = gtk.GestureClick.new();
+                secondary.as(gtk.GestureSingle).setButton(3);
+                _ = gtk.GestureClick.signals.pressed.connect(secondary, *StripButton, menu, callback, .{});
+                button.as(gtk.Widget).addController(secondary.as(gtk.EventController));
+                self.host.append(button.as(gtk.Widget));
             }
-            const name = try localized(alloc, "{s} — {d} {s}, all workspaces{s}{s}", "{s} — {d} {s}, alle Arbeitsflächen{s}{s}", .{ group.name, group.windows.items.len, windowWord(group.windows.items.len), if (group.focused()) tr(", focused", ", fokussiert") else "", if (group.minimized()) tr(", minimized", ", minimiert") else "" });
-            w.name(button.as(gtk.Widget), name);
-            button.as(gtk.Widget).setTooltipText(name);
-            _ = gtk.Button.signals.clicked.connect(button, *StripButton, clicked, callback, .{});
-            const secondary = gtk.GestureClick.new();
-            secondary.as(gtk.GestureSingle).setButton(3);
-            _ = gtk.GestureClick.signals.pressed.connect(secondary, *StripButton, menu, callback, .{});
-            button.as(gtk.Widget).addController(secondary.as(gtk.EventController));
-            self.host.append(button.as(gtk.Widget));
         }
-        if (self.shown < groups.len) {
+        if (placed < total) {
             const callback = try alloc.create(StripButton);
-            callback.* = .{ .owner = self, .key = "", .skip = self.shown };
-            const label = try std.fmt.allocPrintSentinel(alloc, "+{d}", .{groups.len - self.shown}, 0);
+            callback.* = .{ .owner = self, .key = "", .skip = hidden_group orelse groups.len };
+            try rows.append(alloc, .{ .id = "", .kind = "overflow" });
+            const hidden = total - placed;
+            const label = try std.fmt.allocPrintSentinel(alloc, "+{d}", .{hidden}, 0);
             const button = gtk.Button.newWithLabel(label);
             if (self.compact) button.as(gtk.Widget).addCssClass("pearl-task-compact");
             button.as(gtk.Widget).addCssClass("pearl-task-button");
-            const name = if (self.shown == 0) try localized(alloc, "Running applications ({d})", "Laufende Anwendungen ({d})", .{groups.len - self.shown}) else try localized(alloc, "{d} more applications", "{d} weitere Anwendungen", .{groups.len - self.shown});
+            const name = if (placed == 0) try localized(alloc, "Running applications ({d})", "Laufende Anwendungen ({d})", .{hidden}) else if (self.per_window) try localized(alloc, "{d} more windows", "{d} weitere Fenster", .{hidden}) else try localized(alloc, "{d} more applications", "{d} weitere Anwendungen", .{hidden});
             w.name(button.as(gtk.Widget), name);
             button.as(gtk.Widget).setTooltipText(name);
             _ = gtk.Button.signals.clicked.connect(button, *StripButton, clicked, callback, .{});
             self.host.append(button.as(gtk.Widget));
         }
+        self.rows = try rows.toOwnedSlice(alloc);
         self.revision = self.snapshot.revision;
         self.built_slots = self.slots;
         self.built_compact = self.compact;
+        self.built_per_window = self.per_window;
         self.digest = digest;
+    }
+    fn pack(self: *Strip, button: *gtk.Button, image: *gtk.Image, indicator: *gtk.Label) !void {
+        if (self.compact) {
+            button.as(gtk.Widget).addCssClass("pearl-task-compact");
+            const overlay = gtk.Overlay.new();
+            overlay.setChild(image.as(gtk.Widget));
+            indicator.as(gtk.Widget).setHalign(.end);
+            indicator.as(gtk.Widget).setValign(.end);
+            indicator.as(gtk.Widget).addCssClass("pearl-task-badge");
+            overlay.addOverlay(indicator.as(gtk.Widget));
+            button.setChild(overlay.as(gtk.Widget));
+        } else {
+            const content = gtk.Box.new(.vertical, 0);
+            content.append(image.as(gtk.Widget));
+            content.append(indicator.as(gtk.Widget));
+            button.setChild(content.as(gtk.Widget));
+        }
     }
     pub fn report(self: *Strip, alloc: std.mem.Allocator, root: *gtk.Widget) ![]const ProbeRow {
         var result: std.ArrayList(ProbeRow) = .empty;
@@ -153,7 +240,8 @@ pub const Strip = struct {
             child = widget.getNextSibling();
             i += 1;
         }) {
-            try result.append(alloc, .{ .id = if (i < self.shown) self.snapshot.groups[i].key else "", .kind = if (i < self.shown) "group" else "overflow", .rect = rect(widget, root), .enabled = widget.getSensitive() != 0, .focused = widget.hasFocus() != 0 });
+            const row = if (i < self.rows.len) self.rows[i] else StripRow{ .id = "", .kind = "overflow" };
+            try result.append(alloc, .{ .id = row.id, .kind = row.kind, .rect = rect(widget, root), .enabled = widget.getSensitive() != 0, .focused = widget.hasFocus() != 0 });
         }
         return result.toOwnedSlice(alloc);
     }
@@ -161,6 +249,10 @@ pub const Strip = struct {
         const self = cb.owner;
         if (cb.skip) |skip| {
             self.dispatch(self.context, .{ .overflow = skip });
+            return;
+        }
+        if (cb.window) |id| {
+            if (cb.activate) self.dispatch(self.context, .{ .activate = id }) else self.dispatch(self.context, .{ .group = cb.key });
             return;
         }
         const group = self.snapshot.find(cb.key) orelse return;

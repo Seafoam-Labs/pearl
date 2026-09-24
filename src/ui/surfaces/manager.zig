@@ -826,6 +826,7 @@ pub const Manager = struct {
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
                 if (o.bar.?.bar.?.islands != pref.islands) if (o.bar.?.autohide) |controller| controller.clearGesture();
                 o.bar.?.bar.?.setIslands(pref.islands);
+                o.bar.?.bar.?.setRunningAppsPerWindow(pref.running_apps_per_window);
                 const content = try std.json.Stringify.valueAlloc(a, .{ .groups = pref.groups, .plugins = self.preferences.prefs().plugins }, .{});
                 defer a.free(content);
                 const content_hash = std.hash.Wyhash.hash(0, content);
@@ -976,7 +977,6 @@ pub const Manager = struct {
                 const stack = gtk.Stack.new();
                 stack.as(gtk.Widget).setHexpand(1);
                 stack.as(gtk.Widget).setVexpand(1);
-                stack.setVisibleChildName("a");
                 for (0..2) |i| {
                     const picture = gtk.Picture.new();
                     picture.setCanShrink(1);
@@ -985,6 +985,7 @@ pub const Manager = struct {
                     _ = stack.addNamed(picture.as(gtk.Widget), if (i == 0) "a" else "b");
                     s.wallpaper_pictures[i] = picture;
                 }
+                stack.setVisibleChildName("a");
                 panel.append(stack.as(gtk.Widget));
                 s.wallpaper_stack = stack;
                 window.setChild(panel_widget);
