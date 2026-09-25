@@ -9,11 +9,12 @@ const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
 const focus_state = @import("focus_state.zig");
 const Connection = struct { object: *object.Object, id: c_ulong };
-const Row = struct { view: *Sound, key: Audio.Key, title: *gtk.Label, scale: *gtk.Scale, mute: *gtk.Button, route: *gtk.Button };
+const Row = struct { view: *Sound, key: Audio.Key, title: *gtk.Label, scale: *gtk.Scale, mute: *gtk.Button, route: *gtk.Button, muted: bool = false };
 pub const Sound = struct {
     audio: *Audio.Audio,
     devices: *gtk.Box,
     audio_status: *gtk.Label,
+    state_icon: *gtk.Image,
     rows: [128]Row = undefined,
     count: usize = 0,
     updating: bool = false,
@@ -21,17 +22,24 @@ pub const Sound = struct {
     row_connections: std.ArrayList(Connection) = .empty,
     pub fn create(host: *gtk.Box, audio: *Audio.Audio) !*Sound {
         const self = try a.create(Sound);
-        self.* = .{ .audio = audio, .devices = undefined, .audio_status = undefined };
+        self.* = .{ .audio = audio, .devices = undefined, .audio_status = undefined, .state_icon = undefined };
         const root = host;
         const sound = w.card();
         root.append(sound.as(gtk.Widget));
         sound.append(w.label(tr("Sound", "Klang"), "pearl-card-title").as(gtk.Widget));
+        const state_row = w.row(10);
+        state_row.as(gtk.Widget).addCssClass("pearl-state");
+        self.state_icon = w.icon("pearl-emblem-ok-symbolic");
+        self.state_icon.as(gtk.Widget).addCssClass("pearl-state-icon");
+        state_row.append(self.state_icon.as(gtk.Widget));
         self.audio_status = w.label("", "pearl-secondary");
         self.audio_status.setWrap(1);
-        sound.append(self.audio_status.as(gtk.Widget));
+        state_row.append(self.audio_status.as(gtk.Widget));
+        sound.append(state_row.as(gtk.Widget));
         self.devices = w.column(12);
         const expander = gtk.Expander.new(tr("Output, input and applications", "Ausgabe, Eingabe und Anwendungen"));
-        expander.setLabelWidget(w.label(tr("Output, input and applications", "Ausgabe, Eingabe und Anwendungen"), null).as(gtk.Widget));
+        const expander_label = w.label(tr("Output, input and applications", "Ausgabe, Eingabe und Anwendungen"), "pearl-section-title");
+        expander.setLabelWidget(expander_label.as(gtk.Widget));
         focus_state.tag(expander.as(gtk.Widget), "audio-expander", .{});
         expander.setChild(self.devices.as(gtk.Widget));
         expander.setExpanded(1);
@@ -60,24 +68,28 @@ pub const Sound = struct {
         self.count = self.audio.count;
         for (self.audio.devices[0..self.count], 0..) |d, i| {
             const row = &self.rows[i];
-            const box = w.column(4);
+            const box = w.column(6);
+            box.as(gtk.Widget).addCssClass("pearl-row-card");
             self.devices.append(box.as(gtk.Widget));
+            const head = w.row(10);
+            box.append(head.as(gtk.Widget));
+            head.append(w.icon(if (d.key.kind == .source or d.key.kind == .recording) "pearl-microphone-symbolic" else "pearl-audio-volume-high-symbolic").as(gtk.Widget));
             const title = w.label(d.label.z(), null);
             title.setEllipsize(.end);
             title.setXalign(0);
-            box.append(title.as(gtk.Widget));
-            const controls = w.flow(3);
-            controls.setHomogeneous(0);
+            head.append(title.as(gtk.Widget));
+            const mute = w.iconButton("pearl-audio-volume-high-symbolic", tr("Mute", "Stumm"));
+            head.append(mute.as(gtk.Widget));
+            const controls = w.row(8);
             box.append(controls.as(gtk.Widget));
             const scale = gtk.Scale.newWithRange(.horizontal, 0, 100, 1);
-            scale.setDrawValue(1);
+            scale.setDrawValue(0);
             scale.setDigits(0);
             scale.as(gtk.Widget).setHexpand(1);
-            controls.insert(scale.as(gtk.Widget), -1);
-            const mute = w.wrappingButton(tr("Mute", "Stumm"));
-            controls.insert(mute.as(gtk.Widget), -1);
+            controls.append(scale.as(gtk.Widget));
             const route = w.wrappingButton(if (d.key.kind == .sink or d.key.kind == .source) tr("Set default", "Als Standard") else tr("Move to default", "Zum Standard verschieben"));
-            controls.insert(route.as(gtk.Widget), -1);
+            route.as(gtk.Widget).addCssClass("pearl-pill");
+            controls.append(route.as(gtk.Widget));
             for ([_]*gtk.Widget{ scale.as(gtk.Widget), mute.as(gtk.Widget), route.as(gtk.Widget) }, 0..) |widget, control| focus_state.tag(widget, "audio:{d}:{s}:{d}:{d}", .{ d.key.generation, @tagName(d.key.kind), d.key.index, control });
             row.* = .{ .view = self, .key = d.key, .title = title, .scale = scale, .mute = mute, .route = route };
             self.remember(scale.as(object.Object), gtk.Range.signals.value_changed.connect(scale.as(gtk.Range), *Row, volumeChanged, row, .{}), true);
@@ -100,6 +112,7 @@ pub const Sound = struct {
         const sound_text = if (!self.audio.ready) tr("Audio unavailable", "Audio nicht verfügbar") else if (self.audio.count == 0) tr("No audio devices", "Keine Audiogeräte") else std.fmt.bufPrintZ(&buffer, "{s}: {s}\n{s}: {s}{s}", .{ tr("Output", "Ausgabe"), if (self.audio.default(.sink)) |d| d.label.slice() else "—", tr("Input", "Eingabe"), if (self.audio.default(.source)) |d| d.label.slice() else "—", if (self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null) tr(" · Applying…", " · Wird angewendet…") else "" }) catch "Audio";
         self.audio_status.setText(sound_text);
         if (self.audio.err) |message| self.audio_status.setText(std.fmt.bufPrintZ(&buffer, "{s}", .{message}) catch "Audio unavailable");
+        self.state_icon.setFromIconName(if (self.audio.err != null or !self.audio.ready) "pearl-dialog-warning-symbolic" else "pearl-emblem-ok-symbolic");
         for (self.rows[0..self.count], self.audio.devices[0..self.count]) |*row, d| {
             const kind = if (d.key.kind == .sink) tr("Output", "Ausgabe") else if (d.key.kind == .source) tr("Input", "Eingabe") else if (d.key.kind == .playback) tr("Playback", "Wiedergabe") else tr("Recording", "Aufnahme");
             row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ kind, d.label.slice() }) catch d.label.z());
@@ -107,7 +120,13 @@ pub const Sound = struct {
             const pending = self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null;
             if (!pending) row.scale.as(gtk.Range).setValue(@floatFromInt(d.volume));
             row.scale.as(gtk.Widget).setSensitive(@intFromBool(d.writable));
-            row.mute.setLabel(if (d.mute) tr("Unmute", "Ton ein") else tr("Mute", "Stumm"));
+            if (row.muted != d.mute) {
+                row.muted = d.mute;
+                row.mute.setChild(w.icon(if (d.mute) "pearl-audio-volume-muted-symbolic" else "pearl-audio-volume-high-symbolic").as(gtk.Widget));
+                const mute_name = if (d.mute) tr("Unmute", "Ton ein") else tr("Mute", "Stumm");
+                row.mute.as(gtk.Widget).setTooltipText(mute_name);
+                w.name(row.mute.as(gtk.Widget), mute_name);
+            }
             const device = if (d.key.kind == .sink or d.key.kind == .playback) self.audio.default(.sink) else self.audio.default(.source);
             const is_default = if (device) |target| target.key.index == d.key.index and target.key.kind == d.key.kind else false;
             row.route.as(gtk.Widget).setSensitive(@intFromBool(!is_default and (d.key.kind == .sink or d.key.kind == .source or device != null)));
@@ -159,27 +178,39 @@ pub const PowerView = struct {
         const power_card = w.card();
         root.append(power_card.as(gtk.Widget));
         power_card.append(w.label(tr("Power and brightness", "Energie und Helligkeit"), "pearl-card-title").as(gtk.Widget));
+        const state_row = w.row(10);
+        state_row.as(gtk.Widget).addCssClass("pearl-state");
+        const battery_icon = w.icon("pearl-battery-symbolic");
+        battery_icon.as(gtk.Widget).addCssClass("pearl-state-icon");
+        state_row.append(battery_icon.as(gtk.Widget));
         self.power_status = w.label("", "pearl-secondary");
         self.power_status.setWrap(1);
-        power_card.append(self.power_status.as(gtk.Widget));
-        self.brightness_label = w.label("", null);
+        state_row.append(self.power_status.as(gtk.Widget));
+        power_card.append(state_row.as(gtk.Widget));
+        self.brightness_label = w.label("", "pearl-secondary");
         power_card.append(self.brightness_label.as(gtk.Widget));
+        const brightness_row = w.row(10);
+        brightness_row.append(w.icon("pearl-display-brightness-symbolic").as(gtk.Widget));
         self.brightness = gtk.Scale.newWithRange(.horizontal, 0, 100, 1);
         focus_state.tag(self.brightness.as(gtk.Widget), "brightness", .{});
-        self.brightness.setDrawValue(1);
+        self.brightness.setDrawValue(0);
         self.brightness.setDigits(0);
+        self.brightness.as(gtk.Widget).setHexpand(1);
         self.brightness.as(gtk.Widget).setTooltipText(tr("Display brightness", "Bildschirmhelligkeit"));
-        power_card.append(self.brightness.as(gtk.Widget));
+        brightness_row.append(self.brightness.as(gtk.Widget));
+        power_card.append(brightness_row.as(gtk.Widget));
         self.remember(self.brightness.as(object.Object), gtk.Range.signals.value_changed.connect(self.brightness.as(gtk.Range), *PowerView, brightnessChanged, self, .{}), false);
         self.profile_status = w.label("", "pearl-secondary");
         power_card.append(self.profile_status.as(gtk.Widget));
-        const profile_box = w.flow(3);
+        const profile_box = w.row(4);
         power_card.append(profile_box.as(gtk.Widget));
         for (&self.profiles, 0..) |*button, i| {
             button.* = w.wrappingButton(([_][*:0]const u8{ tr("Power saver", "Energiesparen"), tr("Balanced", "Ausgeglichen"), tr("Performance", "Leistung") })[i]);
+            button.*.as(gtk.Widget).setHexpand(1);
+            button.*.as(gtk.Widget).addCssClass("pearl-pill");
             focus_state.tag(button.*.as(gtk.Widget), "profile:{d}", .{i});
             self.profile_choices[i] = .{ .view = self, .index = @intCast(i) };
-            profile_box.insert(button.*.as(gtk.Widget), -1);
+            profile_box.append(button.*.as(gtk.Widget));
             self.remember(button.*.as(object.Object), gtk.Button.signals.clicked.connect(button.*, *ProfileChoice, profileClicked, &self.profile_choices[i], .{}), false);
         }
         self.actions = try PowerActions.create(power_card, power);
@@ -251,13 +282,16 @@ pub const PowerActions = struct {
         host.append(actions.as(gtk.Widget));
         self.off = w.wrappingButton(tr("Power off…", "Ausschalten…"));
         self.reboot = w.wrappingButton(tr("Restart…", "Neu starten…"));
+        self.off.as(gtk.Widget).addCssClass("pearl-destructive");
         for ([_]*gtk.Button{ self.off, self.reboot }) |button| {
+            button.as(gtk.Widget).addCssClass("pearl-pill");
             actions.append(button.as(gtk.Widget));
             self.remember(button.as(object.Object), gtk.Button.signals.clicked.connect(button, *PowerActions, powerClicked, self, .{}), false);
         }
         focus_state.tag(self.off.as(gtk.Widget), "power-off", .{});
         focus_state.tag(self.reboot.as(gtk.Widget), "reboot", .{});
         const cancel = w.wrappingButton(tr("Cancel", "Abbrechen"));
+        cancel.as(gtk.Widget).addCssClass("pearl-pill");
         focus_state.tag(cancel.as(gtk.Widget), "power-cancel", .{});
         actions.insert(cancel.as(gtk.Widget), -1);
         self.remember(cancel.as(object.Object), gtk.Button.signals.clicked.connect(cancel, *PowerActions, cancelClicked, self, .{}), false);

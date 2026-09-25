@@ -1,5 +1,6 @@
 const std = @import("std");
 const gtk = @import("gtk4");
+const glib = @import("glib2");
 const object = @import("gobject2");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
@@ -10,7 +11,8 @@ const connectivity = @import("connectivity.zig");
 const a = std.heap.c_allocator;
 const pages = navigation.compact_routes;
 const focus_state = @import("focus_state.zig");
-const Text = @import("../services/policy.zig").Text;
+const policy = @import("../services/policy.zig");
+const Text = policy.Text;
 
 pub const Control = struct {
     pub const Task = enum { media, overview, settings, aqueous_settings, full_settings, night_settings, close };
@@ -24,11 +26,11 @@ pub const Control = struct {
         auth: *@import("../services/polkit.zig").Agent,
     };
     night_label: ?*gtk.Label = null,
-    night_toggle: ?*gtk.Button = null,
+    night_toggle: ?*gtk.ToggleButton = null,
     night_resume: ?*gtk.Button = null,
-    handoff: *gtk.Button,
-    handoff_box: *gtk.Box,
+    night_updating: bool = false,
     handoff_message: *gtk.Label,
+    settings_button: *gtk.Button,
     models: Models,
     window: *gtk.Window,
     navigate: *const fn (*anyopaque, navigation.Route) anyerror!void,
@@ -43,10 +45,15 @@ pub const Control = struct {
     heading: *gtk.Label,
     header: *gtk.Widget,
     heading_focus: *gtk.Widget,
-    chooser: *gtk.DropDown,
-    chooser_signal: c_ulong = 0,
-    close: *gtk.Button,
-    close_signal: c_ulong = 0,
+    logout_button: *gtk.Button,
+    reboot_button: *gtk.Button,
+    off_button: *gtk.Button,
+    power_confirm: policy.Confirmation = .{},
+    tabs: [pages.len]*gtk.ToggleButton = undefined,
+    tab_rows: [pages.len]TabRow = undefined,
+    volume_scale: ?*gtk.Scale = null,
+    brightness_scale: ?*gtk.Scale = null,
+    sliders_updating: bool = false,
     bodies: [pages.len]*gtk.Box = undefined,
     viewports: [pages.len]*gtk.ScrolledWindow = undefined,
     page: navigation.Route = .overview,
@@ -62,22 +69,48 @@ pub const Control = struct {
     action: *const fn (*anyopaque, ?[]const u8) void,
     task: *const fn (*anyopaque, Task) void,
     rows: [native.names.len]Choice = undefined,
-    links: [pages.len]Link = undefined,
     tasks: [4]TaskLink = undefined,
     probe_focus: ?*gtk.Widget = null,
     const Choice = struct { owner: *Control, name: []const u8 };
-    const Link = struct { owner: *Control, page: navigation.Route };
     const TaskLink = struct { owner: *Control, task: Task };
+    const TabRow = struct { owner: *Control, page: navigation.Route };
 
     pub fn create(host: *gtk.Box, layout: *native.Layout, context: *anyopaque, action: @FieldType(Control, "action"), task: @FieldType(Control, "task"), navigate: @FieldType(Control, "navigate"), initial: navigation.Route, window: *gtk.Window, models: Models) !*Control {
         if (!initial.isCompact()) return error.InvalidRoute;
         const self = try a.create(Control);
-        const header = w.flow(3);
-        header.setHomogeneous(0);
-        header.setColumnSpacing(8);
-        header.setRowSpacing(8);
+        const header = w.row(10);
+        header.as(gtk.Widget).addCssClass("pearl-control-header");
         host.append(header.as(gtk.Widget));
-        const heading = w.label(title(initial), "pearl-card-title");
+        const chip = w.row(10);
+        chip.as(gtk.Widget).addCssClass("pearl-user-chip");
+        const avatar = w.icon("pearl-avatar-default-symbolic");
+        avatar.as(gtk.Widget).addCssClass("pearl-avatar");
+        chip.append(avatar.as(gtk.Widget));
+        const user_label = w.label(glib.getUserName(), "pearl-user-name");
+        user_label.as(gtk.Widget).setHexpand(0);
+        user_label.setWrap(0);
+        chip.append(user_label.as(gtk.Widget));
+        w.name(chip.as(gtk.Widget), tr("Signed-in user", "Angemeldete Person"));
+        header.append(chip.as(gtk.Widget));
+        // Session and settings actions stay reachable on every page.
+        const spacer = w.row(0);
+        spacer.as(gtk.Widget).setHexpand(1);
+        header.append(spacer.as(gtk.Widget));
+        const installed = @import("../settings/launch.zig").available();
+        const handoff_message = w.label(if (installed) "" else tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert."), "pearl-secondary");
+        handoff_message.as(gtk.Widget).setHexpand(0);
+        handoff_message.as(gtk.Widget).setVisible(@intFromBool(!installed));
+        _ = handoff_message.as(object.Object).refSink();
+        header.append(handoff_message.as(gtk.Widget));
+        const session_actions = w.row(6);
+        header.append(session_actions.as(gtk.Widget));
+        const logout = w.iconButton("pearl-system-log-out-symbolic", tr("Log out", "Abmelden"));
+        const reboot = w.iconButton("pearl-system-reboot-symbolic", tr("Restart…", "Neu starten…"));
+        const off = w.iconButton("pearl-system-shutdown-symbolic", tr("Power off…", "Ausschalten…"));
+        const settings_button = w.iconButton("pearl-emblem-system-symbolic", tr("Settings", "Einstellungen"));
+        settings_button.as(gtk.Widget).setSensitive(@intFromBool(installed));
+        for ([_]*gtk.Button{ logout, reboot, off, settings_button }) |button| session_actions.append(button.as(gtk.Widget));
+        const heading = w.label(title(initial), "pearl-page-title");
         heading.as(object.Object).set("accessible-role", @intFromEnum(gtk.AccessibleRole.heading), @as(?[*:0]const u8, null));
         heading.as(gtk.Accessible).updateProperty(.level, @as(c_int, 1), @as(c_int, -1));
         heading.setWrap(1);
@@ -89,34 +122,14 @@ pub const Control = struct {
         heading_box.as(gtk.Widget).addCssClass("pearl-settings-heading");
         w.name(heading_box.as(gtk.Widget), title(initial));
         heading_box.append(heading.as(gtk.Widget));
-        header.insert(heading_box.as(gtk.Widget), -1);
-        var names: [pages.len:null]?[*:0]const u8 = @splat(null);
-        for (pages, 0..) |page, i| names[i] = title(page).ptr;
-        const chooser = gtk.DropDown.newFromStrings(@ptrCast(&names));
-        w.name(chooser.as(gtk.Widget), tr("Settings section", "Einstellungsbereich"));
-        chooser.as(gtk.Widget).setTooltipText(tr("Choose a settings section", "Einstellungsbereich auswählen"));
-        chooser.as(gtk.Widget).setHalign(.end);
-        header.insert(chooser.as(gtk.Widget), -1);
-        const close = w.wrappingButton(tr("Close", "Schließen"));
-        close.as(gtk.Widget).setHalign(.end);
-        header.insert(close.as(gtk.Widget), -1);
+        host.append(heading_box.as(gtk.Widget));
         const stack = gtk.Stack.new();
         stack.setVhomogeneous(0);
         stack.setHhomogeneous(0);
         stack.setTransitionType(.none);
         stack.as(gtk.Widget).setVexpand(1);
         host.append(stack.as(gtk.Widget));
-        const handoff = w.wrappingButton(tr("Open full settings", "Alle Einstellungen öffnen"));
-        const handoff_box = w.column(8);
-        _ = handoff_box.as(object.Object).refSink();
-        focus_state.tag(handoff.as(gtk.Widget), "settings:full", .{});
-        const installed = @import("../settings/launch.zig").available();
-        handoff.as(gtk.Widget).setSensitive(@intFromBool(installed));
-        handoff_box.append(handoff.as(gtk.Widget));
-        const handoff_message = w.label(if (installed) "" else tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert."), "pearl-secondary");
-        handoff_message.as(gtk.Widget).setVisible(@intFromBool(!installed));
-        handoff_box.append(handoff_message.as(gtk.Widget));
-        self.* = .{ .handoff = handoff, .handoff_box = handoff_box, .handoff_message = handoff_message, .models = models, .window = window, .navigate = navigate, .page = initial, .stack = stack, .heading = heading, .header = header.as(gtk.Widget), .heading_focus = heading_box.as(gtk.Widget), .chooser = chooser, .close = close, .layout = layout, .context = context, .action = action, .task = task };
+        self.* = .{ .handoff_message = handoff_message, .settings_button = settings_button, .models = models, .window = window, .navigate = navigate, .page = initial, .stack = stack, .heading = heading, .header = header.as(gtk.Widget), .heading_focus = heading_box.as(gtk.Widget), .logout_button = logout, .reboot_button = reboot, .off_button = off, .layout = layout, .context = context, .action = action, .task = task };
         errdefer self.destroy();
         for (pages, 0..) |page, i| {
             const scroll = gtk.ScrolledWindow.new();
@@ -129,15 +142,48 @@ pub const Control = struct {
             self.viewports[i] = scroll;
             self.bodies[i] = body;
         }
+        const tabs = w.row(4);
+        tabs.as(gtk.Widget).addCssClass("pearl-tab-strip");
+        host.append(tabs.as(gtk.Widget));
+        for (pages, 0..) |page, i| {
+            const tab = gtk.ToggleButton.newWithLabel(title(page).ptr);
+            tab.as(gtk.Widget).setHexpand(1);
+            tab.as(gtk.Widget).addCssClass("pearl-tab");
+            focus_state.tag(tab.as(gtk.Widget), "tab:{s}", .{page.id()});
+            self.tabs[i] = tab;
+            self.tab_rows[i] = .{ .owner = self, .page = page };
+            _ = gtk.Button.signals.clicked.connect(tab, *TabRow, tabClicked, &self.tab_rows[i], .{});
+            tabs.append(tab.as(gtk.Widget));
+        }
         try self.enterPage();
         stack.setVisibleChildName(self.page.id());
-        chooser.setSelected(@intCast(index(initial)));
         self.focus_signal = object.Object.signals.notify.connect(window.as(object.Object), *Control, focusChanged, self, .{ .detail = "focus-widget" });
         self.queueRestore(.heading);
-        self.chooser_signal = object.Object.signals.notify.connect(chooser.as(object.Object), *Control, sectionChanged, self, .{ .detail = "selected" });
-        self.close_signal = gtk.Button.signals.clicked.connect(close, *Control, closeClicked, self, .{});
-        _ = gtk.Button.signals.clicked.connect(handoff, *Control, fullSettingsClicked, self, .{});
+        _ = gtk.Button.signals.clicked.connect(logout, *Control, logoutClicked, self, .{});
+        _ = gtk.Button.signals.clicked.connect(reboot, *Control, powerClicked, self, .{});
+        _ = gtk.Button.signals.clicked.connect(off, *Control, powerClicked, self, .{});
+        _ = gtk.Button.signals.clicked.connect(settings_button, *Control, fullSettingsClicked, self, .{});
         return self;
+    }
+    fn logoutClicked(_: *gtk.Button, self: *Control) callconv(.c) void {
+        const life = self.models.lifecycle;
+        const command = if (life.pending != null and life.pending.? == .logout) "confirm" else "logout";
+        life.act(command, if (std.mem.eql(u8, command, "confirm")) life.confirmation else null) catch {
+            life.err = "Session action unavailable.";
+        };
+        self.update();
+    }
+    fn powerClicked(button: *gtk.Button, self: *Control) callconv(.c) void {
+        const reboot = button == self.reboot_button;
+        const confirmed = self.power_confirm.click(reboot, self.models.power.epoch(), glib.getMonotonicTime());
+        if (confirmed) self.models.power.powerAction(reboot) catch {
+            self.models.power.err = "Power action unavailable. Review the current service state.";
+            self.models.power.changed(self.models.power.context, .failure);
+        };
+        self.update();
+    }
+    fn tabClicked(_: *gtk.ToggleButton, row: *TabRow) callconv(.c) void {
+        row.owner.navigate(row.owner.context, row.page) catch {};
     }
     fn fullSettingsClicked(_: *gtk.Button, self: *Control) callconv(.c) void {
         self.task(self.context, .full_settings);
@@ -145,6 +191,7 @@ pub const Control = struct {
     pub fn launchFailed(self: *Control, err: anyerror) void {
         self.handoff_message.setText(if (err == error.SettingsNotInstalled) tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert.") else tr("Full settings could not be started. Try again after checking the installation.", "Die Einstellungen konnten nicht gestartet werden. Bitte die Installation prüfen."));
         self.handoff_message.as(gtk.Widget).setVisible(1);
+        self.settings_button.as(gtk.Widget).setTooltipText(self.handoff_message.getText());
     }
     pub fn title(page: navigation.Route) [:0]const u8 {
         return tr(page.title(), switch (page) {
@@ -161,9 +208,6 @@ pub const Control = struct {
     }
     fn enterPage(self: *Control) !void {
         const body = self.bodies[index(self.page)];
-        // Share the handoff across pages without imposing fixed footer height on
-        // short outputs. The retained reference survives page-body teardown.
-        defer body.append(self.handoff_box.as(gtk.Widget));
         switch (self.page) {
             .overview => try self.composeOverview(body),
             .sound => self.sound = try services.Sound.create(body, self.models.audio),
@@ -174,37 +218,44 @@ pub const Control = struct {
         }
     }
     fn composeOverview(self: *Control, body: *gtk.Box) !void {
-        const sections = w.flow(2);
-        body.append(sections.as(gtk.Widget));
-        for (pages, 0..) |page, i| {
-            if (page == .overview) continue;
-            const button = w.wrappingButton(title(page));
-            focus_state.tag(button.as(gtk.Widget), "page:{s}", .{page.id()});
-            self.links[i] = .{ .owner = self, .page = page };
-            _ = gtk.Button.signals.clicked.connect(button, *Link, linkClicked, &self.links[i], .{});
-            sections.insert(button.as(gtk.Widget), -1);
-        }
+        const quick = w.card();
+        quick.as(gtk.Widget).addCssClass("pearl-quick-card");
+        const volume = w.slider(w.label(tr("Volume", "Lautstärke"), "pearl-secondary"), "pearl-audio-volume-high-symbolic", 0);
+        self.volume_scale = volume.scale;
+        focus_state.tag(volume.scale.as(gtk.Widget), "quick-volume", .{});
+        _ = gtk.Range.signals.value_changed.connect(volume.scale.as(gtk.Range), *Control, volumeChanged, self, .{});
+        quick.append(volume.box.as(gtk.Widget));
+        const brightness = w.slider(w.label(tr("Brightness", "Helligkeit"), "pearl-secondary"), "pearl-display-brightness-symbolic", 0);
+        self.brightness_scale = brightness.scale;
+        focus_state.tag(brightness.scale.as(gtk.Widget), "quick-brightness", .{});
+        _ = gtk.Range.signals.value_changed.connect(brightness.scale.as(gtk.Range), *Control, brightnessChanged, self, .{});
+        quick.append(brightness.box.as(gtk.Widget));
+        body.append(quick.as(gtk.Widget));
         if (self.models.night_light != null) {
             const night = w.card();
-            night.append(w.label(tr("Night Light", "Nachtlicht"), "pearl-card-title").as(gtk.Widget));
             self.night_label = w.label("", "pearl-secondary");
-            night.append(self.night_label.?.as(gtk.Widget));
-            self.night_toggle = w.wrappingButton(tr("Toggle Night Light", "Nachtlicht umschalten"));
-            night.append(self.night_toggle.?.as(gtk.Widget));
-            _ = gtk.Button.signals.clicked.connect(self.night_toggle.?, *Control, nightToggled, self, .{});
+            const tile = w.tile("pearl-weather-clear-night-symbolic", w.label(tr("Night Light", "Nachtlicht"), null), self.night_label.?, false);
+            self.night_toggle = tile.button;
+            w.name(tile.button.as(gtk.Widget), tr("Toggle Night Light", "Nachtlicht umschalten"));
+            focus_state.tag(tile.button.as(gtk.Widget), "night-tile", .{});
+            _ = gtk.ToggleButton.signals.toggled.connect(tile.button, *Control, nightToggled, self, .{});
+            night.append(tile.button.as(gtk.Widget));
+            const row = w.row(8);
             self.night_resume = w.wrappingButton(tr("Resume saved policy", "Gespeicherte Einstellungen fortsetzen"));
-            night.append(self.night_resume.?.as(gtk.Widget));
             _ = gtk.Button.signals.clicked.connect(self.night_resume.?, *Control, nightResumed, self, .{});
+            row.append(self.night_resume.?.as(gtk.Widget));
             const settings = w.wrappingButton(tr("Night Light settings", "Nachtlicht-Einstellungen"));
             settings.as(gtk.Widget).setSensitive(@intFromBool(@import("../settings/launch.zig").available()));
-            night.append(settings.as(gtk.Widget));
             _ = gtk.Button.signals.clicked.connect(settings, *Control, nightSettings, self, .{});
+            row.append(settings.as(gtk.Widget));
+            night.append(row.as(gtk.Widget));
             body.append(night.as(gtk.Widget));
         }
         const tasks = w.flow(2);
         body.append(tasks.as(gtk.Widget));
         for ([_]Task{ .media, .overview, .settings, .aqueous_settings }, [_][:0]const u8{ tr("Media controls", "Mediensteuerung"), tr("Window overview", "Fensterübersicht"), tr("Pearl settings", "Pearl-Einstellungen"), tr("Aqueous settings", "Aqueous-Einstellungen") }, 0..) |task, label, i| {
             const button = w.wrappingButton(label);
+            button.as(gtk.Widget).addCssClass("pearl-quick-tile");
             focus_state.tag(button.as(gtk.Widget), "task:{s}", .{@tagName(task)});
             self.tasks[i] = .{ .owner = self, .task = task };
             _ = gtk.Button.signals.clicked.connect(button, *TaskLink, taskClicked, &self.tasks[i], .{});
@@ -213,7 +264,13 @@ pub const Control = struct {
         self.lifecycle = try @import("lifecycle.zig").View.create(body, self.models.lifecycle, self.models.auth, self.models.power);
         const section = w.card();
         section.as(gtk.Widget).addCssClass("pearl-layout-card");
-        section.append(w.label(tr("Workspace layout", "Anordnung der Arbeitsfläche"), "pearl-card-title").as(gtk.Widget));
+        const title_row = w.row(8);
+        title_row.append(w.label(tr("Workspace layout", "Anordnung der Arbeitsfläche"), "pearl-card-title").as(gtk.Widget));
+        const refresh = w.iconButton("pearl-view-refresh-symbolic", tr("Refresh layout", "Anordnung aktualisieren"));
+        focus_state.tag(refresh.as(gtk.Widget), "layout-refresh", .{});
+        _ = gtk.Button.signals.clicked.connect(refresh, *Control, refreshed, self, .{});
+        title_row.append(refresh.as(gtk.Widget));
+        section.append(title_row.as(gtk.Widget));
         self.label = w.label("", "pearl-secondary");
         self.label.?.setWrap(1);
         section.append(self.label.?.as(gtk.Widget));
@@ -221,16 +278,13 @@ pub const Control = struct {
         section.append(layouts.as(gtk.Widget));
         for (native.names, 0..) |name, i| {
             const button = w.wrappingButton(name);
+            button.as(gtk.Widget).addCssClass("pearl-pill");
             focus_state.tag(button.as(gtk.Widget), "layout:{s}", .{name});
             self.buttons[i] = button;
             self.rows[i] = .{ .owner = self, .name = name };
             _ = gtk.Button.signals.clicked.connect(button, *Choice, selected, &self.rows[i], .{});
             layouts.insert(button.as(gtk.Widget), -1);
         }
-        const refresh = w.wrappingButton(tr("Refresh layout", "Anordnung aktualisieren"));
-        focus_state.tag(refresh.as(gtk.Widget), "layout-refresh", .{});
-        _ = gtk.Button.signals.clicked.connect(refresh, *Control, refreshed, self, .{});
-        section.append(refresh.as(gtk.Widget));
         body.append(section.as(gtk.Widget));
         self.update();
     }
@@ -248,6 +302,8 @@ pub const Control = struct {
         self.night_label = null;
         self.night_toggle = null;
         self.night_resume = null;
+        self.volume_scale = null;
+        self.brightness_scale = null;
         if (lifecycle) |view| view.destroy();
         if (sound) |view| view.destroy();
         if (power) |view| view.destroy();
@@ -343,7 +399,6 @@ pub const Control = struct {
         self.stack.setVisibleChildName(page.id());
         self.heading.setText(title(page));
         w.name(self.heading_focus, title(page));
-        self.chooser.setSelected(@intCast(index(page)));
         self.applyExpansion();
         self.queueRestore(position);
         self.changing = false;
@@ -354,13 +409,12 @@ pub const Control = struct {
         self.changing = true;
         self.cancelRestore();
         if (self.focus_signal != 0) object.signalHandlerDisconnect(self.window.as(object.Object), self.focus_signal);
-        if (self.chooser_signal != 0) object.signalHandlerDisconnect(self.chooser.as(object.Object), self.chooser_signal);
-        if (self.close_signal != 0) object.signalHandlerDisconnect(self.close.as(object.Object), self.close_signal);
         self.leavePage();
-        self.handoff_box.as(object.Object).unref();
+        self.handoff_message.as(object.Object).unref();
         a.destroy(self);
     }
-    fn nightToggled(_: *gtk.Button, self: *Control) callconv(.c) void {
+    fn nightToggled(_: *gtk.ToggleButton, self: *Control) callconv(.c) void {
+        if (self.night_updating) return;
         self.models.night_light.?.act(.toggle) catch {};
         self.update();
     }
@@ -385,9 +439,51 @@ pub const Control = struct {
                 .off => tr("Night Light is off.", "Nachtlicht ist aus."),
                 .unavailable => tr("Warming is unavailable on these displays.", "Nachtlicht ist auf diesen Bildschirmen nicht verfügbar."),
             });
-            self.night_toggle.?.as(gtk.Widget).setSensitive(@intFromBool(night.interactive and (night.requested or night.warming.available())));
             self.night_resume.?.as(gtk.Widget).setVisible(@intFromBool(night.model.override != null));
+            if (self.night_toggle) |toggle| {
+                const wanted = @intFromBool(night.requested);
+                if (toggle.getActive() != wanted) {
+                    self.night_updating = true;
+                    toggle.setActive(wanted);
+                    self.night_updating = false;
+                }
+                toggle.as(gtk.Widget).setSensitive(@intFromBool(night.interactive and (night.requested or night.warming.available())));
+            }
         }
+        if (self.volume_scale) |scale| {
+            const audio = self.models.audio;
+            const sink = audio.default(.sink);
+            scale.as(gtk.Widget).setSensitive(@intFromBool(sink != null and sink.?.writable));
+            if (!(audio.active != null or audio.queue.len > 0 or audio.feedback != null)) {
+                self.sliders_updating = true;
+                if (sink) |device| scale.as(gtk.Range).setValue(@floatFromInt(device.volume));
+                self.sliders_updating = false;
+            }
+        }
+        if (self.brightness_scale) |scale| {
+            const power = self.models.power;
+            scale.as(gtk.Widget).setSensitive(@intFromBool(power.brightnessAvailable()));
+            if (!power.brightness_pending and power.brightness_wanted == null and power.feedback == null) {
+                self.sliders_updating = true;
+                scale.as(gtk.Range).setValue(@floatFromInt(power.backlight.percent()));
+                self.sliders_updating = false;
+            }
+        }
+        const life = self.models.lifecycle;
+        const logout_pending = life.pending != null and life.pending.? == .logout;
+        self.logout_button.as(gtk.Widget).setSensitive(@intFromBool(life.gate.available and life.gate.active and !life.gate.locked and life.client.capabilities.commands));
+        self.logout_button.as(gtk.Widget).setTooltipText(if (logout_pending) tr("Confirm log out", "Abmelden bestätigen") else tr("Log out", "Abmelden"));
+        if (logout_pending) self.logout_button.as(gtk.Widget).addCssClass("pearl-selected") else self.logout_button.as(gtk.Widget).removeCssClass("pearl-selected");
+        const power = self.models.power;
+        _ = self.power_confirm.valid(power.epoch(), glib.getMonotonicTime());
+        for ([_]*gtk.Button{ self.reboot_button, self.off_button }, [_]bool{ true, false }) |button, reboot| {
+            const can_act = if (reboot) power.can_reboot else power.can_off;
+            const armed = self.power_confirm.action != null and self.power_confirm.action.? == reboot;
+            button.as(gtk.Widget).setSensitive(@intFromBool(can_act and !power.action_pending and !power.preparing));
+            button.as(gtk.Widget).setTooltipText(if (armed) (if (reboot) tr("Confirm restart", "Neustart bestätigen") else tr("Confirm power off", "Ausschalten bestätigen")) else if (can_act) (if (reboot) tr("Restart after confirmation", "Neustart nach Bestätigung") else tr("Power off after confirmation", "Ausschalten nach Bestätigung")) else (if (reboot) tr("Restart is unavailable or requires permission", "Neustart ist nicht verfügbar oder erfordert eine Berechtigung") else tr("Power off is unavailable or requires permission", "Ausschalten ist nicht verfügbar oder erfordert eine Berechtigung")));
+            if (armed) button.as(gtk.Widget).addCssClass("pearl-selected") else button.as(gtk.Widget).removeCssClass("pearl-selected");
+        }
+        for (self.tabs, pages) |tab, page| tab.setActive(@intFromBool(page == self.page));
         if (self.lifecycle) |view| view.update();
         if (self.sound) |view| view.update();
         if (self.power) |view| view.update();
@@ -413,13 +509,24 @@ pub const Control = struct {
     }
     fn focusName(self: *Control, window: *gtk.Window) []const u8 {
         const focus = window.getFocus() orelse return "none";
-        const chooser = self.chooser.as(gtk.Widget);
-        return if (focus == chooser or focus.isAncestor(chooser) != 0) "section-chooser" else if (focus == self.heading_focus) "heading" else "body";
+        return if (focus == self.heading_focus) "heading" else "body";
     }
     fn focusedButton(window: *gtk.Window) ?[]const u8 {
         const focus = window.getFocus() orelse return null;
         const button = object.ext.cast(gtk.Button, focus) orelse if (focus.getAncestor(gtk.Button.getGObjectType())) |ancestor| object.ext.cast(gtk.Button, ancestor).? else return null;
         return if (button.getLabel()) |label| std.mem.span(label) else null;
+    }
+    fn focusedTab(window: *gtk.Window) []const u8 {
+        const focus = window.getFocus() orelse return "";
+        const tab = object.ext.cast(gtk.ToggleButton, focus) orelse if (focus.getAncestor(gtk.ToggleButton.getGObjectType())) |ancestor| object.ext.cast(gtk.ToggleButton, ancestor).? else return "";
+        if (tab.as(gtk.Widget).hasCssClass("pearl-tab") == 0) return "";
+        return if (tab.as(gtk.Button).getLabel()) |label| std.mem.span(label) else "";
+    }
+    fn focusedHeader(self: *Control, window: *gtk.Window) []const u8 {
+        const focus = window.getFocus() orelse return "";
+        if (focus.isAncestor(self.header) == 0) return "";
+        const button = object.ext.cast(gtk.Button, focus) orelse return "";
+        return if (button.as(gtk.Widget).getTooltipText()) |tooltip| std.mem.span(tooltip) else "";
     }
     // Private read-only evidence from the actual widget tree. Never inspect
     // editable widgets or their children, so credential text cannot be exposed.
@@ -434,7 +541,7 @@ pub const Control = struct {
         for (self.bodies) |box| if (box.as(gtk.Widget).getFirstChild() != null) {
             populated += 1;
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .handoff_available = self.handoff.as(gtk.Widget).getSensitive() != 0, .handoff_error = std.mem.span(self.handoff_message.getText()), .page = self.page, .heading = std.mem.span(self.heading.getText()), .focus = self.focusName(window), .button = focusedButton(window), .saved_focus = self.focus_ids[index(self.page)].slice(), .restoring = self.restore_tick != 0, .labels = labels.items, .populated_pages = populated, .viewports = self.viewports.len, .panel_width = panel.getAllocatedWidth(), .panel_height = panel.getAllocatedHeight(), .header_height = self.header.getHeight(), .body_width = scroll.as(gtk.Widget).getWidth(), .body_height = scroll.as(gtk.Widget).getHeight(), .scroll = scroll.getVadjustment().getValue(), .scroll_upper = scroll.getVadjustment().getUpper(), .scroll_page_size = scroll.getVadjustment().getPageSize(), .interest = .{ .network = self.models.network.interest.count() != 0, .bluetooth = self.models.bluetooth.interest.count() != 0, .power = self.models.power.panel_open } }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .handoff_available = self.settings_button.as(gtk.Widget).getSensitive() != 0, .handoff_error = std.mem.span(self.handoff_message.getText()), .page = self.page, .heading = std.mem.span(self.heading.getText()), .focus = self.focusName(window), .button = focusedButton(window), .tab = focusedTab(window), .header = self.focusedHeader(window), .saved_focus = self.focus_ids[index(self.page)].slice(), .restoring = self.restore_tick != 0, .labels = labels.items, .populated_pages = populated, .viewports = self.viewports.len, .panel_width = panel.getAllocatedWidth(), .panel_height = panel.getAllocatedHeight(), .header_height = self.header.getHeight(), .body_width = scroll.as(gtk.Widget).getWidth(), .body_height = scroll.as(gtk.Widget).getHeight(), .scroll = scroll.getVadjustment().getValue(), .scroll_upper = scroll.getVadjustment().getUpper(), .scroll_page_size = scroll.getVadjustment().getPageSize(), .interest = .{ .network = self.models.network.interest.count() != 0, .bluetooth = self.models.bluetooth.interest.count() != 0, .power = self.models.power.panel_open } }, .{});
     }
     fn collectLabels(widget: *gtk.Widget, alloc: std.mem.Allocator, labels: *std.ArrayList([]const u8)) !void {
         if (labels.items.len >= 32 or widget.getVisible() == 0 or widget.hasCssClass("pearl-authentication") != 0 or object.ext.cast(gtk.PasswordEntry, widget) != null or object.ext.cast(gtk.Entry, widget) != null) return;
@@ -445,23 +552,23 @@ pub const Control = struct {
         var child = widget.getFirstChild();
         while (child) |item| : (child = item.getNextSibling()) try collectLabels(item, alloc, labels);
     }
-    fn sectionChanged(_: *object.Object, _: *object.ParamSpec, self: *Control) callconv(.c) void {
-        const i = self.chooser.getSelected();
-        if (i < pages.len) self.navigate(self.context, pages[i]) catch {};
-    }
-    fn linkClicked(_: *gtk.Button, link: *Link) callconv(.c) void {
-        link.owner.navigate(link.owner.context, link.page) catch {};
-    }
     fn taskClicked(_: *gtk.Button, link: *TaskLink) callconv(.c) void {
         link.owner.task(link.owner.context, link.task);
-    }
-    fn closeClicked(_: *gtk.Button, self: *Control) callconv(.c) void {
-        self.task(self.context, .close);
     }
     fn selected(_: *gtk.Button, choice: *Choice) callconv(.c) void {
         choice.owner.action(choice.owner.context, choice.name);
     }
     fn refreshed(_: *gtk.Button, self: *Control) callconv(.c) void {
         self.action(self.context, null);
+    }
+    fn volumeChanged(range: *gtk.Range, self: *Control) callconv(.c) void {
+        if (self.sliders_updating) return;
+        const audio = self.models.audio;
+        const device = audio.default(.sink) orelse return;
+        audio.request(.{ .key = device.key, .volume = @intFromFloat(range.getValue()) }) catch {};
+    }
+    fn brightnessChanged(range: *gtk.Range, self: *Control) callconv(.c) void {
+        if (self.sliders_updating) return;
+        self.models.power.setBrightness(@intFromFloat(range.getValue())) catch {};
     }
 };

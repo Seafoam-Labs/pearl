@@ -50,7 +50,7 @@
 .pearl-root.$scope .pearl-error .pearl-state-icon { color: $error_color$; }
 .pearl-root.$scope separator { background: alpha($outline$, 0.25); min-height: 1px; }
 .pearl-root.$scope.pearl-compact .pearl-content { padding: 16px; }
-.pearl-root.$scope.pearl-compact .pearl-card { padding: 14px; border-radius: 16px; }
+.pearl-root.$scope.pearl-compact .pearl-card { padding: 14px; border-radius: 14px; }
 .pearl-root.$scope.pearl-compact .pearl-profile { padding: 12px; }
 .pearl-root.$scope.pearl-compact button { padding: 6px 12px; }
 .pearl-root.$scope.pearl-compact button.pearl-icon { padding: 6px; }
@@ -122,6 +122,36 @@
 .pearl-root.$scope .pearl-wallpaper-thumb picture { border-radius: 8px; background: alpha($outline$, 0.12); }
 .pearl-root.$scope .pearl-wallpaper-thumb.pearl-wallpaper-selected { outline: 2px solid $primary$; outline-offset: -2px; }
 .pearl-root.$scope.pearl-shell .pearl-layout-card { padding: 14px; }
+
+/* Control center flyout: persistent session header, quick sliders, bottom tabs. */
+.pearl-root.$scope .pearl-control-header button.pearl-icon { background: transparent; border-radius: 999px; }
+.pearl-root.$scope .pearl-control-header button.pearl-icon:hover { background: $high$; }
+.pearl-root.$scope .pearl-control-header button.pearl-icon:active { background: mix($high$, $primary$, 0.20); }
+.pearl-root.$scope .pearl-control-header button.pearl-icon.pearl-selected { background: $primary$; color: $on_primary$; }
+.pearl-root.$scope .pearl-user-chip { background: $low$; border-radius: 999px; padding: 5px 16px 5px 5px; }
+.pearl-root.$scope .pearl-user-chip .pearl-avatar { padding: 8px; }
+.pearl-root.$scope .pearl-user-name { font-weight: 600; }
+.pearl-root.$scope .pearl-page-title { font-size: 1.25em; font-weight: 700; letter-spacing: -0.3px; }
+.pearl-root.$scope .pearl-quick-card { padding: 16px 18px; }
+.pearl-root.$scope button.pearl-quick-tile { border-radius: 16px; padding: 12px 14px; font-weight: 600; }
+.pearl-root.$scope .pearl-tab-strip { background: $low$; border-radius: 999px; padding: 4px; }
+.pearl-root.$scope .pearl-tab-strip button.pearl-tab { background: transparent; color: $secondary$; border-radius: 999px; padding: 7px 10px; font-weight: 600; }
+.pearl-root.$scope .pearl-tab-strip button.pearl-tab:hover { background: alpha($outline$, 0.12); color: $text$; }
+.pearl-root.$scope .pearl-tab-strip button.pearl-tab:checked { background: $primary$; color: $on_primary$; }
+.pearl-root.$scope .pearl-tab-strip button.pearl-tab:checked:hover { background: mix($primary$, $on_primary$, 0.08); }
+.pearl-root.$scope.pearl-compact .pearl-user-chip { padding: 4px 12px 4px 4px; }
+.pearl-root.$scope.pearl-compact .pearl-user-chip .pearl-avatar { padding: 6px; }
+.pearl-root.$scope.pearl-compact .pearl-quick-card { padding: 12px 14px; }
+.pearl-root.$scope.pearl-compact button.pearl-quick-tile { padding: 9px 10px; }
+.pearl-root.$scope.pearl-compact .pearl-tab-strip button.pearl-tab { padding: 5px 8px; }
+/* Sub-page rows: devices, networks and devices sit on quiet inset cards. */
+.pearl-root.$scope .pearl-row-card { background: $low$; border-radius: 14px; padding: 10px 12px; }
+.pearl-root.$scope .pearl-section-title { font-size: 1.02em; font-weight: 600; }
+.pearl-root.$scope button.pearl-destructive { background: $error_container$; color: $error_color$; }
+.pearl-root.$scope button.pearl-destructive:hover { background: mix($error_container$, $error_color$, 0.10); }
+.pearl-root.$scope button.pearl-destructive:active { background: mix($error_container$, $error_color$, 0.16); }
+.pearl-root.$scope button.pearl-destructive:disabled { background: $low$; color: $secondary$; border-color: alpha($outline$, 0.3); }
+.pearl-root.$scope.pearl-compact .pearl-row-card { padding: 8px 10px; }
 
 /* Settings pages must not inherit the system notebook/text editor background. */
 .pearl-root.$scope notebook { background: transparent; color: $text$; border: none; }

@@ -30,6 +30,7 @@ pub const View = struct {
         card.append(flow.as(gtk.Widget));
         for (labels, 0..) |text, i| {
             const button = w.wrappingButton(text);
+            button.as(gtk.Widget).addCssClass("pearl-pill");
             focus_state.tag(button.as(gtk.Widget), "lifecycle:{d}", .{i});
             button.ref();
             self.buttons[i] = button;

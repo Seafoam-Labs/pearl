@@ -35,7 +35,7 @@ pub fn groupLabel(group: Group, edge: prefs.Edge) [:0]const u8 {
         .right => if (vertical) "Bottom" else "Right",
     };
 }
-pub const Action = union(enum) { add: Group, move: Group, earlier, later, remove };
+pub const Action = union(enum) { add: Group, move: Group, earlier, later, remove, place: struct { group: Group, index: usize } };
 pub const Layout = struct {
     items: [3]std.ArrayList([]const u8) = .{ .empty, .empty, .empty },
     pub fn parse(a: std.mem.Allocator, value: policy.Groups) !Layout {
@@ -68,6 +68,19 @@ pub const Layout = struct {
                 if (found != null) return error.AlreadyPlaced;
                 try next.items[@intFromEnum(to)].append(a, try a.dupe(u8, id));
             },
+            .place => |target| {
+                var index = target.index;
+                if (found) |pos| {
+                    const item = next.items[@intFromEnum(pos.group)].orderedRemove(pos.index);
+                    // The index is expressed against the list before removal.
+                    if (pos.group == target.group and pos.index < index) index -= 1;
+                    const dest = &next.items[@intFromEnum(target.group)];
+                    try dest.insert(a, @min(index, dest.items.len), item);
+                } else {
+                    const dest = &next.items[@intFromEnum(target.group)];
+                    try dest.insert(a, @min(index, dest.items.len), try a.dupe(u8, id));
+                }
+            },
             else => {
                 const pos = found orelse return error.WidgetNotFound;
                 const list = &next.items[@intFromEnum(pos.group)];
@@ -87,6 +100,7 @@ pub const Layout = struct {
                         std.mem.swap([]const u8, &list.items[pos.index], &list.items[index]);
                     },
                     .add => unreachable,
+                    .place => unreachable,
                 }
             },
         }
@@ -154,6 +168,20 @@ test "bar actions protect required controls, uniqueness, boundaries, invalid dra
     try std.testing.expectEqualDeep(value, try layout.serialize(a));
     try std.testing.expectError(error.InvalidGroups, patch(a, "{\"bar\":{\"groups\":{\"left\":\"unknown\"}}}", "clock", .remove));
     try std.testing.expectError(error.UnknownField, patch(a, "{\"future\":1}", "clock", .remove));
+}
+test "bar place inserts at an index across groups and adjusts same-group moves" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var layout = try Layout.parse(a, .{ .left = "launcher,workspaces,title", .center = "clock", .right = "" });
+    layout = try layout.change(a, "title", .{ .place = .{ .group = .center, .index = 0 } });
+    try std.testing.expectEqualStrings("launcher,workspaces", try std.mem.join(a, ",", layout.items[0].items));
+    try std.testing.expectEqualStrings("title,clock", try std.mem.join(a, ",", layout.items[1].items));
+    layout = try layout.change(a, "launcher", .{ .place = .{ .group = .left, .index = 2 } });
+    try std.testing.expectEqualStrings("workspaces,launcher", try std.mem.join(a, ",", layout.items[0].items));
+    layout = try layout.change(a, "clock", .{ .place = .{ .group = .right, .index = 99 } });
+    try std.testing.expectEqualStrings("clock", try std.mem.join(a, ",", layout.items[2].items));
+    try std.testing.expectEqualStrings("title", try std.mem.join(a, ",", layout.items[1].items));
 }
 test "bar operations enforce serialized byte and plugin count limits before committing" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
