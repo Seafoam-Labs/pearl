@@ -682,6 +682,9 @@ pub const Menu = struct {
             body.append(b.as(gtk.Widget));
         }
         body.append(u.label("Image size limit (MiB)", null).as(gtk.Widget));
+        const provider_limits = u.label("PDF limit: 50 MiB · Video limit: 2 GiB", "dim-label");
+        provider_limits.setWrap(1);
+        body.append(provider_limits.as(gtk.Widget));
         const limit = gtk.SpinButton.newWithRange(1, 50, 1);
         limit.setValue(@floatFromInt(self.owner.preferences.thumbnail_limit / (1024 * 1024)));
         _ = gtk.SpinButton.signals.value_changed.connect(limit, *Menu, struct {

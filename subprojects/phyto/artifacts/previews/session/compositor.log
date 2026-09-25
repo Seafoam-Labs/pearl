@@ -21,8 +21,8 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info: raised file descriptor limit of the river process to 4096
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
-info(ipc): protocol=1 listening on /tmp/pearl-dev-wnans1jz/run/aqueous/563bd21122bd1b8538b39ec8133977da/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-wnans1jz/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-pmroqjxi/run/aqueous/7cb9566d4149e957cbf90216f9cb0c3b/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-pmroqjxi/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
 info(output): applying output configuration
@@ -77,6 +77,47 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
+info: Vulkan rounded effects draw count=2000 texture=1093 rect=907 normal=2000 swapchain=0 explicit-sync=0
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
@@ -179,20 +220,217 @@ info(output): applying output configuration
 warning(output): initial output-management transaction overlaps unconfigured outputs; retaining automatic positions
 info(aqueous): configuration reloaded layout=floating
 Failed to show notification: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
 info(output): applying output configuration
 info(aqueous): configuration reloaded layout=floating
 Failed to show notification: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info: Vulkan rounded effects draw count=3000 texture=1623 rect=1377 normal=3000 swapchain=0 explicit-sync=0
 info(output): applying output configuration
 info(aqueous): configuration reloaded layout=floating
 Failed to show notification: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
 info(output): applying output configuration
 info(aqueous): configuration reloaded layout=floating
 Failed to show notification: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
 info(output): applying output configuration
 info(aqueous): configuration reloaded layout=floating
 Failed to show notification: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+info: Vulkan rounded effects draw count=4000 texture=2169 rect=1831 normal=4000 swapchain=0 explicit-sync=0
 info: destroyed Vulkan blur after 0 checkpoints, 0 offscreen draws, and 0 composites (0 cache hits, 0 partial rebuilds, 0 full rebuilds, 0 pixels processed)
 info: Vulkan blur resources created: 0 scratch sets, 0 images, 0 descriptors, 0 cache images, 0 composite pipelines
-info: destroyed Vulkan rounded effects after 983 texture and 859 rect draws (1842 normal, 0 swapchain, 0 explicit-sync)
+info: destroyed Vulkan rounded effects after 2355 texture and 1975 rect draws (4330 normal, 0 swapchain, 0 explicit-sync)
 info: Vulkan rounded resources created: 1 texture pipelines, 1 rect pipelines
 info: destroyed Vulkan effects context

@@ -17,7 +17,7 @@
     "Directory monitor invalidates stale menu targets",
     "Clean native teardown with fatal GTK warnings"
   ],
-  "binary_sha256": "e1566103322776eed42f1b0f020974ce44258408fd6e20a9b714fbc6185f1d9c",
+  "binary_sha256": "cb28033fc009ec76a02ac23a0eae28347cd102cea126689898b4876ed6ce27c5",
   "clipboard_formats": [
     "x-special/gnome-copied-files",
     "text/uri-list"

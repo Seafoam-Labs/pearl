@@ -1,10 +1,11 @@
 # PDF and video preview providers
 
-Status: proposed T4 implementation plan · September 25, 2026.
+Status: implemented; see the [implementation report](PDF_VIDEO_PROVIDERS_IMPLEMENTATION.md) · September 25, 2026.
 
 Extends the implemented [thumbnail and preview pipeline](THUMBNAILS_PREVIEWS_IMPLEMENTATION.md)
 and completes T4 of the [original plan](THUMBNAILS_PREVIEWS_PLAN.md).
-This document specifies future work; PDF/video rendering is not implemented yet.
+The original design below is retained for comparison; the implementation report
+records delivered behavior, tests and conservative differences.
 
 ## Outcome and scope
 

@@ -21,8 +21,8 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info: raised file descriptor limit of the river process to 4096
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
-info(ipc): protocol=1 listening on /tmp/pearl-dev-_ym0sv_8/run/aqueous/ca3bf9058f69af4e11e09cdf93b5e70c/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-_ym0sv_8/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-ntbktbgs/run/aqueous/31619701f731e06547d64eda9aeb4ab0/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-ntbktbgs/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
 info(output): applying output configuration
@@ -511,7 +511,7 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
-info: Vulkan rounded effects draw count=2000 texture=1032 rect=968 normal=2000 swapchain=0 explicit-sync=0
+info: Vulkan rounded effects draw count=2000 texture=1030 rect=970 normal=2000 swapchain=0 explicit-sync=0
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
@@ -562,6 +562,6 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 info: destroyed Vulkan blur after 0 checkpoints, 0 offscreen draws, and 0 composites (0 cache hits, 0 partial rebuilds, 0 full rebuilds, 0 pixels processed)
 info: Vulkan blur resources created: 0 scratch sets, 0 images, 0 descriptors, 0 cache images, 0 composite pipelines
-info: destroyed Vulkan rounded effects after 1228 texture and 1144 rect draws (2372 normal, 0 swapchain, 0 explicit-sync)
+info: destroyed Vulkan rounded effects after 1243 texture and 1159 rect draws (2402 normal, 0 swapchain, 0 explicit-sync)
 info: Vulkan rounded resources created: 1 texture pipelines, 1 rect pipelines
 info: destroyed Vulkan effects context

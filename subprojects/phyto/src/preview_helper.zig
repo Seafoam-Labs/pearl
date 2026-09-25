@@ -5,6 +5,12 @@ const gio = @import("gio2");
 const pix = @import("gdkpixbuf2");
 const policy = @import("core/preview.zig");
 const a = std.heap.c_allocator;
+const providers = @import("platform/preview_providers.zig");
+var selected_provider: policy.Provider = .builtin;
+var provider_version: [:0]const u8 = "builtin-v1";
+fn unavailableStatus(status: policy.Status) void {
+    output(&policy.statusHeader(status));
+}
 extern "c" fn alarm(c_uint) c_uint;
 extern "c" fn umask(c_uint) c_uint;
 
@@ -40,8 +46,9 @@ fn unchanged(fd: c_int, path: [*:0]const u8, before: std.os.linux.Statx) bool {
 const Decoder = struct {
     edge: c_int,
     rejected: bool = false,
+    strict: bool = false,
     fn size(loader: *pix.PixbufLoader, w: c_int, h: c_int, self: *Decoder) callconv(.c) void {
-        if (w <= 0 or h <= 0 or @as(i64, w) * h > 64_000_000) {
+        if (w <= 0 or h <= 0 or @as(i64, w) * h > 64_000_000 or (self.strict and (w > self.edge or h > self.edge))) {
             self.rejected = true;
             loader.setSize(1, 1);
             return;
@@ -81,6 +88,32 @@ fn decode(fd: c_int, kind: [*:0]const u8, edge: u32, limit: usize) ?*pix.Pixbuf 
     const decoded = loader.getPixbuf() orelse return null;
     return decoded.applyEmbeddedOrientation();
 }
+fn decodeGenerated(bytes: []const u8, edge: u32) ?*pix.Pixbuf {
+    if (!policy.generatedPng(bytes, edge)) return null;
+    const loader = pix.PixbufLoader.newWithType("png", null) orelse return null;
+    defer loader.unref();
+    var sizing = Decoder{ .edge = @intCast(edge), .strict = true };
+    _ = pix.PixbufLoader.signals.size_prepared.connect(loader, *Decoder, Decoder.size, &sizing, .{});
+    if (loader.write(bytes.ptr, bytes.len, null) == 0 or sizing.rejected) {
+        _ = loader.close(null);
+        return null;
+    }
+    if (loader.close(null) == 0) return null;
+    const decoded = loader.getPixbuf() orelse return null;
+    return decoded.applyEmbeddedOrientation();
+}
+fn renderProvider(fd: c_int, edge: u32, timeout: u32) ?*pix.Pixbuf {
+    const result = if (selected_provider == .pdf) @import("platform/preview_pdf.zig").render(fd, edge, timeout) else @import("platform/preview_video.zig").render(fd, edge, timeout);
+    defer result.deinit();
+    if (result.status != .ok) {
+        unavailableStatus(result.status);
+        return null;
+    }
+    return decodeGenerated(result.bytes, edge) orelse {
+        unavailableStatus(.failed);
+        return null;
+    };
+}
 fn imageOutput(p: *pix.Pixbuf) void {
     const w: usize = @intCast(p.getWidth());
     const h: usize = @intCast(p.getHeight());
@@ -118,7 +151,7 @@ fn save(p: *pix.Pixbuf, cache_root: [:0]const u8, class: []const u8, uri: [*:0]c
         glib.printerr("Preview cache: %s\n", e.f_message orelse "failed");
         e.free();
     };
-    if (p.saveToBuffer(&png, &len, "png", @ptrCast(&save_error), @as([*:0]const u8, "tEXt::Thumb::URI"), uri, @as([*:0]const u8, "tEXt::Thumb::MTime"), mtime.ptr, @as([*:0]const u8, "tEXt::Thumb::Size"), source_size.ptr, @as([*:0]const u8, "tEXt::Phyto::MTimeNS"), nanos.ptr, @as([*:0]const u8, "tEXt::Software"), @as([*:0]const u8, "Phyto"), @as(?[*:0]const u8, null)) != 0) {
+    if (p.saveToBuffer(&png, &len, "png", @ptrCast(&save_error), @as([*:0]const u8, "tEXt::Thumb::URI"), uri, @as([*:0]const u8, "tEXt::Thumb::MTime"), mtime.ptr, @as([*:0]const u8, "tEXt::Thumb::Size"), source_size.ptr, @as([*:0]const u8, "tEXt::Phyto::MTimeNS"), nanos.ptr, @as([*:0]const u8, "tEXt::Phyto::Provider"), @as([*:0]const u8, @tagName(selected_provider)), @as([*:0]const u8, "tEXt::Phyto::ProviderVersion"), provider_version.ptr, @as([*:0]const u8, "tEXt::Software"), @as([*:0]const u8, "Phyto"), @as(?[*:0]const u8, null)) != 0) {
         defer glib.free(png);
         const relative = fmt("{s}/{s}.png", .{ class, policy.cacheName(std.mem.span(uri)) });
         defer a.free(relative);
@@ -139,7 +172,10 @@ fn failureCache(path: [:0]const u8, uri: [*:0]const u8, mtime: []const u8, size:
 // args: URI, edge, encoded limit, text allowed, cache allowed, expected seconds,
 // expected microseconds, expected size. Values are passed as argv, never a shell.
 pub fn run(args: []const [:0]const u8) void {
-    if (args.len != 8) std.process.exit(2);
+    if (args.len != 8 and args.len != 10) std.process.exit(2);
+    const began = glib.getMonotonicTime();
+    const timeout: u32 = if (args.len == 10) @min(10000, std.fmt.parseInt(u32, args[9], 10) catch 5000) else 10000;
+    if (args.len == 10) selected_provider = std.meta.stringToEnum(policy.Provider, args[8]) orelse return;
     // This helper accepts native files only; avoid session GVfs activation.
     _ = glib.setenv("GIO_USE_VFS", "local", 1);
     if (std.c.setrlimit(.AS, &.{ .cur = 512 * 1024 * 1024, .max = 512 * 1024 * 1024 }) != 0) std.process.exit(2);
@@ -170,12 +206,20 @@ pub fn run(args: []const [:0]const u8) void {
         defer fs.unref();
         if (fs.getAttributeBoolean("filesystem::remote") != 0) return unavailable("Previews on remote filesystems are disabled.");
     }
-    var prefix: [16]u8 = undefined;
+    var prefix: [1024]u8 = undefined;
     const prefix_len = std.c.read(fd, &prefix, prefix.len);
     if (prefix_len < 0) return unavailable("File could not be read.");
     _ = std.c.lseek(fd, 0, 0);
-    const format = signature(prefix[0..@intCast(prefix_len)]);
-    if (format == null) {
+    const prefix_bytes = prefix[0..@intCast(prefix_len)];
+    const format = signature(prefix_bytes);
+    if (args.len == 8 and format == null) {
+        if (std.mem.indexOf(u8, prefix_bytes, "%PDF-") != null) selected_provider = .pdf else if ((prefix_bytes.len >= 12 and (std.mem.eql(u8, prefix_bytes[4..8], "ftyp") or std.mem.eql(u8, prefix_bytes[8..12], "AVI "))) or std.mem.startsWith(u8, prefix_bytes, "\x1a\x45\xdf\xa3")) selected_provider = .video;
+    }
+    if (selected_provider != .builtin) {
+        provider_version = providers.versionZ(selected_provider);
+        if (before.size > policy.providerLimit(selected_provider)) return unavailableStatus(.limits);
+    }
+    if (format == null and selected_provider == .builtin) {
         if (!std.mem.eql(u8, args[3], "1")) return unavailable("No preview is available for this file type.");
         var text: [policy.text_limit + 1]u8 = undefined;
         var used: usize = 0;
@@ -208,7 +252,7 @@ pub fn run(args: []const [:0]const u8) void {
         if (truncated) output("\n… Preview truncated (64 KiB / 500 lines).\n");
         return;
     }
-    if (before.size < 0 or before.size > limit) return unavailable("Image exceeds the configured file-size limit.");
+    if (selected_provider == .builtin and (before.size < 0 or before.size > limit)) return unavailable("Image exceeds the configured file-size limit.");
     const uri = file.getUri();
     defer glib.free(uri);
     const mtime = fmt("{d}", .{before.mtime.sec});
@@ -235,16 +279,19 @@ pub fn run(args: []const [:0]const u8) void {
                     defer p.unref();
                     const valid_size = if (p.getOption("tEXt::Thumb::Size") != null) validOption(p, "tEXt::Thumb::Size", source_size) else true;
                     const valid_nanos = if (p.getOption("tEXt::Phyto::MTimeNS") != null) validOption(p, "tEXt::Phyto::MTimeNS", nanos) else true;
-                    if (validOption(p, "tEXt::Thumb::URI", std.mem.span(uri)) and validOption(p, "tEXt::Thumb::MTime", mtime) and valid_size and valid_nanos and unchanged(fd, path, before)) return imageOutput(p);
+                    const valid_provider = selected_provider == .builtin or (validOption(p, "tEXt::Phyto::Provider", @tagName(selected_provider)) and validOption(p, "tEXt::Phyto::ProviderVersion", provider_version));
+                    if (valid_provider and validOption(p, "tEXt::Thumb::URI", std.mem.span(uri)) and validOption(p, "tEXt::Thumb::MTime", mtime) and valid_size and valid_nanos and unchanged(fd, path, before)) return imageOutput(p);
                 }
             }
         }
     }
     const failed_path = fmt("{s}/fail/phyto-1/{s}.png", .{ cache_root, policy.cacheName(std.mem.span(uri)) });
     defer a.free(failed_path);
-    if (cache_enabled and failureCache(failed_path, uri, mtime, source_size, nanos)) return unavailable("This version of the image could not be decoded.");
+    if (selected_provider == .builtin and cache_enabled and failureCache(failed_path, uri, mtime, source_size, nanos)) return unavailable("This version of the image could not be decoded.");
     corrupt_input = false;
-    const p = decode(fd, format.?, edge, limit) orelse {
+    const remaining = @divTrunc(@as(i64, timeout) * 1000 - (glib.getMonotonicTime() - began), 1000);
+    if (remaining <= 0) return unavailableStatus(.timeout);
+    const p = if (selected_provider != .builtin) (renderProvider(fd, edge, @intCast(remaining)) orelse return) else decode(fd, format.?, edge, limit) orelse {
         if (corrupt_input and cache_enabled and unchanged(fd, path, before)) {
             if (pix.Pixbuf.new(.rgb, 1, 8, 1, 1)) |failure| {
                 defer failure.unref();

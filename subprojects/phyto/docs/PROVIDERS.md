@@ -1,7 +1,7 @@
 # Optional context-menu providers
 
-PDF/video rendering is a separate planned integration; see the
-[PDF and video provider plan](PDF_VIDEO_PROVIDERS_PLAN.md). The context-menu
+PDF/video rendering uses separate fixed adapters; see the
+[PDF and video provider report](PDF_VIDEO_PROVIDERS_IMPLEMENTATION.md). The context-menu
 scripts described here are never automatically invoked to generate previews.
 
 Phyto discovers installed applications through GIO for Open with; choosing an

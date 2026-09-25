@@ -26,7 +26,7 @@ def check(binary):
             st = version or path.stat()
             result = subprocess.run([str(binary), '--preview-helper', path.as_uri(), str(edge), str(limit), str(int(text)), '1', str(st.st_mtime_ns // 10**9), str(st.st_mtime_ns % 10**9 // 1000), str(st.st_size)], env=env, capture_output=True, timeout=12)
             assert result.returncode == 0, (result.returncode, result.stderr)
-            assert result.stdout[:4] == b'PHT1', (result.stdout, result.stderr)
+            assert result.stdout[:4] == b'PHT2', (result.stdout, result.stderr)
             return result.stdout[4], struct.unpack('<II', result.stdout[8:16]), result.stdout[16:], result.stderr
 
         source = root / 'café & 100%.png'

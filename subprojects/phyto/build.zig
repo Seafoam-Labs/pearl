@@ -45,6 +45,9 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| menus.addArgs(args);
     b.step("test-context-menus", "Exercise native context menus and batch operations").dependOn(&menus.step);
     b.step("integration", "Exercise native GTK in a private Aqueous session and capture evidence").dependOn(&integration.step);
+    const providers = b.addSystemCommand(&.{ "python3", "tests/providers_helper.py", "--faults", "--binary" });
+    providers.addArtifactArg(test_exe);
+    b.step("test-preview-providers", "Test PDF/video rendering and sandbox lifecycle without a display").dependOn(&providers.step);
     const previews = b.addSystemCommand(&.{ "python3", "tests/previews_native.py", "--binary" });
     previews.addArtifactArg(test_exe);
     if (b.args) |args| previews.addArgs(args);

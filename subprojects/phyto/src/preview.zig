@@ -29,6 +29,10 @@ pub fn shutdown() void {
         _ = glib.Source.remove(update_id);
         update_id = 0;
     }
+    if (@import("build_options").test_hooks and slots.items.len != 0) {
+        glib.printerr("PHYTO_PREVIEW_SHUTDOWN slots=%zu\n", slots.items.len);
+        for (slots.items) |slot| glib.printerr("PHYTO_PREVIEW_RETAINED mode=%s mapped=%d subscribed=%d\n", @as([*:0]const u8, @tagName(slot.mode)), slot.root.as(gtk.Widget).getMapped(), @as(c_int, @intFromBool(slot.entry != null)));
+    }
     std.debug.assert(slots.items.len == 0);
     slots.deinit(a);
     slots = .empty;
@@ -44,6 +48,7 @@ pub const Slot = struct {
     root: *gtk.Stack,
     picture: *gtk.Picture,
     icon: *gtk.Image,
+    caption: ?*gtk.Label,
     text: ?*gtk.TextView,
     info: ?*gio.FileInfo = null,
     entry: ?*service.Entry = null,
@@ -70,7 +75,16 @@ pub const Slot = struct {
         image_frame.addOverlay(picture.as(gtk.Widget));
         picture.as(gtk.Widget).setHalign(.fill);
         picture.as(gtk.Widget).setValign(.fill);
-        _ = root.addNamed(image_frame.as(gtk.Widget), "image");
+        const image_box = u.box(.vertical, 6, null);
+        image_frame.as(gtk.Widget).setVexpand(1);
+        image_box.append(image_frame.as(gtk.Widget));
+        var caption: ?*gtk.Label = null;
+        if (mode == .details or mode == .quick) {
+            caption = u.label("", "dim-label");
+            caption.?.as(gtk.Widget).setVisible(0);
+            image_box.append(caption.?.as(gtk.Widget));
+        }
+        _ = root.addNamed(image_box.as(gtk.Widget), "image");
         var text: ?*gtk.TextView = null;
         if (mode == .quick or mode == .details) {
             const t = gtk.TextView.new();
@@ -85,7 +99,7 @@ pub const Slot = struct {
         root.setVisibleChildName("icon");
         root.as(gtk.Widget).setSizeRequest(if (mode == .grid) 80 else if (mode == .list) 24 else 160, if (mode == .grid) 64 else if (mode == .list) 24 else 160);
         if (mode == .quick) root.as(gtk.Widget).setVexpand(1);
-        s.* = .{ .root = root, .picture = picture, .icon = icon, .text = text, .mode = mode, .preferences = Preferences.acquire() };
+        s.* = .{ .root = root, .picture = picture, .icon = icon, .caption = caption, .text = text, .mode = mode, .preferences = Preferences.acquire() };
         s.listener = .{ .data = s, .ready = completed };
         root.as(u.object.Object).setDataFull("phyto-preview", s, disposed);
         _ = gtk.Widget.signals.map.connect(root.as(gtk.Widget), *Slot, mapped, s, .{});
@@ -164,6 +178,14 @@ pub const Slot = struct {
     fn apply(self: *Slot, e: *service.Entry) void {
         if (e.texture) |texture| {
             self.picture.setPaintable(texture.as(gdk.Paintable));
+            if (self.caption) |caption| {
+                caption.setText(switch (e.provider) {
+                    .pdf => "First page",
+                    .video => "Video still",
+                    .builtin => "",
+                });
+                caption.as(gtk.Widget).setVisible(@intFromBool(e.provider != .builtin));
+            }
             self.root.setVisibleChildName("image");
         } else if (self.text) |t| {
             t.getBuffer().setText(e.caption orelse "Preview unavailable.", -1);

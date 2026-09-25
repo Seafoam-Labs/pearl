@@ -1155,6 +1155,7 @@ pub const Window = struct {
             .realized_grid_children = realized_rows,
             .thumbnail_slots_ready = @import("preview.zig").readyCount(),
             .preview_memory = @import("platform/thumbnails.zig").memory,
+            .preview_heavy_jobs = @import("platform/thumbnails.zig").heavy_running,
             .preview_jobs = @import("platform/thumbnails.zig").running,
             .preview_started = @import("platform/thumbnails.zig").started,
             .preview_max_main_loop_gap_us = @import("platform/thumbnails.zig").max_main_loop_gap_us,
@@ -1162,6 +1163,7 @@ pub const Window = struct {
             .quick_preview = self.quick_preview != null,
             .quick_surface = if (self.quick_preview) |q| std.mem.span(q.slot.root.getVisibleChildName() orelse "none") else "closed",
             .quick_paintable = if (self.quick_preview) |q| q.slot.picture.getPaintable() != null else false,
+            .quick_caption = if (self.quick_preview) |q| if (q.slot.entry) |e| e.caption orelse "" else "" else "",
             .quick_kind = if (self.quick_preview) |q| if (q.slot.entry) |e| if (e.state == .ready) @tagName(e.kind) else "pending" else "pending" else "closed",
             .thumbnails_enabled = self.preferences.thumbnails,
             .details_preview_enabled = self.preferences.preview_details,
@@ -1289,6 +1291,9 @@ pub const Window = struct {
         };
         // Release closed-window widgets/models immediately, even if another
         // window or an outstanding launch request keeps the process alive.
+        // The details container can be retained by GTK layout/focus bookkeeping
+        // after its window is detached. Release the selected-file preview now.
+        u.clear(self.details_body);
         self.window.setChild(null);
         for (&self.panes) |*p| {
             for (p.tabs.items) |t| t.destroy();

@@ -9,6 +9,7 @@ import time
 from urllib.parse import unquote
 
 from previews_helper import check as helper_checks, png
+from providers_helper import check as provider_checks, pdf, video
 
 PROJECT = Path(__file__).resolve().parents[1]
 PEARL = PROJECT.parents[1]
@@ -28,6 +29,7 @@ def main():
     try:
         helper_checks(binary)
         report['checks'].append('Isolated helper/cache checks')
+        report['providers'] = provider_checks(str(binary), faults=True)
         with PrivateSession(output / 'session', tool_prefix=PEARL / '.cache/aqueous-activity-production') as s:
             s.env['GSETTINGS_BACKEND'] = 'memory'
             ipc = IPC(s)
@@ -42,6 +44,11 @@ def main():
             (source / '04 corrupt.png').write_bytes(b'\x89PNG\r\n\x1a\ncorrupt')
             (source / '05 unknown.bin').write_bytes(b'\0binary')
             (source / '06 link.png').symlink_to(source / '01 landscape.png')
+            providers = home / 'Providers'
+            providers.mkdir()
+            pdf(providers / 'first page.pdf')
+            for suffix in ('mp4', 'mkv', 'avi'):
+                video(providers / ('video.' + suffix))
             many = home / 'Many'
             many.mkdir()
             for i in range(10000):
@@ -70,7 +77,7 @@ def main():
                 s.run(argv)
 
             def probe():
-                assert app.proc.poll() is None, app.lines[-20:]
+                assert app.proc.poll() is None, [line for line in app.lines[-30:] if not line.startswith("PHYTO_PROBE ")]
                 start = len(app.lines)
                 key('F12')
                 return json.loads(wait_for(lambda: next((line[12:] for line in app.lines[start:] if line.startswith('PHYTO_PROBE ')), None), timeout=5))
@@ -100,12 +107,17 @@ def main():
                 path = output / f'{name}.png'
                 def frame():
                     s.run(['grim', '-g', f"{rect['x']},{rect['y']} {rect['width']}x{rect['height']}", path])
-                    if name not in ('quick-image', 'quick-text'):
+                    if name not in ('quick-image', 'quick-text', 'quick-pdf', 'quick-video', 'quick-avi', 'quick-mkv'):
                         return True
                     # Readiness alone is insufficient: verify the synthetic
                     # magenta image actually reached the compositor's frame.
                     from PIL import Image
                     with Image.open(path) as image:
+                        if name in ('quick-pdf', 'quick-video', 'quick-avi', 'quick-mkv'):
+                            colors = image.convert('RGB').getcolors(image.width * image.height)
+                            if name == 'quick-pdf':
+                                return sum(n for n, (r, g, b) in colors if g > r * 2 and g > b * 1.5) > 40000
+                            return sum(n for n, (r, g, b) in colors if b > r * 2 and b > g * 1.5) > 40000
                         if name == 'quick-text':
                             region = image.convert('RGB').crop((400, 250, 800, 450))
                             return sum(count for count, color in region.getcolors(region.width * region.height) if color == (33, 31, 38)) > 75000
@@ -123,6 +135,7 @@ def main():
                         assert unquote(row['thumbnail_uri']).endswith('/' + row['label']), row
                 assert state['preview_memory'] <= 64 * 1024 * 1024
                 assert state['preview_jobs'] <= 2
+                assert state['preview_heavy_jobs'] <= 1
                 return state
 
             settled()
@@ -201,6 +214,23 @@ def main():
             wait_for(lambda: probe()['thumbnail_slots_ready'] >= 2)
             passed('Persisted automatic-preview toggles; explicit Preview remains available')
 
+            navigate(providers)
+            wait_for(lambda: probe()['thumbnail_slots_ready'] >= 2, timeout=15)
+            correct_rows()
+            for filename, capture_name in [('first page.pdf', 'quick-pdf'), ('video.mp4', 'quick-video'), ('video.avi', 'quick-avi'), ('video.mkv', 'quick-mkv')]:
+                click(filename)
+                key('space')
+                wait_for(lambda: probe()['quick_kind'] == 'image', timeout=12)
+                capture(capture_name)
+                correct_rows()
+                key('Escape')
+                assert not probe()['quick_preview']
+            key('2', 'ctrl')
+            wait_for(lambda: probe()['thumbnail_slots_ready'] >= 2)
+            capture('providers-list')
+            key('1', 'ctrl')
+            passed('PDF/video grid, details, list and Space previews show real rendered pixels')
+
             start = time.monotonic()
             navigate(many)
             wait_for(lambda: probe()['thumbnail_slots_ready'] > 0, timeout=15)
@@ -226,14 +256,18 @@ def main():
             key('w', 'ctrl')
             assert probe()['title'] == 'Previews'
             key('n', 'ctrl')
-            wait_for(lambda: len(windows()) == 2)
+            second = wait_for(lambda: next((w for w in windows() if w['id'] != win['id']), None))
+            ipc.call('command', action='window.activate', fields={'id': second['id']})
+            probe()  # ensure the new window has received input before closing it
             key('w', 'ctrl')
             wait_for(lambda: len(windows()) == 1)
+            win = windows()[0]
             ipc.call('command', action='window.activate', fields={'id': win['id']})
+            probe()
             navigate(many)
             key('w', 'ctrl')
-            assert app.wait(timeout=15) == 0, app.lines[-20:]
-            assert not any(word in line for line in app.lines for word in ['WARNING', 'CRITICAL', 'panic:']), app.lines[-20:]
+            assert app.wait(timeout=15) == 0, [line for line in app.lines[-30:] if not line.startswith("PHYTO_PROBE ")]
+            assert not any(word in line for line in app.lines for word in ['WARNING', 'CRITICAL', 'panic:']), [line for line in app.lines[-30:] if not line.startswith("PHYTO_PROBE ")]
             passed('Tab/window changes and shutdown during outstanding decode work')
             wait_for(lambda: not windows())
             for label, flags, width, scale in [
@@ -258,12 +292,37 @@ def main():
                 key('space')
                 wait_for(lambda: probe()['quick_kind'] == 'image')
                 key('Escape')
+                navigate(providers)
+                for filename in ('first page.pdf', 'video.mp4'):
+                    click(filename)
+                    key('space')
+                    wait_for(lambda: probe()['quick_kind'] == 'image', timeout=12)
+                    key('Escape')
+                capture('providers-' + label)
                 if width < 1000:
                     assert not probe()['details']
                 key('w', 'ctrl')
-                assert app.wait(timeout=15) == 0, app.lines[-20:]
+                assert app.wait(timeout=15) == 0, [line for line in app.lines[-30:] if not line.startswith("PHYTO_PROBE ")]
                 wait_for(lambda: not windows())
             passed('Light/native themes, compact/narrow layouts, 2× scale and persisted preferences')
+            for suffix, overrides, expected in [
+                ('missing-pdf', {'PHYTO_TEST_PROVIDER_pdftoppm': '/nonexistent'}, 'requires Poppler'),
+                ('no-sandbox', {'PHYTO_TEST_PREVIEW_NO_SANDBOX': '1'}, 'sandbox unavailable'),
+            ]:
+                app = s.child('phyto-provider-' + suffix, [binary, providers], G_DEBUG='fatal-warnings', **overrides)
+                win = wait_for(lambda: next(iter(windows()), None))
+                ipc.call('command', action='window.activate', fields={'id': win['id']})
+                settled()
+                click('first page.pdf')
+                key('space')
+                wait_for(lambda: probe()['quick_kind'] == 'unavailable', timeout=10)
+                assert expected in probe()['quick_caption']
+                capture(suffix)
+                key('Escape')
+                key('w', 'ctrl')
+                assert app.wait(timeout=5) == 0
+                wait_for(lambda: not windows())
+            passed('Missing-provider and disabled-sandbox messages preserve keyboard navigation')
             slow = home / 'Slow'
             slow.mkdir()
             png(slow / 'slow.png')
@@ -273,7 +332,7 @@ def main():
             wait_for(lambda: probe()['preview_jobs'] == 1)
             started_close = time.monotonic()
             key('w', 'ctrl')
-            assert app.wait(timeout=3) == 0, app.lines[-20:]
+            assert app.wait(timeout=3) == 0, [line for line in app.lines[-30:] if not line.startswith("PHYTO_PROBE ")]
             assert time.monotonic() - started_close < 2
             wait_for(lambda: not windows())
             app = s.child('phyto-timeout-preview', [binary, slow], G_DEBUG='fatal-warnings', PHYTO_TEST_PREVIEW_DELAY_MS='6000')
@@ -283,7 +342,7 @@ def main():
             wait_for(lambda: probe()['preview_jobs'] == 0, timeout=8)
             assert probe()['thumbnail_slots_ready'] == 0
             key('w', 'ctrl')
-            assert app.wait(timeout=3) == 0, app.lines[-20:]
+            assert app.wait(timeout=3) == 0, [line for line in app.lines[-30:] if not line.startswith("PHYTO_PROBE ")]
             passed('Deterministic in-flight cancellation and decoder timeout preserve responsive UI')
             ipc.close()
         report['status'] = 'passed'

@@ -5,18 +5,37 @@
     "Image/text quick preview, corruption fallback, Escape and focus restoration",
     "Context Preview, monitored replacement/removal, list view and split preview",
     "Persisted automatic-preview toggles; explicit Preview remains available",
+    "PDF/video grid, details, list and Space previews show real rendered pixels",
     "10,000 mixed files: viewport scheduling, recycling and resource budgets",
     "Tab/window changes and shutdown during outstanding decode work",
     "Light/native themes, compact/narrow layouts, 2\u00d7 scale and persisted preferences",
+    "Missing-provider and disabled-sandbox messages preserve keyboard navigation",
     "Deterministic in-flight cancellation and decoder timeout preserve responsive UI"
   ],
-  "binary_sha256": "d4feca45fe43197a5bedef201e0edc7363c2fbb3c362014fe3c0d586014db80a",
+  "binary_sha256": "4c92902776cf2ad9c474e12a719d8ac3d82b8804fd06cdb21a0dabb6530f5701",
+  "providers": {
+    "pdf": "Poppler first page",
+    "video": [
+      "MP4",
+      "MOV",
+      "Matroska",
+      "AVI",
+      "WebM"
+    ],
+    "codecs": [
+      "MPEG-4 Part 2",
+      "H.264",
+      "VP9"
+    ],
+    "fault_injection": true,
+    "sampled_peak_process_tree_rss_bytes": 130633728
+  },
   "large_directory": {
     "entries": 10000,
-    "elapsed_seconds": 1.281,
-    "jobs_started": 48,
-    "texture_bytes": 1053760,
-    "cache_hits": 16,
-    "max_main_loop_gap_us_during_jobs": 12793
+    "elapsed_seconds": 1.285,
+    "jobs_started": 56,
+    "texture_bytes": 10836288,
+    "cache_hits": 22,
+    "max_main_loop_gap_us_during_jobs": 16952
   }
 }

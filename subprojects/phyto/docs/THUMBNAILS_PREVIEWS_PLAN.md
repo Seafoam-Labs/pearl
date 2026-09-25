@@ -1,6 +1,6 @@
 # Phyto thumbnails and file previews
 
-Status: initial release implemented (T0–T3); T4 remains a follow-up · September 25, 2026.
+Status: T0–T4 implemented; see the [provider report](PDF_VIDEO_PROVIDERS_IMPLEMENTATION.md) · September 25, 2026.
 See [implementation details and validation](THUMBNAILS_PREVIEWS_IMPLEMENTATION.md).
 
 Add recognizable thumbnails to the file views and useful, read-only previews to

@@ -1,8 +1,9 @@
 # Thumbnails and previews implementation
 
 Implemented September 25, 2026: the initial T0–T3 release from the
-[preview plan](THUMBNAILS_PREVIEWS_PLAN.md). Optional PDF/video providers (T4)
-remain a separate extension.
+[preview plan](THUMBNAILS_PREVIEWS_PLAN.md). Optional PDF/video providers (T4) are now implemented in a
+[separate extension report](PDF_VIDEO_PROVIDERS_IMPLEMENTATION.md). This document
+retains the original raster/text release evidence.
 
 ## Behavior
 
@@ -145,6 +146,6 @@ pressure with large photographs. Cache write failure is automated using an
 unusable cache path. The installed decoder's own isolation remains active; the
 helper's process/resource limits alone are not a general security sandbox.
 
-PDF/video stills, SVG/RAW/office providers, media playback, remote downloads,
-syntax highlighting and document page navigation remain outside this initial
-release, as scoped in T4 and the original format matrix.
+PDF/video stills are delivered by the [T4 extension](PDF_VIDEO_PROVIDERS_IMPLEMENTATION.md).
+SVG/RAW/office providers, media playback, remote downloads, syntax highlighting
+and document page navigation remain outside this release.

@@ -36,7 +36,8 @@ application identity so release and Git installs can coexist.
 - Independent application windows, with no Pearl process or Aqueous API dependency.
 - Real, asynchronous GIO folder enumeration and monitoring. Grid and detailed list
   use recycled GTK rows; names, MIME icons, sizes, dates and permissions are real.
-- Local JPEG/PNG/WebP/GIF thumbnails, larger image and UTF-8 text previews in
+- Local JPEG/PNG/WebP/GIF thumbnails, optional PDF first pages and video stills,
+  larger image and UTF-8 text previews in
   details, and a Space-key preview window. Preview generation is bounded and
   asynchronous, with shared memory and freedesktop disk caches.
 - XDG Places, Home, local paths, supported GIO URIs, editable location, back,
@@ -98,7 +99,7 @@ launched by double-click.
 - [Nemo-style context menu plan](docs/CONTEXT_MENUS_PLAN.md) and [menu review mockup](docs/mockups/context-menus.html).
 - [Longer-term implementation plan](docs/IMPLEMENTATION_PLAN.md).
 - [Thumbnails and file previews plan](docs/THUMBNAILS_PREVIEWS_PLAN.md).
-- [PDF and video provider implementation plan](docs/PDF_VIDEO_PROVIDERS_PLAN.md).
+- [PDF and video providers](docs/PDF_VIDEO_PROVIDERS_IMPLEMENTATION.md) and [implementation plan](docs/PDF_VIDEO_PROVIDERS_PLAN.md).
 - [Browser design reference](docs/mockups/index.html) and [mockup guide](docs/mockups/README.md).
 
 ```sh
@@ -106,6 +107,7 @@ zig build test
 zig build integration -Doptimize=ReleaseSafe
 zig build test-context-menus -Doptimize=ReleaseSafe
 zig build test-previews -Doptimize=ReleaseSafe
+zig build test-preview-providers -Doptimize=ReleaseSafe
 ```
 
 The native suite uses Pearl's private Aqueous test harness, Python, `wtype`, `grim`,
@@ -135,14 +137,20 @@ Images retain their aspect ratio, transparency and orientation. GIF and WebP
 previews are still images. Text previews show UTF-8 source without rendering
 HTML/Markdown, limited to 64 KiB / 500 lines. Directories, symlinks, remote GIO
 URIs, unsupported formats and special files retain icons. Known remote native
-mounts are rejected when GIO reports their filesystem as remote. PDF and video
-stills are the [planned provider extension](docs/PDF_VIDEO_PROVIDERS_PLAN.md),
-not included in this release.
+mounts are rejected when GIO reports their filesystem as remote. Optional PDF
+first pages require `poppler`; video stills require `ffmpeg`. Both require
+`bubblewrap` and working unprivileged namespaces. PDF files are limited to 50 MiB
+and videos to 2 GiB, independently of the image-size preference. PDF navigation,
+video playback and HDR tone mapping are outside this release. Missing tools leave
+icons and an explanation in details/Space; no packages are installed automatically.
+See the [provider report](docs/PDF_VIDEO_PROVIDERS_IMPLEMENTATION.md) for formats,
+sandbox behavior and cache/version handling.
 
 The helper runs in the same executable before GTK initialization, using the
 pinned GdkPixbuf bindings (verified with GdkPixbuf 2.44.7). It enforces a 512 MiB
 address-space ceiling, timeouts and image limits. The UI shares two decode jobs,
-a 128-request queue and a 64 MiB texture-pixel cache across windows. Full previews
+a 128-request queue and a 64 MiB texture-pixel cache across windows. At most one
+PDF/video job runs at a time. Full previews
 are capped at 2048 px; generated disk thumbnails have a 256 MiB ownership budget.
 Cache-write errors leave previews usable. See the
 [implementation report](docs/THUMBNAILS_PREVIEWS_IMPLEMENTATION.md) and
@@ -151,3 +159,5 @@ Cache-write errors leave previews usable. See the
 The preview tests additionally use Python Pillow to encode JPEG/WebP/GIF fixtures.
 Pillow is not an application dependency. Like the existing native suites, they
 require local sockets for the private compositor/D-Bus and installed image loaders.
+The provider tests also require Poppler, FFmpeg and working bubblewrap namespaces;
+`test-preview-providers` runs those checks without a graphical session.
