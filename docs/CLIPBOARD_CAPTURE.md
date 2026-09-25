@@ -52,6 +52,14 @@ conservatively for that Pearl process. Protocol/seat loss closes transfers and
 releases objects; an unavailable device is reported instead of pretending to
 own the selection.
 
+The [launcher calculator](DESKTOP.md#calculator) publishes plain text through
+this same service. Enter or clicking a result copies only the displayed number.
+The service resolves duplicate history entries by identity and retains the
+selected payload independently of the launcher, so a paste remains available
+after the popup closes. If selection publication cannot start, the old selection
+is preserved and the launcher stays open for retry. Expressions are not retained
+as calculator history, and a pending copy is never replayed after unlock.
+
 ## Privacy and lock integration
 
 History is memory-only. Selections advertising `x-kde-passwordManagerHint`,

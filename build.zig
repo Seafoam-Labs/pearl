@@ -622,6 +622,13 @@ pub fn build(b: *std.Build) void {
     clipboard_tests.addArtifactArg(clipboard_fixture);
     if (b.args) |args| clipboard_tests.addArgs(args);
     b.step("test-clipboard-capture", "Verify native clipboard privacy, ownership and output screenshots on private Aqueous").dependOn(&clipboard_tests.step);
+    const calculator_tests = b.addSystemCommand(&.{ "python3", "tests/integration/test_launcher_calculator.py" });
+    for ([_][]const u8{ "--pearl", "--ctl", "--locker", "--pam-module", "--producer" }, [_]*std.Build.Step.Compile{ integration_app, ctl, test_locker, pam_fixture, clipboard_fixture }) |flag, binary| {
+        calculator_tests.addArg(flag);
+        calculator_tests.addArtifactArg(binary);
+    }
+    if (b.args) |args| calculator_tests.addArgs(args);
+    b.step("test-launcher-calculator", "Verify launcher calculation, native copy and stale input handling in private Aqueous").dependOn(&calculator_tests.step);
     const lock_tests = b.addSystemCommand(&.{ "python3", "tests/integration/test_lock.py", "--locker" });
     lock_tests.addArtifactArg(test_locker);
     lock_tests.addArg("--pam-module");

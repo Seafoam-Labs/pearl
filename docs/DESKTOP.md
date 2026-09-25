@@ -276,6 +276,51 @@ proof that an application's eventual startup succeeded; GIO's desktop-action
 API itself returns no completion result. Synchronous failure remains in the
 launcher. Rejected/dropped/unknown compositor actions show a non-focusable OSD.
 
+### Calculator
+
+Type an expression such as `12*(3+4)` into the launcher to see `84` before any
+matching applications. Enter or clicking the calculation copies the displayed
+number to the regular clipboard and closes the launcher. Paste it in the
+destination application normally. A failed copy leaves the result open for
+retry. Bare numbers and ordinary names remain application/window searches.
+
+A leading `=` selects calculator-only mode: `=42`, `=sqrt(81)`, or `=cos(pi)`.
+Typing or pasting a trailing `=` continues the calculation in the entry:
+`12*7=` becomes `84`, ready for `+6`; `=sqrt(81)=` becomes `=9`.
+Continuation does not copy. Editing or moving the caret while a calculation is
+pending cancels the pending continuation; editing also cancels pending Enter.
+
+Supported syntax:
+
+- Decimal numbers with `.`, scientific notation (`1e3`), parentheses, unary
+  signs, and `+`, `-`, `*`, `/`, `^`. Powers associate to the right:
+  `2^3^2` is `512`, `-2^2` is `-4`, and `2^-2` is `0.25`.
+- In explicit mode, constants `pi`, `e` and functions `abs`, `sqrt`, `exp`,
+  `ln`, `log` (base 10), `log2`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`,
+  `ceil`, `floor`, `round`, `trunc`, and `mod(a,b)`. Names are case-insensitive;
+  trig functions use radians. `round` rounds ties away from zero; `mod` gives
+  the remainder with the dividend's sign.
+
+Use decimal points without thousands separators or currency symbols. Commas
+only separate `mod` arguments. Percentages, `%`, implicit multiplication such
+as `2(3)`, units, conversion, variables, and persistent calculation history are
+not supported. Incomplete expressions have no actionable answer; explicit mode
+explains invalid syntax, division by zero, domain errors, and overflow.
+
+Arithmetic uses approximate `f64` values with up to 15 significant display
+digits. Very large/small results use scientific notation; negative zero is
+shown as `0`. Copying and continuation use exactly the displayed, rounded text.
+Large integers can lose precision and very small values can underflow to zero;
+this is not an arbitrary-precision or financial decimal calculator.
+
+The allocation-free evaluator bounds input to 512 bytes, 256 tokens, 32 nested
+parser calls, and 256 operations. It runs inside the launcher's existing search
+worker, including with an empty application catalog. Calculator activation uses
+the same query/session freshness checks as other results and synchronizes
+clipboard privacy before copying. Expressions are not logged or persisted.
+Only an explicitly copied result enters the existing memory-only clipboard
+history. See the [implementation plan](LAUNCHER_CALCULATOR_IMPLEMENTATION_PLAN.md).
+
 ## Native runtime layout
 
 `src/platform/wayland/layout.zig` uses generated

@@ -405,6 +405,17 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (self.logout) |callback| callback(self.context.?);
     }
+    fn copyCalculator(context: *anyopaque, text: []const u8) anyerror!void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.syncClipboardPrivacy();
+        if (@import("build_options").test_hooks) if (self.popup) |popup| if (popup.launcher) |view| if (view.test_copy_unavailable) {
+            const device = self.clipboard.device;
+            self.clipboard.device = null;
+            defer self.clipboard.device = device;
+            return self.clipboard.copyText(text);
+        };
+        try self.clipboard.copyText(text);
+    }
     pub fn syncClipboardPrivacy(self: *Manager) void {
         const gate = self.lifecycle.gate;
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
@@ -1095,7 +1106,7 @@ pub const Manager = struct {
                     .settings => s.settings = try @import("../../desktop/settings.zig").View.create(panel, &self.preferences),
                     .launcher_picker => s.launcher_picker = try LauncherPicker.View.create(panel, &self.index, &self.preferences, self.client, self.picker_request orelse return error.InvalidRequest),
                     .running_apps => s.running_apps = try Running.Chooser.create(panel, &self.tasks.snapshot, &self.index, s, runningAction),
-                    .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss),
+                    .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss, copyCalculator),
                     .calendar => s.calendar = try @import("../../desktop/calendar.zig").View.create(panel),
                     .wallpapers => s.wallpapers = try @import("../../desktop/wallpapers.zig").View.create(panel, &self.preferences),
                     .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
@@ -1573,6 +1584,23 @@ pub const Manager = struct {
         if (request.op == .session_status) {
             self.session_services.notifications.setLocked(self.client.availability != .ready or (if (self.client.model.get(.session, "session")) |session| session.locked else true));
             return self.session_services.status(alloc, request.offset orelse 0);
+        }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.startsWith(u8, request.text orelse "", "test-launcher-calculator")) {
+            const popup = self.popup orelse return error.Unavailable;
+            const view = popup.launcher orelse return error.Unavailable;
+            if (std.mem.startsWith(u8, request.text.?, "test-launcher-calculator:delay:")) {
+                const delay = try std.fmt.parseInt(u16, request.text.?["test-launcher-calculator:delay:".len..], 10);
+                view.test_delay_us = @as(u64, @min(delay, 1000)) * 1000;
+            }
+            if (std.mem.eql(u8, request.text.?, "test-launcher-calculator:copy-unavailable")) view.test_copy_unavailable = true;
+            if (std.mem.eql(u8, request.text.?, "test-launcher-calculator:copy-available")) view.test_copy_unavailable = false;
+            if (std.mem.startsWith(u8, request.text.?, "test-launcher-calculator:preedit:")) {
+                const delegate = view.search.as(gtk.Editable).getDelegate() orelse return error.Unavailable;
+                const text = object.ext.cast(gtk.Text, delegate) orelse return error.Unavailable;
+                const preedit: [*:0]const u8 = if (std.mem.endsWith(u8, request.text.?, ":start")) "x" else "";
+                object.signalEmitByName(text.as(object.Object), "preedit-changed", preedit);
+            }
+            return view.testReport(alloc, popup.window.as(gtk.Widget));
         }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-launcher-picker")) {
             const popup = self.popup orelse return error.Unavailable;

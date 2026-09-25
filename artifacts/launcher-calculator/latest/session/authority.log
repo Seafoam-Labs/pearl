@@ -1,0 +1,33 @@
+/home/zoey/Pearl/tests/fixtures/session_security.py:87: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
+  for iface in Gio.DBusNodeInfo.new_for_xml(xml).interfaces: bus.register_object(path,iface,method,None,None)
+event=ready
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"begin": true}
+command={"cancel": true}
+event=authentication
+event=cancel
+event=delay-released
+event=unregistered
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+event=delay-released
+event=unregistered
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/site-packages/gi/overrides/GLib.py", line 796, in func_fdtransform
+    return callback(channel, cond, *data)
+  File "/home/zoey/Pearl/tests/fixtures/session_security.py", line 70, in released
+    os.close(fd); record('delay-released',lease=lease,locked=locked()); return False
+                                                             ~~~~~~^^
+  File "/home/zoey/Pearl/tests/fixtures/session_security.py", line 20, in locked
+    s.connect(os.environ['AQUEOUS_SOCKET']); f=s.makefile('rb')
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory

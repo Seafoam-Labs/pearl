@@ -171,6 +171,16 @@ pub const Clipboard = struct {
         return error.Stale;
     }
     pub fn add(self: *Clipboard, kind: policy.Kind, input: []const u8) !void {
+        _ = try self.retainEntry(kind, input);
+    }
+    /// Publish a copied value independently of the producing popup's lifetime.
+    pub fn copyText(self: *Clipboard, input: []const u8) !void {
+        if (self.locked) return error.Locked;
+        if (self.device == null) return error.Unavailable;
+        const id = try self.retainEntry(.text, input);
+        try self.select(id);
+    }
+    fn retainEntry(self: *Clipboard, kind: policy.Kind, input: []const u8) !u64 {
         if (self.locked) return error.Locked;
         if (!policy.valid(kind, input)) return error.InvalidPayload;
         const bytes = if (kind == .png) try sanitize(input) else try a.dupe(u8, input);
@@ -178,7 +188,7 @@ pub const Clipboard = struct {
         if (bytes.len > policy.image_limit) return error.InvalidPayload;
         for (self.entries.items) |e| if (e.kind == kind and std.mem.eql(u8, e.bytes, bytes)) {
             wipe(bytes);
-            return;
+            return e.id;
         };
         var total: usize = bytes.len;
         for (self.entries.items) |e| total += e.bytes.len;
@@ -191,6 +201,7 @@ pub const Clipboard = struct {
         self.next_id += 1;
         self.message = "Clipboard history updated";
         self.changed(self.context);
+        return self.next_id - 1;
     }
     pub fn select(self: *Clipboard, id: u64) !void {
         if (self.locked) return error.Locked;

@@ -40,6 +40,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Release and packaging](docs/RELEASE.md) and [DMS migration / switch-back](docs/MIGRATION.md).
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md): scope, visual design, architecture, integration contracts, release gates, and risks.
 - [Launcher button icons](docs/PREFERENCES.md#launcher-button-icon): choose bundled or installed theme icons, or a local PNG, with draft preview, live Apply, Reset and Retry. [Implementation plan](docs/LAUNCHER_ICON_IMPLEMENTATION_PLAN.md).
+- [Launcher calculator](docs/DESKTOP.md#calculator): arithmetic and advanced functions, Enter to copy, and `=` to continue. [Implementation and validation](docs/LAUNCHER_CALCULATOR_IMPLEMENTATION_PLAN.md) for issue #2.
 - [Custom launcher selection](docs/DOCK_ISLANDS.md#custom-application-launchers): choose a custom desktop entry for running applications, preserve its icon and launch arguments, and correct existing pins. [Implementation and tests](docs/DOCK_DESKTOP_OVERRIDES_IMPLEMENTATION_PLAN.md) for issue #3.
 - [Preferred custom launchers](docs/DOCK_LAUNCH_ATTRIBUTION_PLAN.md): issue #3 matching and pinning improvements, including matching custom pins and desktop IDs with spaces/Unicode; no Aqueous update required.
 - [Experimental WebAssembly plugins](docs/PLUGINS.md): C, Zig and Rust components, native widgets and companion overlays, with controls in the main Settings app. [Implementation roadmap](docs/WASM_PLUGIN_IMPLEMENTATION_PLAN.md).
