@@ -34,9 +34,12 @@ one does not configure the other. See [DESKTOP.md](DESKTOP.md#running-applicatio
 Each output has its own running application groups and the same ordered list of
 pins. Windows belong to their authoritative Aqueous output. `skip_taskbar`
 excludes a window; `skip_switcher` does not. Minimized windows and windows on
-inactive workspaces remain available. A unique desktop-ID or StartupWMClass
-match associates running windows with installed applications. Ambiguous matches
-remain separate running groups. No command line is guessed from a window title.
+inactive workspaces remain available. Desktop-ID and StartupWMClass matches form
+the candidate launchers. An explicit **Use launcher…** choice wins; otherwise
+Pearl prefers a uniquely matching pin, then a uniquely matching launcher in the
+user's XDG applications directory, then a unique remaining system match. Ties at
+the highest matching priority remain separate running groups. No command line is
+guessed from a window title.
 
 Click an icon to activate its window or cycle through the group's windows. An
 installed pin with no windows launches through GIO. Right-click the icon to open
@@ -48,8 +51,15 @@ Unavailable or removed pinned applications can still be unpinned.
 ### Custom application launchers
 
 When a custom `.desktop` file has a different filename from the packaged entry,
-its window may still identify itself as the packaged application. Open the
-running application's dock menu, choose **Use launcher…**, search for the custom
+its window may still identify itself as the packaged application. If the custom
+entry's desktop ID or StartupWMClass matches, Pearl automatically prefers it over
+system entries unless a matching pin or explicit choice selects another launcher.
+A matching custom pin receives its running windows instead of leaving a second
+running group. This preference applies to all windows sharing that identity.
+
+For entries with no matching identity, multiple matching pins or multiple matching
+user launchers, open the running application's dock menu, choose **Use launcher…**,
+search for the custom
 entry, and select **Use launcher**. Pearl remembers that choice for windows with
 the same Wayland app ID or XWayland class. The dock and Running applications bar
 widget then use the selected entry's icon and name. Pinning and **Open new
@@ -67,12 +77,19 @@ workflow. Missing or hidden selected launchers remain unavailable until restored
 or changed; Pearl never silently launches the packaged entry instead.
 
 The choice applies to every window reporting that application identity,
-including profiles that share it. Automatic detection of the original custom
-launcher is not implemented. A user override with the **same desktop-file ID**
-already follows GIO's XDG precedence and requires no extra choice.
+including profiles that share it. Pearl selects a preferred launcher; it does not
+track which process launch produced each window. A user override with the
+**same desktop-file ID** follows GIO's XDG precedence and requires no extra choice.
+Desktop IDs containing spaces or Unicode are supported in pins and the chooser.
+
+Existing pins are not rewritten automatically. To correct a previously saved
+packaged pin, use **Use launcher…** on its running group; the pin is updated in the
+same save as the choice.
 
 See [implementation and verification](DOCK_DESKTOP_OVERRIDES_IMPLEMENTATION_PLAN.md)
 and [native acceptance evidence](../artifacts/dock-desktop-overrides/README.md).
+The [preferred-launcher fix](DOCK_LAUNCH_ATTRIBUTION_PLAN.md) uses the existing
+Aqueous protocol and requires no compositor update.
 
 Dots indicate running windows; a filled dot and highlighted button indicate
 focus. Accessible button labels and tooltips include the application name,

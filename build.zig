@@ -653,6 +653,12 @@ pub fn build(b: *std.Build) void {
     desktop_overrides.addArtifactArg(ctl);
     if (b.args) |args| desktop_overrides.addArgs(args);
     b.step("test-desktop-overrides", "Verify custom launcher selection, pin correction and recovery").dependOn(&desktop_overrides.step);
+    const preferred_launchers = b.addSystemCommand(&.{ "python3", "tests/integration/test_preferred_launchers.py", "--pearl" });
+    preferred_launchers.addArtifactArg(integration_app);
+    preferred_launchers.addArg("--ctl");
+    preferred_launchers.addArtifactArg(ctl);
+    if (b.args) |args| preferred_launchers.addArgs(args);
+    b.step("test-preferred-launchers", "Verify automatic launcher preferences, grouping and installed desktop IDs").dependOn(&preferred_launchers.step);
     const bar_layout = b.addSystemCommand(&.{ "python3", "tests/integration/test_bar_layout.py", "--pearl" });
     bar_layout.addArtifactArg(integration_app);
     bar_layout.addArg("--ctl");

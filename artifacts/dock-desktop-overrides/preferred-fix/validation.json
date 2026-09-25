@@ -1,0 +1,39 @@
+{
+  "build": "ReleaseSafe passed",
+  "unit_tests": {
+    "passed": 193,
+    "total": 193
+  },
+  "native_suites": {
+    "preferred": {
+      "status": "passed",
+      "checks": 12
+    },
+    "manual": {
+      "status": "passed",
+      "checks": 13
+    },
+    "dock": {
+      "status": "passed",
+      "checks": 17
+    },
+    "running-apps": {
+      "status": "passed",
+      "checks": 16
+    },
+    "desktop": {
+      "status": "passed",
+      "checks": 15
+    },
+    "preferences": {
+      "status": "passed",
+      "checks": 25
+    },
+    "settings": {
+      "status": "passed",
+      "checks": 20
+    }
+  },
+  "production_pearl_sha256": "1ca1427fd421554b952bb68d65e619f59af55771d2a25efa2726846cba828650",
+  "aqueous_changes": false
+}

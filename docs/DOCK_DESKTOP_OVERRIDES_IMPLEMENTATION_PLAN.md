@@ -3,6 +3,13 @@
 Status: explicit launcher-choice fix implemented, 2026-09-19. This replaces the
 initial investigation plan. Automatic attribution remains a separate follow-up.
 
+The additional matching and pinning fix is implemented in the
+[Pearl-only preferred-launcher plan](DOCK_LAUNCH_ATTRIBUTION_PLAN.md), revised after
+native reinvestigation on 2026-09-24. The separate
+[Aqueous attribution proposal](AQUEOUS_LAUNCH_ATTRIBUTION_PLAN.md) is deferred and
+is not required for that fix. This document continues to describe the implemented
+manual-choice behavior.
+
 The implementation uses `app_identity.zig` for stable keys and atomic list/pin
 changes, shared matching in `task_apps.zig` / `task_model.zig`, a manager-owned
 native picker, and a Settings removal list. The resolver retains unavailable

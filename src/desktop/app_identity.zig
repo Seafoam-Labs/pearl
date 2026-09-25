@@ -57,6 +57,22 @@ pub fn digest(choices: []const Association) u64 {
     }
     return hash.final();
 }
+pub fn pinDigest(pins: []const []const u8) u64 {
+    var hash = std.hash.Wyhash.init(0);
+    for (pins) |id| {
+        hash.update(id);
+        hash.update(&.{0});
+    }
+    return hash.final();
+}
+/// Classify the effective GIO filename, not a second desktop-file scan.
+pub fn userDesktopFile(alloc: std.mem.Allocator, filename: []const u8, data_home: []const u8) !bool {
+    const root = try std.fs.path.resolve(alloc, &.{ data_home, "applications" });
+    defer alloc.free(root);
+    const path = try std.fs.path.resolve(alloc, &.{filename});
+    defer alloc.free(path);
+    return path.len > root.len and std.mem.startsWith(u8, path, root) and path[root.len] == '/';
+}
 /// Returned strings borrow the input; serialize before its owning arena expires.
 pub fn change(alloc: std.mem.Allocator, choices: []const Association, identity: Key, desktop: ?[]const u8) ![]const Association {
     var result: std.ArrayList(Association) = .empty;
@@ -116,4 +132,13 @@ test "changing a launcher corrects pins without reordering an existing target" {
     const choices = try change(a, &.{}, identity, "Custom.desktop");
     try std.testing.expectEqualStrings("Custom.desktop", lookup(choices, identity).?);
     try std.testing.expectEqual(@as(usize, 0), (try change(a, choices, identity, null)).len);
+}
+
+test "user desktop classification respects XDG directory boundaries and normalization" {
+    const t = std.testing;
+    try t.expect(try userDesktopFile(t.allocator, "/custom/data/applications/Custom App.desktop", "/custom/data/"));
+    try t.expect(try userDesktopFile(t.allocator, "/custom/data/applications/vendor/App.desktop", "/custom/other/../data"));
+    try t.expect(!try userDesktopFile(t.allocator, "/custom/data/applications-other/App.desktop", "/custom/data"));
+    try t.expect(!try userDesktopFile(t.allocator, "/custom/data/applications/../../system/App.desktop", "/custom/data"));
+    try t.expect(!try userDesktopFile(t.allocator, "/usr/share/applications/App.desktop", "/custom/data"));
 }

@@ -805,7 +805,7 @@ pub const Manager = struct {
             self.clear();
             return error.SessionDisplayMismatch;
         }
-        try self.tasks.update(&self.client.model, &self.index, self.preferences.prefs().application_launchers);
+        try self.tasks.update(&self.client.model, &self.index, self.preferences.prefs().application_launchers, self.preferences.prefs().pinned_apps);
         for (self.outputs.items) |o| o.seen = false;
         const monitors = self.display.getMonitors();
         var values = self.client.model.entities.valueIterator();
@@ -849,7 +849,7 @@ pub const Manager = struct {
                 try o.reservations.bar(bar_pref.edge, bar_pref.size);
                 o.bar = try self.create(o, .bar);
                 errdefer o.bar.?.destroy();
-                o.dock = try @import("../../desktop/dock.zig").Dock.create(self.app, o.monitor, &self.effects, self.client, &self.index, &self.preferences, o.id, self, appsChanged);
+                o.dock = try @import("../../desktop/dock.zig").Dock.create(self.app, o.monitor, &self.effects, self.client, &self.index, &self.tasks, &self.preferences, o.id, self, appsChanged);
                 o.dock.?.choose_launcher = chooseLauncher;
                 errdefer o.dock.?.destroy();
                 try self.outputs.append(a, o);

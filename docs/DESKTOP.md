@@ -11,9 +11,12 @@ override behavior.
 [T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
 dock behavior, split bar sections and matching native input/blur regions.
 
-Custom launchers with a different desktop ID can be associated with a running
-application through the dock's **Use launcher…** menu. The dock and Running
-applications widget share that saved choice, including its icon and grouping.
+The dock and Running applications share preferred-launcher matching: an explicit
+choice wins, followed by a unique matching pin, a unique matching user-local
+launcher, or a unique system match. A custom desktop ID or StartupWMClass must
+match the window for automatic selection. Ambiguous or unrelated IDs can be
+associated through the dock's **Use launcher…** menu. Both surfaces use the same
+effective desktop ID, icon and grouping, including after pin edits.
 See [custom application launchers](DOCK_ISLANDS.md#custom-application-launchers)
 for pin correction, reset and unavailable-entry behavior.
 

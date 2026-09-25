@@ -4,27 +4,37 @@ const entities = @import("../aqueous/entities.zig");
 const Model = @import("../aqueous/reducer.zig").Model;
 const Allocator = std.mem.Allocator;
 const identity_policy = @import("app_identity.zig");
-pub const Application = struct { id: []const u8, name: []const u8, wmclass: ?[]const u8 = null, available: bool = true };
+pub const Application = struct { id: []const u8, name: []const u8, wmclass: ?[]const u8 = null, available: bool = true, user_local: bool = false };
 pub fn matches(id: []const u8, wmclass: ?[]const u8, win: entities.Window) bool {
     for ([_]?[]const u8{ win.app_id, win.class }) |value| if (value) |v| {
         if (v.len != 0 and (std.mem.eql(u8, @import("dock_policy.zig").stem(id), @import("dock_policy.zig").stem(v)) or (wmclass != null and std.mem.eql(u8, wmclass.?, v)))) return true;
     };
     return false;
 }
-pub fn match(apps: []const Application, win: entities.Window) ?Application {
+pub fn match(apps: []const Application, win: entities.Window, pins: []const []const u8) ?Application {
     var found: ?Application = null;
-    for (apps) |app| if (matches(app.id, app.wmclass, win)) {
-        if (found != null) return null;
-        found = app;
+    var best: u8 = 0;
+    var ambiguous = false;
+    for (apps) |app| if (app.available and matches(app.id, app.wmclass, win)) {
+        var rank: u8 = if (app.user_local) 2 else 1;
+        for (pins) |id| if (std.mem.eql(u8, id, app.id)) {
+            rank = 3;
+            break;
+        };
+        if (rank > best) {
+            best = rank;
+            found = app;
+            ambiguous = false;
+        } else if (rank == best) ambiguous = true;
     };
-    return found;
+    return if (ambiguous) null else found;
 }
-pub fn resolve(apps: []const Application, win: entities.Window, choices: []const identity_policy.Association) ?Application {
+pub fn resolve(apps: []const Application, win: entities.Window, choices: []const identity_policy.Association, pins: []const []const u8) ?Application {
     if (identity_policy.selected(choices, win)) |id| {
         for (apps) |app| if (std.mem.eql(u8, id, app.id)) return app;
         return .{ .id = id, .name = id, .available = false };
     }
-    return match(apps, win);
+    return match(apps, win, pins);
 }
 pub const Window = struct { id: [:0]const u8, title: [:0]const u8, workspace: ?[:0]const u8, output: ?[:0]const u8, focused: bool, minimized: bool, can_activate: bool };
 pub const Group = struct {
@@ -50,6 +60,7 @@ pub const Snapshot = struct {
     sequence: []const u8 = "",
     catalog_generation: u64 = std.math.maxInt(u64),
     association_hash: u64 = 0,
+    pin_hash: u64 = 0,
     pub fn init(a: Allocator) Snapshot {
         return .{ .arena = .init(a) };
     }
@@ -68,15 +79,16 @@ pub const Snapshot = struct {
         return null;
     }
     pub fn update(self: *Snapshot, model: *const Model, apps: []const Application, generation: u64) !void {
-        return self.updateWithLaunchers(model, apps, generation, &.{});
+        return self.updateWithLaunchers(model, apps, generation, &.{}, &.{});
     }
-    pub fn updateWithLaunchers(self: *Snapshot, model: *const Model, apps: []const Application, generation: u64, choices: []const identity_policy.Association) !void {
+    pub fn updateWithLaunchers(self: *Snapshot, model: *const Model, apps: []const Application, generation: u64, choices: []const identity_policy.Association, pins: []const []const u8) !void {
         if (!model.ready) {
             if (self.groups.len != 0 or self.sequence.len != 0) self.reset();
             return;
         }
         const association_hash = identity_policy.digest(choices);
-        if (std.mem.eql(u8, self.session, model.session) and std.mem.eql(u8, self.sequence, model.sequence) and self.catalog_generation == generation and self.association_hash == association_hash) return;
+        const pin_hash = identity_policy.pinDigest(pins);
+        if (std.mem.eql(u8, self.session, model.session) and std.mem.eql(u8, self.sequence, model.sequence) and self.catalog_generation == generation and self.association_hash == association_hash and self.pin_hash == pin_hash) return;
         var next = init(self.arena.child_allocator);
         errdefer next.deinit();
         const a = next.arena.allocator();
@@ -84,10 +96,11 @@ pub const Snapshot = struct {
         next.sequence = try a.dupe(u8, model.sequence);
         next.catalog_generation = generation;
         next.association_hash = association_hash;
+        next.pin_hash = pin_hash;
         var groups: std.ArrayList(Group) = .empty;
         var map: std.StringHashMapUnmanaged(usize) = .empty;
         for (try model.windows(a, .{ .purpose = .taskbar })) |win| {
-            const app = resolve(apps, win.*, choices);
+            const app = resolve(apps, win.*, choices, pins);
             const identity = nonempty(win.app_id) orelse nonempty(win.class);
             const key = if (app) |v| try std.fmt.allocPrintSentinel(a, "desktop:{s}", .{v.id}, 0) else try std.fmt.allocPrintSentinel(a, "{s}:{s}", .{ if (nonempty(win.app_id) != null) "app" else if (identity != null) "class" else "window", identity orelse win.id }, 0);
             const slot = try map.getOrPut(a, key);
@@ -140,14 +153,14 @@ test "unique desktop matching and taskbar overflow have no collection cap" {
     win.app_id = "org.test.App";
     win.class = null;
     const apps = [_]Application{ .{ .id = "org.test.App.desktop", .name = "App" }, .{ .id = "other.desktop", .name = "Other", .wmclass = "Legacy" } };
-    try t.expectEqualStrings("App", match(&apps, win).?.name);
+    try t.expectEqualStrings("App", match(&apps, win, &.{}).?.name);
     win.app_id = null;
     win.class = "Legacy";
-    try t.expectEqualStrings("Other", match(&apps, win).?.name);
+    try t.expectEqualStrings("Other", match(&apps, win, &.{}).?.name);
     const ambiguous = [_]Application{ apps[1], .{ .id = "third.desktop", .name = "Third", .wmclass = "Legacy" } };
-    try t.expect(match(&ambiguous, win) == null);
+    try t.expect(match(&ambiguous, win, &.{}) == null);
     win.class = "";
-    try t.expect(match(&apps, win) == null);
+    try t.expect(match(&apps, win, &.{}) == null);
     try t.expectEqual(@as(usize, 100), visibleCount(100, 100));
     try t.expectEqual(@as(usize, 5), visibleCount(100, 6));
     try t.expectEqual(@as(usize, 0), visibleCount(100, 1));
@@ -213,11 +226,11 @@ test "explicit launcher overrides identity and missing selections never fall bac
     const apps = [_]Application{ .{ .id = "App.desktop", .name = "Packaged" }, .{ .id = "Custom.desktop", .name = "Custom" } };
     const choices = [_]identity_policy.Association{.{ .backend = .xdg, .identity = "App", .desktop_id = "Custom.desktop" }};
     const win = fixtureWindow("window", "App");
-    try t.expectEqualStrings("Custom.desktop", resolve(&apps, win, &choices).?.id);
-    const missing = resolve(apps[0..1], win, &choices).?;
+    try t.expectEqualStrings("Custom.desktop", resolve(&apps, win, &choices, &.{}).?.id);
+    const missing = resolve(apps[0..1], win, &choices, &.{}).?;
     try t.expectEqualStrings("Custom.desktop", missing.id);
     try t.expect(!missing.available);
-    try t.expectEqualStrings("App.desktop", resolve(&apps, win, &.{}).?.id);
+    try t.expectEqualStrings("App.desktop", resolve(&apps, win, &.{}, &.{}).?.id);
     var arena = std.heap.ArenaAllocator.init(t.allocator);
     defer arena.deinit();
     var model = try Model.init(t.allocator, (@import("../aqueous/codec.zig").Limits{}).state_bytes);
@@ -227,10 +240,55 @@ test "explicit launcher overrides identity and missing selections never fall bac
     try model.entities.put(model.arena.allocator(), .{ .kind = .window, .id = win.id }, .{ .window = win });
     var snapshot = Snapshot.init(arena.allocator());
     defer snapshot.deinit();
-    try snapshot.updateWithLaunchers(&model, &apps, 1, &.{});
+    try snapshot.updateWithLaunchers(&model, &apps, 1, &.{}, &.{});
     try t.expect(snapshot.find("desktop:App.desktop") != null);
     const before = snapshot.revision;
-    try snapshot.updateWithLaunchers(&model, &apps, 1, &choices);
+    try snapshot.updateWithLaunchers(&model, &apps, 1, &choices, &.{});
     try t.expect(snapshot.revision > before);
+    try t.expect(snapshot.find("desktop:Custom.desktop") != null);
+}
+
+test "preferred launcher ranking is independent of catalog order and never guesses an identity" {
+    const t = std.testing;
+    const packaged: Application = .{ .id = "App.desktop", .name = "Packaged", .wmclass = "App" };
+    const custom: Application = .{ .id = "Custom App.desktop", .name = "Custom", .wmclass = "App", .user_local = true };
+    const other: Application = .{ .id = "Other.desktop", .name = "Other", .wmclass = "App", .user_local = true };
+    const unrelated: Application = .{ .id = "Unrelated.desktop", .name = "Unrelated", .user_local = true };
+    const win = fixtureWindow("window", "App");
+    for ([_][3]Application{ .{ packaged, custom, unrelated }, .{ unrelated, custom, packaged } }) |apps| {
+        try t.expectEqualStrings(custom.id, match(&apps, win, &.{}).?.id);
+        try t.expectEqualStrings(custom.id, match(&apps, win, &.{custom.id}).?.id);
+        try t.expectEqualStrings(packaged.id, match(&apps, win, &.{ packaged.id, unrelated.id }).?.id);
+        try t.expect(match(&apps, win, &.{ packaged.id, custom.id }) == null);
+        const choices = [_]identity_policy.Association{.{ .backend = .xdg, .identity = "App", .desktop_id = custom.id }};
+        try t.expectEqualStrings(custom.id, resolve(&apps, win, &choices, &.{packaged.id}).?.id);
+    }
+    try t.expect(match(&.{ packaged, custom, other }, win, &.{}) == null);
+    try t.expectEqualStrings(packaged.id, match(&.{ custom, other, packaged }, win, &.{packaged.id}).?.id);
+    try t.expectEqualStrings(packaged.id, match(&.{ unrelated, packaged }, win, &.{unrelated.id}).?.id);
+    var legacy = win;
+    legacy.backend = .xwayland;
+    legacy.app_id = null;
+    legacy.class = "App";
+    try t.expectEqualStrings(custom.id, match(&.{ packaged, custom }, legacy, &.{}).?.id);
+}
+
+test "pin changes alone reclassify the global snapshot and removing pins restores user preference" {
+    const t = std.testing;
+    const apps = [_]Application{ .{ .id = "App.desktop", .name = "Packaged" }, .{ .id = "Custom.desktop", .name = "Custom", .wmclass = "App", .user_local = true } };
+    var model = try Model.init(t.allocator, (@import("../aqueous/codec.zig").Limits{}).state_bytes);
+    defer model.deinit();
+    model.ready = true;
+    const win = fixtureWindow("window", "App");
+    try model.entities.put(model.arena.allocator(), .{ .kind = .window, .id = win.id }, .{ .window = win });
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    try snapshot.updateWithLaunchers(&model, &apps, 1, &.{}, &.{});
+    try t.expect(snapshot.find("desktop:Custom.desktop") != null);
+    const before = snapshot.revision;
+    try snapshot.updateWithLaunchers(&model, &apps, 1, &.{}, &.{"App.desktop"});
+    try t.expect(snapshot.revision > before);
+    try t.expect(snapshot.find("desktop:App.desktop") != null);
+    try snapshot.updateWithLaunchers(&model, &apps, 1, &.{}, &.{});
     try t.expect(snapshot.find("desktop:Custom.desktop") != null);
 }

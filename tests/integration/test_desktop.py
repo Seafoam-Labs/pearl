@@ -268,6 +268,8 @@ def main():
             assert result['launcher_latency_us']['p95']<50000, result['launcher_latency_us']
             translated=s.child('pearl-german',[args.pearl],G_DEBUG='fatal-warnings',LANGUAGE='de')
             translated.expect('event=control-ready');translated.expect('event=app-index-ready')
+            # Initial preference application can rebuild surfaces and dismiss a popup.
+            translated.expect('event=preferences-applied')
             ctl(s,args.ctl,'launcher','show','--output',tid)
             assert query(s,args.ctl,'Kaffee')['results']==1
             capture(s,'launcher-german',first['name'])
@@ -278,6 +280,7 @@ def main():
             empty_data=s.base/'empty-data';(empty_data/'applications').mkdir(parents=True)
             empty=s.child('pearl-empty-catalog',[args.pearl],G_DEBUG='fatal-warnings',XDG_DATA_HOME=str(empty_data))
             empty.expect('event=control-ready');empty.expect('event=app-index-ready entries=0')
+            empty.expect('event=preferences-applied')
             assert status(s,args.ctl)['apps']['count']==0
             ctl(s,args.ctl,'launcher','show','--output',tid)
             assert query(s,args.ctl,'NoSuchApplication')['results']==0

@@ -54,7 +54,7 @@ def main():
                 Image.new('RGB', (64, 64), rgb).save(icons[name])
             app_id = 'org.pearl.Override'
             system_id = app_id+'.desktop'
-            custom_id = 'CustomOverride.desktop'
+            custom_id = 'Custom Override 私用.desktop'
             def write(root, identifier, mark):
                 path = root/'applications'/identifier
                 path.write_text(f'[Desktop Entry]\nType=Application\nName=Override {mark}\n'

@@ -8,8 +8,9 @@ pub fn validate(c: Config) !void {
     if (c.icon_size < 24 or c.icon_size > 64 or c.margin < 4 or c.margin > 32) return error.InvalidDock;
 }
 pub fn desktopId(id: []const u8) bool {
-    if (id.len < 9 or id.len > 128 or !std.mem.endsWith(u8, id, ".desktop")) return false;
-    for (id) |ch| if (!(std.ascii.isAlphanumeric(ch) or ch == '.' or ch == '-' or ch == '_')) return false;
+    if (id.len < 9 or id.len > 1024 or !std.mem.endsWith(u8, id, ".desktop") or !std.unicode.utf8ValidateSlice(id)) return false;
+    var chars = std.unicode.Utf8View.initUnchecked(id).iterator();
+    while (chars.nextCodepoint()) |ch| if (ch < 32 or (ch >= 127 and ch <= 159) or ch == '/' or ch == '\\') return false;
     return true;
 }
 pub fn stem(id: []const u8) []const u8 {
@@ -74,4 +75,9 @@ test "dock hiding gates override interaction and keep non-obscured output visibl
     try t.expect(desktopId("org.example.App.desktop"));
     try t.expect(!desktopId("../App.desktop"));
     try t.expectError(error.InvalidDock, validate(.{ .icon_size = 90 }));
+}
+
+test "desktop IDs accept installed names without allowing paths or control characters" {
+    for ([_][]const u8{ "Custom App.desktop", "Éditeur 私用.desktop", "a" ** 1016 ++ ".desktop" }) |id| try std.testing.expect(desktopId(id));
+    for ([_][]const u8{ "", ".desktop", "App", "App.desktop/other", "../App.desktop", "C:\\App.desktop", "bad\x00.desktop", "bad\n.desktop", "bad\x7f.desktop", "bad\xc2\x85.desktop", "bad\xff.desktop", "a" ** 1017 ++ ".desktop" }) |id| try std.testing.expect(!desktopId(id));
 }

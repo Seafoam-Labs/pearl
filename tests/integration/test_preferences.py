@@ -133,6 +133,8 @@ def main():
             p['theme'].update(mode='static',variant='dark');p['wallpaper']['mode']='gradient';p['font']='';p['outputs']=[{'connector':output['connector'],'bar':{'edge':'bottom','size':52,'groups':{'left':'launcher,title','center':'clock','right':'control'}}}];p['popup'].update(placement='centered',max_width=600,max_height=640,dismiss_outside=False)
             apply(s,args.ctl,p);wait_for(lambda:status(s,args.ctl)['outputs'][0]['bar_edge']=='bottom');time.sleep(.4);capture(s,'settings-output-policy',output['connector'])
             checks['per-connector-bar-and-popup-policies']=True
+            # Changing bar groups dismisses its popup; reopen before editing a draft.
+            open_editor(s,args.ctl)
             focus_target(s,app,'settings-gtk-name');key(s,'-M','ctrl','a','-m','ctrl','Adwaita')
             assert state(s,args.ctl)['draft_dirty']
             ctl(s,args.ctl,'popup','hide');assert state(s,args.ctl)['draft_dirty']

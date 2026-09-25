@@ -28,7 +28,15 @@ choices made through the dock's **Use launcher…** picker:
 The key is an exact Wayland app ID (`xdg`) or XWayland class (`xwayland`). A choice
 applies to every window with that identity. Up to 128 choices are supported;
 keys must be unique, nonempty valid UTF-8 of at most 1024 bytes without ASCII
-control characters. Desktop IDs follow the same validator as dock pins.
+control characters. Desktop IDs follow the same validator as dock pins: nonempty
+UTF-8 names ending in `.desktop`, up to 1024 bytes, allowing spaces and Unicode
+but excluding path separators and control characters. Existing GIO entries are
+required when choosing or adding a pin; unavailable saved IDs remain retained.
+
+Without an explicit choice, matching prefers a unique matching pin, then a unique
+matching user-local entry, then a unique system entry. Pin edits update both dock
+and Running applications immediately. Resetting an explicit choice returns to
+this policy, including any pins that remain saved.
 
 The picker saves immediately and atomically replaces an initiating pin when
 needed. **Settings → Bar & dock → Application launchers** can remove choices

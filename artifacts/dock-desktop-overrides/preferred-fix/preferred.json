@@ -1,0 +1,185 @@
+{
+  "status": "passed",
+  "pearl_sha256": "61e31b0cd4bdff20e8e6aa08d43856531d512c345136e957478ead419b3dc594",
+  "cases": [
+    {
+      "case": "same-id-svg-override",
+      "launch_id": "org.pearl.Override.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:org.pearl.Override.desktop",
+      "dock_groups": 1,
+      "pins": [
+        "org.pearl.Override.desktop"
+      ],
+      "icon_pixels": {
+        "system": 0,
+        "custom": 1600
+      }
+    },
+    {
+      "case": "custom-pin-no-wmclass",
+      "launch_id": "CustomOverride.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:org.pearl.Override.desktop",
+      "dock_groups": 2,
+      "pins": [
+        "CustomOverride.desktop"
+      ],
+      "icon_pixels": {
+        "system": 1600,
+        "custom": 1600
+      }
+    },
+    {
+      "case": "custom-wmclass-unpinned-native-pin",
+      "launch_id": "CustomOverride.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:CustomOverride.desktop",
+      "dock_groups": 1,
+      "pins": [
+        "CustomOverride.desktop"
+      ],
+      "icon_pixels": {
+        "system": 0,
+        "custom": 1584
+      }
+    },
+    {
+      "case": "custom-wmclass-pinned-stale-menu",
+      "launch_id": "CustomOverride.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:CustomOverride.desktop",
+      "dock_groups": 1,
+      "pins": [
+        "CustomOverride.desktop"
+      ],
+      "icon_pixels": {
+        "system": 0,
+        "custom": 1584
+      }
+    },
+    {
+      "case": "packaged-pin-wins",
+      "launch_id": "CustomOverride.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:org.pearl.Override.desktop",
+      "dock_groups": 1,
+      "pins": [
+        "org.pearl.Override.desktop"
+      ],
+      "icon_pixels": {
+        "system": 1584,
+        "custom": 0
+      }
+    },
+    {
+      "case": "multiple-matching-pins-remain-ambiguous",
+      "launch_id": "CustomOverride.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "app:org.pearl.Override",
+      "dock_groups": 3,
+      "pins": [
+        "org.pearl.Override.desktop",
+        "CustomOverride.desktop"
+      ],
+      "icon_pixels": {
+        "system": 1584,
+        "custom": 1600
+      }
+    },
+    {
+      "case": "multiple-user-launchers-remain-ambiguous",
+      "launch_id": "CustomOverride.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "app:org.pearl.Override",
+      "dock_groups": 1,
+      "pins": [],
+      "icon_pixels": {
+        "system": 0,
+        "custom": 0
+      }
+    },
+    {
+      "case": "unique-pin-breaks-user-tie",
+      "launch_id": "CustomOverride.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:CustomOverride.desktop",
+      "dock_groups": 1,
+      "pins": [
+        "CustomOverride.desktop"
+      ],
+      "icon_pixels": {
+        "system": 0,
+        "custom": 1600
+      }
+    },
+    {
+      "case": "custom-new-window-action-stale-catalog",
+      "launch_id": "CustomOverride.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:CustomOverride.desktop",
+      "dock_groups": 1,
+      "pins": [
+        "CustomOverride.desktop"
+      ],
+      "icon_pixels": {
+        "system": 0,
+        "custom": 1600
+      }
+    },
+    {
+      "case": "custom-themed-png-icon",
+      "launch_id": "CustomOverride.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:CustomOverride.desktop",
+      "dock_groups": 1,
+      "pins": [
+        "CustomOverride.desktop"
+      ],
+      "icon_pixels": {
+        "system": 0,
+        "custom": 1584
+      }
+    },
+    {
+      "case": "desktop-id-restart-0",
+      "launch_id": "Custom Override.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:Custom Override.desktop",
+      "dock_groups": 1,
+      "pins": [
+        "Custom Override.desktop"
+      ],
+      "icon_pixels": {
+        "system": 0,
+        "custom": 1600
+      }
+    },
+    {
+      "case": "desktop-id-restart-1",
+      "launch_id": "\u00c9diteur \u79c1\u7528.desktop",
+      "launch_mark": "custom",
+      "window_app_id": "org.pearl.Override",
+      "group": "desktop:\u00c9diteur \u79c1\u7528.desktop",
+      "dock_groups": 1,
+      "pins": [
+        "\u00c9diteur \u79c1\u7528.desktop"
+      ],
+      "icon_pixels": {
+        "system": 0,
+        "custom": 1600
+      }
+    }
+  ]
+}

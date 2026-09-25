@@ -1,5 +1,10 @@
 # Issue #3 — launcher choice fix and reproduction
 
+The 2026-09-24 [Pearl-only preferred-launcher fix](preferred-fix/README.md) adds
+automatic preference for matching custom pins/user launchers and accepts desktop
+IDs containing spaces/Unicode. The evidence below records the earlier manual
+selection implementation and baseline reproduction.
+
 Reproduced the reported icon and pinned-launch symptoms on 2026-09-19 **when the
 custom desktop file has a different ID and the running window still reports the
 packaged application's ID**. The reporter's exact desktop files have not yet
