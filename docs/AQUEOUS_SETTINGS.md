@@ -11,7 +11,7 @@ system/installed GTK themes, remains under **Pearl settings**.
 
 The current target is Aqueous master
 `88587243059d58d72dd0fe2146d0ebdb64f26474`, helper **0.8.2**, protocol 1.
-Pearl discovers the helper through PATH, negotiates capabilities and always uses
+Pearl selects the helper beside the verified compositor executable, negotiates capabilities and always uses
 `--shell none`. Older helpers can remain readable, but writes require the modern
 receipt, candidate-impact and recoverable-commit capabilities.
 
@@ -196,12 +196,37 @@ last observed native status, including partial rollback and presentation details
 
 ## Structured collection forms
 
-Rules expose all schema fields and options, numeric limits and an explicit Inherit
-checkbox. Missing/inherited, false and zero are different. All present matchers must
-match, globs are anchored and case sensitive, and first matching rule wins. Add,
-update, delete and one-at-a-time moves produce a reviewable canonical request.
-Unsaved additions remain selectable and can be edited, reordered or removed before
-persistence; their local draft indices are never sent as backend identities.
+Window rules use the same native dialog scaffolding as notification filters:
+ordered cards, Add/Edit/Delete, condition rows and typed setting rows. The data
+models remain separate. All present matchers must match; patterns are anchored,
+case-sensitive byte globs, and the first matching rule wins. Scope alone is not
+a matcher. Rules have no persisted name or enabled switch. Cards show 40 rules
+per page, with source order and generated condition/effect summaries.
+
+Remove a row to inherit normal behavior. Updating an existing rule sends `null`
+for a removed field; omission leaves it untouched. Explicit Off and zero stay
+explicit. Unknown or invalid newer values are visibly preserved for Advanced.
+New rules need a matcher and a setting; existing rules with no effects remain
+editable because they can intentionally stop later rules. Current helper v1
+uses empty strings as removals except for Launch tag: existing empty values are
+retained without rewriting them, and new unsupported empty values are rejected.
+Launch tag offers an explicit advanced empty-pattern checkbox.
+
+Save rule stages the shared Aqueous draft. Unsaved additions can be edited or
+deleted before Apply; local draft indices never become backend identities.
+Repeated saved-rule edits merge earlier field deltas. A changed snapshot or
+shared draft rejects Save and retains the dialog input for review. Cancel
+abandons only modal edits; Discard abandons the shared Aqueous draft.
+
+Move earlier/later is available only with no pending Aqueous edits. Apply or
+Discard that move before making other mutations, including changes on other
+Aqueous pages. Generation/source checks, protected collection confirmation,
+receipts and reload outcomes follow the ordinary Aqueous Apply path.
+
+The Test window disclosure currently explains the missing authoritative tester.
+The installed helper has no window-rule testing capability. The separately
+planned helper/compositor evaluator and read-only transport are not implemented
+in this editor change; Pearl does not guess compositor matches locally.
 
 Custom shortcuts expose chord and compositor command syntax plus an acknowledged
 recorder. Editing a spawn command never executes it; Validate reports collisions.

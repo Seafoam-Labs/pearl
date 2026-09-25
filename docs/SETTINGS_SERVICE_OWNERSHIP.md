@@ -77,3 +77,16 @@ tester is a bounded, read-only backend request scoped to a current view and draf
 revision; it never registers a notification service or sends a Notify call.
 Live history refreshes update separate hosts above/below the filter editor so
 sample fields and an open rule dialog retain their input and focus.
+
+## Rule builder ownership
+
+`rule_builder.zig` owns no service, matcher or persisted schema. Notification
+filters retain Pearl preference ownership; window rules retain Aqueous ownership.
+`window_rules_view.For` lives as long as the Aqueous view. Its modal arena owns
+captured schema/values and survives page rebuilds. Page callbacks are disconnected
+and page controls detached before their arena resets; modal callbacks and widgets
+are destroyed before modal storage is released. Lock, suspension, disconnect and
+navigation hide the dialog without discarding input. Save compares snapshot
+version, shared revision and draft digest; conflicting input remains visible.
+Collection moves are isolated at retention and canonical-request validation,
+including edits arriving through other frontends or Advanced.

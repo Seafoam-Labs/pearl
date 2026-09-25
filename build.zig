@@ -512,6 +512,14 @@ pub fn build(b: *std.Build) void {
     filter_settings.addArtifactArg(ctl);
     if (b.args) |args| filter_settings.addArgs(args);
     b.step("test-notification-filter-settings", "Verify native filter drafts, matching and notification protocol in a private session").dependOn(&filter_settings.step);
+    const window_rules = b.addSystemCommand(&.{ "python3", "tests/integration/test_window_rules.py", "--settings" });
+    window_rules.addArtifactArg(settings_test_app);
+    window_rules.addArg("--pearl");
+    window_rules.addArtifactArg(integration_app);
+    window_rules.addArg("--ctl");
+    window_rules.addArtifactArg(ctl);
+    if (b.args) |args| window_rules.addArgs(args);
+    b.step("test-window-rule-settings", "Verify native window rules, draft preservation and ordering in a private session").dependOn(&window_rules.step);
     const settings_devices = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_devices.py", "--settings" });
     settings_devices.addArtifactArg(settings_test_app);
     settings_devices.addArg("--pearl");

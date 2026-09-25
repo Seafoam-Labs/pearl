@@ -399,6 +399,13 @@ explicit user intent. Never automatically replay.
 - Shared `aqueous_settings.ViewFor` and its collection/display editors work with
   either host. Shortcut recording uses the normal application toplevel, stops on
   departure/lock and writes a validated chord through the ordinary draft path.
+- Window rules use `settings/window_rules_view.zig` with the existing Aqueous
+  document transfer and action endpoints. `settings/rule_builder.zig` shares
+  dialog, theme, scrolling and field presentation with notification filters;
+  each adapter owns its draft policy. Modal input lives outside page rebuild
+  arenas. Captured version, revision and draft digest reject competing saves.
+  No `aqueous.rules.test` endpoint is advertised in this revision; the tester
+  disclosure states that authoritative backend support is unavailable.
 - Network/Bluetooth/Power leases bind to the authenticated peer; owner tokens
   never cross the boundary. Same-page activation preserves the lease. Foreign
   prompt answers and preview decisions are rejected.

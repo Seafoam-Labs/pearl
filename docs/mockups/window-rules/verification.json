@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "scope": "Offline HTML mockup only; not native rule evaluation or persistence",
+  "checks": [
+    "ordered-cards-and-derived-titles",
+    "shared-condition-and-typed-effect-editor",
+    "escape-restores-card-focus",
+    "blank-condition-validation",
+    "unique-condition-fields",
+    "add-stages-explicit-false",
+    "discard-restores-saved-rules",
+    "remove-and-explicit-zero-preserved",
+    "validate-then-apply-preview",
+    "cannot-remove-last-matcher",
+    "delete-reversible-through-discard",
+    "isolated-order-mutation",
+    "apply-order-unlocks-editor",
+    "first-winner-and-later-matches",
+    "case-sensitive-and-result-invalidation",
+    "byte-glob-and-missing-tag-sample-semantics",
+    "tester-capability-fallback",
+    "empty-state",
+    "light-theme",
+    "responsive-no-overflow-560",
+    "responsive-no-overflow-390",
+    "short-editor-reachable-actions",
+    "no-javascript-runtime-errors"
+  ],
+  "runtime_errors": []
+}

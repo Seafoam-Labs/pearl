@@ -17,13 +17,25 @@ pub fn stage(a: std.mem.Allocator, base: m.Value, draft: []const u8, key: []cons
     var replaced = false;
     if (id != .null) for (changes.array.items) |*old| {
         if (m.equal(m.get(old.*, "id"), id)) {
-            old.* = change;
+            var merged = change;
+            if (std.mem.eql(u8, key, "window_rule_changes") and std.mem.eql(u8, m.str(m.get(old.*, "op")), "update") and std.mem.eql(u8, m.str(m.get(change, "op")), "update")) {
+                var values = m.get(old.*, "values");
+                const patch = m.get(change, "values");
+                if (values != .object or patch != .object) return error.InvalidCollection;
+                values.object = try values.object.clone(a);
+                var it = patch.object.iterator();
+                while (it.next()) |e| try values.object.put(a, e.key_ptr.*, e.value_ptr.*);
+                merged.object = try change.object.clone(a);
+                try merged.object.put(a, "values", values);
+            }
+            old.* = merged;
             replaced = true;
             break;
         }
     };
     if (!replaced) try changes.array.append(change);
     try request.object.put(a, key, changes);
+    try @import("aqueous_rule_editor.zig").checkMove(request);
     try request.object.put(a, "collection_preconditions", m.get(base, "collection_preconditions"));
     return std.json.Stringify.valueAlloc(a, request, .{ .whitespace = .indent_2 });
 }
@@ -102,4 +114,22 @@ test "unsaved collection edits replace and delete additions without backend iden
     const removed = try editPending(a, edited, "window_rule_changes", 0, try m.parse(a, "{\"op\":\"delete\"}", 4096));
     try std.testing.expectEqual(@as(usize, 1), m.list(m.get(try m.parse(a, removed, 4096), "window_rule_changes")).len);
     try std.testing.expectError(error.StaleDraft, editPending(a, removed, "window_rule_changes", 1, replacement));
+}
+
+test "successive rule updates merge deltas including explicit removals" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const base = try m.parse(a, "{\"generation\":\"0123456789abcdef\",\"capabilities\":[\"collection_schema_v1\",\"collection_preconditions_v1\",\"collection_identity_v1\"]}", 4096);
+    const first = try stage(a, base, try @import("aqueous_draft.zig").empty(a, base), "window_rule_changes", try m.parse(a, "{\"op\":\"update\",\"id\":\"a\",\"values\":{\"floating\":false,\"opacity\":0}}", 4096));
+    const second = try stage(a, base, first, "window_rule_changes", try m.parse(a, "{\"op\":\"update\",\"id\":\"a\",\"values\":{\"title\":\"\",\"opacity\":null}}", 4096));
+    const changes = m.list(m.get(try m.parse(a, second, 4096), "window_rule_changes"));
+    try std.testing.expectEqual(@as(usize, 1), changes.len);
+    const values = m.get(changes[0], "values");
+    try std.testing.expect(m.equal(m.get(values, "floating"), .{ .bool = false }));
+    try std.testing.expect(m.equal(m.get(values, "title"), .{ .string = "" }));
+    try std.testing.expect(values.object.contains("opacity") and m.get(values, "opacity") == .null);
+    try std.testing.expectError(error.SaveRuleMoveFirst, stage(a, base, second, "window_rule_changes", try m.parse(a, "{\"op\":\"move\",\"id\":\"b\",\"direction\":1}", 4096)));
+    const deleted = try stage(a, base, second, "window_rule_changes", try m.parse(a, "{\"op\":\"delete\",\"id\":\"a\"}", 4096));
+    try std.testing.expect(m.get(m.list(m.get(try m.parse(a, deleted, 4096), "window_rule_changes"))[0], "values") == .null);
 }

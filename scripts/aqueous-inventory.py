@@ -39,14 +39,25 @@ consumer, UI/CLI entry point and test owner for every contract.
 | Display state | Connected/disabled outputs, actual versus inherited values, source/declaration/identity/mode/support inventories | Canonical observation; no local precedence inference |
 | Monitor changes | Position, scale, rotation, mode and mirroring | Compositor-owned lease; physical preview remains unavailable |
 | Enablement, primary, profiles, matching, HDR/VRR | Full observation and disabled controls with reasons; Advanced raw draft | Structured helper mutation missing; raw saves still require classified impact and native preview |
-| Window rules | Schema fields, inheritance, add/update/delete and ordered move | Helper validates collections but currently reports unknown impact; Pearl blocks save |
-| Custom shortcuts | Chord/command fields, recording, add/update/delete | Same classifier dependency; commands never execute during editing |
-| Snap layouts/zones | Named layouts, names/padding/default, normalized zone geometry and order; legacy zone controls | Same classifier dependency; optional canvas not implemented |
+| Window rules | Ordered cards, condition/effect rows, inheritance, add/edit/delete and isolated move | Capability-gated canonical classification, protected apply and receipts; authoritative tester pending |
+| Custom shortcuts | Chord/command fields, recording, add/update/delete | Capability-gated canonical classification and protected apply; commands never execute during editing |
+| Snap layouts/zones | Named layouts, names/padding/default, normalized zone geometry and order; legacy zone controls | Capability-gated canonical classification and protected apply; optional canvas not implemented |
 | Font/cursor synchronization | Scalar controls, explicit sync flags and per-target outcomes | Structured save, reload and toolkit results remain separate |
 | Six raw files and complete JSON request | Shared retained Advanced draft | Unknown impact is blocked, including extensions; no raw path bypasses protection |
 
 [Remaining upstream dependencies](AQUEOUS_MASTER_DEPENDENCIES.md) explains the
 required helper mutations, collection classification and physical preview work.
+
+## Window-rule collection editor
+
+The scalar inventory above remains unchanged, including Game mode settings.
+`settings/window_rules_view.zig` reads collection fields from the negotiated
+helper schema. The v1 compatibility map classifies app ID, X11 class, title,
+launch tag, content type and X11 window type as matchers, and scope separately.
+Known effects use schema choices, On/Off or validated numeric/text entries;
+removing a row means inheritance. Unsupported keys or values remain visible and
+unchanged in the draft. `config/aqueous_rule_editor.zig` projects ordered records
+and computes lossless deltas; the helper remains the final validation authority.
 '''
 (ROOT/'docs/AQUEOUS_FIELD_INVENTORY.md').write_text(header+'\n'.join(rows)+'\n'+footer)
 print(f'PASS {len(rows)} fields mapped; collection and raw limits recorded')

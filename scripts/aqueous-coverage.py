@@ -18,6 +18,7 @@ for key in snapshot:
  consumer='src/config/aqueous_client.zig';entry='aqueous status --text '+key
  if key.startswith('display_'):consumer='src/desktop/aqueous_displays.zig';entry='Displays and '+entry
  if key in ('window_rules','custom_keybinds','snap_zones','snap_layouts','default_snap_layout','collection_schema','collection_preconditions'):consumer='src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig'
+ if key=='window_rules':consumer='src/settings/window_rules_view.zig; src/config/aqueous_rule_editor.zig'
  row('snapshot-model',key,'settingsApplication/src/backend/operations.zig',consumer,entry,'tests/integration/test_aqueous_master.py',note='Bounded owning JSON document; unknown additions retained. CLI responses remain bounded.')
 for field in snapshot['fields']:
  row('scalar-field',field['id'],'settingsApplication/src/backend/schema.zig','src/desktop/aqueous_settings.zig',field['category']+' / '+field['label'],'scripts/aqueous-inventory.py',note=field['type']+'; canonical helper validates the full request.')
@@ -26,9 +27,9 @@ for key in json.loads((F/'apply-result.json').read_text()):
 for collection,spec in snapshot['collection_schema'].items():
  if not isinstance(spec,dict):continue
  for operation in spec.get('operations',[]):
-  row('collection-operation',collection+'.'+operation,'settingsApplication/src/backend/operations.zig','src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig','Rules / Keybindings / Layouts','tests/integration/test_aqueous_master.py','implemented','Canonical protected collection transaction; mixed candidates use fresh-generation apply.')
+  row('collection-operation',collection+'.'+operation,'settingsApplication/src/backend/operations.zig',('src/settings/window_rules_view.zig' if collection=='window_rules' else 'src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig'),'Rules / Keybindings / Layouts','tests/integration/test_aqueous_master.py','implemented','Canonical protected collection transaction; mixed candidates use fresh-generation apply.')
  for field in spec.get('fields',[]):
-  row('collection-field',collection+'.'+field['key'],'settingsApplication/src/backend/schema.zig; operations.zig','src/desktop/aqueous_collections.zig','Rules: '+field['key'],'src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py','implemented',field['type']+'; inheritance distinct from false/zero; canonical classification and protected save.')
+  row('collection-field',collection+'.'+field['key'],'settingsApplication/src/backend/schema.zig; operations.zig',('src/settings/window_rules_view.zig' if collection=='window_rules' else 'src/desktop/aqueous_collections.zig'),'Rules: '+field['key'],('src/config/aqueous_rule_editor.zig; tests/integration/test_window_rules.py' if collection=='window_rules' else 'src/config/aqueous_collections.zig; tests/integration/test_aqueous_master.py'),'implemented',field['type']+'; inheritance distinct from false/zero; canonical classification and protected save.')
 for key in json.loads((F/'display.json').read_text()):
  row('display-observation',key,'compositor/aqueous/DisplayModel.zig','src/config/aqueous_contract.zig; src/desktop/aqueous_displays.zig','Displays / aqueous status --text display_observation','tests/integration/test_aqueous_master.py',note='Canonical compositor observation retained; no inferred configuration precedence.')
 for name in ['hello','snapshot','subscribe','ack','command','window.icon','display.snapshot','display.candidate','display.preview.begin','display.preview.status','display.preview.revert','display.preview.authorize','display.preview.finalize']:

@@ -1,0 +1,4 @@
+test-settings-services failed twice in the final UI build cycle at tests/integration/test_settings_services.py:144.
+After restarting the frontend following a deliberate credential-prompt crash, the next network Connect click did not produce service_prompt before the deadline.
+The suite did not reach its later Aqueous cases. This is not a full service-suite pass.
+Native window-rule Validate / Apply, draft transfer across Aqueous sections, and canonical Aqueous transactions passed independently.

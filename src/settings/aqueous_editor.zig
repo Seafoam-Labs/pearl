@@ -166,6 +166,9 @@ pub const Editor = struct {
     pub fn keepDraft(self: *Editor, bytes: []const u8) !void {
         if (!self.ready or self.locked or self.suspended or self.recovery or self.remote_busy or self.pending_receipt) return error.Unavailable;
         if (bytes.len > model.max_request) return error.RequestTooLarge;
+        var rule_arena = std.heap.ArenaAllocator.init(a);
+        defer rule_arena.deinit();
+        try @import("../config/aqueous_rule_editor.zig").checkBytes(rule_arena.allocator(), bytes);
         const copy = try a.dupe(u8, bytes);
         errdefer a.free(copy);
         if (self.base == null) {

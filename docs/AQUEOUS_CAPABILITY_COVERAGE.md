@@ -71,7 +71,7 @@ The JSON companion records source, consumer, entry point, test owner and disposi
 | `snap_zones` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — aqueous status --text snap_zones | implemented: Bounded owning JSON document; unknown additions retained. CLI responses remain bounded. |
 | `snap_layouts` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — aqueous status --text snap_layouts | implemented: Bounded owning JSON document; unknown additions retained. CLI responses remain bounded. |
 | `default_snap_layout` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — aqueous status --text default_snap_layout | implemented: Bounded owning JSON document; unknown additions retained. CLI responses remain bounded. |
-| `window_rules` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — aqueous status --text window_rules | implemented: Bounded owning JSON document; unknown additions retained. CLI responses remain bounded. |
+| `window_rules` | src/settings/window_rules_view.zig; src/config/aqueous_rule_editor.zig — aqueous status --text window_rules | implemented: Bounded owning JSON document; unknown additions retained. CLI responses remain bounded. |
 | `warnings` | src/config/aqueous_client.zig — aqueous status --text warnings | implemented: Bounded owning JSON document; unknown additions retained. CLI responses remain bounded. |
 | `desktop_typography` | src/config/aqueous_client.zig — aqueous status --text desktop_typography | implemented: Bounded owning JSON document; unknown additions retained. CLI responses remain bounded. |
 | `desktop_cursor` | src/config/aqueous_client.zig — aqueous status --text desktop_cursor | implemented: Bounded owning JSON document; unknown additions retained. CLI responses remain bounded. |
@@ -327,10 +327,10 @@ The JSON companion records source, consumer, entry point, test owner and disposi
 
 | Capability | Consumer / entry point | Disposition |
 |---|---|---|
-| `window_rules.add` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
-| `window_rules.update` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
-| `window_rules.delete` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
-| `window_rules.move` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
+| `window_rules.add` | src/settings/window_rules_view.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
+| `window_rules.update` | src/settings/window_rules_view.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
+| `window_rules.delete` | src/settings/window_rules_view.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
+| `window_rules.move` | src/settings/window_rules_view.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
 | `custom_bindings.add` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
 | `custom_bindings.update` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
 | `custom_bindings.delete` | src/desktop/aqueous_collections.zig; src/desktop/aqueous_snap_layouts.zig — Rules / Keybindings / Layouts | implemented: Canonical protected collection transaction; mixed candidates use fresh-generation apply. |
@@ -340,37 +340,37 @@ The JSON companion records source, consumer, entry point, test owner and disposi
 
 | Capability | Consumer / entry point | Disposition |
 |---|---|---|
-| `window_rules.app_id` | src/desktop/aqueous_collections.zig — Rules: app_id | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.class` | src/desktop/aqueous_collections.zig — Rules: class | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.title` | src/desktop/aqueous_collections.zig — Rules: title | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.content_type` | src/desktop/aqueous_collections.zig — Rules: content_type | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.layout` | src/desktop/aqueous_collections.zig — Rules: layout | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.output` | src/desktop/aqueous_collections.zig — Rules: output | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.workspace` | src/desktop/aqueous_collections.zig — Rules: workspace | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.floating` | src/desktop/aqueous_collections.zig — Rules: floating | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.fullscreen` | src/desktop/aqueous_collections.zig — Rules: fullscreen | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.ignore_struts` | src/desktop/aqueous_collections.zig — Rules: ignore_struts | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.width` | src/desktop/aqueous_collections.zig — Rules: width | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.height` | src/desktop/aqueous_collections.zig — Rules: height | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.x` | src/desktop/aqueous_collections.zig — Rules: x | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.y` | src/desktop/aqueous_collections.zig — Rules: y | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.placement_policy` | src/desktop/aqueous_collections.zig — Rules: placement_policy | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.anchor` | src/desktop/aqueous_collections.zig — Rules: anchor | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.size` | src/desktop/aqueous_collections.zig — Rules: size | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.scale` | src/desktop/aqueous_collections.zig — Rules: scale | implemented: number; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.blur` | src/desktop/aqueous_collections.zig — Rules: blur | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.opacity` | src/desktop/aqueous_collections.zig — Rules: opacity | implemented: number; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.buffer_scale_policy` | src/desktop/aqueous_collections.zig — Rules: buffer_scale_policy | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.hdr_expand` | src/desktop/aqueous_collections.zig — Rules: hdr_expand | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.overlay_plane` | src/desktop/aqueous_collections.zig — Rules: overlay_plane | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.stack_layer` | src/desktop/aqueous_collections.zig — Rules: stack_layer | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.focus` | src/desktop/aqueous_collections.zig — Rules: focus | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.fixed_position` | src/desktop/aqueous_collections.zig — Rules: fixed_position | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.skip_switcher` | src/desktop/aqueous_collections.zig — Rules: skip_switcher | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.skip_taskbar` | src/desktop/aqueous_collections.zig — Rules: skip_taskbar | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.scrolling_full_width` | src/desktop/aqueous_collections.zig — Rules: scrolling_full_width | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.scrolling_width` | src/desktop/aqueous_collections.zig — Rules: scrolling_width | implemented: number; inheritance distinct from false/zero; canonical classification and protected save. |
-| `window_rules.tag` | src/desktop/aqueous_collections.zig — Rules: tag | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.app_id` | src/settings/window_rules_view.zig — Rules: app_id | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.class` | src/settings/window_rules_view.zig — Rules: class | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.title` | src/settings/window_rules_view.zig — Rules: title | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.content_type` | src/settings/window_rules_view.zig — Rules: content_type | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.layout` | src/settings/window_rules_view.zig — Rules: layout | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.output` | src/settings/window_rules_view.zig — Rules: output | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.workspace` | src/settings/window_rules_view.zig — Rules: workspace | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.floating` | src/settings/window_rules_view.zig — Rules: floating | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.fullscreen` | src/settings/window_rules_view.zig — Rules: fullscreen | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.ignore_struts` | src/settings/window_rules_view.zig — Rules: ignore_struts | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.width` | src/settings/window_rules_view.zig — Rules: width | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.height` | src/settings/window_rules_view.zig — Rules: height | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.x` | src/settings/window_rules_view.zig — Rules: x | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.y` | src/settings/window_rules_view.zig — Rules: y | implemented: integer; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.placement_policy` | src/settings/window_rules_view.zig — Rules: placement_policy | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.anchor` | src/settings/window_rules_view.zig — Rules: anchor | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.size` | src/settings/window_rules_view.zig — Rules: size | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.scale` | src/settings/window_rules_view.zig — Rules: scale | implemented: number; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.blur` | src/settings/window_rules_view.zig — Rules: blur | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.opacity` | src/settings/window_rules_view.zig — Rules: opacity | implemented: number; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.buffer_scale_policy` | src/settings/window_rules_view.zig — Rules: buffer_scale_policy | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.hdr_expand` | src/settings/window_rules_view.zig — Rules: hdr_expand | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.overlay_plane` | src/settings/window_rules_view.zig — Rules: overlay_plane | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.stack_layer` | src/settings/window_rules_view.zig — Rules: stack_layer | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.focus` | src/settings/window_rules_view.zig — Rules: focus | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.fixed_position` | src/settings/window_rules_view.zig — Rules: fixed_position | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.skip_switcher` | src/settings/window_rules_view.zig — Rules: skip_switcher | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.skip_taskbar` | src/settings/window_rules_view.zig — Rules: skip_taskbar | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.scrolling_full_width` | src/settings/window_rules_view.zig — Rules: scrolling_full_width | implemented: boolean; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.scrolling_width` | src/settings/window_rules_view.zig — Rules: scrolling_width | implemented: number; inheritance distinct from false/zero; canonical classification and protected save. |
+| `window_rules.tag` | src/settings/window_rules_view.zig — Rules: tag | implemented: string; inheritance distinct from false/zero; canonical classification and protected save. |
 
 ## display-observation
 
@@ -476,7 +476,7 @@ The JSON companion records source, consumer, entry point, test owner and disposi
 | `aqueous_xkb_bindings_v1` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 3 |
 | `aqueous_layer_shell_v1` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 1 |
 | `zwlr_layer_shell_v1` | Ghostty GTK layer-shell bindings — Bar, islands, dock, popup surfaces | library-owned: Registry version 4 |
-| `zwlr_gamma_control_manager_v1` | Pearl Night Light — Appearance and compact status; display writes gated | application-owned: advertised version 1; output color eligibility unavailable |
+| `zwlr_gamma_control_manager_v1` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 1 |
 | `wp_presentation` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 2 |
 | `zxdg_output_manager_v1` | GTK/GDK, compositor or application client — Protocol service; no additional standalone shell control | application-owned: Registry version 3 |
 | `zwlr_output_manager_v1` | Compositor / canonical helper — Display edits use native preview leases; old guardian removed | intentionally-unselected: Registry version 4 |
@@ -572,37 +572,3 @@ The JSON companion records source, consumer, entry point, test owner and disposi
 | `invalidated` | src/config/aqueous_client.zig — Displays status; aqueous status --text preview | implemented: Pending rollback remains pending; durable token and receipts reconcile restart. |
 | `failed` | src/config/aqueous_client.zig — Displays status; aqueous status --text preview | implemented: Pending rollback remains pending; durable token and receipts reconcile restart. |
 | `kept` | src/config/aqueous_client.zig — Displays status; aqueous status --text preview | implemented: Pending rollback remains pending; durable token and receipts reconcile restart. |
-
-## Local workspace switcher extension
-
-The coordinated window-switcher change adds IPC capability
-`workspace_switcher_v1` beyond the pinned baseline above. Pearl gates
-`switcher.next`, `switcher.previous` and `switcher.dismiss` on this flag and
-revalidates output, active workspace and seat at dispatch. Optional session
-fields `switcher_output`, `switcher_window`, `switcher_position`, `switcher_total`
-and `switcher_serial` drive the non-keyboard HUD. Optional window field
-`switcher_eligible` accounts for compositor modal-focus policy. Older snapshots
-remain readable, with the widget disabled when the capability is absent.
-
-Sources: `src/aqueous/{codec,entities,commands}.zig`,
-`src/desktop/window_switcher.zig`, `src/ui/surfaces/manager.zig` and Aqueous
-`WindowSwitcher.zig`, `Overview.zig`, `IpcProtocol.zig`, `ShellManager.zig`.
-Validation: `test-window-switcher`, the Pearl protocol/policy tests, and Aqueous
-ring/overview/protocol tests. See [native evidence](../artifacts/window-switcher/README.md).
-
-## Global window switcher extension
-
-`global_window_switcher_v1` adds `scope: "all"` to the existing three switcher
-commands. Global requests carry output, optional seat, and reduced_motion, and
-omit workspace. The output chooses presentation; it does not restrict candidates.
-Legacy requests omit scope and retain required active-workspace validation.
-Pearl negotiates global behavior and preserves legacy behavior on older Aqueous.
-
-Additional optional session/result fields are `switcher_scope`, `switcher_seat`,
-`switcher_workspace`, `switcher_destination_output`, and `switcher_pending`.
-`switcher_output` remains the presentation output. The compositor owns global
-rings, destination activation, and explicit cursor handoff after dismissal.
-
-Validation: protocol cloning/invalid-shape tests, Pearl negotiation/membership
-tests, and the extended native `test-window-switcher` in two focus-warp modes.
-See [global evidence](../artifacts/global-window-switcher/README.md).

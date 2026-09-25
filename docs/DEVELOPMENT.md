@@ -325,3 +325,16 @@ Unicode/desktop identity, external reloads, startup publication, and native
 themes/compact layouts. Evidence is written to `artifacts/notification-filters/`;
 `-- --output /tmp/filter-check` selects another directory. The test uses the
 existing private Aqueous fixture under `.cache/aqueous-activity-production`.
+
+### Native window-rule builder
+
+`zig build test-window-rule-settings -Doptimize=ReleaseSafe` exercises the shared
+native rule builder in private Aqueous/D-Bus sessions. It checks creation,
+pending additions, explicit false, null removals, repeated edits, stale modal
+saves, isolated moves, canonical Apply and 390/560-pixel dialogs. It uses the
+production private fixture at `.cache/aqueous-activity-production` and writes
+screenshots and `report.json` beneath `artifacts/window-rules` (override with
+`-- --output /tmp/window-rules-check`). Run `zig build test` for pure projection,
+merge, identity and move-guard checks, and `test-notification-filter-settings`
+when changing shared presentation. `test-settings-services` covers navigation,
+focus restoration, receipts and the complete shared Aqueous boundary.

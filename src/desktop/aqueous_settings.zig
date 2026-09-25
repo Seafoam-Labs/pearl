@@ -30,9 +30,11 @@ pub const View = ViewFor(Client);
 pub fn ViewFor(comptime ClientType: type) type {
     return struct {
         const Self = @This();
+        const Pages = if (@hasDecl(ClientType, "standalone")) gtk.Stack else gtk.Notebook;
         const Editor = struct { view: *Self, field: m.Value, widget: *gtk.Widget, record: ?*gtk.Button = null };
         const Monitor = struct { view: *Self, id: []const u8, name: []const u8, x: *gtk.SpinButton, y: *gtk.SpinButton, scale: *gtk.SpinButton, transform: *gtk.DropDown, mode: *gtk.Entry, mirror: *gtk.Entry };
 
+        rules_view: ?*@import("../settings/window_rules_view.zig").For(Self) = null,
         host: *gtk.Box,
         client: *ClientType,
         arena: std.heap.ArenaAllocator,
@@ -43,6 +45,7 @@ pub fn ViewFor(comptime ClientType: type) type {
         raw_file: ?*gtk.DropDown = null,
         filling: bool = true,
         forms_stale: bool = false,
+        rule_move_pending: bool = false,
         version: u64 = 0,
         revision: u64 = 0,
         review_version: u64 = 0,
@@ -59,7 +62,9 @@ pub fn ViewFor(comptime ClientType: type) type {
         record_timer: c_uint = 0,
         record_deadline: i64 = 0,
         keys: *gtk.EventControllerKey = undefined,
-        notebook: ?*gtk.Notebook = null,
+        notebook: ?*Pages = null,
+        page_widgets: [7]?*gtk.Widget = @splat(null),
+        page_count: usize = 0,
         placement_box: ?*gtk.Box = null,
         display_selected: [128:0]u8 = @splat(0),
         display_more: bool = false,
@@ -144,6 +149,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             return self;
         }
         pub fn destroy(self: *Self) void {
+            if (self.rules_view) |view| view.destroy();
             if (self.shared_dialog) |dialog| dialog.as(gtk.Window).destroy();
             if (self.preview_dialog) |dialog| {
                 dialog.destroy();
@@ -166,7 +172,7 @@ pub fn ViewFor(comptime ClientType: type) type {
         pub fn z(self: *Self, text: []const u8) [:0]const u8 {
             return self.arena.allocator().dupeZ(u8, text) catch "";
         }
-        fn page(self: *Self, notebook: *gtk.Notebook, title: []const u8) *gtk.Box {
+        fn page(self: *Self, notebook: *Pages, title: []const u8) *gtk.Box {
             const scroll = gtk.ScrolledWindow.new();
             scroll.setPolicy(.never, .automatic);
             scroll.as(gtk.Widget).setVexpand(1);
@@ -177,16 +183,19 @@ pub fn ViewFor(comptime ClientType: type) type {
                 // The normal window supplies the single page viewport.
                 _ = box.ref();
                 scroll.setChild(null);
-                _ = notebook.appendPage(box.as(gtk.Widget), gtk.Label.new(self.z(title)).as(gtk.Widget));
+                _ = notebook.addNamed(box.as(gtk.Widget), self.z(title));
+                self.page_widgets[self.page_count] = box.as(gtk.Widget);
+                self.page_count += 1;
                 box.unref();
                 _ = scroll.as(object.Object).refSink();
                 scroll.unref();
                 return box;
             }
-            _ = notebook.appendPage(scroll.as(gtk.Widget), gtk.Label.new(self.z(title)).as(gtk.Widget));
+            if (!@hasDecl(ClientType, "standalone")) _ = notebook.appendPage(scroll.as(gtk.Widget), gtk.Label.new(self.z(title)).as(gtk.Widget));
             return box;
         }
         pub fn build(self: *Self) !void {
+            if (self.rules_view) |view| view.detach();
             if (self.rebuild_observer) |observer| observer.notify(observer.context, true);
             defer if (self.rebuild_observer) |observer| observer.notify(observer.context, false);
             self.placement_box = null;
@@ -201,6 +210,8 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.display_canvas = null;
             self.form_signals.clear();
             self.notebook = null;
+            self.page_count = 0;
+            self.page_widgets = @splat(null);
             while (self.content.as(gtk.Widget).getFirstChild()) |c| self.content.remove(c);
             _ = self.arena.reset(.retain_capacity);
             self.editors = .empty;
@@ -215,16 +226,21 @@ pub fn ViewFor(comptime ClientType: type) type {
             const alloc = self.arena.allocator();
             // UI metadata must not borrow a snapshot replaced by a background refresh.
             const snapshot = try m.parse(alloc, try std.json.Stringify.valueAlloc(alloc, self.client.baseValue(), .{}), m.max_response);
-            const notebook = gtk.Notebook.new();
+            const notebook = Pages.new();
             self.notebook = notebook;
-            notebook.setScrollable(1);
-            if (@hasDecl(ClientType, "standalone")) notebook.setShowTabs(0);
+            if (@hasDecl(ClientType, "standalone")) {
+                // Keep the common vertical extent used for section scroll
+                // restoration, while measuring only the active page's width.
+                notebook.setHhomogeneous(0);
+                notebook.setVhomogeneous(1);
+            } else notebook.setScrollable(1);
             notebook.as(gtk.Widget).setVexpand(1);
             self.content.append(notebook.as(gtk.Widget));
-            self.form_signals.add(notebook.as(object.Object), gtk.Notebook.signals.switch_page.connect(notebook, *Self, switched, self, .{}));
+            if (!@hasDecl(ClientType, "standalone")) self.form_signals.add(notebook.as(object.Object), gtk.Notebook.signals.switch_page.connect(notebook, *Self, switched, self, .{}));
             const categories = [_][]const u8{ "appearance", "layouts", "input", "keybinds", "rules", "displays" };
             const titles = [_][]const u8{ "Appearance", "Layouts", "Input", "Keybindings", "Rules", "Displays" };
             const draft = m.parse(alloc, self.client.draft orelse try self.client.emptyDraft(alloc), m.max_request) catch m.Value.null;
+            self.rule_move_pending = @import("../config/aqueous_rule_editor.zig").hasMove(draft);
             for (categories, titles) |category, title| {
                 var box = self.page(notebook, title);
                 if (std.mem.eql(u8, category, "appearance")) {
@@ -259,8 +275,12 @@ pub fn ViewFor(comptime ClientType: type) type {
                     box.append(w.label("Enter chords such as Super+Return, separated by commas. Record waits for Aqueous to inhibit shortcuts. Escape cancels. Custom bindings use the structured editor below.", "pearl-secondary").as(gtk.Widget));
                     try self.inventory(box, snapshot, "custom_keybinds", "Custom bindings");
                 }
-                if (std.mem.eql(u8, category, "rules") or std.mem.eql(u8, category, "keybinds") or std.mem.eql(u8, category, "layouts")) try @import("aqueous_collections.zig").For(@This()).render(self, box, snapshot, category);
-                if (std.mem.eql(u8, category, "rules")) try self.inventory(box, snapshot, "window_rules", "Window rules");
+                if (std.mem.eql(u8, category, "keybinds") or std.mem.eql(u8, category, "layouts")) try @import("aqueous_collections.zig").For(@This()).render(self, box, snapshot, category);
+                if (std.mem.eql(u8, category, "rules")) {
+                    if (self.rules_view == null) self.rules_view = try @import("../settings/window_rules_view.zig").For(Self).create(self);
+                    try self.rules_view.?.render(box, snapshot);
+                    try self.inventory(box, snapshot, "window_rules", "Saved rule inventory");
+                }
                 if (std.mem.eql(u8, category, "layouts")) {
                     try @import("aqueous_snap_layouts.zig").For(@This()).render(self, box, snapshot);
                     try self.inventory(box, snapshot, "snap_zones", "Snap zones");
@@ -359,7 +379,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.request_buffer.?.setText(self.z(self.client.draft orelse try self.client.emptyDraft(alloc)), -1);
             self.form_signals.add(self.request_buffer.?.as(object.Object), gtk.TextBuffer.signals.insert_text.connect(self.request_buffer.?, *Self, inserting, self, .{}));
             self.form_signals.add(self.request_buffer.?.as(object.Object), gtk.TextBuffer.signals.changed.connect(self.request_buffer.?, *Self, requestEdited, self, .{}));
-            notebook.setCurrentPage(self.page_index);
+            self.selectPage(self.page_index);
         }
         fn monitorEditor(self: *Self, box: *gtk.Box, original: m.Value, live: bool) !void {
             const alloc = self.arena.allocator();
@@ -487,6 +507,7 @@ pub fn ViewFor(comptime ClientType: type) type {
         pub fn update(self: *Self) void {
             if (self.review_version != self.client.review_version or self.revision != self.client.revision or (self.version != self.client.version and (self.client.draft == null or self.request_buffer == null))) self.build() catch |err| self.fail(err);
             const c = self.client;
+            if (self.rules_view) |view| view.update();
             self.updatePreviewDialog();
             self.reload_button.as(gtk.Widget).setVisible(@intFromBool(c.reload_state == .failed or c.reload_state == .unknown or c.reload_state == .unavailable));
             self.reload_button.as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.reload_ticket == null and !c.unresolved));
@@ -498,7 +519,7 @@ pub fn ViewFor(comptime ClientType: type) type {
                 self.preview_buttons[0].as(gtk.Widget).setSensitive(@intFromBool(c.remaining() > 0 and c.canChoose()));
                 self.preview_buttons[1].as(gtk.Widget).setSensitive(@intFromBool(c.canChoose()));
             }
-            self.content.as(gtk.Widget).setSensitive(@intFromBool(c.previewPhase() == 0));
+            self.content.as(gtk.Widget).setSensitive(@intFromBool(c.previewPhase() == 0 and !self.rule_move_pending));
             for (self.buttons) |b| b.as(gtk.Widget).setSensitive(@intFromBool(c.job == null));
             self.buttons[2].as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.draft != null and c.canRevalidate() and !c.unresolved and @import("../config/aqueous_contract.zig").Capabilities.read(c.value()).apply));
             var buffer: [1000]u8 = undefined;
@@ -533,7 +554,7 @@ pub fn ViewFor(comptime ClientType: type) type {
                 if (c.detail[0] != 0) " · " else "",
                 std.mem.sliceTo(&c.detail, 0),
             }) catch "Settings status unavailable";
-            self.message.setText(text);
+            self.message.setText(if (self.rule_move_pending) "Rule order changed. Apply & save or Discard draft before making other Aqueous edits." else text);
             const simple = self.page_index == 5 and self.display_canvas != null;
             if (simple) self.footer_line.as(gtk.Widget).addCssClass("display-footer") else self.footer_line.as(gtk.Widget).removeCssClass("display-footer");
             self.footer_line.as(gtk.Orientable).setOrientation(if (simple and self.host.as(gtk.Widget).getWidth() >= 620) .horizontal else .vertical);
@@ -793,16 +814,22 @@ pub fn ViewFor(comptime ClientType: type) type {
             editor.view.startRecording(editor) catch |err| editor.view.fail(err);
         }
         pub fn record(self: *Self, id: []const u8) !void {
-            if (self.notebook) |notebook| notebook.setCurrentPage(3);
+            self.selectPage(3);
             for (self.editors.items) |editor| if (editor.record != null and std.mem.eql(u8, m.str(m.get(editor.field, "id")), id)) return self.startRecording(editor);
             return error.UnknownField;
+        }
+        fn selectPage(self: *Self, index: c_int) void {
+            const notebook = self.notebook orelse return;
+            if (@hasDecl(ClientType, "standalone")) {
+                if (index >= 0 and index < self.page_count) if (self.page_widgets[@intCast(index)]) |child| notebook.setVisibleChild(child);
+            } else notebook.setCurrentPage(index);
         }
         pub fn showPage(self: *Self, name: []const u8) !void {
             const names = @import("settings_navigation.zig").aqueous_sections;
             for (names, 0..) |v, index| if (std.mem.eql(u8, v, name)) {
                 self.page_index = @intCast(index);
                 if (self.notebook) |notebook| {
-                    notebook.setCurrentPage(@intCast(index));
+                    self.selectPage(@intCast(index));
                     // The standalone window restores its own section focus.
                     if (!@hasDecl(ClientType, "standalone")) {
                         if (notebook.getNthPage(@intCast(index))) |page_widget| _ = page_widget.childFocus(.tab_forward);

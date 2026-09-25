@@ -12,6 +12,7 @@ const Text = @import("../services/policy.zig").Text;
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("../desktop/text.zig").tr;
 const a = std.heap.c_allocator;
+const builder = @import("rule_builder.zig");
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
 const Binding = struct { view: *View, id: Text(64), toggle: bool = false };
 const ConditionWidgets = struct {
@@ -111,24 +112,8 @@ pub const View = struct {
         self.update();
         return self;
     }
-    fn entryRow(host: *gtk.Box, label: [:0]const u8, limit: c_int) *gtk.Entry {
-        host.append(w.label(label, "pearl-secondary").as(gtk.Widget));
-        const entry = gtk.Entry.new();
-        entry.setMaxLength(limit);
-        entry.as(gtk.Editable).setWidthChars(12);
-        entry.as(gtk.Widget).setHexpand(1);
-        w.name(entry.as(gtk.Widget), label);
-        host.append(entry.as(gtk.Widget));
-        return entry;
-    }
-    fn choiceRow(host: *gtk.Box, label: [:0]const u8, names: []const ?[*:0]const u8) *gtk.DropDown {
-        host.append(w.label(label, "pearl-secondary").as(gtk.Widget));
-        const choice = gtk.DropDown.newFromStrings(@ptrCast(names.ptr));
-        w.name(choice.as(gtk.Widget), label);
-        choice.as(gtk.Widget).setHexpand(1);
-        host.append(choice.as(gtk.Widget));
-        return choice;
-    }
+    const entryRow = builder.entryRow;
+    const choiceRow = builder.choiceRow;
     pub fn destroy(self: *View) void {
         if (self.idle != 0) _ = glib.Source.remove(self.idle);
         self.closeDialog();
@@ -218,8 +203,7 @@ pub const View = struct {
         const alloc = self.arena.allocator();
         if (config.rules.len == 0) self.rows.append(w.label(tr("No filters yet. Add a filter to hide matching notifications.", "Noch keine Filter. Einen Filter hinzufügen, um passende Benachrichtigungen auszublenden."), "pearl-secondary").as(gtk.Widget));
         for (config.rules) |r| {
-            const card = w.column(6);
-            card.as(gtk.Widget).addCssClass("settings-card");
+            const card = builder.card();
             const top = w.row(10);
             const title = w.label(try alloc.dupeZ(u8, r.name), "settings-row-title");
             title.setWrap(1);
@@ -328,9 +312,7 @@ pub const View = struct {
     }
     fn styleDialog(self: *View) void {
         const dialog = self.dialog orelse return;
-        inline for (.{ "pearl-root", "settings-window", "pearl-dark", "pearl-gtk", "pearl-compact", "pearl-reduced-motion" }) |class| {
-            if (self.window.as(gtk.Widget).hasCssClass(class) != 0) dialog.as(gtk.Widget).addCssClass(class) else dialog.as(gtk.Widget).removeCssClass(class);
-        }
+        builder.style(dialog, self.window);
     }
     fn closeDialog(self: *View) void {
         self.dialog_controls.clearRetainingCapacity();
@@ -362,23 +344,12 @@ pub const View = struct {
         self.rule_id.set(if (rule) |r| r.id else "");
         self.rule_enabled = if (rule) |r| r.enabled else true;
         self.focus_id.set(if (id) |value| try std.fmt.allocPrint(alloc, "filters.edit.{s}", .{value}) else "filters.add");
-        const dialog = gtk.Dialog.new();
-        _ = dialog.ref();
+        const shell = builder.open(self.window, if (rule != null) tr("Edit notification filter", "Benachrichtigungsfilter bearbeiten") else tr("Add notification filter", "Benachrichtigungsfilter hinzufügen"));
+        const dialog = shell.dialog;
+        const body = shell.body;
         self.dialog = dialog;
-        self.styleDialog();
+        self.dialog_scroll = shell.scroll;
         errdefer self.closeDialog();
-        dialog.as(gtk.Window).setTitle(if (rule != null) tr("Edit notification filter", "Benachrichtigungsfilter bearbeiten") else tr("Add notification filter", "Benachrichtigungsfilter hinzufügen"));
-        dialog.as(gtk.Window).setTransientFor(self.window);
-        dialog.as(gtk.Window).setModal(1);
-        dialog.as(gtk.Window).setDefaultSize(@min(600, @max(320, self.window.as(gtk.Widget).getWidth() - 32)), @min(740, @max(400, self.window.as(gtk.Widget).getHeight() - 40)));
-        const scroll = gtk.ScrolledWindow.new();
-        self.dialog_scroll = scroll;
-        scroll.setPolicy(.never, .automatic);
-        scroll.as(gtk.Widget).setVexpand(1);
-        const body = w.column(8);
-        inline for (.{ "setMarginStart", "setMarginEnd", "setMarginTop", "setMarginBottom" }) |method| @field(gtk.Widget, method)(body.as(gtk.Widget), 18);
-        scroll.setChild(body.as(gtk.Widget));
-        dialog.getContentArea().append(scroll.as(gtk.Widget));
         self.rule_name = entryRow(body, tr("Filter name", "Filtername"), 80);
         self.rule_action = choiceRow(body, tr("When a notification matches", "Bei passender Benachrichtigung"), &.{ tr("Block — hide everywhere", "Blockieren — überall ausblenden"), tr("History only — no popup", "Nur Verlauf — kein Popup"), null });
         self.rule_match = choiceRow(body, tr("Conditions", "Bedingungen"), &.{ tr("Match all conditions", "Alle Bedingungen erfüllen"), tr("Match any condition", "Eine Bedingung erfüllen"), null });

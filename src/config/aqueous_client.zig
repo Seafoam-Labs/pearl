@@ -206,6 +206,9 @@ pub const Client = struct {
     pub fn keepDraft(self: *Client, bytes: []const u8) !void {
         if (self.job) |j| j.choice.store(2, .release);
         if (bytes.len > model.max_request) return error.RequestTooLarge;
+        var rule_arena = std.heap.ArenaAllocator.init(a);
+        defer rule_arena.deinit();
+        try @import("aqueous_rule_editor.zig").checkBytes(rule_arena.allocator(), bytes);
         const copy = try a.dupe(u8, bytes);
         errdefer a.free(copy);
         if (self.base == null) {

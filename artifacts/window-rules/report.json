@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "checks": {
+    "native-create-multiple-conditions-and-typed-effect-separate-draft": true,
+    "pending-addition-edit-false-zero-bounds-and-delete-without-backend-id": true,
+    "repeated-edit-merges-earlier-delta-and-emits-null-removal": true,
+    "competing-draft-keeps-modal-input-and-rejects-stale-save": true,
+    "move-projects-order-and-blocks-cross-page-mutations": true,
+    "canonical-validate-apply-receipt-and-preference-isolation": true,
+    "390-and-560-pixel-dialogs-with-reachable-actions": true,
+    "unsupported-authoritative-tester-explains-requirement": true
+  },
+  "binaries": {
+    "settings": "47fd1c19defdbb00ac4cab162288488fccc556bd80d618afa034736613d90521",
+    "pearl": "bd1354df4e68e24718ae5dc5229529342187e12282ef38af77b3736d8b882004",
+    "ctl": "cfc0f3bc496d2deba0fb4db5700a79b58e51288d61000d71e64ea786f43e0970"
+  }
+}

@@ -142,6 +142,7 @@ pub fn request(a: std.mem.Allocator, base: Value, bytes: []const u8, backups: []
     inline for (.{ .{ "monitor_changes", "outputs" }, .{ "custom_keybind_changes", "wm" }, .{ "window_rule_changes", "rules" }, .{ "snap_zone_changes", "layout" }, .{ "snap_layouts", "layout" } }) |pair| {
         if (get(v, pair[0]) != .null and list(get(v, pair[0])).len > 0 and get(raw, pair[1]) != .null) return error.ConflictingEdits;
     }
+    try @import("aqueous_rule_editor.zig").checkMove(v);
     try @import("aqueous_display_mutations.zig").check(base, v);
     try v.object.put(a, "backup_dir", .{ .string = backups });
     return v;
