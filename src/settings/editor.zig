@@ -60,6 +60,11 @@ pub const Editor = struct {
     suspended: bool = false,
     failed: bool = false,
     local_valid: bool = true,
+    notification_test_sample: ?[]u8 = null,
+    notification_test_result: ?[]u8 = null,
+    notification_test_error: Text(128) = .{},
+    notification_test_serial: u64 = 0,
+    notification_test_hash: ?[64]u8 = null,
     live: ?[]u8 = null,
     live_revision: u64 = 0,
     live_offset: u64 = 0,
@@ -103,7 +108,7 @@ pub const Editor = struct {
         self.cancelTimers();
         self.clearLiveCommand();
         if (self.idle != 0) _ = glib.Source.remove(self.idle);
-        inline for (.{ "live", "acknowledged", "base", "current", "local", "local_base", "sending", "buffer", "incoming_draft" }) |name| self.clear(&@field(self, name));
+        inline for (.{ "notification_test_sample", "notification_test_result", "live", "acknowledged", "base", "current", "local", "local_base", "sending", "buffer", "incoming_draft" }) |name| self.clear(&@field(self, name));
     }
     fn clear(_: *Editor, ptr: *?[]u8) void {
         if (ptr.*) |v| a.free(v);
@@ -113,6 +118,21 @@ pub const Editor = struct {
         const next = try a.dupe(u8, value);
         self.clear(ptr);
         ptr.* = next;
+    }
+    pub fn invalidateNotificationTest(self: *Editor) void {
+        self.notification_test_serial +%= 1;
+        self.clear(&self.notification_test_sample);
+        self.clear(&self.notification_test_result);
+        self.notification_test_error = .{};
+        self.notification_test_hash = null;
+    }
+    pub fn testNotifications(self: *Editor, sample: @import("../services/notification_filter_policy.zig").Sample) !void {
+        if (!self.editable() or !self.client.capabilities.notification_filters or self.target.page != .notifications) return error.Unavailable;
+        try sample.validate();
+        self.invalidateNotificationTest();
+        self.notification_test_sample = try std.json.Stringify.valueAlloc(a, sample, .{});
+        self.cancelTimers();
+        self.wake();
     }
     pub fn text(self: *const Editor) []const u8 {
         return self.local orelse self.acknowledged orelse "{}";
@@ -522,6 +542,19 @@ pub const Editor = struct {
             try self.pump();
             return;
         }
+        if (self.notification_test_sample) |sample| {
+            if (self.target.page != .notifications) {
+                self.invalidateNotificationTest();
+            } else if (self.operation == null and !self.state.busy and self.action == .none and !self.state.conflict) {
+                var arena = std.heap.ArenaAllocator.init(a);
+                defer arena.deinit();
+                const value = try std.json.parseFromSliceLeaky(std.json.Value, arena.allocator(), sample, .{});
+                self.notification_test_hash = p.digest(self.text());
+                try self.client.request(.@"notifications.test", .{ .view = p.num(self.view), .draft_revision = p.num(self.state.draft_revision), .revision = p.num(self.state.revision), .sample_serial = p.num(self.notification_test_serial), .sample = value });
+                self.clear(&self.notification_test_sample);
+                return;
+            }
+        }
         if (self.navigation) |selection| {
             self.entering = selection;
             self.navigation = null;
@@ -607,6 +640,21 @@ pub const Editor = struct {
         return p.number(try field([]const u8, value, name));
     }
     fn receive(self: *Editor, reply_: Reply) !void {
+        if (reply_.op == .@"notifications.test") {
+            if (reply_.error_code) |code| {
+                self.notification_test_error.set(code);
+                if (std.mem.eql(u8, code, "StaleDraft")) self.needs_snapshot = true;
+                return;
+            }
+            const v = reply_.result;
+            if (try count(v, "sample_serial") != self.notification_test_serial or try count(v, "draft_revision") != self.state.draft_revision or try count(v, "revision") != self.state.revision or self.target.page != .notifications) return;
+            const hash = self.notification_test_hash orelse return;
+            if (!std.mem.eql(u8, &hash, &p.digest(self.text()))) return;
+            self.clear(&self.notification_test_result);
+            self.notification_test_result = try std.json.Stringify.valueAlloc(a, v, .{});
+            return;
+        }
+
         if (reply_.op == .@"theme.asset") {
             if (self.preview_transfer) |*transfer| {
                 if (reply_.error_code) |code| {
@@ -692,6 +740,7 @@ pub const Editor = struct {
         }
         const v = reply_.result;
         switch (reply_.op) {
+            .@"notifications.test" => unreachable,
             .@"qt.retry", .@"qt.review", .@"qt.reapply" => {
                 self.needs_snapshot = true;
             },

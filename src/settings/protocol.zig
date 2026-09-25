@@ -37,13 +37,14 @@ pub const Capabilities = struct {
     bar_widgets: bool = false,
     launcher_icon: bool = false,
     night_light: bool = false,
+    notification_filters: bool = false,
 };
 pub const Request = struct {
     settings: u32,
     id: []const u8,
     session: []const u8,
     display: []const u8,
-    op: enum { @"launcher-icon.retry", @"night-light.action", hello, ping, @"theme.asset", @"theme.start", @"theme.get", @"theme.cancel", @"qt.retry", @"qt.review", @"qt.reapply", @"page.enter", @"page.leave", @"page.get", @"document.get", @"document.read", @"document.begin", @"document.write", @"document.finish", @"document.cancel", @"draft.discard", @"draft.merge", @"draft.validate", @"draft.apply", @"operation.get", @"frontend.close", @"list.get", @"plugin.refresh", @"plugin.action", @"audio.set", @"brightness.set", @"profile.set", @"network.action", @"network.editor", @"bluetooth.action", @"prompt.answer", @"notifications.action", @"lifecycle.action", @"power.action", @"media.action", @"layout.get", @"layout.set", @"aqueous.get", @"aqueous.action" },
+    op: enum { @"launcher-icon.retry", @"night-light.action", hello, ping, @"theme.asset", @"theme.start", @"theme.get", @"theme.cancel", @"qt.retry", @"qt.review", @"qt.reapply", @"page.enter", @"page.leave", @"page.get", @"document.get", @"document.read", @"document.begin", @"document.write", @"document.finish", @"document.cancel", @"draft.discard", @"draft.merge", @"draft.validate", @"draft.apply", @"operation.get", @"frontend.close", @"list.get", @"plugin.refresh", @"plugin.action", @"audio.set", @"brightness.set", @"profile.set", @"network.action", @"network.editor", @"bluetooth.action", @"prompt.answer", @"notifications.action", @"notifications.test", @"lifecycle.action", @"power.action", @"media.action", @"layout.get", @"layout.set", @"aqueous.get", @"aqueous.action" },
     epoch: ?[]const u8 = null,
     params: ?std.json.Value = null,
 };

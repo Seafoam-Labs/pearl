@@ -345,6 +345,7 @@ Typed immediate request operation names and params:
 | `network.editor` | `{view,operation}`; backend authorizes launch; frontend uses fixed `nm-connection-editor.desktop` with a normal GDK launch context; no caller-supplied executable |
 | `bluetooth.action` | `{view,operation,generation,path,action}`; `pair`, `connect`, `disconnect`, `trust`, `untrust`, `power_on`, `power_off`, `discover`, `stop_discovery`, `cancel`; existing Bluetooth guards |
 | `prompt.answer` | `{view,operation,service,prompt,accept,text?}`; connection ownership, live serial and expiry checked before `Network.answer` / `Bluetooth.answer`; clear decoding and staging secret buffers on completion |
+| `notifications.test` | Read-only, capability `notification_filters`; `{view,draft_revision,revision,sample_serial,sample}`. Decimal-string counters; `sample` contains optional `app_name`, `desktop_entry`, `summary`, `body` strings (each ≤4096 bytes) and `urgency` (`low`, `normal`, `critical`; default Normal). Requires Notifications view, current committed/draft revisions, unlocked session and idle publisher. Returns `{decision,matches:[{id,name}],draft_revision,revision,sample_serial,dirty,filters_enabled}`. No operation receipt, Notify call, history insertion or write. |
 | `notifications.action` | `{view,operation,action,notification?,serial?,key?}`; `dnd_on`, `dnd_off`, `clear_history`, `dismiss`, `invoke`; IDs/actions required only for matching operations, existing notification authority |
 | `lifecycle.action` | `{view,operation,action,confirmation?}`; `lock`, `suspend`, `hibernate`, `logout`, `confirm`, `cancel`, `inhibit`, `uninhibit`; confirmation belongs to initiating connection and current generation |
 | `power.action` | `{view,operation,reboot,confirmation?}`; preserve shutdown/reboot inhibitor/auth path and confirmation, `Power.powerAction` |
@@ -374,7 +375,7 @@ explicit user intent. Never automatically replay.
 | Power | Battery/AC/percentage/state/time, profiles, brightness, session link, generation/error/pending | `services/power.zig`; page-owned polling lease, keep shell policy and authorization |
 | Appearance | `theme.mode/variant/source/gtk_name/seed`, all wallpaper modes/path/color, font/font_size/density/reduced_motion; committed palette | `config/service.zig` owns draft/validation/save, `desktop/settings.zig` contains form extraction; file chooser/preview in frontend, backend owns actual decoding/commit validation |
 | Bar & dock | Bar groups/edge/size/islands; dock enabled/edge/visibility/size/margin; popup dismissal/placement/max size | Same Pearl draft; use full existing `Preferences` / dock schema validation; output overrides remain Advanced |
-| Notifications | DND, history entry/list, dismiss/actions/clear history | `services/notifications.zig`, `notification_policy.zig`, `session.zig`; no invented per-app policy |
+| Notifications | DND, saved filters, draft tester, history/dismiss/actions/clear | `services/notifications.zig`, `notification_filter_policy.zig`, `notification_policy.zig`, `session.zig`; mixed preference/live page |
 | Session & lock | Complete `idle` AC/battery lock/suspend policies and capability status | Same Pearl draft; `services/idle_policy.zig` / lifecycle apply on confirmed commit |
 | Aqueous | Existing seven sections: appearance/layouts/input/keybinds/rules/displays/advanced; full schema, structured collections, raw files, outputs, native preview, shortcut recording, validation, rebase/reload and durable reports | `config/aqueous_client.zig`, `aqueous_model`, `aqueous_contract`, `aqueous_collections`, `aqueous_display_mutations`, `aqueous_transactions`, `aqueous_operations`; retain schema-driven coverage and helper bounds |
 | Advanced | Entire Pearl JSON, output overrides, pins, export templates, invalid text, base/current revision, merge conflicts, validation/save/export failures | `Service.keepDraft/discardDraft/mergeDraft/apply/status`; one draft shared with Appearance/Bar/Session; no second persistence writer |
@@ -526,3 +527,19 @@ normal operation receipts, page ownership, and lock/session checks. It reloads
 only live bars whose committed selection equals the requested selection; it
 never saves or applies the shared draft. The frontend independently reloads its
 preview, so unsaved artwork remains confined to Settings.
+
+### Notification filter editor
+
+`notification_filters` is advertised when the backend supports the saved rule
+schema and read-only tester. The frontend disables filter editing with older
+backends. Filters use ordinary shared preference document transfer, Apply,
+Discard and atomic-list conflicts; DND/history commands remain immediate.
+The frontend waits for local draft retention before testing and rejects results
+whose sample serial, document hash or committed/draft revisions have changed.
+
+Notifications snapshots include an optional `notification_header` row for DND.
+It is repeated independently of history pagination so the native layout can put
+DND above the retained preference editor and history below it. The row remains
+in the first `rows` page for existing frontends; new frontends deduplicate it.
+All live notification commands reject an unavailable notification owner. Rule
+editing and sample testing need only the Settings backend, not bus ownership.

@@ -153,6 +153,26 @@ pub const Backend = struct {
         const params = request.params orelse return error.InvalidRequest;
         peer.expire();
         switch (request.op) {
+            .@"notifications.test" => {
+                const f = @import("../services/notification_filter_policy.zig");
+                const v = try p.fields(struct { view: []const u8, draft_revision: []const u8, revision: []const u8, sample_serial: []const u8, sample: f.Sample }, alloc, params);
+                try self.allowed(self.context);
+                if (peer.target == null or peer.target.?.page != .notifications) return error.WrongPage;
+                if (try p.number(v.view) != peer.view) return error.StaleView;
+                if (try p.number(v.draft_revision) != self.service.draft.revision or try p.number(v.revision) != self.service.revision) return error.StaleDraft;
+                if (self.service.job != null or self.service.pending_reload) return error.Busy;
+                _ = try p.number(v.sample_serial);
+                const sample = try p.fields(f.Sample, alloc, params.object.get("sample") orelse return error.InvalidRequest);
+                try sample.validate();
+                const config = if (self.service.draft.text) |bytes| (try model.parse(alloc, bytes)).notifications else self.service.prefs().notifications;
+                var compiled = try f.Compiled.init(alloc, config);
+                defer compiled.deinit();
+                const result = try compiled.evaluate(sample.record());
+                const Match = struct { id: []const u8, name: []const u8 };
+                var matches: [f.max_rules]Match = undefined;
+                for (result.indices[0..result.count], matches[0..result.count]) |index, *match| match.* = .{ .id = config.rules[index].id, .name = config.rules[index].name };
+                return std.json.Stringify.valueAlloc(alloc, .{ .decision = result.decision, .matches = matches[0..result.count], .draft_revision = v.draft_revision, .revision = v.revision, .sample_serial = v.sample_serial, .dirty = self.service.draft.text != null, .filters_enabled = config.filters_enabled }, .{});
+            },
             .@"theme.asset" => {
                 const v = try p.fields(struct { preview: bool, revision: []const u8, digest: []const u8, offset: u32 }, alloc, params);
                 try self.allowed(self.context);

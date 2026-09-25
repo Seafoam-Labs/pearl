@@ -1,0 +1,19 @@
+/home/zoey/Pearl/tests/fixtures/session/desktop.py:72: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
+  info=Gio.DBusNodeInfo.new_for_xml(xml);bus.register_object(path,info.interfaces[0],method,lambda c,s,p,i,k:objects[(p,i)][k],None)
+event=ready
+command={"notify": {"app": "Firefox", "resident": true, "summary": "Download complete", "urgency": 2}}
+command={"notify": {"app": "Firefox", "summary": "Meeting in 5 minutes"}}
+command={"notify": {"app": "Firefox", "replaces": 2, "summary": "Download complete"}}
+command={"notify": {"app": "Software", "resident": true, "summary": "Ready to update"}}
+command={"close": 3}
+command={"notify": {"app": "Software", "timeout": 100, "transient": true}}
+command={"notify": {"app": "Firefox", "summary": "Download complete"}}
+command={"notify": {"app": "Firefox", "summary": "Download complete"}}
+command={"close": 6}
+command={"notify": {"app": "Software", "desktop_entry": "org.example.Test", "summary": "Stra\u00dfe Cafe\u0301"}}
+command={"notify": {"app": "Software", "summary": "Stra\u00dfe Caf\u00e9"}}
+command={"close": 8}
+command={"notify": {"app": "Firefox", "summary": "Download complete"}}
+command={"close": 12}
+command={"notify": {"app": "Firefox", "summary": "Download complete"}}
+command={"notify": {"app": "Firefox", "summary": "Download complete"}}

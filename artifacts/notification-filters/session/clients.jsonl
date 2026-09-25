@@ -1,0 +1,37 @@
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "notification", "id": 1}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [1, 4]}
+{"kind": "notification", "id": 2}
+{"kind": "notification", "id": 2}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [2, 4]}
+{"kind": "notification", "id": 3}
+{"kind": "notification-signal", "signal": "ActionInvoked", "args": [3, "default"]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [3, 3]}
+{"kind": "notification", "id": 4}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [4, 1]}
+{"kind": "notification", "id": 5}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [5, 4]}
+{"kind": "notification", "id": 6}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [6, 3]}
+{"kind": "notification", "id": 7}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [7, 4]}
+{"kind": "notification", "id": 8}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [8, 3]}
+{"kind": "notification", "id": 12}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [12, 3]}
+{"kind": "notification", "id": 13}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [13, 4]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "notification", "id": 1}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [1, 4]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "call", "path": "/StatusNotifierWatcher", "interface": "org.kde.StatusNotifierWatcher", "method": "RegisterStatusNotifierHost", "args": [":1.25"]}
+{"kind": "call", "path": "/StatusNotifierWatcher", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierWatcher"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "notification", "id": 1}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [1, 4]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}

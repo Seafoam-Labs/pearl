@@ -66,3 +66,14 @@ Page changes release the first connection’s leases while retaining the second
 connection’s window-wide preview. Close waits for native rollback acknowledgment.
 Lock or connection loss revokes only the relevant owned work; unlock never
 re-presents the window automatically. Same-page activation preserves interest.
+
+## Notification filter ownership
+
+The shell surface manager supplies committed notification rules to its existing
+Session/Notifications service at startup and preference publication. That service
+owns the compiled Unicode matcher and decides delivery before history insertion.
+The standalone Notifications page edits only the shared Pearl draft. Its sample
+tester is a bounded, read-only backend request scoped to a current view and draft
+revision; it never registers a notification service or sends a Notify call.
+Live history refreshes update separate hosts above/below the filter editor so
+sample fields and an open rule dialog retain their input and focus.

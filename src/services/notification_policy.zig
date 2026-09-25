@@ -9,6 +9,8 @@ pub const Record = struct {
     transient: bool = false,
     resident: bool = false,
     owner: Text(256) = .{},
+    desktop_entry: Text(256) = .{},
+    history_only: bool = false,
     app: Text(160) = .{},
     summary: Text(256) = .{},
     body: Text(2048) = .{},
@@ -49,13 +51,7 @@ pub const Model = struct {
         const replacing = slot.?.active;
         var id = slot.?.id;
         if (!replacing) {
-            var attempts: usize = 0;
-            while (attempts <= self.records.len) : (attempts += 1) {
-                self.next_id +%= 1;
-                if (self.next_id == 0) self.next_id = 1;
-                if (self.find(self.next_id) == null) break;
-            }
-            id = self.next_id;
+            id = self.allocateId();
         }
         self.serial += 1;
         slot.?.* = input;
@@ -65,8 +61,28 @@ pub const Model = struct {
         r.active = true;
         const ms: i64 = if (timeout < 0) (if (r.urgency == 2) 0 else 5000) else timeout;
         r.deadline = if (ms == 0) 0 else now + ms * 1000;
-        r.toast_until = if (self.dnd or self.locked) 0 else now + @min(if (ms == 0) 8000 else ms, 8000) * 1000;
+        r.toast_until = if (self.dnd or self.locked or r.history_only) 0 else now + @min(if (ms == 0) 8000 else ms, 8000) * 1000;
         return r;
+    }
+    fn allocateId(self: *Model) u32 {
+        for (0..self.records.len + 1) |_| {
+            self.next_id +%= 1;
+            if (self.next_id == 0) self.next_id = 1;
+            if (self.find(self.next_id) == null) return self.next_id;
+        }
+        unreachable;
+    }
+    /// A blocked arrival has a protocol ID but never occupies a history slot.
+    pub fn block(self: *Model, owner: []const u8, replaces: u32) u32 {
+        if (self.find(replaces)) |r| {
+            if (r.active and std.mem.eql(u8, r.owner.slice(), owner)) {
+                const id = r.id;
+                r.* = .{};
+                self.serial += 1;
+                return id;
+            }
+        }
+        return self.allocateId();
     }
     pub fn close(self: *Model, id: u32) bool {
         const r = self.find(id) orelse return false;
@@ -150,4 +166,36 @@ test "expiration is separate from toast timeout and lock suppresses replay" {
     const id = transient.id;
     try t.expect(m.close(id));
     try t.expect(m.find(id) == null);
+}
+
+test "blocked arrivals do not occupy slots and replacement removes old content atomically" {
+    const t = std.testing;
+    var m: Model = .{};
+    var r: Record = .{};
+    r.owner.set(":1.7");
+    const id = (try m.add(r, 0, 0, 100)).id;
+    try t.expect(m.block(":1.8", id) != id);
+    try t.expect(m.find(id) != null);
+    try t.expectEqual(id, m.block(":1.7", id));
+    try t.expect(m.find(id) == null);
+    for (0..64) |_| _ = try m.add(r, 0, 0, 100);
+    const blocked = m.block(":1.7", 0);
+    try t.expect(blocked != 0 and m.find(blocked) == null);
+    m.next_id = std.math.maxInt(u32);
+    try t.expect(m.block(":1.7", 0) != 0);
+    try t.expectError(error.Limit, m.add(r, 0, 0, 100));
+}
+
+test "history only replacements preserve protocol deadlines and can return to normal" {
+    const t = std.testing;
+    var m: Model = .{};
+    var r: Record = .{};
+    r.owner.set(":1.7");
+    const id = (try m.add(r, 0, 0, 100)).id;
+    r.history_only = true;
+    const quiet = try m.add(r, id, 300, 100);
+    try t.expectEqual(@as(i64, 0), quiet.toast_until);
+    try t.expectEqual(@as(i64, 300100), quiet.deadline);
+    r.history_only = false;
+    try t.expect((try m.add(r, id, 300, 100)).toast_until > 0);
 }

@@ -1,0 +1,36 @@
+{
+  "scope": "Browser mockup only; no native production tests run",
+  "browser": "Local Chromium via Python Playwright",
+  "checks": [
+    "Initial rules and clean draft",
+    "Edit writes a draft",
+    "Discard restores rule",
+    "Add rule and condition",
+    "Apply establishes new baseline",
+    "Delete is reversible draft change",
+    "DND is immediate and does not dirty preferences",
+    "Test sample identifies Block",
+    "Test sample identifies History only",
+    "Master off bypasses rules",
+    "Blanket rules prevented",
+    "Escape restores editor focus",
+    "Compact navigation opens",
+    "Compact navigation Escape",
+    "No document overflow at 390px",
+    "Editor fits at 390px",
+    "No document overflow at 560px",
+    "Editor fits at 560px",
+    "No document overflow at 1440px",
+    "Editor fits at 1440px",
+    "Empty state and add entry point",
+    "No JavaScript errors"
+  ],
+  "javascript_errors": [],
+  "captures": [
+    "desktop.png",
+    "editor.png",
+    "test.png",
+    "light.png",
+    "narrow.png"
+  ]
+}

@@ -156,3 +156,20 @@ test "bar autohide merges independently from layout and preserves display overri
     try std.testing.expectEqual(.left, result.bar.edge);
     try std.testing.expectEqual(.always, result.forOutput("DP-1").mode);
 }
+
+test "notification rule lists conflict atomically and merge unrelated preference changes" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const ours =
+        \\{"notifications":{"rules":[{"id":"one","name":"One","conditions":[{"field":"body","value":"one"}]}]}}
+    ;
+    const theirs =
+        \\{"notifications":{"rules":[{"id":"two","name":"Two","conditions":[{"field":"body","value":"two"}]}]}}
+    ;
+    try t.expectError(error.MergeConflict, json(a, "{}", ours, theirs));
+    const result = try @import("preferences.zig").parse(a, try json(a, "{}", ours, "{\"font_size\":18}"));
+    try t.expectEqual(@as(u8, 18), result.font_size);
+    try t.expectEqualStrings("one", result.notifications.rules[0].id);
+}

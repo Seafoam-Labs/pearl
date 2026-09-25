@@ -87,6 +87,7 @@ bus.signal_subscribe(None,nn,None,np,None,Gio.DBusSignalFlags.NONE,lambda c,s,p,
 def send_notification(data):
     hints={k:V('b',data[k]) for k in ('resident','transient') if k in data}
     if 'urgency' in data: hints['urgency']=V('y',data['urgency'])
+    if 'desktop_entry' in data: hints['desktop-entry']=V('s',data['desktop_entry'])
     result=call(nn,np,nn,'Notify',V('(susssasa{sv}i)',(data.get('app','Messages'),data.get('replaces',0),'',data.get('summary','Hello from Pearl'),data.get('body','A notification with <b>plain text</b>.'),data.get('actions',['default','Open']),hints,data.get('timeout',0))))
     id=result.unpack()[0];note_ids.append(id);record('notification',id=id);return id
 def command(channel,condition):

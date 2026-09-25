@@ -1,0 +1,115 @@
+{
+  "base_commit": "aa01605b1840129a10a7c9b4ce70bdae6324dc4c",
+  "unit_tests": "passed: zig build test -Doptimize=ReleaseSafe",
+  "suites": {
+    "session-services": {
+      "status": "passed",
+      "checks": {
+        "initial-mpris-owner-discovery-and-sni-registration-pixmap": true,
+        "truthful-notification-capabilities": true,
+        "replacement-history-and-toast-popup-coexistence": true,
+        "notification-action-through-gtk-keyboard": true,
+        "action-residency-transient-expiry-and-all-closure-reasons": true,
+        "dnd-history-no-replay-and-bounded-bursts": true,
+        "real-aqueous-lock-hides-content-blocks-actions-and-prevents-replay": true,
+        "keyboard-seek-edit-survives-progress-timer-and-focus-change": true,
+        "media-keyboard-controls-position-capabilities-and-rejection": true,
+        "bounded-cancellable-artwork-local-only-and-hidden-view-timers": true,
+        "tray-activation-secondary-and-nested-dbusmenu-keyboard-actions": true,
+        "malformed-pixmaps-menu-limits-and-stale-menu-rejection": true,
+        "owner-loss-restart-and-stale-replies-clean-cards": true,
+        "player-selection-falls-back-after-owner-exit": true,
+        "clean-shutdown": true,
+        "existing-daemon-respected-and-external-watcher-hosting": true,
+        "queued-names-acquired-after-existing-services-exit": true,
+        "production-session-bus-reconnect-restores-protocols": true
+      },
+      "pearl_sha256": "a1a2a83ebb672637d599f230197c7ae022ecf9b3285aa4f169c662eec6c0119d",
+      "ctl_sha256": "cfc0f3bc496d2deba0fb4db5700a79b58e51288d61000d71e64ea786f43e0970",
+      "production_sha256": "b9b4a5d2faa3c854bb82c4c5d9c363a45e604c3687bda29f0f0928693445d556"
+    },
+    "preferences": {
+      "status": "passed",
+      "checks": {
+        "wallpaper-picker-selection-cancel-save-and-parent-close": true,
+        "wallpaper-picker-sets-cover-from-every-fit-mode": true,
+        "defaults-atomic-save-and-live-popup-theme": true,
+        "one-theme-updates-bars-popup-wallpaper-and-second-output-osd": true,
+        "corrupt-external-config-and-stale-revision": true,
+        "wallpapers-exceed-former-dimension-pixel-and-file-size-caps": true,
+        "image-validation-fifo-rejection-and-dynamic-palette-cache": true,
+        "missing-font-falls-back": true,
+        "broken-gtk-css-cannot-replace-working-theme-or-config": true,
+        "installed-gtk-theme-and-system-follow-without-material-css": true,
+        "bar-reservation-conflict-is-rejected-before-saving": true,
+        "per-connector-bar-and-popup-policies": true,
+        "gtk-draft-survives-close-external-edit-and-three-way-merge": true,
+        "opt-in-exports-ownership-backup-and-disable": true,
+        "failed-save-retains-working-file": true,
+        "legacy-migration-is-validated-and-only-written-on-apply": true,
+        "large-preferences-preserved-with-bounded-control-status": true,
+        "no-theme-work-at-idle": true,
+        "custom-bar-opacity-persists-through-restart-and-recovery": true,
+        "restart-uses-last-good-without-overwriting-corruption": true,
+        "generator-failure-malformed-output-bounds-and-deadline": true,
+        "rapid-edits-cancel-obsolete-generator-and-coalesce-latest": true,
+        "concurrent-disk-edit-blocks-save-before-atomic-replacement": true,
+        "shutdown-cancels-worker-and-reaps-generator": true,
+        "static-theme-and-last-good-recovery-without-matugen": true
+      },
+      "pearl_sha256": "a1a2a83ebb672637d599f230197c7ae022ecf9b3285aa4f169c662eec6c0119d",
+      "ctl_sha256": "cfc0f3bc496d2deba0fb4db5700a79b58e51288d61000d71e64ea786f43e0970"
+    },
+    "settings-boundary": {
+      "status": "passed",
+      "checks": {
+        "two-process-handshake-persistent-heartbeat-and-capability-gating": true,
+        "cross-session-display-version-and-unimplemented-operation-denial": true,
+        "duplicate-id-denied": true,
+        "fragmented-frames-oversize-invalid-utf8-empty-frame": true,
+        "partial-handshake-timeout": true,
+        "eight-client-bound-and-disconnect-slot-reuse": true,
+        "handshake-does-not-create-popup-or-change-flyout-routing": true,
+        "backend-crash-eof-stale-socket-recovery-new-epoch-session-isolation": true,
+        "graceful-endpoint-cleanup": true
+      },
+      "pearl_sha256": "b9b4a5d2faa3c854bb82c4c5d9c363a45e604c3687bda29f0f0928693445d556"
+    },
+    "settings-devices": {
+      "status": "passed",
+      "checks": {
+        "sound-pointer-volume-mute-real-libpulse": true,
+        "application-stream-target-choices-and-routing": true,
+        "power-pointer-brightness-and-profile-with-stable-generation": true,
+        "denied-power-operation-receipt-and-feedback": true,
+        "power-confirmation-cannot-be-used-by-another-peer": true,
+        "notifications-dnd-history-and-stable-dismissal": true,
+        "overview-media-actions-and-capability-state": true,
+        "live-pages-dark-light-native-and-480px-layout": true,
+        "lock-hides-window-denies-actions-and-requires-activation": true
+      }
+    },
+    "settings-services": {
+      "status": "failed",
+      "checks": {
+        "normal-window-real-schema-221-fields": true,
+        "complete-sidebar-real-data-or-unavailable": true,
+        "network-stable-identities-and-advanced-editor-route": true,
+        "explicit-scan-and-independent-page-owners": true,
+        "network-pointer-action-and-stale-generation": true,
+        "bluetooth-discovery-stops-only-with-owner": true,
+        "network-prompts-private-and-navigation-cancels-owner": true,
+        "frontend-crash-cancels-private-credential-prompt-without-secret-replay": true,
+        "normal-transient-network-password-entry-and-answer": true,
+        "frontend-crash-stops-owned-discovery-and-preserves-network-connection": true,
+        "bluetooth-owned-pairing-confirmation-completes": true,
+        "bar-selection-edits-remain-valid": true,
+        "bar-shares-pearl-draft-across-service-pages": true,
+        "aqueous-real-pointer-edit-and-shared-draft": true,
+        "aqueous-sublist-draft-transfer-section-restoration-and-rebuild": true
+      },
+      "error": "Aqueous editor: Apply timed out at test_settings_services.py:212; outcome remained validated. Unchanged HEAD also failed this suite later, during display-preview frontend shutdown; the exact Apply failure is not proven pre-existing."
+    }
+  },
+  "production_build": "passed: zig build -Doptimize=ReleaseSafe"
+}

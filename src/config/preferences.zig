@@ -60,6 +60,7 @@ pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock =
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
+    notifications: @import("../services/notification_filter_policy.zig").Config = .{},
     night_light: @import("../services/night_light_policy.zig").Config = .{},
     plugins: @import("../plugins/model.zig").Preferences = .{},
     idle: @import("../services/idle_policy.zig").Config = .{},
@@ -88,6 +89,7 @@ pub const Preferences = struct {
         return self.dock;
     }
     pub fn validate(self: Preferences) !void {
+        try self.notifications.validate();
         try @import("../desktop/app_identity.zig").validate(self.application_launchers);
         try self.night_light.validate();
         try self.plugins.validate();
@@ -342,4 +344,36 @@ test "clock preferences preserve legacy defaults and reject ambiguous or danglin
     try p.validate();
     p.outputs = &.{.{ .connector = "DP-1", .bar = .{ .groups = .{ .center = "clock:c1" } } }};
     try t.expectError(error.UnknownClock, p.validate());
+}
+
+test "notification preferences default empty, own strings, roundtrip and enforce schema limits" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try t.expectEqual(@as(usize, 0), (try parse(a, "{}")).notifications.rules.len);
+    const document =
+        \\{"notifications":{"filters_enabled":true,"rules":[{"id":"mail","name":"Mail","conditions":[{"field":"app_name","value":"Mail"}]}]}}
+    ;
+    const original = try parse(a, document);
+    const again = try parse(a, try std.json.Stringify.valueAlloc(a, original, .{}));
+    try t.expectEqualStrings("Mail", again.notifications.rules[0].conditions[0].value);
+    const f = @import("../services/notification_filter_policy.zig");
+    var condition: f.Condition = .{ .field = .body, .value = "x" ** 257 };
+    var rules = [_]f.Rule{.{ .id = "one", .name = "One", .conditions = @as(*[1]f.Condition, @ptrCast(&condition)) }};
+    var prefs: Preferences = .{ .notifications = .{ .rules = &rules } };
+    try t.expectError(error.InvalidNotificationFilterText, prefs.validate());
+    condition.value = "valid";
+    rules[0].name = "x" ** 81;
+    try t.expectError(error.InvalidNotificationFilterText, prefs.validate());
+    rules[0].name = "One";
+    prefs.notifications.rules = &(@as([33]f.Rule, @splat(rules[0])));
+    try t.expectError(error.TooManyNotificationFilters, prefs.validate());
+    rules[0].conditions = &(@as([9]f.Condition, @splat(condition)));
+    prefs.notifications.rules = &rules;
+    try t.expectError(error.InvalidNotificationConditions, prefs.validate());
+    try t.expectError(error.InvalidEnumTag, parse(a,
+        \\{"notifications":{"rules":[{"id":"bad","name":"Bad","action":"allow","conditions":[{"field":"body","value":"x"}]}]}}
+    ));
+    try t.expectError(error.InvalidConfig, parse(a, document ++ " " ** max_bytes));
 }

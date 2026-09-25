@@ -15,7 +15,20 @@ pub const Notifications = struct {
     name_id: c_uint = 0,
     available: bool = false,
     timer: c_uint = 0,
+    filters: ?@import("notification_filter_policy.zig").Compiled = null,
+    pub fn configure(self: *Notifications, config: @import("notification_filter_policy.zig").Config) !void {
+        const next = try @import("notification_filter_policy.zig").Compiled.init(std.heap.c_allocator, config);
+        if (self.filters) |*old| old.deinit();
+        self.filters = next;
+        if (self.name_id == 0 and self.bus.conn != null) self.start();
+    }
+    pub fn deinitFilters(self: *Notifications) void {
+        if (self.filters) |*old| old.deinit();
+        self.filters = null;
+    }
+
     pub fn start(self: *Notifications) void {
+        if (self.filters == null or self.name_id != 0) return;
         if (!self.exported.startConnection(self.bus.conn orelse return, path, @embedFile("notifications.xml"), &vtable, self)) return;
         self.name_id = gio.busOwnNameOnConnection(self.bus.conn.?, name, .{}, acquired, lost, self, null);
     }
@@ -171,10 +184,28 @@ pub const Notifications = struct {
                 defer v.unref();
                 r.urgency = @min(2, v.getByte());
             }
+            if (db.lookup(hints, "desktop-entry", "s")) |v| {
+                defer v.unref();
+                const id = std.mem.span(v.getString(null));
+                const filters = @import("notification_filter_policy.zig");
+                if (filters.desktopId(id)) r.desktop_entry.set(filters.withoutSuffix(id));
+            }
+            const decision = if (self.filters) |*filters| (filters.evaluate(r) catch {
+                invocation.returnDbusError("org.freedesktop.DBus.Error.Failed", "Notification filter evaluation failed.");
+                return;
+            }).decision else .normal;
             const replace = params.getChildValue(1);
             defer replace.unref();
             const timeout = params.getChildValue(7);
             defer timeout.unref();
+            if (decision == .block) {
+                const id = self.model.block(r.owner.slice(), replace.getUint32());
+                invocation.returnValue(db.tuple(&.{glib.Variant.newUint32(id)}));
+                self.bus.emit(r.owner.z(), path, name, "NotificationClosed", db.tuple(&.{ glib.Variant.newUint32(id), glib.Variant.newUint32(4) }));
+                self.update();
+                return;
+            }
+            r.history_only = decision == .history_only;
             const record = self.model.add(r, replace.getUint32(), timeout.getInt32(), glib.getMonotonicTime()) catch {
                 invocation.returnDbusError("org.freedesktop.DBus.Error.LimitsExceeded", "Active notification limit reached.");
                 return;

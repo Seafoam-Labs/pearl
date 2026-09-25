@@ -12,13 +12,14 @@ const Editor = @import("editor.zig").Editor;
 const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Prompt = struct { service: []const u8, serial: []const u8, kind: []const u8, title: []const u8, challenge: []const u8, secret: bool, editable: bool };
-const Page = struct { summary: []const u8, pending: bool, truncated: bool, rows: []const ui.Row, offset: []const u8, next_offset: ?[]const u8 = null, prompt: ?Prompt = null };
+const Page = struct { notification_header: ?ui.Row = null, summary: []const u8, pending: bool, truncated: bool, rows: []const ui.Row, offset: []const u8, next_offset: ?[]const u8 = null, prompt: ?Prompt = null };
 const Binding = struct { view: *View, spec: ui.Control, widget: *gtk.Widget, id: []const u8, signal: c_ulong };
 pub const View = struct {
     editor: *Editor,
     route: nav.Route,
     window: *gtk.Window,
     host: *gtk.Box,
+    header_host: ?*gtk.Box = null,
     context: *anyopaque,
     invalidate: *const fn (*anyopaque, nav.Route) void,
     arena: std.heap.ArenaAllocator,
@@ -41,6 +42,7 @@ pub const View = struct {
     fn clear(self: *View) void {
         self.invalidate(self.context, self.route);
         for (self.bindings.items) |binding| object.signalHandlerDisconnect(binding.widget.as(object.Object), binding.signal);
+        if (self.header_host) |header| while (header.as(gtk.Widget).getFirstChild()) |child| header.remove(child);
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         self.bindings.clearRetainingCapacity();
         self.arena.deinit();
@@ -68,9 +70,11 @@ pub const View = struct {
         if (self.editor.target.page != self.route or !self.editor.online or self.editor.state.locked or self.editor.suspended) {
             self.closePrompt();
             self.shown = null;
+            if (self.header_host) |header| header.as(gtk.Widget).setSensitive(0);
             self.host.as(gtk.Widget).setSensitive(0);
             return;
         }
+        if (self.header_host) |header| header.as(gtk.Widget).setSensitive(1);
         self.host.as(gtk.Widget).setSensitive(1);
         if (self.editor.needs_snapshot) return;
         const bytes = self.editor.live orelse return;
@@ -109,7 +113,13 @@ pub const View = struct {
         self.host.append(w.label(arena.dupeZ(u8, page.summary) catch return, "pearl-secondary").as(gtk.Widget));
         if (page.pending) self.host.append(w.label("Request in progress…", "pearl-secondary").as(gtk.Widget));
         if (page.truncated) self.host.append(w.label("The service reported more items than it can expose. This list is incomplete.", "pearl-secondary").as(gtk.Widget));
+        var shown_rows: std.ArrayList(ui.Row) = .empty;
+        if (self.header_host != null) if (page.notification_header) |row| shown_rows.append(arena, row) catch return;
         for (page.rows) |row| {
+            if (self.header_host != null and page.notification_header != null and std.mem.eql(u8, row.id, "notifications")) continue;
+            shown_rows.append(arena, row) catch return;
+        }
+        for (shown_rows.items) |row| {
             const card = w.column(4);
             card.as(gtk.Widget).addCssClass("settings-card");
             card.as(gtk.Widget).addCssClass("settings-live-card");
@@ -155,7 +165,8 @@ pub const View = struct {
                 } else actions.insert(widget, -1);
             }
             card.append(actions.as(gtk.Widget));
-            self.host.append(card.as(gtk.Widget));
+            const target = if (std.mem.eql(u8, row.id, "notifications")) self.header_host orelse self.host else self.host;
+            target.append(card.as(gtk.Widget));
         }
         const pagination = w.row(8);
         const previous = w.wrappingButton("Previous items");

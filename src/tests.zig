@@ -1,4 +1,5 @@
 test {
+    _ = @import("services/notification_filter_policy.zig");
     _ = @import("desktop/window_switcher.zig");
     _ = @import("services/audio_feedback.zig");
     _ = @import("services/night_light_policy.zig");

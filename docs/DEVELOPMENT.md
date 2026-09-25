@@ -309,3 +309,19 @@ retry and restart with missing profile assets. Slow extraction/render fixtures
 exercise cancellation; real Matugen produces every successful result. Evidence
 and end-to-end latency samples are written to `artifacts/matugen-wallpaper-live/`.
 The suite requires permission to create local sockets for the private session.
+
+
+## Notification filters
+
+`zig build test` includes configuration/lifecycle tests and the GLib Unicode
+matcher tests. The latter can also run independently with
+`zig build test-notification-filters -Doptimize=ReleaseSafe`; they require GLib
+but no GTK display or compositor.
+
+`zig build test-notification-filter-settings -Doptimize=ReleaseSafe` drives
+the native Settings rule editor and tester against a real private notification
+bus. It checks shared drafts, Apply/Discard, Block and History only, replacements,
+Unicode/desktop identity, external reloads, startup publication, and native
+themes/compact layouts. Evidence is written to `artifacts/notification-filters/`;
+`-- --output /tmp/filter-check` selects another directory. The test uses the
+existing private Aqueous fixture under `.cache/aqueous-activity-production`.

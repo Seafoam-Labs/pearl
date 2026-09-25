@@ -234,7 +234,7 @@ pub const Manager = struct {
         self.power.start();
         self.network.start();
         self.bluetooth.start();
-        self.session_services.start();
+        try self.session_services.start(if (self.preferences.live != null) self.preferences.prefs().notifications else null);
         try self.clipboard.start();
         try self.capture.start();
         self.plugins = try @import("../../plugins/manager.zig").Manager.create(self.app.as(gio.Application), self, pluginsChanged);
@@ -460,6 +460,11 @@ pub const Manager = struct {
     fn preferencesChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
+        if (self.session_services.started and self.preferences.live != null) {
+            self.session_services.notifications.configure(self.preferences.prefs().notifications) catch |err| {
+                std.log.err("event=notification-filter-config error={s}", .{@errorName(err)});
+            };
+        }
         for (self.outputs.items) |o| {
             if (o.wallpaper) |surface| self.styleSurface(surface);
             if (o.bar) |surface| self.styleSurface(surface);

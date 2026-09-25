@@ -49,7 +49,8 @@ calling unique bus owner. Unknown/closed/foreign IDs return InvalidArgs when
 closed. The UI's same-user control endpoint can dismiss or invoke active records.
 
 NotificationClosed is emitted after invalidation with reason **1** for expiry,
-**2** for user dismissal or a nonresident action, and **3** for CloseNotification.
+**2** for user dismissal or a nonresident action, **3** for CloseNotification,
+and **4** for a filter-blocked arrival.
 ActionInvoked contains the exact registered key; resident actions keep the
 notification active. These signals are delivered to the originating client.
 The transient hint prevents retention once closed.
@@ -68,6 +69,35 @@ record limit includes active notifications and history. Old inactive records
 are evicted first; if all slots are active, Notify returns LimitsExceeded.
 Clear History preserves active records. Groups are ordered by newest delivery
 and records within an application group are newest first.
+
+## Notification filters
+
+Saved filters are configured in Settings → Notifications, using the shared
+preference draft and Apply & save. Match application name, Desktop ID, title,
+body or urgency; use All/Any literal conditions and Block/History only actions.
+[Preference fields and limits](PREFERENCES.md#notification-filters) define the
+complete schema. No regex, schedules or sound policy is introduced.
+
+The session owner compiles a private snapshot at startup before claiming the
+notification bus and swaps it after committed preference changes. Drafts never
+change delivery. Notification-name loss/reacquisition preserves the filter
+snapshot. Failed configuration publication retains the last valid policy.
+
+Matching runs after protocol validation/sanitization and before insertion into
+history or popup scheduling. Block returns a nonzero ID then closes it once with
+reason 4; it consumes no history slot even when all 64 slots are active. A blocked
+replacement removes the sender's previous active record and its actions before
+publishing any model change. Foreign/stale replacements retain existing sender
+isolation rules. Blocked content is not exposed through Settings, flyouts,
+counts, actions or status snapshots. History only keeps the normal record and
+protocol deadline with no popup deadline. Filter edits are not retroactive.
+
+The Settings tester invokes the same matcher on a bounded, manually entered
+sample and returns matching rule IDs/names. Sample text and filter values are
+not logged. The Settings process owns neither the D-Bus name nor notification
+history. Native coverage: `zig build test-notification-filters` and
+`zig build test-notification-filter-settings`; the latter runs a private desktop
+and real D-Bus clients.
 
 ## StatusNotifier and DBusMenu
 

@@ -262,6 +262,11 @@ pub fn build(b: *std.Build) void {
     const pure_module = b.createModule(.{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize });
     pure_module.addImport("aqueous_fixtures", b.createModule(.{ .root_source_file = b.path("tests/fixtures/aqueous/fixtures.zig"), .target = target, .optimize = optimize }));
     const pure = b.addTest(.{ .root_module = pure_module });
+    const filter_module = b.createModule(.{ .root_source_file = b.path("src/notification_filter_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    filter_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .force });
+    const filter_tests = b.addRunArtifact(b.addTest(.{ .root_module = filter_module }));
+    b.step("test-notification-filters", "Verify notification Unicode matching and policy lifetime").dependOn(&filter_tests.step);
+
     const night_clock_module = b.createModule(.{ .root_source_file = b.path("src/night_light_clock_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     night_clock_module.addImport("glib2", bindings.module("glib2"));
     night_clock_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .force });
@@ -273,7 +278,9 @@ pub fn build(b: *std.Build) void {
     bar_clock.setEnvironmentVariable("LC_ALL", "C");
     b.step("test-bar-clock", "Verify time-zone clocks, DST, formatting and zone discovery").dependOn(&bar_clock.step);
     b.step("test-night-light-clock", "Verify Night Light schedules across timezone and DST transitions").dependOn(&night_clock.step);
-    b.step("test", "Run pure lifecycle, startup and Aqueous model tests without GTK or a compositor").dependOn(&b.addRunArtifact(pure).step);
+    const test_step = b.step("test", "Run model and Unicode policy tests without GTK or a compositor");
+    test_step.dependOn(&b.addRunArtifact(pure).step);
+    test_step.dependOn(&filter_tests.step);
 
     b.step("test-plugin-unit", "Verify plugin documents, permissions, framing and route isolation").dependOn(&b.addRunArtifact(pure).step);
     var plugin_test_helper: ?*std.Build.Step.InstallArtifact = null;
@@ -497,6 +504,14 @@ pub fn build(b: *std.Build) void {
     greeter_sync_ui.addArg("--helper");
     greeter_sync_ui.addArtifactArg(greeter_sync_test_executable);
     b.step("test-greeter-sync-ui", "Verify native appearance sync from Settings and the flyout").dependOn(&greeter_sync_ui.step);
+    const filter_settings = b.addSystemCommand(&.{ "python3", "tests/integration/test_notification_filters.py", "--settings" });
+    filter_settings.addArtifactArg(settings_test_app);
+    filter_settings.addArg("--pearl");
+    filter_settings.addArtifactArg(integration_app);
+    filter_settings.addArg("--ctl");
+    filter_settings.addArtifactArg(ctl);
+    if (b.args) |args| filter_settings.addArgs(args);
+    b.step("test-notification-filter-settings", "Verify native filter drafts, matching and notification protocol in a private session").dependOn(&filter_settings.step);
     const settings_devices = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_devices.py", "--settings" });
     settings_devices.addArtifactArg(settings_test_app);
     settings_devices.addArg("--pearl");

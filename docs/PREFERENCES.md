@@ -571,3 +571,64 @@ retains last-good outputs; ownership conflicts remain per-application errors.
 Application outputs are published before Qt integration, and newer wallpaper
 events cancel obsolete extraction/rendering. See [application management and
 recovery](CUSTOM_THEMES.md#application-management-and-recovery).
+
+## Notification filters
+
+**Settings → Notifications** edits `notifications` in the shared Pearl draft.
+Save rule retains the draft; Apply & save commits all Pearl preferences and
+activates filters without a restart. Discard restores the saved configuration.
+Do Not Disturb and notification history actions remain immediate.
+
+```json
+"notifications": {
+  "filters_enabled": true,
+  "rules": [{
+    "id": "finished-downloads",
+    "name": "Finished downloads",
+    "enabled": true,
+    "action": "block",
+    "match": "all",
+    "conditions": [
+      { "field": "app_name", "operator": "equals", "value": "Firefox", "case_sensitive": false },
+      { "field": "summary", "operator": "contains", "value": "download complete", "case_sensitive": false }
+    ]
+  }]
+}
+```
+
+Omitted configuration defaults to filtering enabled with no rules. The master
+switch pauses filtering while retaining editable rules. Fields are `app_name`,
+`desktop_entry`, `summary` (Title), `body`, and `urgency`. Text accepts `equals`
+or `contains`; case-insensitive matching uses Unicode NFC then full case folding.
+Whitespace and literal markup are significant. Matching uses Pearl's sanitized,
+UTF-8-safe presentation limits: app name 160 bytes, title 256, body 2048.
+
+`desktop_entry` requires `equals` and `case_sensitive: true`; one optional
+`.desktop` suffix is ignored. A missing, malformed or oversized sender hint never
+matches. IDs allow ASCII letters, digits, dots, hyphens and underscores, without
+leading/trailing dots. `urgency` also requires exact, case-sensitive comparison
+and accepts `low`, `normal` or `critical`. Missing urgency is Normal. Explicit
+matching rules can block Critical notifications. Application identifiers come
+from the sender and are not an authentication boundary.
+
+`match: "all"` requires every condition; `"any"` requires one. `action: "block"`
+omits both popups and history; `"history_only"` retains normal history/actions
+without popups. If several enabled rules match, Block wins regardless of order.
+DND and lock can further suppress popups. Changes affect future arrivals and
+replacements, not existing history or popup cards, and never replay old items.
+Transient notifications still disappear when closed.
+
+There are at most 32 rules and 8 conditions per rule. Rule IDs are unique, 1–64
+ASCII letters/digits/hyphens/underscores; names are 1–80 UTF-8 bytes; condition
+values are 1–256 bytes (app names at most 160). Empty/whitespace-only strings,
+controls, invalid UTF-8, invalid field/operator pairs and zero-condition rules
+are rejected, even for disabled rules. The complete preference document must
+still fit 64 KiB. Concurrent rule-list edits conflict atomically; unrelated
+preference edits can merge. An open rule dialog retains input on a conflict and
+requires reopening against the current rules before saving.
+
+**Test filters** evaluates a manually entered sample against the synchronized
+draft through the backend. It shows the decision and all matching rule names;
+it sends no notification and writes no preferences or history. Rules can be
+edited while another notification daemon owns the bus and take effect when
+Pearl next handles notifications. See [notification services](SESSION_SERVICES.md).

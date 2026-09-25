@@ -218,6 +218,7 @@ pub const Live = struct {
                 if (route != .notifications) return error.WrongPage;
                 const v = try p.fields(ui.Notifications, alloc, params);
                 const n = &self.session.notifications;
+                if (!n.available) return error.Unavailable;
                 switch (v.action) {
                     .dnd_on, .dnd_off => n.setDnd(v.action == .dnd_on),
                     .clear_history => {
@@ -404,10 +405,12 @@ pub const Live = struct {
             },
             .notifications => {
                 const n = &self.session.notifications;
-                summary = if (n.model.dnd) "Do Not Disturb is on" else "Notification history";
-                try rows.append(alloc, .{ .id = "notifications", .title = "Notifications", .controls = try alloc.dupe(ui.Control, &.{
-                    try ui.button(alloc, "dnd", if (n.model.dnd) "Turn Do Not Disturb off" else "Turn Do Not Disturb on", .@"notifications.action", .{ .action = if (n.model.dnd) "dnd_off" else "dnd_on" }, true),
-                    try ui.button(alloc, "clear", "Clear history", .@"notifications.action", .{ .action = "clear_history" }, true),
+                summary = if (!n.available) "Filters apply when Pearl handles notifications. Another notification service is active." else if (n.model.dnd) "Do Not Disturb is on" else "Notification history";
+                try rows.append(alloc, .{ .id = "notifications", .title = "Do Not Disturb", .detail = "Takes effect immediately. Filter edits use Apply & save.", .controls = try alloc.dupe(ui.Control, &.{
+                    try ui.button(alloc, "dnd", if (n.model.dnd) "Turn Do Not Disturb off" else "Turn Do Not Disturb on", .@"notifications.action", .{ .action = if (n.model.dnd) "dnd_off" else "dnd_on" }, n.available),
+                }) });
+                try rows.append(alloc, .{ .id = "notification-history", .title = "Recent notifications", .controls = try alloc.dupe(ui.Control, &.{
+                    try ui.button(alloc, "clear", "Clear history", .@"notifications.action", .{ .action = "clear_history" }, n.available),
                 }) });
                 for (&n.model.records) |*record| if (record.id != 0) {
                     var controls: std.ArrayList(ui.Control) = .empty;
@@ -451,7 +454,7 @@ pub const Live = struct {
         }
         const first = @min(offset, rows.items.len);
         const end = @min(first + 16, rows.items.len);
-        return .{ .summary = summary, .pending = pending, .truncated = truncated, .rows = rows.items[first..end], .offset = p.num(first), .next_offset = if (end < rows.items.len) p.num(end) else null, .prompt = prompt };
+        return .{ .notification_header = if (route == .notifications and rows.items.len > 0) rows.items[0] else null, .summary = summary, .pending = pending, .truncated = truncated, .rows = rows.items[first..end], .offset = p.num(first), .next_offset = if (end < rows.items.len) p.num(end) else null, .prompt = prompt };
     }
 };
 fn json(alloc: std.mem.Allocator, value: anytype) !std.json.Value {

@@ -9,18 +9,24 @@ pub const Session = struct {
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
     bus: t.Bus = undefined,
+    started: bool = false,
     notifications: @import("notifications.zig").Notifications = undefined,
     media: @import("mpris.zig").Media = undefined,
     tray: @import("tray.zig").Tray = undefined,
-    pub fn start(self: *Session) void {
+    pub fn start(self: *Session, filters: ?@import("notification_filter_policy.zig").Config) !void {
         self.bus = .{ .app = self.app, .context = self, .changed = connectionChanged, .signal = signal };
         self.notifications = .{ .bus = &self.bus, .context = self.context, .changed = self.changed };
         self.media = .{ .bus = &self.bus, .context = self.context, .changed = self.changed };
         self.tray = .{ .bus = &self.bus, .context = self.context, .changed = self.changed };
+        if (filters) |config| try self.notifications.configure(config);
+        self.started = true;
         self.bus.start();
     }
     pub fn stop(self: *Session) void {
+        if (!self.started) return;
+        self.started = false;
         self.bus.stop();
+        self.notifications.deinitFilters();
     }
     fn connectionChanged(data: *anyopaque, connected: bool) void {
         const self: *Session = @ptrCast(@alignCast(data));

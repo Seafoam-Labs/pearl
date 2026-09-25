@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "checks": {
+    "native-add-multiple-conditions-retains-shared-draft": true,
+    "read-only-draft-tester-rejects-stale-and-unknown-fields": true,
+    "native-tester-displays-authoritative-match": true,
+    "block-hides-critical-arrivals-and-active-replacements-with-one-directed-close": true,
+    "history-only-retains-actions-and-protocol-expiry": true,
+    "master-discard-individual-toggle-apply-and-immediate-dnd": true,
+    "open-editor-conflict-retains-input-and-refuses-overwrite": true,
+    "delete-is-reversible-through-discard": true,
+    "desktop-hint-unicode-normalization-and-block-over-history-precedence": true,
+    "dark-light-gtk-and-narrow-native-dialog-validation": true,
+    "large-text-short-window-editor-cancel-and-focus-restoration": true,
+    "external-reload-publishes-valid-rules-and-retains-policy-on-invalid-input": true,
+    "persisted-rules-active-before-first-arrival-after-restart": true,
+    "foreign-owner-keeps-preferences-editable-and-name-acquisition-retains-filters": true
+  },
+  "binaries": {
+    "settings": "cd82f4666b4fecc95fe9478e73b37876961156f0efd263987096f3e825b6b6a5",
+    "pearl": "0694bbd44ed17ae870e8a5129234e7da12f8f5f4badce721dd1f7ec3bfb20e6c",
+    "ctl": "cfc0f3bc496d2deba0fb4db5700a79b58e51288d61000d71e64ea786f43e0970"
+  }
+}
