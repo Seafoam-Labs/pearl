@@ -356,17 +356,13 @@ def main():
             assert path.read_bytes()==disk
             passed('native-picker-search-add-and-duplicate-prevention')
             click(s,ipc,'bar.widget.launcher')
-            assert not next(c for c in probe(s,ipc)['controls'] if c['field']=='bar.action.remove')['enabled']
-            assert not next(c for c in probe(s,ipc)['controls'] if c['field']=='bar.action.earlier')['enabled']
+            controls = probe(s,ipc)['controls']
+            assert not next(c for c in controls if c['field']=='bar.action.remove')['enabled']
+            # Reorder and cross-group moves are drag-and-drop only now.
+            assert not any(c['field'] in ('bar.action.earlier','bar.action.later') or c['field'].startswith('bar.action.move') for c in controls)
             capture(s,'bar-editor-required-actions',output['name'])
-            menu_click(s,ipc,'bar.action.move.center');menu_closed(s,ipc)
-            wait_for(lambda:json.loads(peer.document())['bar']['groups']['center'].endswith(',launcher'))
-            assert peer.state()['valid']
-            action(s,ipc,'clock','move.right')
-            wait_for(lambda:json.loads(peer.document())['bar']['groups']['right'].endswith(',clock'))
-            action(s,ipc,'clock','earlier')
-            wait_for(lambda:json.loads(peer.document())['bar']['groups']['right'].endswith(',clock,bluetooth'))
-            passed('launcher-protection-and-atomic-move-reorder')
+            keys(s,'Escape');menu_closed(s,ipc)
+            passed('launcher-protection-and-drag-only-reorder')
             action(s,ipc,'bluetooth','remove')
             wait_for(lambda:'bluetooth' not in json.loads(peer.document())['bar']['groups']['right'])
             candidate=json.loads(peer.document())
@@ -383,12 +379,10 @@ def main():
             assert json.loads(peer.document())==baseline
             choose(s,ipc,'left','Running applications','running_apps')
             wait_for(lambda:'running_apps' in json.loads(peer.document())['bar']['groups']['left'])
-            action(s,ipc,'running_apps','move.center')
-            action(s,ipc,'running_apps','earlier')
             action(s,ipc,'running_apps','remove')
             click(s,ipc,'discard');ready(s,ipc)
             choose(s,ipc,'left','Running applications','running_apps')
-            passed('running-apps-picker-move-reorder-remove-and-discard')
+            passed('running-apps-picker-remove-and-discard')
             choose(s,ipc,'center','Bluetooth','bluetooth')
             wait_for(lambda:'bluetooth' in json.loads(peer.document())['bar']['groups']['center'])
             click(s,ipc,'apply');ready(s,ipc)
@@ -407,7 +401,7 @@ def main():
             external['bar']['groups']['left'] += ',clock'
             keep(json.dumps(external))
             ready(s,ipc)
-            menu_click(s,ipc,'bar.action.move.right')
+            menu_click(s,ipc,'bar.action.remove')
             assert json.loads(peer.document())==external
             keys(s,'Escape');menu_closed(s,ipc)
             passed('stale-menu-cannot-overwrite-a-newer-layout')

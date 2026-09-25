@@ -1,6 +1,7 @@
 //! Selection-based bar editor. All changes go through the shared Pearl draft.
 const std = @import("std");
 const gtk = @import("gtk4");
+const gdk = @import("gdk4");
 const object = @import("gobject2");
 const glib = @import("glib2");
 const prefs = @import("../config/preferences.zig");
@@ -18,6 +19,11 @@ const Group = model.Group;
 const Icon = @import("../ui/components/launcher_icon.zig");
 const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
 const Binding = struct { view: *View, id: []const u8, intent: Intent };
+/// G_TYPE_STRING: fundamental type index 16 (2 is G_TYPE_INTERFACE) shifted into GType space.
+const g_type_string: usize = 16 << 2;
+const DragBinding = struct { view: *View, id: [*:0]const u8, widget: *gtk.Widget };
+const RowDrop = struct { view: *View, group: Group, index: usize, widget: *gtk.Widget };
+const CardDrop = struct { view: *View, group: Group, widget: *gtk.Widget };
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
 const Choice = struct { widget: *gtk.Widget, text: []const u8 };
 pub const View = struct {
@@ -310,7 +316,7 @@ pub const View = struct {
         preview.append(icon_status.as(gtk.Widget));
         try self.controls.append(a, .{ .id = "bar.icon.status", .widget = icon_status.as(gtk.Widget) });
         self.content.append(w.label("Widgets", "settings-row-title").as(gtk.Widget));
-        self.content.append(w.label("Add a widget to a group. Use its actions menu to configure, move, reorder or remove it.", "pearl-secondary").as(gtk.Widget));
+        self.content.append(w.label("Add a widget to a group. Drag rows between groups to move or reorder them, or use the actions menu to configure or remove.", "pearl-secondary").as(gtk.Widget));
         const flow = w.flow(3);
         self.content.append(flow.as(gtk.Widget));
         for (model.groups) |group| {
@@ -323,6 +329,13 @@ pub const View = struct {
             card.as(gtk.Widget).setFocusable(1);
             self.cards[g] = card.as(gtk.Widget);
             flow.insert(card.as(gtk.Widget), -1);
+            const card_drop = try alloc.create(CardDrop);
+            card_drop.* = .{ .view = self, .group = group, .widget = card.as(gtk.Widget) };
+            const card_target = gtk.DropTarget.new(g_type_string, .{ .move = true });
+            _ = gtk.DropTarget.signals.motion.connect(card_target, *CardDrop, cardMotion, card_drop, .{});
+            _ = gtk.DropTarget.signals.leave.connect(card_target, *CardDrop, cardLeave, card_drop, .{});
+            _ = gtk.DropTarget.signals.drop.connect(card_target, *CardDrop, cardDropped, card_drop, .{});
+            card.as(gtk.Widget).addController(card_target.as(gtk.EventController));
             const group_title = w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {d} widgets", .{ model.groupLabel(group, document.bar.edge), layout.items[g].items.len }, 0), "settings-row-title");
             self.group_titles[g] = group_title;
             card.append(group_title.as(gtk.Widget));
@@ -333,6 +346,22 @@ pub const View = struct {
                 const row = w.row(8);
                 row.as(gtk.Widget).addCssClass("bar-widget-row");
                 card.append(row.as(gtk.Widget));
+                const drag_binding = try alloc.create(DragBinding);
+                drag_binding.* = .{ .view = self, .id = try alloc.dupeZ(u8, id), .widget = row.as(gtk.Widget) };
+                const source = gtk.DragSource.new();
+                source.setActions(.{ .move = true });
+                _ = gtk.DragSource.signals.prepare.connect(source, *DragBinding, dragPrepare, drag_binding, .{});
+                _ = gtk.DragSource.signals.drag_begin.connect(source, *DragBinding, dragBegin, drag_binding, .{});
+                _ = gtk.DragSource.signals.drag_end.connect(source, *DragBinding, dragEnd, drag_binding, .{});
+                _ = gtk.DragSource.signals.drag_cancel.connect(source, *DragBinding, dragCancel, drag_binding, .{});
+                row.as(gtk.Widget).addController(source.as(gtk.EventController));
+                const row_drop = try alloc.create(RowDrop);
+                row_drop.* = .{ .view = self, .group = group, .index = i, .widget = row.as(gtk.Widget) };
+                const row_target = gtk.DropTarget.new(g_type_string, .{ .move = true });
+                _ = gtk.DropTarget.signals.motion.connect(row_target, *RowDrop, rowMotion, row_drop, .{});
+                _ = gtk.DropTarget.signals.leave.connect(row_target, *RowDrop, rowLeave, row_drop, .{});
+                _ = gtk.DropTarget.signals.drop.connect(row_target, *RowDrop, rowDropped, row_drop, .{});
+                row.as(gtk.Widget).addController(row_target.as(gtk.EventController));
                 const builtin = if (clock_policy.reference(id) != null) policy.Item.clock else std.meta.stringToEnum(policy.Item, id);
                 row.append((if (builtin == .launcher) try self.icon.image(20) else w.icon(if (builtin) |item| model.metadata(item).icon else "pearl-application-x-executable-symbolic")).as(gtk.Widget));
                 const labels = w.column(2);
@@ -482,13 +511,6 @@ pub const View = struct {
                     try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.workspace.mode.{s}", .{@tagName(mode)}), .widget = choice_.as(gtk.Widget) });
                 }
             }
-            const earlier = try self.button(box, "Move earlier", "bar.action.earlier", id, .{ .change = .earlier }, true);
-            earlier.as(gtk.Widget).setSensitive(@intFromBool(pos.index != 0));
-            const later = try self.button(box, "Move later", "bar.action.later", id, .{ .change = .later }, true);
-            later.as(gtk.Widget).setSensitive(@intFromBool(pos.index + 1 < layout.items[@intFromEnum(pos.group)].items.len));
-            for (model.groups) |to| if (to != pos.group) {
-                _ = try self.button(box, try std.fmt.allocPrintSentinel(alloc, "Move to {s}", .{model.groupLabel(to, document.bar.edge)}, 0), try std.fmt.allocPrint(alloc, "bar.action.move.{s}", .{@tagName(to)}), id, .{ .change = .{ .move = to } }, true);
-            };
             const remove = try self.button(box, "Remove from bar", "bar.action.remove", id, .{ .change = .remove }, true);
             remove.as(gtk.Widget).setSensitive(@intFromBool(!std.mem.eql(u8, id, "launcher")));
             if (std.mem.eql(u8, id, "launcher")) box.append(w.label("Launcher is required. It can be moved to any group.", "pearl-secondary").as(gtk.Widget));
@@ -573,8 +595,81 @@ pub const View = struct {
         try self.editor.edit(next);
         self.host.as(gtk.Accessible).announce(announcement, .medium);
         self.rememberFocus(focus);
-        self.popup.?.popdown();
+        if (self.popup) |popup| popup.popdown();
         self.queue();
+    }
+    /// Drag and drop reuses the menu mutation path; anchor its stale-bar guard
+    /// to the document at drag start instead of an unopened menu.
+    fn syncBarHash(self: *View) void {
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const alloc = temp.allocator();
+        const document = prefs.parse(alloc, self.editor.text()) catch return;
+        self.popup_hash = barHash(alloc, document.bar) catch return;
+    }
+    fn dragPrepare(_: *gtk.DragSource, _: f64, _: f64, binding: *DragBinding) callconv(.c) ?*gdk.ContentProvider {
+        binding.view.syncBarHash();
+        // g_value_init requires zero-filled memory; stack garbage faults inside gobject.
+        var value: object.Value = std.mem.zeroes(object.Value);
+        _ = object.Value.init(&value, g_type_string);
+        value.setString(binding.id);
+        return gdk.ContentProvider.newForValue(&value);
+    }
+    fn dragBegin(_: *gtk.DragSource, _: *gdk.Drag, binding: *DragBinding) callconv(.c) void {
+        binding.widget.addCssClass("pearl-dragging");
+    }
+    fn dragEnd(_: *gtk.DragSource, _: *gdk.Drag, _: c_int, binding: *DragBinding) callconv(.c) void {
+        binding.widget.removeCssClass("pearl-dragging");
+    }
+    fn dragCancel(_: *gtk.DragSource, _: *gdk.Drag, _: gdk.DragCancelReason, binding: *DragBinding) callconv(.c) c_int {
+        binding.widget.removeCssClass("pearl-dragging");
+        return 0;
+    }
+    fn clearDropClasses(widget: *gtk.Widget) void {
+        widget.removeCssClass("pearl-drop-above");
+        widget.removeCssClass("pearl-drop-below");
+        widget.removeCssClass("pearl-drop-target");
+    }
+    fn rowMotion(_: *gtk.DropTarget, _: f64, y: f64, binding: *RowDrop) callconv(.c) gdk.DragAction {
+        const half = @as(f64, @floatFromInt(binding.widget.getHeight())) / 2;
+        if (y < half) {
+            binding.widget.addCssClass("pearl-drop-above");
+            binding.widget.removeCssClass("pearl-drop-below");
+        } else {
+            binding.widget.addCssClass("pearl-drop-below");
+            binding.widget.removeCssClass("pearl-drop-above");
+        }
+        return .{ .move = true };
+    }
+    fn rowLeave(_: *gtk.DropTarget, binding: *RowDrop) callconv(.c) void {
+        clearDropClasses(binding.widget);
+    }
+    fn rowDropped(_: *gtk.DropTarget, value: *object.Value, _: f64, y: f64, binding: *RowDrop) callconv(.c) c_int {
+        clearDropClasses(binding.widget);
+        const raw = value.getString() orelse return 0;
+        const half = @as(f64, @floatFromInt(binding.widget.getHeight())) / 2;
+        const index = binding.index + if (y >= half) @as(usize, 1) else 0;
+        binding.view.mutate(std.mem.span(raw), .{ .place = .{ .group = binding.group, .index = index } }) catch |err| {
+            binding.view.report(err);
+            return 0;
+        };
+        return 1;
+    }
+    fn cardMotion(_: *gtk.DropTarget, _: f64, _: f64, binding: *CardDrop) callconv(.c) gdk.DragAction {
+        binding.widget.addCssClass("pearl-drop-target");
+        return .{ .move = true };
+    }
+    fn cardLeave(_: *gtk.DropTarget, binding: *CardDrop) callconv(.c) void {
+        binding.widget.removeCssClass("pearl-drop-target");
+    }
+    fn cardDropped(_: *gtk.DropTarget, value: *object.Value, _: f64, _: f64, binding: *CardDrop) callconv(.c) c_int {
+        binding.widget.removeCssClass("pearl-drop-target");
+        const raw = value.getString() orelse return 0;
+        binding.view.mutate(std.mem.span(raw), .{ .place = .{ .group = binding.group, .index = std.math.maxInt(usize) } }) catch |err| {
+            binding.view.report(err);
+            return 0;
+        };
+        return 1;
     }
     fn mutateWorkspaceMode(self: *View, mode: prefs.WorkspaceMode) !void {
         if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
