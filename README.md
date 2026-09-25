@@ -47,6 +47,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Live plugin input activity plan](docs/PLUGIN_INPUT_ACTIVITY_IMPLEMENTATION_PLAN.md): implemented Aqueous integration for typing reactions, with permission and authentication controls; physical hardware acceptance remains open.
 - [Live plugin discovery plan](docs/PLUGIN_LIVE_RELOAD_IMPLEMENTATION_PLAN.md): install, update and remove plugins without restarting Pearl, with automatic discovery and package approval.
 - [Settings-flyout navigation plan](docs/SETTINGS_NAVIGATION_PLAN.md): proposed direct bar shortcuts and separate compact settings pages.
+- [Workspace window switcher plan](docs/WINDOW_SWITCHER_IMPLEMENTATION_PLAN.md): cycle through the current workspace with a sliding window stack; includes an interactive mockup and required Aqueous integration.
 - [Standalone Settings application plan](docs/STANDALONE_SETTINGS_APPLICATION_PLAN.md): a separately launchable Settings app, sidebar pages, backend integration, packaging and design mockups.
 - [Qt application theming](docs/QT_THEMING.md): opt-in QtEngine + Darkly application styles for Qt 5/6, Pearl palettes, font/density settings, session setup and conditional restore. [Milestones](docs/QT_DARKLY_IMPLEMENTATION_PLAN.md) record delivery and remaining compatibility checks.
 - [Aqueous integration update plan](docs/AQUEOUS_MASTER_UPDATE_PLAN.md): implementation scope and acceptance for the pinned master contracts.

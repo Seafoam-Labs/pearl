@@ -397,3 +397,37 @@ The static gradient wallpaper, service coverage, dark-only session defaults and
 local-only calendar are deliberate scope differences. T03 retains light/compact
 component comparisons. Full service, settings, lock and accessibility parity is
 not claimed at this milestone; T07 adds audio, power and OSD services next.
+
+## Workspace window switcher
+
+Add **Cycle windows** in **Settings → Bar & dock → Add widget**, then Apply & save.
+Each click advances through the current workspace on that bar's display. Windows
+keep a stable order, including across the 1.5-second idle dismissal; the last
+window wraps to the first. Obscured windows and separate windows of one app are
+included. Minimized windows, `skip_switcher` windows and parents blocked by a
+modal dialog are excluded. Zero/one eligible window disables the button.
+
+The compositor shows a temporary stack of live window textures and focuses each
+selection immediately. It preserves actual window geometry and layout. The HUD
+provides Previous/Cycle controls without taking keyboard focus. Escape or typing
+dismisses the stack; selected focus remains. Pearl's Reduced motion preference
+skips motion for its button/CLI requests.
+
+```
+pearlctl window-switcher next [--output ID]
+pearlctl window-switcher previous [--output ID]
+pearlctl window-switcher dismiss [--output ID]
+```
+
+These commands require Aqueous advertising `workspace_switcher_v1`. Older versions
+show a disabled button with an update explanation. There is no silent static
+fallback. The Aqueous settings helper exposes unbound `window_switcher_next`,
+`window_switcher_previous` and `window_switcher_dismiss` shortcut actions. Assign
+keys explicitly; `Super+Tab` remains assigned to ordinary `cycle_focus` by default.
+To use it for the new switcher, clear `cycle_focus` and assign it to
+`window_switcher_next`, with `Super+Shift+Tab` for reverse cycling. Native compositor
+bindings use compositor animation support; Pearl's motion preference is sent by
+Pearl commands and does not change unrelated native bindings.
+
+See the [implementation plan](WINDOW_SWITCHER_IMPLEMENTATION_PLAN.md) and
+[native validation](../artifacts/window-switcher/README.md).

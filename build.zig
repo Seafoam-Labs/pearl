@@ -625,6 +625,13 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| surfaces.addArgs(args);
     b.step("test-surfaces", "Verify surfaces, CLI isolation and native blur in private Aqueous").dependOn(&surfaces.step);
 
+    const window_switcher = b.addSystemCommand(&.{ "python3", "tests/integration/test_window_switcher.py", "--pearl" });
+    window_switcher.addArtifactArg(integration_app);
+    window_switcher.addArg("--ctl");
+    window_switcher.addArtifactArg(ctl);
+    if (b.args) |args| window_switcher.addArgs(args);
+    b.step("test-window-switcher", "Verify workspace cycling, animated scene and focus lifecycle").dependOn(&window_switcher.step);
+
     const running_apps = b.addSystemCommand(&.{ "python3", "tests/integration/test_running_apps.py", "--pearl" });
     running_apps.addArtifactArg(integration_app);
     running_apps.addArg("--ctl");

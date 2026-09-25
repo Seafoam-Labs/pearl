@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "checks": [
+    "empty-workspace-no-op",
+    "forward-visits-every-window-wraps-immediate-focus-and-nonkeyboard-hud",
+    "reverse-wrap-and-native-capture",
+    "forward-reverse-animation-frame-sequences-and-live-client-textures",
+    "idle-dismissal-preserves-ring-order",
+    "escape-retains-selected-focus",
+    "native-bar-button-activates-without-keyboard-grab",
+    "native-hud-cycle-button-retains-input-through-release",
+    "native-next-and-previous-keybindings-share-the-ring",
+    "rapid-six-press-burst-retains-logical-steps",
+    "typing-dismisses-presentation",
+    "client-geometry-and-layout-unchanged",
+    "fullscreen-membership-and-client-mode-preserved",
+    "external-focus-and-workspace-change-dismiss-presentation",
+    "new-windows-append-and-all-four-identities-remain-reachable",
+    "tiled-layout-keeps-client-geometry-through-full-cycle",
+    "reduced-motion-and-vertical-bar",
+    "overview-coexists-with-switcher-after-reduced-motion",
+    "request-connection-loss-releases-compositor-presentation",
+    "selected-window-close-cleans-up-and-resumes",
+    "one-window-no-op-and-other-display-exclusion",
+    "minimized-windows-excluded",
+    "session-lock-clears-scene-hud-and-input",
+    "powered-off-output-releases-native-stack-and-hud"
+  ]
+}

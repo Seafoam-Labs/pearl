@@ -1,0 +1,16 @@
+{
+  "scope": "Local Chromium browser mockup only; not native compositor validation",
+  "checks": [
+    "Three forward presses visit 2, 3, 1 and wrap",
+    "Reverse wraps from 1 to 3",
+    "Idle dismisses after 1.5 seconds; next bar press continues stable order",
+    "Escape dismisses without restoring original selection",
+    "One-window and empty states disable cycling with accurate counts",
+    "Reduced motion disables transitions",
+    "System reduced-motion preference disables transitions",
+    "Keyboard arrows cycle both directions",
+    "No document horizontal overflow at 390, 560, 850, 1440 px",
+    "No JavaScript errors during checks"
+  ],
+  "javascript_errors": []
+}

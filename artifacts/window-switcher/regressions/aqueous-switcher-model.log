@@ -1,0 +1,10 @@
+1/9 overview_tests.test_0...OK
+2/9 overview.tests.test.empty and single-window arrangements...OK
+3/9 overview.tests.test.mixed aspect ratios are stable, contained, and non-overlapping...OK
+4/9 overview.tests.test.large card counts remain inside the usable area...OK
+5/9 overview.tests.test.directional navigation follows card centers...OK
+6/9 overview.tests.test.cycling wraps and hit testing honors half-open card bounds...OK
+7/9 overview.tests.test.removing selection chooses the nearest replacement...OK
+8/9 switcher.model.test.stable ring wraps through every window and survives idle external focus and churn...OK
+9/9 switcher.model.test.cards preserve aspect ratio inside portrait and landscape bounds...OK
+All 9 tests passed.

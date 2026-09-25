@@ -86,6 +86,7 @@ pub const Capabilities = struct {
     commands: bool,
     keyboard: bool,
     overview: bool,
+    workspace_switcher_v1: bool = false,
     shortcut_inhibition: bool,
     icon_metadata: bool = false,
     icon_fetch: bool = false,

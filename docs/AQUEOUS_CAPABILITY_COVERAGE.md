@@ -572,3 +572,20 @@ The JSON companion records source, consumer, entry point, test owner and disposi
 | `invalidated` | src/config/aqueous_client.zig — Displays status; aqueous status --text preview | implemented: Pending rollback remains pending; durable token and receipts reconcile restart. |
 | `failed` | src/config/aqueous_client.zig — Displays status; aqueous status --text preview | implemented: Pending rollback remains pending; durable token and receipts reconcile restart. |
 | `kept` | src/config/aqueous_client.zig — Displays status; aqueous status --text preview | implemented: Pending rollback remains pending; durable token and receipts reconcile restart. |
+
+## Local workspace switcher extension
+
+The coordinated window-switcher change adds IPC capability
+`workspace_switcher_v1` beyond the pinned baseline above. Pearl gates
+`switcher.next`, `switcher.previous` and `switcher.dismiss` on this flag and
+revalidates output, active workspace and seat at dispatch. Optional session
+fields `switcher_output`, `switcher_window`, `switcher_position`, `switcher_total`
+and `switcher_serial` drive the non-keyboard HUD. Optional window field
+`switcher_eligible` accounts for compositor modal-focus policy. Older snapshots
+remain readable, with the widget disabled when the capability is absent.
+
+Sources: `src/aqueous/{codec,entities,commands}.zig`,
+`src/desktop/window_switcher.zig`, `src/ui/surfaces/manager.zig` and Aqueous
+`WindowSwitcher.zig`, `Overview.zig`, `IpcProtocol.zig`, `ShellManager.zig`.
+Validation: `test-window-switcher`, the Pearl protocol/policy tests, and Aqueous
+ring/overview/protocol tests. See [native evidence](../artifacts/window-switcher/README.md).

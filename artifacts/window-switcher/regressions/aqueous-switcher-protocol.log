@@ -1,0 +1,5 @@
+1/4 IpcProtocol.test.bounded parsing and credential failure...OK
+2/4 IpcProtocol.test.typed command conversion rejects ambiguous moves and nonboolean state...OK
+3/4 IpcProtocol.test.icon query rejects invalid revisions, oversized requests and ambiguous fields...OK
+4/4 IpcProtocol.test.switcher commands retain scope seat and motion across queue cloning...OK
+All 4 tests passed.

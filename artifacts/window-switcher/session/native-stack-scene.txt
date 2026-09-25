@@ -1,0 +1,157 @@
+scene [tree]
+├─ interactive [tree]
+│  ├─ normal session [tree]
+│  │  ├─ layer: background [tree]
+│  │  │  ├─ layer surface: pearl:wallpaper [tree]
+│  │  │  │  ├─ layer backdrop blur marker [rect] disabled
+│  │  │  │  └─ tree [tree]
+│  │  │  │     └─ surface buffer [buffer] (0,0 1280x720)
+│  │  │  └─ layer surface: pearl:wallpaper [tree] (1280,0 0x0)
+│  │  │     ├─ layer backdrop blur marker [rect] disabled
+│  │  │     └─ tree [tree]
+│  │  │        └─ surface buffer [buffer] (0,0 1280x720)
+│  │  ├─ layer: bottom [tree]
+│  │  ├─ layer: windows [tree]
+│  │  │  ├─ window: Task 0 window 2 [tree] disabled (320,246 0x0)
+│  │  │  │  ├─ fullscreen background [rect] disabled
+│  │  │  │  ├─ backdrop blur marker [rect] disabled
+│  │  │  │  ├─ decorations below [tree]
+│  │  │  │  ├─ live surfaces [tree]
+│  │  │  │  │  └─ window subtree [tree]
+│  │  │  │  │     └─ window subtree [tree] (-14,-12 0x0)
+│  │  │  │  │        └─ window surface buffer [buffer] (0,0 796x432)
+│  │  │  │  ├─ saved surfaces [tree] disabled
+│  │  │  │  ├─ border: rounded outline [rect] (-2,-2 772x407)
+│  │  │  │  ├─ border: left [rect] disabled
+│  │  │  │  ├─ border: right [rect] disabled
+│  │  │  │  ├─ border: top [rect] disabled
+│  │  │  │  ├─ border: bottom [rect] disabled
+│  │  │  │  └─ decorations above [tree]
+│  │  │  ├─ window: Task 0 window 1 [tree] disabled (288,214 0x0)
+│  │  │  │  ├─ fullscreen background [rect] disabled
+│  │  │  │  ├─ backdrop blur marker [rect] disabled
+│  │  │  │  ├─ decorations below [tree]
+│  │  │  │  ├─ live surfaces [tree]
+│  │  │  │  │  └─ window subtree [tree]
+│  │  │  │  │     └─ window subtree [tree] (-14,-12 0x0)
+│  │  │  │  │        └─ window surface buffer [buffer] (0,0 796x432)
+│  │  │  │  ├─ saved surfaces [tree] disabled
+│  │  │  │  ├─ border: rounded outline [rect] (-2,-2 772x407)
+│  │  │  │  ├─ border: left [rect] disabled
+│  │  │  │  ├─ border: right [rect] disabled
+│  │  │  │  ├─ border: top [rect] disabled
+│  │  │  │  ├─ border: bottom [rect] disabled
+│  │  │  │  └─ decorations above [tree]
+│  │  │  └─ window: Task 0 window 0 [tree] disabled (256,182 0x0)
+│  │  │     ├─ fullscreen background [rect] disabled
+│  │  │     ├─ backdrop blur marker [rect] disabled
+│  │  │     ├─ decorations below [tree]
+│  │  │     ├─ live surfaces [tree]
+│  │  │     │  └─ window subtree [tree]
+│  │  │     │     └─ window subtree [tree] (-14,-12 0x0)
+│  │  │     │        └─ window surface buffer [buffer] (0,0 796x432)
+│  │  │     ├─ saved surfaces [tree] disabled
+│  │  │     ├─ border: rounded outline [rect] (-2,-2 772x407)
+│  │  │     ├─ border: left [rect] disabled
+│  │  │     ├─ border: right [rect] disabled
+│  │  │     ├─ border: top [rect] disabled
+│  │  │     ├─ border: bottom [rect] disabled
+│  │  │     └─ decorations above [tree]
+│  │  ├─ workspace overview [tree]
+│  │  │  ├─ overview backdrop [rect] (0,0 1280x720)
+│  │  │  ├─ overview card: 8589934593 [tree]
+│  │  │  │  ├─ rect [rect] (100,171 32x32)
+│  │  │  │  ├─ tree [tree]
+│  │  │  │  │  └─ overview thumbnail buffer [buffer] (100,171 653x342)
+│  │  │  │  ├─ overview selection border: left [rect] disabled
+│  │  │  │  ├─ overview selection border: right [rect] disabled
+│  │  │  │  ├─ overview selection border: top [rect] disabled
+│  │  │  │  ├─ overview selection border: bottom [rect] disabled
+│  │  │  │  └─ buffer [buffer] disabled
+│  │  │  ├─ overview card: 4294967297 [tree]
+│  │  │  │  ├─ rect [rect] (526,171 32x32)
+│  │  │  │  ├─ tree [tree]
+│  │  │  │  │  └─ overview thumbnail buffer [buffer] (526,171 653x342)
+│  │  │  │  ├─ overview selection border: left [rect] disabled
+│  │  │  │  ├─ overview selection border: right [rect] disabled
+│  │  │  │  ├─ overview selection border: top [rect] disabled
+│  │  │  │  ├─ overview selection border: bottom [rect] disabled
+│  │  │  │  └─ buffer [buffer] disabled
+│  │  │  └─ overview card: 1 [tree]
+│  │  │     ├─ rect [rect] (243,134 32x32)
+│  │  │     ├─ tree [tree]
+│  │  │     │  └─ overview thumbnail buffer [buffer] (243,134 793x416)
+│  │  │     ├─ overview selection border: left [rect] (238,134 5x416)
+│  │  │     ├─ overview selection border: right [rect] (1036,134 5x416)
+│  │  │     ├─ overview selection border: top [rect] (238,129 803x5)
+│  │  │     ├─ overview selection border: bottom [rect] (238,550 803x5)
+│  │  │     └─ buffer [buffer] disabled
+│  │  ├─ layer: top [tree]
+│  │  │  ├─ layer surface: pearl:bar [tree]
+│  │  │  │  ├─ layer backdrop blur marker [rect] disabled
+│  │  │  │  └─ tree [tree]
+│  │  │  │     └─ surface buffer [buffer] (0,0 1280x48)
+│  │  │  └─ layer surface: pearl:bar [tree] (1280,0 0x0)
+│  │  │     ├─ layer backdrop blur marker [rect] disabled
+│  │  │     └─ tree [tree]
+│  │  │        └─ surface buffer [buffer] (0,0 1280x48)
+│  │  ├─ layer: fullscreen [tree]
+│  │  ├─ layer: overlay [tree]
+│  │  │  ├─ layer surface: pearl:dock-reveal [tree] (596,718 0x0)
+│  │  │  │  ├─ layer backdrop blur marker [rect] disabled
+│  │  │  │  └─ tree [tree]
+│  │  │  │     └─ surface buffer [buffer] (0,0 88x2)
+│  │  │  └─ layer surface: pearl:window-switcher [tree] (480,624 0x0)
+│  │  │     ├─ layer backdrop blur marker [rect] disabled
+│  │  │     └─ tree [tree]
+│  │  │        └─ surface buffer [buffer] (0,0 320x72)
+│  │  └─ layer: popups [tree]
+│  │     ├─ layer surface popups [tree]
+│  │     ├─ layer surface popups [tree]
+│  │     ├─ layer surface popups [tree] (1280,0 0x0)
+│  │     ├─ layer surface popups [tree] (1280,0 0x0)
+│  │     ├─ window popups [tree] disabled (256,182 0x0)
+│  │     ├─ window popups [tree] disabled (288,214 0x0)
+│  │     ├─ window popups [tree] disabled (320,246 0x0)
+│  │     ├─ layer surface popups [tree] (596,718 0x0)
+│  │     └─ layer surface popups [tree] (480,624 0x0)
+│  └─ locked session [tree] disabled
+├─ hidden staging [tree] disabled
+│  ├─ window animation snapshot [tree] disabled
+│  │  ├─ animation fullscreen background [rect] disabled
+│  │  ├─ animation backdrop blur marker [rect] disabled
+│  │  ├─ animation surfaces [tree]
+│  │  └─ animation border [tree] disabled
+│  │     ├─ animation border: rounded outline [rect]
+│  │     ├─ animation border: left [rect]
+│  │     ├─ animation border: right [rect]
+│  │     ├─ animation border: top [rect]
+│  │     └─ animation border: bottom [rect]
+│  ├─ window animation snapshot [tree] disabled
+│  │  ├─ animation fullscreen background [rect] disabled
+│  │  ├─ animation backdrop blur marker [rect] disabled
+│  │  ├─ animation surfaces [tree]
+│  │  └─ animation border [tree] disabled
+│  │     ├─ animation border: rounded outline [rect]
+│  │     ├─ animation border: left [rect]
+│  │     ├─ animation border: right [rect]
+│  │     ├─ animation border: top [rect]
+│  │     └─ animation border: bottom [rect]
+│  └─ window animation snapshot [tree] disabled
+│     ├─ animation fullscreen background [rect] disabled
+│     ├─ animation backdrop blur marker [rect] disabled
+│     ├─ animation surfaces [tree]
+│     └─ animation border [tree] disabled
+│        ├─ animation border: rounded outline [rect]
+│        ├─ animation border: left [rect]
+│        ├─ animation border: right [rect]
+│        ├─ animation border: top [rect]
+│        └─ animation border: bottom [rect]
+├─ tree [tree] disabled
+│  ├─ rect [rect] (0,0 1x1)
+│  ├─ rect [rect] (0,0 1x1)
+│  ├─ rect [rect] (0,0 1x1)
+│  └─ rect [rect] (0,0 1x1)
+└─ drag icons [tree]
+output-retry output=HEADLESS-2 pending=false failures=0 total_failures=0 retries=0 deadline_ms=0 stage=scene_build recovery_commit=null presented_commit=null [tree]
+output-retry output=HEADLESS-1 pending=false failures=0 total_failures=0 retries=0 deadline_ms=0 stage=scene_build recovery_commit=null presented_commit=null [tree]

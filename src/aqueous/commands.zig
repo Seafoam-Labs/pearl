@@ -7,7 +7,11 @@ pub const Target = struct { id: []const u8 };
 pub const Activate = struct { id: []const u8, seat: ?[]const u8 = null };
 pub const Toggle = struct { id: []const u8, value: bool };
 pub const Keyboard = struct { seat: ?[]const u8 = null, group: ?[]const u8 = null };
+pub const Switcher = struct { output: []const u8, workspace: []const u8, seat: ?[]const u8 = null, reduced_motion: bool = false };
 pub const Action = union(enum) {
+    switcher_next: Switcher,
+    switcher_previous: Switcher,
+    switcher_dismiss: Switcher,
     window_activate: Activate,
     window_close: Target,
     window_minimized: Toggle,
@@ -122,6 +126,13 @@ pub fn validate(action: Action, model: *const Model, caps: codec.Capabilities) !
         .keyboard_next => |v| {
             if (!caps.keyboard) return error.Unsupported;
             try keyboard(model, v.seat, v.group, null);
+        },
+        inline .switcher_next, .switcher_previous, .switcher_dismiss => |v| {
+            if (!caps.workspace_switcher_v1) return error.Unsupported;
+            try output(model, v.output);
+            const active = model.activeWorkspace(v.output) orelse return error.Unavailable;
+            if (!std.mem.eql(u8, active.id, v.workspace)) return error.Unavailable;
+            _ = try focusFor(model, v.seat);
         },
         inline .overview_show, .overview_toggle => |v| {
             if (!caps.overview) return error.Unsupported;

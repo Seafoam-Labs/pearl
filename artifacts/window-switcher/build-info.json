@@ -1,0 +1,35 @@
+{
+  "switcher_checks": 24,
+  "build_mode": "ReleaseSafe",
+  "compositor_effects": "Vulkan",
+  "components": {
+    "pearl": {
+      "path": "/home/zoey/Pearl/zig-out/bin/pearl",
+      "sha256": "11dbd97842a9161bd9d0e368d1ef1ea1e6f80647c2975dc2b4fe8dd41685bb1c"
+    },
+    "pearlctl": {
+      "path": "/home/zoey/Pearl/zig-out/bin/pearlctl",
+      "sha256": "370d194d027387293576370c1947b2770ea30e73492ea4ae604e8d1ca33484fc"
+    },
+    "aqueous": {
+      "path": "/home/zoey/Pearl/.cache/aqueous-switcher/bin/aqueous",
+      "sha256": "b6c9971e1ce67bb56772478cd89c547ef60491be6b14946ac5dca333db52cfb4"
+    },
+    "aqueous-config": {
+      "path": "/home/zoey/Pearl/.cache/aqueous-switcher/bin/aqueous-config",
+      "sha256": "70975b0d0d3139efbfdc6a2c22bb9f66de8a4c40e5054b6a7a0552ee8ce32bea"
+    }
+  },
+  "repositories": {
+    "Pearl": {
+      "path": "/home/zoey/Pearl",
+      "base_commit": "5d1416b482f81eba1d30a1ab6d756557827d0672",
+      "working_tree_changes": true
+    },
+    "Aqueous": {
+      "path": "/home/zoey/RiderProjects/Aqueous",
+      "base_commit": "1c3583b01a5abd11015ecf363123cc09c0fc34c0",
+      "working_tree_changes": true
+    }
+  }
+}

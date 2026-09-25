@@ -588,3 +588,29 @@ test "all typed command encodings use strict fields and own caller strings" {
     @memset(&name, 'x');
     try t.expectEqualStrings("ab", owned.action.workspace_rename.name);
 }
+
+test "switcher commands require negotiated capability and reject a stale workspace" {
+    var m = try model();
+    defer m.deinit();
+    try install(&m, f.desktop);
+    var hello = try decode(f.hello, .hello);
+    defer hello.deinit();
+    var caps = hello.message.response.result.hello.capabilities;
+    const focus = try m.focus(null);
+    const output = focus.output.?.id;
+    const workspace = m.activeWorkspace(output).?.id;
+    const action: cmd.Action = .{ .switcher_next = .{ .output = output, .workspace = workspace, .seat = focus.seat.id, .reduced_motion = true } };
+    try t.expectError(error.Unsupported, cmd.validate(action, &m, caps));
+    caps.workspace_switcher_v1 = true;
+    try cmd.validate(action, &m, caps);
+    try t.expectError(error.Unavailable, cmd.validate(.{ .switcher_previous = .{ .output = output, .workspace = "stale" } }, &m, caps));
+    try t.expectError(error.NotFound, cmd.validate(.{ .switcher_next = .{ .output = output, .workspace = workspace, .seat = "missing" } }, &m, caps));
+    var owned = try cmd.Owned.init(a, action, 9);
+    defer owned.deinit();
+    try t.expect(owned.action.switcher_next.reduced_motion);
+    const encoded = try action.params(a);
+    defer a.free(encoded);
+    try t.expect(std.mem.indexOf(u8, encoded, "switcher.next") != null);
+    m.invalidate();
+    try t.expectError(error.Unavailable, cmd.validate(action, &m, caps));
+}

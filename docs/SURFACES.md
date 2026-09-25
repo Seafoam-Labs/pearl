@@ -286,3 +286,19 @@ release-gate checks. Private Vulkan compositor teardown logs a wlroots
 `shared_buffer_finish: 1 allocations left` diagnostic; Pearl exits cleanly under
 fatal GTK warnings, but this test does not establish compositor allocation
 cleanup or production GPU performance.
+
+## Window switcher HUD
+
+`pearl:window-switcher` is a separate overlay surface with keyboard mode `none`,
+zero exclusive zone and a pointer region around its previous/cycle control row.
+It follows the compositor's committed `session.switcher_*` state and disappears
+on dismissal, lock, connection loss or output removal. Labels use Pearl's theme
+and coalesced accessible announcements. A principal popup dismisses the switcher;
+cycling closes the principal popup before submitting a command. `status` includes
+`window_switcher` with output, label, serial, keyboard mode and HUD rectangle.
+
+Window textures, cycle order and immediate application focus belong to Aqueous.
+The compositor keeps its stack below top/overlay shell layers, so repeated bar
+and HUD clicks work while the stack is visible. It restores presentation before
+ordinary pointer input is delivered. The session request connection owns stacks
+started by Pearl; disconnect dismisses them without replaying queued requests.

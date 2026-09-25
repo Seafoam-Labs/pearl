@@ -7,6 +7,7 @@ pub const groups = std.enums.values(Group);
 pub const Metadata = struct { name: [:0]const u8, description: [:0]const u8, icon: [:0]const u8 };
 pub fn metadata(item: policy.Item) Metadata {
     return switch (item) {
+        .window_switcher => .{ .name = "Cycle windows", .description = "Step through windows on this workspace", .icon = "pearl-window-switcher-symbolic" },
         .running_apps => .{ .name = "Running applications", .description = "Open windows across all workspaces and displays", .icon = "pearl-application-x-executable-symbolic" },
         .launcher => .{ .name = "Launcher", .description = "Open your applications · Required", .icon = @import("../desktop/launcher_icon_policy.zig").default_icon },
         .workspaces => .{ .name = "Workspaces", .description = "Switch between workspaces", .icon = "pearl-view-grid-symbolic" },

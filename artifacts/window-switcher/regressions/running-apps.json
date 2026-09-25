@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "checks": {
+    "empty-widget-collapses-and-default-layout-roundtrips": true,
+    "global-groups-include-inactive-workspaces-other-output-and-minimized-windows": true,
+    "small-workspace-mode-frees-task-strip-space-without-changing-global-groups": true,
+    "bar-group-click-selects-restores-and-focuses-exact-remote-window": true,
+    "single-window-click-activates-without-chooser": true,
+    "cli-keyboard-entry-arrows-escape-and-bar-focus-policy": true,
+    "open-chooser-refreshes-after-window-close-without-stale-callback": true,
+    "catalog-rescan-reclassifies-group-without-losing-chooser": true,
+    "taskbar-exclusion-does-not-confuse-switcher-exclusion": true,
+    "all-four-bar-edges-and-clamped-chooser": true,
+    "compact-bar-keeps-application-counts-without-growing-the-edge": true,
+    "per-output-placement-preserves-global-window-scope": true,
+    "gtk-theme-large-text-and-mixed-scale": true,
+    "more-than-32-apps-and-64-windows-remain-reachable": true,
+    "powered-off-output-removes-surfaces-and-dismisses-chooser": true,
+    "teardown-with-fatal-gtk-warnings-enabled": true
+  },
+  "binaries": {
+    "pearl": "ec6931ea60562aa25c6b9299183c42466f9c999b228a548c86162ed4309bf143",
+    "ctl": "370d194d027387293576370c1947b2770ea30e73492ea4ae604e8d1ca33484fc"
+  }
+}

@@ -14,7 +14,7 @@ const clocks = @import("clock_policy.zig");
 const Clock = @import("clock_view.zig").View;
 const Running = @import("running_apps.zig");
 pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers };
-pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview };
+pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
     background_opacity: @import("bar_opacity.zig").Config = .{},
@@ -290,6 +290,7 @@ pub const Bar = struct {
                         button.setChild((try self.launcher_icon.image(20)).as(gtk.Widget));
                         break :blk button.as(gtk.Widget);
                     },
+                    .window_switcher => (try self.makeButton(.window_switcher, "pearl-window-switcher-symbolic", tr("Cycle windows", "Fenster durchschalten"), false)).as(gtk.Widget),
                     .overview => (try self.makeButton(.overview, "pearl-view-grid-symbolic", tr("Overview", "Übersicht"), false)).as(gtk.Widget),
                     .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", tr("Clipboard & capture", "Zwischenablage & Bildschirmfoto"), false)).as(gtk.Widget),
                     .wallpaper => (try self.makeButton(.{ .pane = .wallpapers }, "pearl-image-symbolic", tr("Wallpaper", "Hintergrundbild"), false)).as(gtk.Widget),
@@ -432,6 +433,15 @@ pub const Bar = struct {
         self.action(self.context, .{ .pane = .tray });
     }
     pub fn update(self: *Bar) void {
+        if (self.widgets[@intFromEnum(policy.Item.window_switcher)]) |widget| {
+            const n = @import("window_switcher.zig").count(&self.client.model, self.output);
+            const supported = self.client.capabilities.workspace_switcher_v1;
+            widget.setSensitive(@intFromBool(supported and n > 1));
+            var buffer: [160]u8 = undefined;
+            const title = if (!supported) tr("Cycle windows requires updated Aqueous", "Fensterwechsel benötigt aktualisiertes Aqueous") else if (n == 0) tr("No open windows on this workspace", "Keine offenen Fenster auf dieser Arbeitsfläche") else if (n == 1) tr("Only window on this workspace", "Nur ein Fenster auf dieser Arbeitsfläche") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ tr("Cycle windows on this workspace", "Fenster dieser Arbeitsfläche durchschalten"), n }) catch "Cycle windows";
+            widget.setTooltipText(title);
+            w.name(widget, title);
+        }
         for (self.plugin_views.items) |view| view.update();
         if (self.tray) |tray| tray.update();
         if (self.notification_label) |label| {
