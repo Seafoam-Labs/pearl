@@ -1,0 +1,212 @@
+info: initializing Aqueous version aqueous 0.8.0 +xwayland
+info: gpu-pin: scanout pinned to /dev/dri/card1 (connected monitor)
+info(wlroots): [backend/backend.c:342] Loading user-specified backends due to WLR_BACKENDS: headless
+info(wlroots): [backend/headless/backend.c:60] Creating headless backend
+info(wlroots): [util/env.c:25] Loading WLR_RENDERER option: vulkan
+info(wlroots): [render/vulkan/renderer.c:2766] The vulkan renderer is only experimental and not expected to be ready for daily use
+info(wlroots): [render/vulkan/renderer.c:2768] Run with VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation to enable the validation layer
+info(wlroots): [render/vulkan/vulkan.c:253] Vulkan device: 'NVIDIA GeForce RTX 5090'
+info(wlroots): [render/vulkan/vulkan.c:254]   Device type: 'discrete'
+info(wlroots): [render/vulkan/vulkan.c:255]   Supported API version: 1.4.351
+info(wlroots): [render/vulkan/vulkan.c:256]   Driver version: 615.284.576
+info(wlroots): [render/vulkan/vulkan.c:344]   Driver name: NVIDIA (615.71.09)
+info(wlroots): [render/vulkan/vulkan.c:364] Found matching Vulkan physical device: NVIDIA GeForce RTX 5090
+info: Vulkan rounded effects pipeline initialized
+info: Vulkan backdrop-blur pipeline initialized
+info: Vulkan effects context: device=NVIDIA GeForce RTX 5090 api=1.4.351 queue-family=0 rgba16f(sampled=true,color=true) bgra8(sampled=true,color=true) linear=true sync(fence=true,wlroots-timeline=true) physical-features(anisotropy=true,timeline=true,sync2=true) timestamps=true period-ns=1
+info(xdg): default mode=client
+info: gpu-pin: device=10de:2b85 pci=0000_01_00_0 driver=nvidia -> vk=MESA_VK_DEVICE_SELECT=10de:2b85 gl=__GLX_VENDOR_LIBRARY_NAME=nvidia prime=null offload=null
+info(aqueous): policy mode=internal layout=floating
+info(input): cursor theme=default size=24
+info(drm_lease): DRM leasing unavailable (no usable lease device)
+info: raised file descriptor limit of the river process to 4096
+info(wlroots): [backend/headless/backend.c:17] Starting headless backend
+info(ipc): protocol=1 listening on /tmp/pearl-dev-dg8y6ij6/run/aqueous/fba280d0639bb03cacfd032e4e94abf7/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-dg8y6ij6/run/aqueous/outputd.sock
+info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"; printenv DISPLAY > "$XDG_RUNTIME_DIR/x11-display"'
+info(wlroots): [xwayland/server.c:108] Starting Xwayland on :1
+info: running server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+>                   Using F23, ignoring XF86TouchpadOff
+> Warning:          Symbol map for key <FK23> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Symbol map for key <FK24> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOn
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOff
+> Warning:          Could not resolve keysym XF86ActionOnSelection
+> Warning:          Could not resolve keysym XF86ContextualInsert
+> Warning:          Could not resolve keysym XF86ContextualQuery
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported maximum keycode 709, clipping.
+>                   X11 cannot support keycodes above 255.
+> Warning:          Virtual modifier Hyper multiply defined
+>                   Using 0, ignoring 0
+> Warning:          Virtual modifier ScrollLock multiply defined
+>                   Using 0, ignoring 0
+Errors from xkbcomp are not fatal to the X server
+info: Vulkan rounded effects draw count=1 texture=1 rect=0 normal=1 swapchain=0 explicit-sync=0
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+>                   Using F23, ignoring XF86TouchpadOff
+> Warning:          Symbol map for key <FK23> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Symbol map for key <FK24> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOn
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOff
+> Warning:          Could not resolve keysym XF86ActionOnSelection
+> Warning:          Could not resolve keysym XF86ContextualInsert
+> Warning:          Could not resolve keysym XF86ContextualQuery
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported maximum keycode 709, clipping.
+>                   X11 cannot support keycodes above 255.
+> Warning:          Virtual modifier Hyper multiply defined
+>                   Using 0, ignoring 0
+> Warning:          Virtual modifier ScrollLock multiply defined
+>                   Using 0, ignoring 0
+Errors from xkbcomp are not fatal to the X server
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+>                   Using F23, ignoring XF86TouchpadOff
+> Warning:          Symbol map for key <FK23> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Symbol map for key <FK24> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOn
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOff
+> Warning:          Could not resolve keysym XF86ActionOnSelection
+> Warning:          Could not resolve keysym XF86ContextualInsert
+> Warning:          Could not resolve keysym XF86ContextualQuery
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported maximum keycode 709, clipping.
+>                   X11 cannot support keycodes above 255.
+> Warning:          Virtual modifier Hyper multiply defined
+>                   Using 0, ignoring 0
+> Warning:          Virtual modifier ScrollLock multiply defined
+>                   Using 0, ignoring 0
+Errors from xkbcomp are not fatal to the X server
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+>                   Using F23, ignoring XF86TouchpadOff
+> Warning:          Symbol map for key <FK23> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Symbol map for key <FK24> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOn
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOff
+> Warning:          Could not resolve keysym XF86ActionOnSelection
+> Warning:          Could not resolve keysym XF86ContextualInsert
+> Warning:          Could not resolve keysym XF86ContextualQuery
+Errors from xkbcomp are not fatal to the X server
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported maximum keycode 709, clipping.
+>                   X11 cannot support keycodes above 255.
+> Warning:          Virtual modifier Hyper multiply defined
+>                   Using 0, ignoring 0
+> Warning:          Virtual modifier ScrollLock multiply defined
+>                   Using 0, ignoring 0
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+>                   Using F23, ignoring XF86TouchpadOff
+> Warning:          Symbol map for key <FK23> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Symbol map for key <FK24> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOn
+> Warning:          Could not resolve keysym XF86ElectronicPrivacyScreenOff
+> Warning:          Could not resolve keysym XF86ActionOnSelection
+> Warning:          Could not resolve keysym XF86ContextualInsert
+> Warning:          Could not resolve keysym XF86ContextualQuery
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported maximum keycode 709, clipping.
+>                   X11 cannot support keycodes above 255.
+> Warning:          Virtual modifier Hyper multiply defined
+>                   Using 0, ignoring 0
+> Warning:          Virtual modifier ScrollLock multiply defined
+>                   Using 0, ignoring 0
+Errors from xkbcomp are not fatal to the X server
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+error(wlroots): [xwayland/xwm.c:1995] xcb error: op ConfigureWindow (no minor), code Window (no extension), sequence 227, value 4194305
+error(wlroots): [xwayland/xwm.c:1995] xcb error: op ConfigureWindow (no minor), code Window (no extension), sequence 229, value 4194305
+error(wlroots): [xwayland/xwm.c:1995] xcb error: op ChangeProperty (no minor), code Window (no extension), sequence 232, value 4194305
+error(wlroots): [xwayland/xwm.c:1995] xcb error: op DeleteProperty (no minor), code Window (no extension), sequence 233, value 4194305
+error(wlroots): [xwayland/xwm.c:1995] xcb error: op DeleteProperty (no minor), code Window (no extension), sequence 236, value 4194305
+info: Vulkan rounded effects draw count=1000 texture=722 rect=278 normal=1000 swapchain=0 explicit-sync=0
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info(lock): session locked
+info(lock): session unlocked
+info(output): applying output configuration
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
+(EE) failed to read Wayland events: Broken pipe
+info: destroyed Vulkan blur after 0 checkpoints, 0 offscreen draws, and 0 composites (0 cache hits, 0 partial rebuilds, 0 full rebuilds, 0 pixels processed)
+info: Vulkan blur resources created: 0 scratch sets, 0 images, 0 descriptors, 0 cache images, 0 composite pipelines
+info: destroyed Vulkan rounded effects after 1275 texture and 517 rect draws (1786 normal, 6 swapchain, 0 explicit-sync)
+info: Vulkan rounded resources created: 1 texture pipelines, 1 rect pipelines
+info: destroyed Vulkan effects context

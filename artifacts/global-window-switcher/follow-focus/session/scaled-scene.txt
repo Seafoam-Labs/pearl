@@ -1,0 +1,109 @@
+scene [tree]
+├─ interactive [tree]
+│  ├─ normal session [tree]
+│  │  ├─ layer: background [tree]
+│  │  │  ├─ layer surface: pearl:wallpaper [tree]
+│  │  │  │  ├─ layer backdrop blur marker [rect] disabled
+│  │  │  │  └─ tree [tree]
+│  │  │  │     └─ surface buffer [buffer] (0,0 1280x720)
+│  │  │  └─ layer surface: pearl:wallpaper [tree] (-800,0 0x0)
+│  │  │     ├─ layer backdrop blur marker [rect] disabled
+│  │  │     └─ tree [tree]
+│  │  │        └─ surface buffer [buffer] (0,0 576x1024)
+│  │  ├─ layer: bottom [tree]
+│  │  ├─ layer: windows [tree]
+│  │  │  ├─ window animation snapshot [tree] disabled
+│  │  │  │  ├─ animation fullscreen background [rect] disabled
+│  │  │  │  ├─ animation backdrop blur marker [rect] disabled
+│  │  │  │  ├─ animation surfaces [tree]
+│  │  │  │  └─ animation border [tree] disabled
+│  │  │  │     ├─ animation border: rounded outline [rect] (-2,-2 772x407)
+│  │  │  │     ├─ animation border: left [rect] disabled
+│  │  │  │     ├─ animation border: right [rect] disabled
+│  │  │  │     ├─ animation border: top [rect] disabled
+│  │  │  │     └─ animation border: bottom [rect] disabled
+│  │  │  ├─ window: Task 0 window 0 [tree] (256,182 0x0)
+│  │  │  │  ├─ fullscreen background [rect] disabled
+│  │  │  │  ├─ backdrop blur marker [rect] disabled
+│  │  │  │  ├─ decorations below [tree]
+│  │  │  │  ├─ live surfaces [tree]
+│  │  │  │  │  └─ window subtree [tree]
+│  │  │  │  │     └─ window subtree [tree] (-14,-12 0x0)
+│  │  │  │  │        └─ window surface buffer [buffer] (0,0 796x432)
+│  │  │  │  ├─ saved surfaces [tree] disabled
+│  │  │  │  ├─ border: rounded outline [rect] (-2,-2 772x407)
+│  │  │  │  ├─ border: left [rect] disabled
+│  │  │  │  ├─ border: right [rect] disabled
+│  │  │  │  ├─ border: top [rect] disabled
+│  │  │  │  ├─ border: bottom [rect] disabled
+│  │  │  │  └─ decorations above [tree]
+│  │  │  ├─ window: Task 0 window 2 [tree] (-752,0 0x0)
+│  │  │  │  ├─ fullscreen background [rect] disabled (0,0 1280x720)
+│  │  │  │  ├─ backdrop blur marker [rect] disabled
+│  │  │  │  ├─ decorations below [tree]
+│  │  │  │  ├─ live surfaces [tree]
+│  │  │  │  │  └─ window subtree [tree]
+│  │  │  │  │     └─ window subtree [tree] (-14,-12 0x0)
+│  │  │  │  │        └─ window surface buffer [buffer] (0,0 556x1053)
+│  │  │  │  ├─ saved surfaces [tree] disabled
+│  │  │  │  ├─ border: rounded outline [rect] (-2,-2 532x1028)
+│  │  │  │  ├─ border: left [rect] disabled
+│  │  │  │  ├─ border: right [rect] disabled
+│  │  │  │  ├─ border: top [rect] disabled
+│  │  │  │  ├─ border: bottom [rect] disabled
+│  │  │  │  └─ decorations above [tree]
+│  │  │  └─ window animation snapshot [tree] disabled (320,246 0x0)
+│  │  │     ├─ animation fullscreen background [rect] disabled
+│  │  │     ├─ animation backdrop blur marker [rect] disabled
+│  │  │     ├─ animation surfaces [tree]
+│  │  │     └─ animation border [tree] disabled
+│  │  │        ├─ animation border: rounded outline [rect] (-2,-2 532x1028)
+│  │  │        ├─ animation border: left [rect] disabled
+│  │  │        ├─ animation border: right [rect] disabled
+│  │  │        ├─ animation border: top [rect] disabled
+│  │  │        └─ animation border: bottom [rect] disabled
+│  │  ├─ workspace overview [tree] disabled
+│  │  ├─ layer: top [tree]
+│  │  │  ├─ layer surface: pearl:bar [tree]
+│  │  │  │  ├─ layer backdrop blur marker [rect] disabled
+│  │  │  │  └─ tree [tree]
+│  │  │  │     └─ surface buffer [buffer] (0,0 48x720)
+│  │  │  ├─ layer surface: pearl:bar [tree] (-800,0 0x0)
+│  │  │  │  ├─ layer backdrop blur marker [rect] disabled
+│  │  │  │  └─ tree [tree]
+│  │  │  │     └─ surface buffer [buffer] (0,0 48x1024)
+│  │  │  └─ layer surface: pearl:dock [tree] (610,632 0x0)
+│  │  │     ├─ layer backdrop blur marker [rect] disabled
+│  │  │     └─ tree [tree]
+│  │  │        └─ surface buffer [buffer] (0,0 60x80)
+│  │  ├─ layer: fullscreen [tree]
+│  │  ├─ layer: overlay [tree]
+│  │  │  ├─ layer surface: pearl:dock-reveal [tree] (596,718 0x0)
+│  │  │  │  ├─ layer backdrop blur marker [rect] disabled
+│  │  │  │  └─ tree [tree]
+│  │  │  │     └─ surface buffer [buffer] (0,0 88x2)
+│  │  │  └─ layer surface: pearl:dock-reveal [tree] (-556,1022 0x0)
+│  │  │     ├─ layer backdrop blur marker [rect] disabled
+│  │  │     └─ tree [tree]
+│  │  │        └─ surface buffer [buffer] (0,0 88x2)
+│  │  ├─ layer: popups [tree]
+│  │  │  ├─ layer surface popups [tree]
+│  │  │  ├─ layer surface popups [tree]
+│  │  │  ├─ layer surface popups [tree] (-800,0 0x0)
+│  │  │  ├─ layer surface popups [tree] (-800,0 0x0)
+│  │  │  ├─ window popups [tree] (256,182 0x0)
+│  │  │  ├─ window popups [tree] (-752,0 0x0)
+│  │  │  ├─ layer surface popups [tree] (596,718 0x0)
+│  │  │  ├─ layer surface popups [tree] (-556,1022 0x0)
+│  │  │  └─ layer surface popups [tree] (610,632 0x0)
+│  │  └─ layer: XWayland override-redirect [tree]
+│  └─ locked session [tree] disabled
+├─ hidden staging [tree] disabled
+├─ tree [tree] disabled
+│  ├─ rect [rect] (0,0 1x1)
+│  ├─ rect [rect] (0,0 1x1)
+│  ├─ rect [rect] (0,0 1x1)
+│  └─ rect [rect] (0,0 1x1)
+└─ drag icons [tree]
+output-retry output=HEADLESS-2 pending=false failures=0 total_failures=0 retries=0 deadline_ms=0 stage=scene_build recovery_commit=null presented_commit=null [tree]
+output-retry output=HEADLESS-1 pending=false failures=0 total_failures=0 retries=0 deadline_ms=0 stage=scene_build recovery_commit=null presented_commit=null [tree]

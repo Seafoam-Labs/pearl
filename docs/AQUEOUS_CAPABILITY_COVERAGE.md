@@ -589,3 +589,20 @@ Sources: `src/aqueous/{codec,entities,commands}.zig`,
 `WindowSwitcher.zig`, `Overview.zig`, `IpcProtocol.zig`, `ShellManager.zig`.
 Validation: `test-window-switcher`, the Pearl protocol/policy tests, and Aqueous
 ring/overview/protocol tests. See [native evidence](../artifacts/window-switcher/README.md).
+
+## Global window switcher extension
+
+`global_window_switcher_v1` adds `scope: "all"` to the existing three switcher
+commands. Global requests carry output, optional seat, and reduced_motion, and
+omit workspace. The output chooses presentation; it does not restrict candidates.
+Legacy requests omit scope and retain required active-workspace validation.
+Pearl negotiates global behavior and preserves legacy behavior on older Aqueous.
+
+Additional optional session/result fields are `switcher_scope`, `switcher_seat`,
+`switcher_workspace`, `switcher_destination_output`, and `switcher_pending`.
+`switcher_output` remains the presentation output. The compositor owns global
+rings, destination activation, and explicit cursor handoff after dismissal.
+
+Validation: protocol cloning/invalid-shape tests, Pearl negotiation/membership
+tests, and the extended native `test-window-switcher` in two focus-warp modes.
+See [global evidence](../artifacts/global-window-switcher/README.md).

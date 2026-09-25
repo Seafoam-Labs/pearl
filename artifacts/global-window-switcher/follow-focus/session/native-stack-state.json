@@ -1,0 +1,18 @@
+{
+  "kind": "session",
+  "id": "session",
+  "locked": false,
+  "default_seat": "default",
+  "overview_output": null,
+  "overview_window": null,
+  "switcher_output": "1",
+  "switcher_window": "fd73590cefaea9fdc45e814422513289",
+  "switcher_position": 2,
+  "switcher_total": 3,
+  "switcher_serial": 4,
+  "switcher_scope": "all",
+  "switcher_seat": "default",
+  "switcher_workspace": "1",
+  "switcher_destination_output": "1",
+  "switcher_pending": false
+}

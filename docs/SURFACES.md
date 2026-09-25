@@ -302,3 +302,11 @@ The compositor keeps its stack below top/overlay shell layers, so repeated bar
 and HUD clicks work while the stack is visible. It restores presentation before
 ordinary pointer input is delivered. The session request connection owns stacks
 started by Pearl; disconnect dismisses them without replaying queued requests.
+
+Global cycling keeps the deck/HUD on the initiating output while window focus
+and the selected seat follow the destination workspace/output. HUD labels use
+`switcher_workspace` and `switcher_destination_output`, not the presentation
+output's active workspace. The title and destination/count occupy separate rows
+to keep the numeric position visible. Pending selections are not announced as confirmed.
+The compositor restores the live scene before the final cursor handoff; physical
+pointer intent or lifecycle cancellation suppresses that handoff.

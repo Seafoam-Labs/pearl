@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "date": "2026-09-25",
+  "source_bases": {
+    "Pearl": "2ff702c",
+    "Aqueous": "c2d89d5"
+  },
+  "capability": "global_window_switcher_v1",
+  "native_checks": {
+    "default": 31,
+    "mouse_follows_focus_and_xwayland": 32
+  },
+  "checks": {
+    "pearl_release_safe_build": "passed",
+    "pearl_unit_tests": "passed",
+    "aqueous_release_safe_xwayland_build": "passed",
+    "aqueous_compositor_tests": "passed",
+    "aqueous_config_build": "passed",
+    "aqueous_overview_regression": "passed",
+    "aqueous_output_focus_constraints_regression": "passed",
+    "pearl_bar_layout_regression": "passed",
+    "pearl_preferences_regression": "passed",
+    "zig_format_and_diff_checks": "passed"
+  },
+  "binaries": {
+    "/home/zoey/Pearl/zig-out/bin/pearl": "460d49eb53af84a5093588d6e0d48821624f2945dd9664705596ce2acbc0d7d1",
+    "/home/zoey/Pearl/zig-out/bin/pearlctl": "fa95af5309a89923b696c08d7cf4bce46ada6d8f355b0c868e06957d1c1ec716",
+    "/home/zoey/Pearl/.cache/aqueous-global-switcher/bin/aqueous": "99d6e49491a82b8f5874974c9b68add322fbc6e2ec3950c65c9f7bc63d8ed845",
+    "/home/zoey/Pearl/.cache/aqueous-global-switcher/bin/aqueous-config": "0bf4d094d516ca806cc83012721efb69468f201c2c81d5ebe352b3004454431d"
+  },
+  "limitations": [
+    "Headless software-rendered sessions; physical scanout not tested",
+    "Physical multi-seat devices and screen-reader speech not exercised",
+    "Representative scale/rotation case tested; full matrix not exercised"
+  ],
+  "system_install": false,
+  "running_desktop_restarted": false
+}

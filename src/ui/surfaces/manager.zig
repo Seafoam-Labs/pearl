@@ -40,6 +40,7 @@ const Surface = struct {
     effects: native.Surface = undefined,
     edge: Edge = .top,
     switcher_label: ?*gtk.Label = null,
+    switcher_location: ?*gtk.Label = null,
     switcher_controls: ?*gtk.Widget = null,
     switcher_spoken: ?[:0]u8 = null,
     bar: ?*Bar.Bar = null,
@@ -1134,6 +1135,11 @@ pub const Manager = struct {
                 title.setMaxWidthChars(40);
                 panel.append(title.as(gtk.Widget));
                 s.switcher_label = title;
+                const location = gtk.Label.new("");
+                location.setEllipsize(.middle);
+                location.setMaxWidthChars(40);
+                panel.append(location.as(gtk.Widget));
+                s.switcher_location = location;
                 const row = gtk.Box.new(.horizontal, 8);
                 row.setHomogeneous(1);
                 s.switcher_controls = row.as(gtk.Widget);
@@ -1183,7 +1189,7 @@ pub const Manager = struct {
     }
     fn cycleWindow(self: *Manager, output: *Output, direction: Switcher.Direction) !void {
         if (self.barInhibited()) return error.Locked;
-        const action = try Switcher.action(&self.client.model, output.id, direction, self.preferences.prefs().reduced_motion);
+        const action = try Switcher.action(&self.client.model, output.id, direction, self.preferences.prefs().reduced_motion, self.client.capabilities.global_window_switcher_v1);
         if (direction != .dismiss) self.hidePopup();
         _ = try self.client.enqueue(action);
     }
@@ -1192,6 +1198,7 @@ pub const Manager = struct {
             self.hideSwitcher();
             return;
         };
+        if (state.switcher_pending) return;
         const id = state.switcher_output orelse {
             self.hideSwitcher();
             return;
@@ -1209,13 +1216,20 @@ pub const Manager = struct {
         self.switcher = surface;
         const window = self.client.model.get(.window, state.switcher_window orelse "");
         const title = if (window) |w| w.title orelse w.app_id orelse "Window" else "Window";
-        const workspace = self.client.model.activeWorkspace(output.id);
-        const label = try std.fmt.allocPrintSentinel(a, "{s} · {d} / {d}", .{ title, state.switcher_position, state.switcher_total }, 0);
+        const workspace = if (state.switcher_workspace) |workspace_id| self.client.model.get(.workspace, workspace_id) else self.client.model.activeWorkspace(output.id);
+        const destination = if (state.switcher_destination_output) |destination_id| self.client.model.get(.output, destination_id) else self.client.model.get(.output, output.id);
+        const location = try std.fmt.allocPrintSentinel(a, "{d} / {d} · {s} {s} · {s}", .{ state.switcher_position, state.switcher_total, tr("Workspace", "Arbeitsfläche"), if (workspace) |ws| ws.name else "", if (destination) |dest| dest.name else "" }, 0);
+        defer a.free(location);
+        const title_z = try a.dupeZ(u8, title);
+        defer a.free(title_z);
+        const label = try std.fmt.allocPrintSentinel(a, "{s} · {s}", .{ title, location }, 0);
         defer a.free(label);
-        const spoken = try std.fmt.allocPrintSentinel(a, "{s}, {s}, {s} {s}", .{ if (window) |w| w.app_id orelse "Window" else "Window", label, tr("Workspace", "Arbeitsfläche"), if (workspace) |ws| ws.name else "" }, 0);
+        const spoken = try std.fmt.allocPrintSentinel(a, "{s}, {s}", .{ if (window) |w| w.app_id orelse "Window" else "Window", label }, 0);
         if (surface.switcher_spoken) |old| a.free(old);
         surface.switcher_spoken = spoken;
-        surface.switcher_label.?.setText(label);
+        surface.switcher_label.?.setText(title_z);
+        surface.switcher_location.?.setText(location);
+        surface.switcher_location.?.as(gtk.Widget).setTooltipText(location);
         surface.switcher_label.?.as(gtk.Widget).setTooltipText(label);
         surface.panel.as(gtk.Accessible).updateProperty(.label, spoken.ptr, @as(c_int, -1));
         if (self.switcher_serial != state.switcher_serial) {
@@ -1909,7 +1923,7 @@ pub const Manager = struct {
         const Item = struct { keyboard: []const u8, title: []const u8, groups: Groups, id: []const u8, connector: []const u8, scale: f64, bounds: Rect, usable: Rect, bar_edge: Edge, bar_size: u16, bar_mode: BarVisibility.Mode, bar_visible: bool, bar_visibility_reason: BarVisibility.Reason, bar_sensor_visible: bool, bar_exclusive_zone: i32, frames: [4]u16, islands: bool, island_rects: [3]?Rect, dock: struct { reason: @import("../../desktop/dock_policy.zig").Reason, groups: usize, truncated: bool, rect: Rect, edge: Edge } };
         var items: std.ArrayList(Item) = .empty;
         for (self.outputs.items) |o| try items.append(alloc, .{ .keyboard = if (o.bar.?.bar.?.keyboard) |label| std.mem.span(label.getText()) else "", .title = if (o.bar.?.bar.?.title) |label| titlePreview(std.mem.span(label.getText())) else "", .groups = .{ .left = o.bar.?.bar.?.groups[0], .center = o.bar.?.bar.?.groups[1], .right = o.bar.?.bar.?.groups[2] }, .id = o.id, .connector = o.connector, .scale = o.scale, .bounds = o.bounds, .usable = o.usable, .bar_edge = o.reservations.bar_edge, .bar_size = o.reservations.bar_size, .bar_mode = if (o.bar.?.autohide) |c| c.state.mode else .always, .bar_visible = o.bar.?.window.as(gtk.Widget).getVisible() != 0, .bar_visibility_reason = if (o.bar.?.autohide) |c| c.state.reason else .always, .bar_sensor_visible = if (o.bar.?.autohide) |c| c.sensor.as(gtk.Widget).getVisible() != 0 else false, .bar_exclusive_zone = layer.getExclusiveZone(o.bar.?.window), .frames = o.reservations.frames, .islands = o.bar.?.bar.?.islands, .island_rects = o.bar.?.effects.last_shapes, .dock = .{ .reason = o.dock.?.reason, .groups = o.dock.?.count, .truncated = o.dock.?.truncated, .rect = o.dock.?.rect, .edge = o.dock.?.config.edge } });
-        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .identifying = self.identifiers.items.len, .osd = self.osd != null, .osd_text = self.osd_text.slice(), .osd_detail = self.osdStatus(), .window_switcher = if (self.switcher) |surface| @as(?struct { output: []const u8, keyboard_mode: []const u8, text: []const u8, serial: u64, rect: Rect }, .{ .output = surface.output.id, .keyboard_mode = @tagName(layer.getKeyboardMode(surface.window)), .text = std.mem.span(surface.switcher_label.?.getText()), .serial = self.switcher_serial, .rect = .{ .x = surface.output.usable.x + @divTrunc(surface.output.usable.width - surface.window.as(gtk.Widget).getWidth(), 2), .y = surface.output.usable.y + surface.output.usable.height - layer.getMargin(surface.window, .bottom) - surface.window.as(gtk.Widget).getHeight(), .width = surface.window.as(gtk.Widget).getWidth(), .height = surface.window.as(gtk.Widget).getHeight() } }) else null }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .identifying = self.identifiers.items.len, .osd = self.osd != null, .osd_text = self.osd_text.slice(), .osd_detail = self.osdStatus(), .window_switcher = if (self.switcher) |surface| @as(?struct { output: []const u8, keyboard_mode: []const u8, text: []const u8, serial: u64, rect: Rect }, .{ .output = surface.output.id, .keyboard_mode = @tagName(layer.getKeyboardMode(surface.window)), .text = surface.switcher_spoken orelse "", .serial = self.switcher_serial, .rect = .{ .x = surface.output.usable.x + @divTrunc(surface.output.usable.width - surface.window.as(gtk.Widget).getWidth(), 2), .y = surface.output.usable.y + surface.output.usable.height - layer.getMargin(surface.window, .bottom) - surface.window.as(gtk.Widget).getHeight(), .width = surface.window.as(gtk.Widget).getWidth(), .height = surface.window.as(gtk.Widget).getHeight() } }) else null }, .{});
     }
 };
 fn rectangle(r: anytype) !Rect {

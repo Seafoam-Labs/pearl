@@ -159,6 +159,7 @@ pub const usage =
     \\       Opens the compact flyout. Toggle closes the same page or switches to another.
     \\       Status popup.page reports its route; invalid pages leave the flyout unchanged.
     \\       pearlctl window-switcher next|previous|dismiss [--output ID]
+    \\         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.
     \\       pearlctl running-apps show [--output ID]
     \\       pearlctl calendar toggle [--output ID]
     \\       pearlctl overview toggle [--output ID]

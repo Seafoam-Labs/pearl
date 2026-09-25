@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Coordinated Pearl/Aqueous window switcher in a disposable native session."""
-import argparse, copy, json, re, sys, time
+import argparse, copy, json, re, socket, sys, time
 from pathlib import Path
 from types import SimpleNamespace
 from PIL import Image, ImageChops
@@ -15,14 +15,16 @@ from test_preferences import settled, apply
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--pearl',type=Path,required=True);p.add_argument('--ctl',type=Path,required=True)
-    p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-switcher')
-    p.add_argument('--output',type=Path,default=ROOT/'artifacts/window-switcher')
+    p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-global-switcher')
+    p.add_argument('--output',type=Path,default=ROOT/'artifacts/global-window-switcher')
+    p.add_argument('--mouse-follows-focus', action='store_true')
+    p.add_argument('--xwayland', action='store_true')
     args=p.parse_args()
     args.pearl=args.pearl.resolve();args.ctl=args.ctl.resolve();args.output.mkdir(parents=True,exist_ok=True)
     report={'status':'running','checks':[]}
     def passed(name): report['checks'].append(name); print('PASS',name,flush=True)
     try:
-        with PrivateSession(args.output/'session',tool_prefix=args.prefix.resolve(),wm_extra='\n[keybinds]\nwindow_switcher_next = ["Super+Tab"]\nwindow_switcher_previous = ["Super+Shift+Tab"]\ncycle_focus = []\n') as s:
+        with PrivateSession(args.output/'session',tool_prefix=args.prefix.resolve(),xwayland=args.xwayland,wm_extra=f'\n[input]\nmouse_follows_focus = {str(args.mouse_follows_focus).lower()}\n[keybinds]\nwindow_switcher_next = ["Super+Tab"]\nwindow_switcher_previous = ["Super+Shift+Tab"]\ncycle_focus = []\n') as s:
             s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
             ipc=IPC(s)
             shell=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
@@ -36,6 +38,21 @@ def main():
             def focused():return next((w['id'] for w in windows() if w['focused']),None)
             def command(action,**fields):return ipc.call('command',action=action,fields=fields)
             def cycle(direction='next',output=oid):return ctl(s,args.ctl,'window-switcher',direction,'--output',output)
+            def cursor():
+                with socket.socket(socket.AF_UNIX) as client:
+                    client.settimeout(5)
+                    client.connect(str(s.runtime/'aqueous/outputd.sock'))
+                    client.sendall(b'{"op":"cursor_state"}\n')
+                    with client.makefile('r') as response: result=json.loads(response.readline())
+                assert result['ok'],result
+                return result
+            def xy():
+                c=cursor();return c['x'],c['y']
+            def inside_selected():
+                w=next((w for w in windows() if w['id']==focused()),None)
+                if w is None:return False
+                x,y=xy();g=w['geometry']
+                return g['x']<=x<g['x']+g['width'] and g['y']<=y<g['y']+g['height']
             def visible():return session().get('switcher_window')
             def hud():return status(s,args.ctl)['window_switcher']
             def bar():return ctl(s,args.ctl,'aqueous','status','--text','test-bar-layout:'+oid)['result']
@@ -89,7 +106,7 @@ def main():
             wait_for(lambda:visible() is None,timeout=3)
             previous=focused();cycle();wait_for(lambda:focused()==start)
             passed('idle-dismissal-preserves-ring-order')
-            keys(s,'Escape');wait_for(lambda:visible() is None);assert focused()==start
+            keys(s,'Escape');wait_for(lambda:visible() is None);assert focused()==start;wait_for(inside_selected)
             passed('escape-retains-selected-focus')
             # A physical button press must reach the bar without taking keyboard focus.
             rect=wait_for(lambda:(lambda v:v if v['width']>0 else None)(widget()['rect']))
@@ -115,10 +132,92 @@ def main():
             wait_for(lambda:focused()==before)
             assert len(windows())==3
             passed('rapid-six-press-burst-retains-logical-steps')
-            keys(s,'a');wait_for(lambda:visible() is None)
+            keys(s,'a');wait_for(lambda:visible() is None);wait_for(inside_selected)
             passed('typing-dismisses-presentation')
             assert {w['id']:(w['geometry'],w['layout'],w['fullscreen'],w['maximized']) for w in windows()}==geometry
             passed('client-geometry-and-layout-unchanged')
+            # Global order survives workspace/output activation beneath a deck
+            # anchored on the invoking bar's output.
+            remote=next(e for e in spaces if e['output']==second['id'] and e['active'])
+            inactive=next(e for e in spaces if e['output']==oid and e['id']!=ws['id'])
+            base=windows();base_ids=[w['id'] for w in base]
+            command('window.move',id=base_ids[1],workspace=inactive['id'])
+            command('window.move',id=base_ids[2],workspace=remote['id'])
+            # Commit each destination's normal layout before recording geometry.
+            for window_id in base_ids:
+                command('window.activate',id=window_id);wait_for(lambda:focused()==window_id)
+            command('window.activate',id=base_ids[0]);wait_for(lambda:focused()==base_ids[0])
+            time.sleep(.4)
+            before_global={w['id']:(w['workspace'],w['output'],w['geometry'],w['layout']) for w in windows()}
+            origin_cursor=xy();seen=[]
+            for _ in range(3):
+                before=focused();cycle();selected=wait_for(lambda:(lambda v:v if v and v!=before else None)(focused()))
+                seen.append(selected)
+                st=wait_for(lambda:(lambda v:v if v.get('switcher_window')==selected else None)(session()))
+                w=next(w for w in windows() if w['id']==selected)
+                assert st['switcher_scope']=='all' and st['switcher_output']==oid,st
+                assert st['switcher_destination_output']==w['output'] and st['switcher_workspace']==w['workspace'],st
+                assert next(e for e in state() if e['kind']=='workspace' and e['id']==w['workspace'])['active']
+                value=wait_for(hud);assert value['output']==oid and value['keyboard_mode']=='none',value
+                assert xy()==origin_cursor,('premature warp',origin_cursor,xy())
+            assert set(seen)==set(base_ids) and seen[-1]==base_ids[0],seen
+            for expected in [seen[1],seen[0],base_ids[0]]:
+                cycle('previous');wait_for(lambda:focused()==expected)
+                assert session()['switcher_output']==oid
+            before=focused()
+            for _ in range(6):cycle()
+            wait_for(lambda:focused()==before)
+            cycle('dismiss');wait_for(lambda:visible() is None);wait_for(inside_selected)
+            after_global={w['id']:(w['workspace'],w['output'],w['geometry'],w['layout']) for w in windows()}
+            (s.output/'global-geometry.json').write_text(json.dumps(dict(before=before_global,after=after_global),indent=2))
+            assert after_global==before_global,(before_global,after_global)
+            passed('global-cycle-activates-remote-workspaces-and-outputs-with-stationary-origin-hud')
+            # Every stop, including the remote display, gets a real cursor
+            # destination after its scene has been restored.
+            for _ in range(3):
+                before=focused();cycle();wait_for(lambda:focused()!=before)
+                cycle('dismiss');wait_for(lambda:visible() is None);wait_for(inside_selected)
+            passed('global-dismiss-warps-inside-selected-content')
+            before=focused();cycle();wait_for(lambda:focused()!=before)
+            s.run(['wlrctl','pointer','move','-100000','-100000'])
+            point=xy();cycle('dismiss');wait_for(lambda:visible() is None);time.sleep(.15)
+            assert xy()==point,('physical pointer intent lost',point,xy())
+            passed('physical-pointer-motion-cancels-pending-warp')
+            cycle();wait_for(visible);wait_for(lambda:visible() is None,timeout=3);wait_for(inside_selected)
+            passed('idle-dismissal-warps-to-final-global-selection')
+            # Legacy requests retain workspace scope on the new compositor.
+            command('window.activate',id=base_ids[0]);wait_for(lambda:focused()==base_ids[0])
+            command('switcher.next',output=oid,workspace=ws['id'])
+            assert visible() is None and focused()==base_ids[0]
+            passed('legacy-v1-retains-single-workspace-scope')
+            if args.xwayland:
+                fixture_path=s.runtime/'switcher-x11'
+                s.run(['cc','/home/zoey/RiderProjects/Aqueous/compositor/scripts/fixtures/shell-x11.c','-lX11','-o',fixture_path])
+                xclient=s.child('switcher-x11',[fixture_path])
+                def xwindow():return next((w for w in state() if w['kind']=='window' and w.get('class')=='aq-shell-x11'),None)
+                xwin=wait_for(xwindow)
+                command('window.move',id=xwin['id'],workspace=remote['id'])
+                command('window.activate',id=base_ids[0]);wait_for(lambda:focused()==base_ids[0])
+                seen=[]
+                for _ in range(4):
+                    cycle();st=wait_for(session);seen.append(st['switcher_window'])
+                assert set(seen)==set(base_ids+[xwin['id']]),seen
+                for _ in range(4):
+                    cycle()
+                    if session()['switcher_window']==xwin['id']:break
+                else:raise AssertionError('XWayland window unreachable')
+                cycle('dismiss');wait_for(lambda:visible() is None)
+                def inside_x11():
+                    w=xwindow();x,y=xy();g=w['geometry']
+                    return w['focused'] and g['x']<=x<g['x']+g['width'] and g['y']<=y<g['y']+g['height']
+                wait_for(inside_x11)
+                command('window.close',id=xwin['id']);wait_for(lambda:xwindow() is None);xclient.wait()
+                passed('mixed-xdg-xwayland-global-ring-and-remote-cursor-handoff')
+
+            for window in windows():command('window.move',id=window['id'],workspace=ws['id'])
+            command('window.activate',id=start);wait_for(lambda:focused()==start)
+            time.sleep(.4)
+
             # A fullscreen client remains fullscreen while its texture is scaled
             # into the deck; switching must not change the application's mode.
             full=windows()[0]['id']
@@ -181,22 +280,25 @@ def main():
             passed('overview-coexists-with-switcher-after-reduced-motion')
             cycle('dismiss');wait_for(lambda:visible() is None)
             other_ipc=IPC(s)
-            other_ipc.call('command',action='switcher.next',fields={'output':oid,'workspace':ws['id']})
-            wait_for(visible);other_ipc.close();wait_for(lambda:visible() is None)
+            other_ipc.call('command',action='switcher.next',fields={'output':oid,'scope':'all'})
+            wait_for(visible);point=xy();other_ipc.close();wait_for(lambda:visible() is None)
+            time.sleep(.15);assert xy()==point,('disconnect warped cursor',point,xy())
             passed('request-connection-loss-releases-compositor-presentation')
             cycle();wait_for(visible)
             active=focused();command('window.close',id=active);wait_for(lambda:len(windows())==2);wait_for(lambda:visible() is None)
             cycle();wait_for(visible)
             passed('selected-window-close-cleans-up-and-resumes')
             remote=next(e for e in spaces if e['output']==second['id'] and e['active'])
-            move=windows()[0]['id'];command('window.move',id=move,workspace=remote['id']);wait_for(lambda:visible() is None)
-            before=focused();cycle();time.sleep(.15);assert visible() is None and focused()==before
-            assert next(w for w in windows() if w['id']==move)['workspace']==remote['id']
-            passed('one-window-no-op-and-other-display-exclusion')
+            move=windows()[0]['id'];command('window.move',id=move,workspace=remote['id'])
+            cycle('dismiss');wait_for(lambda:visible() is None)
             remaining=next(w for w in windows() if w['id']!=move)
             command('window.minimized',id=remaining['id'],value=True)
-            cycle();assert visible() is None
-            passed('minimized-windows-excluded')
+            # Sole eligible window on another output must still be reachable.
+            command('workspace.activate',id=ws['id'])
+            cycle();wait_for(lambda:focused()==move);wait_for(lambda:visible() is None);wait_for(inside_selected)
+            assert next(w for w in windows() if w['id']==move)['workspace']==remote['id']
+            assert next(w for w in windows() if w['id']==remaining['id'])['minimized']
+            passed('single-remote-window-activates-and-warps-with-minimized-window-excluded')
             command('window.minimized',id=remaining['id'],value=False)
             command('window.move',id=move,workspace=ws['id'])
             command('window.activate',id=remaining['id']);cycle();wait_for(visible)
@@ -207,6 +309,24 @@ def main():
             locker.proc.stdin.write('unlock\n');locker.proc.stdin.flush();locker.wait()
             wait_for(lambda:not session()['locked'])
             passed('session-lock-clears-scene-hud-and-input')
+            # Pointer destinations use logical coordinates even when the other
+            # output is rotated, fractionally scaled, and left of the origin.
+            s.run(['wlr-randr','--output',second['connector'],'--pos','-800,0','--scale','1.25','--transform','90'])
+            remote=next(e for e in state() if e['kind']=='workspace' and e['output']==second['id'] and e['active'])
+            command('window.move',id=move,workspace=remote['id'])
+            # The floating layout retains its saved coordinates across output
+            # reconfiguration. Arrange the destination to establish a visible
+            # client before testing the cursor's transformed coordinates.
+            ctl(s,args.ctl,'layout','set','--output',second['id'],'--layout','tile')
+            wait_for(lambda:next(w for w in windows() if w['id']==move)['geometry']['x']<0)
+            command('window.activate',id=remaining['id']);wait_for(lambda:focused()==remaining['id'])
+            cycle();wait_for(lambda:focused()==move);cycle('dismiss');wait_for(lambda:visible() is None)
+            try:wait_for(inside_selected)
+            finally:
+                (s.output/'scaled-handoff.json').write_text(json.dumps(dict(cursor=cursor(),state=state()),indent=2))
+                (s.output/'scaled-scene.txt').write_text(s.run(['aqueousctl','scene']).stdout)
+            assert xy()[0]<0,xy()
+            passed('remote-cursor-handoff-with-negative-origin-fractional-scale-and-rotation')
             cycle();wait_for(visible)
             protocol=Path('/home/zoey/RiderProjects/Aqueous/compositor/protocol/upstream/wlr-output-power-management-unstable-v1.xml')
             power_dir=s.runtime/'output-power';power_dir.mkdir()
@@ -218,7 +338,11 @@ def main():
             wait_for(lambda:visible() is None and hud() is None)
             assert len(status(s,args.ctl)['outputs'])==1
             passed('powered-off-output-releases-native-stack-and-hud')
+            cycle(output=second['id']);wait_for(lambda:focused()==move);wait_for(lambda:visible() is None);wait_for(inside_selected)
+            passed('powered-off-output-windows-excluded-from-global-ring')
             ipc.close();shell.stop();clean(shell)
+        assert s.compositor.proc.returncode in (0,-15),s.compositor.proc.returncode
+        passed('compositor-shutdown-cleans-up-global-seat-rings')
         report['status']='passed'
     finally:
         (args.output/'verification.json').write_text(json.dumps(report,indent=2)+'\n')

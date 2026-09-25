@@ -1,0 +1,6 @@
+PASS: output warps, empty outputs, placement, window moves, constraints and focus history (focus_follows_mouse=False, mouse_follows_focus=False)
+PASS: activation, pointer exclusions, keyboard/overview focus, constraints, workspaces, reload, admission/replacement, fullscreen, scrolling and lock
+PASS: output warps, empty outputs, placement, window moves, constraints and focus history (focus_follows_mouse=False, mouse_follows_focus=True)
+PASS: output warps, empty outputs, placement, window moves, constraints and focus history (focus_follows_mouse=True, mouse_follows_focus=False)
+PASS: activation, pointer exclusions, keyboard/overview focus, constraints, workspaces, reload, admission/replacement, fullscreen, scrolling and lock
+PASS: output warps, empty outputs, placement, window moves, constraints and focus history (focus_follows_mouse=True, mouse_follows_focus=True)

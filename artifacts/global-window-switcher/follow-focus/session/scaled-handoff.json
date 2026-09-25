@@ -1,0 +1,360 @@
+{
+  "cursor": {
+    "ok": true,
+    "x": -488,
+    "y": 512,
+    "outputs": [
+      {
+        "name": "HEADLESS-2",
+        "scale": 1,
+        "hardware_active": true,
+        "software_cursor_locks": 0,
+        "width": 24,
+        "height": 24
+      },
+      {
+        "name": "HEADLESS-1",
+        "scale": 1.25,
+        "hardware_active": true,
+        "software_cursor_locks": 0,
+        "width": 30,
+        "height": 30
+      }
+    ]
+  },
+  "state": [
+    {
+      "kind": "workspace",
+      "id": "12",
+      "output": "2",
+      "name": "3",
+      "number": 3,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "11",
+      "output": "2",
+      "name": "2",
+      "number": 2,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "18",
+      "output": "2",
+      "name": "9",
+      "number": 9,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "16",
+      "output": "2",
+      "name": "7",
+      "number": 7,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "9",
+      "output": "1",
+      "name": "9",
+      "number": 9,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "keyboard",
+      "id": "1",
+      "seat": "default",
+      "layouts": [
+        "English (US)"
+      ],
+      "index": 0
+    },
+    {
+      "kind": "window",
+      "id": "d341028e66a7a7fc97e154f6097791d3",
+      "backend": "xdg",
+      "app_id": "org.pearl.Tasks0",
+      "class": null,
+      "title": "Task 0 window 2",
+      "tag": null,
+      "description": null,
+      "icon": null,
+      "workspace": "10",
+      "output": "2",
+      "geometry": {
+        "x": -752,
+        "y": 0,
+        "width": 528,
+        "height": 1024
+      },
+      "outer_geometry": {
+        "x": -754,
+        "y": -2,
+        "width": 532,
+        "height": 1028
+      },
+      "focused": true,
+      "visible": true,
+      "floating": false,
+      "minimized": false,
+      "maximized": false,
+      "fullscreen": false,
+      "skip_taskbar": false,
+      "skip_switcher": false,
+      "always_above": false,
+      "always_below": false,
+      "snapped": false,
+      "fixed_position": false,
+      "layout": "tiled",
+      "switcher_eligible": true,
+      "can_minimize": false,
+      "can_maximize": false,
+      "can_activate": true
+    },
+    {
+      "kind": "seat",
+      "id": "default",
+      "output": "2",
+      "window": "d341028e66a7a7fc97e154f6097791d3",
+      "focus_kind": "window",
+      "keyboard": "1"
+    },
+    {
+      "kind": "workspace",
+      "id": "3",
+      "output": "1",
+      "name": "3",
+      "number": 3,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "14",
+      "output": "2",
+      "name": "5",
+      "number": 5,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "7",
+      "output": "1",
+      "name": "7",
+      "number": 7,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "6",
+      "output": "1",
+      "name": "6",
+      "number": 6,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "17",
+      "output": "2",
+      "name": "8",
+      "number": 8,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "output",
+      "id": "2",
+      "name": "HEADLESS-1",
+      "enabled": true,
+      "powered": true,
+      "bounds": {
+        "x": -800,
+        "y": 0,
+        "width": 576,
+        "height": 1024
+      },
+      "usable_bounds": {
+        "x": -752,
+        "y": 0,
+        "width": 528,
+        "height": 1024
+      },
+      "scale": 1.25,
+      "transform": "90",
+      "active_workspace": "10"
+    },
+    {
+      "kind": "workspace",
+      "id": "2",
+      "output": "1",
+      "name": "2",
+      "number": 2,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "window",
+      "id": "f63ab5e3f7e855a28b8b1af9b22b79ba",
+      "backend": "xdg",
+      "app_id": "org.pearl.Tasks0",
+      "class": null,
+      "title": "Task 0 window 0",
+      "tag": null,
+      "description": null,
+      "icon": null,
+      "workspace": "1",
+      "output": "1",
+      "geometry": {
+        "x": 256,
+        "y": 182,
+        "width": 768,
+        "height": 403
+      },
+      "outer_geometry": {
+        "x": 254,
+        "y": 180,
+        "width": 772,
+        "height": 407
+      },
+      "focused": false,
+      "visible": true,
+      "floating": false,
+      "minimized": false,
+      "maximized": false,
+      "fullscreen": false,
+      "skip_taskbar": false,
+      "skip_switcher": false,
+      "always_above": false,
+      "always_below": false,
+      "snapped": false,
+      "fixed_position": false,
+      "layout": "tiled",
+      "switcher_eligible": true,
+      "can_minimize": true,
+      "can_maximize": true,
+      "can_activate": true
+    },
+    {
+      "kind": "output",
+      "id": "1",
+      "name": "HEADLESS-2",
+      "enabled": true,
+      "powered": true,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "usable_bounds": {
+        "x": 48,
+        "y": 0,
+        "width": 1232,
+        "height": 720
+      },
+      "scale": 1,
+      "transform": "normal",
+      "active_workspace": "1"
+    },
+    {
+      "kind": "workspace",
+      "id": "15",
+      "output": "2",
+      "name": "6",
+      "number": 6,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "10",
+      "output": "2",
+      "name": "1",
+      "number": 1,
+      "active": true,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "5",
+      "output": "1",
+      "name": "5",
+      "number": 5,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "4",
+      "output": "1",
+      "name": "4",
+      "number": 4,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "keyboard_device",
+      "id": "1",
+      "name": "wlr_virtual_keyboard_v1",
+      "seat": "default",
+      "group": "1",
+      "virtual": true
+    },
+    {
+      "kind": "workspace",
+      "id": "1",
+      "output": "1",
+      "name": "1",
+      "number": 1,
+      "active": true,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "13",
+      "output": "2",
+      "name": "4",
+      "number": 4,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "workspace",
+      "id": "8",
+      "output": "1",
+      "name": "8",
+      "number": 8,
+      "active": false,
+      "urgent": false
+    },
+    {
+      "kind": "session",
+      "id": "session",
+      "locked": false,
+      "default_seat": "default",
+      "overview_output": null,
+      "overview_window": null,
+      "switcher_output": null,
+      "switcher_window": null,
+      "switcher_position": 0,
+      "switcher_total": 0,
+      "switcher_serial": 60,
+      "switcher_scope": null,
+      "switcher_seat": null,
+      "switcher_workspace": null,
+      "switcher_destination_output": null,
+      "switcher_pending": false
+    }
+  ]
+}

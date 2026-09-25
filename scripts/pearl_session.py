@@ -81,7 +81,8 @@ class Child:
 
 
 class PrivateSession:
-    def __init__(self, output, aqueous=None, backend='headless', parent_display=None, inherited=None, renderer='pixman', wm_extra='', tool_prefix=None, compositor_args=(), compositor_fds=()):
+    def __init__(self, output, aqueous=None, backend='headless', parent_display=None, inherited=None, renderer='pixman', wm_extra='', tool_prefix=None, compositor_args=(), compositor_fds=(), xwayland=False):
+        self.xwayland = xwayland
         self.compositor_args = compositor_args
         self.compositor_fds = compositor_fds
         self.baseline = None
@@ -177,7 +178,8 @@ class PrivateSession:
         if self.parent_display:
             compositor_env['WAYLAND_DISPLAY'] = str(self.parent_display)
         marker = 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
-        self.compositor = self.child('compositor', [self.aqueous, *self.compositor_args, '-no-xwayland', '-c', marker], pass_fds=self.compositor_fds, **compositor_env)
+        if self.xwayland: marker += '; printenv DISPLAY > "$XDG_RUNTIME_DIR/x11-display"'
+        self.compositor = self.child('compositor', [self.aqueous, *self.compositor_args, *([] if self.xwayland else ['-no-xwayland']), '-c', marker], pass_fds=self.compositor_fds, **compositor_env)
         def ready():
             if self.compositor.proc.poll() is not None:
                 raise RuntimeError('private Aqueous failed: ' + str(self.compositor.logfile))
@@ -190,6 +192,8 @@ class PrivateSession:
         assert display_path.is_relative_to(self.runtime) and display_path.is_socket()
         assert display_path != self.parent_display
         self.env.update(WAYLAND_DISPLAY=display, AQUEOUS_SOCKET=str(endpoint))
+        if self.xwayland:
+            self.env['DISPLAY'] = wait_for(lambda: (self.runtime/'x11-display').read_text().strip() if (self.runtime/'x11-display').exists() else None)
         self.display_path = display_path
 
     def close(self):

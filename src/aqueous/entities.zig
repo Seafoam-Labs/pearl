@@ -65,7 +65,7 @@ pub const Seat = struct {
 };
 pub const Keyboard = struct { id: []const u8, seat: []const u8, layouts: []const []const u8, index: u32 };
 pub const KeyboardDevice = struct { id: []const u8, name: ?[]const u8, seat: []const u8, group: ?[]const u8, virtual: bool };
-pub const Session = struct { id: []const u8, locked: bool, default_seat: ?[]const u8, overview_output: ?[]const u8, overview_window: ?[]const u8, switcher_output: ?[]const u8 = null, switcher_window: ?[]const u8 = null, switcher_position: u32 = 0, switcher_total: u32 = 0, switcher_serial: u64 = 0 };
+pub const Session = struct { id: []const u8, locked: bool, default_seat: ?[]const u8, overview_output: ?[]const u8, overview_window: ?[]const u8, switcher_output: ?[]const u8 = null, switcher_window: ?[]const u8 = null, switcher_position: u32 = 0, switcher_total: u32 = 0, switcher_serial: u64 = 0, switcher_scope: ?[]const u8 = null, switcher_seat: ?[]const u8 = null, switcher_workspace: ?[]const u8 = null, switcher_destination_output: ?[]const u8 = null, switcher_pending: bool = false };
 pub const Entity = union(Kind) {
     output: Output,
     workspace: Workspace,

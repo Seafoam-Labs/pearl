@@ -434,11 +434,12 @@ pub const Bar = struct {
     }
     pub fn update(self: *Bar) void {
         if (self.widgets[@intFromEnum(policy.Item.window_switcher)]) |widget| {
-            const n = @import("window_switcher.zig").count(&self.client.model, self.output);
-            const supported = self.client.capabilities.workspace_switcher_v1;
-            widget.setSensitive(@intFromBool(supported and n > 1));
+            const all = self.client.capabilities.global_window_switcher_v1;
+            const n = @import("window_switcher.zig").count(&self.client.model, self.output, all);
+            const supported = all or self.client.capabilities.workspace_switcher_v1;
+            widget.setSensitive(@intFromBool(supported and (if (all) n > 0 else n > 1)));
             var buffer: [160]u8 = undefined;
-            const title = if (!supported) tr("Cycle windows requires updated Aqueous", "Fensterwechsel benötigt aktualisiertes Aqueous") else if (n == 0) tr("No open windows on this workspace", "Keine offenen Fenster auf dieser Arbeitsfläche") else if (n == 1) tr("Only window on this workspace", "Nur ein Fenster auf dieser Arbeitsfläche") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ tr("Cycle windows on this workspace", "Fenster dieser Arbeitsfläche durchschalten"), n }) catch "Cycle windows";
+            const title = if (!supported) tr("Cycle windows requires updated Aqueous", "Fensterwechsel benötigt aktualisiertes Aqueous") else if (all) (if (n == 0) tr("No open windows", "Keine offenen Fenster") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ tr("Cycle windows across all workspaces and displays", "Fenster aller Arbeitsflächen und Bildschirme durchschalten"), n }) catch "Cycle windows") else if (n == 0) tr("No open windows on this workspace", "Keine offenen Fenster auf dieser Arbeitsfläche") else if (n == 1) tr("Only window on this workspace", "Nur ein Fenster auf dieser Arbeitsfläche") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ tr("Cycle windows on this workspace", "Fenster dieser Arbeitsfläche durchschalten"), n }) catch "Cycle windows";
             widget.setTooltipText(title);
             w.name(widget, title);
         }

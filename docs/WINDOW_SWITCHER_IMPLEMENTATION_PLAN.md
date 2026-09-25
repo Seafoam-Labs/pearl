@@ -1,5 +1,7 @@
 # Workspace window switcher
 
+Follow-up proposal: [global scope and cursor warping](GLOBAL_WINDOW_SWITCHER_IMPLEMENTATION_PLAN.md).
+
 Status: implemented in the coordinated local Pearl/Aqueous changes. Native
 validation and remaining acceptance limits are recorded in
 [the evidence directory](../artifacts/window-switcher/README.md). The design and

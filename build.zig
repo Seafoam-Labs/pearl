@@ -630,7 +630,7 @@ pub fn build(b: *std.Build) void {
     window_switcher.addArg("--ctl");
     window_switcher.addArtifactArg(ctl);
     if (b.args) |args| window_switcher.addArgs(args);
-    b.step("test-window-switcher", "Verify workspace cycling, animated scene and focus lifecycle").dependOn(&window_switcher.step);
+    b.step("test-window-switcher", "Verify global cycling, cursor handoff, animated scene and focus lifecycle").dependOn(&window_switcher.step);
 
     const running_apps = b.addSystemCommand(&.{ "python3", "tests/integration/test_running_apps.py", "--pearl" });
     running_apps.addArtifactArg(integration_app);
