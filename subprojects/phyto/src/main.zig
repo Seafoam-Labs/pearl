@@ -13,11 +13,26 @@ var options: Options = .{};
 pub fn newWindow(app: *gtk.Application, file: *gio.File, opts: Options) void {
     windows.append(u.a, Window.create(app, file, opts)) catch @panic("Out of memory");
 }
+pub fn previewPreferencesChanged() void {
+    for (windows.items) |window| {
+        if (window.closed) continue;
+        inline for (.{ "thumbnails", "preview_details" }) |name| {
+            const action: *gio.SimpleAction = @ptrCast(u.object.ext.cast(gtk.ApplicationWindow, window.window).?.as(gio.ActionMap).lookupAction(name).?);
+            action.setState(glib.Variant.newBoolean(@intFromBool(@field(window.preferences, name))));
+        }
+        window.queueUpdate();
+    }
+    @import("preview.zig").schedule();
+}
 fn activate(app: *gio.Application, _: ?*anyopaque) callconv(.c) void {
     newWindow(@ptrCast(app), initial.?, options);
 }
 pub fn main(init: std.process.Init) void {
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch return;
+    if (args.len > 1 and std.mem.eql(u8, args[1], "--preview-helper")) {
+        @import("preview_helper.zig").run(args[2..]);
+        return;
+    }
     var location: ?[:0]const u8 = null;
     for (args[1..]) |arg| {
         if (std.mem.eql(u8, arg, "--help")) {
@@ -45,9 +60,13 @@ pub fn main(init: std.process.Init) void {
     _ = gio.Application.signals.activate.connect(app.as(gio.Application), ?*anyopaque, activate, null, .{});
     _ = gio.Application.signals.startup.connect(app.as(gio.Application), ?*anyopaque, startup, null, .{});
     var argv = [_][*:0]u8{@constCast("phyto")};
+    @import("platform/thumbnails.zig").init(app.as(gio.Application));
+    @import("platform/thumbnails.zig").changed = @import("preview.zig").schedule;
     const code = app.as(gio.Application).run(1, &argv);
     for (windows.items) |window| window.destroy();
     windows.deinit(u.a);
+    @import("preview.zig").shutdown();
+    @import("platform/thumbnails.zig").deinit();
     if (provider) |css| {
         if (gdk.Display.getDefault()) |display| gtk.StyleContext.removeProviderForDisplay(display, css.as(gtk.StyleProvider));
         css.unref();

@@ -48,6 +48,8 @@ pub const Window = struct {
     active: usize = 0,
     split: bool = false,
     show_details: bool = true,
+    quick_preview: ?*@import("preview.zig").Quick = null,
+    details_key: ?[:0]u8 = null,
     width: c_int = 1180,
     closed: bool = false,
     syncing: bool = false,
@@ -217,7 +219,12 @@ pub const Window = struct {
         for (std.enums.values(Command)) |command| {
             const idx = @intFromEnum(command);
             self.actions[idx] = .{ .owner = self, .command = command };
-            const action = if (command == .advanced or command == .allow_delete) gio.SimpleAction.newStateful(@tagName(command), null, glib.Variant.newBoolean(@intFromBool(if (command == .advanced) self.preferences.advanced else self.preferences.allow_delete))) else gio.SimpleAction.new(@tagName(command), null);
+            const action = if (command == .advanced or command == .allow_delete or command == .thumbnails or command == .preview_details) gio.SimpleAction.newStateful(@tagName(command), null, glib.Variant.newBoolean(@intFromBool(switch (command) {
+                .advanced => self.preferences.advanced,
+                .thumbnails => self.preferences.thumbnails,
+                .preview_details => self.preferences.preview_details,
+                else => self.preferences.allow_delete,
+            }))) else gio.SimpleAction.new(@tagName(command), null);
             _ = gio.SimpleAction.signals.activate.connect(action, *Action, actionActivated, &self.actions[idx], .{});
             object.ext.cast(gtk.ApplicationWindow, win).?.as(gio.ActionMap).addAction(action.as(gio.Action));
             action.unref();
@@ -236,7 +243,7 @@ pub const Window = struct {
         self.connect(list_button, .list);
         self.connect(details_button, .details);
         const menu = gio.Menu.new();
-        inline for (.{ .{ "New tab", "new_tab" }, .{ "Close tab", "close_tab" }, .{ "New window", "new_window" }, .{ "Split panes", "split" }, .{ "New folder…", "new_folder" }, .{ "Rename…", "rename" }, .{ "Cut", "cut" }, .{ "Copy", "copy" }, .{ "Paste", "paste" }, .{ "Undo", "undo" }, .{ "Redo", "redo" }, .{ "Context menu options…", "menu_settings" }, .{ "Move to Trash…", "trash" }, .{ "File operations", "operations" }, .{ "Properties", "properties" }, .{ "Show / hide hidden files", "hidden" }, .{ "Refresh", "refresh" }, .{ "Light / dark appearance", "light" }, .{ "Compact density", "compact" }, .{ "Use system GTK theme", "native" } }) |entry| menu.append(entry[0], "win." ++ entry[1]);
+        inline for (.{ .{ "New tab", "new_tab" }, .{ "Close tab", "close_tab" }, .{ "New window", "new_window" }, .{ "Split panes", "split" }, .{ "New folder…", "new_folder" }, .{ "Rename…", "rename" }, .{ "Cut", "cut" }, .{ "Copy", "copy" }, .{ "Paste", "paste" }, .{ "Undo", "undo" }, .{ "Redo", "redo" }, .{ "File view options…", "menu_settings" }, .{ "Move to Trash…", "trash" }, .{ "File operations", "operations" }, .{ "Properties", "properties" }, .{ "Preview", "preview" }, .{ "Show / hide hidden files", "hidden" }, .{ "Refresh", "refresh" }, .{ "Light / dark appearance", "light" }, .{ "Compact density", "compact" }, .{ "Use system GTK theme", "native" } }) |entry| menu.append(entry[0], "win." ++ entry[1]);
         menu_button.setMenuModel(menu.as(gio.MenuModel));
         menu.unref();
         self.fillPlaces(sidebar_box);
@@ -708,7 +715,24 @@ pub const Window = struct {
         return 0;
     }
     fn updateDetails(self: *Window) void {
+        const selection = self.current().selection.as(gtk.SelectionModel).getSelection();
+        defer selection.unref();
+        const visible = self.show_details and !self.split and self.width >= 1000;
+        const selected_info = if (visible and selection.getSize() == 1) self.current().selected() else null;
+        defer if (selected_info) |i| i.unref();
+        const source_key = if (selected_info) |i| @import("platform/thumbnails.zig").identity(i, 512, self.preferences.thumbnail_limit, true) else u.format("selection:{d}:{d}", .{ selection.getSize(), @intFromBool(visible) });
+        defer a.free(source_key);
+        const key = u.format("{d}:{d}:{s}", .{ self.current().id, self.current().generation, source_key });
+        if (self.details_key) |old| {
+            if (std.mem.eql(u8, old, key)) {
+                a.free(key);
+                return;
+            }
+            a.free(old);
+        }
+        self.details_key = key;
         u.clear(self.details_body);
+        if (!visible) return;
         const top = u.box(.horizontal, 8, null);
         const heading = u.label("File details", "secondary");
         heading.as(gtk.Widget).setHexpand(1);
@@ -717,18 +741,17 @@ pub const Window = struct {
         self.connect(close, .details);
         top.append(close.as(gtk.Widget));
         self.details_body.append(top.as(gtk.Widget));
-        const info = self.current().selected() orelse {
-            const empty = u.label("Select a file to see its details.", "secondary");
+        const info = selected_info orelse {
+            const selection_message = if (selection.getSize() > 1) u.format("{d} items selected. Open Properties for selection details.", .{selection.getSize()}) else u.format("Select a file to see its details.", .{});
+            defer a.free(selection_message);
+            const empty = u.label(selection_message, "secondary");
             empty.setWrap(1);
             self.details_body.append(empty.as(gtk.Widget));
             return;
         };
-        defer info.unref();
-        const preview = u.box(.vertical, 0, "details-art");
-        const image = u.image("text-x-generic-symbolic", 72);
-        u.infoIcon(info, image);
-        preview.append(image.as(gtk.Widget));
-        self.details_body.append(preview.as(gtk.Widget));
+        const preview = @import("preview.zig").Slot.create(.details);
+        preview.set(info);
+        self.details_body.append(preview.root.as(gtk.Widget));
         const name = u.label(info.getDisplayName(), "file-title");
         name.setWrap(1);
         name.setWrapMode(.word_char);
@@ -763,6 +786,8 @@ pub const Window = struct {
         self.details_body.append(row.as(gtk.Widget));
     }
     fn layout(self: *Window) void {
+        @import("preview.zig").schedule();
+        self.queueUpdate();
         if (self.closed) return;
         const narrow = self.width < 760;
         self.sidebar.as(gtk.Widget).setVisible(@intFromBool(!narrow));
@@ -865,6 +890,7 @@ pub const Window = struct {
             },
             .home => t.navigate(self.home, true),
             .location => {
+                t.focus_pending = false;
                 const f = gio.File.newForUri(t.uri);
                 defer f.unref();
                 const text = f.getParseName();
@@ -875,6 +901,7 @@ pub const Window = struct {
                 self.path.as(gtk.Editable).selectRegion(0, -1);
             },
             .search => {
+                t.focus_pending = false;
                 if (self.search_row.as(gtk.Widget).getVisible() != 0) self.closeSearch() else {
                     self.search_row.as(gtk.Widget).setVisible(1);
                     _ = self.search.as(gtk.Widget).grabFocus();
@@ -944,6 +971,11 @@ pub const Window = struct {
                 self.preferences.folders_first = !self.preferences.folders_first;
                 self.resort();
             },
+            .thumbnails, .preview_details => {
+                if (command == .thumbnails) self.preferences.thumbnails = !self.preferences.thumbnails else self.preferences.preview_details = !self.preferences.preview_details;
+                self.preferences.save();
+                @import("main.zig").previewPreferencesChanged();
+            },
             .advanced, .allow_delete => {
                 if (command == .advanced) self.preferences.advanced = !self.preferences.advanced else self.preferences.allow_delete = !self.preferences.allow_delete;
                 self.preferences.save();
@@ -1007,6 +1039,19 @@ pub const Window = struct {
         const focus = self.window.getFocus();
         const editing = self.navigation.getVisibleChild() == self.path.as(gtk.Widget) or (if (focus) |f| f == self.search.as(gtk.Widget) or f.isAncestor(self.search.as(gtk.Widget)) != 0 else false);
         if (!editing) {
+            const view = if (self.current().list_mode) self.current().list.as(gtk.Widget) else self.current().grid.as(gtk.Widget);
+            const in_files = if (focus) |f| f == view or f.isAncestor(view) != 0 else false;
+            if (in_files and key == gdk.KEY_space and !mods.control_mask and !mods.shift_mask and !mods.alt_mask and !mods.super_mask) {
+                const set = self.current().selection.as(gtk.SelectionModel).getSelection();
+                defer set.unref();
+                if (set.getSize() == 1) {
+                    const selected_info = self.current().selected() orelse return 0;
+                    defer selected_info.unref();
+                    if (selected_info.getFileType() == .directory) return 0;
+                    self.dispatch(.preview);
+                    return 1;
+                }
+            }
             if (key == gdk.KEY_Menu or (key == gdk.KEY_F10 and mods.shift_mask)) {
                 self.keyboardContext();
                 return 1;
@@ -1064,28 +1109,35 @@ pub const Window = struct {
         }
         return 0;
     }
-    const ProbeWidget = struct { label: []const u8, kind: []const u8, x: f64, y: f64, width: c_int, height: c_int, menu: bool, sensitive: bool };
+    const ProbeWidget = struct { label: []const u8, kind: []const u8, x: f64, y: f64, width: c_int, height: c_int, menu: bool, sensitive: bool, thumbnail_uri: []const u8 = "" };
     fn probeWidgets(self: *Window, widget: *gtk.Widget, result: *std.ArrayList(ProbeWidget)) void {
         if (widget.getMapped() == 0) return;
         var label: ?[*:0]const u8 = null;
         var kind: []const u8 = "label";
+        var thumbnail_uri: []const u8 = "";
         if (widget.as(object.Object).getData("phyto-item")) |raw| {
             const item: *gtk.ListItem = @ptrCast(@alignCast(raw));
             if (item.getItem()) |obj| {
                 const info = object.ext.cast(gio.FileInfo, obj).?;
                 label = info.getDisplayName();
                 kind = "file";
+                if (widget.getFirstChild()) |visual| if (visual.as(object.Object).getData("phyto-preview") != null) {
+                    const slot = @import("preview.zig").Slot.from(visual);
+                    if (slot.entry) |e| if (e.texture != null) {
+                        thumbnail_uri = e.uri;
+                    };
+                };
             }
         } else if (object.ext.cast(gtk.Label, widget)) |text| label = text.getText();
         if (label) |text| if (text[0] != 0) {
             var x: f64 = 0;
             var y: f64 = 0;
-            if (widget.translateCoordinates(self.window.as(gtk.Widget), 0, 0, &x, &y) != 0) result.append(a, .{ .label = std.mem.span(text), .kind = kind, .x = x, .y = y, .width = widget.getWidth(), .height = widget.getHeight(), .menu = if (self.context.popover) |p| widget.isAncestor(p.as(gtk.Widget)) != 0 else false, .sensitive = widget.isSensitive() != 0 }) catch unreachable;
+            if (widget.translateCoordinates(self.window.as(gtk.Widget), 0, 0, &x, &y) != 0) result.append(a, .{ .label = std.mem.span(text), .kind = kind, .x = x, .y = y, .width = widget.getWidth(), .height = widget.getHeight(), .menu = if (self.context.popover) |p| widget.isAncestor(p.as(gtk.Widget)) != 0 else false, .sensitive = widget.isSensitive() != 0, .thumbnail_uri = thumbnail_uri }) catch unreachable;
         };
         var child = widget.getFirstChild();
         while (child) |w| : (child = w.getNextSibling()) self.probeWidgets(w, result);
     }
-    fn probe(self: *Window) void {
+    pub fn probe(self: *Window) void {
         const t = self.current();
         const selection = t.selection.as(gtk.SelectionModel).getSelection();
         defer selection.unref();
@@ -1101,6 +1153,18 @@ pub const Window = struct {
         self.probeWidgets(self.window.as(gtk.Widget), &widgets);
         const json = std.json.Stringify.valueAlloc(a, .{
             .realized_grid_children = realized_rows,
+            .thumbnail_slots_ready = @import("preview.zig").readyCount(),
+            .preview_memory = @import("platform/thumbnails.zig").memory,
+            .preview_jobs = @import("platform/thumbnails.zig").running,
+            .preview_started = @import("platform/thumbnails.zig").started,
+            .preview_max_main_loop_gap_us = @import("platform/thumbnails.zig").max_main_loop_gap_us,
+            .preview_cache_hits = @import("platform/thumbnails.zig").hits,
+            .quick_preview = self.quick_preview != null,
+            .quick_surface = if (self.quick_preview) |q| std.mem.span(q.slot.root.getVisibleChildName() orelse "none") else "closed",
+            .quick_paintable = if (self.quick_preview) |q| q.slot.picture.getPaintable() != null else false,
+            .quick_kind = if (self.quick_preview) |q| if (q.slot.entry) |e| if (e.state == .ready) @tagName(e.kind) else "pending" else "pending" else "closed",
+            .thumbnails_enabled = self.preferences.thumbnails,
+            .details_preview_enabled = self.preferences.preview_details,
             .focus_name = if (self.window.getFocus()) |f| std.mem.span(f.getName()) else "none",
             .uri = t.uri,
             .title = t.title,
@@ -1200,6 +1264,7 @@ pub const Window = struct {
         self.background_cancel.cancel();
         for (self.volume_signals) |signal| object.signalHandlerDisconnect(self.volume_monitor.as(object.Object), signal);
         self.closed = true;
+        if (self.quick_preview) |q| q.window.close();
         if (self.update_id != 0) {
             _ = glib.Source.remove(self.update_id);
             self.update_id = 0;
@@ -1245,6 +1310,7 @@ pub const Window = struct {
         self.context.deinit();
         self.clipboard.deinit();
         self.preferences.release();
+        if (self.details_key) |key| a.free(key);
         self.volume_monitor.unref();
         self.background_cancel.unref();
         if (self.status_message) |msg| a.free(msg);

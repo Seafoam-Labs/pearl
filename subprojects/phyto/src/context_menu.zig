@@ -51,7 +51,7 @@ pub const Menu = struct {
     }
     fn toggle(cmd: Command) bool {
         return switch (cmd) {
-            .grid, .list, .sort_name, .sort_size, .sort_type, .sort_modified, .hidden, .reverse, .folders_first, .advanced, .allow_delete, .pin, .favorite => true,
+            .grid, .list, .sort_name, .sort_size, .sort_type, .sort_modified, .hidden, .reverse, .folders_first, .advanced, .allow_delete, .thumbnails, .preview_details, .pin, .favorite => true,
             else => false,
         };
     }
@@ -187,6 +187,7 @@ pub const Menu = struct {
             .redo => "<Control><Shift>z",
             .rename => "F2",
             .properties => "<Alt>Return",
+            .preview => "space",
             .new_folder => "<Control><Shift>n",
             .trash => "Delete",
             .delete => "<Shift>Delete",
@@ -263,6 +264,7 @@ pub const Menu = struct {
         const count = c.items.items.len;
         if (cmd == .paste or cmd == .new_folder or cmd == .new_document) f.can_write = if (c.directory_info) |i| i.getAttributeBoolean("access::can-write") != 0 else false;
         return switch (cmd) {
+            .preview => accessible and count == 1 and !f.all_directories and !f.trash,
             .open => accessible and count > 0 and (place or !f.trash),
             .copy => rules.enabled(f, .copy),
             .cut => rules.enabled(f, .cut),
@@ -324,6 +326,8 @@ pub const Menu = struct {
                     .hidden => self.owner.findTab(c.tab_id).?.hidden,
                     .reverse => self.owner.preferences.reverse,
                     .folders_first => self.owner.preferences.folders_first,
+                    .thumbnails => self.owner.preferences.thumbnails,
+                    .preview_details => self.owner.preferences.preview_details,
                     .advanced => self.owner.preferences.advanced,
                     .allow_delete => self.owner.preferences.allow_delete,
                     .pin => self.owner.preferences.contains("pinned", c.target()),
@@ -422,6 +426,7 @@ pub const Menu = struct {
                 self.add(with, "Other application…", .open_with);
                 self.submenu(open, "Open with", with);
             }
+            if (self.allowed(c, .preview)) self.add(open, "Preview", .preview);
             if (self.allowed(c, .follow_link)) self.add(open, "Follow link to original", .follow_link);
             if (self.owner.findTab(c.tab_id).?.query.len != 0) self.add(open, "Open containing folder", .containing);
             self.section(menu, open);
@@ -476,6 +481,8 @@ pub const Menu = struct {
         self.add(sort, "Folders first", .folders_first);
         self.submenu(section_, "Sort by", sort);
         self.add(section_, "Show hidden files", .hidden);
+        self.add(section_, "Show thumbnails", .thumbnails);
+        self.add(section_, "Preview in details", .preview_details);
         self.section(menu, section_);
     }
     fn destinations(self: *Menu, menu: *gio.Menu, move: bool) void {
@@ -554,6 +561,7 @@ pub const Menu = struct {
             .restore => owner.operations.transfer(c, null, .restore),
             .undo, .redo => owner.operations.undo(cmd == .redo),
             .properties => apps.properties(owner, c),
+            .preview => @import("preview.zig").Quick.show(owner, c.target(), c.tab_id),
             .open_with => apps.choose(owner, c),
             .terminal => apps.terminal(owner, c.target()),
             .copy_location => {
@@ -658,7 +666,7 @@ pub const Menu = struct {
     }
     fn settings(self: *Menu) void {
         const d = gtk.Dialog.new();
-        d.as(gtk.Window).setTitle("Context menu options");
+        d.as(gtk.Window).setTitle("File view options");
         d.as(gtk.Window).setDestroyWithParent(1);
         d.as(gtk.Window).setTransientFor(self.owner.window);
         d.as(gtk.Window).setModal(1);
@@ -667,12 +675,23 @@ pub const Menu = struct {
         d.as(gtk.Widget).insertActionGroup("win", object.ext.cast(gtk.ApplicationWindow, self.owner.window).?.as(gio.ActionGroup));
         const body = d.getContentArea();
         body.as(gtk.Widget).addCssClass("dialog-body");
-        inline for (.{ .{ "Show advanced file actions", "advanced" }, .{ "Show permanent deletion", "allow_delete" } }) |pair| {
+        inline for (.{ .{ "Show advanced file actions", "advanced" }, .{ "Show permanent deletion", "allow_delete" }, .{ "Show thumbnails for local files", "thumbnails" }, .{ "Preview in details", "preview_details" } }) |pair| {
             const b = gtk.CheckButton.newWithLabel(pair[0]);
             b.setActive(@intFromBool(@field(self.owner.preferences, pair[1])));
             b.as(gtk.Actionable).setActionName("win." ++ pair[1]);
             body.append(b.as(gtk.Widget));
         }
+        body.append(u.label("Image size limit (MiB)", null).as(gtk.Widget));
+        const limit = gtk.SpinButton.newWithRange(1, 50, 1);
+        limit.setValue(@floatFromInt(self.owner.preferences.thumbnail_limit / (1024 * 1024)));
+        _ = gtk.SpinButton.signals.value_changed.connect(limit, *Menu, struct {
+            fn change(button: *gtk.SpinButton, menu_: *Menu) callconv(.c) void {
+                menu_.owner.preferences.thumbnail_limit = @as(usize, @intCast(button.getValueAsInt())) * 1024 * 1024;
+                menu_.owner.preferences.save();
+                @import("preview.zig").schedule();
+            }
+        }.change, self, .{});
+        body.append(limit.as(gtk.Widget));
         _ = d.addButton("Close", 0);
         _ = gtk.Dialog.signals.response.connect(d, ?*anyopaque, struct {
             fn close(dialog: *gtk.Dialog, _: c_int, _: ?*anyopaque) callconv(.c) void {

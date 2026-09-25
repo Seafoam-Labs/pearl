@@ -45,8 +45,9 @@ not link layer-shell, Cinnamon, Nemo or Pearl services.
 ## Intentional differences from the browser reference
 
 - Folder contents and metadata are real, so names/counts/selection differ by path.
-- MIME artwork comes from the installed icon theme. Thumbnails and the mockup's
-  abstract Figma preview are not simulated as real previews.
+- MIME artwork comes from the installed icon theme. Local raster thumbnails and
+  image/text previews are implemented; unsupported types retain their MIME icons.
+  See [preview implementation and validation](THUMBNAILS_PREVIEWS_IMPLEMENTATION.md).
 - The current search filters filenames in the open directory. It is explicitly
   labeled as such; recursive search remains in the roadmap.
 - Places includes real XDG locations and GIO URI entry points. Fictional devices

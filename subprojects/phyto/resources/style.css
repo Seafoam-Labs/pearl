@@ -95,3 +95,15 @@
 .phyto-root popover.context-menu modelbutton:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
 .phyto-root.dark popover.context-menu modelbutton:hover { background: alpha(#e6e0e9, 0.08); }
 .phyto-root.light popover.context-menu modelbutton:hover { background: alpha(#1d1b20, 0.08); }
+
+/* Preview geometry is independent of image dimensions. */
+.phyto-root .preview-slot { border-radius: 8px; }
+.phyto-root .preview-body { padding: 16px; }
+.phyto-root .preview-slot textview { padding: 8px; }
+
+.phyto-root.dark .preview-slot textview,
+.phyto-root.dark .preview-slot textview text { background: #211f26; color: #e6e0e9; }
+.phyto-root.light .preview-slot textview,
+.phyto-root.light .preview-slot textview text { background: #f3edf7; color: #1d1b20; }
+.phyto-root.dark .preview-slot textview text selection { background: #4f378b; color: #e6e0e9; }
+.phyto-root.light .preview-slot textview text selection { background: #e8def8; color: #1d1b20; }

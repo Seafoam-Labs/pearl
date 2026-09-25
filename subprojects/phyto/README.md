@@ -36,6 +36,9 @@ application identity so release and Git installs can coexist.
 - Independent application windows, with no Pearl process or Aqueous API dependency.
 - Real, asynchronous GIO folder enumeration and monitoring. Grid and detailed list
   use recycled GTK rows; names, MIME icons, sizes, dates and permissions are real.
+- Local JPEG/PNG/WebP/GIF thumbnails, larger image and UTF-8 text previews in
+  details, and a Space-key preview window. Preview generation is bounded and
+  asynchronous, with shared memory and freedesktop disk caches.
 - XDG Places, Home, local paths, supported GIO URIs, editable location, back,
   forward, parent and refresh. Missing/empty locations retain navigation.
 - Multiple tabs in each pane, split view, active-pane targeting and independent
@@ -65,6 +68,7 @@ application identity so release and Git installs can coexist.
 | Ctrl+L | Enter a path or URI |
 | Alt+Left / Right / Up; F5 | Back / forward / parent; refresh |
 | Ctrl+1 / Ctrl+2 | Grid / detailed list |
+| Space | Preview one selected file; Escape closes the preview |
 | Ctrl+F; Escape | Filter the current folder; clear search/location editor |
 | Ctrl+H | Show/hide hidden files |
 | Ctrl+T / Ctrl+W | New / close tab; last tab closes window |
@@ -93,12 +97,15 @@ launched by double-click.
   [native menu captures](artifacts/context-menus/native/file-menu-dark.png), and [custom providers](docs/PROVIDERS.md).
 - [Nemo-style context menu plan](docs/CONTEXT_MENUS_PLAN.md) and [menu review mockup](docs/mockups/context-menus.html).
 - [Longer-term implementation plan](docs/IMPLEMENTATION_PLAN.md).
+- [Thumbnails and file previews plan](docs/THUMBNAILS_PREVIEWS_PLAN.md).
+- [PDF and video provider implementation plan](docs/PDF_VIDEO_PROVIDERS_PLAN.md).
 - [Browser design reference](docs/mockups/index.html) and [mockup guide](docs/mockups/README.md).
 
 ```sh
 zig build test
 zig build integration -Doptimize=ReleaseSafe
 zig build test-context-menus -Doptimize=ReleaseSafe
+zig build test-previews -Doptimize=ReleaseSafe
 ```
 
 The native suite uses Pearl's private Aqueous test harness, Python, `wtype`, `grim`,
@@ -107,7 +114,7 @@ its own display and D-Bus with disposable home/config/data directories. The app
 itself has no such test dependencies. `integration` builds a separate instrumented
 binary; the normal build contains no F12 test inspection shortcut.
 
-Recursive search, drag/drop, replacement/merge, thumbnails, localization,
+Recursive search, drag/drop, replacement/merge, localization,
 FileManager1 and live Pearl appearance integration remain future work. Optional
 Trash/network/admin support requires the relevant GIO/GVfs backends; file-roller
 provides archive actions. Menu preferences live in
@@ -115,3 +122,32 @@ provides archive actions. Menu preferences live in
 [PROVIDERS.md](docs/PROVIDERS.md). Full Nemo extension ABI compatibility is not
 claimed. See the implementation report for operation limits and manual release
 qualification still required.
+
+## Thumbnails and previews
+
+Use **File view options…** in More options to toggle local thumbnails or details
+previews and set the image file-size cap (1–50 MiB). The background menu also
+provides the two toggles. Explicit **Preview** (Space or the file context menu)
+works even when automatic previews are disabled, including in narrow/split views.
+Enter/double-click still opens the file normally.
+
+Images retain their aspect ratio, transparency and orientation. GIF and WebP
+previews are still images. Text previews show UTF-8 source without rendering
+HTML/Markdown, limited to 64 KiB / 500 lines. Directories, symlinks, remote GIO
+URIs, unsupported formats and special files retain icons. Known remote native
+mounts are rejected when GIO reports their filesystem as remote. PDF and video
+stills are the [planned provider extension](docs/PDF_VIDEO_PROVIDERS_PLAN.md),
+not included in this release.
+
+The helper runs in the same executable before GTK initialization, using the
+pinned GdkPixbuf bindings (verified with GdkPixbuf 2.44.7). It enforces a 512 MiB
+address-space ceiling, timeouts and image limits. The UI shares two decode jobs,
+a 128-request queue and a 64 MiB texture-pixel cache across windows. Full previews
+are capped at 2048 px; generated disk thumbnails have a 256 MiB ownership budget.
+Cache-write errors leave previews usable. See the
+[implementation report](docs/THUMBNAILS_PREVIEWS_IMPLEMENTATION.md) and
+[native preview results](artifacts/previews/results.json).
+
+The preview tests additionally use Python Pillow to encode JPEG/WebP/GIF fixtures.
+Pillow is not an application dependency. Like the existing native suites, they
+require local sockets for the private compositor/D-Bus and installed image loaders.

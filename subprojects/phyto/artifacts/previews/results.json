@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "checks": [
+    "Isolated helper/cache checks",
+    "Image/text quick preview, corruption fallback, Escape and focus restoration",
+    "Context Preview, monitored replacement/removal, list view and split preview",
+    "Persisted automatic-preview toggles; explicit Preview remains available",
+    "10,000 mixed files: viewport scheduling, recycling and resource budgets",
+    "Tab/window changes and shutdown during outstanding decode work",
+    "Light/native themes, compact/narrow layouts, 2\u00d7 scale and persisted preferences",
+    "Deterministic in-flight cancellation and decoder timeout preserve responsive UI"
+  ],
+  "binary_sha256": "d4feca45fe43197a5bedef201e0edc7363c2fbb3c362014fe3c0d586014db80a",
+  "large_directory": {
+    "entries": 10000,
+    "elapsed_seconds": 1.281,
+    "jobs_started": 48,
+    "texture_bytes": 1053760,
+    "cache_hits": 16,
+    "max_main_loop_gap_us_during_jobs": 12793
+  }
+}

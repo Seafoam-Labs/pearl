@@ -1,5 +1,9 @@
 # Optional context-menu providers
 
+PDF/video rendering is a separate planned integration; see the
+[PDF and video provider plan](PDF_VIDEO_PROVIDERS_PLAN.md). The context-menu
+scripts described here are never automatically invoked to generate previews.
+
 Phyto discovers installed applications through GIO for Open with; choosing an
 application once does not change MIME defaults. Local terminal actions use the
 first available executable among xdg-terminal-exec, ghostty, kgx, gnome-terminal,

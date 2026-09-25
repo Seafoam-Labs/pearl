@@ -5,6 +5,7 @@ const gio = u.gio;
 const glib = u.glib;
 const object = u.object;
 const a = u.a;
+const preview = @import("preview.zig");
 const Window = @import("window.zig").Window;
 const History = @import("core/model.zig").History;
 
@@ -42,7 +43,7 @@ pub const Tab = struct {
         _ = root.as(object.Object).refSink();
         root.as(gtk.Widget).setVexpand(1);
         root.as(gtk.Widget).setHexpand(1);
-        const directory = gtk.DirectoryList.new("standard::*,time::modified,access::*,trash::*", null);
+        const directory = gtk.DirectoryList.new("standard::*,time::modified,time::modified-usec,access::*,trash::*", null);
         directory.setIoPriority(200);
         directory.setMonitored(1);
         const filter = gtk.CustomFilter.new(matches, self, null);
@@ -77,8 +78,14 @@ pub const Tab = struct {
         const views = gtk.Stack.new();
         views.setHhomogeneous(0);
         views.setVhomogeneous(0);
-        _ = views.addNamed(u.scroll(grid.as(gtk.Widget)).as(gtk.Widget), "grid");
-        _ = views.addNamed(u.scroll(list.as(gtk.Widget)).as(gtk.Widget), "list");
+        const grid_scroll = u.scroll(grid.as(gtk.Widget));
+        const list_scroll = u.scroll(list.as(gtk.Widget));
+        for ([_]*gtk.ScrolledWindow{ grid_scroll, list_scroll }) |scroll| {
+            _ = gtk.Adjustment.signals.value_changed.connect(scroll.getVadjustment(), ?*anyopaque, preview.scrolled, null, .{});
+            _ = gtk.Adjustment.signals.changed.connect(scroll.getVadjustment(), ?*anyopaque, preview.scrolled, null, .{});
+        }
+        _ = views.addNamed(grid_scroll.as(gtk.Widget), "grid");
+        _ = views.addNamed(list_scroll.as(gtk.Widget), "list");
         _ = root.addNamed(views.as(gtk.Widget), "files");
         const empty = u.box(.vertical, 12, "empty-state");
         empty.as(gtk.Widget).setHalign(.center);
@@ -173,6 +180,7 @@ pub const Tab = struct {
     }
     pub fn refresh(self: *Tab) void {
         self.invalidate();
+        self.generation += 1;
         const f = gio.File.newForUri(self.uri);
         defer f.unref();
         self.directory.setFile(null);
@@ -360,8 +368,8 @@ fn setup(_: *gtk.SignalListItemFactory, item_object: *object.Object, data: ?*any
     const kind: Column = @enumFromInt(@intFromPtr(data));
     if (kind == .grid or kind == .name) {
         const row = u.box(if (kind == .grid) .vertical else .horizontal, if (kind == .grid) 10 else 12, if (kind == .grid) "file-card" else "file-name");
-        const image = u.image("folder-symbolic", if (kind == .grid) 48 else 20);
-        row.append(image.as(gtk.Widget));
+        const visual = preview.Slot.create(if (kind == .grid) .grid else .list);
+        row.append(visual.root.as(gtk.Widget));
         const text = u.label("", null);
         text.setEllipsize(.end);
         text.setMaxWidthChars(if (kind == .grid) 16 else 48);
@@ -388,8 +396,7 @@ fn bind(_: *gtk.SignalListItemFactory, item_object: *object.Object, data: ?*anyo
     item.getChild().?.setHexpand(1);
     if (kind == .grid or kind == .name) {
         const row = item.getChild().?;
-        const image = object.ext.cast(gtk.Image, row.getFirstChild().?).?;
-        u.infoIcon(info, image);
+        preview.Slot.from(row.getFirstChild().?).set(info);
         object.ext.cast(gtk.Label, row.getLastChild().?).?.setText(info.getDisplayName());
         row.setTooltipText(info.getDisplayName());
     } else {
@@ -401,5 +408,8 @@ fn bind(_: *gtk.SignalListItemFactory, item_object: *object.Object, data: ?*anyo
 
 fn unbind(_: *gtk.SignalListItemFactory, obj: *object.Object, _: ?*anyopaque) callconv(.c) void {
     const item = object.ext.cast(gtk.ListItem, obj).?;
-    if (item.getChild()) |child| child.as(object.Object).setData("phyto-item", null);
+    if (item.getChild()) |child| {
+        child.as(object.Object).setData("phyto-item", null);
+        if (child.getFirstChild()) |visual| if (visual.as(object.Object).getData("phyto-preview") != null) preview.Slot.from(visual).set(null);
+    }
 }

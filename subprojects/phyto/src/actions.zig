@@ -26,6 +26,9 @@ pub const Command = enum {
     paste,
     operations,
     properties,
+    preview,
+    thumbnails,
+    preview_details,
     open,
     open_tab,
     open_window,
@@ -78,7 +81,7 @@ pub const Command = enum {
 };
 pub fn fileAction(c: Command) bool {
     return switch (c) {
-        .new_folder, .rename, .trash, .copy, .paste, .properties, .open, .open_tab, .open_window, .open_with, .terminal, .cut, .paste_into, .copy_to, .move_to, .copy_other, .move_other, .duplicate, .link, .delete, .new_document, .restore, .restore_to, .empty_trash, .undo, .redo, .containing, .follow_link, .copy_location, .bookmark_add, .bookmark_rename, .bookmark_remove, .tab_duplicate, .tab_left, .tab_right, .tab_other, .tab_close_others, .mount, .unmount, .eject, .pin, .favorite, .menu_settings, .archive, .extract, .bulk_rename, .admin => true,
+        .new_folder, .rename, .trash, .copy, .paste, .properties, .preview, .open, .open_tab, .open_window, .open_with, .terminal, .cut, .paste_into, .copy_to, .move_to, .copy_other, .move_other, .duplicate, .link, .delete, .new_document, .restore, .restore_to, .empty_trash, .undo, .redo, .containing, .follow_link, .copy_location, .bookmark_add, .bookmark_rename, .bookmark_remove, .tab_duplicate, .tab_left, .tab_right, .tab_other, .tab_close_others, .mount, .unmount, .eject, .pin, .favorite, .menu_settings, .archive, .extract, .bulk_rename, .admin => true,
         else => false,
     };
 }

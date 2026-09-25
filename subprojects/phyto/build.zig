@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     const options = b.addOptions();
     options.addOption(bool, "test_hooks", b.option(bool, "test-hooks", "Enable test-only state inspection") orelse false);
     const module = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1" }) |name| module.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| module.addImport(name, bindings.module(name));
     module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     module.addOptions("build_options", options);
     module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
@@ -21,6 +21,8 @@ pub fn build(b: *std.Build) void {
     const tests = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/core/model.zig"), .target = target, .optimize = optimize }) });
     const test_step = b.step("test", "Test navigation, capability policy and file operations");
     test_step.dependOn(&b.addRunArtifact(tests).step);
+    const preview_tests = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/core/preview.zig"), .target = target, .optimize = optimize }) });
+    test_step.dependOn(&b.addRunArtifact(preview_tests).step);
     const context_tests = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/core/context.zig"), .target = target, .optimize = optimize }) });
     test_step.dependOn(&b.addRunArtifact(context_tests).step);
     const engine_module = b.createModule(.{ .root_source_file = b.path("src/operations/engine.zig"), .target = target, .optimize = optimize, .link_libc = true });
@@ -28,7 +30,7 @@ pub fn build(b: *std.Build) void {
     const engine_tests = b.addTest(.{ .root_module = engine_module });
     test_step.dependOn(&b.addRunArtifact(engine_tests).step);
     const test_module = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1" }) |name| test_module.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| test_module.addImport(name, bindings.module(name));
     test_module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     const test_options = b.addOptions();
     test_options.addOption(bool, "test_hooks", true);
@@ -43,4 +45,8 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| menus.addArgs(args);
     b.step("test-context-menus", "Exercise native context menus and batch operations").dependOn(&menus.step);
     b.step("integration", "Exercise native GTK in a private Aqueous session and capture evidence").dependOn(&integration.step);
+    const previews = b.addSystemCommand(&.{ "python3", "tests/previews_native.py", "--binary" });
+    previews.addArtifactArg(test_exe);
+    if (b.args) |args| previews.addArgs(args);
+    b.step("test-previews", "Test bounded decoding, cache and native file previews").dependOn(&previews.step);
 }

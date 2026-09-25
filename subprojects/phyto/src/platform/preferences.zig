@@ -9,6 +9,9 @@ pub const Preferences = struct {
     key: *glib.KeyFile,
     path: [:0]u8,
     references: usize = 1,
+    thumbnails: bool = true,
+    preview_details: bool = true,
+    thumbnail_limit: usize = 50 * 1024 * 1024,
     advanced: bool = false,
     allow_delete: bool = false,
     sort: Sort = .name,
@@ -25,6 +28,9 @@ pub const Preferences = struct {
         const key = glib.KeyFile.new();
         _ = key.loadFromFile(path, .{}, null);
         p.* = .{ .key = key, .path = path };
+        if (key.hasKey("Previews", "thumbnails", null) != 0) p.thumbnails = key.getBoolean("Previews", "thumbnails", null) != 0;
+        if (key.hasKey("Previews", "details", null) != 0) p.preview_details = key.getBoolean("Previews", "details", null) != 0;
+        if (key.hasKey("Previews", "max-mib", null) != 0) p.thumbnail_limit = @as(usize, @intCast(std.math.clamp(key.getInteger("Previews", "max-mib", null), 1, 50))) * 1024 * 1024;
         p.advanced = key.getBoolean("Menus", "advanced", null) != 0;
         p.allow_delete = key.getBoolean("Menus", "permanent-delete", null) != 0;
         p.reverse = key.getBoolean("View", "reverse", null) != 0;
@@ -45,6 +51,9 @@ pub const Preferences = struct {
         shared = null;
     }
     pub fn save(self: *Preferences) void {
+        self.key.setBoolean("Previews", "thumbnails", @intFromBool(self.thumbnails));
+        self.key.setBoolean("Previews", "details", @intFromBool(self.preview_details));
+        self.key.setInteger("Previews", "max-mib", @intCast(self.thumbnail_limit / (1024 * 1024)));
         self.key.setBoolean("Menus", "advanced", @intFromBool(self.advanced));
         self.key.setBoolean("Menus", "permanent-delete", @intFromBool(self.allow_delete));
         self.key.setString("View", "sort", @tagName(self.sort));
