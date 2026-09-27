@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Make a deterministic worktree source archive and checksum-locked Arch recipe."""
-import argparse, gzip, hashlib, io, json, os, tarfile
+import argparse, gzip, hashlib, io, json, os, re, tarfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 def archive(root, output):
@@ -21,7 +21,16 @@ def archive(root, output):
             info.uid=info.gid=0;info.uname=info.gname='';info.mtime=epoch
             tar.addfile(info,io.BytesIO(data))
     digest=hashlib.sha256(target.read_bytes()).hexdigest()
-    recipe=(root/'packaging/arch/PKGBUILD').read_text().replace('@SOURCE_SHA256@',digest)
+    recipe=(root/'packaging/arch/PKGBUILD').read_text()
+    # The checked-in recipe targets a published tag. Local archives use the
+    # worktree's version metadata and their own bytes, without a remote URL.
+    for pattern,replacement in (
+        (r'^pkgver=.*$',f'pkgver={version}'),
+        (r'^source=\("[^"\n]+"','source=("pearl-$pkgver.tar.gz"'),
+        (r"^sha256sums=\('[^'\n]+'",f"sha256sums=('{digest}'"),
+    ):
+        recipe,count=re.subn(pattern,lambda match: replacement,recipe,count=1,flags=re.MULTILINE)
+        if count!=1:raise ValueError(f'Missing release recipe field: {pattern}')
     (output/'PKGBUILD').write_text(recipe)
     result={'archive':target.name,'sha256':digest,'source_date_epoch':epoch,'version':meta['version'],'files':len(paths)}
     (output/'source.json').write_text(json.dumps(result,indent=2)+'\n');return result

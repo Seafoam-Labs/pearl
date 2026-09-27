@@ -22,6 +22,14 @@ that evidence does not grant public release acceptance.
 
 ## Build and package
 
+The checked-in `packaging/arch/PKGBUILD` downloads the checksum-pinned GitHub
+release `v0.1.0`. Its Arch version is `1:0.1.0-1`; the epoch allows upgrades from
+the earlier `1.0.0rc2` packages. The tagged source still identifies itself as
+`1.0.0-rc.2` internally. This packaging version does not change release acceptance.
+Run `makepkg` in `packaging/arch` to build the published source.
+
+To package the local worktree instead, use:
+
 ```sh
 ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build -Drelease=true -Doptimize=ReleaseSafe
 python3 scripts/release-source.py --output /tmp/pearl-release-source
@@ -36,8 +44,8 @@ binding inputs, tests, packaging and documentation; local caches, DMS reference
 assets and test artifacts are excluded. The generated Arch recipe contains the
 actual archive SHA-256, never `SKIP`. Run `makepkg` beside the archive and generated
 recipe, or use the private package script. Neither path installs the package or
-enables services. Do not use the template PKGBUILD before replacing its hash via
-the source generator.
+enables services. The source generator replaces the published recipe's version,
+source URL and source checksum with the local archive's metadata.
 
 The release, Git and Intel Git Pearl recipes also build and test
 [Phyto](../subprojects/phyto/README.md) with ReleaseSafe and the baseline CPU.

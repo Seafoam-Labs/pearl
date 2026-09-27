@@ -35,7 +35,10 @@ class ReleaseTools(unittest.TestCase):
     def test_archive_is_deterministic_and_ignores_local_artifacts(self):
         with tempfile.TemporaryDirectory() as t:
             root=Path(t)/'source';root.mkdir();write(root,'packaging/release.json',{'arch_pkgver':'1','version':'1','source_date_epoch':1})
-            (root/'packaging/arch').mkdir();(root/'packaging/arch/PKGBUILD').write_text("sha256sums=('@SOURCE_SHA256@')\n");(root/'README.md').write_text('fixture')
+            (root/'packaging/arch').mkdir();(root/'packaging/arch/PKGBUILD').write_text(
+                'pkgver=0.1.0\nsource=("pearl-$pkgver.tar.gz::https://example.invalid/v$pkgver.tar.gz"\n'
+                '        "dependency.tar.gz")\nsha256sums=(\'published-hash\'\n        \'dependency-hash\')\n')
+            (root/'README.md').write_text('fixture')
             write(root,'plugins/wit/plugin.wit',{'included':True})
             write(root,'plugins/examples/rust/target/generated.wasm',{'excluded':True})
             write(root,'subprojects/phyto/src/main.zig',{'included':True})
@@ -67,6 +70,12 @@ class ReleaseTools(unittest.TestCase):
                     'pearl-1/subprojects/dome/packaging/org.aqueous.Dome.desktop',
                 })
             self.assertEqual(first,second);self.assertIn(first['sha256'],(Path(t)/'one/PKGBUILD').read_text())
+            recipe=(Path(t)/'one/PKGBUILD').read_text()
+            self.assertIn('pkgver=1\n',recipe)
+            self.assertIn('source=("pearl-$pkgver.tar.gz"\n',recipe)
+            self.assertNotIn('example.invalid',recipe)
+            self.assertIn('"dependency.tar.gz"',recipe)
+            self.assertIn("'dependency-hash'",recipe)
             (root/'src').mkdir();(root/'src/link').symlink_to(root/'README.md')
             with self.assertRaises(ValueError):source.archive(root,Path(t)/'three')
     def test_standalone_app_payloads_in_each_pearl_package(self):
@@ -119,7 +128,8 @@ class ReleaseTools(unittest.TestCase):
                     write(root,f'.cache/plugin-examples/{example}/{member}',{})
             for member in ('cat.png','LICENSE.assets'):
                 write(root,f'.cache/plugin-examples/companion-c/{member}',{})
-            version=json.loads((ROOT/'packaging/release.json').read_text())['arch_pkgver']
+            version=subprocess.check_output(['bash','-c','source "$1"; printf "%s" "$pkgver"',
+                'version',str(ROOT/'packaging/arch/PKGBUILD')],text=True)
             (work/f'pearl-{version}').symlink_to(root, target_is_directory=True)
             for variant in ('arch','arch-git','arch-intel-git'):
                 with self.subTest(variant=variant):
