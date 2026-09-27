@@ -17,7 +17,7 @@ const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Group = model.Group;
 const Icon = @import("../ui/components/launcher_icon.zig");
-const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
+const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, clock_zone, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
 const Binding = struct { view: *View, id: []const u8, intent: Intent };
 /// G_TYPE_STRING: fundamental type index 16 (2 is G_TYPE_INTERFACE) shifted into GType space.
 const g_type_string: usize = 16 << 2;
@@ -33,7 +33,6 @@ pub const View = struct {
     clock_zone: ?*gtk.Entry = null,
     clock_label: ?*gtk.Entry = null,
     clock_format: ?*gtk.DropDown = null,
-    clock_chooser: ?*gtk.DropDown = null,
     clock_date: ?*gtk.CheckButton = null,
     clock_preview: ?*gtk.Label = null,
     clock_zones: []const [:0]const u8 = &.{},
@@ -62,6 +61,7 @@ pub const View = struct {
     popup_workspace_mode: prefs.WorkspaceMode = .large,
     destination: ?*gtk.DropDown = null,
     search: ?*gtk.Entry = null,
+    zone_list: ?*gtk.ScrolledWindow = null,
     signature: ?[64]u8 = null,
     idle: c_uint = 0,
     editing: bool = false,
@@ -120,7 +120,6 @@ pub const View = struct {
         self.clock_zone = null;
         self.clock_label = null;
         self.clock_format = null;
-        self.clock_chooser = null;
         self.clock_date = null;
         self.clock_preview = null;
         self.clock_zones = &.{};
@@ -135,6 +134,7 @@ pub const View = struct {
         self.popup_error = null;
         self.destination = null;
         self.search = null;
+        self.zone_list = null;
         self.popup_closed = false;
         self.menu_controls.clearRetainingCapacity();
         self.choices.clearRetainingCapacity();
@@ -415,7 +415,14 @@ pub const View = struct {
         popup.as(gtk.Widget).setParent(anchor);
         const box = w.column(8);
         box.as(gtk.Widget).addCssClass("bar-menu");
-        popup.setChild(box.as(gtk.Widget));
+        // GTK pops a popover down again when the space beside its anchor is
+        // smaller than the content minimum, so menus scroll instead.
+        const menu = gtk.ScrolledWindow.new();
+        menu.setPolicy(.automatic, .automatic);
+        menu.setPropagateNaturalWidth(1);
+        menu.setPropagateNaturalHeight(1);
+        menu.setChild(box.as(gtk.Widget));
+        popup.setChild(menu.as(gtk.Widget));
         _ = gtk.Popover.signals.closed.connect(popup, *View, closed, self, .{});
         self.popup_error = w.label("", "pearl-secondary");
         if (group) |destination| {
@@ -533,17 +540,20 @@ pub const View = struct {
         w.name(b.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Add {s}{s}", .{ title, if (placed != null) " (already placed)" else "" }, 0));
         try self.choices.append(a, .{ .widget = b.as(gtk.Widget), .text = try std.ascii.allocLowerString(alloc, try std.fmt.allocPrint(alloc, "{s} {s}", .{ title, description })) });
     }
-    fn searched(_: *gtk.Editable, self: *View) callconv(.c) void {
+    fn searched(editable: *gtk.Editable, self: *View) callconv(.c) void {
         var temp = std.heap.ArenaAllocator.init(a);
         defer temp.deinit();
-        const query = std.ascii.allocLowerString(temp.allocator(), std.mem.span(self.search.?.as(gtk.Editable).getText())) catch return;
+        const query = std.ascii.allocLowerString(temp.allocator(), std.mem.span(editable.getText())) catch return;
         var count: usize = 0;
         for (self.choices.items) |choice_| {
             const visible = std.mem.indexOf(u8, choice_.text, query) != null;
             choice_.widget.setVisible(@intFromBool(visible));
             count += @intFromBool(visible);
         }
-        if (self.popup_error) |label| label.setText(if (count == 0) "No widgets match your search." else "");
+        if (self.zone_list) |list| {
+            list.as(gtk.Widget).setVisible(@intFromBool(query.len != 0));
+            if (self.popup_error) |label| label.setText(if (count == 0) tr("No time zones match your search.", "Keine Zeitzonen entsprechen der Suche.") else "");
+        } else if (self.popup_error) |label| label.setText(if (count == 0) "No widgets match your search." else "");
     }
     fn closed(_: *gtk.Popover, self: *View) callconv(.c) void {
         if (self.popup == null) return;
@@ -720,36 +730,47 @@ pub const View = struct {
         box.append(w.label(if (destination != null) tr("Add clock", "Uhr hinzufügen") else tr("Configure clock", "Uhr konfigurieren"), "settings-row-title").as(gtk.Widget));
         self.clock_zone = try self.clockEntry(box, tr("Time zone", "Zeitzone"), "bar.clock.zone", d.timezone, 128);
         self.clock_zones = try clock_time.catalog(alloc);
-        const names = try alloc.allocSentinel(?[*:0]const u8, self.clock_zones.len + 1, null);
-        names[0] = tr("Browse time zones…", "Zeitzonen durchsuchen…");
-        for (self.clock_zones, names[1..], 0..) |zone, *name_, i| {
-            name_.* = if (i == 0) tr("System local time", "Lokale Systemzeit") else (try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ try clock_policy.displayName(alloc, .{ .id = "preview", .timezone = zone }), zone }, 0)).ptr;
+        const search = gtk.Entry.new();
+        self.search = search;
+        search.setPlaceholderText(tr("Search time zones", "Zeitzonen durchsuchen"));
+        search.as(gtk.Editable).setWidthChars(22);
+        w.name(search.as(gtk.Widget), tr("Search time zones", "Zeitzonen durchsuchen"));
+        box.append(search.as(gtk.Widget));
+        try self.menu_controls.append(a, .{ .id = "bar.clock.search", .widget = search.as(gtk.Widget) });
+        _ = gtk.Editable.signals.changed.connect(search.as(gtk.Editable), *View, searched, self, .{});
+        // Only shown while a query is active: a permanent list would make the
+        // editor taller than the space beside its anchor.
+        const scroll = gtk.ScrolledWindow.new();
+        scroll.setPolicy(.never, .automatic);
+        scroll.setMaxContentHeight(150);
+        scroll.setPropagateNaturalHeight(1);
+        scroll.as(gtk.Widget).setVisible(0);
+        self.zone_list = scroll;
+        const list = w.column(6);
+        scroll.setChild(list.as(gtk.Widget));
+        box.append(scroll.as(gtk.Widget));
+        for (self.clock_zones) |zone| {
+            const display = try clock_policy.displayName(alloc, .{ .id = "preview", .timezone = zone });
+            const label = try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ display, zone }, 0);
+            const row = try self.button(list, label, try std.fmt.allocPrint(alloc, "bar.clock.zone.{s}", .{zone}), zone, .clock_zone, true);
+            try self.choices.append(a, .{ .widget = row.as(gtk.Widget), .text = try std.ascii.allocLowerString(alloc, try std.fmt.allocPrint(alloc, "{s} {s}", .{ display, zone })) });
         }
-        const chooser = gtk.DropDown.newFromStrings(@ptrCast(names.ptr));
-        chooser.setEnableSearch(1);
-        self.clock_chooser = chooser;
-        chooser.setSelected(0);
-        for (self.clock_zones, 0..) |zone, i| if (std.mem.eql(u8, zone, d.timezone)) {
-            chooser.setSelected(@intCast(i + 1));
-            break;
-        };
-        w.name(chooser.as(gtk.Widget), tr("Browse time zones", "Zeitzonen durchsuchen"));
-        box.append(chooser.as(gtk.Widget));
-        try self.menu_controls.append(a, .{ .id = "bar.clock.browse", .widget = chooser.as(gtk.Widget) });
-        _ = object.Object.signals.notify.connect(chooser.as(object.Object), *View, clockZoneSelected, self, .{ .detail = "selected" });
         self.clock_label = try self.clockEntry(box, tr("Label (optional)", "Beschriftung (optional)"), "bar.clock.label", d.label, 64);
+        const options = w.row(8);
+        box.append(options.as(gtk.Widget));
         const formats = [_:null]?[*:0]const u8{ tr("24-hour time", "24-Stunden-Zeit"), tr("12-hour time", "12-Stunden-Zeit") };
         const format = gtk.DropDown.newFromStrings(@ptrCast(&formats));
         self.clock_format = format;
         format.setSelected(if (d.hour_format == .@"24h") 0 else 1);
         w.name(format.as(gtk.Widget), tr("Time format", "Zeitformat"));
-        box.append(format.as(gtk.Widget));
+        format.as(gtk.Widget).setHexpand(1);
+        options.append(format.as(gtk.Widget));
         try self.menu_controls.append(a, .{ .id = "bar.clock.format", .widget = format.as(gtk.Widget) });
         _ = object.Object.signals.notify.connect(format.as(object.Object), *View, clockFormatChanged, self, .{ .detail = "selected" });
         const date = gtk.CheckButton.newWithLabel(tr("Show date", "Datum anzeigen"));
         self.clock_date = date;
         date.setActive(@intFromBool(d.show_date));
-        box.append(date.as(gtk.Widget));
+        options.append(date.as(gtk.Widget));
         try self.menu_controls.append(a, .{ .id = "bar.clock.date", .widget = date.as(gtk.Widget) });
         _ = gtk.CheckButton.signals.toggled.connect(date, *View, clockDateChanged, self, .{});
         self.clock_preview = w.label("", "pearl-secondary");
@@ -757,8 +778,12 @@ pub const View = struct {
         box.append(self.clock_preview.?.as(gtk.Widget));
         try self.menu_controls.append(a, .{ .id = "bar.clock.preview", .widget = self.clock_preview.?.as(gtk.Widget) });
         self.updateClockPreview();
-        _ = try self.button(box, tr("Save to draft", "Im Entwurf speichern"), "bar.clock.save", "", .clock_save, true);
-        _ = try self.button(box, tr("Cancel", "Abbrechen"), "bar.clock.cancel", "", .clock_cancel, true);
+        const actions = w.row(8);
+        box.append(actions.as(gtk.Widget));
+        const save = try self.button(actions, tr("Save to draft", "Im Entwurf speichern"), "bar.clock.save", "", .clock_save, true);
+        save.as(gtk.Widget).setHexpand(1);
+        const cancel = try self.button(actions, tr("Cancel", "Abbrechen"), "bar.clock.cancel", "", .clock_cancel, true);
+        cancel.as(gtk.Widget).setHexpand(1);
     }
     fn clockDefinition(self: *View) clock_policy.Definition {
         return .{ .id = self.clock_id, .timezone = std.mem.trim(u8, std.mem.span(self.clock_zone.?.as(gtk.Editable).getText()), " "), .label = std.mem.span(self.clock_label.?.as(gtk.Editable).getText()), .hour_format = if (self.clock_format.?.getSelected() == 0) .@"24h" else .@"12h", .show_date = self.clock_date.?.getActive() != 0 };
@@ -781,15 +806,6 @@ pub const View = struct {
         label.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {s}\n{s}{s}{s}", .{ tr("Example", "Beispiel"), clock_policy.displayName(alloc, d) catch return, if (d.show_date) text.date else "", if (d.show_date) " · " else "", text.time }, 0) catch return);
     }
     fn clockEdited(_: *gtk.Editable, self: *View) callconv(.c) void {
-        if (self.clock_chooser) |chooser| {
-            const zone = std.mem.span(self.clock_zone.?.as(gtk.Editable).getText());
-            var selected: c_uint = 0;
-            for (self.clock_zones, 0..) |candidate, i| if (std.mem.eql(u8, zone, candidate)) {
-                selected = @intCast(i + 1);
-                break;
-            };
-            chooser.setSelected(selected);
-        }
         self.updateClockPreview();
     }
     fn clockDateChanged(_: *gtk.CheckButton, self: *View) callconv(.c) void {
@@ -798,12 +814,13 @@ pub const View = struct {
     fn clockFormatChanged(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
         self.updateClockPreview();
     }
-    fn clockZoneSelected(obj: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
-        const index = object.ext.cast(gtk.DropDown, obj).?.getSelected();
-        if (index > 0 and index <= self.clock_zones.len) {
-            const entry = self.clock_zone.?.as(gtk.Editable);
-            if (!std.mem.eql(u8, std.mem.span(entry.getText()), self.clock_zones[index - 1])) entry.setText(self.clock_zones[index - 1]);
-        }
+    fn pickZone(self: *View, zone: []const u8) void {
+        const entry = self.clock_zone orelse return;
+        for (self.clock_zones) |candidate| if (std.mem.eql(u8, candidate, zone)) {
+            entry.as(gtk.Editable).setText(candidate);
+            if (self.search) |search| search.as(gtk.Editable).setText("");
+            return;
+        };
     }
     fn saveClock(self: *View) !void {
         if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
@@ -994,6 +1011,7 @@ pub const View = struct {
                 self.queue();
             },
             .clock_delete => self.deleteClock(binding.id) catch |err| self.report(err),
+            .clock_zone => self.pickZone(binding.id),
             .icon_open => {
                 const anchor = self.popup.?.as(gtk.Widget).getParent().?;
                 self.clearPopup();

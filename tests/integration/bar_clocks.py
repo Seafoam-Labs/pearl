@@ -28,6 +28,16 @@ def verify_editor(s, ipc, peer, args, output, baseline, passed, app, shell):
     menu_click(s, ipc, 'bar.clock.zone'); type_text(s, 'Europe/London')
     menu_click(s, ipc, 'bar.clock.cancel'); close_editor()
     assert peer.document() == original
+    # The zone browser filters its rows from the focused search entry and a
+    # picked row fills the Time zone entry without closing the menu.
+    start()
+    menu_click(s, ipc, 'bar.clock.search'); type_text(s, 'tokyo')
+    wait_for(lambda: [c['field'] for c in probe(s, ipc)['controls'] if c['field'].startswith('bar.clock.zone.')] == ['bar.clock.zone.Asia/Tokyo'])
+    menu_click(s, ipc, 'bar.clock.zone.Asia/Tokyo')
+    preview = wait_for(lambda: next((c['text'] for c in probe(s, ipc)['controls'] if c['field'] == 'bar.clock.preview' and c['text'] and 'Tokyo' in c['text']), None))
+    assert 'Tokyo' in preview
+    menu_click(s, ipc, 'bar.clock.cancel'); close_editor()
+    assert peer.document() == original
     for zone, label in [('Europe/London', 'London'), ('Asia/Tokyo', 'Tokyo')]:
         start()
         menu_click(s, ipc, 'bar.clock.zone'); type_text(s, 'NoSuch/Zone')
