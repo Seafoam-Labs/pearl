@@ -14,7 +14,7 @@ use an isolated mock systemd manager. The earlier browser mockup has separate
 | Memory / disks / network | [Memory](memory.png) · [Disks](disks.png) · [Network](network.png) |
 | GPU / sensors | [GPU](gpu.png) · [Sensors](sensors.png) |
 | Process table and selection | [Processes](processes.png) · [Details](process-selected.png) |
-| Safe action | [Disposable process confirmation](process-confirmation.png) |
+| Safe action | [Row menu](process-menu.png) · [Disposable process confirmation](process-confirmation.png) |
 | Optional service manager | [Unavailable](services.png) · [Fixture](service-fixture.png) · [Denied](service-denied.png) |
 | Appearance | [Light](overview-light.png) · [Native GTK](native-theme.png) · [High contrast](high-contrast.png) |
 | Size and text | [480 pixels](narrow.png) · [Narrow details](details-narrow.png) · [200% GTK font](text-200-percent.png) |
@@ -34,11 +34,16 @@ python3 tests/soak.py --binary zig-out/bin/dome --seconds 1800
 
 The private integration suite treats GLib/GTK warnings as fatal and checks every
 native page, search, selection, recycled rows, pause/manual/resume, keyboard
-navigation, process-action cancellation and confirmed termination of its own
-child, service start/stop/restart, denial and manager disappearance, clean close,
+navigation, the row menu opened on the selected process and the confirmation
+dialog reached from it, process-action cancellation and confirmed termination of
+its own child, service start/stop/restart, denial and manager disappearance, clean close,
 light/native/high-contrast themes, 480-pixel navigation and enlarged GTK fonts.
 It also deliberately hangs a disposable GPU helper and verifies continued core
 sampling and clean shutdown after the timeout. No host services are changed.
+
+The row menu capture shows the built menu, not pointer interaction: the harness has
+no pointer injection, so hover shading, the `context-menu` cursor and popover
+flipping near window edges stay visual checks.
 
 The JSON [results](results.json) record the instrumented executable hash,
 per-capture dimensions/state, checks, sample application times and keyboard
@@ -71,7 +76,7 @@ vendor-support claim:
 | Check | Result |
 | --- | --- |
 | Core/platform tests | 14 test invocations pass (the core suite is also imported into platform tests) |
-| Native suite | 11 scenario groups pass with fatal GTK warnings enabled |
+| Native suite | 14 scenario groups pass with fatal GTK warnings enabled |
 | 10,000-row table | 1,230 realized cells; 8.93–10.20 ms steady snapshot application across eight samples |
 | Probe key acknowledgment | 6.48–7.24 ms including the input tool and log reply |
 | Software graph render | 1.215 ms median; 1.239 ms p95, 500 iterations |

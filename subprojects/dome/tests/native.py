@@ -132,7 +132,9 @@ def main():
             wait_for(lambda: probe()['visible'] == 1)
             key('F11')
             assert probe()['selected_pid'] == target.proc.pid
+            # wtype injects no pointer button, so F1 opens the menu on the selected row.
             assert hook_line('DOME_MENU ', 'F1') == {'services': False, 'target': 'sleep', 'pid': target.proc.pid, 'enabled': '11'}
+            # An open autohide popover grabs keys, so the F12 probe cannot reach the window.
             capture('process-menu', state={'menu': 'open'})
             assert hook_line('DOME_CONFIRM ', 'Return') == {'target': 'sleep', 'pid': target.proc.pid, 'force': False}
             key('Escape')
