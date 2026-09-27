@@ -6,9 +6,9 @@ styling and Mission Center as its functional reference.
 ![Native Dome overview](artifacts/native/overview-dark.png)
 
 Dome provides live CPU, memory, disk, network, GPU and sensor pages, searchable
-processes, safe process termination, optional systemd service controls and a
-compact summary. Sampling, graph duration, colors, columns and units are
-configurable. It runs independently of Pearl and Aqueous.
+processes with right-click row menus, safe process termination, optional systemd
+service controls and a compact summary. Sampling, graph duration, colors, columns
+and units are configurable. It runs independently of Pearl and Aqueous.
 
 Build with Zig 0.16.0, `pkg-config`, GTK4/GLib development headers and libc:
 
@@ -38,6 +38,9 @@ do not prevent resource and process monitoring.
 | Ctrl+P / F5 | Pause or resume / request one sample |
 | Alt+Enter | Selected details |
 | Escape / Ctrl+W | Dismiss transient UI or clear search / close |
+
+Right-click a Processes or Services row for a context menu with the same
+actions as the side panel.
 
 Preferences are written atomically to `$XDG_CONFIG_HOME/dome/preferences.ini`
 (default `~/.config/dome/preferences.ini`). History and command lines are not

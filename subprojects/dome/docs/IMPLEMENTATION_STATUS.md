@@ -18,8 +18,8 @@ parity or a fully qualified distribution release.
 | Network | Individual interfaces, receive/send, lifetime totals, state, addresses, hardware address and readable link speed; bytes/s or bits/s summaries |
 | GPU | Multiple DRM adapters; available AMD sysfs metrics; Intel discovery/frequency; optional NVIDIA NVML helper with deadline and stale-result handling |
 | Sensors | Named hwmon temperature and fan readings, with per-sensor history |
-| Processes | Recycled sortable/filterable GTK column view, user filter, cgroup application grouping, details, pidfd-based end/force-stop confirmations |
-| Services | Optional user/system systemd manager, search, selection, asynchronous start/stop/restart, authorization errors, owner-change recovery |
+| Processes | Recycled sortable/filterable GTK column view, user filter, cgroup application grouping, details, right-click row menu, pidfd-based end/force-stop confirmations |
+| Services | Optional user/system systemd manager, search, selection, right-click row menu, asynchronous start/stop/restart, authorization errors, owner-change recovery |
 | Preferences | Atomic versioned storage; interval, theme, compact rows, network/CPU units, graph duration, columns, primary process sort, page and window size |
 | Interface | Nine pages, light/dark/native GTK colors, narrow navigation/details, compact summary, keyboard shortcuts, scalable GTK fonts |
 | Packaging | Standalone staged install and Pearl release/Git/Intel-Git package integration; separate Git executable and desktop identity |

@@ -52,12 +52,18 @@ def main():
                 key('F12', delay=delay)
                 line = wait_for(lambda: next((line for line in app.lines[start:] if line.startswith('DOME_PROBE ')), None))
                 return json.loads(line.removeprefix('DOME_PROBE '))
-            def capture(name):
+            def hook_line(prefix, name, delay=70):
+                assert app.proc.poll() is None, app.lines[-30:]
+                start = len(app.lines)
+                key(name, delay=delay)
+                line = wait_for(lambda: next((line for line in app.lines[start:] if line.startswith(prefix)), None))
+                return json.loads(line.removeprefix(prefix))
+            def capture(name, state=None):
                 time.sleep(.2)
                 rect = windows()[0]['geometry']
                 path = output / f'{name}.png'
                 session.run(['grim', '-g', f"{rect['x']},{rect['y']} {rect['width']}x{rect['height']}", path])
-                report['captures'].append({'file': path.name, 'geometry': rect, 'state': probe()})
+                report['captures'].append({'file': path.name, 'geometry': rect, 'state': state if state is not None else probe()})
             def launch(width=1120, height=800, *flags, fixture_count=0, font_scale=1, theme="", hang_gpu=False):
                 nonlocal app
                 rules.write_text(f'[[window]]\napp_id = "org.aqueous.Dome"\nfloating = true\nwidth = {width}\nheight = {height}\n')
@@ -126,6 +132,12 @@ def main():
             wait_for(lambda: probe()['visible'] == 1)
             key('F11')
             assert probe()['selected_pid'] == target.proc.pid
+            assert hook_line('DOME_MENU ', 'F1') == {'services': False, 'target': 'sleep', 'pid': target.proc.pid, 'enabled': '11'}
+            capture('process-menu', state={'menu': 'open'})
+            assert hook_line('DOME_CONFIRM ', 'Return') == {'target': 'sleep', 'pid': target.proc.pid, 'force': False}
+            key('Escape')
+            assert target.proc.poll() is None
+            passed('F1 opens the process row menu on the disposable child; its End action reaches the confirmation dialog')
             key('F8')
             session.run(['grim', '-o', display['name'], output / 'process-confirmation.png'])
             key('Escape')
@@ -143,10 +155,16 @@ def main():
             key('f', 'ctrl'); text('dome-fixture')
             wait_for(lambda: probe()['service_visible'] == 1)
             key('F11')
+            assert hook_line('DOME_MENU ', 'F1') == {'services': True, 'target': 'dome-fixture.service', 'pid': 0, 'enabled': '011'}
+            key('Escape')
+            passed('F1 service row menu reflects the active fixture state')
             key('F8')
             key('Tab'); key('Return')
             fixture.expect('ACTION StopUnit dome-fixture.service inactive')
             time.sleep(.6)
+            assert hook_line('DOME_MENU ', 'F1') == {'services': True, 'target': 'dome-fixture.service', 'pid': 0, 'enabled': '110'}
+            key('Escape')
+            passed('Service row menu flips to Start-only after the fixture stops')
             key('F9')
             key('Tab'); key('Return')
             fixture.expect('ACTION StartUnit dome-fixture.service active')

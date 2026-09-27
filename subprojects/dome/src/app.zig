@@ -166,8 +166,8 @@ pub const App = struct {
         u.connect(keys, "key-pressed", &keyPressed, self);
         c.gtk_event_controller_set_propagation_phase(keys, c.GTK_PHASE_CAPTURE);
         c.gtk_widget_add_controller(window, keys);
-        self.processes = Table.create(false, self, processSelected);
-        self.services_table = Table.create(true, self, serviceSelected);
+        self.processes = Table.create(false, self, processSelected, runCommand);
+        self.services_table = Table.create(true, self, serviceSelected, runCommand);
         if (test_hooks) {
             const requested = c.g_getenv("DOME_TEST_PROCESSES");
             if (requested != null) self.fixture_count = @min(32768, std.fmt.parseInt(usize, std.mem.span(requested), 10) catch 0);
@@ -883,7 +883,7 @@ pub const App = struct {
             u.class(kill, "error");
             u.append(box, end);
             u.append(box, kill);
-            const permitted = self.fixture_count == 0 and p.uid == c.getuid() and p.id.pid > 1 and p.id.pid != c.getpid() and !p.is_group;
+            const permitted = self.fixture_count == 0 and selected.?.controllable();
             c.gtk_widget_set_sensitive(end, @intFromBool(permitted));
             c.gtk_widget_set_sensitive(kill, @intFromBool(permitted));
             if (!permitted) {
@@ -908,10 +908,15 @@ pub const App = struct {
             detailFact(box, "State", service.state.slice());
             detailFact(box, "Substate", service.substate.slice());
             detailFact(box, "Loaded", service.load.slice());
-            u.append(box, self.actionButton("Start service…", 22));
-            u.append(box, self.actionButton("Restart service…", 23));
+            const start = self.actionButton("Start service…", 22);
+            const restart = self.actionButton("Restart service…", 23);
             const stop = self.actionButton("Stop service…", 24);
             u.class(stop, "error");
+            c.gtk_widget_set_sensitive(start, @intFromBool(selected.?.serviceEnabled(22)));
+            c.gtk_widget_set_sensitive(restart, @intFromBool(selected.?.serviceEnabled(23)));
+            c.gtk_widget_set_sensitive(stop, @intFromBool(selected.?.serviceEnabled(24)));
+            u.append(box, start);
+            u.append(box, restart);
             u.append(box, stop);
         }
         self.updateBindings();
@@ -960,6 +965,9 @@ pub const App = struct {
         const self = u.cast(App, data);
         const command = @intFromPtr(c.g_object_get_data(@ptrCast(button), "dome-action")) - 1;
         self.handleCommand(@intCast(command));
+    }
+    fn runCommand(data: ?*anyopaque, command: u32) void {
+        u.cast(App, data).handleCommand(command);
     }
     fn handleCommand(self: *App, command: u32) void {
         if (command < 9) {
@@ -1197,7 +1205,7 @@ pub const App = struct {
     fn confirmProcess(self: *App, force: bool) void {
         const row = self.processes.selected() orelse return;
         const p = row.process;
-        if (self.fixture_count > 0 or p.uid != c.getuid() or p.is_group) return;
+        if (self.fixture_count > 0 or !row.controllable()) return;
         if (self.target) |t| t.close();
         self.target = Target.open(p.id) catch |err| {
             self.message(@errorName(err));
@@ -1218,6 +1226,7 @@ pub const App = struct {
         u.class(button, "destructive-action");
         c.gtk_dialog_set_default_response(u.cast(c.GtkDialog, dialog), c.GTK_RESPONSE_CANCEL);
         c.gtk_window_present(u.cast(c.GtkWindow, dialog));
+        if (test_hooks) c.g_print("DOME_CONFIRM {\"target\":\"%s\",\"pid\":%d,\"force\":%s}\n", p.name.z(), @as(c_int, p.id.pid), @as([*:0]const u8, if (force) "true" else "false"));
     }
     fn confirmService(self: *App, method: [*:0]const u8) void {
         const row = self.services_table.selected() orelse return;
@@ -1303,6 +1312,11 @@ pub const App = struct {
         }
         if (test_hooks and self.dialog == null) {
             switch (key) {
+                c.GDK_KEY_F1 => {
+                    const table = if (self.page == 8) self.services_table else self.processes;
+                    table.openSelectedMenu();
+                    return 1;
+                },
                 c.GDK_KEY_F6 => {
                     self.handleCommand(10);
                     return 1;

@@ -3,6 +3,7 @@ const u = @import("widgets.zig");
 const c = u.c;
 const m = @import("../core/model.zig");
 const Service = @import("../platform/services.zig").Service;
+const test_hooks = @import("build_options").test_hooks;
 pub const Row = struct {
     process: m.Process = .{},
     service: Service = .{},
@@ -30,6 +31,19 @@ pub const Row = struct {
         };
         return m.Text(512).init(formatted.slice());
     }
+    pub fn controllable(self: *const Row) bool {
+        const p = self.process;
+        return p.uid == c.getuid() and p.id.pid > 1 and p.id.pid != c.getpid() and !p.is_group;
+    }
+    pub fn serviceEnabled(self: *const Row, command: u32) bool {
+        // App.handleCommand identifiers.
+        const state = self.service.state.slice();
+        return switch (command) {
+            22 => !std.mem.eql(u8, state, "active"),
+            24 => !std.mem.eql(u8, state, "inactive"),
+            else => true,
+        };
+    }
 };
 pub const Table = struct {
     view: u.W,
@@ -47,6 +61,9 @@ pub const Table = struct {
     rows: std.AutoHashMap(u64, *c.GObject),
     context: ?*anyopaque = null,
     changed: *const fn (?*anyopaque) void,
+    command: *const fn (?*anyopaque, u32) void,
+    menu: u.W,
+    menu_box: u.W,
     pending: std.ArrayList(*c.GObject) = .empty,
     column_mask: u32 = 63,
     syncing: bool = false,
@@ -54,7 +71,7 @@ pub const Table = struct {
     cores: usize = 1,
     realized: usize = 0,
     const Column = struct { owner: *Table, index: usize, widget: ?*c.GtkColumnViewColumn = null };
-    pub fn create(services: bool, context: ?*anyopaque, changed: *const fn (?*anyopaque) void) *Table {
+    pub fn create(services: bool, context: ?*anyopaque, changed: *const fn (?*anyopaque) void, command: *const fn (?*anyopaque, u32) void) *Table {
         const self = u.a.create(Table) catch unreachable;
         const store = c.g_list_store_new(c.g_object_get_type()).?;
         const filter = c.gtk_custom_filter_new(matches, self, null).?;
@@ -65,7 +82,17 @@ pub const Table = struct {
         c.gtk_single_selection_set_can_unselect(selection, 1);
         const view = c.gtk_column_view_new(@ptrCast(@alignCast(c.g_object_ref(selection)))).?;
         _ = c.g_object_ref_sink(view);
-        self.* = .{ .view = view, .store = store, .filter = filter, .filtered = filtered, .sorted = sorted, .selection = selection, .services = services, .count = if (services) 4 else 6, .rows = .init(u.a), .context = context, .changed = changed };
+        const menu = c.gtk_popover_new().?;
+        const menu_box = u.box(c.GTK_ORIENTATION_VERTICAL, 2, null);
+        u.margin(menu_box, 8);
+        c.gtk_popover_set_child(u.cast(c.GtkPopover, menu), menu_box);
+        c.gtk_popover_set_autohide(u.cast(c.GtkPopover, menu), 1);
+        c.gtk_popover_set_has_arrow(u.cast(c.GtkPopover, menu), 0);
+        c.gtk_popover_set_position(u.cast(c.GtkPopover, menu), c.GTK_POS_BOTTOM);
+        c.gtk_widget_set_cursor_from_name(view, "context-menu");
+        self.* = .{ .view = view, .store = store, .filter = filter, .filtered = filtered, .sorted = sorted, .selection = selection, .services = services, .count = if (services) 4 else 6, .rows = .init(u.a), .context = context, .changed = changed, .command = command, .menu = menu, .menu_box = menu_box };
+        _ = c.g_object_ref_sink(self.menu);
+        u.connect(self.menu, "closed", &menuClosed, self);
         c.gtk_column_view_set_show_row_separators(u.cast(c.GtkColumnView, view), 1);
         const titles = if (services) [_][*:0]const u8{ "Service", "State", "Substate", "Description", "", "" } else [_][*:0]const u8{ "Name", "PID", "CPU", "Memory", "Read/s", "Write/s" };
         for (0..self.count) |i| {
@@ -88,11 +115,17 @@ pub const Table = struct {
         }
         c.gtk_sort_list_model_set_sorter(sorted, c.gtk_column_view_get_sorter(u.cast(c.GtkColumnView, view)));
         c.gtk_column_view_sort_by_column(u.cast(c.GtkColumnView, view), self.columns[if (services) 0 else 2].widget, if (services) c.GTK_SORT_ASCENDING else c.GTK_SORT_DESCENDING);
+        const gesture = c.gtk_gesture_click_new().?;
+        c.gtk_gesture_single_set_button(@ptrCast(gesture), c.GDK_BUTTON_SECONDARY);
+        u.connect(gesture, "pressed", &menuPressed, self);
+        c.gtk_widget_add_controller(view, @ptrCast(gesture));
         u.connect(selection, "notify::selected-item", &selectedChanged, self);
         return self;
     }
     pub fn destroy(self: *Table) void {
         self.syncing = true;
+        if (c.gtk_widget_get_parent(self.menu) != null) c.gtk_widget_unparent(self.menu);
+        c.g_object_unref(self.menu);
         c.g_object_unref(self.view);
         c.g_object_unref(self.selection);
         c.g_object_unref(self.sorted);
@@ -113,6 +146,149 @@ pub const Table = struct {
         const self = u.cast(Table, data);
         if (!self.syncing) self.changed(self.context);
     }
+    fn menuButton(self: *Table, text: []const u8, command: u32) u.W {
+        const button = u.button(text);
+        c.g_object_set_data(@ptrCast(button), "dome-action", @ptrFromInt(command + 1));
+        u.connect(button, "clicked", &menuAction, self);
+        return button;
+    }
+    fn menuAction(button: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
+        const self = u.cast(Table, data);
+        const command = @intFromPtr(c.g_object_get_data(@ptrCast(button), "dome-action")) - 1;
+        c.gtk_popover_popdown(u.cast(c.GtkPopover, self.menu));
+        self.command(self.context, @intCast(command));
+    }
+    fn rowWidget(label: ?*c.GtkWidget) ?*c.GtkWidget {
+        const cell = c.gtk_widget_get_parent(label orelse return null) orelse return null;
+        return c.gtk_widget_get_parent(cell);
+    }
+    fn itemAt(self: *Table, x: f64, y: f64) ?*Row {
+        var w: ?*c.GtkWidget = c.gtk_widget_pick(self.view, x, y, @intCast(c.GTK_PICK_DEFAULT));
+        while (w) |p| {
+            if (c.g_object_get_data(@ptrCast(p), "dome-item")) |data| return row(data);
+            w = c.gtk_widget_get_parent(p);
+        }
+        return null;
+    }
+    fn positionOf(self: *Table, r: *Row) ?c_uint {
+        for (0..self.countVisible()) |i| {
+            const candidate = c.g_list_model_get_item(@ptrCast(@alignCast(self.sorted)), @intCast(i)).?;
+            defer c.g_object_unref(candidate);
+            if (row(candidate) == r) return @intCast(i);
+        }
+        return null;
+    }
+    fn menuPressed(_: ?*c.GtkGesture, _: c_int, x: f64, y: f64, data: ?*anyopaque) callconv(.c) void {
+        const self = u.cast(Table, data);
+        const r = self.itemAt(x, y) orelse return;
+        const pos = self.positionOf(r) orelse return;
+        self.openMenu(pos, .{ .x = @intFromFloat(x), .y = @intFromFloat(y), .width = 1, .height = 1 });
+    }
+    pub fn openMenu(self: *Table, pos: c_uint, rect: c.GdkRectangle) void {
+        // Parent to the window so popover surface teardown cannot pin the table's scroller.
+        const root: u.W = u.cast(c.GtkWidget, c.gtk_widget_get_root(self.view) orelse return);
+        if (c.gtk_widget_get_parent(self.menu) != root) c.gtk_widget_set_parent(self.menu, root);
+        var offset: c.graphene_rect_t = undefined;
+        if (c.gtk_widget_compute_bounds(self.view, root, &offset) == 0) return;
+        const placed: c.GdkRectangle = .{
+            .x = rect.x + @as(c_int, @intFromFloat(offset.origin.x)),
+            .y = rect.y + @as(c_int, @intFromFloat(offset.origin.y)),
+            .width = rect.width,
+            .height = rect.height,
+        };
+        c.gtk_single_selection_set_selected(self.selection, pos);
+        self.buildMenu();
+        const popover = u.cast(c.GtkPopover, self.menu);
+        c.gtk_popover_set_pointing_to(popover, &placed);
+        c.gtk_popover_popup(popover);
+        if (test_hooks) {
+            if (self.selected()) |r| {
+                if (self.services) {
+                    c.g_print("DOME_MENU {\"services\":true,\"target\":\"%s\",\"pid\":0,\"enabled\":\"%d%d%d\"}\n", r.service.name.z(), @as(c_int, @intFromBool(r.serviceEnabled(22))), @as(c_int, @intFromBool(r.serviceEnabled(23))), @as(c_int, @intFromBool(r.serviceEnabled(24))));
+                } else {
+                    const enabled = r.controllable();
+                    c.g_print("DOME_MENU {\"services\":false,\"target\":\"%s\",\"pid\":%d,\"enabled\":\"%d%d\"}\n", r.process.name.z(), @as(c_int, r.process.id.pid), @as(c_int, @intFromBool(enabled)), @as(c_int, @intFromBool(enabled)));
+                }
+            }
+        }
+    }
+    fn buildMenu(self: *Table) void {
+        const io = @import("../platform/io.zig");
+        const r = self.selected() orelse return;
+        u.clear(self.menu_box);
+        if (self.services) {
+            const title = u.label(r.service.name.slice(), "title");
+            u.ellipsize(title);
+            c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, title), 30);
+            u.append(self.menu_box, title);
+            const info = u.label(if (r.service.description.len > 0) r.service.description.slice() else r.service.state.slice(), "secondary");
+            u.ellipsize(info);
+            c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, info), 40);
+            u.append(self.menu_box, info);
+            const start = self.menuButton("Start service…", 22);
+            const restart = self.menuButton("Restart service…", 23);
+            const stop = self.menuButton("Stop service…", 24);
+            u.class(stop, "error");
+            c.gtk_popover_set_default_widget(u.cast(c.GtkPopover, self.menu), start);
+            c.gtk_widget_set_sensitive(start, @intFromBool(r.serviceEnabled(22)));
+            c.gtk_widget_set_sensitive(restart, @intFromBool(r.serviceEnabled(23)));
+            c.gtk_widget_set_sensitive(stop, @intFromBool(r.serviceEnabled(24)));
+            u.append(self.menu_box, c.gtk_separator_new(c.GTK_ORIENTATION_HORIZONTAL).?);
+            u.expand(start);
+            u.expand(restart);
+            u.expand(stop);
+            u.append(self.menu_box, start);
+            u.append(self.menu_box, restart);
+            u.append(self.menu_box, stop);
+        } else {
+            const p = r.process;
+            const title = u.label(p.name.slice(), "title");
+            u.ellipsize(title);
+            c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, title), 30);
+            u.append(self.menu_box, title);
+            const info = io.path("PID {d} · User {d}", .{ p.id.pid, p.uid });
+            u.append(self.menu_box, u.label(info.slice(), "secondary"));
+            const finish = self.menuButton("End process…", 20);
+            const force = self.menuButton("Force stop…", 21);
+            u.class(force, "error");
+            c.gtk_popover_set_default_widget(u.cast(c.GtkPopover, self.menu), finish);
+            c.gtk_widget_set_sensitive(finish, @intFromBool(r.controllable()));
+            c.gtk_widget_set_sensitive(force, @intFromBool(r.controllable()));
+            u.append(self.menu_box, c.gtk_separator_new(c.GTK_ORIENTATION_HORIZONTAL).?);
+            u.expand(finish);
+            u.expand(force);
+            u.append(self.menu_box, finish);
+            u.append(self.menu_box, force);
+            if (p.is_group) {
+                const hint = u.label("Open raw processes to control one group member.", "secondary");
+                u.wrap(hint);
+                c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, hint), 40);
+                u.append(self.menu_box, hint);
+            }
+        }
+    }
+    pub fn openSelectedMenu(self: *Table) void {
+        const r = self.selected() orelse return;
+        const widget = findRowWidget(self.view, r) orelse return;
+        var bounds: c.graphene_rect_t = undefined;
+        if (c.gtk_widget_compute_bounds(widget, self.view, &bounds) == 0) return;
+        self.openMenu(c.gtk_single_selection_get_selected(self.selection), .{ .x = @intFromFloat(bounds.origin.x), .y = @intFromFloat(bounds.origin.y), .width = @intFromFloat(bounds.size.width), .height = @intFromFloat(bounds.size.height) });
+    }
+    fn findRowWidget(widget: ?*c.GtkWidget, r: *Row) ?*c.GtkWidget {
+        var child = c.gtk_widget_get_first_child(widget orelse return null);
+        while (child) |w| {
+            if (c.g_object_get_data(@ptrCast(w), "dome-item")) |data| {
+                if (row(data) == r) return w;
+            }
+            if (findRowWidget(w, r)) |found| return found;
+            child = c.gtk_widget_get_next_sibling(w);
+        }
+        return null;
+    }
+    fn menuClosed(_: ?*c.GtkPopover, data: ?*anyopaque) callconv(.c) void {
+        const self = u.cast(Table, data);
+        if (c.gtk_widget_get_parent(self.menu) != null) c.gtk_widget_unparent(self.menu);
+    }
     fn setup(_: ?*c.GtkSignalListItemFactory, item: ?*c.GtkListItem, data: ?*anyopaque) callconv(.c) void {
         const col = u.cast(Column, data);
         const label = u.label("", null);
@@ -127,6 +303,7 @@ pub const Table = struct {
         const r = row(object);
         const label = c.gtk_list_item_get_child(item).?;
         r.labels[col.index] = label;
+        if (rowWidget(label)) |rw| c.g_object_set_data(@ptrCast(rw), "dome-item", object);
         const value = r.text(col.index, col.owner.per_core, col.owner.cores);
         u.setLabel(label, value.slice());
         c.gtk_widget_set_tooltip_text(label, value.z());
@@ -136,6 +313,7 @@ pub const Table = struct {
         const col = u.cast(Column, data);
         const object = c.gtk_list_item_get_item(item) orelse return;
         const r = row(object);
+        if (rowWidget(c.gtk_list_item_get_child(item))) |rw| c.g_object_set_data(@ptrCast(rw), "dome-item", null);
         if (r.labels[col.index] == c.gtk_list_item_get_child(item)) r.labels[col.index] = null;
         col.owner.realized -|= 1;
     }

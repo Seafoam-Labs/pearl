@@ -55,6 +55,8 @@
 .dome-root.light columnview, .dome-root.light columnview listview, .dome-root.light columnview row { background: #f7f2fa; color: #1d1b20; }
 .dome-root.dark columnview header { background: #211f26; color: #cac4d0; }
 .dome-root.light columnview header { background: #f3edf7; color: #49454f; }
+.dome-root.dark columnview row:hover { background: #211f26; }
+.dome-root.light columnview row:hover { background: #f3edf7; }
 .dome-root.dark columnview row:selected { background: #4f378b; color: #eaddff; }
 .dome-root.light columnview row:selected { background: #eaddff; color: #21005d; }
 .dome-root.dark .destructive-action { background: #601410; color: #ffb4ab; }
