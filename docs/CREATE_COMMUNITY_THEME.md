@@ -269,4 +269,8 @@ For a custom HTTPS index and immutable archive hosting, follow
 [Repository publishing](THEME_REPOSITORIES.md). Images and application profiles
 require schema 2; start with the palette/style package above, then consult the
 [manifest contract](../src/theme/package_model.zig) and the
-[bundled application profiles](../themes/profiles/).
+[bundled Seafoam profiles](../themes/profiles/) and
+[base Material profiles](../src/theme/material/). The `pearl.material.*` namespace
+is reserved for embedded assets. New adapters declare exact output counts and
+formats in `src/theme/matugen_profiles.zig`; their destinations and activation
+instructions belong to Pearl, not the contributed manifest.

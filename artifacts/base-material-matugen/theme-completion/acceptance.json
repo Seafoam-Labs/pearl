@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "package": {
+    "id": "original.completion",
+    "name": "Sample Theme",
+    "author": "Fixture author",
+    "version": "1.0.0",
+    "digest": "b3a19c51e453e5332fe489d2b380d8f7dd561fa0a4716fcc85a2a8899cc59c27",
+    "dark": true,
+    "light": false,
+    "style": true,
+    "error_code": null
+  },
+  "renderer": "matugen 4.2.0",
+  "render_data_sha256": "a2a1cef0c4d903302343d9e6aaa9f8262f2884280e1b11a90d1763ac44e5fb50",
+  "images": [
+    {
+      "id": "grain",
+      "digest": "896465718d2c0f9a56e4f9be7919a68259ba483e23247399142a2ce70724c6e9",
+      "size": 225007,
+      "width": 256,
+      "height": 256
+    }
+  ],
+  "checks": [
+    "automatic_local_discovery",
+    "multi_chunk_assets",
+    "gtk_images_preview",
+    "application_controls_shared_draft_discard",
+    "fixed_render_data",
+    "inherited_zed_steam_off",
+    "committed_template_retry",
+    "image_profile_restart",
+    "off_preserves_user_edit"
+  ]
+}

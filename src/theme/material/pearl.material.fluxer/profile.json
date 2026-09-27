@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "pearl.material.fluxer",
+  "application": "fluxer",
+  "adapter": "fluxer",
+  "name": "Material \u00b7 fluxer",
+  "author": "Pearl and attributed upstream contributors",
+  "license": "GPL-3.0-only",
+  "source": "https://github.com/Seafoam-Labs/aqueous-dotfiles/tree/76772cb9d009f971193b6fb2dbb56854055225d5",
+  "asset_version": "1.0.0",
+  "variants": [
+    "dark"
+  ],
+  "templates": [
+    {
+      "path": "theme.css",
+      "output": "theme.css"
+    }
+  ],
+  "instructions": ""
+}

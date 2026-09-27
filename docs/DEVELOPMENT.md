@@ -338,3 +338,21 @@ screenshots and `report.json` beneath `artifacts/window-rules` (override with
 merge, identity and move-guard checks, and `test-notification-filter-settings`
 when changing shared presentation. `test-settings-services` covers navigation,
 focus restoration, receipts and the complete shared Aqueous boundary.
+
+
+## Base Material application profiles
+
+`zig build test-base-material-profiles -Doptimize=ReleaseSafe` checks all 23
+built-in targets with real Matugen, independent JSON/TOML/INI/SVG/Lua parsers,
+local VSIX contents, Neovim when available, upgrade defaults, committed snapshots,
+owned installation, conflicts and restoration in private XDG roots.
+`zig build test-base-material-session -Doptimize=ReleaseSafe` exercises the actual
+Settings defaults button, Apply/Discard, restart and real GTK 3/4 named colors
+inside nested Aqueous. It needs permission to create private D-Bus/Wayland sockets.
+Evidence is under `artifacts/base-material-matugen/`.
+
+Built-in assets are in `src/theme/material/` and indexed by `material.zig`.
+Regenerate static render data with `python3 scripts/generate-material-palette.py`
+using Matugen 4.2.0; the exact shell colors remain authoritative. New targets need
+registry metadata, adapter validation, output ownership and coverage entries;
+update the default-assignment revision only when intentionally offering adoption.

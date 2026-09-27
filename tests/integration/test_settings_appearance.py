@@ -143,7 +143,12 @@ def main():
             peer.keep(json.dumps(p)); ready(s, ipc)
             wait_for(lambda: probe(s, ipc)['editor']['state']['draft_revision'] == int(peer.state()['draft_revision']) and probe(s, ipc)['editor']['can_edit'])
             click(s, ipc, 'seed'); type_text(s, '#123456')
-            wait_for(lambda: json.loads(peer.document())['theme']['seed'] == '#123456')
+            try:
+                wait_for(lambda: json.loads(peer.document())['theme']['seed'] == '#123456')
+            except TimeoutError:
+                capture(s, 'seed-edit-failure')
+                (args.output/'seed-edit-failure.json').write_text(json.dumps(dict(probe=probe(s, ipc), draft=peer.document()), indent=2))
+                raise
             actual = json.loads(peer.document()); expected = copy.deepcopy(p); expected['theme']['seed'] = '#123456'
             assert actual == expected, actual
             assert not path.exists()

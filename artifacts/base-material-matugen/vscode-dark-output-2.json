@@ -1,0 +1,26 @@
+{
+  "name": "pearl-material",
+  "displayName": "Pearl Material",
+  "publisher": "pearl",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "label": "Pearl Material Dark",
+        "uiTheme": "vs-dark",
+        "path": "./vscode-color-theme-dark.json"
+      },
+      {
+        "label": "Pearl Material Light",
+        "uiTheme": "vs",
+        "path": "./vscode-color-theme-light.json"
+      }
+    ]
+  }
+}

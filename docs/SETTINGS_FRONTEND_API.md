@@ -550,3 +550,12 @@ DND above the retained preference editor and history below it. The row remains
 in the first `rows` page for existing frontends; new frontends deduplicate it.
 All live notification commands reject an unavailable notification owner. Rule
 editing and sample testing need only the Settings backend, not bus ownership.
+
+Application-profile status advertises `application_profiles_version: 2` in the
+Settings handshake. It includes all registry targets and explicit `application`
+IDs, detection, resolved profile/origin, output and activation instructions.
+The Settings frontend requires version 2 for this expanded status; restart both
+shell and Settings after upgrading from a five-target backend. Existing persisted
+profile snapshots retain schema 1 and remain readable. The explicit
+`application_refresh` action currently accepts only `id: "pywalfox"`, requires
+current committed output in the backend, and has a ten-second worker deadline.

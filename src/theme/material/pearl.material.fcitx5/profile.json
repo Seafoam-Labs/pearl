@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "pearl.material.fcitx5",
+  "application": "fcitx5",
+  "adapter": "fcitx5",
+  "name": "Material \u00b7 fcitx5",
+  "author": "Pearl and attributed upstream contributors",
+  "license": "MIT",
+  "source": "https://github.com/AvengeMedia/DankMaterialShell/tree/72ca8a6876b014f5722a00f69301a5766653764e",
+  "asset_version": "1.0.0",
+  "variants": [
+    "dark",
+    "light"
+  ],
+  "templates": [
+    {
+      "path": "theme.conf",
+      "output": "theme.conf"
+    },
+    {
+      "path": "panel.svg",
+      "output": "panel.svg"
+    },
+    {
+      "path": "highlight.svg",
+      "output": "highlight.svg"
+    }
+  ],
+  "instructions": ""
+}

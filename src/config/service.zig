@@ -34,7 +34,7 @@ pub const Job = struct {
     timed_out: bool = false,
     previous_desired_generation: u64 = 0,
     previous_applied_generation: u64 = 0,
-    previous_target_generations: [5]u64 = @splat(0),
+    previous_target_generations: [@import("../theme/matugen_profiles.zig").count]u64 = @splat(0),
     requested: ?[]const u8 = null,
     draft_revision: ?u64 = null,
     expected: [64]u8,

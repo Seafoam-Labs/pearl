@@ -200,11 +200,16 @@ pub const Backend = struct {
                 try self.allowed(self.context);
                 var command = try @import("../theme/package_model.zig").parse(@import("../theme/commands.zig").Request, alloc, v.request, 16384);
                 self.service.theme_jobs.publication_guard = .{};
-                if (command.action == .application_review or command.action == .application_install or command.action == .application_retry) {
+                if (command.action == .application_review or command.action == .application_install or command.action == .application_retry or command.action == .application_refresh) {
                     if (self.service.job != null or self.service.pending_reload) return error.Busy;
                     if (try p.number(command.revision) != self.service.revision) return error.Conflict;
                     const preferences = self.service.prefs();
                     if (!preferences.matugen.enabled) return error.ApplicationManagementDisabled;
+                    if (command.action == .application_refresh) {
+                        if (!std.mem.eql(u8, command.id, "pywalfox")) return error.UnsupportedApplicationRefresh;
+                        const target = self.service.application_status.targets[@intFromEnum(@import("../theme/matugen_profiles.zig").Application.pywalfox)];
+                        if ((target.state != .activation_required and target.state != .applied) or target.applied_generation != self.service.application_status.desired_generation) return error.ApplicationColorsNotApplied;
+                    }
                     command.sha256 = (self.service.live orelse return error.Unavailable).application_digest;
                     if (command.sha256.len == 0) return error.ProfileUnavailable;
                     self.service.application_action_generation = self.service.appearance;

@@ -6,6 +6,12 @@ package. Open **Pearl Settings → Appearance → Qt applications · QtEngine + 
 and enable management with **Apply & save**. Management is off by default and
 participates in the shared draft; previews do not write external settings.
 
+Application themes also offers Material qt5ct/qt6ct palette exports and KDE
+schemes. These are separate selectable files and never change the managed Qt
+platform plugin. QtEngine remains the sole writer of the configuration described
+here. Its Follow Pearl mode follows the shell even when Matugen application
+colors use an independent seed or wallpaper.
+
 ## Install and activate
 
 Build the updated Pearl and its separate runtime probes:

@@ -330,3 +330,15 @@ Seafoam profiles under share/pearl/matugen/profiles and their licenses. Source
 archives include themes and the reviewable community-repository scaffold; no
 Python theme or publishing executable is deployed. The hosted default must stay
 disabled until the scaffold launch checklist and real GitHub round trip pass.
+
+
+The built-in Material palette and 23 application profiles are embedded in Pearl
+and its theme worker. Reviewable assets and notices are also installed under
+`share/pearl/material`; they require no DMS installation or downloaded repository.
+Package staging must include this directory. Existing Seafoam assets remain
+under `share/pearl/matugen/profiles`. External template rendering requires Matugen
+4.x. Application defaults are opt-in and versioned; existing enabled users retain
+legacy assignments until adoption. Restart shell and Settings together after an
+upgrade because the expanded application status contract is version 2. Disable
+and restore managed targets before downgrading to a binary that lacks the new
+preference fields and ownership metadata.

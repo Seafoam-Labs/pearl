@@ -42,7 +42,7 @@ pub const Manager = struct {
         _ = self.assets_arena.reset(.free_all);
         self.blobs = &.{};
         self.job = job;
-        job.deadline = glib.timeoutAdd(if (job.request.action == .preview_render) 15000 else 60000, expired, job);
+        job.deadline = glib.timeoutAdd(if (job.request.action == .application_refresh) 10000 else if (job.request.action == .preview_render) 15000 else 60000, expired, job);
         self.serial +|= 1;
         app.hold();
         const task = gio.Task.new(null, job.cancel, done, job);

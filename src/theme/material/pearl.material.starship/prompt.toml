@@ -1,0 +1,8 @@
+format = "$directory$git_branch$git_status$character"
+[directory]
+style = "bold {{colors.primary.default.hex}}"
+[git_branch]
+style = "{{colors.tertiary.default.hex}}"
+[character]
+success_symbol = "[❯](bold {{colors.primary.default.hex}})"
+error_symbol = "[❯](bold {{colors.error.default.hex}})"

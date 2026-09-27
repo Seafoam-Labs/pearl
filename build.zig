@@ -21,6 +21,7 @@ pub fn build(b: *std.Build) void {
         }
         return;
     }
+    b.installDirectory(.{ .source_dir = b.path("src/theme/material"), .install_dir = .prefix, .install_subdir = "share/pearl/material" });
     var themes_tool: *std.Build.Step.Compile = undefined;
     for ([_][]const u8{ "zed", "equibop", "fluxer", "starship", "steam" }) |application| {
         b.installDirectory(.{ .source_dir = b.path(b.fmt("themes/profiles/seafoam.{s}", .{application})), .install_dir = .prefix, .install_subdir = b.fmt("share/pearl/matugen/profiles/seafoam.{s}", .{application}) });
@@ -70,6 +71,18 @@ pub fn build(b: *std.Build) void {
     theme_native_test.setEnvironmentVariable("XDG_CACHE_HOME", b.pathFromRoot(".cache/profile-tests"));
     const matugen_tests = b.step("test-matugen", "Test native application rendering, snapshots and ownership recovery");
     matugen_tests.dependOn(&theme_native_test.step);
+    const material_tests = b.step("test-base-material-profiles", "Verify built-in Material palettes, target coverage and ownership");
+    material_tests.dependOn(matugen_tests);
+    const material_module = b.createModule(.{ .root_source_file = b.path("src/material_test_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| material_module.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gio-2.0", "libcurl", "libarchive", "libpng" }) |name| material_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+    material_module.addOptions("build_options", native_options);
+    const material_driver = b.addExecutable(.{ .name = "pearl-material-test", .root_module = material_module });
+    const material_check = b.addSystemCommand(&.{ "python3", "tests/integration/test_base_material_profiles.py", "--driver" });
+    material_check.addArtifactArg(material_driver);
+    material_check.addArg("--tool");
+    material_check.addArtifactArg(themes_tool);
+    material_tests.dependOn(&material_check.step);
     const profile_formats = b.addSystemCommand(&.{ "python3", "tests/integration/test_profile_formats.py", "--tool" });
     profile_formats.addArtifactArg(themes_tool);
     matugen_tests.dependOn(&profile_formats.step);
@@ -333,6 +346,13 @@ pub fn build(b: *std.Build) void {
             b.getInstallStep().dependOn(&b.addInstallFileWithDir(output, .bin, b.fmt("pearl-qt{s}-probe", .{version})).step);
         }
     }
+
+    const material_session = b.addSystemCommand(&.{ "python3", "tests/integration/test_base_material_session.py", "--pearl" });
+    material_session.addArtifactArg(app);
+    material_session.addArg("--settings");
+    material_session.addArtifactArg(settings_test_app);
+    if (b.args) |args| material_session.addArgs(args);
+    b.step("test-base-material-session", "Verify Material defaults UI and real GTK consumers in private Aqueous").dependOn(&material_session.step);
 
     const custom_themes = b.addSystemCommand(&.{ "python3", "tests/integration/test_custom_themes.py", "--pearl" });
     custom_themes.addArtifactArg(app);

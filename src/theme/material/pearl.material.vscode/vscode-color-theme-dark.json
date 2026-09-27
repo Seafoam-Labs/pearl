@@ -1,0 +1,273 @@
+{
+  "$schema": "vscode://schemas/color-theme",
+  "name": "Dynamic Base16 Pearl Material Dark",
+  "semanticHighlighting": true,
+  "colors": {
+    "foreground": "{{colors.on_surface.dark.hex}}",
+    "editor.background": "{{colors.background.dark.hex}}",
+    "editor.foreground": "{{colors.on_surface.dark.hex}}",
+    "errorForeground": "{{colors.error.dark.hex}}",
+    "panel.border": "{{colors.outline_variant.dark.hex}}",
+    "panelTitle.activeBorder": "{{colors.primary.dark.hex}}",
+    "sideBar.border": "{{colors.outline_variant.dark.hex}}",
+    "editorGroup.border": "{{colors.outline_variant.dark.hex}}",
+    "tab.border": "{{colors.outline_variant.dark.hex}}",
+    "titleBar.border": "{{colors.outline_variant.dark.hex}}",
+    "focusBorder": "{{colors.primary.dark.hex}}",
+    "selection.background": "{{colors.primary_container.dark.hex}}99",
+    "titleBar.activeBackground": "{{colors.background.dark.hex}}",
+    "titleBar.activeForeground": "{{colors.on_surface.dark.hex}}",
+    "titleBar.inactiveForeground": "{{colors.outline.dark.hex}}",
+    "activityBar.background": "{{colors.background.dark.hex}}",
+    "activityBar.foreground": "{{colors.on_surface.dark.hex}}",
+    "activityBar.inactiveForeground": "{{colors.outline.dark.hex}}",
+    "activityBar.activeBorder": "{{colors.primary.dark.hex}}",
+    "activityBarBadge.background": "{{colors.primary.dark.hex}}",
+    "activityBarBadge.foreground": "{{colors.on_primary.dark.hex}}",
+    "sideBar.background": "{{colors.surface_container_low.dark.hex}}",
+    "sideBar.foreground": "{{colors.on_surface.dark.hex}}",
+    "statusBarItem.hoverBackground": "{{colors.surface_container_low.dark.hex}}",
+    "statusBarItem.activeBackground": "{{colors.surface_container.dark.hex}}",
+    "sideBarTitle.foreground": "{{colors.on_surface.dark.hex}}",
+    "panel.background": "{{colors.surface_container_low.dark.hex}}",
+    "panelTitle.activeForeground": "{{colors.on_surface.dark.hex}}",
+    "panelTitle.inactiveForeground": "{{colors.outline.dark.hex}}",
+    "sideBarSectionHeader.background": "{{colors.surface_container.dark.hex}}",
+    "sideBarSectionHeader.foreground": "{{colors.on_surface.dark.hex}}",
+    "editorGroupHeader.tabsBackground": "{{colors.background.dark.hex}}",
+    "tab.activeBackground": "{{colors.surface_container_low.dark.hex}}",
+    "tab.inactiveBackground": "{{colors.background.dark.hex}}",
+    "tab.activeForeground": "{{colors.on_surface.dark.hex}}",
+    "tab.inactiveForeground": "{{colors.outline.dark.hex}}",
+    "tab.activeBorderTop": "{{colors.primary.dark.hex}}",
+    "list.activeSelectionBackground": "{{colors.primary.dark.hex}}",
+    "list.activeSelectionForeground": "{{colors.on_primary.dark.hex}}",
+    "list.inactiveSelectionBackground": "{{colors.surface_container.dark.hex}}",
+    "list.hoverBackground": "{{colors.surface_container.dark.hex}}",
+    "list.hoverForeground": "{{colors.on_surface.dark.hex}}",
+    "list.focusForeground": "{{colors.on_surface.dark.hex}}",
+    "list.focusOutline": "{{colors.primary.dark.hex}}",
+    "list.focusBackground": "{{colors.surface_container_high.dark.hex}}",
+    "list.highlightForeground": "{{colors.primary.dark.hex}}",
+    "list.focusHighlightForeground": "{{colors.primary.dark.hex}}",
+    "list.errorForeground": "{{colors.error.dark.hex}}",
+    "list.warningForeground": "{{colors.secondary.dark.hex}}",
+    "input.background": "{{colors.surface_container_low.dark.hex}}",
+    "input.foreground": "{{colors.on_surface.dark.hex}}",
+    "input.border": "{{colors.outline_variant.dark.hex}}",
+    "input.placeholderForeground": "{{colors.outline.dark.hex}}",
+    "dropdown.background": "{{colors.surface_container_low.dark.hex}}",
+    "dropdown.foreground": "{{colors.on_surface.dark.hex}}",
+    "dropdown.border": "{{colors.outline_variant.dark.hex}}",
+    "quickInput.background": "{{colors.surface_container_low.dark.hex}}",
+    "quickInput.foreground": "{{colors.on_surface.dark.hex}}",
+    "widget.shadow": "{{colors.background.dark.hex}}80",
+    "button.background": "{{colors.primary.dark.hex}}",
+    "button.foreground": "{{colors.on_primary.dark.hex}}",
+    "button.hoverBackground": "{{colors.primary_container.dark.hex}}",
+    "statusBar.background": "{{colors.background.dark.hex}}",
+    "statusBar.foreground": "{{colors.on_surface.dark.hex}}",
+    "statusBar.border": "{{colors.outline_variant.dark.hex}}",
+    "statusBar.noFolderBackground": "{{colors.background.dark.hex}}",
+    "statusBar.noFolderForeground": "{{colors.on_surface.dark.hex}}",
+    "statusBar.debuggingBackground": "{{colors.error.dark.hex}}",
+    "statusBar.debuggingForeground": "{{colors.on_error.dark.hex}}",
+    "notificationCenterHeader.background": "{{colors.surface_container_low.dark.hex}}",
+    "notificationCenterHeader.foreground": "{{colors.on_surface.dark.hex}}",
+    "notificationCenter.border": "{{colors.outline_variant.dark.hex}}",
+    "notifications.background": "{{colors.surface_container_low.dark.hex}}",
+    "notifications.foreground": "{{colors.on_surface.dark.hex}}",
+    "notifications.border": "{{colors.outline_variant.dark.hex}}",
+    "notificationsErrorIcon.foreground": "{{colors.error.dark.hex}}",
+    "notificationsWarningIcon.foreground": "{{colors.secondary.dark.hex}}",
+    "notificationsInfoIcon.foreground": "{{colors.primary.dark.hex}}",
+    "breadcrumb.background": "{{colors.surface_container.dark.hex}}",
+    "breadcrumb.foreground": "{{colors.outline.dark.hex}}",
+    "breadcrumb.focusForeground": "{{colors.on_surface.dark.hex}}",
+    "breadcrumb.activeSelectionForeground": "{{colors.primary.dark.hex}}",
+    "editorLineNumber.foreground": "{{colors.outline.dark.hex}}",
+    "editorLineNumber.activeForeground": "{{colors.primary.dark.hex}}",
+    "editorCursor.foreground": "{{colors.primary.dark.hex}}",
+    "editor.lineHighlightBackground": "{{colors.surface_container.dark.hex}}66",
+    "editor.wordHighlightBackground": "{{colors.secondary.dark.hex}}22",
+    "editor.wordHighlightStrongBackground": "{{colors.tertiary.dark.hex}}22",
+    "editor.selectionBackground": "{{colors.primary_container.dark.hex}}99",
+    "editor.inactiveSelectionBackground": "{{colors.primary_container.dark.hex}}33",
+    "editorWhitespace.foreground": "{{colors.outline.dark.hex}}66",
+    "editorIndentGuide.background1": "{{colors.outline.dark.hex}}33",
+    "editorIndentGuide.activeBackground1": "{{colors.primary.dark.hex}}99",
+    "editorOverviewRuler.border": "{{colors.outline_variant.dark.hex}}",
+    "editorOverviewRuler.errorForeground": "{{colors.error.dark.hex}}88",
+    "editorOverviewRuler.warningForeground": "{{colors.tertiary.dark.hex}}88",
+    "editorOverviewRuler.infoForeground": "{{colors.primary.dark.hex}}88",
+    "editorStickyScroll.background": "{{colors.background.dark.hex}}",
+    "editorStickyScrollHover.background": "{{colors.surface_container_low.dark.hex}}",
+    "editorBracketHighlight.unexpectedBracket.foreground": "{{colors.outline.dark.hex}}",
+    "diffEditor.insertedTextBackground": "{{colors.secondary.dark.hex}}20",
+    "diffEditor.removedTextBackground": "{{colors.error.dark.hex}}20",
+    "gitDecoration.modifiedResourceForeground": "{{colors.primary.dark.hex}}",
+    "gitDecoration.addedResourceForeground": "{{colors.secondary.dark.hex}}",
+    "gitDecoration.deletedResourceForeground": "{{colors.error.dark.hex}}",
+    "gitDecoration.ignoredResourceForeground": "{{colors.outline.dark.hex}}",
+    "editorHoverWidget.background": "{{colors.surface_container_high.dark.hex}}",
+    "editorHoverWidget.border": "{{colors.outline.dark.hex}}",
+    "editorSuggestWidget.background": "{{colors.surface_container.dark.hex}}",
+    "editorSuggestWidget.foreground": "{{colors.on_surface.dark.hex}}",
+    "editorSuggestWidget.selectedBackground": "{{colors.surface_container_high.dark.hex}}",
+    "editorSuggestWidget.selectedForeground": "{{colors.on_surface.dark.hex}}",
+    "editorSuggestWidget.highlightForeground": "{{colors.primary.dark.hex}}",
+    "scrollbarSlider.background": "{{colors.on_surface_variant.dark.hex}}50",
+    "scrollbarSlider.hoverBackground": "{{colors.on_surface_variant.dark.hex}}80",
+    "scrollbarSlider.activeBackground": "{{colors.on_surface_variant.dark.hex}}AA",
+    "terminal.background": "{{colors.background.dark.hex}}",
+    "terminal.foreground": "{{colors.on_surface.dark.hex}}",
+    "terminal.ansiBlack": "{{base16.base00.dark.hex}}",
+    "terminal.ansiRed": "{{base16.base08.dark.hex}}",
+    "terminal.ansiGreen": "{{base16.base0b.dark.hex}}",
+    "terminal.ansiYellow": "{{base16.base0a.dark.hex}}",
+    "terminal.ansiBlue": "{{base16.base0d.dark.hex}}",
+    "terminal.ansiMagenta": "{{base16.base0e.dark.hex}}",
+    "terminal.ansiCyan": "{{base16.base0c.dark.hex}}",
+    "terminal.ansiWhite": "{{base16.base05.dark.hex}}",
+    "terminal.ansiBrightBlack": "{{base16.base03.dark.hex}}",
+    "terminal.ansiBrightRed": "{{base16.base08.dark.hex}}",
+    "terminal.ansiBrightGreen": "{{base16.base0b.dark.hex}}",
+    "terminal.ansiBrightYellow": "{{base16.base0a.dark.hex}}",
+    "terminal.ansiBrightBlue": "{{base16.base0d.dark.hex}}",
+    "terminal.ansiBrightMagenta": "{{base16.base0e.dark.hex}}",
+    "terminal.ansiBrightCyan": "{{base16.base0c.dark.hex}}",
+    "terminal.ansiBrightWhite": "{{base16.base07.dark.hex}}",
+    "terminal.selectionBackground": "{{colors.primary_container.dark.hex}}99"
+  },
+  "tokenColors": [
+    {
+      "scope": ["comment"],
+      "settings": {
+        "foreground": "{{base16.base03.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["keyword"],
+      "settings": {
+        "foreground": "{{base16.base0c.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["string"],
+      "settings": {
+        "foreground": "{{base16.base0a.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["constant", "constant.language", "constant.numeric"],
+      "settings": {
+        "foreground": "{{base16.base0d.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["variable"],
+      "settings": {
+        "foreground": "{{base16.base07.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["entity.name.function"],
+      "settings": {
+        "foreground": "{{base16.base0b.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["entity.name.class", "support.type"],
+      "settings": {
+        "foreground": "{{base16.base0d.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["invalid"],
+      "settings": {
+        "foreground": "{{colors.error.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["markup.heading"],
+      "settings": {
+        "foreground": "{{colors.primary.dark.hex}}",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": ["entity.name.tag.yaml", "punctuation.definition.block.sequence.item.yaml"],
+      "settings": {
+        "foreground": "{{colors.on_surface.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["source.yaml string.unquoted", "source.yaml string.quoted"],
+      "settings": {
+        "foreground": "{{base16.base0a.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["constant.language.boolean.yaml", "constant.language.null.yaml"],
+      "settings": {
+        "foreground": "{{base16.base0d.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["punctuation.separator.key-value.mapping.yaml"],
+      "settings": {
+        "foreground": "{{colors.on_surface.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["entity.name.tag.toml", "support.type.property-name.toml"],
+      "settings": {
+        "foreground": "{{colors.on_surface.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["string.quoted.single.basic.line.toml", "string.quoted.double.basic.line.toml"],
+      "settings": {
+        "foreground": "{{base16.base0a.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["constant.language.boolean.toml", "constant.numeric.toml"],
+      "settings": {
+        "foreground": "{{base16.base0d.dark.hex}}"
+      }
+    },
+    {
+      "scope": ["meta.object-literal.key", "support.type.property-name.json"],
+      "settings": {
+        "foreground": "{{colors.on_surface.dark.hex}}"
+      }
+    }
+  ],
+  "semanticTokenColors": {
+    "variable": {
+      "foreground": "{{base16.base07.dark.hex}}"
+    },
+    "parameter": {
+      "foreground": "{{base16.base05.dark.hex}}"
+    },
+    "property": {
+      "foreground": "{{base16.base0d.dark.hex}}"
+    },
+    "function": {
+      "foreground": "{{base16.base0b.dark.hex}}"
+    },
+    "string": {
+      "foreground": "{{base16.base0a.dark.hex}}"
+    },
+    "number": {
+      "foreground": "{{base16.base0d.dark.hex}}"
+    },
+    "keyword": {
+      "foreground": "{{base16.base0c.dark.hex}}"
+    },
+    "comment": {
+      "foreground": "{{base16.base03.dark.hex}}"
+    }
+  }
+}

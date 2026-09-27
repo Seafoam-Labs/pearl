@@ -5,6 +5,7 @@ const gio = @import("gio2");
 const glib = @import("glib2");
 const model = @import("package_model.zig");
 const profiles = @import("matugen_profiles.zig");
+const material = @import("material.zig");
 const pkg = @import("package.zig");
 const io = @import("../config/io.zig");
 pub const Entry = struct { descriptor: profiles.Descriptor, path: [:0]const u8, origin: []const u8, digest: []const u8 };
@@ -32,7 +33,12 @@ pub fn catalog(a: std.mem.Allocator, themes: @import("catalog.zig").Catalog) !Ca
     var diagnostics: std.ArrayList(@import("catalog.zig").Diagnostic) = .empty;
     var visited: usize = 0;
     var bytes: usize = 0;
+    for (std.enums.values(profiles.Application)) |app| {
+        const descriptor = try material.descriptor(a, app);
+        try entries.append(a, .{ .descriptor = descriptor, .path = "", .origin = "Base Material", .digest = try a.dupe(u8, &hash(material.files(app))) });
+    }
     for (themes.entries) |entry| for (entry.package.profiles) |descriptor| {
+        if (std.mem.startsWith(u8, descriptor.id, "pearl.material.")) return error.ReservedThemeProfile;
         if (entries.items.len >= 256) return error.ProfileCatalogLimit;
         try entries.append(a, .{ .descriptor = descriptor, .path = entry.path, .origin = entry.package.manifest.id, .digest = try a.dupe(u8, &entry.package.digest) });
     };
@@ -63,6 +69,10 @@ pub fn catalog(a: std.mem.Allocator, themes: @import("catalog.zig").Catalog) !Ca
                 try diagnostics.append(a, .{ .path = path, .error_code = @errorName(err) });
                 continue;
             };
+            if (std.mem.startsWith(u8, descriptor.id, "pearl.material.")) {
+                try diagnostics.append(a, .{ .path = path, .error_code = "ReservedThemeProfile" });
+                continue;
+            }
             const cloned = try model.parse(profiles.Descriptor, a, try std.json.Stringify.valueAlloc(scratch.allocator(), descriptor, .{}), 16384);
             try entries.append(a, .{ .descriptor = cloned, .path = path, .origin = "local", .digest = try a.dupe(u8, &hash(files)) });
         }
@@ -128,7 +138,7 @@ pub fn capture(a: std.mem.Allocator, p: Preferences, dynamic_json: ?[]const u8, 
     const active = if (p.theme.mode != .gtk and p.theme.package_id.len > 0) (try themes.get(p.theme.package_id)).package else null;
     var selected: std.ArrayList(Captured) = .empty;
     for (std.enums.values(profiles.Application)) |application| {
-        var inherited: ?[]const u8 = null;
+        var inherited: ?[]const u8 = if (baseMaterial(p) and p.matugen.defaults_revision > 0 and application != .qt5ct and application != .qt6ct) (try material.descriptor(a, application)).id else null;
         if (active) |package| for (package.manifest.defaults) |default| {
             if (std.mem.eql(u8, default.application, @tagName(application))) inherited = default.profile;
         };
@@ -147,7 +157,7 @@ pub fn capture(a: std.mem.Allocator, p: Preferences, dynamic_json: ?[]const u8, 
             try selected.append(a, .{ .application = application, .id = id, .origin = entry.origin, .error_code = "UnsupportedProfileVariant" });
             continue;
         }
-        const files = if (std.mem.eql(u8, entry.origin, "local")) blk: {
+        const files = if (std.mem.eql(u8, entry.origin, "Base Material")) material.files(application) else if (std.mem.eql(u8, entry.origin, "local")) blk: {
             const loaded = try pkg.remaining(a, entry.path);
             if (!std.mem.eql(u8, &hash(loaded), entry.digest)) return error.ProfileCatalogChanged;
             break :blk loaded;
@@ -160,7 +170,7 @@ pub fn capture(a: std.mem.Allocator, p: Preferences, dynamic_json: ?[]const u8, 
         for (entry.descriptor.templates) |t| try templates.append(a, .{ .path = t.output, .bytes = try asset(files, t.path) });
         try selected.append(a, .{ .application = application, .id = id, .origin = entry.origin, .descriptor = entry.descriptor, .templates = templates.items });
     }
-    var result: Snapshot = .{ .provider = if (active) |package| package.manifest.id else "", .catalog_revision = try a.dupe(u8, &choices.revision), .profiles = selected.items, .variant = if (p.theme.variant == .dark) .dark else .light };
+    var result: Snapshot = .{ .provider = if (active) |package| package.manifest.id else if (baseMaterial(p)) "pearl.material" else "", .catalog_revision = try a.dupe(u8, &choices.revision), .profiles = selected.items, .variant = if (p.theme.variant == .dark) .dark else .light };
     result.selection_key = try selectionKey(a, p);
     if (selected.items.len == 0) return result;
     if (p.matugen.colors.source == .follow_pearl) {
@@ -183,20 +193,32 @@ pub fn capture(a: std.mem.Allocator, p: Preferences, dynamic_json: ?[]const u8, 
 const Preferences = @import("../config/preferences.zig").Preferences;
 const generator = @import("generator.zig");
 
+pub fn baseMaterial(p: Preferences) bool {
+    return (p.theme.mode == .static or p.theme.mode == .dynamic) and p.theme.package_id.len == 0;
+}
+
 /// The template selection identity deliberately excludes wallpaper bytes/path.
 pub fn selectionKey(a: std.mem.Allocator, p: Preferences) ![]const u8 {
-    var selections: [5]profiles.Selection = undefined;
+    var selections: [profiles.count]profiles.Selection = undefined;
     for (std.enums.values(profiles.Application), &selections) |application, *selection|
         selection.* = p.matugen.applications.map.get(@tagName(application)) orelse .{};
-    return a.dupe(u8, &model.hash(try std.json.Stringify.valueAlloc(a, .{
-        .applications = selections,
+    var legacy = p.matugen.defaults_revision == 0;
+    for (std.enums.values(profiles.Application)[5..]) |app| {
+        if (p.matugen.applications.map.get(@tagName(app))) |choice| {
+            if (choice.mode != .theme or choice.profile_id.len > 0) legacy = false;
+        }
+    }
+    const selection_bytes = try std.json.Stringify.valueAlloc(a, .{
+        .applications = if (legacy) selections[0..5] else &selections,
         .catalog = p.matugen.catalog_revision,
         .provider = p.theme.package_id,
         .palette = p.theme.palette_id,
         .mode = p.theme.mode,
         .variant = p.theme.variant,
         .source = p.matugen.colors.source,
-    }, .{})));
+    }, .{});
+    if (legacy) return a.dupe(u8, &model.hash(selection_bytes));
+    return a.dupe(u8, &model.hash(try std.json.Stringify.valueAlloc(a, .{ .selection = selection_bytes, .defaults_revision = p.matugen.defaults_revision }, .{})));
 }
 
 pub fn wallpaperColors(p: Preferences) bool {
@@ -211,7 +233,10 @@ pub fn refreshColors(a: std.mem.Allocator, result: *Snapshot, p: Preferences, dy
     if (p.matugen.colors.source == .follow_pearl) {
         if (p.theme.mode == .dynamic) result.render_json = dynamic_json;
         // Package render data was captured with the committed templates.
-        if (p.theme.mode == .static or p.theme.mode == .gtk) result.render_json = null;
+        if (p.theme.mode == .static) {
+            if (result.render_json == null) result.render_json = material.palette;
+        }
+        if (p.theme.mode == .gtk) result.render_json = null;
     } else {
         var source = p;
         source.theme.source = if (p.matugen.colors.source == .seed) .seed else .wallpaper;

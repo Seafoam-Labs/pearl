@@ -1,0 +1,282 @@
+{
+  "dms_revision": "72ca8a6876b014f5722a00f69301a5766653764e",
+  "excluded": [
+    "niri",
+    "hyprland",
+    "mangowc",
+    "dgop"
+  ],
+  "targets": [
+    "zed",
+    "equibop",
+    "fluxer",
+    "starship",
+    "steam",
+    "gtk",
+    "qt5ct",
+    "qt6ct",
+    "kcolorscheme",
+    "ghostty",
+    "kitty",
+    "foot",
+    "alacritty",
+    "wezterm",
+    "nvim",
+    "vscode",
+    "emacs",
+    "firefox",
+    "zenbrowser",
+    "pywalfox",
+    "vesktop",
+    "vencord",
+    "fcitx5"
+  ],
+  "existing_integration": [
+    "qtengine"
+  ],
+  "vscode_editors": [
+    "code",
+    "codium",
+    "cursor",
+    "windsurf",
+    "code-insiders"
+  ],
+  "profiles": {
+    "zed": {
+      "id": "pearl.material.zed",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "pearl-zed.json"
+      ]
+    },
+    "equibop": {
+      "id": "pearl.material.equibop",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "vesktop.css"
+      ]
+    },
+    "fluxer": {
+      "id": "pearl.material.fluxer",
+      "variants": [
+        "dark"
+      ],
+      "outputs": [
+        "theme.css"
+      ]
+    },
+    "starship": {
+      "id": "pearl.material.starship",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "prompt.toml"
+      ]
+    },
+    "steam": {
+      "id": "pearl.material.steam",
+      "variants": [
+        "dark"
+      ],
+      "outputs": [
+        "theme.css"
+      ]
+    },
+    "gtk": {
+      "id": "pearl.material.gtk",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "gtk-colors.css"
+      ]
+    },
+    "qt5ct": {
+      "id": "pearl.material.qt5ct",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "qtct-colors.conf"
+      ]
+    },
+    "qt6ct": {
+      "id": "pearl.material.qt6ct",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "qtct-colors.conf"
+      ]
+    },
+    "kcolorscheme": {
+      "id": "pearl.material.kcolorscheme",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "kcolorscheme.colors",
+        "dark-kcolorscheme.colors",
+        "light-kcolorscheme.colors"
+      ]
+    },
+    "ghostty": {
+      "id": "pearl.material.ghostty",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "ghostty.conf"
+      ]
+    },
+    "kitty": {
+      "id": "pearl.material.kitty",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "kitty.conf",
+        "kitty-tabs.conf"
+      ]
+    },
+    "foot": {
+      "id": "pearl.material.foot",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "foot.ini"
+      ]
+    },
+    "alacritty": {
+      "id": "pearl.material.alacritty",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "alacritty.toml"
+      ]
+    },
+    "wezterm": {
+      "id": "pearl.material.wezterm",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "wezterm.toml"
+      ]
+    },
+    "nvim": {
+      "id": "pearl.material.nvim",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "colors.lua",
+        "lualine.lua"
+      ]
+    },
+    "vscode": {
+      "id": "pearl.material.vscode",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "vscode-color-theme-dark.json",
+        "vscode-color-theme-light.json",
+        "package.json"
+      ]
+    },
+    "emacs": {
+      "id": "pearl.material.emacs",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "pearl-emacs.el"
+      ]
+    },
+    "firefox": {
+      "id": "pearl.material.firefox",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "firefox-userchrome.css"
+      ]
+    },
+    "zenbrowser": {
+      "id": "pearl.material.zenbrowser",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "zen-userchrome.css"
+      ]
+    },
+    "pywalfox": {
+      "id": "pearl.material.pywalfox",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "pywalfox-colors.json"
+      ]
+    },
+    "vesktop": {
+      "id": "pearl.material.vesktop",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "vesktop.css"
+      ]
+    },
+    "vencord": {
+      "id": "pearl.material.vencord",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "vesktop.css"
+      ]
+    },
+    "fcitx5": {
+      "id": "pearl.material.fcitx5",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "theme.conf",
+        "panel.svg",
+        "highlight.svg"
+      ]
+    }
+  }
+}

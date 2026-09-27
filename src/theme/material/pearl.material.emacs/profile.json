@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "pearl.material.emacs",
+  "application": "emacs",
+  "adapter": "emacs",
+  "name": "Material \u00b7 emacs",
+  "author": "Pearl and attributed upstream contributors",
+  "license": "MIT",
+  "source": "https://github.com/AvengeMedia/DankMaterialShell/tree/72ca8a6876b014f5722a00f69301a5766653764e",
+  "asset_version": "1.0.0",
+  "variants": [
+    "dark",
+    "light"
+  ],
+  "templates": [
+    {
+      "path": "pearl-emacs.el",
+      "output": "pearl-emacs.el"
+    }
+  ],
+  "instructions": ""
+}

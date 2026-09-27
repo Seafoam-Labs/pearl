@@ -23,7 +23,7 @@ pub fn main(init: std.process.Init) !void {
         glib.printerr("%s\n", @errorName(err).ptr);
         std.process.exit(2);
     };
-    if (request.action == .preview_render or request.action == .verify_profiles or request.action == .application_review or request.action == .application_install or request.action == .application_retry) {
+    if (request.action == .preview_render or request.action == .verify_profiles or request.action == .application_review or request.action == .application_install or request.action == .application_retry or request.action == .application_refresh) {
         // The same worker/deadline as Settings bounds generator execution.
         const app = gio.Application.new("org.aqueous.Pearl.ThemeAuthor", .{ .non_unique = true });
         defer app.unref();

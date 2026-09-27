@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "pearl.material.kitty",
+  "application": "kitty",
+  "adapter": "kitty",
+  "name": "Material \u00b7 kitty",
+  "author": "Pearl and attributed upstream contributors",
+  "license": "MIT",
+  "source": "https://github.com/AvengeMedia/DankMaterialShell/tree/72ca8a6876b014f5722a00f69301a5766653764e",
+  "asset_version": "1.0.0",
+  "variants": [
+    "dark",
+    "light"
+  ],
+  "templates": [
+    {
+      "path": "kitty.conf",
+      "output": "kitty.conf"
+    },
+    {
+      "path": "kitty-tabs.conf",
+      "output": "kitty-tabs.conf"
+    }
+  ],
+  "instructions": ""
+}

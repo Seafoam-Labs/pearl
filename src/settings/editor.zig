@@ -45,6 +45,7 @@ pub const Editor = struct {
     theme_catalog_generation: u64 = 0,
     theme_discovery_degraded: bool = false,
     application_summary: Text(16384) = .{},
+    application_status: Text(32768) = .{},
     theme_busy: bool = false,
     theme_serial: u64 = 0,
     theme_poll: c_uint = 0,
@@ -152,7 +153,7 @@ pub const Editor = struct {
         self.live_command = .{ .op = .@"theme.start", .payload = try std.json.Stringify.valueAlloc(a, .{ .request = text_ }, .{}) };
         self.theme_busy = true;
         self.application_command = switch (request.action) {
-            .profiles_catalog, .application_review, .application_install, .application_retry => true,
+            .profiles_catalog, .application_review, .application_install, .application_retry, .application_refresh => true,
             else => false,
         };
         self.theme_error.set("");
@@ -755,6 +756,7 @@ pub const Editor = struct {
                         self.live = encoded;
                     } else self.live_more = true;
                 };
+                if (self.client.capabilities.application_profiles and self.client.capabilities.application_profiles_version < 2) return error.RestartPearlForApplicationThemes;
                 const snapshot = try e.read(p.Snapshot, a, try e.field(v, "snapshot"));
                 const revision = try p.number(snapshot.revision);
                 self.theme_catalog_generation = try p.number(snapshot.theme_catalog_generation);
@@ -766,7 +768,11 @@ pub const Editor = struct {
                     try app_summary.appendSlice(a, err);
                     try app_summary.appendSlice(a, " · use preferences reload to retry watching.\n");
                 }
+                const app_status = try std.json.Stringify.valueAlloc(a, snapshot.applications, .{});
+                defer a.free(app_status);
+                self.application_status.set(app_status);
                 for (snapshot.applications.targets, std.enums.values(@import("../theme/matugen_profiles.zig").Application)) |status, application| {
+                    if (status.state == .unmanaged) continue;
                     const line = try std.fmt.allocPrint(a, "{s}: {s} · {s} · {s}{s}{s}\n{s}\n{s}\n", .{ @tagName(application), @tagName(status.state), status.profile, status.origin, if (status.error_code != null) " · " else "", status.error_code orelse "", status.output, status.instructions });
                     defer a.free(line);
                     try app_summary.appendSlice(a, line);

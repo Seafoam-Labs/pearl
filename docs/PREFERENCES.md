@@ -548,18 +548,26 @@ are tracked in [PROGRESS.md](PROGRESS.md).
 The optional top-level `matugen` object defaults to disabled:
 
 ```json
-{"enabled":false,"colors":{"source":"follow_pearl","seed":"#6750a4"},"applications":{"zed":{"mode":"theme","profile_id":""},"steam":{"mode":"off","profile_id":""}},"snapshot_digest":"","catalog_revision":""}
+{"enabled":false,"defaults_revision":0,"colors":{"source":"follow_pearl","seed":"#6750a4"},"applications":{"zed":{"mode":"theme","profile_id":""},"steam":{"mode":"off","profile_id":""}},"snapshot_digest":"","catalog_revision":""}
 ```
 
 Colors may follow_pearl, seed or wallpaper. Application modes are theme, profile
 (explicit profile_id), or off. Omitted applications inherit theme defaults while
 management is enabled. Manual and Off choices survive changes to the active theme.
+`defaults_revision` is 0 for legacy behavior and 1 for the bundled Material
+assignments. First enablement in Settings and **Use Material defaults** adopt
+revision 1 in the draft; neither changes explicit profiles or Off choices. A
+previously enabled configuration with revision 0 stays unchanged until adoption.
+qt5ct/qt6ct exports require individual profile selection. GTK mode has no implicit
+Material assignments; packages retain their own defaults.
+
 The backend owns snapshot_digest; the picker captures catalog_revision. Controls
 share the ordinary draft, Apply/Discard and independent object merge behavior.
 Application reconciliation follows preference commit and reports each app’s state
 separately. Wallpaper-derived application colors update automatically when the
 committed image changes, including with a static/GTK shell and an independent
-wallpaper color source. Follow Pearl reuses the shell's complete dynamic palette;
+wallpaper color source. Follow Pearl uses fixed built-in Material render data in
+static mode and reuses the shell's complete dynamic palette;
 seed and fixed package colors do not change with the wallpaper. Uncommitted
 wallpaper selections continue to require Apply.
 

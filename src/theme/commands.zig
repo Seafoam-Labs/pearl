@@ -7,7 +7,7 @@ const install = @import("install.zig");
 const io = @import("../config/io.zig");
 extern fn mkdtemp([*:0]u8) ?[*:0]u8;
 pub const Request = struct {
-    action: enum { catalog, profiles_catalog, application_review, application_install, application_retry, validate, verify_profiles, validate_index, pack, publish_build, preview, preview_render, source_add, source_remove, source_default, refresh, install, import_archive, remove, rollback },
+    action: enum { catalog, profiles_catalog, application_review, application_install, application_retry, application_refresh, validate, verify_profiles, validate_index, pack, publish_build, preview, preview_render, source_add, source_remove, source_default, refresh, install, import_archive, remove, rollback },
     id: []const u8 = "",
     name: []const u8 = "",
     url: []const u8 = "",
@@ -41,11 +41,24 @@ pub fn runWithAssets(a: std.mem.Allocator, request: Request, cancel: *gio.Cancel
 pub fn runWithAssetsGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress, blobs: ?*[]const @import("assets.zig").Blob, guard: @import("publication.zig").Guard) ![]const u8 {
     if (cancel.isCancelled() != 0) return error.Cancelled;
     switch (request.action) {
-        .application_review, .application_install, .application_retry => {
+        .application_review, .application_install, .application_retry, .application_refresh => {
             const glib = @import("glib2");
             const config = std.mem.span(glib.getUserConfigDir());
             const root = try std.fmt.allocPrint(a, "{s}/pearl", .{config});
             const snapshot = try @import("application_profiles.zig").load(a, root, request.sha256);
+            if (request.action == .application_refresh) {
+                if (!std.mem.eql(u8, request.id, "pywalfox")) return error.UnsupportedApplicationRefresh;
+                var selected = false;
+                for (snapshot.profiles) |profile| if (profile.application == .pywalfox and profile.error_code == null) {
+                    selected = true;
+                };
+                if (!selected) return error.ProfileUnavailable;
+                if (@import("glib2").findProgramInPath("pywalfox")) |path| @import("glib2").free(path) else return error.ApplicationHelperUnavailable;
+                try guard.begin(cancel);
+                defer guard.end();
+                _ = try @import("generator.zig").run(a, &.{ "pywalfox", "update" }, cancel);
+                return "{\"application_action\":true,\"refreshed\":\"pywalfox\"}";
+            }
             if (request.action == .application_review) return std.json.Stringify.valueAlloc(a, .{ .application_review = try @import("application_profiles.zig").reviewStarship(a, config, snapshot, cancel) }, .{});
             if (request.action == .application_install) {
                 try @import("application_profiles.zig").installStarshipGuarded(a, config, snapshot, request.id, cancel, guard);

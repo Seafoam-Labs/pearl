@@ -6,19 +6,23 @@ const glib = @import("glib2");
 const object = @import("gobject2");
 const w = @import("../ui/components/widgets.zig");
 const profiles = @import("../theme/matugen_profiles.zig");
+const adapters = @import("../theme/application_adapters.zig");
 const a = std.heap.c_allocator;
 const Choice = struct { id: []const u8, name: []const u8, application: profiles.Application, origin: []const u8 };
 pub const View = struct {
     editor: *@import("editor.zig").Editor,
     root: *gtk.Box,
     enabled: *gtk.Switch,
+    defaults: *gtk.Button = undefined,
     source: *gtk.DropDown,
     seed: *gtk.Entry,
     search: *gtk.Entry,
-    rows: [5]*gtk.Box,
-    modes: [5]*gtk.DropDown,
-    pickers: [5]*gtk.DropDown,
-    ids: [5][]const []const u8 = @splat(&.{}),
+    rows: [profiles.count]*gtk.Box,
+    details: [profiles.count]*gtk.Label,
+    shown_status: ?[]u8 = null,
+    modes: [profiles.count]*gtk.DropDown,
+    pickers: [profiles.count]*gtk.DropDown,
+    ids: [profiles.count][]const []const u8 = @splat(&.{}),
     status: *gtk.Label,
     arena: std.heap.ArenaAllocator = .init(a),
     catalog_arena: std.heap.ArenaAllocator = .init(a),
@@ -58,21 +62,39 @@ pub const View = struct {
         const search = gtk.Entry.new();
         search.setPlaceholderText("Search applications");
         root.append(search.as(gtk.Widget));
-        self.* = .{ .editor = editor, .root = root, .enabled = enabled, .source = source, .seed = seed, .search = search, .rows = undefined, .modes = undefined, .pickers = undefined, .status = w.label("", "pearl-secondary") };
-        for (std.enums.values(profiles.Application), 0..) |application, i| {
-            const row = w.column(6);
-            self.rows[i] = row;
-            root.append(row.as(gtk.Widget));
-            row.append(w.label(@tagName(application), "settings-row-title").as(gtk.Widget));
-            self.modes[i] = dropdown(&.{ "Follow Pearl theme", "Choose profile", "Off" });
-            self.pickers[i] = dropdown(&.{"No profile selected"});
-            var label: [96]u8 = undefined;
-            w.name(self.modes[i].as(gtk.Widget), try std.fmt.bufPrintZ(&label, "{s} theme assignment", .{@tagName(application)}));
-            w.name(self.pickers[i].as(gtk.Widget), try std.fmt.bufPrintZ(&label, "{s} application profile", .{@tagName(application)}));
-            row.append(self.modes[i].as(gtk.Widget));
-            row.append(self.pickers[i].as(gtk.Widget));
-            _ = object.Object.signals.notify.connect(self.modes[i].as(object.Object), *View, changed, self, .{ .detail = "selected" });
-            _ = object.Object.signals.notify.connect(self.pickers[i].as(object.Object), *View, changed, self, .{ .detail = "selected" });
+        self.* = .{ .editor = editor, .root = root, .enabled = enabled, .source = source, .seed = seed, .search = search, .rows = undefined, .details = undefined, .modes = undefined, .pickers = undefined, .status = w.label("", "pearl-secondary") };
+        const defaults = w.wrappingButton("Use Material defaults");
+        self.defaults = defaults;
+        root.append(defaults.as(gtk.Widget));
+        _ = gtk.Button.signals.clicked.connect(defaults, *View, defaultsClicked, self, .{});
+        root.append(w.label("Base Material defaults preserve individual choices and Off. QtEngine + Darkly is managed by the Qt applications controls on this page. qtct palettes remain individually selectable exports.", "pearl-secondary").as(gtk.Widget));
+        for (std.enums.values(adapters.Group)) |group| {
+            root.append(w.label(@tagName(group), "pearl-card-title").as(gtk.Widget));
+            for (std.enums.values(profiles.Application), 0..) |application, i| {
+                if (adapters.group(application) != group) continue;
+                const row = w.column(6);
+                self.rows[i] = row;
+                root.append(row.as(gtk.Widget));
+                row.append(w.label(@tagName(application), "settings-row-title").as(gtk.Widget));
+                self.modes[i] = dropdown(&.{ "Follow Pearl theme", "Choose profile", "Off" });
+                self.pickers[i] = dropdown(&.{"No profile selected"});
+                var label: [96]u8 = undefined;
+                w.name(self.modes[i].as(gtk.Widget), try std.fmt.bufPrintZ(&label, "{s} theme assignment", .{@tagName(application)}));
+                w.name(self.pickers[i].as(gtk.Widget), try std.fmt.bufPrintZ(&label, "{s} application profile", .{@tagName(application)}));
+                row.append(self.modes[i].as(gtk.Widget));
+                row.append(self.pickers[i].as(gtk.Widget));
+                self.details[i] = w.label("", "pearl-secondary");
+                self.details[i].setWrap(1);
+                self.details[i].setSelectable(1);
+                row.append(self.details[i].as(gtk.Widget));
+                if (application == .pywalfox) {
+                    const refresh = w.wrappingButton("Refresh Pywalfox from committed colors");
+                    row.append(refresh.as(gtk.Widget));
+                    _ = gtk.Button.signals.clicked.connect(refresh, *View, pywalfoxClicked, self, .{});
+                }
+                _ = object.Object.signals.notify.connect(self.modes[i].as(object.Object), *View, changed, self, .{ .detail = "selected" });
+                _ = object.Object.signals.notify.connect(self.pickers[i].as(object.Object), *View, changed, self, .{ .detail = "selected" });
+            }
         }
         root.append(w.label("Zed and Equibop need activation in the application. Fluxer and Steam use the generated CSS. Starship generates a full prompt configuration; review it before installing. Off restores only unchanged Pearl-owned files.", "pearl-secondary").as(gtk.Widget));
         const refresh = w.wrappingButton("Refresh application profiles");
@@ -114,6 +136,7 @@ pub const View = struct {
         return gtk.DropDown.newFromStrings(@ptrCast(&strings));
     }
     pub fn destroy(self: *View) void {
+        if (self.shown_status) |v| a.free(v);
         if (self.review_seen) |v| a.free(v);
         if (self.seen) |v| a.free(v);
         if (self.shown) |v| a.free(v);
@@ -124,6 +147,10 @@ pub const View = struct {
     fn refreshClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         self.requested = false;
         self.update();
+    }
+    fn pywalfoxClicked(_: *gtk.Button, self: *View) callconv(.c) void {
+        var buffer: [20]u8 = undefined;
+        self.editor.themeCommand(.{ .action = .application_refresh, .id = "pywalfox", .revision = std.fmt.bufPrint(&buffer, "{d}", .{self.editor.state.revision}) catch unreachable }) catch |err| self.status.setText(@errorName(err));
     }
     fn retryClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         var buffer: [20]u8 = undefined;
@@ -145,6 +172,21 @@ pub const View = struct {
         const query = std.mem.span(self.search.as(gtk.Editable).getText());
         for (self.rows, std.enums.values(profiles.Application)) |row, app| row.as(gtk.Widget).setVisible(@intFromBool(query.len == 0 or std.ascii.indexOfIgnoreCase(@tagName(app), query) != null));
     }
+    fn defaultsClicked(_: *gtk.Button, self: *View) callconv(.c) void {
+        self.adoptDefaults() catch |err| self.status.setText(@errorName(err));
+    }
+    fn adoptDefaults(self: *View) !void {
+        if (!self.editor.editable()) return;
+        var memory = std.heap.ArenaAllocator.init(a);
+        defer memory.deinit();
+        const alloc = memory.allocator();
+        var p = try @import("../config/preferences.zig").parse(alloc, self.editor.text());
+        p.matugen.enabled = true;
+        p.matugen.defaults_revision = profiles.defaults_revision;
+        p.matugen.catalog_revision = self.revision;
+        p.matugen.snapshot_digest = "";
+        try self.editor.edit(try std.json.Stringify.valueAlloc(alloc, p, .{ .whitespace = .indent_2 }));
+    }
     fn adoptClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         self.edit(true) catch |err| self.status.setText(@errorName(err));
     }
@@ -164,6 +206,7 @@ pub const View = struct {
         defer memory.deinit();
         const alloc = memory.allocator();
         var p = try @import("../config/preferences.zig").parse(alloc, self.editor.text());
+        if (!p.matugen.enabled and self.enabled.getActive() != 0 and p.matugen.defaults_revision == 0) p.matugen.defaults_revision = profiles.defaults_revision;
         p.matugen.enabled = self.enabled.getActive() != 0;
         p.matugen.colors.source = switch (self.source.getSelected()) {
             1 => .seed,
@@ -228,8 +271,22 @@ pub const View = struct {
         }
         const text = self.editor.text();
         if (self.shown == null or !std.mem.eql(u8, self.shown.?, text)) self.fill(text) catch |err| self.status.setText(@errorName(err));
+        self.showStatus() catch |err| self.status.setText(@errorName(err));
         self.enabled.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable()));
         self.status.setText(if (self.editor.application_command and self.editor.theme_error.len > 0) self.editor.theme_error.z() else self.editor.application_summary.z());
+    }
+    fn showStatus(self: *View) !void {
+        const bytes = self.editor.application_status.slice();
+        if (bytes.len == 0 or (self.shown_status != null and std.mem.eql(u8, self.shown_status.?, bytes))) return;
+        var memory = std.heap.ArenaAllocator.init(a);
+        defer memory.deinit();
+        const alloc = memory.allocator();
+        const status = try std.json.parseFromSliceLeaky(profiles.Status, alloc, bytes, .{});
+        for (status.targets, 0..) |target, i| {
+            self.details[i].setText(try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s} · {s}{s}{s}\n{s}\n{s}", .{ @tagName(target.state), target.profile, target.origin, if (target.detected) "Detected" else "Not detected / manual setup", if (target.error_code != null) " · " else "", target.error_code orelse "", target.output, target.instructions }, 0));
+        }
+        if (self.shown_status) |old| a.free(old);
+        self.shown_status = try a.dupe(u8, bytes);
     }
     fn showReview(self: *View, bytes: []const u8) !void {
         var memory = std.heap.ArenaAllocator.init(a);

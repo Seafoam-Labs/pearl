@@ -1,0 +1,16 @@
+{
+  "checks": [
+    "legacy-enabled-does-not-adopt",
+    "all-23-targets-and-gtk-preservation",
+    "dark-independent-parsers-vsix-and-neovim",
+    "committed-snapshot-retry-idempotent",
+    "typed-explicit-pywalfox-refresh",
+    "missing-matugen-retains-last-good",
+    "light-independent-parsers-and-variant-restrictions",
+    "off-preserves-user-edits-restores-gtk",
+    "off-restores-all-unchanged-owned-files-and-flatpak",
+    "manual-and-off-precedence",
+    "redirected-gtk-root-does-not-block-other-targets"
+  ],
+  "unverified_optional_consumers": []
+}

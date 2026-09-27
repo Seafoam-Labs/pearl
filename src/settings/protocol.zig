@@ -34,6 +34,7 @@ pub const Capabilities = struct {
     community_themes: bool = false,
     theme_assets: bool = false,
     application_profiles: bool = false,
+    application_profiles_version: u32 = 1,
     bar_widgets: bool = false,
     launcher_icon: bool = false,
     night_light: bool = false,

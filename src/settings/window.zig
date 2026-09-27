@@ -1095,7 +1095,7 @@ pub const Window = struct {
             for ([_][]const @import("themes_view.zig").Control{ view.themes.controls.items, view.themes.row_controls.items }) |bindings| for (bindings) |binding| {
                 try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget else false, .enabled = binding.widget.isSensitive() != 0, .bounds = self.bounds(binding.widget) });
             };
-            for ([_]*gtk.Widget{ view.profiles.enabled.as(gtk.Widget), view.profiles.source.as(gtk.Widget), view.profiles.seed.as(gtk.Widget) }, [_][]const u8{ "applications.enabled", "applications.source", "applications.seed" }) |widget, name| {
+            for ([_]*gtk.Widget{ view.profiles.enabled.as(gtk.Widget), view.profiles.defaults.as(gtk.Widget), view.profiles.source.as(gtk.Widget), view.profiles.seed.as(gtk.Widget) }, [_][]const u8{ "applications.enabled", "applications.defaults", "applications.source", "applications.seed" }) |widget, name| {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
             }
             for (std.enums.values(@import("../theme/matugen_profiles.zig").Application), 0..) |application, i| {

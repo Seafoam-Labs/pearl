@@ -1,0 +1,47 @@
+info(pearl): event=aqueous-availability state=connecting
+info(pearl): event=ready mode=session
+info: event=blur-capability available=false
+info(pearl): event=aqueous-availability state=subscribing
+info(pearl): event=aqueous-availability state=ready
+info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
+info(pearl): event=settings-backend-ready session=0347aea46331e1f16a838dd32a33cb59
+info(pearl): event=control-ready session=0347aea46331e1f16a838dd32a33cb59
+info: event=app-index-ready entries=162 truncated=false
+info: event=preferences-applied revision=0 mode=static cache=false
+info: event=wallpaper-applications-applied generation=2 elapsed_us=2272 success=true
+info: event=preferences-applied revision=1 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=3 elapsed_us=37923 success=true
+info: event=app-index-ready entries=162 truncated=false
+info: event=preferences-applied revision=2 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=6 elapsed_us=29009 success=true
+info: event=preferences-error detail=InvalidImage
+info: event=preferences-error detail=GtkThemeNotInstalled
+info: event=preferences-error detail=SaveFailed
+info: event=app-index-ready entries=162 truncated=false
+info: event=preferences-applied revision=3 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=11 elapsed_us=3960 success=true
+info: event=app-index-ready entries=162 truncated=false
+info: event=preferences-applied revision=4 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=13 elapsed_us=4017 success=true
+info: event=preferences-applied revision=5 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=15 elapsed_us=4122 success=true
+info: event=preferences-applied revision=6 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=17 elapsed_us=3788 success=true
+info: event=preferences-applied revision=7 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=19 elapsed_us=4544 success=true
+info: event=preferences-applied revision=8 mode=dynamic cache=true
+info: event=wallpaper-applications-applied generation=21 elapsed_us=3758 success=true
+info: event=preferences-applied revision=9 mode=dynamic cache=false
+info: event=wallpaper-applications-applied generation=23 elapsed_us=10043229 success=true
+info: event=wallpaper-applications-applied generation=25 elapsed_us=624 success=true
+info: event=preferences-applied revision=10 mode=static cache=false
+info: event=wallpaper-applications-applied generation=26 elapsed_us=3822 success=true
+info: event=preferences-applied revision=11 mode=gtk cache=false
+info: event=wallpaper-applications-applied generation=28 elapsed_us=3135 success=true
+info: event=preferences-applied revision=12 mode=static cache=false
+info: event=wallpaper-applications-applied generation=30 elapsed_us=3814 success=true
+info(pearl): event=stopping reason=signal pending=false
+info(pearl): event=aqueous-availability state=stopped
+info(pearl): event=cleanup pending=false watched_objects=0
+info(pearl): event=stopped

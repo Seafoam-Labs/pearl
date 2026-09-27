@@ -3,17 +3,21 @@
 See [Create a community theme](CREATE_COMMUNITY_THEME.md) for package authoring
 and [theme repositories](THEME_REPOSITORIES.md) for discovery and installation.
 
+See [base Material application defaults](BASE_MATERIAL_PROFILES.md) and the
+[implementation and acceptance plan](BASE_MATERIAL_MATUGEN_IMPLEMENTATION_PLAN.md).
+
 ## Application management and recovery
 
 Enable **Appearance → Application themes** and choose each application's profile,
 follow the active theme's assignment, or turn that application Off. Management is
-disabled by default. Manual profile choices and Off remain independent of the
+disabled by default. **Use Material defaults** adopts the built-in assignments
+in the shared draft; **Apply & save** commits them. Manual profile choices and Off remain independent of the
 shell's theme selection.
 
 Application colors can follow Pearl, use an independent seed, or use the current
 wallpaper. Follow Pearl uses the complete dynamic palette or the fixed render
-data supplied by a package; static and GTK shell themes do not supply a complete
-Matugen palette. Independent wallpaper colors work with every shell mode.
+data supplied by a package. Built-in static Material supplies complete, fixed
+dark/light render data; GTK shell themes do not supply a complete Matugen palette. Independent wallpaper colors work with every shell mode.
 
 After committing a wallpaper selection, image edits and replacements update the
 selected wallpaper-dependent profiles automatically. Pearl uses one validated

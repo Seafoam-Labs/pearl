@@ -4,6 +4,7 @@ const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
 const profiles = @import("matugen_profiles.zig");
+const adapters = @import("application_adapters.zig");
 const provider = @import("theme_provider.zig");
 const model = @import("package_model.zig");
 const io = @import("../config/io.zig");
@@ -74,13 +75,15 @@ pub fn load(a: std.mem.Allocator, root: []const u8, digest: []const u8) !provide
     return result;
 }
 fn validateSnapshot(result: provider.Snapshot) !void {
-    if (result.schema_version != 1 or result.profiles.len > 5) return error.ProfileSnapshotCorrupt;
-    for (result.profiles) |profile| {
+    if (result.schema_version != 1 or result.profiles.len > profiles.count) return error.ProfileSnapshotCorrupt;
+    for (result.profiles, 0..) |profile, index| {
+        for (result.profiles[0..index]) |old| if (old.application == profile.application) return error.ProfileSnapshotCorrupt;
         try model.identifier(profile.id);
         if (profile.descriptor) |descriptor| {
             try descriptor.validate();
             if (!std.mem.eql(u8, descriptor.id, profile.id) or descriptor.application != profile.application or profile.templates.len != descriptor.templates.len) return error.ProfileSnapshotCorrupt;
-            for (profile.templates) |template| {
+            for (profile.templates, descriptor.templates) |template, declared| {
+                if (!std.mem.eql(u8, template.path, declared.output)) return error.ProfileSnapshotCorrupt;
                 try model.identifier(template.path);
                 try profiles.template(template.bytes);
             }
@@ -112,7 +115,7 @@ pub fn prune(a: std.mem.Allocator, root: []const u8, retained: []const []const u
         if (std.mem.eql(u8, &model.hash(bytes), name[0..64])) _ = c.unlinkat(fd, @ptrCast(&entry.*.d_name), 0);
     }
 }
-pub const Output = struct { name: []const u8, bytes: []const u8 };
+pub const Output = struct { name: []const u8, bytes: []const u8, expected: ?[64]u8 = null };
 pub fn render(a: std.mem.Allocator, captured: provider.Captured, snapshot: provider.Snapshot, scratch_root: [:0]const u8, cancel: *gio.Cancellable) ![]const Output {
     var context: @import("generator.zig").Context = .{};
     return renderWithContext(a, captured, snapshot, scratch_root, cancel, &context);
@@ -122,7 +125,7 @@ pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snap
     const input = snapshot.render_json orelse return error.CompleteRenderPaletteUnavailable;
     const version = try context.getVersion(a, cancel);
     try io.mkdir(scratch_root);
-    const key = model.hash(try std.json.Stringify.valueAlloc(a, .{ .adapter_api = @as(u32, 2), .renderer = version, .captured = captured, .input = input, .variant = snapshot.variant }, .{}));
+    const key = model.hash(try std.json.Stringify.valueAlloc(a, .{ .adapter_api = @as(u32, 3), .renderer = version, .captured = captured, .input = input, .variant = snapshot.variant }, .{}));
     const slot = std.fmt.parseInt(u8, key[0..2], 16) catch unreachable;
     // Three bounded slots per adapter prevent another application's render from
     // evicting the current input. Retrying a failed target reuses the others.
@@ -157,8 +160,8 @@ pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snap
             try color.object.put(a, "default", selected);
         }
     }
-    if (document.object.getPtr("mode")) |mode| mode.* = .{ .string = @tagName(snapshot.variant) };
-    if (document.object.getPtr("is_dark_mode")) |dark| dark.* = .{ .bool = snapshot.variant == .dark };
+    try document.object.put(a, "mode", .{ .string = @tagName(snapshot.variant) });
+    try document.object.put(a, "is_dark_mode", .{ .bool = snapshot.variant == .dark });
     try io.atomic(json, try std.json.Stringify.valueAlloc(a, document, .{}), true);
     var config: std.ArrayList(u8) = .empty;
     try config.appendSlice(a, "[config]\n");
@@ -175,10 +178,10 @@ pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snap
     for (captured.templates, 0..) |template, i| {
         const file = try io.read(a, try std.fmt.allocPrintSentinel(a, "{s}/output-{d}", .{ scratch, i }, 0), 131072, cancel);
         if (file.missing or file.bytes.len == 0 or !std.unicode.utf8ValidateSlice(file.bytes) or std.mem.indexOf(u8, file.bytes, "{{") != null) return error.InvalidProfileOutput;
-        if (captured.application == .zed) {
+        if (captured.application == .zed or captured.application == .vscode or captured.application == .pywalfox) {
             try @import("../config/preferences.zig").boundedJson(file.bytes, 131072, 16);
             const value = try std.json.parseFromSliceLeaky(std.json.Value, a, file.bytes, .{});
-            if (value != .object or !value.object.contains("themes")) return error.InvalidProfileOutput;
+            if (value != .object or (captured.application == .zed and !value.object.contains("themes"))) return error.InvalidProfileOutput;
         }
         try result.append(a, .{ .name = template.path, .bytes = file.bytes });
     }
@@ -187,43 +190,58 @@ pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snap
     return result.items;
 }
 const Record = struct { name: []const u8, original: ?[]const u8 = null, last: []const u8 = "", next: []const u8 = "", pending: bool = false };
-const Ledger = struct { schema_version: u32 = 1, records: []Record = &.{} };
-fn ledgerSave(a: std.mem.Allocator, path: [:0]const u8, records: []const Record) !void {
-    const bytes = try std.json.Stringify.valueAlloc(a, .{ .schema_version = @as(u32, 1), .records = records }, .{});
+const Ledger = struct { schema_version: u32 = 1, root: []const u8 = "", records: []Record = &.{} };
+fn ledgerSave(a: std.mem.Allocator, path: [:0]const u8, root: []const u8, records: []const Record) !void {
+    const bytes = try std.json.Stringify.valueAlloc(a, .{ .schema_version = @as(u32, 1), .root = root, .records = records }, .{});
     if (bytes.len > 2 * 1024 * 1024) return error.ProfileLedgerLimit;
+    const old = try io.read(a, path, 2 * 1024 * 1024, null);
+    if (!old.missing and std.mem.eql(u8, old.bytes, bytes)) return;
     try io.atomic(path, bytes, false);
 }
 fn destination(a: std.mem.Allocator, config: []const u8, application: profiles.Application) ![]const u8 {
-    if (application == .equibop) if (glib.getenv("EQUICORD_USER_DATA_DIR")) |root| return std.fmt.allocPrint(a, "{s}/themes", .{std.mem.span(root)});
-    if (application == .starship and glib.getenv("STARSHIP_CONFIG") != null) return error.CustomStarshipConfigRequiresManualSetup;
-    return std.fmt.allocPrint(a, "{s}/{s}", .{ config, switch (application) {
-        .zed => "zed/themes",
-        .equibop => "equibop/themes",
-        .starship => "",
-        else => return error.ManualProfileActivation,
-    } });
+    return adapters.root(a, config, application);
+}
+const OwnedFile = struct { fd: c_int, name: [:0]const u8, path: [:0]const u8 };
+fn ownedFile(a: std.mem.Allocator, root_fd: c_int, name: []const u8) !OwnedFile {
+    var fd = c.dup(root_fd);
+    if (fd < 0) return error.ProfileDirectory;
+    errdefer _ = c.close(fd);
+    var parts = std.mem.splitScalar(u8, name, '/');
+    while (parts.next()) |part| {
+        const z = try a.dupeZ(u8, part);
+        if (parts.peek() == null) return .{ .fd = fd, .name = z, .path = try std.fmt.allocPrintSentinel(a, "/proc/self/fd/{d}/{s}", .{ fd, z }, 0) };
+        if (c.mkdirat(fd, z, 0o700) != 0 and std.posix.errno(-1) != .EXIST) return error.ProfileDirectory;
+        const next = c.openat(fd, z, c.O_RDONLY | c.O_DIRECTORY | c.O_CLOEXEC | c.O_NOFOLLOW);
+        if (next < 0) return error.ProfileDirectory;
+        _ = c.close(fd);
+        fd = next;
+    }
+    return error.InvalidProfileOutputName;
 }
 /// One application journal is committed stepwise. Preflight every destination
 /// before writing; recover each pending step from its content hash after a crash.
 fn install(a: std.mem.Allocator, config: []const u8, state: [:0]const u8, application: profiles.Application, outputs: []const Output, cancel: *gio.Cancellable, reviewed: bool) !void {
-    const journal = try std.fmt.allocPrintSentinel(a, "{s}/{s}.json", .{ state, @tagName(application) }, 0);
+    return installAt(a, config, state, application, outputs, cancel, reviewed, null, @tagName(application));
+}
+fn installAt(a: std.mem.Allocator, config: []const u8, state: [:0]const u8, application: profiles.Application, outputs: []const Output, cancel: *gio.Cancellable, reviewed: bool, override_root: ?[]const u8, journal_name: []const u8) !void {
+    const journal = try std.fmt.allocPrintSentinel(a, "{s}/{s}.json", .{ state, journal_name }, 0);
     const stored = try io.read(a, journal, 2 * 1024 * 1024, cancel);
     if (stored.missing and outputs.len == 0) return;
     var ledger: Ledger = if (stored.missing) .{} else try model.parse(Ledger, a, stored.bytes, 2 * 1024 * 1024);
     if (ledger.schema_version != 1 or ledger.records.len > 16) return error.InvalidProfileLedger;
-    const root = try destination(a, config, application);
+    const root = override_root orelse try destination(a, config, application);
+    if (ledger.records.len > 0 and ledger.root.len > 0 and !std.mem.eql(u8, ledger.root, root)) return error.ProfileDestinationChanged;
     const fd = try safe.directory(a, root, true);
     defer _ = c.close(fd);
     var records: std.ArrayList(Record) = .empty;
     for (ledger.records, 0..) |*record, i| {
-        try outputName(record.name);
-        if (application == .starship) {
-            if (!std.mem.eql(u8, record.name, "starship.toml")) return error.InvalidProfileLedger;
-        } else if (!std.mem.startsWith(u8, record.name, "pearl-")) return error.InvalidProfileLedger;
+        if (!adapters.allowed(application, record.name)) return error.InvalidProfileLedger;
         for (ledger.records[0..i]) |old| if (std.mem.eql(u8, old.name, record.name)) return error.InvalidProfileLedger;
         if (record.original) |bytes| if (bytes.len > 131072) return error.InvalidProfileLedger;
         for ([_][]const u8{ record.last, record.next }) |digest| if (digest.len > 0) try model.digest(digest);
-        const path = try std.fmt.allocPrintSentinel(a, "/proc/self/fd/{d}/{s}", .{ fd, record.name }, 0);
+        const owned = try ownedFile(a, fd, record.name);
+        defer _ = c.close(owned.fd);
+        const path = owned.path;
         const current = try io.read(a, path, 131072, cancel);
         if (record.pending) {
             if (std.mem.eql(u8, &current.hash, record.next)) record.last = record.next else if (!std.mem.eql(u8, &current.hash, record.last)) return error.ProfileOwnershipConflict;
@@ -233,15 +251,19 @@ fn install(a: std.mem.Allocator, config: []const u8, state: [:0]const u8, applic
         try records.append(a, record.*);
     }
     for (outputs) |output| {
-        try outputName(output.name);
+        if (!adapters.allowed(application, output.name)) return error.InvalidProfileOutputName;
         var found = false;
         for (records.items) |record| if (std.mem.eql(u8, record.name, output.name)) {
             found = true;
         };
         if (!found) {
-            const path = try std.fmt.allocPrintSentinel(a, "/proc/self/fd/{d}/{s}", .{ fd, output.name }, 0);
+            const owned = try ownedFile(a, fd, output.name);
+            defer _ = c.close(owned.fd);
+            const path = owned.path;
             const current = try io.read(a, path, 131072, cancel);
-            if (!current.missing and !reviewed) return error.ProfileOwnershipConflict;
+            if (output.expected) |expected| if (!std.mem.eql(u8, &current.hash, &expected)) return error.ProfileOwnershipConflict;
+            const gtk_import = application == .gtk and std.mem.endsWith(u8, output.name, "/gtk.css") and output.expected != null;
+            if (!current.missing and !reviewed and !gtk_import) return error.ProfileOwnershipConflict;
             try records.append(a, .{ .name = output.name, .original = if (current.missing) null else current.bytes, .last = try a.dupe(u8, &current.hash) });
         }
     }
@@ -255,17 +277,19 @@ fn install(a: std.mem.Allocator, config: []const u8, state: [:0]const u8, applic
         if (std.mem.eql(u8, record.last, &hash)) continue;
         record.pending = true;
         record.next = try a.dupe(u8, &hash);
-        try ledgerSave(a, journal, records.items);
-        const path = try std.fmt.allocPrintSentinel(a, "/proc/self/fd/{d}/{s}", .{ fd, record.name }, 0);
+        try ledgerSave(a, journal, root, records.items);
+        const owned = try ownedFile(a, fd, record.name);
+        defer _ = c.close(owned.fd);
+        const path = owned.path;
         const current = try io.read(a, path, 131072, cancel);
         if (!std.mem.eql(u8, &current.hash, record.last)) return error.ProfileOwnershipConflict;
         if (desired) |bytes| try io.replace(path, bytes, current, cancel) else {
-            if (!current.missing and c.unlinkat(fd, try a.dupeZ(u8, record.name), 0) != 0) return error.ProfileRestoreFailed;
-            if (c.fsync(fd) != 0) return error.ProfileRestoreFailed;
+            if (!current.missing and c.unlinkat(owned.fd, owned.name, 0) != 0) return error.ProfileRestoreFailed;
+            if (c.fsync(owned.fd) != 0) return error.ProfileRestoreFailed;
         }
         record.last = record.next;
         record.pending = false;
-        try ledgerSave(a, journal, records.items);
+        try ledgerSave(a, journal, root, records.items);
     }
     // Retain only destinations still managed. Restored records no longer own files.
     var retained: std.ArrayList(Record) = .empty;
@@ -273,12 +297,16 @@ fn install(a: std.mem.Allocator, config: []const u8, state: [:0]const u8, applic
         try retained.append(a, record);
         break;
     };
-    try ledgerSave(a, journal, retained.items);
+    try ledgerSave(a, journal, root, retained.items);
 }
-fn outputName(name: []const u8) !void {
-    if (name.len == 0 or name.len > 240) return error.InvalidProfileOutputName;
-    for (name) |ch| if (!(std.ascii.isLower(ch) or std.ascii.isDigit(ch) or ch == '.' or ch == '-' or ch == '_')) return error.InvalidProfileOutputName;
-    if (name[0] == '.') return error.InvalidProfileOutputName;
+fn installFlatpaks(a: std.mem.Allocator, config: []const u8, state: [:0]const u8, application: profiles.Application, outputs: []const Output, cancel: *gio.Cancellable) !void {
+    for (adapters.flatpaks(application)) |id| {
+        const sandbox = try std.fmt.allocPrintSentinel(a, "{s}/.var/app/{s}/config", .{ std.mem.span(glib.getHomeDir()), id }, 0);
+        const journal = try std.fmt.allocPrint(a, "{s}-{s}", .{ @tagName(application), id });
+        if (outputs.len > 0 and glib.fileTest(sandbox, .{ .is_dir = true }) == 0) continue;
+        const root = try std.fmt.allocPrint(a, "{s}/{s}/themes", .{ sandbox, if (application == .vesktop) "vesktop" else "Vencord" });
+        try installAt(a, config, state, application, outputs, cancel, false, root, journal);
+    }
 }
 pub const Review = struct { digest: []const u8, current: []const u8, proposed: []const u8, profile: []const u8, destination: []const u8 };
 pub fn reviewStarship(a: std.mem.Allocator, config: []const u8, snapshot: provider.Snapshot, cancel: *gio.Cancellable) !Review {
@@ -319,8 +347,79 @@ pub fn reconcile(a: std.mem.Allocator, config: []const u8, enabled: bool, snapsh
     var context: @import("generator.zig").Context = .{};
     return reconcileGuarded(a, config, enabled, snapshot, cancel, &context, .{});
 }
+fn applyProfile(a: std.mem.Allocator, config: []const u8, state: [:0]const u8, scratch: [:0]const u8, application: profiles.Application, profile: provider.Captured, snapshot: provider.Snapshot, cancel: *gio.Cancellable, context: *@import("generator.zig").Context, guard: @import("publication.zig").Guard) !profiles.Target {
+    var result: profiles.Target = .{};
+    const builtin = std.mem.startsWith(u8, profile.id, "pearl.material.");
+    result = .{ .application = application, .detected = adapters.detected(application), .profile = profile.id, .origin = profile.origin, .instructions = if (builtin) adapters.instructions(application) else if (profile.descriptor) |descriptor| descriptor.instructions else "" };
+    if (profile.error_code) |err| {
+        result.state = .unavailable;
+        result.error_code = err;
+        return result;
+    }
+    const generated = renderWithContext(a, profile, snapshot, scratch, cancel, context) catch |err| {
+        result.state = if (err == error.CompleteRenderPaletteUnavailable) .unsupported else .failed;
+        result.error_code = @errorName(err);
+        return result;
+    };
+    try guard.begin(cancel);
+    defer guard.end();
+    // Fixed adapter directories bound durable generated output even
+    // when arbitrary community profile IDs are installed and removed.
+    const output_root = try std.fmt.allocPrintSentinel(a, "{s}/outputs/{s}", .{ state, @tagName(application) }, 0);
+    const output_fd = try safe.directory(a, output_root, true);
+    defer _ = c.close(output_fd);
+    var installed: std.ArrayList(Output) = .empty;
+    for (generated, 0..) |output, output_index| {
+        const extension = std.fs.path.extension(output.name);
+        const path = try std.fmt.allocPrintSentinel(a, "/proc/self/fd/{d}/output-{d}{s}", .{ output_fd, output_index, extension }, 0);
+        const old = try io.read(a, path, 131072, cancel);
+        if (old.missing or !std.mem.eql(u8, old.bytes, output.bytes)) try io.replace(path, output.bytes, old, cancel);
+        try installed.append(a, .{ .name = try adapters.name(a, application, profile.id, output.name, output_index), .bytes = output.bytes });
+    }
+    if (application == .gtk) {
+        try installed.append(a, .{ .name = "gtk-4.0/pearl-material.css", .bytes = generated[0].bytes });
+        for ([_][]const u8{ "gtk-3.0/gtk.css", "gtk-4.0/gtk.css" }) |name| {
+            const root_fd = try safe.directory(a, config, true);
+            defer _ = c.close(root_fd);
+            const owned = try ownedFile(a, root_fd, name);
+            defer _ = c.close(owned.fd);
+            const current = try io.read(a, owned.path, 131072, cancel);
+            const line = "@import url(\"pearl-material.css\");\n";
+            const desired = if (std.mem.indexOf(u8, current.bytes, line) != null) current.bytes else try std.fmt.allocPrint(a, "{s}{s}", .{ line, current.bytes });
+            try installed.append(a, .{ .name = name, .bytes = desired, .expected = current.hash });
+        }
+    }
+    if (application == .vscode) {
+        const vsix = try @import("vscode_theme.zig").pack(a, generated);
+        installed = .empty;
+        try installed.append(a, .{ .name = "pearl-material.vsix", .bytes = vsix });
+    }
+    result.output = if (adapters.managed(application) and application != .starship) try destination(a, config, application) else output_root;
+    result.state = .activation_required;
+    if (application == .starship) {
+        const journal = try io.read(a, try std.fmt.allocPrintSentinel(a, "{s}/starship.json", .{state}, 0), 2 * 1024 * 1024, cancel);
+        if (!journal.missing and (try model.parse(Ledger, a, journal.bytes, 2 * 1024 * 1024)).records.len > 0) {
+            install(a, config, state, .starship, &.{.{ .name = "starship.toml", .bytes = generated[0].bytes }}, cancel, false) catch |err| {
+                result.state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
+                result.error_code = @errorName(err);
+                return result;
+            };
+            result.state = .applied;
+        }
+    }
+    if (adapters.managed(application) and application != .starship) install(a, config, state, application, installed.items, cancel, false) catch |err| {
+        result.state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
+        result.error_code = @errorName(err);
+    };
+    installFlatpaks(a, config, state, application, installed.items, cancel) catch |err| {
+        result.state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
+        result.error_code = @errorName(err);
+    };
+    return result;
+}
 pub fn reconcileGuarded(a: std.mem.Allocator, config: []const u8, enabled: bool, snapshot: provider.Snapshot, cancel: *gio.Cancellable, context: *@import("generator.zig").Context, guard: @import("publication.zig").Guard) !profiles.Status {
     var status: profiles.Status = .{};
+    for (&status.targets, std.enums.values(profiles.Application)) |*target, app| target.application = app;
     if (enabled) if (snapshot.error_code) |code| {
         for (&status.targets) |*target| target.* = .{ .state = .unavailable, .error_code = code };
         return status;
@@ -341,53 +440,22 @@ pub fn reconcileGuarded(a: std.mem.Allocator, config: []const u8, enabled: bool,
             selected = profile;
         };
         if (selected) |profile| {
-            status.targets[i] = .{ .profile = profile.id, .origin = profile.origin, .instructions = if (profile.descriptor) |descriptor| descriptor.instructions else "" };
-            if (profile.error_code) |err| {
-                status.targets[i].state = .unavailable;
-                status.targets[i].error_code = err;
-                continue;
-            }
-            const generated = renderWithContext(a, profile, snapshot, scratch, cancel, context) catch |err| {
-                status.targets[i].state = if (err == error.CompleteRenderPaletteUnavailable) .unsupported else .failed;
-                status.targets[i].error_code = @errorName(err);
-                continue;
+            status.targets[i] = applyProfile(a, config, state, scratch, application, profile, snapshot, cancel, context, guard) catch |err| .{
+                .application = application,
+                .profile = profile.id,
+                .origin = profile.origin,
+                .state = if (err == error.ProfileOwnershipConflict) .conflict else .failed,
+                .error_code = @errorName(err),
+                .instructions = adapters.instructions(application),
             };
-            try guard.begin(cancel);
-            defer guard.end();
-            // Five fixed adapter directories bound durable generated output even
-            // when arbitrary community profile IDs are installed and removed.
-            const output_root = try std.fmt.allocPrintSentinel(a, "{s}/outputs/{s}", .{ state, @tagName(application) }, 0);
-            const output_fd = try safe.directory(a, output_root, true);
-            defer _ = c.close(output_fd);
-            var installed: std.ArrayList(Output) = .empty;
-            for (generated, 0..) |output, output_index| {
-                const extension = std.fs.path.extension(output.name);
-                const path = try std.fmt.allocPrintSentinel(a, "/proc/self/fd/{d}/output-{d}{s}", .{ output_fd, output_index, extension }, 0);
-                const old = try io.read(a, path, 131072, cancel);
-                if (old.missing or !std.mem.eql(u8, old.bytes, output.bytes)) try io.replace(path, output.bytes, old, cancel);
-                try installed.append(a, .{ .name = try std.fmt.allocPrint(a, "pearl-{s}-{s}", .{ profile.id, output.name }), .bytes = output.bytes });
-            }
-            status.targets[i].output = output_root;
-            status.targets[i].state = .activation_required;
-            if (application == .starship) {
-                const journal = try io.read(a, try std.fmt.allocPrintSentinel(a, "{s}/starship.json", .{state}, 0), 2 * 1024 * 1024, cancel);
-                if (!journal.missing and (try model.parse(Ledger, a, journal.bytes, 2 * 1024 * 1024)).records.len > 0) {
-                    install(a, config, state, .starship, &.{.{ .name = "starship.toml", .bytes = generated[0].bytes }}, cancel, false) catch |err| {
-                        status.targets[i].state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
-                        status.targets[i].error_code = @errorName(err);
-                        continue;
-                    };
-                    status.targets[i].state = .applied;
-                }
-            }
-            if (application == .zed or application == .equibop) install(a, config, state, application, installed.items, cancel, false) catch |err| {
-                status.targets[i].state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
-                status.targets[i].error_code = @errorName(err);
-            };
-        } else if (application == .zed or application == .equibop or application == .starship) {
+        } else if (adapters.managed(application)) {
             try guard.begin(cancel);
             defer guard.end();
             install(a, config, state, application, &.{}, cancel, false) catch |err| {
+                status.targets[i].state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
+                status.targets[i].error_code = @errorName(err);
+            };
+            installFlatpaks(a, config, state, application, &.{}, cancel) catch |err| {
                 status.targets[i].state = if (err == error.ProfileOwnershipConflict) .conflict else .failed;
                 status.targets[i].error_code = @errorName(err);
             };
@@ -423,7 +491,7 @@ test "application ownership preserves edits, restores absence and recovers pendi
     // A process died after publishing the new bytes but before recording success.
     try io.atomic(path, "second", true);
     const journal = try std.fmt.allocPrintSentinel(a, "{s}/zed.json", .{state}, 0);
-    try ledgerSave(a, journal, &.{.{ .name = name, .last = &model.hash("first"), .next = &model.hash("second"), .pending = true }});
+    try ledgerSave(a, journal, "", &.{.{ .name = name, .last = &model.hash("first"), .next = &model.hash("second"), .pending = true }});
     try install(a, root, state, .zed, &.{}, cancel, false);
     try std.testing.expect((try io.read(a, path, 131072, cancel)).missing);
 }
@@ -497,7 +565,7 @@ test "all attributed Seafoam templates render supported variants and Starship re
     defer @import("install.zig").removeTree(a, root) catch {};
     const cancel = gio.Cancellable.new();
     defer cancel.unref();
-    for (std.enums.values(profiles.Application)) |application| {
+    for (profiles.legacy_applications) |application| {
         const prefix = try std.fmt.allocPrint(a, "themes/profiles/seafoam.{s}", .{@tagName(application)});
         const manifest = try io.read(a, try std.fmt.allocPrintSentinel(a, "{s}/profile.json", .{prefix}, 0), 16384, cancel);
         const descriptor = try model.parse(profiles.Descriptor, a, manifest.bytes, 16384);
@@ -569,4 +637,58 @@ pub fn verifyPackage(a: std.mem.Allocator, path: [:0]const u8, output_directory:
         }
     }
     return std.json.Stringify.valueAlloc(a, .{ .package = package.manifest.id, .checks = checks.items }, .{});
+}
+
+test "all built-in Material templates render complete static palettes and package VSIX" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const root = try a.dupeZ(u8, "/tmp/pearl-material-render-XXXXXX");
+    try std.testing.expect(mkdtemp(root) != null);
+    defer @import("install.zig").removeTree(a, root) catch {};
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    const material = @import("material.zig");
+    var context: @import("generator.zig").Context = .{};
+    for (std.enums.values(profiles.Application)) |app| {
+        const descriptor = try material.descriptor(a, app);
+        try descriptor.validate();
+        const captured: provider.Captured = .{ .application = app, .id = descriptor.id, .origin = "Base Material", .descriptor = descriptor, .templates = material.files(app) };
+        for (descriptor.variants) |variant| {
+            const outputs = renderWithContext(a, captured, .{ .render_json = material.palette, .variant = if (variant == .dark) .dark else .light }, root, cancel, &context) catch |err| {
+                std.debug.print("Material {s}/{s}: {s}\n", .{ @tagName(app), @tagName(variant), @errorName(err) });
+                return err;
+            };
+            try std.testing.expectEqual(descriptor.templates.len, outputs.len);
+            if (app == .vscode) try std.testing.expect(std.mem.startsWith(u8, try @import("vscode_theme.zig").pack(a, outputs), "PK"));
+        }
+    }
+}
+
+test "nested application ownership preflights every file and rejects redirected paths" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const root = try a.dupeZ(u8, "/tmp/pearl-material-owned-XXXXXX");
+    try std.testing.expect(mkdtemp(root) != null);
+    defer @import("install.zig").removeTree(a, root) catch {};
+    const state = try std.fmt.allocPrintSentinel(a, "{s}/state", .{root}, 0);
+    try io.mkdir(state);
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    const files = [_]Output{ .{ .name = "colors/pearl-material.lua", .bytes = "colors" }, .{ .name = "lua/lualine/themes/pearl-material.lua", .bytes = "lualine" } };
+    try install(a, root, state, .nvim, &files, cancel, false);
+    const first = try std.fmt.allocPrintSentinel(a, "{s}/nvim/colors/pearl-material.lua", .{root}, 0);
+    const second = try std.fmt.allocPrintSentinel(a, "{s}/nvim/lua/lualine/themes/pearl-material.lua", .{root}, 0);
+    try io.atomic(second, "user edits", false);
+    try std.testing.expectError(error.ProfileOwnershipConflict, install(a, root, state, .nvim, &.{}, cancel, false));
+    try std.testing.expectEqualStrings("colors", (try io.read(a, first, 131072, cancel)).bytes);
+    try io.atomic(second, "lualine", false);
+    try install(a, root, state, .nvim, &.{}, cancel, false);
+    try std.testing.expect((try io.read(a, first, 131072, cancel)).missing);
+    try std.testing.expectError(error.InvalidProfileOutputName, install(a, root, state, .nvim, &.{.{ .name = "../escape.lua", .bytes = "bad" }}, cancel, false));
+    const linked = try std.fmt.allocPrintSentinel(a, "{s}/nvim/colors", .{root}, 0);
+    try std.testing.expect(c.rmdir(linked) == 0);
+    try std.testing.expect(c.symlink(root, linked) == 0);
+    try std.testing.expectError(error.ProfileDirectory, install(a, root, state, .nvim, &files, cancel, false));
 }

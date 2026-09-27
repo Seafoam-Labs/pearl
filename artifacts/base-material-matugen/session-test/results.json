@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "checks": [
+    "defaults-shared-draft-discard-no-external-writes",
+    "defaults-apply-and-visible-target-controls",
+    "real-gtk3-gtk4-dark-light-color-consumers",
+    "restart-persistence-and-off-restoration"
+  ]
+}

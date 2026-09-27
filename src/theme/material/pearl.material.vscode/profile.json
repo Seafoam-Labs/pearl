@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "pearl.material.vscode",
+  "application": "vscode",
+  "adapter": "vscode",
+  "name": "Material \u00b7 vscode",
+  "author": "Pearl and attributed upstream contributors",
+  "license": "MIT",
+  "source": "https://github.com/AvengeMedia/DankMaterialShell/tree/72ca8a6876b014f5722a00f69301a5766653764e",
+  "asset_version": "1.0.0",
+  "variants": [
+    "dark",
+    "light"
+  ],
+  "templates": [
+    {
+      "path": "vscode-color-theme-dark.json",
+      "output": "vscode-color-theme-dark.json"
+    },
+    {
+      "path": "vscode-color-theme-light.json",
+      "output": "vscode-color-theme-light.json"
+    },
+    {
+      "path": "package.json",
+      "output": "package.json"
+    }
+  ],
+  "instructions": ""
+}
