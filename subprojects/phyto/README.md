@@ -56,7 +56,8 @@ application identity so release and Git installs can coexist.
 - Open with, terminal, empty documents/templates, aggregate Properties, Trash
   restore and permanent deletion with confirmation. GIO capabilities govern
   availability; optional integrations depend on installed providers.
-- Persisted bookmarks, pinning/favorites, sorting and menu preferences. Archive,
+- Persisted view and hidden-file defaults, bookmarks, pinning/favorites, sorting
+  and menu preferences. Archive,
   bulk rename and user-installed script/sharing actions have provider adapters.
 - Pearl stock dark/light colors, compact density and optional native GTK theme.
   System GTK animation preferences remain respected; Phyto adds no animation loop.
@@ -85,6 +86,10 @@ application identity so release and Git installs can coexist.
 | Alt+Enter | Properties |
 
 More options contains the same file actions, appearance choices and split control.
+Phyto remembers the last explicitly chosen grid/list view and hidden-file setting
+for new tabs and windows, including after restarting. Existing tabs keep their
+own settings; switching tabs or revealing an existing split pane does not change
+the saved defaults. A fresh configuration uses grid view with hidden files off.
 Closing a window during an operation reveals its progress/cancel dialog; finish or
 cancel the operation before closing. Executable files and desktop entries are not
 launched by double-click.
@@ -98,6 +103,7 @@ launched by double-click.
   [native menu captures](artifacts/context-menus/native/file-menu-dark.png), and [custom providers](docs/PROVIDERS.md).
 - [Nemo-style context menu plan](docs/CONTEXT_MENUS_PLAN.md) and [menu review mockup](docs/mockups/context-menus.html).
 - [Longer-term implementation plan](docs/IMPLEMENTATION_PLAN.md).
+- [View and hidden-file persistence plan](docs/VIEW_PREFERENCES_PLAN.md).
 - [Thumbnails and file previews plan](docs/THUMBNAILS_PREVIEWS_PLAN.md).
 - [PDF and video providers](docs/PDF_VIDEO_PROVIDERS_IMPLEMENTATION.md) and [implementation plan](docs/PDF_VIDEO_PROVIDERS_PLAN.md).
 - [Browser design reference](docs/mockups/index.html) and [mockup guide](docs/mockups/README.md).
@@ -119,8 +125,11 @@ binary; the normal build contains no F12 test inspection shortcut.
 Recursive search, drag/drop, replacement/merge, localization,
 FileManager1 and live Pearl appearance integration remain future work. Optional
 Trash/network/admin support requires the relevant GIO/GVfs backends; file-roller
-provides archive actions. Menu preferences live in
-`$XDG_CONFIG_HOME/phyto/preferences.ini`; optional actions are described in
+provides archive actions. Preferences live in
+`$XDG_CONFIG_HOME/phyto/preferences.ini` (normally `~/.config/phyto/preferences.ini`).
+The `[View]` keys `mode=grid|list` and `show-hidden=true|false` store the browsing
+defaults. Changes are saved immediately; a failed save displays a message while
+keeping the current settings usable. Optional actions are described in
 [PROVIDERS.md](docs/PROVIDERS.md). Full Nemo extension ABI compatibility is not
 claimed. See the implementation report for operation limits and manual release
 qualification still required.

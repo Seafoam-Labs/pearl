@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Native context menus, target identities and operations in an isolated session."""
-import argparse, hashlib, json, os, sys, time
+import argparse, configparser, hashlib, json, os, sys, time
 from pathlib import Path
 PROJECT = Path(__file__).resolve().parents[1]
 PEARL = PROJECT.parents[1]
@@ -272,6 +272,34 @@ def main():
             (source / 'one.txt').unlink()
             wait_for(lambda: not probe()['context_open'])
             passed('Directory monitor invalidates stale menu targets')
+
+            def background():
+                rect = windows()[0]['geometry']
+                s.run(['wlrctl', 'pointer', 'move', '-100000', '-100000'])
+                s.run(['wlrctl', 'pointer', 'move', str(rect['x'] + 700), str(rect['y'] + 620)])
+                s.run(['wlrctl', 'pointer', 'click', 'right'])
+                wait_for(lambda: probe()['context_kind'] == 'background' and probe()['context_open'])
+
+            for label, mode in [('Detailed list', 'list'), ('Icon view', 'grid')]:
+                background()
+                click('View', menu=True)
+                click(label, menu=True)
+                assert probe()['list'] == (mode == 'list')
+                values = configparser.ConfigParser()
+                values.read(config)
+                assert values['View']['mode'] == mode
+            hidden_file = source / '.hidden-preference.txt'
+            hidden_file.write_text('hidden')
+            for hidden in [True, False]:
+                background()
+                click('Show hidden files', menu=True)
+                assert probe()['hidden'] == hidden
+                assert any(w['label'] == hidden_file.name for w in probe()['widgets']) == hidden
+                values = configparser.ConfigParser()
+                values.read(config)
+                assert values.getboolean('View', 'show-hidden') == hidden
+                assert (source / 'Folder').as_uri() in values['Files']['bookmarks']
+            passed('Context-menu view and hidden-file choices persist and preserve bookmarks')
             key('w', 'ctrl')
             assert app.wait(timeout=10) == 0, app.lines[-20:]
             assert not any(('CRITICAL' in x or 'WARNING' in x or 'panic:' in x for x in app.lines))

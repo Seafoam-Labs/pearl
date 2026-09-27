@@ -105,6 +105,10 @@ pub const Tab = struct {
         _ = root.addNamed(empty.as(gtk.Widget), "empty");
         owner.next_tab_id += 1;
         self.* = .{ .id = owner.next_tab_id, .sorter = sorter, .owner = owner, .pane = pane, .root = root, .views = views, .grid = grid, .list = list, .directory = directory, .filter = filter, .selection = selection, .error_label = error_label, .error_title = error_title, .uri = a.dupeZ(u8, "") catch unreachable, .title = a.dupeZ(u8, "") catch unreachable, .query = a.dupeZ(u8, "") catch unreachable };
+        // Restore before enumeration, without syncing a tab not yet in its pane.
+        self.list_mode = owner.preferences.view_mode == .list;
+        self.hidden = owner.preferences.show_hidden;
+        views.setVisibleChildName(if (self.list_mode) "list" else "grid");
         _ = object.Object.signals.notify.connect(directory.as(object.Object), *Tab, directoryChanged, self, .{});
         _ = gtk.SelectionModel.signals.selection_changed.connect(selection.as(gtk.SelectionModel), *Tab, selectionChanged, self, .{});
         _ = gio.ListModel.signals.items_changed.connect(selection.as(gio.ListModel), *Tab, itemsChanged, self, .{});

@@ -908,8 +908,14 @@ pub const Window = struct {
                 }
             },
             .refresh => t.refresh(),
-            .grid => t.setView(false),
-            .list => t.setView(true),
+            .grid, .list => {
+                t.setView(command == .list);
+                const mode: @import("platform/preferences.zig").ViewMode = if (command == .list) .list else .grid;
+                if (self.preferences.view_mode != mode or self.preferences.save_error) {
+                    self.preferences.view_mode = mode;
+                    self.saveViewPreferences();
+                }
+            },
             .split => {
                 self.split = !self.split;
                 if (!self.split) self.active = 0;
@@ -927,6 +933,10 @@ pub const Window = struct {
                 t.hidden = !t.hidden;
                 t.filter.as(gtk.Filter).changed(.different);
                 self.queueUpdate();
+                if (self.preferences.show_hidden != t.hidden or self.preferences.save_error) {
+                    self.preferences.show_hidden = t.hidden;
+                    self.saveViewPreferences();
+                }
             },
             .new_tab => {
                 const f = gio.File.newForUri(t.uri);
@@ -1177,6 +1187,9 @@ pub const Window = struct {
             .selected = selection.getSize(),
             .selected_name = if (selected) |i| std.mem.span(i.getDisplayName()) else "",
             .list = t.list_mode,
+            .hidden = t.hidden,
+            .view_child = std.mem.span(t.views.getVisibleChildName() orelse "none"),
+            .preferences_save_error = self.preferences.save_error,
             .split = self.split,
             .active = self.active,
             .tabs = .{ self.panes[0].tabs.items.len, self.panes[1].tabs.items.len },
@@ -1203,6 +1216,10 @@ pub const Window = struct {
         const text = u.format("PHYTO_PROBE {s}\n", .{json});
         defer a.free(text);
         glib.print("%s", text.ptr);
+    }
+    fn saveViewPreferences(self: *Window) void {
+        self.preferences.save();
+        if (self.preferences.save_error) self.message("Preferences were not saved", "The preferences file could not be written. Check the configuration directory permissions.");
     }
     pub fn message(self: *Window, title: [*:0]const u8, text: [*:0]const u8) void {
         if (self.closed) return;

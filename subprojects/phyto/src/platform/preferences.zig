@@ -5,6 +5,7 @@ const a = u.a;
 const gio = u.gio;
 const glib = u.glib;
 pub const Sort = enum { name, size, type, modified };
+pub const ViewMode = enum { grid, list };
 pub const Preferences = struct {
     key: *glib.KeyFile,
     path: [:0]u8,
@@ -17,6 +18,8 @@ pub const Preferences = struct {
     sort: Sort = .name,
     reverse: bool = false,
     folders_first: bool = true,
+    view_mode: ViewMode = .grid,
+    show_hidden: bool = false,
     save_error: bool = false,
     pub fn acquire() *Preferences {
         if (shared) |p| {
@@ -34,6 +37,11 @@ pub const Preferences = struct {
         p.advanced = key.getBoolean("Menus", "advanced", null) != 0;
         p.allow_delete = key.getBoolean("Menus", "permanent-delete", null) != 0;
         p.reverse = key.getBoolean("View", "reverse", null) != 0;
+        p.show_hidden = key.getBoolean("View", "show-hidden", null) != 0;
+        if (key.getString("View", "mode", null)) |s| {
+            defer glib.free(s);
+            p.view_mode = std.meta.stringToEnum(ViewMode, std.mem.span(s)) orelse .grid;
+        }
         if (key.hasKey("View", "folders-first", null) != 0) p.folders_first = key.getBoolean("View", "folders-first", null) != 0;
         if (key.getString("View", "sort", null)) |s| {
             defer glib.free(s);
@@ -59,6 +67,8 @@ pub const Preferences = struct {
         self.key.setString("View", "sort", @tagName(self.sort));
         self.key.setBoolean("View", "reverse", @intFromBool(self.reverse));
         self.key.setBoolean("View", "folders-first", @intFromBool(self.folders_first));
+        self.key.setString("View", "mode", @tagName(self.view_mode));
+        self.key.setBoolean("View", "show-hidden", @intFromBool(self.show_hidden));
         const dir = u.format("{s}/phyto", .{glib.getUserConfigDir()});
         defer a.free(dir);
         if (glib.mkdirWithParents(dir, 0o700) != 0) {

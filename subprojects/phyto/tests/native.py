@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Native GTK interaction checks using only temporary files/display/D-Bus."""
 import argparse
+import configparser
 import hashlib
 import json
 import sys
@@ -47,6 +48,8 @@ def main():
             (home / "Documents/Notes.md").write_text("Keep this document intact.\n")
             source_bytes = (home / "Documents/Notes.md").read_bytes()
             app = None
+            launch_count = 0
+            config = Path(s.env["XDG_CONFIG_HOME"]) / "phyto/preferences.ini"
 
             def windows():
                 return [w for w in ipc.state() if w["kind"] == "window" and w.get("app_id") == "org.aqueous.Phyto"]
@@ -86,12 +89,15 @@ def main():
                 s.run(["grim", "-g", f"{rect['x']},{rect['y']} {rect['width']}x{rect['height']}", path])
                 captures.append({"file": path.name, "geometry": rect, "state": probe()})
 
-            def launch(width=1180, height=760, *flags):
-                nonlocal app
+            def launch(width=1180, height=760, *flags, keep_preferences=False):
+                nonlocal app, launch_count
+                if not keep_preferences:
+                    config.unlink(missing_ok=True)
                 rules.write_text(f'[[window]]\napp_id = "org.aqueous.Phyto"\nfloating = true\nwidth = {width}\nheight = {height}\n')
                 time.sleep(.3)
                 ipc.call("command", action="session.reload", fields={})
-                app = s.child(f"phyto-{len(captures)}", [binary, f"--width={width}", f"--height={height}", *flags], G_DEBUG="fatal-warnings")
+                app = s.child(f"phyto-{launch_count}", [binary, f"--width={width}", f"--height={height}", *flags], G_DEBUG="fatal-warnings")
+                launch_count += 1
                 win = wait_for(lambda: next(iter(windows()), None))
                 ipc.call("command", action="window.activate", fields={"id": win["id"]})
                 return settled()
@@ -224,6 +230,135 @@ def main():
             assert v["left_visible"] and not v["right_visible"]
             key("F3"); close()
             passed("Light, compact and system-theme windows; narrow layout retains both split panes")
+
+            # Persistence cases deliberately reuse one configuration across full
+            # process exits; visual cases above each start with fresh defaults.
+            def assert_view(list_mode, hidden):
+                v = settled()
+                assert (v["list"], v["hidden"]) == (list_mode, hidden), v
+                assert v["view_child"] == ("list" if list_mode else "grid"), v
+                return v
+
+            def saved():
+                values = configparser.ConfigParser(interpolation=None)
+                values.read(config)
+                return values
+
+            def assert_saved(list_mode, hidden):
+                values = saved()
+                assert values["View"]["mode"] == ("list" if list_mode else "grid")
+                assert values.getboolean("View", "show-hidden") == hidden
+
+            launch()
+            assert_view(False, False)
+            assert not config.exists()  # reading defaults must not write
+            close()
+            config.parent.mkdir(parents=True, exist_ok=True)
+            legacy = ("[View]\nsort=size\nreverse=true\nfolders-first=false\n"
+                      "[Previews]\nthumbnails=false\ndetails=false\nmax-mib=7\n"
+                      "[Menus]\nadvanced=true\npermanent-delete=true\n"
+                      f"[Files]\nbookmarks={(home / 'Documents').as_uri()};\n"
+                      "[Future]\nkeep=untouched\n")
+            config.write_text(legacy)
+            launch(keep_preferences=True)
+            assert_view(False, False)
+            assert config.read_text() == legacy
+            close()
+            for mode, hidden, expected in [("invalid", "true", (False, True)),
+                                           ("list", "invalid", (True, False))]:
+                contents = f"[View]\nmode={mode}\nshow-hidden={hidden}\n"
+                config.write_text(contents)
+                launch(keep_preferences=True)
+                assert_view(*expected)
+                assert config.read_text() == contents
+                close()
+            passed("Missing, legacy and invalid preferences restore independent defaults without writing")
+
+            config.write_text(legacy)
+            launch(keep_preferences=True)
+            # This folder has exactly two entries, so filtering is verified
+            # independently of desktop services creating files in HOME.
+            fixture = home / "View preferences"
+            fixture.mkdir()
+            (fixture / "visible.txt").write_text("visible")
+            (fixture / ".hidden.txt").write_text("hidden")
+            for list_mode, hidden in [(True, True), (False, True), (True, False), (False, False)]:
+                navigate(fixture)
+                key("2" if list_mode else "1", "ctrl")
+                if probe()["hidden"] != hidden:
+                    key("h", "ctrl")
+                assert assert_view(list_mode, hidden)["count"] == (2 if hidden else 1)
+                assert_saved(list_mode, hidden)
+                values = saved()
+                assert values["View"]["sort"] == "size" and values.getboolean("View", "reverse")
+                assert not values.getboolean("View", "folders-first")
+                assert not values.getboolean("Previews", "thumbnails")
+                assert not values.getboolean("Previews", "details")
+                assert values["Previews"]["max-mib"] == "7"
+                assert values.getboolean("Menus", "advanced") and values.getboolean("Menus", "permanent-delete")
+                assert values["Files"]["bookmarks"] == (home / "Documents").as_uri() + ";"
+                assert values["Future"]["keep"] == "untouched"
+                close()
+                launch(keep_preferences=True)
+                assert_view(list_mode, hidden)
+                navigate(fixture)
+                assert assert_view(list_mode, hidden)["count"] == (2 if hidden else 1)
+            passed("All four view/hidden combinations survive process restarts and preserve unrelated preferences")
+
+            # The original tab and pre-created second pane retain grid/hidden-off.
+            key("t", "ctrl")
+            key("2", "ctrl"); key("h", "ctrl")
+            key("t", "ctrl")
+            assert_view(True, True)
+            key("w", "ctrl"); key("w", "ctrl")
+            assert_view(False, False)
+            assert_saved(True, True)
+            before = config.stat().st_mtime_ns
+            navigate(home); key("F5")
+            key("F3"); key("F6")
+            assert_view(False, False)
+            key("F6"); key("F3")
+            assert config.stat().st_mtime_ns == before
+            # Reaffirming the current view must replace another tab's default.
+            key("1", "ctrl")
+            assert_saved(False, True)
+            before = config.stat().st_mtime_ns
+            key("1", "ctrl")
+            assert config.stat().st_mtime_ns == before
+
+            original = windows()[0]["id"]
+            key("n", "ctrl")
+            new = wait_for(lambda: next((w for w in windows() if w["id"] != original), None))
+            ipc.call("command", action="window.activate", fields={"id": new["id"]})
+            assert_view(False, True)
+            key("2", "ctrl")
+            key("w", "ctrl")
+            wait_for(lambda: len(windows()) == 1)
+            ipc.call("command", action="window.activate", fields={"id": original})
+            assert_view(False, False)
+            assert_saved(True, True)
+            close()
+            launch(keep_preferences=True)
+            assert_view(True, True)
+            passed("New tabs/windows inherit defaults; existing tabs/panes and close order preserve the last explicit choices")
+
+            config.unlink()
+            config.mkdir()
+            key("1", "ctrl")
+            wait_for(lambda: any(w.get("title") == "Preferences were not saved" for w in ipc.state()))
+            key("Escape")
+            wait_for(lambda: not any(w.get("title") == "Preferences were not saved" for w in ipc.state()))
+            assert_view(False, True)
+            assert probe()["preferences_save_error"]
+            config.rmdir()
+            key("1", "ctrl")  # retry even though the in-memory value matches
+            assert_saved(False, True)
+            assert not probe()["preferences_save_error"]
+            close()
+            launch(keep_preferences=True)
+            assert_view(False, True)
+            close()
+            passed("Save failure is visible, preserves usable state, and retries successfully")
             ipc.close()
         report["status"] = "passed"
     except Exception as error:
