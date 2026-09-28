@@ -13,6 +13,7 @@ const theme = @import("../theme/theme.zig");
 const qt = @import("../theme/qt.zig");
 const qt_integration = @import("qt_integration.zig");
 const generator = @import("../theme/generator.zig");
+const log = std.log.scoped(.config);
 const a = std.heap.c_allocator;
 const applications = @import("../theme/application_profiles.zig");
 const app_provider = @import("../theme/theme_provider.zig");
@@ -305,7 +306,7 @@ pub const Service = struct {
         }
         self.pending_image = true;
         self.image_retry = false;
-        std.log.info("event=wallpaper-changed", .{});
+        log.info("event=wallpaper-changed", .{});
         self.queueReload(true);
     }
     fn candidateWallpaperChanged(context: *anyopaque, _: bool) void {
@@ -794,7 +795,7 @@ pub const Service = struct {
                     self.application_status.applied_revision = self.revision;
                     self.application_status.applied_generation = j.generation;
                 }
-                std.log.info("event=wallpaper-applications-applied generation={d} elapsed_us={d} success={}", .{ j.generation, glib.getMonotonicTime() - j.started_us, applicationSucceeded(self.application_status) });
+                log.info("event=wallpaper-applications-applied generation={d} elapsed_us={d} success={}", .{ j.generation, glib.getMonotonicTime() - j.started_us, applicationSucceeded(self.application_status) });
                 self.notify();
                 if (!self.pending_reload or !self.force_reload) {
                     j.stage = .integrate;
@@ -956,7 +957,7 @@ pub const Service = struct {
                     self.deadline = glib.timeoutAdd(15000, timedOut, self);
                     self.dispatch(j);
                 }
-                std.log.info("event=preferences-applied revision={d} mode={s} cache={}", .{ self.revision, @tagName(j.prefs.theme.mode), j.cache_hit });
+                log.info("event=preferences-applied revision={d} mode={s} cache={}", .{ self.revision, @tagName(j.prefs.theme.mode), j.cache_hit });
             } else {
                 if (j.image_event and !self.image_retry) {
                     self.image_retry = true;
@@ -966,7 +967,7 @@ pub const Service = struct {
                 }
                 self.application_status.busy = false;
                 if (j.requested != null) self.application_status.desired_generation = j.previous_desired_generation;
-                std.log.info("event=preferences-error detail={s}", .{@errorName(j.failure.?)});
+                log.info("event=preferences-error detail={s}", .{@errorName(j.failure.?)});
                 j.destroy();
             }
         } else {

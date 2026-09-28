@@ -1,6 +1,7 @@
 //! A real Authority-registered agent. Authentication uses libpolkit-agent only.
 const std = @import("std");
 const db = @import("dbus_peer.zig");
+const log = std.log.scoped(.services);
 const gio = db.gio;
 const glib = db.glib;
 const gtk = @import("gtk4");
@@ -329,7 +330,7 @@ pub const Agent = struct {
         if (self.window) |window| {
             window.present();
             if (self.entry) |entry| _ = entry.as(gtk.Widget).grabFocus();
-            if (@import("build_options").test_hooks) std.log.info("event=activity-auth-presented", .{});
+            if (@import("build_options").test_hooks) log.info("event=activity-auth-presented", .{});
         }
     }
     fn remember(self: *Agent, emitter: *object.Object, signal_id: c_ulong) void {

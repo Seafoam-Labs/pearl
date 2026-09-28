@@ -1,6 +1,7 @@
 //! Session-scoped login1 orchestration; native lock ownership outlives Pearl.
 const std = @import("std");
 const db = @import("dbus_peer.zig");
+const log = std.log.scoped(.services);
 const gio = db.gio;
 const glib = db.glib;
 const unix = @import("glibunix2");
@@ -212,7 +213,7 @@ pub const Lifecycle = struct {
     fn sessionFailed(self: *Lifecycle, reason: []const u8) void {
         self.invalidateSession();
         self.session_error.set(reason);
-        std.log.warn("event=logind-session-unavailable reason={s}", .{reason});
+        log.warn("event=logind-session-unavailable reason={s}", .{reason});
     }
     fn done(data: *anyopaque, raw_token: u64, result: ?*glib.Variant, remote_error: ?[]const u8) void {
         const self: *Lifecycle = @ptrCast(@alignCast(data));

@@ -8,6 +8,7 @@ const cairo = @import("cairo1");
 const wl = @import("wayland").client.wl;
 const aq = @import("wayland").client.aqueous;
 const ext = @import("wayland").client.ext;
+const log = std.log.scoped(.platform);
 const a = std.heap.c_allocator;
 const Rect = @import("../../ui/surfaces/policy.zig").Rect;
 pub const Effects = struct {
@@ -85,7 +86,7 @@ pub const Effects = struct {
         switch (event) {
             .capabilities => |c| self.available = c.flags.blur,
         }
-        std.log.info("event=blur-capability available={}", .{self.available});
+        log.info("event=blur-capability available={}", .{self.available});
         for (self.surfaces.items) |s| s.refresh();
     }
 };

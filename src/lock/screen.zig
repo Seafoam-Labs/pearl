@@ -12,6 +12,7 @@ const w = @import("../ui/components/widgets.zig");
 const wire = @import("conversation.zig");
 const options = @import("build_options");
 const presentation = @import("../ui/auth/prompt_view.zig");
+const log = std.log.scoped(.lock);
 const View = struct { window: *gtk.Window, monitor: *gdk.Monitor, panel: *gtk.Box, picture: *gtk.Picture, clock: *gtk.Label, date: *gtk.Label, message: *gtk.Label, entry: *gtk.Entry, button: *gtk.Button, caps: *gtk.Label, viewport: *gtk.Viewport, avatar: *gtk.Image, footer: *gtk.Label, monitor_signal: c_ulong };
 const Screen = struct {
     loop: *glib.MainLoop,
@@ -102,7 +103,7 @@ const Screen = struct {
         if (self.cooldown_source == 0 and remaining > 0) {
             self.cooldown_source = glib.timeoutAdd(@intCast(@divTrunc(remaining, 1000) + 1), cooled, self);
         }
-        if (options.test_hooks) std.log.info("event=lock-ui views={d} waiting={} echo={} caps={} auth={} acquired={} updates={d} clocks={d}", .{ views, self.waiting, self.echo, self.caps_on, self.auth != null, self.acquired, self.ui_updates, self.clock_updates });
+        if (options.test_hooks) log.info("event=lock-ui views={d} waiting={} echo={} caps={} auth={} acquired={} updates={d} clocks={d}", .{ views, self.waiting, self.echo, self.caps_on, self.auth != null, self.acquired, self.ui_updates, self.clock_updates });
     }
     fn cooled(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Screen = @ptrCast(@alignCast(data.?));
@@ -118,7 +119,7 @@ const Screen = struct {
             v.caps.as(gtk.Widget).setVisible(@intFromBool(caps));
             v.caps.as(gtk.Accessible).announce(if (caps) "Caps Lock is on" else "Caps Lock is off", .medium);
         };
-        if (options.test_hooks) std.log.info("event=lock-caps enabled={}", .{caps});
+        if (options.test_hooks) log.info("event=lock-caps enabled={}", .{caps});
     }
     fn monitorChanged(_: *object.Object, _: *object.ParamSpec, self: *Screen) callconv(.c) void {
         // GTK and gtk4-session-lock still use the native window while delivering
@@ -331,7 +332,7 @@ const Screen = struct {
         self.pending_count = kept;
         if (self.pending_count == self.pending_monitors.len) {
             self.failed = true;
-            std.log.err("event=lock-output-limit", .{});
+            log.err("event=lock-output-limit", .{});
             return;
         }
         output.ref();
@@ -370,7 +371,7 @@ const Screen = struct {
         }
         const slot = target orelse {
             self.failed = true;
-            std.log.err("event=lock-output-limit", .{});
+            log.err("event=lock-output-limit", .{});
             return;
         };
         const window = gtk.Window.new();
@@ -444,7 +445,7 @@ const Screen = struct {
         self.updateClock();
         self.update();
         window.setFocus(if (self.waiting) entry.as(gtk.Widget) else button.as(gtk.Widget));
-        std.log.info("event=lock-monitor", .{});
+        log.info("event=lock-monitor", .{});
     }
     fn locked(_: *lock.Instance, self: *Screen) callconv(.c) void {
         if (self.failed) return;
@@ -454,7 +455,7 @@ const Screen = struct {
             _ = std.c.close(3);
             self.ready_fd = false;
         }
-        std.log.info("event=lock-acquired", .{});
+        log.info("event=lock-acquired", .{});
         self.startAuth();
     }
     fn onFailed(_: *lock.Instance, self: *Screen) callconv(.c) void {
@@ -464,7 +465,7 @@ const Screen = struct {
     fn unlocked(_: *lock.Instance, self: *Screen) callconv(.c) void {
         self.acquired = false;
         self.cancelAuth();
-        std.log.info("event=lock-released", .{});
+        log.info("event=lock-released", .{});
         self.loop.quit();
     }
     fn changed(data: *anyopaque) void {
@@ -476,7 +477,7 @@ const Screen = struct {
         const self: *Screen = @ptrCast(@alignCast(data.?));
         self.updateClock();
         self.scheduleClock();
-        if (options.test_hooks) std.log.info("event=lock-clock updates={d} clocks={d}", .{ self.ui_updates, self.clock_updates });
+        if (options.test_hooks) log.info("event=lock-clock updates={d} clocks={d}", .{ self.ui_updates, self.clock_updates });
         return 0;
     }
     fn scheduleClock(self: *Screen) void {
