@@ -1,65 +1,65 @@
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=appearance light=false compact=false large=false reduced=false
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-started generation=1
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=ready mode=demo
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=stopping reason=window-close pending=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-finished applied=false canceled=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=appearance light=false compact=false large=false reduced=false
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-started generation=1
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=ready mode=demo
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=stopping reason=window-close pending=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-finished applied=false canceled=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=appearance light=false compact=false large=false reduced=false
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-started generation=1
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=ready mode=demo
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=stopping reason=window-close pending=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-finished applied=false canceled=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=appearance light=false compact=false large=false reduced=false
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-started generation=1
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=ready mode=demo
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=stopping reason=window-close pending=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-finished applied=false canceled=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=appearance light=false compact=false large=false reduced=false
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-started generation=1
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=ready mode=demo
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=stopping reason=window-close pending=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-finished applied=false canceled=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=appearance light=false compact=false large=false reduced=false
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-started generation=1
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=ready mode=demo
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=stopping reason=window-close pending=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-finished applied=false canceled=true
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=appearance light=false compact=false large=false reduced=false
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=work-started generation=1
-ts=2026-09-28T19:18:40Z pid=103168 info(pearl): event=ready mode=demo
-ts=2026-09-28T19:18:40Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:41Z pid=103168 info(pearl): event=stopping reason=window-close pending=true
-ts=2026-09-28T19:18:41Z pid=103168 info(pearl): event=work-finished applied=false canceled=true
-ts=2026-09-28T19:18:41Z pid=103168 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:18:41Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:41Z pid=103168 info(gallery): event=appearance light=false compact=false large=false reduced=false
-ts=2026-09-28T19:18:41Z pid=103168 info(pearl): event=work-started generation=1
-ts=2026-09-28T19:18:41Z pid=103168 info(pearl): event=ready mode=demo
-ts=2026-09-28T19:18:41Z pid=103168 info(gallery): event=search results=518
-ts=2026-09-28T19:18:41Z pid=103168 info(pearl): event=stopping reason=window-close pending=true
-ts=2026-09-28T19:18:41Z pid=103168 info(pearl): event=work-finished applied=false canceled=true
-ts=2026-09-28T19:18:41Z pid=103168 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:18:41Z pid=103168 info(pearl): event=stopped
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=appearance light=false compact=false large=false reduced=false
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=work-started generation=1
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=ready mode=demo
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=stopping reason=window-close pending=true
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=work-finished applied=false canceled=true
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=appearance light=false compact=false large=false reduced=false
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=work-started generation=1
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=ready mode=demo
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=stopping reason=window-close pending=true
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=work-finished applied=false canceled=true
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=appearance light=false compact=false large=false reduced=false
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=work-started generation=1
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=ready mode=demo
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=stopping reason=window-close pending=true
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=work-finished applied=false canceled=true
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=appearance light=false compact=false large=false reduced=false
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=work-started generation=1
+ts=2026-09-28T20:00:26Z pid=128320 info(pearl): event=ready mode=demo
+ts=2026-09-28T20:00:26Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=stopping reason=window-close pending=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=work-finished applied=false canceled=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=appearance light=false compact=false large=false reduced=false
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=work-started generation=1
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=ready mode=demo
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=stopping reason=window-close pending=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=work-finished applied=false canceled=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=appearance light=false compact=false large=false reduced=false
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=work-started generation=1
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=ready mode=demo
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=stopping reason=window-close pending=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=work-finished applied=false canceled=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=appearance light=false compact=false large=false reduced=false
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=work-started generation=1
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=ready mode=demo
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=stopping reason=window-close pending=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=work-finished applied=false canceled=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=appearance light=false compact=false large=false reduced=false
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=work-started generation=1
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=ready mode=demo
+ts=2026-09-28T20:00:27Z pid=128320 info(gallery): event=search results=518
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=stopping reason=window-close pending=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=work-finished applied=false canceled=true
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T20:00:27Z pid=128320 info(pearl): event=stopped

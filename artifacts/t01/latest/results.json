@@ -15,7 +15,7 @@
     "session_mode_has_no_fixture_work": "pass",
     "sigint_and_sigterm_drain_cleanly": "pass"
   },
-  "executable_sha256": "0b007c34aad1e2518e41821a3a02d49a298a994d782753c1e764fca94300472a",
+  "executable_sha256": "a1ceeea5abce45711ae8b93bc257408f02613ae97f20b49a5bbd2d5aca4f535a",
   "nested_outputs": [
     {
       "actual_vrr": true,
@@ -54,8 +54,8 @@
       "transform": "normal"
     }
   ],
-  "private_bus_names": "NAME                    PID PROCESS         USER    CONNECTION UNIT              SESSION DESCRIPTION\n:1.43                104294 pearl-integrati azdanov :1.43      user@1000.service -       -\n:1.47                104444 busctl          azdanov :1.47      user@1000.service -       -\norg.freedesktop.DBus 102390 dbus-daemon     azdanov -          user@1000.service -       -\n",
-  "production_executable_sha256": "a2e43e51608e5b0ca53aaecd9d5a2df5873acda04241df1cc7083f0b55634523",
-  "recorded_utc": "2026-09-28T19:18:37.908054+00:00",
+  "private_bus_names": "NAME                    PID PROCESS         USER    CONNECTION UNIT              SESSION DESCRIPTION\n:1.43                129449 pearl-integrati azdanov :1.43      user@1000.service -       -\n:1.47                129599 busctl          azdanov :1.47      user@1000.service -       -\norg.freedesktop.DBus 127605 dbus-daemon     azdanov -          user@1000.service -       -\n",
+  "production_executable_sha256": "77ad840af7253f73036581bf80f5ebc39b6e20728557e1aaeb66ff0a1c82b704",
+  "recorded_utc": "2026-09-28T20:00:24.333725+00:00",
   "status": "pass"
 }

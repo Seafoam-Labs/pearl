@@ -1,5 +1,71 @@
 # Pearl implementation progress
 
+## Log redaction at the call site, September 28, 2026
+
+`src/diagnostics/safe_text.zig` makes redaction a type instead of a
+convention. A field reaches the journal only if its call site wraps it in
+`safe()`, which replaces control bytes with `?` so peer text cannot split a
+line or fake an `event=` entry, cuts at 512 bytes on a character boundary and
+appends `…[truncated]`, and replaces `scheme://user:pass@` userinfo with
+`[redacted]@`. Sanitizing runs before the cut and userinfo bytes are never
+written, so truncating inside a URL cannot expose part of a password.
+`fingerprint()` renders an FNV-1a digest as 16 hex characters for values that
+must stay correlatable across processes without becoming quotable.
+
+Six named leak fields now go through it: `event=css-error message=` and both
+`event=resource-error message=` sites in `src/core/application.zig`,
+`event=desktop-action detail=` in `src/ui/surfaces/manager.zig` (verbatim
+compositor text) and `event=settings-stale-response received=` in
+`src/settings/client.zig`. The IPC session token, previously logged verbatim by
+`event=settings-backend-ready`, `event=control-ready` and
+`event=settings-instance-ready`, becomes `session_hash=<16 hex>`. Event names
+are unchanged and no driver matched the old `session=` field.
+
+Two claims in the survey this step was written from did not survive checking
+the tree:
+
+- `received=` was already bounded. `entities.decimal(id)` runs before the log
+  line and rejects anything but 1 to 20 ASCII digits, so that field could carry
+  neither control bytes nor length. It is wrapped anyway, so the guarantee no
+  longer depends on a validation two lines above it.
+- The `message=` fields do not quote user theme text. `theme.css` only
+  transforms the embedded `/org/aqueous/Pearl/style.css`, and user theme CSS is
+  validated silently in `src/config/service.zig` (its `cssError` sets a flag and
+  logs nothing). The wrap bounds a pathological multi-line GTK or gio message
+  rather than closing a user-controlled leak.
+
+Upstream, not changed here: Aqueous logs
+`info(ipc): protocol=1 listening on <runtime>/aqueous/<token>/ipc.sock`, and
+that path component is the same 32-hex token Pearl authorizes control requests
+with (`IpcServer.zig:57,68,82,313`). Pearl's logs are no longer a second copy
+of it, but the compositor's journal still is.
+
+Checks actually run:
+
+- `zig build -Doptimize=ReleaseSafe`, `zig build test -Doptimize=ReleaseSafe`
+  and `zig build test-bindings -Doptimize=ReleaseSafe`: pass; `zig fmt --check`
+  clean on every touched file. Seven pure tests cover the redaction rules, the
+  boundary-safe cut and the digest rendering.
+- `zig build integration -Doptimize=ReleaseSafe`: pass, `artifacts/t01/latest`
+  refreshed. Its session logs carry `session_hash=729f5ef72578b9f0`, and no
+  Pearl log in the tree contains a 32-hex token; the only 32-hex strings in
+  those artifacts are the compositor's own socket paths.
+- `zig build test-settings-app -Doptimize=ReleaseSafe`: pass. Two settings
+  processes in one session log the same digest (`8cbd12bf443a1a69`) while the
+  isolated nested session logs a different one, which is the correlation the
+  digest exists for. Its artifacts are left at HEAD because the run also
+  rewrites host-specific audio probe data.
+- `zig build test-security -Doptimize=ReleaseSafe`: the new check
+  `ipc-session-token-reaches-logs-only-as-a-digest` passes (27 checks, report
+  `passed`), but only with two local edits that are not in the tree: the
+  hardcoded reference Aqueous source pointed at this machine's cached composite
+  source, and the `output-removal-return-remains-locked` step bypassed. Without
+  the bypass the suite dies before its end-of-suite scan because this machine's
+  Aqueous build aborts in `OutputManager.zig:621 validateConfigCoordinates`
+  when `wlr-randr --off` is applied. That abort predates this change and is in
+  the compositor, not in Pearl; `artifacts/t12` is left at HEAD rather than
+  committing a report whose bypassed check would read as verified.
+
 ## Scoped logs, level hygiene and the event catalog, September 28, 2026
 
 All 68 remaining unscoped `std.log` call sites in 26 files now go through
