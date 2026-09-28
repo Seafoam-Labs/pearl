@@ -10,6 +10,7 @@ const nav = @import("../desktop/settings_navigation.zig");
 const w = @import("../ui/components/widgets.zig");
 const theme = @import("../theme/theme.zig");
 const appearance = @import("appearance.zig");
+const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
 const count = std.enums.values(nav.Route).len;
 const Page = struct { scroll: *gtk.ScrolledWindow, body: *gtk.Widget, focus: ?*gtk.Widget = null };
@@ -676,7 +677,7 @@ pub const Window = struct {
         self.footer_text.setText(if (self.fixture) (if (preference) self.t("Pearl preferences · Preview only", "Pearl-Einstellungen · Nur Vorschau") else self.t("Preview only · Sample devices", "Nur Vorschau · Beispielgeräte")) else self.t("Pearl preferences are managed by your session.", "Deine Sitzung verwaltet die Pearl-Einstellungen."));
         self.heading.as(gtk.Accessible).announce(if (target.page == .aqueous) context_title else heading, .medium);
         if (!self.fixture) self.editingChanged();
-        std.log.info("event=settings-page page={s}", .{target.page.id()});
+        log.info("event=settings-page page={s}", .{target.page.id()});
     }
     fn restore(context: ?*anyopaque) callconv(.c) c_int {
         const self: *Window = @ptrCast(@alignCast(context.?));

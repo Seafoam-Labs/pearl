@@ -13,6 +13,7 @@ const Identity = @import("identity.zig").Identity;
 const Instance = @import("instance.zig").Server;
 const Window = @import("window.zig").Window;
 const Editor = @import("editor.zig").Editor;
+const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
 const App = struct {
     app: *gtk.Application,
@@ -37,7 +38,7 @@ const App = struct {
             self.window = try Window.create(self.app, self, retry, close, self.fixture, &self.editor, &self.aqueous);
             self.window.?.select(self.target, true);
             self.window.?.present(self.activation);
-            std.log.info("event=settings-window-created app_id={s}", .{@import("distribution.zig").appId()});
+            log.info("event=settings-window-created app_id={s}", .{@import("distribution.zig").appId()});
         }
     }
     fn activate(_: *gio.Application, self: *App) callconv(.c) void {
@@ -62,7 +63,7 @@ const App = struct {
             .verified => self.claim() catch |err| {
                 self.client.stop();
                 self.failed = true;
-                std.log.err("event=settings-instance-error error={s}", .{@errorName(err)});
+                log.err("event=settings-instance-error error={s}", .{@errorName(err)});
                 self.app.as(gio.Application).quit();
             },
             .connected => |snapshot| {
@@ -74,7 +75,7 @@ const App = struct {
                 self.window.?.connection(true, null);
                 self.editor.connected(self.window.?.target);
                 if (!self.fixture and !self.aqueous.online and self.aqueous.transport.phase == .idle) self.aqueous.connect(self.identity.?.session);
-                if (snapshot) |p| self.window.?.style(p) catch |err| std.log.err("event=settings-style-error error={s}", .{@errorName(err)});
+                if (snapshot) |p| self.window.?.style(p) catch |err| log.err("event=settings-style-error error={s}", .{@errorName(err)});
             },
             .reply => |reply| self.editor.reply(reply),
             .changed => self.editor.changed(),
@@ -89,7 +90,7 @@ const App = struct {
                     return;
                 };
                 self.window.?.connection(false, err);
-                std.log.info("event=settings-connection-unavailable error={s}", .{@errorName(err)});
+                log.info("event=settings-connection-unavailable error={s}", .{@errorName(err)});
             },
         }
     }
@@ -106,7 +107,7 @@ const App = struct {
             try self.forwardOpen();
             return;
         };
-        std.log.info("event=settings-instance-ready session={s}", .{self.client.session.?});
+        log.info("event=settings-instance-ready session={s}", .{self.client.session.?});
         try self.show();
     }
     fn forwardOpen(self: *App) !void {
@@ -160,7 +161,7 @@ const App = struct {
         }
     }
     fn sendActivation(self: *App) !void {
-        std.log.info("event=settings-forward activation_context={}", .{self.activation != null});
+        log.info("event=settings-forward activation_context={}", .{self.activation != null});
         const request: @import("activation.zig").Request = .{ .session = &self.client.session.?, .display = self.client.display, .page = self.target.page, .section = self.target.section, .activation = self.activation };
         const json = try std.json.Stringify.valueAlloc(a, request, .{ .emit_null_optional_fields = false });
         defer a.free(json);
@@ -184,7 +185,7 @@ const App = struct {
         // This endpoint is scoped to native identity even when Pearl is absent.
         const native = self.identity.?.session orelse return error.Unavailable;
         if (!std.mem.eql(u8, &native, request.session)) return error.StaleSession;
-        std.log.info("event=settings-activation activation_context={}", .{request.activation != null});
+        log.info("event=settings-activation activation_context={}", .{request.activation != null});
         try self.show();
         if (!self.fixture and self.editor.state.locked) return error.Locked;
         self.window.?.requestSelect(request.target(), true);
@@ -261,7 +262,7 @@ pub fn run(target: nav.Target) !u8 {
         }
     }
 
-    std.log.info("event=settings-launch activation_context={}", .{token != null});
+    log.info("event=settings-launch activation_context={}", .{token != null});
     const raw = @embedFile("pearl_resources");
     const bytes = glib.Bytes.newStatic(raw.ptr, raw.len);
     defer bytes.unref();

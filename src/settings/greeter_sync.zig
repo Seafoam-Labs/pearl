@@ -8,6 +8,7 @@ const pixbuf = @import("gdkpixbuf2");
 const model = @import("../config/preferences.zig");
 const writer = @import("../greeter/appearance_sync.zig");
 const w = @import("../ui/components/widgets.zig");
+const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
 pub const View = struct {
     button: *gtk.Button,
@@ -194,7 +195,7 @@ const Job = struct {
                 else => if (owner.german) "Synchronisierung fehlgeschlagen. Greeter-Installation und Authentifizierung prüfen." else "Could not sync. Check that Pearl Greeter is installed and authentication completed.",
             } else if (owner.german) "Synchronisiert. Wird beim nächsten Start des Anmeldebildschirms verwendet." else "Synced. The login screen will use this appearance next time it starts.";
             owner.status.setText(message);
-            std.log.info("event=greeter-appearance-sync success={}", .{self.err == null and !self.denied});
+            log.info("event=greeter-appearance-sync success={}", .{self.err == null and !self.denied});
         }
     }
 };

@@ -2,6 +2,7 @@
 const std = @import("std");
 const glib = @import("glib2");
 const unix = @import("glibunix2");
+const log = std.log.scoped(.greeter);
 const a = std.heap.c_allocator;
 const Host = struct {
     loop: *glib.MainLoop,
@@ -45,7 +46,7 @@ const Host = struct {
     fn startupTimeout(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Host = @ptrCast(@alignCast(data.?));
         self.startup_timer = 0;
-        std.log.err("Greeter init did not start within 30 seconds", .{});
+        log.err("Greeter init did not start within 30 seconds", .{});
         _ = stop(self);
         return 0;
     }
@@ -147,12 +148,12 @@ fn supervise(args: []const []const u8, managed: bool) !void {
     const int = unix.signalAdd(@intFromEnum(std.c.SIG.INT), Host.stop, &self);
     defer _ = glib.Source.remove(term);
     defer _ = glib.Source.remove(int);
-    std.log.info("event=greeter-host-started", .{});
+    log.info("event=greeter-host-started", .{});
     self.loop.run();
     if (self.forced) _ = glib.Source.remove(source);
     _ = std.c.kill(-pid, std.c.SIG.KILL);
     try reapDescendants();
-    std.log.info("event=greeter-host-reaped", .{});
+    log.info("event=greeter-host-reaped", .{});
     if (managed and !self.ready) return error.GreeterStartupFailed;
 }
 

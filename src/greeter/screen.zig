@@ -18,6 +18,7 @@ const w = @import("../ui/components/widgets.zig");
 const options = @import("build_options");
 const output_identity = @import("output_identity.zig");
 const OutputWatch = @import("output_watch.zig").Watch;
+const log = std.log.scoped(.greeter);
 const a = std.heap.c_allocator;
 const View = struct { window: *gtk.Window, monitor: *gdk.Monitor, picture: *gtk.Picture, clock: *gtk.Label, date: *gtk.Label, active: bool, scroll: ?*gtk.ScrolledWindow = null, monitor_signal: c_ulong };
 const Purpose = enum { refresh, begin, start };
@@ -100,7 +101,7 @@ const Screen = struct {
         const self: *Screen = @ptrCast(@alignCast(context));
         self.clear();
         const c = &self.client.controller;
-        if (options.test_hooks) std.log.info("event=greeter-state state={s}", .{@tagName(c.state)});
+        if (options.test_hooks) log.info("event=greeter-state state={s}", .{@tagName(c.state)});
         switch (c.state) {
             .idle => {
                 self.setMessage(if (self.selection_error) "The selected desktop changed. Refresh and choose it again." else if (self.auth_error) "Authentication failed. Try again." else if (self.service_error) "Login service rejected the request. Try again later." else "Choose your account and desktop.");
@@ -493,18 +494,18 @@ const Screen = struct {
         for (&self.views) |*view| if (view.*) |*v| v.picture.setPaintable(if (self.texture) |texture| texture.as(gdk.Paintable) else null);
         if (self.selected_id[0] == 0) self.setMessage("No usable desktop sessions. Install a session or check its dependencies.");
         self.update();
-        if (options.test_hooks) std.log.info("event=greeter-ready sessions={d}", .{self.catalog.?.entries.items.len});
+        if (options.test_hooks) log.info("event=greeter-ready sessions={d}", .{self.catalog.?.entries.items.len});
     }
     fn contrastChanged(button: *gtk.CheckButton, self: *Screen) callconv(.c) void {
         self.high_contrast = button.getActive() != 0;
         for (self.views) |slot| if (slot) |v| self.accessibilityStyle(v.window);
-        if (options.test_hooks) std.log.info("event=greeter-contrast enabled={}", .{self.high_contrast});
+        if (options.test_hooks) log.info("event=greeter-contrast enabled={}", .{self.high_contrast});
     }
     fn motionChanged(button: *gtk.CheckButton, self: *Screen) callconv(.c) void {
         self.reduced_motion = button.getActive() != 0;
         if (gtk.Settings.getDefault()) |settings| settings.as(object.Object).set("gtk-enable-animations", @as(c_int, @intFromBool(!self.reduced_motion)), "gtk-cursor-blink", @as(c_int, @intFromBool(!self.reduced_motion)), @as(?[*:0]const u8, null));
         for (self.views) |slot| if (slot) |v| self.accessibilityStyle(v.window);
-        if (options.test_hooks) std.log.info("event=greeter-reduced-motion enabled={}", .{self.reduced_motion});
+        if (options.test_hooks) log.info("event=greeter-reduced-motion enabled={}", .{self.reduced_motion});
     }
     fn accessibilityStyle(self: *Screen, window: *gtk.Window) void {
         const widget = window.as(gtk.Widget);
@@ -606,7 +607,7 @@ const Screen = struct {
         }
         if (!active) self.cancelAttempt();
         for (&self.views) |*slot| if (slot.*) |*v| self.resize(v);
-        if (options.test_hooks) std.log.info("event=greeter-outputs interactive={d}", .{@as(u8, if (active) 1 else 0)});
+        if (options.test_hooks) log.info("event=greeter-outputs interactive={d}", .{@as(u8, if (active) 1 else 0)});
         return 0;
     }
     fn resize(self: *Screen, v: *View) void {
@@ -634,7 +635,7 @@ const Screen = struct {
         overlay.addOverlay(scroll.as(gtk.Widget));
         v.scroll = scroll;
         v.active = true;
-        if (options.test_hooks) std.log.info("event=greeter-active-output connector={s}", .{if (v.monitor.getConnector()) |name| std.mem.span(name) else "unknown"});
+        if (options.test_hooks) log.info("event=greeter-active-output connector={s}", .{if (v.monitor.getConnector()) |name| std.mem.span(name) else "unknown"});
         layer.setKeyboardMode(v.window, .exclusive);
         self.clear();
         self.update();

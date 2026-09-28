@@ -6,6 +6,7 @@ const p = @import("editor_protocol.zig");
 const api = @import("aqueous_protocol.zig");
 const model = @import("../config/aqueous_model.zig");
 const contract = @import("../config/aqueous_contract.zig");
+const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
 const Value = std.json.Value;
 const Document = struct {
@@ -243,7 +244,7 @@ pub const Editor = struct {
         self.revision +|= 1;
     }
     fn command(self: *Editor, action: Action) !void {
-        if (@import("build_options").test_hooks) std.log.info("event=settings-aqueous-action action={s} pending={}", .{ @tagName(action), self.pending_receipt });
+        if (@import("build_options").test_hooks) log.info("event=settings-aqueous-action action={s} pending={}", .{ @tagName(action), self.pending_receipt });
         if (!self.online or self.locked or self.suspended) return error.Unavailable;
         if (self.action != null or (self.pending_receipt and action != .keep and action != .revert)) return error.Busy;
         if (self.recovery and action != .refresh and action != .revert) return error.ReviewRequired;

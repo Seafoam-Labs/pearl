@@ -2,6 +2,7 @@
 const std = @import("std");
 const glib = @import("glib2");
 const Client = @import("client.zig").Client;
+const log = std.log.scoped(.greeter);
 const Probe = struct {
     client: Client = undefined,
     loop: *glib.MainLoop,
@@ -10,7 +11,7 @@ const Probe = struct {
     status: u8 = 1,
     fn changed(context: *anyopaque) void {
         const self: *Probe = @ptrCast(@alignCast(context));
-        std.log.info("event=greeter-state state={s}", .{@tagName(self.client.controller.state)});
+        log.info("event=greeter-state state={s}", .{@tagName(self.client.controller.state)});
         switch (self.client.controller.state) {
             .prompt => {
                 if ((glib.getenv("PEARL_TEST_GREETER_CANCEL") != null and !self.cancelled) or (self.remaining > 0 and self.client.controller.needsInput())) {

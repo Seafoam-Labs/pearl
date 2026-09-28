@@ -6,6 +6,7 @@ const wire = @import("../aqueous/transport.zig");
 const codec = @import("../aqueous/codec.zig");
 const protocol = @import("protocol.zig");
 const e = @import("../aqueous/entities.zig");
+const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
 pub const Operation = @FieldType(protocol.Request, "op");
 pub const Reply = struct { op: Operation, result: std.json.Value, error_code: ?[]const u8 = null };
@@ -179,7 +180,7 @@ pub const Client = struct {
         const id = try e.read([]const u8, alloc, try e.field(v, "id"));
         try e.decimal(id);
         if (try std.fmt.parseInt(u64, id, 10) != self.sequence) {
-            std.log.err("event=settings-stale-response expected={d} received={s} operation={s}", .{ self.sequence, id, @tagName(self.operation) });
+            log.err("event=settings-stale-response expected={d} received={s} operation={s}", .{ self.sequence, id, @tagName(self.operation) });
             return error.StaleResponse;
         }
         const ok = try e.read(bool, alloc, try e.field(v, "ok"));

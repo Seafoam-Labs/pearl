@@ -1,6 +1,7 @@
 const std = @import("std");
 const glib = @import("glib2");
 const sync = @import("greeter/appearance_sync.zig");
+const log = std.log.scoped(.greeter);
 
 pub const std_options = @import("core/logging.zig").std_options;
 
@@ -17,7 +18,7 @@ pub fn main(init: std.process.Init) !void {
     const bytes = try sync.read(0, sync.max_request);
     defer std.heap.c_allocator.free(bytes);
     sync.apply(directory, bytes) catch |err| {
-        std.log.err("{s}", .{@errorName(err)});
+        log.err("{s}", .{@errorName(err)});
         std.process.exit(1);
     };
 }
