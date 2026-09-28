@@ -265,6 +265,8 @@ pub fn build(b: *std.Build) void {
     }
 
     const spike_module = gtkModule(b, bindings, target, optimize, "spikes/t00/main.zig", pulse_module);
+    // The spike root lives outside src/, so it reaches the handler by module name.
+    spike_module.addImport("logging", b.createModule(.{ .root_source_file = b.path("src/core/logging.zig"), .target = target, .optimize = optimize }));
     const spike = b.addExecutable(.{ .name = "pearl-t00", .root_module = spike_module });
     spike.step.dependOn(&system_versions.step);
     b.installArtifact(spike);

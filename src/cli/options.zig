@@ -1,6 +1,59 @@
 const std = @import("std");
 const protocol = @import("protocol.zig");
+const logging = @import("../core/logging.zig");
 pub const Options = union(enum) { help, version, request: protocol.Request };
+
+/// Verbosity flags are process-wide rather than request fields, so they are
+/// lifted out of argv before the positional command parse.
+pub const Verbosity = struct {
+    level: ?std.log.Level = null,
+    scopes: ?std.EnumSet(logging.Scope) = null,
+    remaining: [][]const u8 = &.{},
+};
+
+pub fn takeVerbosity(args: [][]const u8) !Verbosity {
+    var result: Verbosity = .{};
+    var kept: usize = 0;
+    var index: usize = 0;
+    while (index < args.len) : (index += 1) {
+        const level = std.mem.eql(u8, args[index], "--log-level");
+        if (!level and !std.mem.eql(u8, args[index], "--log-scopes")) {
+            args[kept] = args[index];
+            kept += 1;
+            continue;
+        }
+        if (index + 1 >= args.len) return error.Usage;
+        const value = args[index + 1];
+        if (level) {
+            result.level = logging.parseLevel(value) orelse return error.Usage;
+        } else {
+            result.scopes = logging.parseScopes(value) orelse return error.Usage;
+        }
+        index += 1;
+    }
+    result.remaining = args[0..kept];
+    return result;
+}
+
+test "verbosity flags are lifted out and leave the command intact" {
+    const t = std.testing;
+    var args = [_][]const u8{ "--log-level", "debug", "status", "--log-scopes", "all,~cli" };
+    const verbosity = try takeVerbosity(&args);
+    try t.expectEqual(std.log.Level.debug, verbosity.level.?);
+    try t.expect(!verbosity.scopes.?.contains(.cli) and verbosity.scopes.?.contains(.core));
+    try t.expectEqualSlices([]const u8, &.{"status"}, verbosity.remaining);
+    var plain_arguments = [_][]const u8{ "session", "status", "--offset", "1" };
+    const plain = try takeVerbosity(&plain_arguments);
+    try t.expectEqual(null, plain.level);
+    try t.expectEqual(null, plain.scopes);
+    try t.expectEqualSlices([]const u8, &.{ "session", "status", "--offset", "1" }, plain.remaining);
+    var missing_value = [_][]const u8{"--log-level"};
+    try t.expectError(error.Usage, takeVerbosity(&missing_value));
+    var unknown_level = [_][]const u8{ "--log-level", "bogus" };
+    try t.expectError(error.Usage, takeVerbosity(&unknown_level));
+    var unknown_scope = [_][]const u8{ "status", "--log-scopes", "~bogus" };
+    try t.expectError(error.Usage, takeVerbosity(&unknown_scope));
+}
 test "night light commands are explicit and reject unrelated flags" {
     try std.testing.expectEqual(protocol.Op.night_light_status, (try parse(&.{ "night-light", "status" })).request.op);
     for ([_][]const u8{ "on", "off", "toggle", "resume", "retry" }) |action| {
@@ -184,6 +237,9 @@ pub const usage =
     \\
     \\Uses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.
     \\Output IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.
+    \\
+    \\Any command also accepts --log-level error|warning|info|debug and
+    \\--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).
     \\
 ;
 

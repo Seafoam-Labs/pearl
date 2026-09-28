@@ -1,473 +1,560 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1.5
-info(pearl): event=control-ready session=8920b90e395f6e971df2942e1191caa2
-info: event=app-index-ready entries=2009 truncated=false
-info: event=popup-opened output=1
-info: event=launcher-results count=2008 shown=200 publish_us=8095
-info: event=launcher-results count=2008 shown=200 publish_us=7294
-info: event=launcher-painted latency_us=21579
-info: event=launcher-results count=2008 shown=200 publish_us=8459
-info: event=launcher-painted latency_us=21663
-info: event=launcher-results count=3 shown=3 publish_us=4340
-info: event=launcher-results count=0 shown=0 publish_us=281
-info: event=launcher-results count=0 shown=0 publish_us=279
-info: event=launcher-painted latency_us=5094
-info: event=launcher-results count=0 shown=0 publish_us=854
-info: event=launcher-results count=0 shown=0 publish_us=245
-info: event=launcher-results count=0 shown=0 publish_us=206
-info: event=launcher-results count=0 shown=0 publish_us=213
-info: event=launcher-painted latency_us=4549
-info: event=launcher-results count=0 shown=0 publish_us=254
-info: event=launcher-results count=0 shown=0 publish_us=231
-info: event=launcher-results count=0 shown=0 publish_us=203
-info: event=launcher-results count=0 shown=0 publish_us=181
-info: event=launcher-painted latency_us=4218
-info: event=launcher-results count=0 shown=0 publish_us=220
-info: event=launcher-painted latency_us=16257
-info: event=launcher-results count=0 shown=0 publish_us=515
-info: event=launcher-painted latency_us=9400
-info: event=launcher-results count=0 shown=0 publish_us=478
-info: event=launcher-painted latency_us=3934
-info: event=launcher-results count=2008 shown=200 publish_us=4695
-info: event=launcher-painted latency_us=17178
-info: event=launcher-results count=2009 shown=200 publish_us=8700
-info: event=launcher-results count=2008 shown=200 publish_us=8059
-info: event=launcher-painted latency_us=20948
-info: event=launcher-results count=2000 shown=200 publish_us=9736
-info: event=launcher-painted latency_us=31153
-info: event=launcher-results count=2000 shown=200 publish_us=8772
-info: event=launcher-painted latency_us=31333
-info: event=launcher-results count=2000 shown=200 publish_us=9143
-info: event=launcher-painted latency_us=23307
-info: event=launcher-results count=2000 shown=200 publish_us=9557
-info: event=launcher-painted latency_us=22465
-info: event=launcher-results count=2000 shown=200 publish_us=9230
-info: event=launcher-painted latency_us=25215
-info: event=launcher-results count=2008 shown=200 publish_us=8929
-info: event=launcher-painted latency_us=23483
-info: event=launcher-results count=2009 shown=200 publish_us=9199
-info: event=launcher-painted latency_us=23186
-info: event=launcher-results count=1 shown=1 publish_us=5085
-info: event=launcher-painted latency_us=20525
-info: event=launcher-results count=1 shown=1 publish_us=689
-info: event=launcher-painted latency_us=5052
-info: event=launcher-results count=1 shown=1 publish_us=609
-info: event=launcher-painted latency_us=9031
-info: event=application-launch accepted=true action=false
-info: event=popup-closed
+ts=2026-09-28T18:45:21Z pid=79086 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-28T18:45:21Z pid=79086 info(pearl): event=ready mode=session
+ts=2026-09-28T18:45:21Z pid=79086 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-28T18:45:21Z pid=79086 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-28T18:45:21Z pid=79086 info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-28T18:45:21Z pid=79086 info: event=output-mapped id=2 connector=HEADLESS-1 scale=1.5
+ts=2026-09-28T18:45:21Z pid=79086 info(pearl): event=settings-backend-ready session=712910caa75059db03caa319f5ab51b8
+ts=2026-09-28T18:45:21Z pid=79086 info(pearl): event=control-ready session=712910caa75059db03caa319f5ab51b8
+ts=2026-09-28T18:45:21Z pid=79086 info: event=app-index-ready entries=2009 truncated=false
+ts=2026-09-28T18:45:21Z pid=79086 info: event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-28T18:45:21Z pid=79086 info: event=wallpaper-applications-applied generation=2 elapsed_us=6424 success=true
+ts=2026-09-28T18:45:22Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2008 shown=200 publish_us=6700
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=36111
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2008 shown=200 publish_us=14202
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=37928
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2008 shown=200 publish_us=11797
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=39453
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=820
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=5675
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=472
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=375
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=555
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=635
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=5314
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=702
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=919
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=948
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=737
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=4778
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=532
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=804
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=12934
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=1599
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=5048
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=441
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=2251
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=647
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=9281
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=1391
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=468
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=9699
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2008 shown=200 publish_us=6993
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=30311
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2008 shown=200 publish_us=6592
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=10011
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=7274
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=7762
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=33527
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=12002
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=30620
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=10183
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=28183
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=11498
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=31333
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=9881
+ts=2026-09-28T18:45:22Z pid=79086 info: event=launcher-painted latency_us=28573
+ts=2026-09-28T18:45:23Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=13458
+ts=2026-09-28T18:45:23Z pid=79086 info: event=launcher-painted latency_us=31963
+ts=2026-09-28T18:45:24Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=14012
+ts=2026-09-28T18:45:24Z pid=79086 info: event=launcher-painted latency_us=37666
+ts=2026-09-28T18:45:24Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=13362
+ts=2026-09-28T18:45:24Z pid=79086 info: event=launcher-painted latency_us=34507
+ts=2026-09-28T18:45:24Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=11549
+ts=2026-09-28T18:45:24Z pid=79086 info: event=launcher-painted latency_us=31387
+ts=2026-09-28T18:45:24Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=11033
+ts=2026-09-28T18:45:24Z pid=79086 info: event=launcher-painted latency_us=36132
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=2008 shown=200 publish_us=5911
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=33601
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=2008 shown=200 publish_us=8747
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=11678
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1302
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=2433
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1314
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=15781
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1046
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=13341
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1314
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=783
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=6774
+ts=2026-09-28T18:45:25Z pid=79086 info: event=application-launch accepted=true action=false
+ts=2026-09-28T18:45:25Z pid=79086 info: event=popup-closed
 event=fixture-ready Cafe
-info: event=popup-opened output=1
-info: event=launcher-results count=2009 shown=200 publish_us=4654
-info: event=launcher-results count=2009 shown=200 publish_us=7170
-info: event=launcher-painted latency_us=21082
-info: event=launcher-results count=3 shown=3 publish_us=4362
-info: event=launcher-painted latency_us=5840
-info: event=launcher-results count=1 shown=1 publish_us=1446
-info: event=launcher-results count=1 shown=1 publish_us=351
-info: event=launcher-results count=1 shown=1 publish_us=412
-info: event=launcher-results count=1 shown=1 publish_us=379
-info: event=launcher-painted latency_us=4897
-info: event=launcher-results count=1 shown=1 publish_us=394
-info: event=launcher-results count=1 shown=1 publish_us=421
-info: event=launcher-results count=1 shown=1 publish_us=337
-info: event=launcher-results count=1 shown=1 publish_us=374
-info: event=launcher-painted latency_us=4481
-info: event=launcher-results count=1 shown=1 publish_us=359
-info: event=launcher-results count=1 shown=1 publish_us=319
-info: event=launcher-painted latency_us=12803
-info: event=launcher-results count=1 shown=1 publish_us=701
-info: event=launcher-painted latency_us=6102
-info: event=launcher-results count=1 shown=1 publish_us=653
-info: event=launcher-painted latency_us=1527
-info: event=application-launch accepted=true action=false
-info: event=popup-closed
+ts=2026-09-28T18:45:25Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=2009 shown=200 publish_us=6686
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=28245
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=2009 shown=200 publish_us=11492
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=30867
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=2009 shown=200 publish_us=11342
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=32994
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=896
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=645
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=680
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=4128
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=384
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=642
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=675
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=692
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=3203
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=365
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=691
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=669
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=7772
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1964
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=2839
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1308
+ts=2026-09-28T18:45:25Z pid=79086 info: event=launcher-painted latency_us=15448
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1874
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=629
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=6518
+ts=2026-09-28T18:45:26Z pid=79086 info: event=application-launch accepted=true action=false
+ts=2026-09-28T18:45:26Z pid=79086 info: event=popup-closed
 event=fixture-ready fields
-info: event=popup-opened output=1
-info: event=launcher-results count=2010 shown=200 publish_us=5570
-info: event=launcher-results count=2010 shown=200 publish_us=7216
-info: event=launcher-results count=2010 shown=200 publish_us=7446
-info: event=launcher-painted latency_us=21863
-info: event=launcher-results count=2011 shown=200 publish_us=9254
-info: event=launcher-painted latency_us=22421
-info: event=launcher-results count=1 shown=1 publish_us=4028
-info: event=launcher-results count=1 shown=1 publish_us=308
-info: event=launcher-results count=1 shown=1 publish_us=284
-info: event=launcher-results count=1 shown=1 publish_us=307
-info: event=launcher-painted latency_us=3782
-info: event=launcher-results count=1 shown=1 publish_us=374
-info: event=launcher-results count=1 shown=1 publish_us=379
-info: event=launcher-results count=1 shown=1 publish_us=363
-info: event=launcher-results count=1 shown=1 publish_us=344
-info: event=launcher-painted latency_us=3410
-info: event=launcher-results count=1 shown=1 publish_us=411
-info: event=launcher-painted latency_us=15754
-info: event=launcher-results count=1 shown=1 publish_us=669
-info: event=launcher-painted latency_us=9717
-info: event=launcher-results count=1 shown=1 publish_us=767
-info: event=launcher-painted latency_us=5098
-info: event=application-launch accepted=true action=true
-info: event=popup-closed
+ts=2026-09-28T18:45:26Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=2010 shown=200 publish_us=7289
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=2010 shown=200 publish_us=9877
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=32549
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=2010 shown=200 publish_us=11332
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=31085
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=2010 shown=200 publish_us=10762
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=33867
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1948
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=380
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=402
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=6011
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=692
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=623
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=632
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=387
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=5854
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=796
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=652
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=622
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=826
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=6187
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=709
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=654
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=14045
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=2746
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=8252
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=690
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=15498
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1430
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=419
+ts=2026-09-28T18:45:26Z pid=79086 info: event=launcher-painted latency_us=15028
+ts=2026-09-28T18:45:26Z pid=79086 info: event=application-launch accepted=true action=true
+ts=2026-09-28T18:45:26Z pid=79086 info: event=popup-closed
 event=fixture-ready special
-info: event=popup-opened output=1
-info: event=launcher-results count=2011 shown=200 publish_us=5784
-info: event=launcher-results count=2011 shown=200 publish_us=6854
-info: event=launcher-painted latency_us=20047
-info: event=launcher-results count=2011 shown=200 publish_us=19703
-info: event=launcher-painted latency_us=31112
-info: event=launcher-results count=2011 shown=200 publish_us=9276
-info: event=launcher-results count=1 shown=1 publish_us=3632
-info: event=launcher-results count=1 shown=1 publish_us=337
-info: event=launcher-painted latency_us=3222
-info: event=launcher-results count=1 shown=1 publish_us=321
-info: event=launcher-results count=1 shown=1 publish_us=310
-info: event=launcher-results count=1 shown=1 publish_us=275
-info: event=launcher-results count=1 shown=1 publish_us=277
-info: event=launcher-painted latency_us=3543
-info: event=launcher-results count=1 shown=1 publish_us=362
-info: event=launcher-results count=1 shown=1 publish_us=319
-info: event=launcher-results count=1 shown=1 publish_us=285
-info: event=launcher-results count=1 shown=1 publish_us=291
-info: event=launcher-painted latency_us=3545
-info: event=launcher-results count=1 shown=1 publish_us=416
-info: event=launcher-results count=1 shown=1 publish_us=375
-info: event=launcher-results count=1 shown=1 publish_us=330
-info: event=launcher-painted latency_us=7852
-info: event=launcher-results count=1 shown=1 publish_us=735
-info: event=launcher-painted latency_us=1670
-info: event=launcher-results count=1 shown=1 publish_us=581
-info: event=launcher-painted latency_us=13911
-info: event=application-launch accepted=true action=false
-info: event=popup-closed
+ts=2026-09-28T18:45:27Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=2011 shown=200 publish_us=6391
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=27881
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=2011 shown=200 publish_us=10899
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=31217
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=2011 shown=200 publish_us=9864
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=29989
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1313
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=777
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=4744
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=436
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=692
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1135
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1224
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=4204
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=738
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1172
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=2152
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1212
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=3930
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=751
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=788
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=806
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=7193
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1540
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=2234
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=684
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=16707
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1948
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=686
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=6112
+ts=2026-09-28T18:45:27Z pid=79086 info: event=application-launch accepted=true action=false
+ts=2026-09-28T18:45:27Z pid=79086 info: event=popup-closed
 event=fixture-ready Terminal
-info: event=popup-opened output=1
-info: event=launcher-results count=2013 shown=200 publish_us=5657
-info: event=launcher-painted latency_us=19798
-info: event=launcher-results count=2013 shown=200 publish_us=22218
-info: event=launcher-painted latency_us=34869
-info: event=launcher-results count=2013 shown=200 publish_us=8353
-info: event=launcher-painted latency_us=27953
-info: event=launcher-results count=3 shown=3 publish_us=4343
-info: event=launcher-results count=2 shown=2 publish_us=532
-info: event=launcher-painted latency_us=5295
-info: event=launcher-results count=2 shown=2 publish_us=463
-info: event=launcher-results count=2 shown=2 publish_us=377
-info: event=launcher-results count=2 shown=2 publish_us=367
-info: event=launcher-results count=1 shown=1 publish_us=333
-info: event=launcher-painted latency_us=4918
-info: event=launcher-results count=1 shown=1 publish_us=352
-info: event=launcher-results count=1 shown=1 publish_us=331
-info: event=launcher-results count=1 shown=1 publish_us=311
-info: event=launcher-results count=1 shown=1 publish_us=316
-info: event=launcher-painted latency_us=4757
-info: event=launcher-results count=1 shown=1 publish_us=676
-info: event=launcher-painted latency_us=15669
-info: event=launcher-results count=1 shown=1 publish_us=814
-info: event=launcher-painted latency_us=9565
-info: event=application-launch accepted=true action=false
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=5482
-info: event=launcher-results count=2015 shown=200 publish_us=7502
-info: event=launcher-painted latency_us=19945
-info: event=launcher-results count=2015 shown=200 publish_us=7179
-info: event=launcher-painted latency_us=25370
-info: event=launcher-results count=2015 shown=200 publish_us=8342
-info: event=launcher-painted latency_us=20821
-info: event=launcher-results count=2 shown=2 publish_us=3271
-info: event=launcher-painted latency_us=4204
-info: event=launcher-results count=2 shown=2 publish_us=403
-info: event=launcher-results count=2 shown=2 publish_us=385
-info: event=launcher-results count=2 shown=2 publish_us=322
-info: event=launcher-results count=2 shown=2 publish_us=322
-info: event=launcher-painted latency_us=3049
-info: event=launcher-results count=2 shown=2 publish_us=327
-info: event=launcher-results count=2 shown=2 publish_us=514
-info: event=launcher-painted latency_us=11308
-info: event=launcher-results count=2 shown=2 publish_us=806
-info: event=launcher-painted latency_us=5159
-info: event=launcher-results count=2 shown=2 publish_us=686
-info: event=launcher-painted latency_us=17418
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=5542
-info: event=launcher-results count=2015 shown=200 publish_us=7193
-info: event=launcher-painted latency_us=20861
-info: event=launcher-results count=2015 shown=200 publish_us=8452
-info: event=launcher-painted latency_us=30061
-info: event=launcher-results count=2015 shown=200 publish_us=9555
-info: event=launcher-results count=2 shown=2 publish_us=3708
-info: event=launcher-painted latency_us=5050
-info: event=launcher-results count=2 shown=2 publish_us=1424
-info: event=launcher-results count=2 shown=2 publish_us=465
-info: event=launcher-results count=2 shown=2 publish_us=369
-info: event=launcher-results count=2 shown=2 publish_us=302
-info: event=launcher-results count=2 shown=2 publish_us=491
-info: event=launcher-painted latency_us=1615
-info: event=launcher-results count=2 shown=2 publish_us=450
-info: event=launcher-results count=2 shown=2 publish_us=552
-info: event=launcher-results count=2 shown=2 publish_us=475
-info: event=launcher-painted latency_us=6319
-info: event=launcher-results count=2 shown=2 publish_us=1580
-info: event=launcher-painted latency_us=17018
-info: event=launcher-results count=2 shown=2 publish_us=814
-info: event=launcher-painted latency_us=11471
-info: event=launcher-results count=2 shown=2 publish_us=626
-info: event=launcher-painted latency_us=7112
-info: event=launcher-results count=2 shown=2 publish_us=912
-info: event=launcher-results count=2 shown=2 publish_us=344
-info: event=launcher-painted latency_us=2189
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2014 shown=200 publish_us=5617
-info: event=launcher-results count=2014 shown=200 publish_us=6631
-info: event=launcher-painted latency_us=19226
-info: event=launcher-results count=2014 shown=200 publish_us=7493
-info: event=launcher-painted latency_us=30502
-info: event=launcher-results count=2014 shown=200 publish_us=10145
-info: event=launcher-results count=1 shown=1 publish_us=4536
-info: event=launcher-painted latency_us=5922
-info: event=launcher-results count=1 shown=1 publish_us=1305
-info: event=launcher-results count=1 shown=1 publish_us=348
-info: event=launcher-results count=1 shown=1 publish_us=447
-info: event=launcher-results count=1 shown=1 publish_us=468
-info: event=launcher-painted latency_us=4123
-info: event=launcher-results count=1 shown=1 publish_us=601
-info: event=launcher-results count=1 shown=1 publish_us=438
-info: event=launcher-results count=1 shown=1 publish_us=470
-info: event=launcher-results count=1 shown=1 publish_us=429
-info: event=launcher-painted latency_us=3316
-info: event=launcher-results count=1 shown=1 publish_us=612
-info: event=launcher-painted latency_us=15522
-info: event=launcher-results count=1 shown=1 publish_us=726
-info: event=launcher-painted latency_us=9201
-info: event=launcher-results count=2 shown=2 publish_us=614
-info: event=launcher-painted latency_us=8212
-info: event=launcher-results count=2 shown=2 publish_us=503
-info: event=launcher-painted latency_us=11509
-info: event=launcher-results count=2015 shown=200 publish_us=4926
-info: event=launcher-painted latency_us=22798
-info: event=launcher-results count=2015 shown=200 publish_us=8566
-info: event=launcher-painted latency_us=21765
-info: event=launcher-results count=2 shown=2 publish_us=4005
-info: event=launcher-painted latency_us=5298
-info: event=launcher-results count=2 shown=2 publish_us=1334
-info: event=launcher-results count=2 shown=2 publish_us=353
-info: event=launcher-results count=2 shown=2 publish_us=367
-info: event=launcher-results count=2 shown=2 publish_us=390
-info: event=launcher-painted latency_us=2631
-info: event=launcher-results count=2 shown=2 publish_us=454
-info: event=launcher-results count=2 shown=2 publish_us=476
-info: event=launcher-painted latency_us=10806
-info: event=launcher-results count=2 shown=2 publish_us=804
-info: event=launcher-painted latency_us=5551
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=5867
-info: event=launcher-results count=2015 shown=200 publish_us=7397
-info: event=launcher-painted latency_us=20176
-info: event=launcher-results count=2015 shown=200 publish_us=7206
-info: event=launcher-painted latency_us=18990
-info: event=launcher-results count=2015 shown=200 publish_us=10704
-info: event=launcher-results count=2 shown=2 publish_us=3624
-info: event=launcher-results count=2 shown=2 publish_us=476
-info: event=launcher-painted latency_us=1826
-info: event=launcher-results count=2 shown=2 publish_us=414
-info: event=launcher-results count=2 shown=2 publish_us=380
-info: event=launcher-results count=2 shown=2 publish_us=479
-info: event=launcher-results count=2 shown=2 publish_us=392
-info: event=launcher-painted latency_us=3650
-info: event=launcher-results count=2 shown=2 publish_us=464
-info: event=launcher-results count=2 shown=2 publish_us=410
-info: event=launcher-results count=2 shown=2 publish_us=404
-info: event=launcher-results count=2 shown=2 publish_us=533
-info: event=launcher-painted latency_us=3631
-info: event=launcher-results count=2 shown=2 publish_us=763
-info: event=launcher-painted latency_us=14543
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=popup-opened output=2
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=desktop-action status=rejected detail=unavailable
-info: event=app-index-ready entries=2010 truncated=false
-info: event=popup-opened output=2
-info: event=launcher-results count=2016 shown=200 publish_us=5737
-info: event=launcher-results count=2016 shown=200 publish_us=7661
-info: event=launcher-results count=2016 shown=200 publish_us=7811
-info: event=launcher-painted latency_us=22251
-info: event=launcher-results count=5 shown=5 publish_us=4489
-info: event=launcher-painted latency_us=6601
-info: event=launcher-results count=1 shown=1 publish_us=2197
-info: event=launcher-results count=1 shown=1 publish_us=450
-info: event=launcher-results count=1 shown=1 publish_us=346
-info: event=launcher-results count=1 shown=1 publish_us=460
-info: event=launcher-painted latency_us=2829
-info: event=launcher-results count=1 shown=1 publish_us=400
-info: event=launcher-results count=1 shown=1 publish_us=353
-info: event=launcher-results count=1 shown=1 publish_us=269
-info: event=launcher-results count=1 shown=1 publish_us=263
-info: event=launcher-painted latency_us=2333
-info: event=launcher-results count=1 shown=1 publish_us=259
-info: event=launcher-results count=1 shown=1 publish_us=326
-info: event=launcher-results count=1 shown=1 publish_us=486
-info: event=launcher-results count=1 shown=1 publish_us=439
-info: event=launcher-painted latency_us=2061
-info: event=launcher-results count=1 shown=1 publish_us=527
-info: event=launcher-results count=1 shown=1 publish_us=361
-info: event=launcher-results count=1 shown=1 publish_us=329
-info: event=launcher-results count=1 shown=1 publish_us=327
-info: event=launcher-painted latency_us=1689
-info: event=launcher-results count=1 shown=1 publish_us=672
-info: event=launcher-painted latency_us=12799
-info: event=launcher-results count=1 shown=1 publish_us=627
-info: event=launcher-painted latency_us=5446
-info: event=launcher-results count=2016 shown=200 publish_us=5959
-info: event=launcher-painted latency_us=19231
-info: event=launcher-results count=5 shown=5 publish_us=4861
-info: event=launcher-results count=1 shown=1 publish_us=444
-info: event=launcher-results count=1 shown=1 publish_us=419
-info: event=launcher-results count=1 shown=1 publish_us=363
-info: event=launcher-painted latency_us=4099
-info: event=launcher-results count=1 shown=1 publish_us=420
-info: event=launcher-painted latency_us=1314
-info: event=launcher-results count=1 shown=1 publish_us=380
-info: event=launcher-results count=1 shown=1 publish_us=358
-info: event=launcher-results count=1 shown=1 publish_us=404
-info: event=launcher-painted latency_us=5416
-info: event=launcher-results count=1 shown=1 publish_us=1034
-info: event=launcher-results count=1 shown=1 publish_us=295
-info: event=launcher-results count=1 shown=1 publish_us=400
-info: event=launcher-results count=1 shown=1 publish_us=436
-info: event=launcher-painted latency_us=4842
-info: event=launcher-results count=1 shown=1 publish_us=404
-info: event=launcher-results count=1 shown=1 publish_us=402
-info: event=launcher-results count=1 shown=1 publish_us=335
-info: event=launcher-results count=1 shown=1 publish_us=395
-info: event=launcher-painted latency_us=4763
-info: event=launcher-results count=1 shown=1 publish_us=428
-info: event=launcher-painted latency_us=16530
-info: event=app-index-ready entries=2009 truncated=false
-info: event=launcher-results count=0 shown=0 publish_us=2550
-info: event=launcher-painted latency_us=12480
-info: event=launcher-results count=0 shown=0 publish_us=703
-info: event=launcher-painted latency_us=10108
-info: event=launcher-results count=0 shown=0 publish_us=484
-info: event=launcher-painted latency_us=2887
-info: event=launcher-results count=2015 shown=200 publish_us=5886
-info: event=launcher-painted latency_us=20350
-info: event=launcher-results count=2016 shown=200 publish_us=9646
-info: event=launcher-painted latency_us=23525
-info: event=launcher-results count=1 shown=1 publish_us=4812
-info: event=launcher-results count=1 shown=1 publish_us=557
-info: event=launcher-results count=1 shown=1 publish_us=345
-info: event=launcher-results count=1 shown=1 publish_us=347
-info: event=launcher-painted latency_us=4707
-info: event=launcher-results count=1 shown=1 publish_us=407
-info: event=launcher-results count=1 shown=1 publish_us=429
-info: event=launcher-results count=1 shown=1 publish_us=371
-info: event=launcher-results count=1 shown=1 publish_us=371
-info: event=launcher-painted latency_us=4389
-info: event=launcher-results count=1 shown=1 publish_us=385
-info: event=launcher-results count=1 shown=1 publish_us=421
-info: event=launcher-painted latency_us=12813
-info: event=launcher-results count=1 shown=1 publish_us=736
-info: event=launcher-painted latency_us=9408
-info: event=popup-closed
-info: event=popup-opened output=2
-info: event=launcher-results count=2015 shown=200 publish_us=5347
-info: event=launcher-results count=2015 shown=200 publish_us=8037
-info: event=launcher-painted latency_us=22518
-info: event=launcher-results count=2014 shown=200 publish_us=9315
-info: event=launcher-results count=2008 shown=200 publish_us=9560
-info: event=launcher-painted latency_us=22982
-info: event=launcher-results count=2000 shown=200 publish_us=9519
-info: event=launcher-painted latency_us=28165
-info: event=launcher-results count=2000 shown=200 publish_us=9504
-info: event=launcher-painted latency_us=27505
-info: event=popup-closed
-info: event=popup-opened output=2
-info: event=launcher-results count=2015 shown=200 publish_us=5569
-info: event=launcher-painted latency_us=23531
-info: event=launcher-results count=2015 shown=200 publish_us=9280
-info: event=launcher-painted latency_us=25929
-info: event=launcher-results count=2014 shown=200 publish_us=10152
-info: event=launcher-painted latency_us=24382
-info: event=launcher-results count=2000 shown=200 publish_us=9841
-info: event=launcher-painted latency_us=28306
-info: event=launcher-results count=2000 shown=200 publish_us=9294
-info: event=launcher-painted latency_us=22083
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=6290
-info: event=launcher-results count=2015 shown=200 publish_us=8268
-info: event=launcher-painted latency_us=23269
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=6984
-info: event=launcher-painted latency_us=21291
-info: event=launcher-results count=2015 shown=200 publish_us=10718
-info: event=launcher-painted latency_us=25491
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=6397
-info: event=launcher-results count=2015 shown=200 publish_us=7999
-info: event=launcher-painted latency_us=23027
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=6336
-info: event=launcher-painted latency_us=20462
-info: event=launcher-results count=2015 shown=200 publish_us=8638
-info: event=launcher-painted latency_us=21817
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=6137
-info: event=launcher-painted latency_us=19926
-info: event=launcher-results count=2015 shown=200 publish_us=8881
-info: event=launcher-painted latency_us=22507
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=6107
-info: event=launcher-painted latency_us=19910
-info: event=launcher-results count=2015 shown=200 publish_us=8935
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=6582
-info: event=launcher-results count=2015 shown=200 publish_us=7587
-info: event=launcher-painted latency_us=21474
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=6007
-info: event=launcher-results count=2015 shown=200 publish_us=7483
-info: event=launcher-painted latency_us=26281
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=6399
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=5796
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=5894
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=5758
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=5700
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=5857
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=5670
-info: event=popup-closed
-info(pearl): event=stopping reason=control-quit pending=false
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-09-28T18:45:27Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=2013 shown=200 publish_us=8339
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-results count=2013 shown=200 publish_us=9990
+ts=2026-09-28T18:45:27Z pid=79086 info: event=launcher-painted latency_us=32032
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2013 shown=200 publish_us=10859
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=31194
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2013 shown=200 publish_us=11209
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=38217
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1174
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=836
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=978
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=3983
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=667
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=940
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=918
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=673
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=2929
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=510
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=483
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=12320
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1468
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=8444
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=798
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=14772
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1371
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=644
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=12554
+ts=2026-09-28T18:45:28Z pid=79086 info: event=application-launch accepted=true action=false
+ts=2026-09-28T18:45:28Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:28Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9023
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=37958
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=36506
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=58178
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=13150
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=37938
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=12289
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=39479
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=2234
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-painted latency_us=5246
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1130
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=877
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=842
+ts=2026-09-28T18:45:28Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=675
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=7990
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=680
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=822
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=791
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=757
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=3873
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=789
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=932
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=11560
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1890
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=7971
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=569
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=11839
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1561
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=972
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=3180
+ts=2026-09-28T18:45:29Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:29Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=5723
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=26211
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9566
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=31590
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9990
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=32687
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=2239
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=649
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=868
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=797
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=6089
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1220
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1009
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=809
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1372
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=4088
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=507
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1371
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1217
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=9800
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1672
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=6881
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=687
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=15038
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1316
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=796
+ts=2026-09-28T18:45:29Z pid=79086 info: event=launcher-painted latency_us=8520
+ts=2026-09-28T18:45:30Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=2192
+ts=2026-09-28T18:45:30Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1393
+ts=2026-09-28T18:45:30Z pid=79086 info: event=launcher-painted latency_us=11497
+ts=2026-09-28T18:45:30Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=816
+ts=2026-09-28T18:45:30Z pid=79086 info: event=launcher-painted latency_us=13594
+ts=2026-09-28T18:45:30Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1068
+ts=2026-09-28T18:45:30Z pid=79086 info: event=launcher-painted latency_us=15186
+ts=2026-09-28T18:45:30Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:31Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=2014 shown=200 publish_us=6537
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-painted latency_us=26996
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=2014 shown=200 publish_us=10669
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-painted latency_us=36452
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=2014 shown=200 publish_us=11382
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-painted latency_us=31258
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=865
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=873
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=866
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=854
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-painted latency_us=2387
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=925
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=908
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1271
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-painted latency_us=5946
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1791
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=837
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=720
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=855
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-painted latency_us=7184
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=2831
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-painted latency_us=3702
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1234
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-painted latency_us=12993
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1099
+ts=2026-09-28T18:45:31Z pid=79086 info: event=launcher-painted latency_us=10922
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=922
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=2680
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1129
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=438
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=415
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=10286
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=632
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=17162
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9870
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=32329
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=2378
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=586
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=5175
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=837
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=2174
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=649
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1363
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1048
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1187
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=4581
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1111
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=671
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1377
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1228
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=4206
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1891
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=759
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=5811
+ts=2026-09-28T18:45:32Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:32Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=7560
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9897
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=30485
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=10975
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=30712
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=10401
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=36546
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1742
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=818
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=848
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=767
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=2643
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=657
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=681
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=474
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=690
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=3056
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=743
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=694
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=1173
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=7301
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=2344
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=3770
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-results count=2 shown=2 publish_us=806
+ts=2026-09-28T18:45:32Z pid=79086 info: event=launcher-painted latency_us=13673
+ts=2026-09-28T18:45:32Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:33Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:33Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:33Z pid=79086 info: event=popup-opened output=2
+ts=2026-09-28T18:45:33Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:33Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:34Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:34Z pid=79086 info: event=desktop-action status=rejected detail=unavailable
+ts=2026-09-28T18:45:34Z pid=79086 info: event=app-index-ready entries=2010 truncated=false
+ts=2026-09-28T18:45:34Z pid=79086 info: event=popup-opened output=2
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=2016 shown=200 publish_us=6872
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=2016 shown=200 publish_us=9047
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-painted latency_us=30454
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=2016 shown=200 publish_us=29678
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-painted latency_us=57299
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=2016 shown=200 publish_us=10555
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-painted latency_us=31620
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1665
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=997
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=884
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-painted latency_us=6145
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=869
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=699
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=390
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=560
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-painted latency_us=5138
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=516
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=639
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=715
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=669
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-painted latency_us=5274
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=468
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=675
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=648
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=651
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-painted latency_us=4460
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=792
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-painted latency_us=16352
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1901
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=867
+ts=2026-09-28T18:45:34Z pid=79086 info: event=launcher-painted latency_us=4742
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1234
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=688
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=898
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=5724
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=2016 shown=200 publish_us=9072
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=32775
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=758
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=5339
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1112
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=2922
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=837
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=416
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1023
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=963
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=3938
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1149
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1097
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=811
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=905
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=3540
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=925
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=800
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=872
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=890
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=3466
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=914
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=16587
+ts=2026-09-28T18:45:35Z pid=79086 info: event=app-index-ready entries=2009 truncated=false
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=3232
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=13105
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=1554
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=9133
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=2192
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=15229
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=1196
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=0 shown=0 publish_us=375
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=9560
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=7688
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=34876
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=2001 shown=200 publish_us=6755
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=9782
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1254
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=3080
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=847
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1216
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=967
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1195
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=5759
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1221
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1262
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1236
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=907
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=5639
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=803
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1149
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1246
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1024
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=4787
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=1796
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-results count=1 shown=1 publish_us=867
+ts=2026-09-28T18:45:35Z pid=79086 info: event=launcher-painted latency_us=9572
+ts=2026-09-28T18:45:35Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:36Z pid=79086 info: event=popup-opened output=2
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=10202
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=40546
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=14003
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=38091
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=14505
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=45091
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2008 shown=200 publish_us=8659
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=13200
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=7539
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=13550
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=8507
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=39896
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=11341
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=36305
+ts=2026-09-28T18:45:36Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:36Z pid=79086 info: event=popup-opened output=2
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=7959
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=37565
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=13949
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=43162
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=11284
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=35295
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2009 shown=200 publish_us=8322
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=7635
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=12307
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=9647
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=32786
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2000 shown=200 publish_us=11329
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-painted latency_us=30360
+ts=2026-09-28T18:45:36Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:36Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:36Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=6479
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=33125
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=8018
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9713
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=32194
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9297
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9235
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=32331
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9833
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=33296
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=33178
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=56925
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=8806
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=11556
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=37730
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=6975
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=29006
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9170
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=12254
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=38948
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=8358
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=31753
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=11727
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-painted latency_us=33646
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9419
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9140
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9795
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=8698
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=9319
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=10215
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-opened output=1
+ts=2026-09-28T18:45:37Z pid=79086 info: event=launcher-results count=2015 shown=200 publish_us=8829
+ts=2026-09-28T18:45:37Z pid=79086 info: event=popup-closed
+ts=2026-09-28T18:45:37Z pid=79086 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-09-28T18:45:37Z pid=79086 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-28T18:45:37Z pid=79086 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T18:45:37Z pid=79086 info(pearl): event=stopped

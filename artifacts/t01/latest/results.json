@@ -4,6 +4,8 @@
     "eight_cycles_cancel_drain_finalize_unregister": "pass",
     "eight_cycles_complete_finalize_unregister": "pass",
     "failed_compositor_start_cleans_private_bus_and_directories": "pass",
+    "log_level_and_scope_flags_filter_a_private_session": "pass",
+    "log_lines_carry_the_timestamp_and_pid_envelope": "pass",
     "missing_and_non_socket_endpoints_rejected": "pass",
     "nested_display_private_bus_and_reused_bus_isolation": "pass",
     "poisoned_host_environment_removed": "pass",
@@ -13,13 +15,17 @@
     "session_mode_has_no_fixture_work": "pass",
     "sigint_and_sigterm_drain_cleanly": "pass"
   },
-  "executable_sha256": "50a4242105e66404184e5f870e02d48e961c9bb3f9550eadbaf8b0d4dcf75d42",
+  "executable_sha256": "3f260349e652aea9f673e5c262ceee9b380a67cb1c1cb24cbc79d164d4ee8163",
   "nested_outputs": [
     {
+      "actual_vrr": true,
       "adaptive_sync": true,
+      "adaptive_sync_error": "unsupported",
       "description": "Wayland output 1",
       "edid_sha256": null,
+      "effective_adaptive_sync": true,
       "enabled": true,
+      "fullscreen_only_adaptive_sync": false,
       "make": null,
       "mirror_error": null,
       "mirror_of": "",
@@ -48,8 +54,8 @@
       "transform": "normal"
     }
   ],
-  "private_bus_names": "NAME                    PID PROCESS         USER CONNECTION UNIT              SESSION DESCRIPTION\n:1.33                269888 pearl-integrati zoey :1.33      user@1000.service -       -\n:1.37                269906 busctl          zoey :1.37      user@1000.service -       -\norg.freedesktop.DBus 269764 dbus-daemon     zoey -          user@1000.service -       -\n",
-  "production_executable_sha256": "47b1b67afbfa422861fe5588dfd4002b58654ec77941dc14f1a056e2bd056947",
-  "recorded_utc": "2026-09-13T17:01:26.145502+00:00",
+  "private_bus_names": "NAME                   PID PROCESS         USER    CONNECTION UNIT              SESSION DESCRIPTION\n:1.43                76963 pearl-integrati azdanov :1.43      user@1000.service -       -\n:1.47                77180 busctl          azdanov :1.47      user@1000.service -       -\norg.freedesktop.DBus 75265 dbus-daemon     azdanov -          user@1000.service -       -\n",
+  "production_executable_sha256": "2ddaeb38217b1a0d770a78cc33cc85c812a344d8d7818ce7a1243291ac83e1ec",
+  "recorded_utc": "2026-09-28T18:40:55.530334+00:00",
   "status": "pass"
 }

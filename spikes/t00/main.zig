@@ -10,6 +10,8 @@ const session_lock = @import("gtk4sessionlock1");
 extern "c" fn getenv([*:0]const u8) ?[*:0]const u8;
 extern "c" fn read(c_int, [*]u8, usize) isize;
 
+pub const std_options = @import("logging").std_options;
+
 var loop: *glib.MainLoop = undefined;
 var bars: [16]*gtk.Window = undefined;
 var monitors: [16]*gdk.Monitor = undefined;

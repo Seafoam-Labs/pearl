@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import sys
@@ -14,6 +15,9 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession
+
+# std.log renders .err/.warn as error/warning and omits the scope group for unscoped lines.
+LOG_LINE = re.compile(r'^ts=\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z pid=\d+ (error|warning|info|debug)(\([a-z]+\))?: ')
 
 
 def clean(child, cycles=1):
@@ -41,8 +45,11 @@ def main():
     directories = []
     try:
         isolated_cli = dict(PATH=os.environ.get('PATH', '/usr/bin'), LANG='C.UTF-8')
-        for argv, code, text in [(['--help'], 0, 'Usage: pearl'), (['--version'], 0, 'Zig 0.16.0'),
-                                 (['--bogus'], 2, 'Unknown argument'), ([], 2, 'requires a Wayland display')]:
+        for argv, code, text in [(['--help'], 0, 'Usage: pearl'), (['--help'], 0, '--log-scopes LIST'),
+                                 (['--version'], 0, 'Zig 0.16.0'), (['--bogus'], 2, 'Unknown argument'),
+                                 (['--log-level'], 2, 'Unknown argument'), (['--log-level', 'bogus'], 2, 'Unknown argument'),
+                                 (['--log-level', 'Debug'], 2, 'Unknown argument'), (['--log-scopes', '~bogus'], 2, 'Unknown argument'),
+                                 ([], 2, 'requires a Wayland display')]:
             response = subprocess.run([str(args.pearl), *argv], env=isolated_cli, capture_output=True, text=True, timeout=5)
             assert response.returncode == code and text in response.stdout + response.stderr, response
         response = subprocess.run([str(args.pearl)], env=dict(isolated_cli, XDG_CURRENT_DESKTOP='GNOME', WAYLAND_DISPLAY='absent'),
@@ -96,6 +103,23 @@ def main():
             clean(normal)
             assert not any('event=work-started' in line for line in normal.lines)
             checks['session_mode_has_no_fixture_work'] = 'pass'
+
+            ready = next(line for line in normal.lines if 'event=ready' in line)
+            assert LOG_LINE.match(ready), ready
+            checks['log_lines_carry_the_timestamp_and_pid_envelope'] = 'pass'
+
+            # No debug-level call sites exist yet, so raising the level must
+            # leave the default output untouched while error level and a scope
+            # filter both suppress the known info events.
+            for name, flag in [('error-level', ['--log-level', 'error']), ('scope-filter', ['--log-scopes', 'all,~pearl'])]:
+                quiet = outer.child('quiet-' + name, [args.pearl, '--demo', *flag], **common, PEARL_TEST_CLOSE_MS='200')
+                assert quiet.wait(timeout=30) == 0, '\n'.join(quiet.lines)
+                assert not any('event=ready' in line or 'event=cleanup' in line for line in quiet.lines), quiet.lines
+                assert not any(word in line for line in quiet.lines for word in ('CRITICAL', 'WARNING', 'panic:')), quiet.lines
+            verbose = outer.child('verbose-debug', [args.pearl, '--demo', '--log-level', 'debug'], **common, PEARL_TEST_CLOSE_MS='200')
+            verbose.expect('event=ready mode=demo')
+            clean(verbose)
+            checks['log_level_and_scope_flags_filter_a_private_session'] = 'pass'
 
             cancel = outer.child('cancel-cycles', [args.pearl, '--demo'], **common,
                                  PEARL_TEST_WORKER_DELAY_MS='2000', PEARL_TEST_CLOSE_MS='100', PEARL_TEST_CYCLES='8')

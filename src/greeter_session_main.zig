@@ -4,6 +4,9 @@ const glib = @import("glib2");
 const cfg = @import("greeter/config.zig");
 const sessions = @import("greeter/sessions.zig");
 const a = std.heap.c_allocator;
+
+pub const std_options = @import("core/logging.zig").std_options;
+
 pub fn main(init: std.process.Init) !void {
     @import("greeter/logging.zig").init();
     const args = try init.minimal.args.toSlice(a);

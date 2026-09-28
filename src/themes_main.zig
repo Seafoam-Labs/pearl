@@ -2,6 +2,9 @@
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
+
+pub const std_options = @import("core/logging.zig").std_options;
+
 pub fn main(init: std.process.Init) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
     defer arena.deinit();

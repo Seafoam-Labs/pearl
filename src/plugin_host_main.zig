@@ -13,6 +13,9 @@ const c = @cImport({
 });
 const a = std.heap.c_allocator;
 extern "c" fn getenv([*:0]const u8) ?[*:0]u8;
+
+pub const std_options = @import("core/logging.zig").std_options;
+
 fn env(name: [*:0]const u8) ![:0]const u8 {
     return std.mem.span(getenv(name) orelse return error.HelperEnvironment);
 }

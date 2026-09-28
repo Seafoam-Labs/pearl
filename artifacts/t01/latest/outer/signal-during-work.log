@@ -1,9 +1,9 @@
-info(gallery): event=search results=518
-info(gallery): event=appearance light=false compact=false large=false reduced=false
-info(pearl): event=work-started generation=1
-info(pearl): event=ready mode=demo
-info(gallery): event=search results=518
-info(pearl): event=stopping reason=signal pending=true
-info(pearl): event=work-finished applied=false canceled=true
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-09-28T18:41:03Z pid=77497 info(gallery): event=search results=518
+ts=2026-09-28T18:41:03Z pid=77497 info(gallery): event=appearance light=false compact=false large=false reduced=false
+ts=2026-09-28T18:41:03Z pid=77497 info(pearl): event=work-started generation=1
+ts=2026-09-28T18:41:03Z pid=77497 info(pearl): event=ready mode=demo
+ts=2026-09-28T18:41:03Z pid=77497 info(gallery): event=search results=518
+ts=2026-09-28T18:41:03Z pid=77497 info(pearl): event=stopping reason=signal pending=true
+ts=2026-09-28T18:41:03Z pid=77497 info(pearl): event=work-finished applied=false canceled=true
+ts=2026-09-28T18:41:03Z pid=77497 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T18:41:03Z pid=77497 info(pearl): event=stopped

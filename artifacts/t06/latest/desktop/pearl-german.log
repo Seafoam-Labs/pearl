@@ -1,30 +1,33 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=2
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info(pearl): event=control-ready session=8920b90e395f6e971df2942e1191caa2
-info: event=app-index-ready entries=2009 truncated=false
-info: event=popup-opened output=1
-info: event=launcher-results count=2015 shown=200 publish_us=8449
-info: event=launcher-results count=2015 shown=200 publish_us=7699
-info: event=launcher-painted latency_us=22444
-info: event=launcher-results count=2015 shown=200 publish_us=9146
-info: event=launcher-painted latency_us=29426
-info: event=launcher-results count=2009 shown=200 publish_us=9542
-info: event=launcher-results count=1 shown=1 publish_us=3766
-info: event=launcher-results count=1 shown=1 publish_us=395
-info: event=launcher-painted latency_us=4305
-info: event=launcher-results count=1 shown=1 publish_us=440
-info: event=launcher-results count=1 shown=1 publish_us=462
-info: event=launcher-painted latency_us=11075
-info: event=launcher-results count=1 shown=1 publish_us=1087
-info: event=launcher-painted latency_us=5502
-info: event=popup-closed
-info: event=popup-opened output=1
-info(pearl): event=stopping reason=control-quit pending=false
-info: event=popup-closed
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-09-28T18:45:39Z pid=86444 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-28T18:45:39Z pid=86444 info(pearl): event=ready mode=session
+ts=2026-09-28T18:45:39Z pid=86444 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-28T18:45:39Z pid=86444 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-28T18:45:39Z pid=86444 info: event=output-mapped id=2 connector=HEADLESS-1 scale=2
+ts=2026-09-28T18:45:39Z pid=86444 info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-28T18:45:39Z pid=86444 info(pearl): event=settings-backend-ready session=712910caa75059db03caa319f5ab51b8
+ts=2026-09-28T18:45:39Z pid=86444 info(pearl): event=control-ready session=712910caa75059db03caa319f5ab51b8
+ts=2026-09-28T18:45:39Z pid=86444 info: event=app-index-ready entries=2009 truncated=false
+ts=2026-09-28T18:45:39Z pid=86444 info: event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-28T18:45:39Z pid=86444 info: event=wallpaper-applications-applied generation=2 elapsed_us=5061 success=true
+ts=2026-09-28T18:45:39Z pid=86444 info: event=popup-opened output=1
+ts=2026-09-28T18:45:39Z pid=86444 info: event=launcher-results count=2015 shown=200 publish_us=11505
+ts=2026-09-28T18:45:39Z pid=86444 info: event=launcher-results count=2015 shown=200 publish_us=8786
+ts=2026-09-28T18:45:39Z pid=86444 info: event=launcher-painted latency_us=32354
+ts=2026-09-28T18:45:39Z pid=86444 info: event=launcher-results count=2015 shown=200 publish_us=10596
+ts=2026-09-28T18:45:39Z pid=86444 info: event=launcher-painted latency_us=29316
+ts=2026-09-28T18:45:40Z pid=86444 info: event=launcher-results count=1 shown=1 publish_us=2524
+ts=2026-09-28T18:45:40Z pid=86444 info: event=launcher-results count=1 shown=1 publish_us=696
+ts=2026-09-28T18:45:40Z pid=86444 info: event=launcher-results count=1 shown=1 publish_us=990
+ts=2026-09-28T18:45:40Z pid=86444 info: event=launcher-results count=1 shown=1 publish_us=513
+ts=2026-09-28T18:45:40Z pid=86444 info: event=launcher-painted latency_us=5218
+ts=2026-09-28T18:45:40Z pid=86444 info: event=launcher-results count=1 shown=1 publish_us=910
+ts=2026-09-28T18:45:40Z pid=86444 info: event=launcher-painted latency_us=16429
+ts=2026-09-28T18:45:40Z pid=86444 info: event=launcher-results count=1 shown=1 publish_us=675
+ts=2026-09-28T18:45:40Z pid=86444 info: event=launcher-painted latency_us=13247
+ts=2026-09-28T18:45:40Z pid=86444 info: event=popup-closed
+ts=2026-09-28T18:45:40Z pid=86444 info: event=popup-opened output=1
+ts=2026-09-28T18:45:40Z pid=86444 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-09-28T18:45:40Z pid=86444 info: event=popup-closed
+ts=2026-09-28T18:45:40Z pid=86444 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-28T18:45:40Z pid=86444 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T18:45:40Z pid=86444 info(pearl): event=stopped

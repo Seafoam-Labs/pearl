@@ -1,5 +1,4 @@
-info: initializing Aqueous version aqueous 0.6.0 -xwayland
-info: gpu-pin: scanout pinned to /dev/dri/card1 (connected monitor)
+info: initializing Aqueous version aqueous 0.8.0 -xwayland
 info(wlroots): [backend/backend.c:342] Loading user-specified backends due to WLR_BACKENDS: headless
 info(wlroots): [backend/headless/backend.c:60] Creating headless backend
 info(wlroots): [util/env.c:25] Loading WLR_RENDERER option: pixman
@@ -10,7 +9,7 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info: raised file descriptor limit of the river process to 4096
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
-info(ipc): protocol=1 listening on /tmp/pearl-dev-fygm8m_l/run/aqueous/bc43265cf88db35ded7fce85d2c953bf/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-fygm8m_l/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-6b4j7vnp/run/aqueous/58c29f3d9a2f96c1ed0bc805dd70e2da/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-6b4j7vnp/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server

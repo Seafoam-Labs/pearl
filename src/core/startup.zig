@@ -1,13 +1,20 @@
 const std = @import("std");
+const logging = @import("logging.zig");
 
 pub const Mode = enum { session, demo };
 pub const Options = struct {
     mode: Mode = .session,
     action: enum { run, help, version, check_environment } = .run,
+    log_level: ?std.log.Level = null,
+    log_scopes: ?std.EnumSet(logging.Scope) = null,
 
     pub fn parse(args: []const []const u8) !Options {
         var result: Options = .{};
-        for (args) |arg| {
+        var index: usize = 0;
+        while (index < args.len) : (index += 1) {
+            const arg = args[index];
+            const level = std.mem.eql(u8, arg, "--log-level");
+            const scopes = std.mem.eql(u8, arg, "--log-scopes");
             if (std.mem.eql(u8, arg, "--demo")) {
                 result.mode = .demo;
             } else if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
@@ -16,6 +23,15 @@ pub const Options = struct {
                 result.action = .check_environment;
             } else if (std.mem.eql(u8, arg, "--version")) {
                 result.action = .version;
+            } else if (level or scopes) {
+                index += 1;
+                if (index >= args.len) return error.UnknownArgument;
+                const value = args[index];
+                if (level) {
+                    result.log_level = logging.parseLevel(value) orelse return error.UnknownArgument;
+                } else {
+                    result.log_scopes = logging.parseScopes(value) orelse return error.UnknownArgument;
+                }
             } else return error.UnknownArgument;
         }
         return result;
@@ -78,6 +94,30 @@ test "demo is explicit and unknown options fail" {
     try std.testing.expectEqual(Mode.session, (try Options.parse(&.{})).mode);
     try std.testing.expectEqual(Mode.demo, (try Options.parse(&.{"--demo"})).mode);
     try std.testing.expectError(error.UnknownArgument, Options.parse(&.{"--demoo"}));
+}
+
+test "verbosity options accept documented values and reject the rest" {
+    const t = std.testing;
+    try t.expectEqual(null, (try Options.parse(&.{})).log_level);
+    try t.expectEqual(null, (try Options.parse(&.{})).log_scopes);
+    for ([_][]const u8{ "error", "warning", "info", "debug" }, [_]std.log.Level{ .err, .warn, .info, .debug }) |text, level|
+        try t.expectEqual(level, (try Options.parse(&.{ "--log-level", text })).log_level.?);
+    const scopes = try Options.parse(&.{ "--log-scopes", "all,~gallery" });
+    try t.expect(!scopes.log_scopes.?.contains(.gallery));
+    try t.expect(scopes.log_scopes.?.contains(.core));
+    const combined = try Options.parse(&.{ "--demo", "--log-level", "debug", "--log-scopes", "core,ui" });
+    try t.expectEqual(Mode.demo, combined.mode);
+    try t.expectEqual(std.log.Level.debug, combined.log_level.?);
+    try t.expectEqual(@as(usize, 2), combined.log_scopes.?.count());
+    for ([_][]const []const u8{
+        &.{ "--log-level", "bogus" },
+        &.{ "--log-level", "Debug" },
+        &.{"--log-level"},
+        &.{ "--log-scopes", "bogus" },
+        &.{ "--log-scopes", "" },
+        &.{"--log-scopes"},
+    }) |invalid| try t.expectError(error.UnknownArgument, Options.parse(invalid));
+    try t.expectEqualStrings("Unknown argument. Use pearl --help.", diagnostic(error.UnknownArgument));
 }
 
 test "session prerequisites reject other desktops and foreign runtime endpoints" {

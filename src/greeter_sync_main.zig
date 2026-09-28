@@ -1,6 +1,9 @@
 const std = @import("std");
 const glib = @import("glib2");
 const sync = @import("greeter/appearance_sync.zig");
+
+pub const std_options = @import("core/logging.zig").std_options;
+
 pub fn main(init: std.process.Init) !void {
     const args = try init.minimal.args.toSlice(std.heap.c_allocator);
     if (args.len == 2 and std.mem.eql(u8, args[1], "--version")) {

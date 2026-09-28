@@ -6,7 +6,10 @@ const gio = @import("gio2");
 const options = @import("build_options");
 const startup = @import("core/startup.zig");
 const application = @import("core/application.zig");
+const logging = @import("core/logging.zig");
 const log = std.log.scoped(.pearl);
+
+pub const std_options = logging.std_options;
 
 fn env(name: [*:0]const u8) []const u8 {
     return if (glib.getenv(name)) |value| std.mem.span(value) else "";
@@ -41,10 +44,11 @@ pub fn main(init: std.process.Init) void {
         log.err("{s}", .{startup.diagnostic(err)});
         std.process.exit(2);
     };
+    logging.apply(parsed.log_level, parsed.log_scopes);
     if (parsed.mode == .demo or !options.wasm_plugins) bootstrap.close();
     switch (parsed.action) {
         .help => {
-            glib.print("Usage: pearl [--demo] [--help] [--version] [--check-environment]\n\nDefault: Aqueous session application.\n--demo: standalone gallery with sample content (Wayland required).\n");
+            glib.print("Usage: pearl [--demo] [--help] [--version] [--check-environment] [--log-level LEVEL] [--log-scopes LIST]\n\nDefault: Aqueous session application.\n--demo: standalone gallery with sample content (Wayland required).\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes such as aqueous,ui; all for every scope;\n              prefix a scope with ~ to exclude it, as in all,~gallery.\n");
             return;
         },
         .version => {

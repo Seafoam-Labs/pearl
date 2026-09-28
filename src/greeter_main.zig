@@ -3,6 +3,9 @@ const glib = @import("glib2");
 const cfg = @import("greeter/config.zig");
 const sessions = @import("greeter/sessions.zig");
 const options = @import("build_options");
+
+pub const std_options = @import("core/logging.zig").std_options;
+
 pub fn main(init: std.process.Init) !void {
     @import("greeter/logging.zig").init();
     var action: std.c.Sigaction = .{ .handler = .{ .handler = std.c.SIG.IGN }, .mask = std.mem.zeroes(std.c.sigset_t), .flags = 0 };

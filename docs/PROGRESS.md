@@ -1,5 +1,46 @@
 # Pearl implementation progress
 
+## Logging control plane: runtime level and scope filters, September 28, 2026
+
+`src/core/logging.zig` is now the single `std.log` handler for every Pearl
+executable root, instrumented rebuilds included. All levels compile in and
+filter at runtime, so a support session can raise verbosity without a rebuild.
+Each line gains a `ts=<iso8601 utc> pid=<n>` envelope written under the same
+stderr lock as the message body. Message text is unchanged and no driver in
+`tests/` matched the old `level:` prefix. A declared `Scope` enum gates the
+filter, so a `std.log.scoped` label missing from it fails to compile at its call
+site; unscoped `.default` lines are exempt and can never be filtered away.
+`pearl` and `pearlctl` accept `--log-level error|warning|info|debug` and
+`--log-scopes all|a,b,~c`, both documented in their usage output, with unknown
+values on the existing exit-2 path. Developer probes whose stdout is a test
+contract (`pearl-material-test`, `pearl-qt-test`, `pearl-adapter-probe`, the
+clipboard fixture) stay unwired.
+
+Open by design for later work: unit-launched executables (greeter, lock,
+settings, themes, plugin host) take no flags, and the tree has no `debug` level
+call sites yet, so `--log-level debug` currently changes no output.
+
+Checks actually run:
+
+- `zig build -Doptimize=ReleaseSafe`, `zig build test -Doptimize=ReleaseSafe`
+  and `zig build test-bindings -Doptimize=ReleaseSafe`: pass.
+- `zig build integration -Doptimize=ReleaseSafe`: pass. New private-session
+  checks assert the envelope on a known line, a silent exit-0 gallery run at
+  `--log-level error` and at `--log-scopes all,~pearl`, unchanged output at
+  `--log-level debug`, and exit 2 for bad flag values headless. In
+  `artifacts/t01/latest/outer/`, `quiet-error-level.log` is empty and
+  `quiet-scope-filter.log` keeps only `gallery` lines.
+- `zig build test-desktop -Doptimize=ReleaseSafe`: pass, with 167 launcher
+  latency samples still scraped from the enveloped log
+  (`artifacts/t06/latest`). The run needed `test_desktop.py`'s hardcoded
+  reference Aqueous source pointed at this machine's cached composite source;
+  that line is unchanged in the tree.
+- `zig build test-greeter-unit -Doptimize=ReleaseSafe` and
+  `zig build test-greeter-host -Doptimize=ReleaseSafe`: pass, so the greeter
+  roots keep priming stderr before GLib sanitizes their environment.
+- Manual, headless: `pearl --help` lists both flags; `pearl --log-level bogus`
+  and `pearlctl --log-level bogus status` exit 2.
+
 ## Night Light — native integration verified, physical acceptance pending, September 19, 2026
 
 Added disabled-by-default preferences, local-time scheduling, temporary-off policy,
