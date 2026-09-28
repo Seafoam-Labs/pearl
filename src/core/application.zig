@@ -14,6 +14,7 @@ const control = @import("../cli/server.zig");
 const control_protocol = @import("../cli/protocol.zig");
 const adapter = @import("../aqueous/client.zig");
 const theme = @import("../theme/theme.zig");
+const diagnostics = @import("../diagnostics/safe_text.zig");
 const log = std.log.scoped(.pearl);
 
 pub const TestHooks = struct { worker_delay_ms: u32 = 0, close_after_ms: u32 = 0 };
@@ -154,7 +155,7 @@ fn testClose(data: ?*anyopaque) callconv(.c) c_int {
 
 fn cssError(_: *gtk.CssProvider, _: *gtk.CssSection, err: *const glib.Error, data: *State) callconv(.c) void {
     data.failed = true;
-    log.err("event=css-error message={s}", .{err.f_message orelse "Unknown GTK error"});
+    log.err("event=css-error message={f}", .{diagnostics.safe(std.mem.span(err.f_message orelse "Unknown GTK error"))});
 }
 
 fn activate(_: *gio.Application, self: *State) callconv(.c) void {
@@ -303,8 +304,8 @@ fn sessionChanged(data: ?*anyopaque) callconv(.c) c_int {
             sessionFailed(self, err);
             return 0;
         };
-        log.info("event=settings-backend-ready session={s}", .{client.model.session});
-        log.info("event=control-ready session={s}", .{client.model.session});
+        log.info("event=settings-backend-ready session_hash={f}", .{diagnostics.fingerprint(client.model.session)});
+        log.info("event=control-ready session_hash={f}", .{diagnostics.fingerprint(client.model.session)});
     }
     if (self.settings_server) |*server| server.sessionChanged();
     return 0;
@@ -457,7 +458,7 @@ pub fn run(mode: Mode, hooks: TestHooks) !u8 {
     var err: ?*glib.Error = null;
     const resource = gio.Resource.newFromData(bytes, &err) orelse {
         defer err.?.free();
-        log.err("event=resource-error message={s}", .{err.?.f_message orelse "Unknown GTK error"});
+        log.err("event=resource-error message={f}", .{diagnostics.safe(std.mem.span(err.?.f_message orelse "Unknown GTK error"))});
         return error.InvalidResources;
     };
     defer resource.unref();
@@ -486,7 +487,7 @@ pub fn run(mode: Mode, hooks: TestHooks) !u8 {
     defer cleanup(&self);
     if (builder.addFromResource(if (mode == .demo) "/org/aqueous/Pearl/gallery.ui" else "/org/aqueous/Pearl/session.ui", &err) == 0) {
         defer err.?.free();
-        log.err("event=resource-error message={s}", .{err.?.f_message orelse "Unknown GTK error"});
+        log.err("event=resource-error message={f}", .{diagnostics.safe(std.mem.span(err.?.f_message orelse "Unknown GTK error"))});
         return error.InvalidResources;
     }
     self.remember(css.as(gobject.Object), gtk.CssProvider.signals.parsing_error.connect(css, *State, cssError, &self, .{}));

@@ -13,6 +13,7 @@ const Identity = @import("identity.zig").Identity;
 const Instance = @import("instance.zig").Server;
 const Window = @import("window.zig").Window;
 const Editor = @import("editor.zig").Editor;
+const diagnostics = @import("../diagnostics/safe_text.zig");
 const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
 const App = struct {
@@ -107,7 +108,7 @@ const App = struct {
             try self.forwardOpen();
             return;
         };
-        log.info("event=settings-instance-ready session={s}", .{self.client.session.?});
+        log.info("event=settings-instance-ready session_hash={f}", .{diagnostics.fingerprint(&self.client.session.?)});
         try self.show();
     }
     fn forwardOpen(self: *App) !void {

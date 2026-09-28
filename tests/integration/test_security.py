@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """T12 and native-lock foundation: private login1/polkit and real GTK/PAM surfaces."""
-import argparse, hashlib, json, os, shlex, signal, sys, time
+import argparse, hashlib, json, os, re, shlex, signal, sys, time
 from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2]
@@ -120,6 +120,10 @@ def main():
                 ipc.close();report['status']='passed';print(json.dumps(report,indent=2));return
             command(discovery='no-pid',restart='org.freedesktop.PolicyKit1')
             pearl=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');pearl.expect('event=control-ready')
+            # The IPC token authorizes every control request, so it may only
+            # ever appear as the digest the shell logs.
+            token=status(s,args.ctl)['session']
+            assert re.fullmatch(r'[0-9a-f]{32}',token),token
             ready=wait(lambda v:v['active'] and v['authentication']['registered'] and v['delay_inhibitor'] and v['idle_available'])
             assert ready['session_id']=='test' and ready['session_error'] is None
             assert any(r.get('method')=='GetUser' for r in records())
@@ -269,7 +273,10 @@ def main():
             assert any('reason=aqueous-logout' in line for line in recovery.lines),recovery.lines[-20:]
             checks['acknowledged-aqueous-logout-stops-shell']=True
             ipc.close()
-            assert not any(word in line for line in pearl.lines for word in ('CRITICAL','WARNING','panic:','fixture-secret','incorrect'))
+            assert not any(word in line for line in pearl.lines for word in ('CRITICAL','WARNING','panic:','fixture-secret','incorrect',token))
+            digests=[line.split('session_hash=',1)[1].split()[0] for line in pearl.lines if 'session_hash=' in line]
+            assert digests and all(re.fullmatch(r'[0-9a-f]{16}',value) for value in digests),pearl.lines[-20:]
+            checks['ipc-session-token-reaches-logs-only-as-a-digest']=True
             report['status']='passed'
     except BaseException:
         report['status']='failed'

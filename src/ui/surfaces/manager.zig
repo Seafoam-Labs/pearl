@@ -9,6 +9,7 @@ const layer = @import("gtk4layershell1");
 const native = @import("../../platform/wayland/effects.zig");
 const adapter = @import("../../aqueous/client.zig");
 const protocol = @import("../../cli/protocol.zig");
+const diagnostics = @import("../../diagnostics/safe_text.zig");
 const policy = @import("policy.zig");
 const Bar = @import("../../desktop/bar.zig");
 const BarVisibility = @import("../../desktop/bar_visibility.zig");
@@ -1568,7 +1569,7 @@ pub const Manager = struct {
         if (result.status == .rejected or result.status == .unknown or result.status == .dropped) {
             self.error_pending = true;
             self.schedule();
-            log.info("event=desktop-action status={s} detail={s}", .{ @tagName(result.status), result.detail });
+            log.info("event=desktop-action status={s} detail={f}", .{ @tagName(result.status), diagnostics.safe(result.detail) });
         }
     }
     pub fn control(self: *Manager, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
