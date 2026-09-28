@@ -9,7 +9,7 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info: raised file descriptor limit of the river process to 4096
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
-info(ipc): protocol=1 listening on /tmp/pearl-dev-6b4j7vnp/run/aqueous/58c29f3d9a2f96c1ed0bc805dd70e2da/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-6b4j7vnp/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-0pkhc7qi/run/aqueous/4da81c0fb054983054efcf5577ca33fd/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-0pkhc7qi/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server

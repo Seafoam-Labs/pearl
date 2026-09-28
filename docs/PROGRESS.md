@@ -1,5 +1,44 @@
 # Pearl implementation progress
 
+## Scoped logs, level hygiene and the event catalog, September 28, 2026
+
+All 68 remaining unscoped `std.log` call sites in 26 files now go through
+per-file `std.log.scoped` aliases matching their subsystem (`desktop`, `ui`,
+`settings`, `greeter`, `lock`, `services`, `platform`, `config`); the handler
+in `src/core/logging.zig` is the only place that still calls `std.log`
+directly, and the acceptance grep finds zero unscoped sites elsewhere.
+Message text is unchanged; every integration driver matches log lines by
+substring and none anchors on the `level(scope):` prefix, so the new labels
+are additive.
+
+Level hygiene quiets the shipped binary: `launcher-painted`, `surface-error`
+and `wallpaper-changed` (per-event floods) drop to `debug`; `dock-action` and
+`launcher-error` (failures previously at `info`) become `err`; `logout-result`
+splits into `err` unless the compositor accepted or applied the request.
+The desktop suite runs its latency-scrape shell with `--log-level debug` and
+asserts a default-level session log stays free of `launcher-painted` after a
+search; its main session log is 553 lines, far below the 20000 harness cap.
+
+`src/core/log_events.zig` catalogs all 78 literal `event=` names with their
+scopes. A pure test walks `src/**/*.zig` from the repository root and fails
+on an uncataloged literal, on a dynamic `event=` form, and on a catalog entry
+nothing emits anymore.
+
+Checks actually run:
+
+- `zig build -Doptimize=ReleaseSafe`, `zig build test -Doptimize=ReleaseSafe`:
+  pass; `zig fmt --check` clean on all touched files.
+- Catalog test negative check: a probe file with an undeclared event name
+  fails the pure tests with the offending file and name; probe removed.
+- `zig build test-desktop -Doptimize=ReleaseSafe`: pass, 15/15 checks, 162
+  launcher latency samples scraped at debug level, zero `launcher-painted`
+  lines in the default-level German session
+  (`artifacts/t06/latest/desktop/`). As before, the run needed
+  `test_desktop.py`'s hardcoded reference Aqueous source pointed at this
+  machine's cached composite source; that line is unchanged in the tree.
+- `zig build integration -Doptimize=ReleaseSafe`: pass (T01 lifecycle,
+  `artifacts/t01/latest/`).
+
 ## Logging control plane: runtime level and scope filters, September 28, 2026
 
 `src/core/logging.zig` is now the single `std.log` handler for every Pearl

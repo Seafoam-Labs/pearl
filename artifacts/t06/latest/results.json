@@ -17,17 +17,17 @@
     "localized-gio-desktop-labels-and-german-surface-text": true,
     "empty-gio-catalog-and-no-results-state": true
   },
-  "pearl_sha256": "2ddaeb38217b1a0d770a78cc33cc85c812a344d8d7818ce7a1243291ac83e1ec",
-  "ctl_sha256": "ec9d4afd837029886881d5a60fa6bd9b914ea3119b8d71cf10e3cbe804762b77",
+  "pearl_sha256": "a2e43e51608e5b0ca53aaecd9d5a2df5873acda04241df1cc7083f0b55634523",
+  "ctl_sha256": "f5178980f1911b409a965259d380cb58ec25edd745a4894333fc2f9c9ad68899",
   "warm_launcher_open_us": {
     "samples": 8,
-    "median": 47794.5,
-    "maximum": 53723
+    "median": 53483.5,
+    "maximum": 64123
   },
   "launcher_latency_us": {
-    "samples": 167,
-    "median": 13200,
-    "p95": 39453,
-    "maximum": 58178
+    "samples": 162,
+    "median": 14375.0,
+    "p95": 39908,
+    "maximum": 65511
   }
 }

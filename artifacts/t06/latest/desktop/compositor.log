@@ -9,8 +9,8 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info: raised file descriptor limit of the river process to 4096
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
-info(ipc): protocol=1 listening on /tmp/pearl-dev-15hxwgu7/run/aqueous/712910caa75059db03caa319f5ab51b8/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-15hxwgu7/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-637gih2w/run/aqueous/01bc5806627be456fe641f8c2c3f44b0/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-637gih2w/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
 info(output): applying output configuration
@@ -135,8 +135,8 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 info(aqueous): configuration hot-reloaded layout=floating
-info: ignoring xdg-activation-v1 activate request of layer_surface surface
 error(input): inactive text input tried to commit an update, client bug?
+info: ignoring xdg-activation-v1 activate request of layer_surface surface
 info: ignoring xdg-activation-v1 activate request of layer_surface surface
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?

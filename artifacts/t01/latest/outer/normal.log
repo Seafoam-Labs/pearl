@@ -1,15 +1,15 @@
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=aqueous-availability state=connecting
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=ready mode=session
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=aqueous-availability state=subscribing
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=aqueous-availability state=ready
-ts=2026-09-28T18:40:56Z pid=75588 info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-ts=2026-09-28T18:40:56Z pid=75588 info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=settings-backend-ready session=58c29f3d9a2f96c1ed0bc805dd70e2da
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=control-ready session=58c29f3d9a2f96c1ed0bc805dd70e2da
-ts=2026-09-28T18:40:56Z pid=75588 info: event=app-index-ready entries=145 truncated=false
-ts=2026-09-28T18:40:56Z pid=75588 info: event=preferences-applied revision=0 mode=static cache=false
-ts=2026-09-28T18:40:56Z pid=75588 info: event=wallpaper-applications-applied generation=2 elapsed_us=7557 success=true
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=stopping reason=test-close pending=false
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=aqueous-availability state=stopped
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T18:40:56Z pid=75588 info(pearl): event=stopped
+ts=2026-09-28T19:18:38Z pid=102714 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-28T19:18:38Z pid=102714 info(pearl): event=ready mode=session
+ts=2026-09-28T19:18:38Z pid=102714 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-28T19:18:38Z pid=102714 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-28T19:18:38Z pid=102714 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-28T19:18:38Z pid=102714 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-09-28T19:18:38Z pid=102714 info(pearl): event=settings-backend-ready session=4da81c0fb054983054efcf5577ca33fd
+ts=2026-09-28T19:18:38Z pid=102714 info(pearl): event=control-ready session=4da81c0fb054983054efcf5577ca33fd
+ts=2026-09-28T19:18:38Z pid=102714 info(desktop): event=app-index-ready entries=145 truncated=false
+ts=2026-09-28T19:18:39Z pid=102714 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-28T19:18:39Z pid=102714 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=6428 success=true
+ts=2026-09-28T19:18:39Z pid=102714 info(pearl): event=stopping reason=test-close pending=false
+ts=2026-09-28T19:18:39Z pid=102714 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-28T19:18:39Z pid=102714 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-28T19:18:39Z pid=102714 info(pearl): event=stopped
