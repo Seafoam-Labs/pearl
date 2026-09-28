@@ -24,6 +24,12 @@ is insufficient: disable wit-bindgen's default `std` feature and provide an
 allocator/reallocation export, as in the example. Standard-library WASI output
 is rejected instead of receiving implicit system access.
 
+The Rust example also explicitly links the target's bundled static `libc` for
+compiler-generated memory operations such as `memcpy`. Keep that link when
+copying the example: `no_std` does not supply those routines, and a toolchain
+that emits WebAssembly bulk-memory instructions can hide the missing dependency.
+The memory routines are linked into the component and need no WASI host imports.
+
 `handle-event` receives activation with validated effective settings, button
 clicks, timers, explicit previews and granted coarse activity. One guest instance serves all its views.
 Settings/permission changes restart that instance; no guest state survives a

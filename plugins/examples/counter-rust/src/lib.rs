@@ -1,5 +1,12 @@
 #![no_std]
 extern crate alloc;
+// no_std does not link WASI's libc automatically. LLVM can lower copies to
+// memcpy (and other memory routines), depending on the toolchain's target
+// features. Use the target's bundled static archive; only referenced routines
+// are linked, so these memory operations do not require WASI host imports.
+#[link(name = "c", kind = "static")]
+unsafe extern "C" {}
+
 #[global_allocator]
 static ALLOCATOR: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 #[panic_handler]

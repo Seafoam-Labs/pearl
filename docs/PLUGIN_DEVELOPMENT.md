@@ -357,9 +357,16 @@ for your own project. Give a copied example your own manifest ID and name.
 
 The Zig example imports the generated C header and links its bindings. The Rust
 example uses `wit-bindgen` macros and `no_std`, with an allocator and explicit
-`cabi_realloc` export. Keep those pieces when adapting it. An ordinary Rust WASI
-application can import system APIs that Pearl does not provide and will fail to
-load. The same restriction applies to imports from any other language.
+`cabi_realloc` export. It also links the target's bundled static `libc` to supply
+compiler-generated memory routines such as `memcpy`; these routines do not
+require WASI host imports. Keep those pieces when adapting it. Without the
+explicit link, builds can fail with `undefined symbol: memcpy` on toolchains
+that lower copies to function calls instead of WebAssembly bulk-memory
+instructions. No host C library or additional Cargo dependency is needed.
+
+An ordinary Rust WASI application can import system APIs that Pearl does not
+provide and will fail to load. The same restriction applies to imports from any
+other language.
 
 ## Troubleshooting
 
