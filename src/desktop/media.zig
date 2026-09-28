@@ -4,6 +4,7 @@ const glib = @import("glib2");
 const w = @import("../ui/components/widgets.zig");
 const m = @import("../services/mpris.zig");
 const tr = @import("text.zig").tr;
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const Button = struct { view: *View, action: m.Action, generation: u64 = 0, track: @import("../services/policy.zig").Text(512) = .{}, widget: *gtk.Button };
 pub const View = struct {
@@ -79,14 +80,14 @@ pub const View = struct {
         if (focus == self.probe_focus) return;
         self.probe_focus = focus;
         if (focus == self.progress.as(gtk.Widget)) {
-            std.log.info("event=session-focus target=media-position", .{});
+            log.info("event=session-focus target=media-position", .{});
             return;
         }
         for (&self.buttons) |*button| if (focus == button.widget.as(gtk.Widget)) {
-            std.log.info("event=session-focus target=media-{s}", .{@tagName(button.action)});
+            log.info("event=session-focus target=media-{s}", .{@tagName(button.action)});
             return;
         };
-        std.log.info("event=session-focus target=other", .{});
+        log.info("event=session-focus target=other", .{});
     }
     pub fn destroy(self: *View) void {
         if (self.timer != 0) _ = glib.Source.remove(self.timer);

@@ -8,6 +8,7 @@ const native = @import("../platform/wayland/layout.zig");
 const navigation = @import("settings_navigation.zig");
 const services = @import("services.zig");
 const connectivity = @import("connectivity.zig");
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const pages = navigation.compact_routes;
 const focus_state = @import("focus_state.zig");
@@ -394,7 +395,7 @@ pub const Control = struct {
         self.page = page;
         self.enterPage() catch |err| {
             self.bodies[index(page)].append(w.label(tr("Unable to open this section. Choose another section to retry.", "Bereich kann nicht geöffnet werden. Bitte einen anderen Bereich wählen und erneut versuchen."), "pearl-secondary").as(gtk.Widget));
-            std.log.err("event=settings-page-failed page={s} error={s}", .{ page.id(), @errorName(err) });
+            log.err("event=settings-page-failed page={s} error={s}", .{ page.id(), @errorName(err) });
         };
         self.stack.setVisibleChildName(page.id());
         self.heading.setText(title(page));
@@ -403,7 +404,7 @@ pub const Control = struct {
         self.queueRestore(position);
         self.changing = false;
         self.update();
-        if (@import("build_options").test_hooks) std.log.info("event=settings-page page={s}", .{page.id()});
+        if (@import("build_options").test_hooks) log.info("event=settings-page page={s}", .{page.id()});
     }
     pub fn destroy(self: *Control) void {
         self.changing = true;
@@ -505,7 +506,7 @@ pub const Control = struct {
         if (focus == self.probe_focus) return;
         self.probe_focus = focus;
         const target = self.focusName(window);
-        std.log.info("event=settings-focus target={s}", .{target});
+        log.info("event=settings-focus target={s}", .{target});
     }
     fn focusName(self: *Control, window: *gtk.Window) []const u8 {
         const focus = window.getFocus() orelse return "none";

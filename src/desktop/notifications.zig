@@ -5,6 +5,7 @@ const glib = @import("glib2");
 const w = @import("../ui/components/widgets.zig");
 const service = @import("../services/notifications.zig");
 const tr = @import("text.zig").tr;
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const Action = struct { view: *View, id: u32 = 0, key: service.policy.Action = .{}, button: *gtk.Button, dismiss: bool = false };
 const Card = struct { icon: *gtk.Image, box: *gtk.Box, header: *gtk.Label, title: *gtk.Label, body: *gtk.Label, actions: [9]Action = undefined, id: u32 = 0 };
@@ -83,14 +84,14 @@ pub const View = struct {
         if (focus == self.probe_focus) return;
         self.probe_focus = focus;
         if (self.dnd) |button| if (focus == button.as(gtk.Widget)) {
-            std.log.info("event=session-focus target=dnd", .{});
+            log.info("event=session-focus target=dnd", .{});
             return;
         };
         for (self.rows[0..self.count]) |*row| for (&row.actions) |*action| if (focus == action.button.as(gtk.Widget)) {
-            std.log.info("event=session-focus target=notification-{s}", .{if (action.dismiss) "dismiss" else "action"});
+            log.info("event=session-focus target=notification-{s}", .{if (action.dismiss) "dismiss" else "action"});
             return;
         };
-        std.log.info("event=session-focus target=other", .{});
+        log.info("event=session-focus target=other", .{});
     }
     pub fn destroy(self: *View) void {
         a.destroy(self);

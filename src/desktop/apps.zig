@@ -4,6 +4,7 @@ const gio = @import("gio2");
 const unix = @import("giounix2");
 const glib = @import("glib2");
 const object = @import("gobject2");
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 pub const Entry = struct {
     info: *gio.AppInfo,
@@ -190,7 +191,7 @@ pub const Index = struct {
                 if (self.catalog) |old| old.release();
                 self.catalog = c;
                 self.generation += 1;
-                std.log.info("event=app-index-ready entries={d} truncated={}", .{ c.entries.items.len, c.truncated });
+                log.info("event=app-index-ready entries={d} truncated={}", .{ c.entries.items.len, c.truncated });
             }
             self.changed(self.context);
             if (self.dirty) {

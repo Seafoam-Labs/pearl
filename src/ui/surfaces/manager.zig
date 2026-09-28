@@ -25,6 +25,7 @@ const Layout = @import("../../platform/wayland/layout.zig").Layout;
 const Groups = @import("../../desktop/policy.zig").Groups;
 const slideshow_policy = @import("../../config/slideshow_policy.zig");
 const tr = @import("../../desktop/text.zig").tr;
+const log = std.log.scoped(.ui);
 const a = std.heap.c_allocator;
 const Rect = policy.Rect;
 const Edge = policy.Edge;
@@ -473,7 +474,7 @@ pub const Manager = struct {
         if (!self.running) return;
         if (self.session_services.started and self.preferences.live != null) {
             self.session_services.notifications.configure(self.preferences.prefs().notifications) catch |err| {
-                std.log.err("event=notification-filter-config error={s}", .{@errorName(err)});
+                log.err("event=notification-filter-config error={s}", .{@errorName(err)});
             };
         }
         for (self.outputs.items) |o| {
@@ -800,7 +801,7 @@ pub const Manager = struct {
     fn syncIdle(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Manager = @ptrCast(@alignCast(data.?));
         self.sync_source = 0;
-        self.sync() catch |err| std.log.err("event=surface-error error={s}", .{@errorName(err)});
+        self.sync() catch |err| log.err("event=surface-error error={s}", .{@errorName(err)});
         return 0;
     }
     fn sync(self: *Manager) !void {
@@ -880,7 +881,7 @@ pub const Manager = struct {
                 errdefer o.dock.?.destroy();
                 try self.outputs.append(a, o);
                 output = o;
-                std.log.info("event=output-mapped id={s} connector={s} scale={d}", .{ o.id, o.connector, o.scale });
+                log.info("event=output-mapped id={s} connector={s} scale={d}", .{ o.id, o.connector, o.scale });
             }
             const o = output.?;
             o.seen = true;
@@ -1185,7 +1186,7 @@ pub const Manager = struct {
         if (kind == .bar) {
             _ = gtk.Widget.signals.map.connect(window.as(gtk.Widget), *Surface, barMapped, s, .{});
             s.autohide = BarAutohide.create(window, output.monitor, s, barVisibilityChanged) catch |err| blk: {
-                std.log.err("event=bar-autohide-unavailable error={s}", .{@errorName(err)});
+                log.err("event=bar-autohide-unavailable error={s}", .{@errorName(err)});
                 break :blk null;
             };
             if (s.autohide) |controller| {
@@ -1397,7 +1398,7 @@ pub const Manager = struct {
             _ = launcher.search.as(gtk.Widget).grabFocus();
         }
         if (pane == .control) self.queryLayout(output, null) catch {};
-        std.log.info("event=popup-opened output={s}", .{output.id});
+        log.info("event=popup-opened output={s}", .{output.id});
     }
     fn positionPopup(self: *Manager) void {
         const s = self.popup orelse return;
@@ -1450,7 +1451,7 @@ pub const Manager = struct {
             if (self.layout) |*layout| layout.cancel();
             s.destroy();
             self.positionNotifications();
-            std.log.info("event=popup-closed", .{});
+            log.info("event=popup-closed", .{});
         }
     }
     fn positionNotifications(self: *Manager) void {
@@ -1567,7 +1568,7 @@ pub const Manager = struct {
         if (result.status == .rejected or result.status == .unknown or result.status == .dropped) {
             self.error_pending = true;
             self.schedule();
-            std.log.info("event=desktop-action status={s} detail={s}", .{ @tagName(result.status), result.detail });
+            log.info("event=desktop-action status={s} detail={s}", .{ @tagName(result.status), result.detail });
         }
     }
     pub fn control(self: *Manager, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {

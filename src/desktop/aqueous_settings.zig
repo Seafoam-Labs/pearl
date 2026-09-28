@@ -7,6 +7,7 @@ const object = @import("gobject2");
 const Client = @import("../config/aqueous_client.zig").Client;
 const m = @import("../config/aqueous_model.zig");
 const w = @import("../ui/components/widgets.zig");
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const Signals = struct {
     items: std.ArrayList(struct { instance: *object.Object, id: c_ulong }) = .empty,
@@ -871,7 +872,7 @@ pub fn ViewFor(comptime ClientType: type) type {
         fn recordTick(data: ?*anyopaque) callconv(.c) c_int {
             const self: *Self = @ptrCast(@alignCast(data.?));
             if (glib.getMonotonicTime() >= self.record_deadline or self.host.as(gtk.Widget).getMapped() == 0 or !self.client.canRecord()) {
-                std.log.info("event=shortcut-record-ended reason=deadline-or-unmapped", .{});
+                log.info("event=shortcut-record-ended reason=deadline-or-unmapped", .{});
                 self.record_timer = 0;
                 self.stopRecording();
                 self.message.setText("Shortcut recording cancelled.");
@@ -880,7 +881,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             var inhibited: c_int = 0;
             self.inhibited.?.as(object.Object).get("shortcuts-inhibited", &inhibited, @as(?[*:0]const u8, null));
             if (inhibited == 0 and self.client.recording) {
-                std.log.info("event=shortcut-record-ended reason=revoked", .{});
+                log.info("event=shortcut-record-ended reason=revoked", .{});
                 self.record_timer = 0;
                 self.stopRecording();
                 self.message.setText("Shortcut inhibition was revoked.");

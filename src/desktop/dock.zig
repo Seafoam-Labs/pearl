@@ -15,6 +15,7 @@ const Preferences = @import("../config/service.zig").Service;
 const p = @import("dock_policy.zig");
 const placement = @import("../ui/surfaces/policy.zig");
 const w = @import("../ui/components/widgets.zig");
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const identity = @import("app_identity.zig");
 const TaskApps = @import("task_apps.zig");
@@ -472,7 +473,7 @@ pub const Dock = struct {
     fn clicked(_: *gtk.Button, cb: *Callback) callconv(.c) void {
         const self = cb.dock;
         self.act(cb.*) catch |err| {
-            std.log.info("event=dock-action error={s}", .{@errorName(err)});
+            log.info("event=dock-action error={s}", .{@errorName(err)});
             self.window.as(gtk.Widget).setTooltipText("Action unavailable; the application or window may have changed.");
         };
         self.reveal(false);

@@ -13,6 +13,7 @@ const test_hooks = @import("build_options").test_hooks;
 const tr = @import("text.zig").tr;
 const widgets = @import("../ui/components/widgets.zig");
 const Client = @import("../aqueous/client.zig").Client;
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const Window = struct { id: [:0]const u8, name: [:0]const u8, detail: [:0]const u8, keywords: [:0]const u8, visible: bool };
 const Hit = struct { kind: enum { app, window, calculator }, index: usize, score: i32, id: []const u8, name: [:0]const u8, detail: [:0]const u8 };
@@ -81,7 +82,7 @@ pub const Launcher = struct {
         if (self.render_started) |start| {
             self.render_started = null;
             self.latency_us = glib.getMonotonicTime() - start;
-            std.log.info("event=launcher-painted latency_us={d}", .{self.latency_us});
+            log.info("event=launcher-painted latency_us={d}", .{self.latency_us});
         }
     }
     fn connect(self: *Launcher, instance: *object.Object, id: c_ulong) void {
@@ -314,7 +315,7 @@ pub const Launcher = struct {
         const detail = if (job.hits.items.len > self.count) std.fmt.bufPrintZ(&buffer, "{d} / {d} · {s}", .{ self.count, job.hits.items.len, tr("Refine your search for more results", "Suche eingrenzen für weitere Ergebnisse") }) catch unreachable else message;
         self.message.setText(self.action_message orelse if (job.calculation.explicit and job.calculation.outcome != .value) calculationMessage(job.calculation.outcome) else if (job.calculation.outcome == .value) tr("↑ ↓ to choose · Enter to copy calculation · = to continue", "↑ ↓ wählen · Eingabe kopiert die Berechnung · = rechnet weiter") else detail);
         self.render_started = job.started;
-        std.log.info("event=launcher-results count={d} shown={d} publish_us={d}", .{ job.hits.items.len, self.count, glib.getMonotonicTime() - job.started });
+        log.info("event=launcher-results count={d} shown={d} publish_us={d}", .{ job.hits.items.len, self.count, glib.getMonotonicTime() - job.started });
     }
     fn edited(_: *gtk.Editable, self: *Launcher) callconv(.c) void {
         self.action_message = null;
@@ -398,7 +399,7 @@ pub const Launcher = struct {
         }
         if (self.count == 0) return;
         self.open(position) catch |err| {
-            std.log.info("event=launcher-error error={s}", .{@errorName(err)});
+            log.info("event=launcher-error error={s}", .{@errorName(err)});
             const is_calculation = if (self.shown) |job| position < job.hits.items.len and job.hits.items[position].kind == .calculator else false;
             self.action_message = if (is_calculation) tr("Could not copy: clipboard unavailable or paused. Try again.", "Kopieren fehlgeschlagen: Zwischenablage nicht verfügbar oder pausiert. Erneut versuchen.") else tr("Could not open this result. Try again or choose another.", "Öffnen fehlgeschlagen. Versuche es erneut oder wähle einen anderen Eintrag.");
             self.message.setText(self.action_message.?);
@@ -444,7 +445,7 @@ pub const Launcher = struct {
             if (desktop.as(gio.AppInfo).launch(null, context.as(gio.AppLaunchContext), &err) == 0) return error.LaunchFailed;
         }
         self.index.remember(entry.id);
-        std.log.info("event=application-launch accepted=true action={}", .{entry.action != null});
+        log.info("event=application-launch accepted=true action={}", .{entry.action != null});
     }
     /// Compiled only when called by the private integration control hook.
     pub fn testReport(self: *Launcher, alloc: std.mem.Allocator, root: *gtk.Widget) ![]const u8 {

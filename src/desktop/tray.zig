@@ -2,6 +2,7 @@ const std = @import("std");
 const gtk = @import("gtk4");
 const w = @import("../ui/components/widgets.zig");
 const service = @import("../services/tray.zig");
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const Button = struct { bar: *Bar, generation: u64 = 0, widget: *gtk.Button, image: *gtk.Image };
 pub const Bar = struct {
@@ -191,10 +192,10 @@ pub const View = struct {
         if (focus == self.probe_focus) return;
         self.probe_focus = focus;
         for (&self.nodes) |*node| if (focus == node.row.button.as(gtk.Widget)) {
-            std.log.info("event=session-focus target=tray-{d}", .{node.id});
+            log.info("event=session-focus target=tray-{d}", .{node.id});
             return;
         };
-        std.log.info("event=session-focus target=other", .{});
+        log.info("event=session-focus target=other", .{});
     }
     pub fn destroy(self: *View) void {
         self.service.selected = 0;

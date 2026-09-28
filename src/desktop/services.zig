@@ -6,6 +6,7 @@ const Audio = @import("../services/audio.zig");
 const Power = @import("../services/power.zig").Power;
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const focus_state = @import("focus_state.zig");
 const Connection = struct { object: *object.Object, id: c_ulong };
@@ -255,7 +256,7 @@ pub const PowerView = struct {
         const focus = window.getFocus();
         if (focus == self.probe_focus) return;
         self.probe_focus = focus;
-        std.log.info("event=services-focus target={s}", .{if (focus == self.brightness.as(gtk.Widget)) "brightness" else if (focus == self.actions.off.as(gtk.Widget)) "power-off" else if (focus == self.actions.reboot.as(gtk.Widget)) "reboot" else "other"});
+        log.info("event=services-focus target={s}", .{if (focus == self.brightness.as(gtk.Widget)) "brightness" else if (focus == self.actions.off.as(gtk.Widget)) "power-off" else if (focus == self.actions.reboot.as(gtk.Widget)) "reboot" else "other"});
     }
     fn brightnessChanged(range: *gtk.Range, self: *PowerView) callconv(.c) void {
         if (!self.updating) self.power.setBrightness(@intFromFloat(range.getValue())) catch {};
@@ -330,7 +331,7 @@ pub const PowerActions = struct {
         const reboot = button == self.reboot;
         const now = glib.getMonotonicTime();
         const confirmed = self.confirmation.click(reboot, self.power.epoch(), now);
-        if (@import("build_options").test_hooks) std.log.info("event=power-intent reboot={} confirmed={}", .{ reboot, confirmed });
+        if (@import("build_options").test_hooks) log.info("event=power-intent reboot={} confirmed={}", .{ reboot, confirmed });
         if (confirmed) self.power.powerAction(reboot) catch {
             self.power.err = "Power action unavailable. Review the current service state.";
             self.power.changed(self.power.context, .failure);

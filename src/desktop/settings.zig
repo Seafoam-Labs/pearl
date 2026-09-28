@@ -9,6 +9,7 @@ const layer = @import("gtk4layershell1");
 const Service = @import("../config/service.zig").Service;
 const model = @import("../config/preferences.zig");
 const w = @import("../ui/components/widgets.zig");
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 pub const View = struct {
     service: *Service,
@@ -445,7 +446,7 @@ pub const View = struct {
         if (!std.mem.eql(u8, prior, name)) {
             @memset(&self.last_probe, 0);
             @memcpy(self.last_probe[0..name.len], name);
-            std.log.info("event=session-focus target={s}", .{name});
+            log.info("event=session-focus target={s}", .{name});
         }
     }
 };

@@ -7,6 +7,7 @@ const Network = @import("../services/network.zig").Network;
 const Bluetooth = @import("../services/bluetooth.zig").Bluetooth;
 const Text = @import("../services/policy.zig").Text;
 const w = @import("../ui/components/widgets.zig");
+const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const focus_state = @import("focus_state.zig");
 const Connection = struct { object: *object.Object, id: c_ulong };
@@ -346,6 +347,6 @@ pub const View = struct {
         self.probe_focus = focus;
         const widget = focus orelse return;
         const target: []const u8 = if (widget == self.prompt.entry.as(gtk.Widget) or widget.isAncestor(self.prompt.entry.as(gtk.Widget)) != 0) (if (self.page == .network) "wifi-password" else "bluetooth-input") else if (widget == self.prompt.accept.as(gtk.Widget)) (if (self.page == .network) "wifi-confirm" else "bluetooth-confirm") else if (widget == self.expander.as(gtk.Widget)) (if (self.page == .network) "net-expander" else "bt-expander") else "other";
-        std.log.info("event=connectivity-focus target={s}", .{target});
+        log.info("event=connectivity-focus target={s}", .{target});
     }
 };
