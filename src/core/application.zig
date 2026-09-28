@@ -231,7 +231,8 @@ fn aqueousChanged(context: *anyopaque, event: adapter.Event) void {
         if (event == .completion and self.logout_ticket == event.completion.ticket) {
             self.logout_ticket = null;
             self.failed = event.completion.status != .accepted and event.completion.status != .applied;
-            log.info("event=logout-result status={s}", .{@tagName(event.completion.status)});
+            const status = @tagName(event.completion.status);
+            if (self.failed) log.err("event=logout-result status={s}", .{status}) else log.info("event=logout-result status={s}", .{status});
             if (self.logout_loop) |loop| loop.quit();
         }
         return;

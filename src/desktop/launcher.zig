@@ -82,7 +82,7 @@ pub const Launcher = struct {
         if (self.render_started) |start| {
             self.render_started = null;
             self.latency_us = glib.getMonotonicTime() - start;
-            log.info("event=launcher-painted latency_us={d}", .{self.latency_us});
+            log.debug("event=launcher-painted latency_us={d}", .{self.latency_us});
         }
     }
     fn connect(self: *Launcher, instance: *object.Object, id: c_ulong) void {
@@ -399,7 +399,7 @@ pub const Launcher = struct {
         }
         if (self.count == 0) return;
         self.open(position) catch |err| {
-            log.info("event=launcher-error error={s}", .{@errorName(err)});
+            log.err("event=launcher-error error={s}", .{@errorName(err)});
             const is_calculation = if (self.shown) |job| position < job.hits.items.len and job.hits.items[position].kind == .calculator else false;
             self.action_message = if (is_calculation) tr("Could not copy: clipboard unavailable or paused. Try again.", "Kopieren fehlgeschlagen: Zwischenablage nicht verfügbar oder pausiert. Erneut versuchen.") else tr("Could not open this result. Try again or choose another.", "Öffnen fehlgeschlagen. Versuche es erneut oder wähle einen anderen Eintrag.");
             self.message.setText(self.action_message.?);

@@ -801,7 +801,7 @@ pub const Manager = struct {
     fn syncIdle(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Manager = @ptrCast(@alignCast(data.?));
         self.sync_source = 0;
-        self.sync() catch |err| log.err("event=surface-error error={s}", .{@errorName(err)});
+        self.sync() catch |err| log.debug("event=surface-error error={s}", .{@errorName(err)});
         return 0;
     }
     fn sync(self: *Manager) !void {

@@ -473,7 +473,7 @@ pub const Dock = struct {
     fn clicked(_: *gtk.Button, cb: *Callback) callconv(.c) void {
         const self = cb.dock;
         self.act(cb.*) catch |err| {
-            log.info("event=dock-action error={s}", .{@errorName(err)});
+            log.err("event=dock-action error={s}", .{@errorName(err)});
             self.window.as(gtk.Widget).setTooltipText("Action unavailable; the application or window may have changed.");
         };
         self.reveal(false);

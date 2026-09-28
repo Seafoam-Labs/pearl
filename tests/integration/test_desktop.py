@@ -100,7 +100,7 @@ def main():
             for i in range(2000):
                 desktop(s,f'Catalog{i:04d}',f'Catalog Application {i:04d}', command='/usr/bin/true')
             desktop(s,'Long','Long Application '+('wide title ' * 50))
-            app = s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings')
+            app = s.child('pearl',[args.pearl,'--log-level','debug'],G_DEBUG='fatal-warnings')
             app.expect('event=control-ready'); app.expect('event=app-index-ready')
             live = eventually_status(s,args.ctl,lambda v:len(v['outputs'])==2 and v['apps']['ready'])
             assert live['apps']['count'] == 2009, live['apps']
@@ -273,6 +273,7 @@ def main():
             ctl(s,args.ctl,'launcher','show','--output',tid)
             assert query(s,args.ctl,'Kaffee')['results']==1
             capture(s,'launcher-german',first['name'])
+            assert not any('event=launcher-painted' in line for line in translated.lines), 'paint event logged at default level'
             ctl(s,args.ctl,'control-center','show','--output',tid)
             capture(s,'control-center-german',first['name'])
             ctl(s,args.ctl,'quit');clean(translated)

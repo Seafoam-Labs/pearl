@@ -306,7 +306,7 @@ pub const Service = struct {
         }
         self.pending_image = true;
         self.image_retry = false;
-        log.info("event=wallpaper-changed", .{});
+        log.debug("event=wallpaper-changed", .{});
         self.queueReload(true);
     }
     fn candidateWallpaperChanged(context: *anyopaque, _: bool) void {
