@@ -250,7 +250,11 @@ class Session:
     def input_fixture(self):
         # Reuse Aqueous's existing test client as a persistent virtual keyboard.
         # It is an external test executable, never linked into Pearl.
+        # PEARL_TEST_AQUEOUS_SOURCE overrides the baked-in reference checkout;
+        # a driver's own explicit non-default path still wins.
         source = Path(self.args.aqueous_source) / 'compositor'
+        if str(self.args.aqueous_source) == '/home/zoey/RiderProjects/Aqueous' and os.environ.get('PEARL_TEST_AQUEOUS_SOURCE'):
+            source = Path(os.environ['PEARL_TEST_AQUEOUS_SOURCE']) / 'compositor'
         build = self.runtime / 'input-fixture'
         build.mkdir()
         protocols = {
