@@ -6,6 +6,7 @@ const gio = db.gio;
 const glib = db.glib;
 const pixbuf = @import("gdkpixbuf2");
 const Text = db.Text;
+const log = std.log.scoped(.services);
 const watcher_name = "org.kde.StatusNotifierWatcher";
 const watcher_path = "/StatusNotifierWatcher";
 const item_iface = "org.kde.StatusNotifierItem";
@@ -65,7 +66,7 @@ pub const Tray = struct {
     pub fn start(self: *Tray) void {
         if (self.exported.startConnection(self.bus.conn orelse return, watcher_path, @embedFile("tray_watcher.xml"), &vtable, self)) self.name_id = gio.busOwnNameOnConnection(self.bus.conn.?, watcher_name, .{}, acquired, lost, self, null);
         self.external_epoch += 1;
-        transport.resolve(self.bus, self, self.external_epoch, watcher_name, resolvedWatcher) catch {};
+        transport.resolve(self.bus, self, self.external_epoch, watcher_name, resolvedWatcher) catch |err| log.debug("event=tray-failed op=resolve-watcher error={s}", .{@errorName(err)});
     }
     pub fn stop(self: *Tray) void {
         if (self.timer != 0) _ = glib.Source.remove(self.timer);
@@ -101,7 +102,7 @@ pub const Tray = struct {
         self.watcher = false;
         self.notify();
         self.external_epoch += 1;
-        transport.resolve(self.bus, self, self.external_epoch, watcher_name, resolvedWatcher) catch {};
+        transport.resolve(self.bus, self, self.external_epoch, watcher_name, resolvedWatcher) catch |err| log.debug("event=tray-failed op=resolve-watcher error={s}", .{@errorName(err)});
     }
     fn resolvedWatcher(data: *anyopaque, token: u64, value: ?*glib.Variant) void {
         const self: *Tray = @ptrCast(@alignCast(data));
@@ -110,8 +111,8 @@ pub const Tray = struct {
         self.external = transport.childText(256, v, 0);
         const unique = self.bus.conn.?.getUniqueName() orelse return;
         if (std.mem.eql(u8, self.external.slice(), std.mem.span(unique))) return;
-        self.bus.call(self, token, self.external.z(), watcher_path, watcher_name, "RegisterStatusNotifierHost", db.tuple(&.{db.str(std.mem.span(unique))}), "()", hostDone) catch {};
-        transport.getAll(self.bus, self, token, self.external.z(), watcher_path, watcher_name, watcherProperties) catch {};
+        self.bus.call(self, token, self.external.z(), watcher_path, watcher_name, "RegisterStatusNotifierHost", db.tuple(&.{db.str(std.mem.span(unique))}), "()", hostDone) catch |err| log.debug("event=tray-failed op=register-host error={s}", .{@errorName(err)});
+        transport.getAll(self.bus, self, token, self.external.z(), watcher_path, watcher_name, watcherProperties) catch |err| log.debug("event=tray-failed op=watcher-properties error={s}", .{@errorName(err)});
     }
     fn hostDone(data: *anyopaque, token: u64, value: ?*glib.Variant) void {
         const self: *Tray = @ptrCast(@alignCast(data));
@@ -130,7 +131,7 @@ pub const Tray = struct {
         defer entries.unref();
         for (0..@min(32, entries.nChildren())) |i| {
             const registration = transport.childText(768, entries, i);
-            self.register(registration.slice(), null) catch {};
+            self.register(registration.slice(), null) catch |err| log.debug("event=tray-failed op=register-item error={s}", .{@errorName(err)});
         }
     }
     pub fn find(self: *Tray, generation: u64) ?*Item {
@@ -185,7 +186,7 @@ pub const Tray = struct {
             if (!self.watcher) {
                 for (&self.items) |*item| self.remove(item);
             }
-            if (new.len != 0) transport.resolve(self.bus, self, self.external_epoch, watcher_name, resolvedWatcher) catch {};
+            if (new.len != 0) transport.resolve(self.bus, self, self.external_epoch, watcher_name, resolvedWatcher) catch |err| log.debug("event=tray-failed op=resolve-watcher error={s}", .{@errorName(err)});
         }
         for (&self.items) |*item| if (std.mem.eql(u8, item.name.slice(), name) or std.mem.eql(u8, item.owner.slice(), name)) {
             self.remove(item);
@@ -195,7 +196,7 @@ pub const Tray = struct {
     pub fn signal(self: *Tray, sender: []const u8, object_path: []const u8, interface: []const u8, member: []const u8, params: *glib.Variant) void {
         if (self.external.len != 0 and std.mem.eql(u8, sender, self.external.slice()) and std.mem.eql(u8, interface, watcher_name) and std.mem.eql(u8, object_path, watcher_path) and db.is(params, "(s)")) {
             const registration = transport.childText(768, params, 0);
-            if (std.mem.eql(u8, member, "StatusNotifierItemRegistered")) self.register(registration.slice(), null) catch {} else if (std.mem.eql(u8, member, "StatusNotifierItemUnregistered")) {
+            if (std.mem.eql(u8, member, "StatusNotifierItemRegistered")) self.register(registration.slice(), null) catch |err| log.debug("event=tray-failed op=register-item error={s}", .{@errorName(err)}) else if (std.mem.eql(u8, member, "StatusNotifierItemUnregistered")) {
                 for (&self.items) |*item| if (std.mem.eql(u8, item.registration.slice(), registration.slice())) self.remove(item);
                 self.notify();
             }

@@ -68,8 +68,9 @@ const App = struct {
                 self.app.as(gio.Application).quit();
             },
             .connected => |snapshot| {
-                self.show() catch {
+                self.show() catch |err| {
                     self.failed = true;
+                    log.err("event=settings-show-failed error={s}", .{@errorName(err)});
                     self.app.as(gio.Application).quit();
                     return;
                 };
@@ -85,8 +86,9 @@ const App = struct {
             },
             .failed => |err| {
                 if (!self.fixture) self.editor.disconnected();
-                self.show() catch {
+                self.show() catch |show_err| {
                     self.failed = true;
+                    log.err("event=settings-show-failed error={s}", .{@errorName(show_err)});
                     self.app.as(gio.Application).quit();
                     return;
                 };

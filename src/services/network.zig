@@ -8,6 +8,7 @@ const glib = d.glib;
 const p = @import("connectivity_policy.zig");
 const Text = d.Text;
 const V = glib.Variant;
+const log = std.log.scoped(.services);
 pub const root = "/org/freedesktop/NetworkManager";
 const nm = "org.freedesktop.NetworkManager";
 const devif = nm ++ ".Device";
@@ -120,7 +121,7 @@ pub const Network = struct {
             self.agent.stop();
             self.registered = false;
             if (self.peer.owner.len != 0 and self.agent.start(&self.peer, agentpath, @embedFile("network_agent.xml"), &vtable, self)) {
-                self.peer.call(0, root ++ "/AgentManager", nm ++ ".AgentManager", "RegisterWithCapabilities", d.tuple(&.{ d.str("org.aqueous.Pearl"), V.newUint32(0) }), "()", 5000, registeredDone) catch {};
+                self.peer.call(0, root ++ "/AgentManager", nm ++ ".AgentManager", "RegisterWithCapabilities", d.tuple(&.{ d.str("org.aqueous.Pearl"), V.newUint32(0) }), "()", 5000, registeredDone) catch |err| log.debug("event=network-failed op=RegisterWithCapabilities error={s}", .{@errorName(err)});
             }
         } else self.read();
         self.emit();

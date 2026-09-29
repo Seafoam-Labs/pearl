@@ -1558,9 +1558,10 @@ pub const Manager = struct {
         try self.layout.?.request(output.connector, value);
     }
     fn enqueueAction(self: *Manager, action: adapter.Action) void {
-        _ = self.client.enqueue(action) catch {
+        _ = self.client.enqueue(action) catch |err| {
             self.error_pending = true;
             self.schedule();
+            log.err("event=desktop-action-dropped error={s}", .{@errorName(err)});
             return;
         };
     }

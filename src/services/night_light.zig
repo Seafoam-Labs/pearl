@@ -5,6 +5,7 @@ const gdk = @import("gdk4");
 const warming = @import("../platform/wayland/warming_control.zig");
 const gamma = @import("../platform/wayland/gamma_control.zig");
 pub const policy = @import("night_light_policy.zig");
+const log = std.log.scoped(.services);
 pub const NightLight = struct {
     display: *gdk.Display,
     context: *anyopaque,
@@ -24,8 +25,8 @@ pub const NightLight = struct {
         self.capability = .{ .display = self.display, .context = self, .changed = capabilityChanged };
         self.warming = .{ .display = self.display, .context = self, .changed = capabilityChanged };
         self.running = true;
-        self.warming.start() catch {};
-        self.capability.start() catch {};
+        self.warming.start() catch |err| log.debug("event=night-light-failed op=warming error={s}", .{@errorName(err)});
+        self.capability.start() catch |err| log.debug("event=night-light-failed op=gamma error={s}", .{@errorName(err)});
         // One timer per session. Civil time is resampled after clock/timezone
         // changes and sleep; no view-owned polling or repeated display writes.
         self.source = glib.timeoutAdd(1000, tick, self);

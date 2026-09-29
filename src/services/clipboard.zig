@@ -8,6 +8,7 @@ const ext = @import("wayland").client.ext;
 const wl = @import("wayland").client.wl;
 const pixbuf = @import("gdkpixbuf2");
 pub const policy = @import("clipboard_policy.zig");
+const log = std.log.scoped(.services);
 const a = std.heap.c_allocator;
 pub const Entry = struct { id: u64, kind: policy.Kind, bytes: []u8 };
 const Offer = struct { proxy: *ext.DataControlOfferV1, owner: *Clipboard, mime: ?[:0]const u8 = null, mime_text: [32:0]u8 = @splat(0), kind: policy.Kind = .text, sensitive: bool = false };
@@ -324,7 +325,7 @@ pub const Clipboard = struct {
                     if (self.read) |r| r.finish(false);
                 }
                 for (self.offers.items, 0..) |o, i| if (o.proxy == id) {
-                    if (event == .selection and !skip and !self.locked and !o.sensitive and o.mime != null) self.receive(o) catch {};
+                    if (event == .selection and !skip and !self.locked and !o.sensitive and o.mime != null) self.receive(o) catch |err| log.debug("event=clipboard-failed error={s}", .{@errorName(err)});
                     o.proxy.destroy();
                     a.destroy(o);
                     _ = self.offers.orderedRemove(i);

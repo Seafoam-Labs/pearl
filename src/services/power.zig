@@ -8,6 +8,7 @@ const object = @import("gobject2");
 const policy = @import("policy.zig");
 const Text = policy.Text;
 const a = std.heap.c_allocator;
+const log = std.log.scoped(.services);
 pub const Event = @import("audio.zig").Event;
 const Tag = enum { battery, upower, login, session, profiles, legacy_profiles };
 const names = [_][:0]const u8{ "org.freedesktop.UPower", "org.freedesktop.UPower", "org.freedesktop.login1", "org.freedesktop.login1", "org.freedesktop.UPower.PowerProfiles", "net.hadess.PowerProfiles" };
@@ -208,7 +209,7 @@ pub const Power = struct {
                     self.brightness_pending = false;
                     if (name.len != 0) {
                         self.capabilities();
-                        self.call(slot, .session, "GetSessionByPID", tuple(&.{glib.Variant.newUint32(@intCast(std.c.getpid()))}), null) catch {};
+                        self.call(slot, .session, "GetSessionByPID", tuple(&.{glib.Variant.newUint32(@intCast(std.c.getpid()))}), null) catch |err| log.debug("event=power-failed op=GetSessionByPID error={s}", .{@errorName(err)});
                     }
                 },
                 .profiles, .legacy_profiles => {

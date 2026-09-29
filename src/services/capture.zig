@@ -11,6 +11,7 @@ const pixbuf = @import("gdkpixbuf2");
 const clipboard = @import("clipboard.zig");
 const policy = clipboard.policy;
 const Text = @import("policy.zig").Text;
+const log = std.log.scoped(.services);
 const a = std.heap.c_allocator;
 const Output = struct { owner: *Capture, proxy: *wl.Output, id: u32, name: Text(128) = .{}, transform: u32 = 0 };
 const Job = struct { owner: *Capture, cancel: *gio.Cancellable, pixels: []u8, width: u32, height: u32, stride: u32, format: u32, transform: u32, gamma22: bool = false, isolated: bool = false, inverted: bool, region: ?policy.Region, connector: Text(128), logical_width: i32, logical_height: i32, png: ?[]u8 = null, out_width: i32 = 0, out_height: i32 = 0 };
@@ -297,7 +298,7 @@ pub const Capture = struct {
     }
     fn work(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
         const job: *Job = @ptrCast(@alignCast(data.?));
-        render(job) catch {};
+        render(job) catch |err| log.err("event=capture-failed error={s}", .{@errorName(err)});
         task.returnBoolean(1);
     }
     fn render(j: *Job) !void {

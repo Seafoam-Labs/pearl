@@ -8,6 +8,7 @@ const glib = d.glib;
 const V = glib.Variant;
 const Text = d.Text;
 const p = @import("connectivity_policy.zig");
+const log = std.log.scoped(.services);
 const adapterif = "org.bluez.Adapter1";
 const deviceif = "org.bluez.Device1";
 const agentpath = "/org/aqueous/Pearl/BluetoothAgent";
@@ -90,7 +91,7 @@ pub const Bluetooth = struct {
             self.registered = false;
             self.agent.stop();
             if (self.peer.owner.len != 0 and self.agent.start(&self.peer, agentpath, @embedFile("bluetooth_agent.xml"), &vtable, self)) {
-                self.peer.call(0, "/org/bluez", "org.bluez.AgentManager1", "RegisterAgent", d.tuple(&.{ d.path(agentpath), d.str("KeyboardDisplay") }), "()", 5000, registeredDone) catch {};
+                self.peer.call(0, "/org/bluez", "org.bluez.AgentManager1", "RegisterAgent", d.tuple(&.{ d.path(agentpath), d.str("KeyboardDisplay") }), "()", 5000, registeredDone) catch |err| log.debug("event=bluetooth-failed op=RegisterAgent error={s}", .{@errorName(err)});
             }
         } else self.read();
         self.emit();
@@ -306,7 +307,7 @@ pub const Bluetooth = struct {
         }
         self.cancelling = true;
         if (self.action == .pair or self.action == .connect) {
-            self.peer.call(self.sequence, self.target.z(), deviceif, if (self.action == .pair) "CancelPairing" else "Disconnect", null, "()", 5000, cancelDone) catch {};
+            self.peer.call(self.sequence, self.target.z(), deviceif, if (self.action == .pair) "CancelPairing" else "Disconnect", null, "()", 5000, cancelDone) catch |err| log.err("event=bluetooth-failed op={s} error={s}", .{ if (self.action == .pair) "CancelPairing" else "Disconnect", @errorName(err) });
             self.err = "Bluetooth request cancelled.";
         }
         self.emit();

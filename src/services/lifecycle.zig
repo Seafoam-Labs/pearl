@@ -129,8 +129,8 @@ pub const Lifecycle = struct {
         self.rearm();
         if (self.peer.owner.len != 0) {
             self.resolveSession();
-            self.call(2, "CanSuspend", null, "(s)") catch {};
-            self.call(3, "CanHibernate", null, "(s)") catch {};
+            self.call(2, "CanSuspend", null, "(s)") catch |err| log.debug("event=lifecycle-failed op=CanSuspend error={s}", .{@errorName(err)});
+            self.call(3, "CanHibernate", null, "(s)") catch |err| log.debug("event=lifecycle-failed op=CanHibernate error={s}", .{@errorName(err)});
         }
         if (self.running) self.changed(self.context);
     }
@@ -395,7 +395,7 @@ pub const Lifecycle = struct {
             }
             self.changed(self.context);
         } else if (std.mem.eql(u8, object_path, self.session_path.slice())) {
-            if (std.mem.eql(u8, member, "Lock")) self.lockNow() catch {} else if (std.mem.eql(u8, member, "PropertiesChanged")) self.refreshSession();
+            if (std.mem.eql(u8, member, "Lock")) self.lockNow() catch |err| log.err("event=lifecycle-failed op=Lock error={s}", .{@errorName(err)}) else if (std.mem.eql(u8, member, "PropertiesChanged")) self.refreshSession();
         }
     }
     fn closeDelay(self: *Lifecycle) void {
@@ -448,11 +448,15 @@ pub const Lifecycle = struct {
             .resumed => {
                 if (!self.gate.preparing) self.gate.sleep_pending = false;
             },
-            .lock => self.query(.lock) catch {},
+            .lock => self.query(.lock) catch |err| {
+                if (err != error.Busy) log.err("event=lifecycle-failed op=query-lock error={s}", .{@errorName(err)});
+            },
             .sleep => {
                 if (self.can_suspend and self.delay_fd >= 0) {
                     self.sleep_action = .@"suspend";
-                    self.query(.sleep) catch {};
+                    self.query(.sleep) catch |err| {
+                        if (err != error.Busy) log.err("event=lifecycle-failed op=query-sleep error={s}", .{@errorName(err)});
+                    };
                 }
             },
         }

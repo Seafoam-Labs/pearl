@@ -3,6 +3,7 @@ const std = @import("std");
 const transport = @import("session_bus.zig");
 const db = transport.db;
 const glib = db.glib;
+const log = std.log.scoped(.services);
 const path = "/org/mpris/MediaPlayer2";
 const iface = "org.mpris.MediaPlayer2.Player";
 pub const Player = struct {
@@ -52,7 +53,7 @@ pub const Media = struct {
         self.art.app = self.bus.app;
         self.art.context = self;
         self.art.changed = artChanged;
-        self.bus.call(self, 0, "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "ListNames", null, "(as)", listed) catch {};
+        self.bus.call(self, 0, "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "ListNames", null, "(as)", listed) catch |err| log.debug("event=mpris-failed op=ListNames error={s}", .{@errorName(err)});
     }
     pub fn stop(self: *Media) void {
         self.art.want("");
@@ -128,7 +129,7 @@ pub const Media = struct {
         p.owner = transport.childText(256, v, 0);
         p.dirty = true;
         self.arm();
-        transport.getAll(self.bus, self, token, p.owner.z(), path, "org.mpris.MediaPlayer2", rootDone) catch {};
+        transport.getAll(self.bus, self, token, p.owner.z(), path, "org.mpris.MediaPlayer2", rootDone) catch |err| log.debug("event=mpris-failed op=GetAll error={s}", .{@errorName(err)});
     }
     fn rootDone(data: *anyopaque, token: u64, value: ?*glib.Variant) void {
         const self: *Media = @ptrCast(@alignCast(data));
