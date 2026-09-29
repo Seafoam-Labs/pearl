@@ -243,6 +243,9 @@ pub const Editor = struct {
         self.synced_revision = self.server_revision;
         self.revision +|= 1;
     }
+    fn busyJob(self: *Editor) ?u8 {
+        return if (self.remote_busy or self.recovery or self.pending_receipt) 1 else null;
+    }
     fn command(self: *Editor, action: Action) !void {
         if (@import("build_options").test_hooks) log.info("event=settings-aqueous-action action={s} pending={}", .{ @tagName(action), self.pending_receipt });
         if (!self.online or self.locked or self.suspended) return error.Unavailable;
@@ -399,7 +402,7 @@ pub const Editor = struct {
             };
             return self.send(.get, .@"document.get", .{ .domain = "aqueous", .kind = kind, .revision = p.num(revision) });
         };
-        const next_job: ?u8 = if (self.remote_busy or self.recovery or self.pending_receipt) 1 else null;
+        const next_job = self.busyJob();
         const updated = !self.ready or self.job != next_job;
         self.ready = true;
         self.job = next_job;
@@ -583,6 +586,7 @@ pub const Editor = struct {
             },
             else => return error.InvalidReply,
         }
+        self.job = self.busyJob();
         self.notify(self.context, .changed);
     }
     fn adopt(self: *Editor, bytes: []const u8) !void {
