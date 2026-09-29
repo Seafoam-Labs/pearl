@@ -877,6 +877,8 @@ pub const Manager = struct {
                 try o.reservations.bar(bar_pref.edge, bar_pref.size);
                 o.bar = try self.create(o, .bar);
                 errdefer o.bar.?.destroy();
+                try o.bar.?.bar.?.configure(bar_pref.groups, bar_pref.clocks);
+                o.bar_content_hash = try self.barContentHash(bar_pref);
                 o.dock = try @import("../../desktop/dock.zig").Dock.create(self.app, o.monitor, &self.effects, self.client, &self.index, &self.tasks, &self.preferences, o.id, self, appsChanged);
                 o.dock.?.choose_launcher = chooseLauncher;
                 errdefer o.dock.?.destroy();
@@ -896,9 +898,7 @@ pub const Manager = struct {
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
                 if (o.bar.?.bar.?.islands != pref.islands) if (o.bar.?.autohide) |controller| controller.clearGesture();
                 o.bar.?.bar.?.setIslands(pref.islands);
-                const content = try std.json.Stringify.valueAlloc(a, .{ .groups = pref.groups, .clocks = pref.clocks, .plugins = self.preferences.prefs().plugins }, .{});
-                defer a.free(content);
-                const content_hash = std.hash.Wyhash.hash(0, content);
+                const content_hash = try self.barContentHash(pref);
                 if (o.bar_content_hash == null or o.bar_content_hash.? != content_hash) {
                     if (o.bar.?.autohide) |controller| controller.clearGesture();
                     if (self.popup != null and self.popup.?.output == o) self.hidePopup();
@@ -988,6 +988,11 @@ pub const Manager = struct {
             self.hideIdentifiers();
             self.hideOsd();
         }
+    }
+    fn barContentHash(self: *Manager, bar_prefs: anytype) !u64 {
+        const content = try std.json.Stringify.valueAlloc(a, .{ .groups = bar_prefs.groups, .clocks = bar_prefs.clocks, .plugins = self.preferences.prefs().plugins }, .{});
+        defer a.free(content);
+        return std.hash.Wyhash.hash(0, content);
     }
     fn create(self: *Manager, output: *Output, kind: Kind) !*Surface {
         const s = try a.create(Surface);
