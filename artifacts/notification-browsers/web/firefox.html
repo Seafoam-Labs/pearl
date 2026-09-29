@@ -1,0 +1,8 @@
+<!doctype html><html><body><script>
+addEventListener('load',async()=>{
+  const a=new Image();a.src='/icon160.png';await a.decode();
+  const b=new Image();b.src='/icon256.png';await b.decode();
+  new Notification('firefox bennish 160x160',{body:'probe',icon:'/icon160.png'});
+  setTimeout(()=>new Notification('firefox icon256',{body:'probe',icon:'/icon256.png'}),1000);
+});
+</script></body></html>

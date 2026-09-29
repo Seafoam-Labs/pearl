@@ -1,5 +1,116 @@
 # Pearl implementation progress
 
+## Notification icons: measured evidence and rejected alternatives, September 29, 2026
+
+Firefox web notifications that carry a site icon were dropped outright while
+Chromium's identical notifications arrived. The diagnosis and the fix live in
+the two commits that remove the whole-message Notify bound and add bounded
+icon decoding; `docs/SESSION_SERVICES.md` carries the resulting behavior and
+limits. This section keeps only what the untracked working notes recorded and
+the tree cannot recover.
+
+Wire capture, Firefox (`firefox-developer-edition` 157.0b5), five notifications
+from one page load of the bennish probe, sender `:1.378`, against `pearl-git`
+1459 owning `org.freedesktop.Notifications`:
+
+| summary | hints | pixel bytes | reply |
+| --- | --- | --- | --- |
+| probe plain | desktop-entry, sender-pid, suppress-sound | 0 | id 79 |
+| probe bennish 160x160 | plus image-data | 102400 | LimitsExceeded |
+| probe icon32 | plus image-data | 4096 | id 80 |
+| probe icon256 | plus image-data | 262144 | LimitsExceeded |
+| probe interaction | desktop-entry, sender-pid, suppress-sound | 0 | id 81 |
+
+Chromium 153.0.8010.52, same five notifications, sender `:1.376`: all five
+accepted, no error replies, `byte_payload` of 1 for every call including the
+256x256 icon. Chromium writes the icon to a temp file and sends the path both
+as `app_icon` and as `image-path`/`image_path`, so its message stays in the
+hundreds of bytes regardless of icon size; Firefox converts the icon to a
+pixbuf and sends raw RGBA in `image-data`, so size scales with
+width x height x 4.
+
+Why Firefox stays completely silent: `nsAlertsIconListener::ShowAlert` treats a
+failed show as terminal and the native-versus-XUL choice is made earlier in
+`InitAlert`, so a `LimitsExceeded` reply yields neither a toast nor an
+in-browser popup; Firefox neither retries nor falls back. The portal route was
+ruled out: `ShouldUsePortal(PortalKind::Notification)` forces
+`autoBehavior = false`, so unsandboxed Firefox always takes libnotify, and the
+capture confirms the Notify calls come from the Firefox process. Separate and
+unrelated to delivery, both browsers fail portal host-app registration
+(`Could not register app ID: App info not found for 'org.mozilla.firefox'` and
+the same for `'org.chromium.Chromium'`) because the app ID does not match the
+installed desktop file name; upstream Bugzilla 1945770.
+
+libnotify sends the pixbuf verbatim with no downscaling and picks the hint name
+from the server's reported spec version: `image-data` at >= 1.2, `image_data`
+at 1.1, `icon_data` below. Pearl reports 1.2, so Firefox sends `image-data`;
+the legacy names only matter for hand-rolled clients.
+
+Measured transport ceiling on a private `dbus-daemon` with a GLib server and
+client, host session bus untouched. By the time the handler runs GLib has
+already deserialized the message, so a message bound measures memory that is
+allocated regardless:
+
+| payload | wire bytes | result |
+| --- | --- | --- |
+| 1 to 32 MiB | up to 33554552 | accepted, handler ran |
+| 63 MiB | 66060408 | accepted, handler ran, `get_size()` = 66060408 |
+| 64 MiB | 67108984 | connection torn down |
+
+`/usr/share/dbus-1/session.conf` sets this machine's daemon limits to 1 GB, so
+the 64 MiB ceiling is GLib's, not the daemon's. A hostile page could already
+hand Pearl a 63 MiB `image-data` array; the old bound stopped none of it and
+only converted a paid-for payload into a lost notification.
+
+Reference implementations, none of which bounds the message: mako
+(`dbus/xdg.c handle_notify`) has no bound, `calloc`s the full payload and
+always renders, falling through to `resolve_icon` when the raw image is
+absent; dunst (`src/dbus.c`) has no bound, reads `image-data` then
+`image_data` then `icon_data`, defers the decode until rules supply the icon
+size and rejects only on a length mismatch; GNOME Shell
+(`js/ui/notificationDaemon.js`) has no bound and uses
+`Shell.util_create_pixbuf_from_data`, splitting `file://` / leading `/` /
+themed name; SwayNotificationCenter (GTK4, closest analogue) has no bound, wraps
+the raw bytes in a `Gdk.Pixbuf`, `scale_simple`s to the widget's preferred
+size and `set_from_paintable`s it. The working note's claim that dropping the
+image "matches dunst and mako" was wrong: neither degrades. The ecosystem
+answer is accept the notification always and bound plus downscale the image.
+
+Reproduction, for re-running the browser check on a private nested Aqueous
+session. Throwaway profiles, no changes to the real ones; serve a page that
+fires notifications on load (`new Notification("probe bennish 160x160",
+{ body: "...", icon: "sexy_ben.jpeg" })`). Firefox grants notification
+permission for every origin through a temp profile `user.js`:
+`user_pref("permissions.default.desktop-notification", 1);`. Chromium grants it
+per origin through `Default/Preferences` in a temp `--user-data-dir`, written
+before first launch:
+`{"profile":{"content_settings":{"exceptions":{"notifications":{"http://127.0.0.1:8765,*":{"setting":1}}}}}}`.
+Capture with `busctl --user monitor org.freedesktop.Notifications` (systemd 262
+accepts service names only, not match rules). Launch with
+`firefox-developer-edition -no-remote -new-instance -profile <tmp> http://127.0.0.1:8765/probe.html`
+and `chromium --user-data-dir=<tmp> --no-first-run http://127.0.0.1:8765/probe.html`.
+A 160x160 icon makes the monitor log grow by megabytes because every pixel
+byte is printed; extract summaries rather than reading it.
+
+Rejected alternatives, so nobody re-litigates them:
+
+- Raising the message bound to a larger finite value. Still loses
+  notifications over a large icon while buying no wire protection, since GLib
+  has already allocated the payload before the handler runs.
+- Keeping any message bound at all, for the same reason.
+- Storing pixels inline in `policy.Record`. Record grows from about 5.6 KB to
+  about 22 KB and Model from about 358 KB to about 1.4 MB permanently resident,
+  plus a 22 KB stack frame for `var r: policy.Record` in the handler.
+- An opaque pointer on `Record`. `Model.add`'s `slot.?.* = input` and
+  `Model.close`'s `r.* = .{}` would drop it without release, and adding a
+  release hook to the pure model is more machinery than keeping pixels outside
+  it.
+- Reading image files at paint time as SwayNotificationCenter does. Chromium's
+  temp file is deleted on exit and Pearl retains 64 records of history for the
+  whole session, so the path would dangle.
+- Widening `icon` to `Text(512)`. Unnecessary once `icon` only ever holds a
+  themed name.
+
 ## Bar layout stability and the service suite, September 29, 2026
 
 `zig build test-services` was red at three moving sites. The bar's keyboard
