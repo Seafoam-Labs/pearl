@@ -17,6 +17,7 @@ def state(s,binary):
         page=more['next_offset']
     return value
 def await_state(s,b,p,timeout=12): return wait_for(lambda:(lambda v:v if p(v) else False)(state(s,b)),timeout)
+def record_with(s,b,id): return wait_for(lambda:next((n for n in state(s,b)['notifications']['records'] if n['id']==id),False))
 def action(s,b,name,code=0,**kw):
     args=['session','action','--command',name]
     for k,v in kw.items(): args.extend(['--'+k.replace('_','-'),str(v)])
@@ -52,10 +53,10 @@ def main():
             assert initial['tray']['items'][0]['image'];gen=initial['media']['players'][0]['generation'];traygen=initial['tray']['items'][0]['generation'];output=status(s,args.ctl)['outputs'][0]
             checks['initial-mpris-owner-discovery-and-sni-registration-pixmap']=True
             caps=s.run(['gdbus','call','--session','--dest','org.freedesktop.Notifications','--object-path','/org/freedesktop/Notifications','--method','org.freedesktop.Notifications.GetCapabilities']).stdout
-            assert all(x in caps for x in ["'body'","'actions'","'persistence'"]) and 'markup' not in caps
+            assert all(x in caps for x in ["'body'","'actions'","'persistence'","'icon-static'"]) and 'markup' not in caps and 'icon-multi' not in caps
             checks['truthful-notification-capabilities']=True
-            id=notified(s,fixture,summary='New message',body='Hello <b>world</b>\x1b',resident=True)
-            assert notified(s,fixture,replaces=id,summary='Updated message',resident=True)==id
+            id=notified(s,fixture,summary='New message',body='Hello <b>world</b>\x1b',resident=True,image_data=(64,64,230))
+            assert notified(s,fixture,replaces=id,summary='Updated message',resident=True,image_data=(64,64,230))==id
             assert state(s,args.ctl)['notifications']['active']==1
             wait_for(lambda:status(s,args.ctl)['notification'])
             ctl(s,args.ctl,'notifications','toggle','--output',output['id']);time.sleep(.4);capture(s,'notification-center',output['connector'])
@@ -70,9 +71,26 @@ def main():
             id=notified(s,fixture);command(fixture,close=id);wait_for(lambda:closed(s,id,3))
             action(s,args.ctl,'dismiss',notification=id,code=4)
             checks['action-residency-transient-expiry-and-all-closure-reasons']=True
-            big=notified(s,fixture,summary='Large site icon',image_data=(160,160,200),timeout=150,transient=True)
-            assert big;wait_for(lambda:closed(s,big,1))
+            large=notified(s,fixture,summary='Large site icon',image_data=(160,160,200),timeout=150,transient=True)
+            assert large;wait_for(lambda:closed(s,large,1))
             checks['oversized-image-data-still-delivers-and-expires']=True
+            site=art.as_uri()
+            hint_id=notified(s,fixture,summary='Raw hint beats themed app icon',icon='pearl-notifications-symbolic',image_data=(8,8,7))
+            assert record_with(s,args.ctl,hint_id)['image']
+            fell=notified(s,fixture,summary='Oversized hint falls through to path',image_path=site,image_data=(2048,1,7))
+            assert record_with(s,args.ctl,fell)['image']
+            themed=notified(s,fixture,summary='Themed path outranks raw hint',image_path='pearl-notifications-symbolic',icon_data=(8,8,7))
+            assert not record_with(s,args.ctl,themed)['image']
+            ranked=notified(s,fixture,summary='Themed path outranks app icon path',icon=str(art),image_path='pearl-notifications-symbolic')
+            assert not record_with(s,args.ctl,ranked)['image']
+            legacy=notified(s,fixture,summary='Legacy icon_data hint',icon_data=(8,8,7))
+            assert record_with(s,args.ctl,legacy)['image']
+            absolute=notified(s,fixture,summary='Absolute app icon path',icon=str(art))
+            assert record_with(s,args.ctl,absolute)['image']
+            assert notified(s,fixture,replaces=absolute,summary='Absolute app icon path')==absolute
+            await_state(s,args.ctl,lambda v:not next(n for n in v['notifications']['records'] if n['id']==absolute)['image'])
+            for stale in (hint_id,fell,themed,ranked,legacy,absolute): command(fixture,close=stale)
+            checks['icon-priority-chain-image-bounds-and-atomic-replacement']=True
             action(s,args.ctl,'dnd_on');id=notified(s,fixture,app='Mail',summary='Quiet delivery')
             assert state(s,args.ctl)['notifications']['toasts']==0 and not status(s,args.ctl)['notification']
             action(s,args.ctl,'dnd_off');assert state(s,args.ctl)['notifications']['toasts']==0

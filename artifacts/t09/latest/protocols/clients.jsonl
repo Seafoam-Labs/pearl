@@ -10,14 +10,22 @@
 {"kind": "notification", "id": 3}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [3, 3]}
 {"kind": "notification", "id": 4}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [4, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [4, 1]}
 {"kind": "notification", "id": 5}
 {"kind": "notification", "id": 6}
 {"kind": "notification", "id": 7}
 {"kind": "notification", "id": 8}
 {"kind": "notification", "id": 9}
 {"kind": "notification", "id": 10}
+{"kind": "notification", "id": 10}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [5, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [6, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [7, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [8, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [9, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [10, 3]}
 {"kind": "notification", "id": 11}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [11, 3]}
 {"kind": "notification", "id": 12}
 {"kind": "notification", "id": 13}
 {"kind": "notification", "id": 14}
@@ -111,13 +119,13 @@
 {"kind": "notification", "id": 102}
 {"kind": "notification", "id": 103}
 {"kind": "notification", "id": 104}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [5, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [6, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [7, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [8, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [9, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [10, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [11, 3]}
+{"kind": "notification", "id": 105}
+{"kind": "notification", "id": 106}
+{"kind": "notification", "id": 107}
+{"kind": "notification", "id": 108}
+{"kind": "notification", "id": 109}
+{"kind": "notification", "id": 110}
+{"kind": "notification", "id": 111}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [12, 3]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [13, 3]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [14, 3]}
@@ -211,8 +219,15 @@
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [102, 3]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [103, 3]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [104, 3]}
-{"kind": "notification", "id": 105}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [105, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [106, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [107, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [108, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [109, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [110, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [111, 3]}
+{"kind": "notification", "id": 112}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [112, 3]}
 {"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "PlayPause", "args": []}
 {"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
 {"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "Play", "args": []}
@@ -236,8 +251,8 @@
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [4]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
-{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 26706331]}
-{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 26706709]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 55821065]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 55821459]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
 {"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}

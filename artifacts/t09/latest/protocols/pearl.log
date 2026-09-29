@@ -1,49 +1,65 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-info(pearl): event=control-ready session=93c47a26a97f502b6f289b1cf16ee2a6
-info: event=app-index-ready entries=158 truncated=false
-info: event=popup-opened output=1
-info: event=session-focus target=dnd
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=notification-action
-info: event=session-focus target=other
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=media-position
-info: event=session-focus target=media-previous
-info: event=session-focus target=media-play_pause
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=media-position
-info: event=session-focus target=media-previous
-info: event=session-focus target=media-play_pause
-info: event=session-focus target=media-next
-info: event=session-focus target=media-stop
-info: event=session-focus target=media-seek
-info: event=session-focus target=other
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=session-focus target=other
-info: event=session-focus target=tray-1
-info: event=session-focus target=tray-2
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=tray-3
-info: event=session-focus target=tray-4
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=tray-5
-info: event=session-focus target=other
-info(pearl): event=stopping reason=control-quit pending=false
-info: event=popup-closed
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-09-29T18:13:47Z pid=360542 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-29T18:13:47Z pid=360542 info(pearl): event=ready mode=session
+ts=2026-09-29T18:13:47Z pid=360542 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-29T18:13:47Z pid=360542 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-29T18:13:47Z pid=360542 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-29T18:13:47Z pid=360542 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-29T18:13:47Z pid=360542 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-29T18:13:47Z pid=360542 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-09-29T18:13:47Z pid=360542 info(pearl): event=settings-backend-ready session_hash=2769f6bd80ef9da2
+ts=2026-09-29T18:13:47Z pid=360542 info(pearl): event=control-ready session_hash=2769f6bd80ef9da2
+ts=2026-09-29T18:13:47Z pid=360542 info(desktop): event=app-index-ready entries=145 truncated=false
+ts=2026-09-29T18:13:47Z pid=360542 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-29T18:13:47Z pid=360542 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=115942 success=true
+ts=2026-09-29T18:13:47Z pid=360542 info(ui): event=popup-close-reason reason=show-pane
+ts=2026-09-29T18:13:48Z pid=360542 info(ui): event=popup-opened output=1
+ts=2026-09-29T18:13:48Z pid=360542 info(desktop): event=session-focus target=dnd
+ts=2026-09-29T18:13:48Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:13:49Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:13:49Z pid=360542 info(desktop): event=session-focus target=notification-action
+ts=2026-09-29T18:13:50Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:13:54Z pid=360542 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-29T18:13:54Z pid=360542 info(ui): event=popup-closed
+ts=2026-09-29T18:13:54Z pid=360542 info(ui): event=popup-close-reason reason=locked
+ts=2026-09-29T18:13:54Z pid=360542 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-29T18:13:54Z pid=360542 info(ui): event=popup-close-reason reason=locked
+ts=2026-09-29T18:13:54Z pid=360542 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-29T18:13:54Z pid=360542 info(ui): event=popup-close-reason reason=locked
+ts=2026-09-29T18:13:54Z pid=360542 info(config): event=wallpaper-applications-applied generation=3 elapsed_us=879 success=true
+ts=2026-09-29T18:13:54Z pid=360542 info(ui): event=popup-close-reason reason=show-pane
+ts=2026-09-29T18:13:54Z pid=360542 info(ui): event=popup-opened output=1
+ts=2026-09-29T18:13:54Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:13:54Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:13:55Z pid=360542 info(desktop): event=session-focus target=media-position
+ts=2026-09-29T18:13:55Z pid=360542 info(desktop): event=session-focus target=media-previous
+ts=2026-09-29T18:13:56Z pid=360542 info(desktop): event=session-focus target=media-play_pause
+ts=2026-09-29T18:13:56Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:13:56Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:13:57Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:13:57Z pid=360542 info(desktop): event=session-focus target=media-position
+ts=2026-09-29T18:13:58Z pid=360542 info(desktop): event=session-focus target=media-previous
+ts=2026-09-29T18:13:59Z pid=360542 info(desktop): event=session-focus target=media-play_pause
+ts=2026-09-29T18:13:59Z pid=360542 info(desktop): event=session-focus target=media-next
+ts=2026-09-29T18:13:59Z pid=360542 info(desktop): event=session-focus target=media-stop
+ts=2026-09-29T18:14:00Z pid=360542 info(desktop): event=session-focus target=media-seek
+ts=2026-09-29T18:14:01Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:14:03Z pid=360542 info(ui): event=popup-close-reason reason=popup-hide
+ts=2026-09-29T18:14:03Z pid=360542 info(ui): event=popup-closed
+ts=2026-09-29T18:14:03Z pid=360542 info(ui): event=popup-close-reason reason=show-pane
+ts=2026-09-29T18:14:03Z pid=360542 info(ui): event=popup-opened output=1
+ts=2026-09-29T18:14:03Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:14:04Z pid=360542 info(desktop): event=session-focus target=tray-1
+ts=2026-09-29T18:14:04Z pid=360542 info(desktop): event=session-focus target=tray-2
+ts=2026-09-29T18:14:04Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:14:05Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:14:05Z pid=360542 info(desktop): event=session-focus target=tray-3
+ts=2026-09-29T18:14:06Z pid=360542 info(desktop): event=session-focus target=tray-4
+ts=2026-09-29T18:14:06Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:14:06Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:14:07Z pid=360542 info(desktop): event=session-focus target=tray-5
+ts=2026-09-29T18:14:08Z pid=360542 info(desktop): event=session-focus target=other
+ts=2026-09-29T18:14:10Z pid=360542 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-09-29T18:14:10Z pid=360542 info(ui): event=popup-closed
+ts=2026-09-29T18:14:10Z pid=360542 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-29T18:14:10Z pid=360542 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-29T18:14:10Z pid=360542 info(pearl): event=stopped
