@@ -204,6 +204,32 @@ def basic(args, checks):
             ctl(s, args.ctl, 'popup', 'hide')
             checks['rotated-output-popup-clamping'] = True
 
+            state = (Path(s.env['XDG_STATE_HOME']) / 'pearl').resolve()
+            state.mkdir(parents=True, exist_ok=True)
+            os.chmod(state, 0o700)
+            stale = [state / f'report-2020010{i}T000000Z.log' for i in range(1, 5)]
+            for old in stale:
+                old.write_text('stale')
+            first = Path(ctl(s, args.ctl, 'report')['result']['path']).resolve()
+            assert first.parent == state and first.is_file()
+            assert state.stat().st_mode & 0o777 == 0o700
+            assert first.stat().st_mode & 0o777 == 0o600
+            text = first.read_text()
+            assert text.startswith('=== pearl report ===')
+            assert 'version=' in text and 'argv=' in text
+            assert '=== check-environment exit=0 ===' in text
+            assert 'Aqueous session environment is valid.' in text
+            assert '=== pearlctl status ===' in text and '"availability"' in text
+            assert '=== journalctl --user -u pearl.service -n 500 --no-pager ===' in text
+            assert text.rstrip().endswith('=== report complete exit=0 ===')
+            assert status(s, args.ctl)['session'] not in text
+            assert not stale[0].exists() and not stale[1].exists() and stale[3].exists()
+            time.sleep(1.05)
+            second = Path(ctl(s, args.ctl, 'report')['result']['path']).resolve()
+            assert second != first and second.is_file()
+            assert sorted(x.name for x in state.glob('report-*.log')) == sorted([first.name, second.name, stale[3].name])
+            checks['report-bundle-modes-markers-and-retention'] = True
+
             time.sleep(.4)
             def ticks():
                 fields = Path(f'/proc/{app.proc.pid}/stat').read_text().split()

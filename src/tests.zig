@@ -54,6 +54,7 @@ test {
     _ = @import("ui/surfaces/policy.zig");
     _ = @import("cli/options.zig");
     _ = @import("cli/protocol.zig");
+    _ = @import("cli/report.zig");
     _ = @import("core/tests.zig");
     _ = @import("core/log_events.zig");
     _ = @import("diagnostics/safe_text.zig");

@@ -72,6 +72,7 @@ pub fn parse(args: []const []const u8) !Options {
     const op: protocol.Op = blk: {
         if (std.mem.eql(u8, args[0], "lock")) break :blk .lifecycle_action;
         if (std.mem.eql(u8, args[0], "status")) break :blk .status;
+        if (std.mem.eql(u8, args[0], "report")) break :blk .report;
         if (std.mem.eql(u8, args[0], "quit")) break :blk .quit;
         if (args.len < 2) return error.Usage;
         index = 2;
@@ -164,7 +165,7 @@ pub fn parse(args: []const []const u8) !Options {
     return .{ .request = r };
 }
 pub const usage =
-    \\Usage: pearlctl status | quit | lock
+    \\Usage: pearlctl status | report | quit | lock
     \\       pearlctl night-light status|on|off|toggle|resume|retry
     \\       pearlctl clipboard status|show|clear
     \\       pearlctl clipboard select|delete --generation ENTRY_ID
@@ -235,6 +236,10 @@ pub const usage =
     \\       pearlctl brightness set --percent 0..100
     \\       pearlctl profile set --profile power-saver|balanced|performance
     \\
+    \\       pearlctl report: write a bounded support report (environment, status,
+    \\       recent journal lines) to ~/.local/state/pearl/report-*.log and print
+    \\       its path. Contents and retention: docs/LOGGING.md.
+    \\
     \\Uses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.
     \\Output IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.
     \\
@@ -251,6 +256,13 @@ test "CLI rejects unknown options, duplicate flags and inappropriate fields" {
     try t.expectError(error.Usage, parse(&.{ "frame", "set", "--size", "8" }));
     const result = try parse(&.{ "osd", "show", "--text", "Sound muted", "--duration", "1200" });
     try t.expectEqual(protocol.Op.osd_show, result.request.op);
+}
+
+test "report is a bare command that takes no request fields" {
+    const t = std.testing;
+    try t.expectEqual(protocol.Op.report, (try parse(&.{"report"})).request.op);
+    try t.expectError(error.Usage, parse(&.{ "report", "--output", "1" }));
+    try t.expectError(error.Usage, parse(&.{"reports"}));
 }
 
 test "control-center defaults and explicit compact pages preserve strict CLI validation" {

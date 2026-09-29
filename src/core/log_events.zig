@@ -76,6 +76,8 @@ pub const events: []const Event = &.{
     .{ .name = "preferences-applied", .scopes = &.{.config} },
     .{ .name = "preferences-error", .scopes = &.{.config} },
     .{ .name = "ready", .scopes = &.{.pearl} },
+    .{ .name = "report-failed", .scopes = &.{.cli} },
+    .{ .name = "report-written", .scopes = &.{.cli} },
     .{ .name = "resource-error", .scopes = &.{.pearl} },
     .{ .name = "sample-activated", .scopes = &.{.gallery} },
     .{ .name = "sample-workspace", .scopes = &.{.gallery} },

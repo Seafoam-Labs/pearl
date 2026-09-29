@@ -1684,7 +1684,7 @@ pub const Manager = struct {
                 try self.night_light.act(std.meta.stringToEnum(@import("../../services/night_light_policy.zig").Action, request.text.?).?);
                 return std.json.Stringify.valueAlloc(alloc, try self.night_light.snapshot(alloc), .{});
             },
-            .night_light_status, .plugin_refresh, .plugin_list, .plugin_inspect, .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .services_status, .connectivity_status, .session_status => unreachable,
+            .night_light_status, .plugin_refresh, .plugin_list, .plugin_inspect, .clipboard_status, .capture_status, .capture_windows, .lifecycle_action, .lifecycle_status, .aqueous_status, .preferences_status, .status, .report, .services_status, .connectivity_status, .session_status => unreachable,
             .dock_show, .dock_hide, .dock_pin, .dock_unpin => {
                 const dock = (try self.selected(request.output)).dock orelse return error.Unavailable;
                 if (dock.locked) return error.Locked;

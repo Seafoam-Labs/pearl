@@ -4,7 +4,12 @@ const gio = @import("gio2");
 const glib = @import("glib2");
 const wire = @import("../aqueous/transport.zig");
 const protocol = @import("protocol.zig");
+const report = @import("report.zig");
+const startup = @import("../core/startup.zig");
+const files = @import("../config/io.zig");
+const helper = @import("../config/helper_process.zig");
 const a = std.heap.c_allocator;
+const log = std.log.scoped(.cli);
 pub const Server = struct {
     path: [:0]u8,
     display: [:0]u8,
@@ -177,7 +182,12 @@ const Slot = struct {
             try self.failure(alloc, request.id, error.DisplayMismatch);
             return;
         }
-        const result = self.owner.handle(self.owner.context, request, alloc) catch |err| {
+        // The report answers with the artifact path; everything else goes to
+        // the desktop handler.
+        const result = blk: {
+            if (request.op == .report) break :blk writeReport(self.owner, request, alloc);
+            break :blk self.owner.handle(self.owner.context, request, alloc);
+        } catch |err| {
             try self.failure(alloc, request.id, switch (err) {
                 error.OutputColorEligibilityUnavailable, error.SessionInactive, error.ClockUnavailable, error.Stale, error.InvalidRegion, error.InvalidPayload, error.InvalidPath, error.SaveFailed, error.Unavailable, error.OutputUnavailable, error.Locked, error.AmbiguousSeat, error.EdgeOccupied, error.InvalidSize, error.InvalidGroups, error.InvalidValue, error.Conflict, error.Busy, error.Unsupported, error.StaleConfirmation, error.NoConfirmation, error.InhibitorUnavailable, error.LockFailed, error.LockerMissing, error.SettingsNotInstalled, error.SettingsLaunchFailed => err,
                 else => if (request.op == .preferences_apply and err != error.OutOfMemory) err else error.Internal,
@@ -208,4 +218,91 @@ pub fn privateDirectory(path: []const u8) !void {
     const info = file.queryInfo("standard::type,unix::uid,unix::mode", .{ .nofollow_symlinks = true }, null, &err) orelse return error.RuntimeDirectory;
     defer info.unref();
     if (info.getFileType() != .directory or info.getAttributeUint32("unix::uid") != std.os.linux.getuid() or info.getAttributeUint32("unix::mode") & 0o077 != 0) return error.UnsafeRuntimeDirectory;
+}
+
+fn envValue(name: [*:0]const u8) []const u8 {
+    return if (glib.getenv(name)) |value| std.mem.span(value) else "";
+}
+
+/// Writes the support artifact and answers with its path. Every source except
+/// the file itself is best effort: a degraded section carries a marker line
+/// instead of failing the report.
+fn writeReport(owner: *Server, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
+    errdefer |err| log.err("event=report-failed error={s}", .{@errorName(err)});
+    var status_request = request;
+    status_request.op = .status;
+    const status = owner.handle(owner.context, status_request, alloc) catch "{\"unavailable\":true}";
+    const environment = environmentCheck();
+    const seconds_raw = std.Io.Clock.real.now(std.Options.debug_io).toSeconds();
+    var name_storage: [32]u8 = undefined;
+    var out: std.Io.Writer.Allocating = .init(alloc);
+    report.write(&out.writer, .{
+        .argv = commandLine(alloc),
+        .version = @import("../version.zig").string,
+        .environment = environment.text,
+        .environment_exit = environment.exit,
+        .status = try report.redactSession(alloc, status),
+        .journal = journalExcerpt(alloc),
+    }) catch return error.SaveFailed;
+    const directory = try std.fmt.allocPrintSentinel(alloc, "{s}/pearl", .{std.mem.span(glib.getUserStateDir())}, 0);
+    privateDirectory(directory) catch return error.SaveFailed;
+    const path = try std.fmt.allocPrintSentinel(alloc, "{s}/{s}", .{ directory, report.name(if (seconds_raw > 0) @intCast(seconds_raw) else 0, &name_storage) }, 0);
+    files.atomic(path, out.written(), false) catch return error.SaveFailed;
+    evictReports(alloc, directory);
+    log.info("event=report-written path={s}", .{path});
+    return std.json.Stringify.valueAlloc(alloc, .{ .path = path }, .{});
+}
+
+/// Same contract as `pearl --check-environment` in the server's environment:
+/// valid, or the actionable diagnostic with the usage/environment exit code.
+fn environmentCheck() struct { text: []const u8, exit: u8 } {
+    startup.validate(.session, .{ .desktop = envValue("XDG_CURRENT_DESKTOP"), .runtime = envValue("XDG_RUNTIME_DIR"), .display = envValue("WAYLAND_DISPLAY"), .endpoint = envValue("AQUEOUS_SOCKET") }) catch |err| {
+        return .{ .text = startup.diagnostic(err), .exit = 2 };
+    };
+    return .{ .text = "Aqueous session environment is valid.", .exit = 0 };
+}
+
+fn commandLine(alloc: std.mem.Allocator) []const u8 {
+    const fd = std.c.open("/proc/self/cmdline", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, @as(c_uint, 0));
+    if (fd < 0) return "";
+    defer _ = std.c.close(fd);
+    var storage: [4096]u8 = undefined;
+    const n = std.c.read(fd, &storage, storage.len);
+    if (n <= 0) return "";
+    const text = alloc.dupe(u8, storage[0..@intCast(n)]) catch return "";
+    for (text) |*byte| {
+        if (byte.* == 0) byte.* = ' ';
+    }
+    return std.mem.trimEnd(u8, text, " ");
+}
+
+/// The user journal only, never the system journal: no privilege escalation
+/// for a support artifact. `null` degrades to `journal=unavailable`.
+fn journalExcerpt(alloc: std.mem.Allocator) ?[]const u8 {
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    const result = helper.run(alloc, &.{ "journalctl", "--user", "-u", "pearl.service", "-n", "500", "--no-pager" }, null, cancel, 2500) catch return null;
+    if (!result.success) return null;
+    return result.stdout;
+}
+
+/// Retention runs after a successful write and never fails the report.
+fn evictReports(alloc: std.mem.Allocator, directory: [:0]const u8) void {
+    var threaded: std.Io.Threaded = .init_single_threaded;
+    const io = threaded.io();
+    var dir = std.Io.Dir.openDirAbsolute(io, directory, .{ .iterate = true }) catch return;
+    defer dir.close(io);
+    var names: std.ArrayList([]const u8) = .empty;
+    defer {
+        for (names.items) |entry| alloc.free(entry);
+        names.deinit(alloc);
+    }
+    var iterator = dir.iterate();
+    while (iterator.next(io) catch null) |entry| {
+        if (entry.kind != .file) continue;
+        names.append(alloc, alloc.dupe(u8, entry.name) catch break) catch break;
+    }
+    const doomed = report.evictList(alloc, names.items) catch return;
+    defer alloc.free(doomed);
+    for (doomed) |entry| dir.deleteFile(io, entry) catch {};
 }
