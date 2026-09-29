@@ -1,0 +1,1 @@
+{"status": "passed", "checks": {"marker-line-written-to-log-at-limit": true, "captured-lines-stop-at-log-limit": true, "child-exit-code-survives-drain-after-truncation": true}, "command": "Child(['seq', '1', '100'], log_limit=10) via scripts/pearl_session.py", "observed_marker": "TRUNCATED at log_limit=10; raise log_limit for this suite"}

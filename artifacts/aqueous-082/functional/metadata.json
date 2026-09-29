@@ -1,10 +1,10 @@
 {
-  "status": "passed",
-  "started": "2026-09-29T04:08:38.146320+00:00",
+  "status": "failed",
+  "started": "2026-09-29T08:18:14.463424+00:00",
   "targets": {
     "unit": {
       "exit_code": 0,
-      "seconds": 14.202208161000272,
+      "seconds": 16.55477337100092,
       "command": [
         "zig",
         "build",
@@ -18,9 +18,361 @@
         "all"
       ]
     },
+    "integration": {
+      "exit_code": 0,
+      "seconds": 67.63266056200155,
+      "command": [
+        "zig",
+        "build",
+        "integration",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/integration"
+      ]
+    },
+    "test-components": {
+      "exit_code": 0,
+      "seconds": 49.022496637000586,
+      "command": [
+        "zig",
+        "build",
+        "test-components",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-components"
+      ]
+    },
+    "test-adapter": {
+      "exit_code": 0,
+      "seconds": 32.61358791699968,
+      "command": [
+        "zig",
+        "build",
+        "test-adapter",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-adapter"
+      ]
+    },
+    "test-surfaces": {
+      "exit_code": 1,
+      "seconds": 26.692271772000822,
+      "command": [
+        "zig",
+        "build",
+        "test-surfaces",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-surfaces"
+      ]
+    },
+    "test-desktop": {
+      "exit_code": 0,
+      "seconds": 23.187076103000436,
+      "command": [
+        "zig",
+        "build",
+        "test-desktop",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-desktop"
+      ]
+    },
+    "test-services": {
+      "exit_code": 1,
+      "seconds": 42.941469802997744,
+      "command": [
+        "zig",
+        "build",
+        "test-services",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-services"
+      ]
+    },
+    "test-connectivity": {
+      "exit_code": 1,
+      "seconds": 3.6270193070013192,
+      "command": [
+        "zig",
+        "build",
+        "test-connectivity",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-connectivity"
+      ]
+    },
+    "test-session-services": {
+      "exit_code": 0,
+      "seconds": 29.316514944999653,
+      "command": [
+        "zig",
+        "build",
+        "test-session-services",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-session-services"
+      ]
+    },
+    "test-preferences": {
+      "exit_code": 0,
+      "seconds": 130.97122222600228,
+      "command": [
+        "zig",
+        "build",
+        "test-preferences",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-preferences"
+      ]
+    },
+    "test-aqueous-settings": {
+      "exit_code": 0,
+      "seconds": 17.00604191599996,
+      "command": [
+        "zig",
+        "build",
+        "test-aqueous-settings",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-aqueous-settings"
+      ]
+    },
+    "test-capture-master": {
+      "exit_code": 0,
+      "seconds": 10.951074888998846,
+      "command": [
+        "zig",
+        "build",
+        "test-capture-master",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-capture-master"
+      ]
+    },
+    "test-security": {
+      "exit_code": 1,
+      "seconds": 47.29270516699762,
+      "command": [
+        "zig",
+        "build",
+        "test-security",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-security"
+      ]
+    },
+    "test-lock": {
+      "exit_code": 1,
+      "seconds": 5.18257389199789,
+      "command": [
+        "zig",
+        "build",
+        "test-lock",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-lock"
+      ]
+    },
+    "test-clipboard-capture": {
+      "exit_code": 1,
+      "seconds": 39.12051333400086,
+      "command": [
+        "zig",
+        "build",
+        "test-clipboard-capture",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-clipboard-capture"
+      ]
+    },
+    "test-dock-islands": {
+      "exit_code": 0,
+      "seconds": 36.035656760002894,
+      "command": [
+        "zig",
+        "build",
+        "test-dock-islands",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-dock-islands"
+      ]
+    },
+    "test-settings-boundary": {
+      "exit_code": 1,
+      "seconds": 5.70102417200178,
+      "command": [
+        "zig",
+        "build",
+        "test-settings-boundary",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-settings-boundary"
+      ]
+    },
+    "test-settings-app": {
+      "exit_code": 0,
+      "seconds": 70.46838598600152,
+      "command": [
+        "zig",
+        "build",
+        "test-settings-app",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-settings-app"
+      ]
+    },
+    "test-settings-appearance": {
+      "exit_code": 1,
+      "seconds": 15.72478164900167,
+      "command": [
+        "zig",
+        "build",
+        "test-settings-appearance",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-settings-appearance"
+      ]
+    },
+    "test-settings-services": {
+      "exit_code": 1,
+      "seconds": 21.59676733499873,
+      "command": [
+        "zig",
+        "build",
+        "test-settings-services",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-settings-services"
+      ]
+    },
+    "test-settings-devices": {
+      "exit_code": 0,
+      "seconds": 19.891783600000053,
+      "command": [
+        "zig",
+        "build",
+        "test-settings-devices",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-settings-devices"
+      ]
+    },
+    "test-settings-integration": {
+      "exit_code": 1,
+      "seconds": 26.35711815099785,
+      "command": [
+        "zig",
+        "build",
+        "test-settings-integration",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-settings-integration"
+      ]
+    },
+    "test-settings-presentation": {
+      "exit_code": 1,
+      "seconds": 10.781440230999578,
+      "command": [
+        "zig",
+        "build",
+        "test-settings-presentation",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-settings-presentation"
+      ]
+    },
     "test-release": {
       "exit_code": 0,
-      "seconds": 62.23918122899977,
+      "seconds": 30.402773375000834,
       "command": [
         "zig",
         "build",
@@ -35,6 +387,6 @@
       ]
     }
   },
-  "source_fingerprint": "c985a225008cebe5d80934cf6c86feb1624786c0e49ee264fd1f475c9f4cf5bf",
+  "source_fingerprint": "6ed39601a58b50ed0267cf968da2a244718cec24b2a2fe97c91fa02bfb612247",
   "source_unchanged": true
 }

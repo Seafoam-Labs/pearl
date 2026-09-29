@@ -5,8 +5,8 @@
     "installed-startup-dry-run-private-bundle-explicit-apply-conflict-rollback-restart-and-bounds": true
   },
   "binary_sha256": {
-    "pearl": "a88be7e7d79b1cc93f81a9f5c10a5f51e6136f6dc703e01936445702ea1e8096",
-    "ctl": "791f0b3b5e627f70d9adf5a13403d5a0e85c051c8811ad8c6de4f289e9f53425",
+    "pearl": "ec63577edbebabd04ee4ed1fe6472eb48d59842bdaaa96b26432b34ef2972a5f",
+    "ctl": "474048d0523fad0c57ea06d7064a8d871657895b5e43ce1332fb77f1540e7fab",
     "locker": "82f64d2e01f026519cabc0431de54d6005a87c785319ad1925a0d4e8a389609b",
     "settings": "077ba41fe86a6aa1c64e91f50b6557443a39dcf05d034208ac2caada5588015c",
     "themes": "fc6a8e725a48c0adb81d4a5d047a8461771bd9c1ef014760ce4f852ce7128930"
@@ -15,23 +15,23 @@
 Build Summary: 17/17 steps succeeded
 test-release success
 +- run python3 success 4s
-   +- compile exe pearl ReleaseSafe native success 57s MaxRSS:592M
-   |  +- run pkg-config success 2ms
-   |  +- translate-c cached 20ms MaxRSS:54M
+   +- compile exe pearl ReleaseSafe native cached 118ms MaxRSS:59M
+   |  +- run pkg-config success 9ms
+   |  +- translate-c cached 70ms MaxRSS:57M
    |  +- run glib-compile-resources (pearl.gresource) cached
    |  +- options cached
    |  +- run exe zig-wayland-scanner (wayland.zig) cached
-   |     +- compile exe zig-wayland-scanner Debug native cached 16ms MaxRSS:56M
-   +- compile exe pearl-themes ReleaseSafe native success 27s MaxRSS:316M
+   |     +- compile exe zig-wayland-scanner Debug native cached 81ms MaxRSS:57M
+   +- compile exe pearl-themes ReleaseSafe native success 25s MaxRSS:312M
    |  +- options cached
-   +- compile exe pearlctl ReleaseSafe native success 16s MaxRSS:290M
-   +- compile exe pearl-settings ReleaseSafe native success 35s MaxRSS:380M
+   +- compile exe pearlctl ReleaseSafe native cached 135ms MaxRSS:59M
+   +- compile exe pearl-settings ReleaseSafe native cached 173ms MaxRSS:59M
    |  +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
    |  +- run glib-compile-resources (pearl.gresource) (reused)
    |  +- options cached
-   +- compile exe pearl-lock ReleaseSafe native success 27s MaxRSS:323M
+   +- compile exe pearl-lock ReleaseSafe native cached 111ms MaxRSS:59M
       +- translate-c (reused)
       +- run glib-compile-resources (pearl.gresource) (reused)
       +- options cached
-      +- translate-c cached 20ms MaxRSS:54M
+      +- translate-c cached 92ms MaxRSS:56M
 

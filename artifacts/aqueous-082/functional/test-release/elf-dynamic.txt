@@ -1,5 +1,5 @@
 
-Dynamic section at offset 0x5a9620 contains 39 entries:
+Dynamic section at offset 0x5b22e0 contains 39 entries:
   Tag        Type                         Name/Value
  0x0000000000000001 (NEEDED)             Shared library: [libpulse.so.0]
  0x0000000000000001 (NEEDED)             Shared library: [libpulse-mainloop-glib.so.0]
@@ -26,7 +26,7 @@ Dynamic section at offset 0x5a9620 contains 39 entries:
  0x0000000000000009 (RELAENT)            24 (bytes)
  0x0000000000000017 (JMPREL)             0x100d8b0
  0x0000000000000002 (PLTRELSZ)           22584 (bytes)
- 0x0000000000000003 (PLTGOT)             0x15ab8b0
+ 0x0000000000000003 (PLTGOT)             0x15b4570
  0x0000000000000014 (PLTREL)             RELA
  0x0000000000000006 (SYMTAB)             0x1000320
  0x000000000000000b (SYMENT)             24 (bytes)
@@ -34,8 +34,8 @@ Dynamic section at offset 0x5a9620 contains 39 entries:
  0x000000000000000a (STRSZ)              21886 (bytes)
  0x000000006ffffef5 (GNU_HASH)           0x1006510
  0x0000000000000004 (HASH)               0x1006530
- 0x000000000000000c (INIT)               0x1598c4c
- 0x000000000000000d (FINI)               0x1598c68
+ 0x000000000000000c (INIT)               0x15a142c
+ 0x000000000000000d (FINI)               0x15a1448
  0x000000006ffffff0 (VERSYM)             0x1005be8
  0x000000006ffffffe (VERNEED)            0x1006350
  0x000000006fffffff (VERNEEDNUM)         6

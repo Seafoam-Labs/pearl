@@ -1,5 +1,49 @@
 # Pearl implementation progress
 
+## Harness truncation and final verification, September 29, 2026
+
+The private-session harness now makes log truncation loud: when a child hits
+its `log_limit`, the collector writes one final line
+`TRUNCATED at log_limit=<N>; raise log_limit for this suite` to that child's
+`.log` and keeps draining stdout without recording it, so a flooding child
+never blocks on a full pipe. `Child.lines` still stops at the limit; only the
+retained file carries the marker. No suite in the verification run hit its
+limit, so the change was behavior-neutral for the matrix.
+
+The Phase 8 envelope assertion (an `event=ready` line matching
+`^ts=<iso8601>Z pid=<n> level(scope): `) and the event-catalog walk already
+landed with earlier phases; both were reexercised and pass.
+
+Checks actually run:
+
+- `zig build -Doptimize=ReleaseSafe`: pass.
+- `zig build test -Doptimize=ReleaseSafe`: pass, 248 tests.
+- `zig build test-bindings -Doptimize=ReleaseSafe`: pass.
+- `zig build integration -Doptimize=ReleaseSafe`: pass; the envelope and
+  level/scope filter checks are recorded in
+  `artifacts/t01/latest/results.json`.
+- Truncation demonstration (`Child` with `log_limit=10` against a 100-line
+  child, marker written, exit status still 0):
+  `artifacts/aqueous-082/functional/harness-truncation/`.
+- `python3 scripts/release-validate.py` (full matrix, `-Drelease=true`): 13 of
+  24 targets pass, 11 fail, source fingerprint unchanged; run with the
+  established local override pointing the drivers' hardcoded reference Aqueous
+  source paths at `.cache/aqueous-activity-production/source`, restored
+  afterwards.
+
+The full matrix is not green on this machine, and the failures predate the
+workstream: five targets die in the pinned compositor's known output-off abort
+(`OutputManager.zig:621 validateConfigCoordinates`), three assert expectations
+that went stale against source changes from September 18-27 (all ancestors of
+the workstream base `ba72a98`), two fail identically when rebuilt and rerun
+from a scratch worktree at that base (connectivity: the control-center popup
+closes by itself right after opening; settings-services: validation outcome
+timeout), and one passes standalone at both base and HEAD and only flaked
+under matrix load. `artifacts/aqueous-082/functional/matrix-triage.md`
+classifies each failure with its evidence and reproduction; none is
+attributable to the logging changes, which the four passing gates and the 13
+passing matrix targets cover.
+
 ## Subproject logging, September 29, 2026
 
 Coral, Dome and Phyto now share the shell's log handler and redactor instead of

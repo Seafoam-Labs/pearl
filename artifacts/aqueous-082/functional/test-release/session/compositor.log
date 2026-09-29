@@ -19,8 +19,8 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info: raised file descriptor limit of the river process to 4096
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
-info(ipc): protocol=1 listening on /tmp/pearl-dev-wl_2sgeg/run/aqueous/26f81692d72891e6d39982e4627c12aa/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-wl_2sgeg/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-n6cligk2/run/aqueous/144027bf2a748397104d471a4f806590/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-n6cligk2/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
 info: destroyed Vulkan blur after 0 checkpoints, 0 offscreen draws, and 0 composites (0 cache hits, 0 partial rebuilds, 0 full rebuilds, 0 pixels processed)
