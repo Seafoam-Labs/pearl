@@ -4,6 +4,8 @@ const gio = @import("gio2");
 const glib = @import("glib2");
 const model = @import("package_model.zig");
 const io = @import("../config/io.zig");
+const diagnostics = @import("../diagnostics/safe_text.zig");
+const log = std.log.scoped(.theme);
 pub const c = @cImport({
     @cInclude("curl/curl.h");
     @cInclude("pthread.h");
@@ -194,6 +196,7 @@ pub fn refresh(a: std.mem.Allocator, source: Source, address: []const u8, cancel
         if (try @import("github.zig").location(source.url) != null and err != error.ThemeDownloadFailed and err != error.NetworkUnavailable) return err;
         const cached = try io.read(a, path, 1048576, cancel);
         if (cached.missing) return err;
+        log.warn("event=theme-index-offline error={s} url={f}", .{ @errorName(err), diagnostics.safe(address) });
         return .{ .index = try parseIndex(a, cached.bytes, source), .offline = true, .error_code = @errorName(err) };
     };
     const value = try parseIndex(a, bytes, source);

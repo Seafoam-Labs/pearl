@@ -5,6 +5,8 @@ const model = @import("package_model.zig");
 const repository = @import("repository.zig");
 const install = @import("install.zig");
 const io = @import("../config/io.zig");
+const diagnostics = @import("../diagnostics/safe_text.zig");
+const log = std.log.scoped(.theme);
 extern fn mkdtemp([*:0]u8) ?[*:0]u8;
 pub const Request = struct {
     action: enum { catalog, profiles_catalog, application_review, application_install, application_retry, application_refresh, validate, verify_profiles, validate_index, pack, publish_build, preview, preview_render, source_add, source_remove, source_default, refresh, install, import_archive, remove, rollback },
@@ -39,6 +41,20 @@ pub fn runWithAssets(a: std.mem.Allocator, request: Request, cancel: *gio.Cancel
     return runWithAssetsGuarded(a, request, cancel, report, blobs, .{});
 }
 pub fn runWithAssetsGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress, blobs: ?*[]const @import("assets.zig").Blob, guard: @import("publication.zig").Guard) ![]const u8 {
+    return runGuarded(a, request, cancel, report, blobs, guard) catch |err| {
+        // Cancellation is a normal outcome of navigation and shutdown.
+        if (err != error.Cancelled) log.err("event=theme-command-failed action={s} target={f} error={s}", .{ @tagName(request.action), diagnostics.safe(targetOf(request)), @errorName(err) });
+        return err;
+    };
+}
+/// Most specific identifier the request carries; remote URLs pass through
+/// redaction at the log call site.
+fn targetOf(request: Request) []const u8 {
+    if (request.id.len > 0) return request.id;
+    if (request.url.len > 0) return request.url;
+    return request.path;
+}
+fn runGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress, blobs: ?*[]const @import("assets.zig").Blob, guard: @import("publication.zig").Guard) ![]const u8 {
     if (cancel.isCancelled() != 0) return error.Cancelled;
     switch (request.action) {
         .application_review, .application_install, .application_retry, .application_refresh => {

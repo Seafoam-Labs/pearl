@@ -10,6 +10,8 @@ const Registry = @import("registry.zig").Registry;
 const Transport = @import("../aqueous/transport.zig").Transport;
 const activity_policy = @import("activity_policy.zig");
 const Broker = @import("../platform/wayland/input_activity.zig").Broker;
+const diagnostics = @import("../diagnostics/safe_text.zig");
+const log = std.log.scoped(.plugins);
 const a = std.heap.c_allocator;
 const c = @cImport({
     @cInclude("sys/socket.h");
@@ -91,6 +93,7 @@ pub const Slot = struct {
         if (self.process) |process| process.forceExit();
     }
     fn fail(self: *Slot, code: []const u8) void {
+        log.err("event=plugin-failed id={f} code={f}", .{ diagnostics.safe(self.id()), diagnostics.safe(code) });
         self.error_code = code;
         self.stop(.failed);
         self.owner.changed();
@@ -189,6 +192,7 @@ pub const Slot = struct {
                     return;
                 }
                 if (reply.error_code != null) {
+                    log.warn("event=plugin-callback-failed id={f} code={f}", .{ diagnostics.safe(self.id()), diagnostics.safe(reply.error_code.?) });
                     self.fail("PluginCallbackFailed");
                     return;
                 }

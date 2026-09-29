@@ -6,6 +6,7 @@ const protocol = @import("cli/protocol.zig");
 const options = @import("cli/options.zig");
 const startup = @import("core/startup.zig");
 const logging = @import("core/logging.zig");
+const log = std.log.scoped(.cli);
 const a = std.heap.c_allocator;
 
 pub const std_options = logging.std_options;
@@ -25,6 +26,7 @@ const Client = struct {
         if (self.done) return;
         self.done = true;
         const code = if (self.phase == .control and self.transport.sent > 0) "UnknownCompletion" else @errorName(err);
+        log.err("event=pearlctl-failed code={s}", .{code});
         const json = std.json.Stringify.valueAlloc(a, .{ .pearl = 1, .ok = false, .err = .{ .code = code } }, .{}) catch unreachable;
         defer a.free(json);
         const output = a.dupeZ(u8, json) catch unreachable;
