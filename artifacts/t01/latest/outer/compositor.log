@@ -9,7 +9,8 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info: raised file descriptor limit of the river process to 4096
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
-info(ipc): protocol=1 listening on /tmp/pearl-dev-4sy_38qu/run/aqueous/51b2fd20e68fac68e6f9d878be9ab86f/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-4sy_38qu/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-50bvvs8l/run/aqueous/b6eb4974c57d2d743a2159f22a0f445f/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-50bvvs8l/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
+error(wm): timeout occurred, some imperfect frames may be shown

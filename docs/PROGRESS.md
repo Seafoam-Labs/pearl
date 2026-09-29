@@ -1,5 +1,67 @@
 # Pearl implementation progress
 
+## Silent subsystem logging, September 29, 2026
+
+The four quietest subsystems get their first structured log lines and the
+worst-case silent discards named in the survey now report. Three bounded
+changes, all logging-only: no control flow, return value or state mutation
+changed (129 insertions, 26 deletions; every removed line is a `catch {}`
+widened to `catch |err| log(...)` or a `try` rewritten to an identical `catch`
+that re-returns).
+
+`src/aqueous/client.zig` logs the IPC lifecycle under the `.aqueous` scope:
+`ipc-connect-failed` (path via `safe()`), `ipc-disconnected` (reason),
+`ipc-request-failed` (the reject code, never the message payload),
+`ipc-sequence-gap` (expected/got), plus debug `ipc-request`/`ipc-response`
+round-trips compiled in but off by default. Reject codes pass through a closed
+`codec.FailureCode` enum whose nine members were re-derived from the pinned
+compositor source; anything unrecognized collapses to `other`, so a wire string
+never reaches the journal raw and a renamed code fails the pure vocabulary test.
+
+Theme, plugin and CLI failures log for the first time. Theme commands fail
+through one boundary in `theme/commands.zig` (`theme-command-failed` with action,
+redacted target, error name) and `repository.refresh` warns `theme-index-offline`
+when it serves a cached index. Plugin slot failures log at the `manager.zig`
+`fail()` funnel, with a warn carrying the guest's specific code before it
+collapses to `PluginCallbackFailed`; guest log text stays discarded. `pearlctl`
+logs `pearlctl-failed` on transport errors only, keeping `glib.print` for product
+output.
+
+The named worst-case discards now report: `settings-show-failed` before both
+silent Settings quits, `desktop-action-dropped` on a failed compositor enqueue,
+and all 22 services `catch {}` sites dispositioned (err for broken user intent
+like `Lock` and the suspend/lock queries; debug for optional-service degradation
+like tray, MPRIS and agent registration). Zero silent `catch {}` remain in
+`src/services`.
+
+One plan citation did not survive checking the tree: `application_profiles.zig:578,659`
+were listed as failure-path `std.debug.print` calls, but both sit inside `test`
+blocks (and did at the census commit too), so they are test-failure diagnostics,
+not production paths. Per the plan's own rule for test-block diagnostics they are
+left alone, and theme failure logging lands at the command boundary instead.
+
+Checks actually run:
+
+- `zig build -Doptimize=ReleaseSafe`, `zig build test -Doptimize=ReleaseSafe` and
+  `zig fmt --check` on every touched file: pass. The catalog test accepts the 22
+  new event names; the pure aqueous suite covers the `FailureCode` vocabulary.
+- Passing private-session suites: `integration` (t01), `test-desktop` (t06),
+  `test-session-services`, `test-settings-app`, `test-custom-themes`,
+  `test-theme-github`, `test-plugin-unit`, `test-bindings`. `artifacts/t01/latest`
+  and `artifacts/t06/latest` refreshed. The t06 debug-level session log carries
+  `event=ipc-request-failed op=command code=unavailable` (a real compositor
+  rejection mapped through the enum) and 193 debug `ipc-request op=ack`
+  round-trips, none of which appear at the default level.
+- `test-services` and `test-connectivity` fail, but reproduce identically in a
+  baseline worktree at the pre-phase parent commit `147c485` (same volume-OSD
+  `TimeoutError`; same `aqueous status` returning `code=Unavailable` on the
+  network page). They are pre-existing environmental failures on this machine,
+  whose locally built compositor aborts on output configuration, not regressions
+  from this phase; their artifacts are left at HEAD.
+- `test-plugins` has no build step without `-Dwasm-plugins=true`; the shell-side
+  supervisor change compiles in every config (proven by `zig build`) and
+  `test-plugin-unit` passes.
+
 ## Log redaction at the call site, September 28, 2026
 
 `src/diagnostics/safe_text.zig` makes redaction a type instead of a

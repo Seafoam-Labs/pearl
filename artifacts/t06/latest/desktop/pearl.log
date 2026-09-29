@@ -1,553 +1,956 @@
-ts=2026-09-28T19:15:49Z pid=93822 info(pearl): event=aqueous-availability state=connecting
-ts=2026-09-28T19:15:49Z pid=93822 info(pearl): event=ready mode=session
-ts=2026-09-28T19:15:49Z pid=93822 info(pearl): event=aqueous-availability state=subscribing
-ts=2026-09-28T19:15:49Z pid=93822 info(pearl): event=aqueous-availability state=ready
-ts=2026-09-28T19:15:49Z pid=93822 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
-ts=2026-09-28T19:15:49Z pid=93822 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1.5
-ts=2026-09-28T19:15:49Z pid=93822 info(pearl): event=settings-backend-ready session=01bc5806627be456fe641f8c2c3f44b0
-ts=2026-09-28T19:15:49Z pid=93822 info(pearl): event=control-ready session=01bc5806627be456fe641f8c2c3f44b0
-ts=2026-09-28T19:15:49Z pid=93822 info(desktop): event=app-index-ready entries=2009 truncated=false
-ts=2026-09-28T19:15:49Z pid=93822 info(config): event=preferences-applied revision=0 mode=static cache=false
-ts=2026-09-28T19:15:49Z pid=93822 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=5167 success=true
-ts=2026-09-28T19:15:49Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:15:49Z pid=93822 info(desktop): event=launcher-results count=2008 shown=200 publish_us=8563
-ts=2026-09-28T19:15:49Z pid=93822 debug(desktop): event=launcher-painted latency_us=35299
-ts=2026-09-28T19:15:49Z pid=93822 info(desktop): event=launcher-results count=2008 shown=200 publish_us=10344
-ts=2026-09-28T19:15:49Z pid=93822 debug(desktop): event=launcher-painted latency_us=33988
-ts=2026-09-28T19:15:49Z pid=93822 info(desktop): event=launcher-results count=2008 shown=200 publish_us=10508
-ts=2026-09-28T19:15:49Z pid=93822 debug(desktop): event=launcher-painted latency_us=37548
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=522
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=3816
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=317
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=455
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=443
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=473
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=3565
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=332
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=336
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=498
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=576
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=3586
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=512
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=493
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=12076
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=1588
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=3139
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=854
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=1627
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=1431
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=528
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=5565
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=1512
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=15364
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=2008 shown=200 publish_us=7608
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=25768
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=2008 shown=200 publish_us=12615
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=18251
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=9408
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=7862
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=31341
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=12807
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=32405
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=9393
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=41620
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=11032
-ts=2026-09-28T19:15:50Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=9316
-ts=2026-09-28T19:15:50Z pid=93822 debug(desktop): event=launcher-painted latency_us=27661
-ts=2026-09-28T19:15:51Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=11179
-ts=2026-09-28T19:15:51Z pid=93822 debug(desktop): event=launcher-painted latency_us=28588
-ts=2026-09-28T19:15:52Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=9616
-ts=2026-09-28T19:15:52Z pid=93822 debug(desktop): event=launcher-painted latency_us=31861
-ts=2026-09-28T19:15:52Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=9735
-ts=2026-09-28T19:15:52Z pid=93822 debug(desktop): event=launcher-painted latency_us=33427
-ts=2026-09-28T19:15:52Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=10341
-ts=2026-09-28T19:15:52Z pid=93822 debug(desktop): event=launcher-painted latency_us=30163
-ts=2026-09-28T19:15:52Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=9940
-ts=2026-09-28T19:15:52Z pid=93822 debug(desktop): event=launcher-painted latency_us=34774
-ts=2026-09-28T19:15:52Z pid=93822 info(desktop): event=launcher-results count=2008 shown=200 publish_us=6378
-ts=2026-09-28T19:15:52Z pid=93822 debug(desktop): event=launcher-painted latency_us=31104
-ts=2026-09-28T19:15:52Z pid=93822 info(desktop): event=launcher-results count=2008 shown=200 publish_us=7035
-ts=2026-09-28T19:15:52Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1149
-ts=2026-09-28T19:15:52Z pid=93822 debug(desktop): event=launcher-painted latency_us=2329
-ts=2026-09-28T19:15:52Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1297
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=15189
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=890
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=13487
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1580
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=435
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=8055
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=application-launch accepted=true action=false
-ts=2026-09-28T19:15:53Z pid=93822 info(ui): event=popup-closed
+ts=2026-09-29T03:33:18Z pid=11789 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-29T03:33:18Z pid=11789 info(pearl): event=ready mode=session
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-request op=hello
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-request op=hello
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-response op=hello
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-response op=hello
+ts=2026-09-29T03:33:18Z pid=11789 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:18Z pid=11789 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-29T03:33:18Z pid=11789 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-29T03:33:18Z pid=11789 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1.5
+ts=2026-09-29T03:33:18Z pid=11789 info(pearl): event=settings-backend-ready session_hash=0b85d58d3f72235e
+ts=2026-09-29T03:33:18Z pid=11789 info(pearl): event=control-ready session_hash=0b85d58d3f72235e
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:18Z pid=11789 info(desktop): event=app-index-ready entries=2009 truncated=false
+ts=2026-09-29T03:33:18Z pid=11789 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-29T03:33:18Z pid=11789 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=4648 success=true
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:18Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2008 shown=200 publish_us=7883
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=30904
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2008 shown=200 publish_us=10890
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=28824
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2008 shown=200 publish_us=9744
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=30635
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=953
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=3601
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=689
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=642
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1072
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1006
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=2541
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1036
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1011
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=659
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=7020
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1632
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=854
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=907
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=9257
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1228
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=1246
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=526
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=14300
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1680
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=2036
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=903
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=15750
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1370
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=8542
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2008 shown=200 publish_us=10118
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=30640
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2008 shown=200 publish_us=7347
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=7721
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=10744
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=7305
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=34345
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=12363
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=30395
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=10260
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=27933
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=9426
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=26716
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:19Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:19Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=13175
+ts=2026-09-29T03:33:19Z pid=11789 debug(desktop): event=launcher-painted latency_us=30927
+ts=2026-09-29T03:33:20Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=14114
+ts=2026-09-29T03:33:20Z pid=11789 debug(desktop): event=launcher-painted latency_us=32799
+ts=2026-09-29T03:33:21Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:21Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:21Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=13619
+ts=2026-09-29T03:33:21Z pid=11789 debug(desktop): event=launcher-painted latency_us=44140
+ts=2026-09-29T03:33:21Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:21Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:21Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=12474
+ts=2026-09-29T03:33:21Z pid=11789 debug(desktop): event=launcher-painted latency_us=34897
+ts=2026-09-29T03:33:21Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:21Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:21Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=13326
+ts=2026-09-29T03:33:21Z pid=11789 debug(desktop): event=launcher-painted latency_us=37351
+ts=2026-09-29T03:33:21Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:21Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:21Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=12046
+ts=2026-09-29T03:33:21Z pid=11789 debug(desktop): event=launcher-painted latency_us=36903
+ts=2026-09-29T03:33:21Z pid=11789 info(desktop): event=launcher-results count=2008 shown=200 publish_us=6201
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=28405
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=2008 shown=200 publish_us=9388
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=14545
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=2040
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=3505
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1895
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=14786
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=998
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=12881
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1683
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=807
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=6952
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=application-launch accepted=true action=false
+ts=2026-09-29T03:33:22Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
 event=fixture-ready Cafe
-ts=2026-09-28T19:15:53Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=2009 shown=200 publish_us=5469
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=26134
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=2009 shown=200 publish_us=11260
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=30110
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=2009 shown=200 publish_us=10934
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=34233
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=981
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=434
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=847
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=2639
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1001
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1229
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1034
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1261
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=3100
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1180
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1225
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=687
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=8341
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1825
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=3825
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=963
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=13679
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1572
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=686
-ts=2026-09-28T19:15:53Z pid=93822 debug(desktop): event=launcher-painted latency_us=9626
-ts=2026-09-28T19:15:53Z pid=93822 info(desktop): event=application-launch accepted=true action=false
-ts=2026-09-28T19:15:53Z pid=93822 info(ui): event=popup-closed
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=2009 shown=200 publish_us=6446
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=26533
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=2009 shown=200 publish_us=12780
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=31479
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=2009 shown=200 publish_us=9416
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=34676
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=937
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=376
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1099
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=3896
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=702
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=771
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=812
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1250
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=3400
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=646
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1240
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1145
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=8190
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1491
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=3335
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:22Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:22Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1056
+ts=2026-09-29T03:33:22Z pid=11789 debug(desktop): event=launcher-painted latency_us=17084
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1930
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=975
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=4962
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=application-launch accepted=true action=false
+ts=2026-09-29T03:33:23Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
 event=fixture-ready fields
-ts=2026-09-28T19:15:54Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=2010 shown=200 publish_us=6541
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=26671
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=2010 shown=200 publish_us=11659
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=30322
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=2010 shown=200 publish_us=9754
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=27606
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1821
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=433
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=5563
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1132
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=699
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1185
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1220
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=5668
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=740
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1284
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=821
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=801
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=5478
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1145
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1043
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1297
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=10574
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1974
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=5505
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=760
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=15327
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1979
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=708
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=9661
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=application-launch accepted=true action=true
-ts=2026-09-28T19:15:54Z pid=93822 info(ui): event=popup-closed
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=2010 shown=200 publish_us=12296
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=2010 shown=200 publish_us=9721
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=30388
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=2010 shown=200 publish_us=10068
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=28262
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=2010 shown=200 publish_us=14309
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=32466
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1073
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=4629
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=886
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1238
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=923
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=5896
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=917
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1339
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1122
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=980
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=3990
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=995
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1059
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1347
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=7456
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1382
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=19683
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=3679
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=722
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=7493
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1895
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=2760
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=881
+ts=2026-09-29T03:33:23Z pid=11789 debug(desktop): event=launcher-painted latency_us=17493
+ts=2026-09-29T03:33:23Z pid=11789 info(desktop): event=application-launch accepted=true action=true
+ts=2026-09-29T03:33:23Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:23Z pid=11789 debug(aqueous): event=ipc-response op=ack
 event=fixture-ready special
-ts=2026-09-28T19:15:54Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=2011 shown=200 publish_us=6896
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=26893
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=2011 shown=200 publish_us=11140
-ts=2026-09-28T19:15:54Z pid=93822 debug(desktop): event=launcher-painted latency_us=29674
-ts=2026-09-28T19:15:54Z pid=93822 info(desktop): event=launcher-results count=2011 shown=200 publish_us=10226
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=30267
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=6 shown=6 publish_us=2544
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=478
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=4995
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=822
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=790
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=682
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=820
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=5426
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1014
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1012
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=809
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=853
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=5177
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=480
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=871
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=862
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=651
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=5081
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1435
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=2176
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=614
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=15725
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=2580
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=703
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=3408
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=application-launch accepted=true action=false
-ts=2026-09-28T19:15:55Z pid=93822 info(ui): event=popup-closed
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=2011 shown=200 publish_us=6288
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=2011 shown=200 publish_us=9907
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=29023
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=2011 shown=200 publish_us=11297
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=32084
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=2011 shown=200 publish_us=11060
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=29130
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=6 shown=6 publish_us=1350
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=940
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=907
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=783
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=4360
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1017
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=859
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1371
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=6680
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=974
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1306
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1287
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=879
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=4218
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=837
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1282
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1247
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=7002
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=2348
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=3314
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1305
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=15835
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1989
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1208
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=3966
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=application-launch accepted=true action=false
+ts=2026-09-29T03:33:24Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
 event=fixture-ready Terminal
-ts=2026-09-28T19:15:55Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=2013 shown=200 publish_us=8843
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=2013 shown=200 publish_us=11574
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=36562
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=2013 shown=200 publish_us=12172
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=34988
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=2013 shown=200 publish_us=13494
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=40102
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1627
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1205
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=710
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1125
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=3064
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=509
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=903
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=760
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=794
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=2420
-ts=2026-09-28T19:15:55Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=524
-ts=2026-09-28T19:15:55Z pid=93822 debug(desktop): event=launcher-painted latency_us=16687
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1514
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=13992
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=846
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=14586
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1471
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=3411
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=585
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=15914
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=application-launch accepted=true action=false
-ts=2026-09-28T19:15:56Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:15:56Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=8818
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=33603
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11506
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=34821
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=12905
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=36880
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1978
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=4128
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=921
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1449
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=857
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1140
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=6532
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=793
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=636
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=873
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=5537
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=802
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=819
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=694
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=8959
-ts=2026-09-28T19:15:56Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1889
-ts=2026-09-28T19:15:56Z pid=93822 debug(desktop): event=launcher-painted latency_us=4765
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1215
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=8477
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1561
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=965
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=3534
-ts=2026-09-28T19:15:57Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:15:57Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=6560
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9240
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=29285
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9612
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=28427
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11735
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=33022
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=561
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=731
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=6352
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1251
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=910
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=871
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1167
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=4064
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=776
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1183
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=682
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1144
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=5682
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1854
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=17838
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=812
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=15214
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1709
-ts=2026-09-28T19:15:57Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=830
-ts=2026-09-28T19:15:57Z pid=93822 debug(desktop): event=launcher-painted latency_us=3508
-ts=2026-09-28T19:15:58Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=2232
-ts=2026-09-28T19:15:58Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=609
-ts=2026-09-28T19:15:58Z pid=93822 debug(desktop): event=launcher-painted latency_us=13558
-ts=2026-09-28T19:15:58Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1016
-ts=2026-09-28T19:15:58Z pid=93822 debug(desktop): event=launcher-painted latency_us=15493
-ts=2026-09-28T19:15:58Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1110
-ts=2026-09-28T19:15:58Z pid=93822 debug(desktop): event=launcher-painted latency_us=15501
-ts=2026-09-28T19:15:58Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:15:58Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:15:58Z pid=93822 info(desktop): event=launcher-results count=2014 shown=200 publish_us=6793
-ts=2026-09-28T19:15:58Z pid=93822 info(desktop): event=launcher-results count=2014 shown=200 publish_us=8662
-ts=2026-09-28T19:15:58Z pid=93822 debug(desktop): event=launcher-painted latency_us=28558
-ts=2026-09-28T19:15:58Z pid=93822 info(desktop): event=launcher-results count=2014 shown=200 publish_us=10111
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=28957
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=2014 shown=200 publish_us=10154
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=32193
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1317
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=830
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=890
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=840
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=3762
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=848
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=756
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=827
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=844
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=2527
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=773
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=778
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=342
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=7404
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1701
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=4241
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=853
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=15110
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=769
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=16412
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=931
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=885
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=361
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=382
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=5063
-ts=2026-09-28T19:15:59Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1076
-ts=2026-09-28T19:15:59Z pid=93822 debug(desktop): event=launcher-painted latency_us=15729
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=6637
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=31266
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=2166
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=621
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=6005
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1109
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=2561
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=769
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=925
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=881
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=822
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=4080
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=792
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1116
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1162
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=643
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=4118
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1448
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1084
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=7189
-ts=2026-09-28T19:16:00Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:00Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=7694
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=10080
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=32020
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=12812
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=36924
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11751
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=37324
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1846
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=597
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=987
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=984
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=4323
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=753
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=651
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=993
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=728
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=3278
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=830
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1140
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=738
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=7786
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=1665
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=2649
-ts=2026-09-28T19:16:00Z pid=93822 info(desktop): event=launcher-results count=2 shown=2 publish_us=668
-ts=2026-09-28T19:16:00Z pid=93822 debug(desktop): event=launcher-painted latency_us=14164
-ts=2026-09-28T19:16:00Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:01Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:01Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:01Z pid=93822 info(ui): event=popup-opened output=2
-ts=2026-09-28T19:16:01Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:01Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:01Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:02Z pid=93822 info(ui): event=desktop-action status=rejected detail=unavailable
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=app-index-ready entries=2010 truncated=false
-ts=2026-09-28T19:16:02Z pid=93822 info(ui): event=popup-opened output=2
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=2016 shown=200 publish_us=6119
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=2016 shown=200 publish_us=9533
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=31534
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=2016 shown=200 publish_us=10797
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=30596
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=2016 shown=200 publish_us=13220
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=35237
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1322
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=966
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1272
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=852
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=2621
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1063
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=976
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1194
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=5581
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1508
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1305
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1143
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1271
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=5694
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1666
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=686
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=817
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=723
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=5435
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1413
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=19718
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1897
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=13260
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=596
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=17931
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1232
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=2306
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=802
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=16739
-ts=2026-09-28T19:16:02Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=853
-ts=2026-09-28T19:16:02Z pid=93822 debug(desktop): event=launcher-painted latency_us=9585
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=2016 shown=200 publish_us=8552
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=34567
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=685
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=484
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=4295
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1409
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=680
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=351
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=707
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=514
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=2961
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=410
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=776
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=823
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1161
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=2868
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=493
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=972
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=972
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=801
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=2384
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=902
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=15898
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=app-index-ready entries=2009 truncated=false
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=3073
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=9252
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=1388
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=744
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=4391
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=1085
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=0 shown=0 publish_us=569
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=6813
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11084
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=30945
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=2149
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=5019
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=791
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=2170
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=606
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=643
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=788
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=552
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=3171
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=878
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=857
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=940
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=527
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=3122
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=691
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=858
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=952
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1167
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=3611
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1922
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=1 shown=1 publish_us=1286
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=8993
-ts=2026-09-28T19:16:03Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:03Z pid=93822 info(ui): event=popup-opened output=2
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=7169
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=39834
-ts=2026-09-28T19:16:03Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=14297
-ts=2026-09-28T19:16:03Z pid=93822 debug(desktop): event=launcher-painted latency_us=42922
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2008 shown=200 publish_us=8622
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=14019
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=9392
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=13542
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=8820
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=40934
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=11477
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=33986
-ts=2026-09-28T19:16:04Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:04Z pid=93822 info(ui): event=popup-opened output=2
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=10554
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=47434
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=36151
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=65511
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2009 shown=200 publish_us=10289
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=15244
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=9048
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=8199
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=34108
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2000 shown=200 publish_us=13613
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=37199
-ts=2026-09-28T19:16:04Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:04Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9287
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=10415
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=39401
-ts=2026-09-28T19:16:04Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:04Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=10703
-ts=2026-09-28T19:16:04Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=12264
-ts=2026-09-28T19:16:04Z pid=93822 debug(desktop): event=launcher-painted latency_us=39908
-ts=2026-09-28T19:16:04Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=12149
-ts=2026-09-28T19:16:05Z pid=93822 debug(desktop): event=launcher-painted latency_us=55645
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=12698
-ts=2026-09-28T19:16:05Z pid=93822 debug(desktop): event=launcher-painted latency_us=40134
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=13993
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=10814
-ts=2026-09-28T19:16:05Z pid=93822 debug(desktop): event=launcher-painted latency_us=37334
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11269
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9522
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=10450
-ts=2026-09-28T19:16:05Z pid=93822 debug(desktop): event=launcher-painted latency_us=33953
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=8781
-ts=2026-09-28T19:16:05Z pid=93822 debug(desktop): event=launcher-painted latency_us=31419
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9912
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9509
-ts=2026-09-28T19:16:05Z pid=93822 debug(desktop): event=launcher-painted latency_us=32837
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=10310
-ts=2026-09-28T19:16:05Z pid=93822 debug(desktop): event=launcher-painted latency_us=31456
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=7860
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9850
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9483
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=10562
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:05Z pid=93822 info(desktop): event=launcher-results count=2015 shown=200 publish_us=8801
-ts=2026-09-28T19:16:05Z pid=93822 info(ui): event=popup-closed
-ts=2026-09-28T19:16:05Z pid=93822 info(pearl): event=stopping reason=control-quit pending=false
-ts=2026-09-28T19:16:05Z pid=93822 info(pearl): event=aqueous-availability state=stopped
-ts=2026-09-28T19:16:05Z pid=93822 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:16:05Z pid=93822 info(pearl): event=stopped
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=2013 shown=200 publish_us=7416
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:24Z pid=11789 info(desktop): event=launcher-results count=2013 shown=200 publish_us=9546
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:24Z pid=11789 debug(desktop): event=launcher-painted latency_us=31522
+ts=2026-09-29T03:33:24Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2013 shown=200 publish_us=10404
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=30235
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2013 shown=200 publish_us=10465
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=31377
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=2141
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=869
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=903
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=6246
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=809
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=723
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=742
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=830
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=6088
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=789
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=579
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=14719
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1318
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=11957
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=925
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=15753
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=3738
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=880
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=9081
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=application-launch accepted=true action=false
+ts=2026-09-29T03:33:25Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=8250
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9576
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=31334
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:25Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11110
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=32493
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=2342
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=846
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=6845
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=602
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=916
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=919
+ts=2026-09-29T03:33:25Z pid=11789 debug(desktop): event=launcher-painted latency_us=5510
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=610
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=858
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1054
+ts=2026-09-29T03:33:25Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1204
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=5121
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=608
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=872
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=16965
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1492
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=12856
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1165
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=15992
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1285
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=2167
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=971
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=11679
+ts=2026-09-29T03:33:26Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=command
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=command
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=8204
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9199
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=28365
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11920
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=32639
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9255
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=32459
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1679
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1087
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=6355
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1049
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1002
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1239
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1548
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=5075
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=685
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1199
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1297
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1063
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=4558
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=2213
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=17006
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1899
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=11735
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1110
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=17036
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1714
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:26Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:26Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1065
+ts=2026-09-29T03:33:26Z pid=11789 debug(desktop): event=launcher-painted latency_us=12259
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:27Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1604
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:27Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=464
+ts=2026-09-29T03:33:27Z pid=11789 debug(desktop): event=launcher-painted latency_us=12878
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:27Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1218
+ts=2026-09-29T03:33:27Z pid=11789 debug(desktop): event=launcher-painted latency_us=16092
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:27Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1771
+ts=2026-09-29T03:33:27Z pid=11789 debug(desktop): event=launcher-painted latency_us=14005
+ts=2026-09-29T03:33:27Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-request op=command
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-response op=command
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:27Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:28Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=2014 shown=200 publish_us=5665
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=2014 shown=200 publish_us=9551
+ts=2026-09-29T03:33:28Z pid=11789 debug(desktop): event=launcher-painted latency_us=29144
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=2014 shown=200 publish_us=10261
+ts=2026-09-29T03:33:28Z pid=11789 debug(desktop): event=launcher-painted latency_us=34852
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=805
+ts=2026-09-29T03:33:28Z pid=11789 debug(desktop): event=launcher-painted latency_us=4749
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=932
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=905
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=875
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=926
+ts=2026-09-29T03:33:28Z pid=11789 debug(desktop): event=launcher-painted latency_us=2864
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=852
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1120
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1169
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1034
+ts=2026-09-29T03:33:28Z pid=11789 debug(desktop): event=launcher-painted latency_us=2931
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=821
+ts=2026-09-29T03:33:28Z pid=11789 debug(desktop): event=launcher-painted latency_us=16633
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1966
+ts=2026-09-29T03:33:28Z pid=11789 debug(desktop): event=launcher-painted latency_us=14559
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:28Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=722
+ts=2026-09-29T03:33:28Z pid=11789 debug(desktop): event=launcher-painted latency_us=14687
+ts=2026-09-29T03:33:28Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1133
+ts=2026-09-29T03:33:28Z pid=11789 debug(desktop): event=launcher-painted latency_us=17149
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1314
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1610
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=611
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=8566
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=621
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=13881
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1064
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=14067
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=6880
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=31542
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1867
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1328
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=2542
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1024
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1379
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1367
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=5372
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1098
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=2288
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=833
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1372
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=983
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=7875
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1271
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=14320
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=2478
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=5850
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1668
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=14796
+ts=2026-09-29T03:33:29Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=7147
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=27186
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=10172
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=30461
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11433
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=33747
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1724
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=804
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1079
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=6801
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=801
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=564
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1014
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=742
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=5807
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=898
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=547
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=889
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=935
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=5392
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=2282
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=18938
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:29Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:29Z pid=11789 info(desktop): event=launcher-results count=2 shown=2 publish_us=1076
+ts=2026-09-29T03:33:29Z pid=11789 debug(desktop): event=launcher-painted latency_us=14219
+ts=2026-09-29T03:33:30Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=command
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=command
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:30Z pid=11789 info(ui): event=popup-opened output=2
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:30Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:30Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=command
+ts=2026-09-29T03:33:31Z pid=11789 error(aqueous): event=ipc-request-failed op=command code=unavailable
+ts=2026-09-29T03:33:31Z pid=11789 info(ui): event=desktop-action status=rejected detail=unavailable
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=command
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=command
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=command
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=command
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=app-index-ready entries=2010 truncated=false
+ts=2026-09-29T03:33:31Z pid=11789 info(ui): event=popup-opened output=2
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=2016 shown=200 publish_us=8603
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=2016 shown=200 publish_us=8991
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(desktop): event=launcher-painted latency_us=29177
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=2016 shown=200 publish_us=10859
+ts=2026-09-29T03:33:31Z pid=11789 debug(desktop): event=launcher-painted latency_us=31285
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=2016 shown=200 publish_us=14643
+ts=2026-09-29T03:33:31Z pid=11789 debug(desktop): event=launcher-painted latency_us=35254
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=697
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=543
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=739
+ts=2026-09-29T03:33:31Z pid=11789 debug(desktop): event=launcher-painted latency_us=3350
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=919
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=710
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1247
+ts=2026-09-29T03:33:31Z pid=11789 debug(desktop): event=launcher-painted latency_us=6675
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1318
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1194
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=807
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1115
+ts=2026-09-29T03:33:31Z pid=11789 debug(desktop): event=launcher-painted latency_us=5657
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=716
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1146
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1242
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1157
+ts=2026-09-29T03:33:31Z pid=11789 debug(desktop): event=launcher-painted latency_us=5024
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1394
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1092
+ts=2026-09-29T03:33:31Z pid=11789 debug(desktop): event=launcher-painted latency_us=13903
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:31Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:31Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1324
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=7940
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=991
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=17757
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1429
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1478
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=8657
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1267
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=19854
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=2016 shown=200 publish_us=9983
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=32027
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=5 shown=5 publish_us=605
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=635
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1240
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=3055
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=872
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=961
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1025
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=731
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=3105
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=734
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=520
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=677
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1142
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=3041
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=945
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=889
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=698
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=734
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=2059
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=625
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=722
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=10911
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=app-index-ready entries=2009 truncated=false
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=2965
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=19160
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1576
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=2130
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=895
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=16046
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1361
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=5158
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=0 shown=0 publish_us=1085
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=18777
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9695
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=28390
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=865
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=2965
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=992
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1020
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=946
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=6265
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1403
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=881
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1334
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=946
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=6246
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=763
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=957
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=917
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1400
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=5111
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=519
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=874
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=14479
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=2405
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=3892
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:32Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:32Z pid=11789 info(desktop): event=launcher-results count=1 shown=1 publish_us=1188
+ts=2026-09-29T03:33:32Z pid=11789 debug(desktop): event=launcher-painted latency_us=15762
+ts=2026-09-29T03:33:33Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 info(ui): event=popup-opened output=2
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=6414
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=34877
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=12036
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=33870
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2009 shown=200 publish_us=10812
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=14924
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=7808
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=8988
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=26978
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=10398
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=30949
+ts=2026-09-29T03:33:33Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 info(ui): event=popup-opened output=2
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=7390
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=30752
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=13249
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=33334
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2009 shown=200 publish_us=7524
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=6495
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=9747
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=8003
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=31390
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:33Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:33Z pid=11789 info(desktop): event=launcher-results count=2000 shown=200 publish_us=10718
+ts=2026-09-29T03:33:33Z pid=11789 debug(desktop): event=launcher-painted latency_us=28056
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=6873
+ts=2026-09-29T03:33:34Z pid=11789 debug(desktop): event=launcher-painted latency_us=29458
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=7830
+ts=2026-09-29T03:33:34Z pid=11789 debug(desktop): event=launcher-painted latency_us=27083
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9209
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9696
+ts=2026-09-29T03:33:34Z pid=11789 debug(desktop): event=launcher-painted latency_us=29705
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=6343
+ts=2026-09-29T03:33:34Z pid=11789 debug(desktop): event=launcher-painted latency_us=26210
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=8702
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9229
+ts=2026-09-29T03:33:34Z pid=11789 debug(desktop): event=launcher-painted latency_us=28547
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=7222
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=8890
+ts=2026-09-29T03:33:34Z pid=11789 debug(desktop): event=launcher-painted latency_us=30812
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=6502
+ts=2026-09-29T03:33:34Z pid=11789 debug(desktop): event=launcher-painted latency_us=27335
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=8212
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=12603
+ts=2026-09-29T03:33:34Z pid=11789 debug(desktop): event=launcher-painted latency_us=32064
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=7296
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 info(desktop): event=launcher-results count=2015 shown=200 publish_us=8394
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-response op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(ui): event=popup-closed
+ts=2026-09-29T03:33:34Z pid=11789 debug(aqueous): event=ipc-request op=ack
+ts=2026-09-29T03:33:34Z pid=11789 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-09-29T03:33:34Z pid=11789 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-29T03:33:34Z pid=11789 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-29T03:33:34Z pid=11789 info(pearl): event=stopped

@@ -1,27 +1,27 @@
-ts=2026-09-28T19:16:07Z pid=100770 info(pearl): event=aqueous-availability state=connecting
-ts=2026-09-28T19:16:07Z pid=100770 info(pearl): event=ready mode=session
-ts=2026-09-28T19:16:07Z pid=100770 info(pearl): event=aqueous-availability state=subscribing
-ts=2026-09-28T19:16:07Z pid=100770 info(pearl): event=aqueous-availability state=ready
-ts=2026-09-28T19:16:07Z pid=100770 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=2
-ts=2026-09-28T19:16:07Z pid=100770 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
-ts=2026-09-28T19:16:07Z pid=100770 info(pearl): event=settings-backend-ready session=01bc5806627be456fe641f8c2c3f44b0
-ts=2026-09-28T19:16:07Z pid=100770 info(pearl): event=control-ready session=01bc5806627be456fe641f8c2c3f44b0
-ts=2026-09-28T19:16:07Z pid=100770 info(desktop): event=app-index-ready entries=2009 truncated=false
-ts=2026-09-28T19:16:07Z pid=100770 info(config): event=preferences-applied revision=0 mode=static cache=false
-ts=2026-09-28T19:16:07Z pid=100770 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=6244 success=true
-ts=2026-09-28T19:16:07Z pid=100770 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:07Z pid=100770 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11863
-ts=2026-09-28T19:16:07Z pid=100770 info(desktop): event=launcher-results count=2015 shown=200 publish_us=9999
-ts=2026-09-28T19:16:07Z pid=100770 info(desktop): event=launcher-results count=1 shown=1 publish_us=2646
-ts=2026-09-28T19:16:07Z pid=100770 info(desktop): event=launcher-results count=1 shown=1 publish_us=902
-ts=2026-09-28T19:16:07Z pid=100770 info(desktop): event=launcher-results count=1 shown=1 publish_us=1002
-ts=2026-09-28T19:16:07Z pid=100770 info(desktop): event=launcher-results count=1 shown=1 publish_us=1185
-ts=2026-09-28T19:16:07Z pid=100770 info(desktop): event=launcher-results count=1 shown=1 publish_us=469
-ts=2026-09-28T19:16:08Z pid=100770 info(desktop): event=launcher-results count=1 shown=1 publish_us=1056
-ts=2026-09-28T19:16:08Z pid=100770 info(ui): event=popup-closed
-ts=2026-09-28T19:16:08Z pid=100770 info(ui): event=popup-opened output=1
-ts=2026-09-28T19:16:08Z pid=100770 info(pearl): event=stopping reason=control-quit pending=false
-ts=2026-09-28T19:16:08Z pid=100770 info(ui): event=popup-closed
-ts=2026-09-28T19:16:08Z pid=100770 info(pearl): event=aqueous-availability state=stopped
-ts=2026-09-28T19:16:08Z pid=100770 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-28T19:16:08Z pid=100770 info(pearl): event=stopped
+ts=2026-09-29T03:33:36Z pid=12097 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-29T03:33:36Z pid=12097 info(pearl): event=ready mode=session
+ts=2026-09-29T03:33:36Z pid=12097 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-29T03:33:36Z pid=12097 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-29T03:33:36Z pid=12097 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=2
+ts=2026-09-29T03:33:36Z pid=12097 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-29T03:33:36Z pid=12097 info(pearl): event=settings-backend-ready session_hash=0b85d58d3f72235e
+ts=2026-09-29T03:33:36Z pid=12097 info(pearl): event=control-ready session_hash=0b85d58d3f72235e
+ts=2026-09-29T03:33:36Z pid=12097 info(desktop): event=app-index-ready entries=2009 truncated=false
+ts=2026-09-29T03:33:36Z pid=12097 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-29T03:33:36Z pid=12097 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=4617 success=true
+ts=2026-09-29T03:33:36Z pid=12097 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:36Z pid=12097 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11974
+ts=2026-09-29T03:33:36Z pid=12097 info(desktop): event=launcher-results count=2015 shown=200 publish_us=11063
+ts=2026-09-29T03:33:37Z pid=12097 info(desktop): event=launcher-results count=1 shown=1 publish_us=2062
+ts=2026-09-29T03:33:37Z pid=12097 info(desktop): event=launcher-results count=1 shown=1 publish_us=1190
+ts=2026-09-29T03:33:37Z pid=12097 info(desktop): event=launcher-results count=1 shown=1 publish_us=1335
+ts=2026-09-29T03:33:37Z pid=12097 info(desktop): event=launcher-results count=1 shown=1 publish_us=919
+ts=2026-09-29T03:33:37Z pid=12097 info(desktop): event=launcher-results count=1 shown=1 publish_us=1213
+ts=2026-09-29T03:33:37Z pid=12097 info(desktop): event=launcher-results count=1 shown=1 publish_us=771
+ts=2026-09-29T03:33:37Z pid=12097 info(ui): event=popup-closed
+ts=2026-09-29T03:33:37Z pid=12097 info(ui): event=popup-opened output=1
+ts=2026-09-29T03:33:37Z pid=12097 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-09-29T03:33:37Z pid=12097 info(ui): event=popup-closed
+ts=2026-09-29T03:33:37Z pid=12097 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-29T03:33:37Z pid=12097 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-29T03:33:37Z pid=12097 info(pearl): event=stopped
