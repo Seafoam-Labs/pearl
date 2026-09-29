@@ -1,7 +1,8 @@
-//! Catalog of every structured log event name in the tree with the scopes
-//! that emit it. The test walks the sources relative to the repository root,
-//! where `zig build test` runs, so an undeclared name fails the pure tests
-//! instead of silently escaping documentation and grep habits.
+//! Catalog of every structured log event name in the tree, including the
+//! subprojects, with the scopes that emit it. The test walks the sources
+//! relative to the repository root, where `zig build test` runs, so an
+//! undeclared name fails the pure tests instead of silently escaping
+//! documentation and grep habits.
 const std = @import("std");
 const logging = @import("logging.zig");
 
@@ -75,6 +76,10 @@ pub const events: []const Event = &.{
     .{ .name = "power-intent", .scopes = &.{.desktop} },
     .{ .name = "preferences-applied", .scopes = &.{.config} },
     .{ .name = "preferences-error", .scopes = &.{.config} },
+    .{ .name = "preferences-save-failed", .scopes = &.{.config} },
+    .{ .name = "preview-cache-failed", .scopes = &.{.platform} },
+    .{ .name = "preview-decode-failed", .scopes = &.{.platform} },
+    .{ .name = "preview-failed", .scopes = &.{.platform} },
     .{ .name = "ready", .scopes = &.{.pearl} },
     .{ .name = "report-failed", .scopes = &.{.cli} },
     .{ .name = "report-written", .scopes = &.{.cli} },
@@ -125,32 +130,38 @@ fn declared(name: []const u8) ?usize {
 const name_bytes = "abcdefghijklmnopqrstuvwxyz0123456789-";
 const marker = "event" ++ "=";
 
+/// Coral, Dome and Phyto ship in the same source tree and their lines reach the
+/// same journal stream as the shell's, so their names are declared here too.
+const roots = [_][]const u8{ "src", "subprojects/coral/src", "subprojects/dome/src", "subprojects/phyto/src" };
+
 test "catalog matches the literal event names in the tree" {
     var threaded: std.Io.Threaded = .init_single_threaded;
     const io = threaded.io();
     const t = std.testing;
-    var src = try std.Io.Dir.cwd().openDir(io, "src", .{ .iterate = true });
-    defer src.close(io);
-    var walker = try src.walk(t.allocator);
-    defer walker.deinit();
     var seen = [_]bool{false} ** events.len;
-    while (try walker.next(io)) |entry| {
-        if (entry.kind != .file or !std.mem.endsWith(u8, entry.basename, ".zig")) continue;
-        // This file carries the search marker as data and its own catalog.
-        if (std.mem.eql(u8, entry.basename, "log_events.zig")) continue;
-        const text = try src.readFileAlloc(io, entry.path, t.allocator, .limited(16 << 20));
-        defer t.allocator.free(text);
-        var pos: usize = 0;
-        while (std.mem.indexOfPos(u8, text, pos, marker)) |start| {
-            pos = start + marker.len;
-            const end = pos + (std.mem.indexOfNone(u8, text[pos..], name_bytes) orelse text.len - pos);
-            const name = text[pos..end];
-            const index = if (name.len > 0) declared(name) orelse null else null;
-            if (index == null) {
-                std.debug.print("{s}: literal event name not in core/log_events.zig: '{s}'\n", .{ entry.path, name });
-                return error.UndeclaredEventName;
+    for (roots) |root| {
+        var dir = try std.Io.Dir.cwd().openDir(io, root, .{ .iterate = true });
+        defer dir.close(io);
+        var walker = try dir.walk(t.allocator);
+        defer walker.deinit();
+        while (try walker.next(io)) |entry| {
+            if (entry.kind != .file or !std.mem.endsWith(u8, entry.basename, ".zig")) continue;
+            // This file carries the search marker as data and its own catalog.
+            if (std.mem.eql(u8, entry.basename, "log_events.zig")) continue;
+            const text = try dir.readFileAlloc(io, entry.path, t.allocator, .limited(16 << 20));
+            defer t.allocator.free(text);
+            var pos: usize = 0;
+            while (std.mem.indexOfPos(u8, text, pos, marker)) |start| {
+                pos = start + marker.len;
+                const end = pos + (std.mem.indexOfNone(u8, text[pos..], name_bytes) orelse text.len - pos);
+                const name = text[pos..end];
+                const index = if (name.len > 0) declared(name) orelse null else null;
+                if (index == null) {
+                    std.debug.print("{s}/{s}: literal event name not in core/log_events.zig: '{s}'\n", .{ root, entry.path, name });
+                    return error.UndeclaredEventName;
+                }
+                seen[index.?] = true;
             }
-            seen[index.?] = true;
         }
     }
     for (events, 0..) |event, index| {

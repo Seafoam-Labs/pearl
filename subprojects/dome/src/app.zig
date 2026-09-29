@@ -10,6 +10,7 @@ const Services = @import("platform/services.zig").Controller;
 const Preferences = @import("platform/preferences.zig").Preferences;
 const Target = @import("platform/actions.zig").Target;
 const test_hooks = @import("build_options").test_hooks;
+const log = std.log.scoped(.config);
 const titles = [_][]const u8{ "Overview", "CPU", "Memory", "Disks", "Network", "GPU", "Sensors", "Processes", "Services" };
 const symbols = [_][*:0]const u8{ "view-grid-symbolic", "computer-symbolic", "media-flash-symbolic", "drive-harddisk-symbolic", "network-wireless-symbolic", "video-display-symbolic", "weather-clear-symbolic", "view-list-symbolic", "preferences-system-symbolic" };
 const Field = enum { cpu, io_wait, frequency, processes, threads, uptime, mem_used, mem_available, mem_cached, swap, disk_read, disk_write, disk_busy, disk_latency, disk_size, net_receive, net_send, net_rx, net_tx, net_speed, gpu_usage, gpu_used, gpu_total, gpu_temp, gpu_power, gpu_encode, gpu_decode, gpu_frequency, sensor, proc_cpu, proc_memory, proc_read, proc_write, proc_threads, proc_pss, proc_command };
@@ -1177,7 +1178,7 @@ pub const App = struct {
             self.prefs.sort_column = @intCast(i);
         };
         self.prefs.sort_descending = c.gtk_column_view_sorter_get_primary_sort_order(sorter) == c.GTK_SORT_DESCENDING;
-        if (!self.prefs.save()) c.g_printerr("Dome: could not save preferences\n");
+        if (!self.prefs.save()) log.err("event=preferences-save-failed", .{});
         if (self.dialog) |dialog| {
             c.gtk_window_destroy(u.cast(c.GtkWindow, dialog));
             self.dialog = null;

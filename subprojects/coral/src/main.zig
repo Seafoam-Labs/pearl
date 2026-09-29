@@ -2,9 +2,15 @@ const std = @import("std");
 const u = @import("c.zig");
 const c = u.c;
 const build_options = @import("build_options");
+const logging = @import("logging");
+const diagnostics = @import("diagnostics");
 const command = if (build_options.git_variant) "coral-git" else "coral";
 const App = @import("app.zig").App;
 const Settings = @import("platform/settings.zig").Settings;
+const log = std.log.scoped(.cli);
+
+pub const std_options = logging.std_options;
+
 var app: ?*App = null;
 var settings: Settings = undefined;
 var paths: std.ArrayList([:0]const u8) = .empty;
@@ -25,9 +31,22 @@ pub fn main(init: std.process.Init) void {
     settings = Settings.load();
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch return;
     defer paths.deinit(u.a);
-    for (args[1..]) |arg| {
+    var index: usize = 1;
+    while (index < args.len) : (index += 1) {
+        const arg = args[index];
+        switch (logging.verbosity(args[index..])) {
+            .other => {},
+            .applied => {
+                index += 1;
+                continue;
+            },
+            .rejected => |rejection| {
+                logging.report(rejection, diagnostics.safe(rejection.value));
+                std.process.exit(2);
+            },
+        }
         if (std.mem.eql(u8, arg, "--help")) {
-            c.g_print("Coral 0.1.0 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--light|--dark|--native-theme] [--width=N] [--height=N] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\n");
+            c.g_print("Coral 0.1.0 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         }
         if (std.mem.eql(u8, arg, "--version")) {
@@ -35,7 +54,7 @@ pub fn main(init: std.process.Init) void {
             return;
         }
         if (std.mem.eql(u8, arg, "--light")) settings.theme = 1 else if (std.mem.eql(u8, arg, "--dark")) settings.theme = 0 else if (std.mem.eql(u8, arg, "--native-theme")) settings.theme = 2 else if (std.mem.startsWith(u8, arg, "--width=")) width = std.math.clamp(std.fmt.parseInt(c_int, arg[8..], 10) catch 1000, 390, 3840) else if (std.mem.startsWith(u8, arg, "--height=")) height = std.math.clamp(std.fmt.parseInt(c_int, arg[9..], 10) catch 740, 400, 2160) else if (std.mem.startsWith(u8, arg, "--")) {
-            c.g_printerr("Unknown option: %s\n", arg.ptr);
+            log.err("Unknown option: {f}", .{diagnostics.safe(arg)});
             std.process.exit(2);
         } else paths.append(u.a, arg) catch unreachable;
     }

@@ -8,11 +8,13 @@ const policy = @import("../core/preview.zig");
 const a = u.a;
 const Read = @import("preview_read.zig").Read;
 const Providers = @import("preview_providers.zig");
+const log = std.log.scoped(.platform);
 var capabilities: ?Providers.Snapshot = null;
 var discovering = false;
 var discovery_read: ?*Read = null;
 var generation: u64 = 0;
 var last_discovery: i64 = 0;
+var reported: std.EnumSet(policy.Status) = .empty;
 pub var heavy_running: usize = 0;
 pub const Listener = struct { data: *anyopaque, ready: *const fn (*anyopaque, *Entry) void };
 pub const State = enum { queued, running, ready };
@@ -223,6 +225,7 @@ fn pump(_: ?*anyopaque) callconv(.c) c_int {
             const status = std.enums.fromInt(policy.Status, code) orelse .failed;
             if (status != .ok) {
                 fail(e, policy.message(status));
+                reportFailure(status);
                 deliver(e);
                 continue;
             }
@@ -249,6 +252,7 @@ fn pump(_: ?*anyopaque) callconv(.c) c_int {
             application.?.hold();
         } else {
             fail(e, "Could not start the preview decoder.");
+            reportFailure(.failed);
             deliver(e);
         }
     }
@@ -266,6 +270,14 @@ fn discovered(read: *Read, success: bool, _: ?*anyopaque) void {
     last_discovery = glib.getMonotonicTime();
     queuePump();
     if (changed) |notify| notify();
+}
+/// First occurrence of an outcome at warn, repeats at debug: a directory of
+/// unpreviewable files must not flood the journal, while the reason stays
+/// visible once and `--log-level debug` restores the per-file detail.
+fn reportFailure(status: policy.Status) void {
+    const first = !reported.contains(status);
+    reported.insert(status);
+    if (first) log.warn("event=preview-failed status={s}", .{@tagName(status)}) else log.debug("event=preview-failed status={s}", .{@tagName(status)});
 }
 fn fail(e: *Entry, message: []const u8) void {
     e.state = .ready;
@@ -290,6 +302,7 @@ fn completed(read: *Read, success: bool, data: ?*anyopaque) void {
     }
     if (!success) {
         fail(e, if (read.timeout) policy.message(.timeout) else "Preview exceeded its limits or the decoder failed.");
+        reportFailure(if (read.timeout) .timeout else .failed);
         deliver(e);
         return;
     }
@@ -297,11 +310,13 @@ fn completed(read: *Read, success: bool, data: ?*anyopaque) void {
     const n = raw.len;
     const h = policy.parse(raw[0..n]) catch {
         fail(e, "Decoder returned an invalid preview.");
+        reportFailure(.failed);
         deliver(e);
         return;
     };
     if (h.kind == .image and !makeRoom(h.length)) {
         fail(e, "Preview memory limit reached.");
+        reportFailure(.limits);
     } else {
         e.state = .ready;
         e.kind = h.kind;
@@ -314,6 +329,7 @@ fn completed(read: *Read, success: bool, data: ?*anyopaque) void {
         } else {
             e.retry_after = glib.getMonotonicTime() + 5_000_000;
             e.caption = a.dupeZ(u8, if (h.status != .ok) policy.message(h.status) else raw[16..n]) catch unreachable;
+            if (h.status != .ok) reportFailure(h.status);
         }
     }
     deliver(e);

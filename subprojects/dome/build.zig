@@ -11,6 +11,12 @@ pub fn build(b: *std.Build) void {
     module.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
     module.addOptions("build_options", options);
     module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    // Shared by path with the parent tree so every executable renders identical
+    // log lines and redacts untrusted text the same way.
+    const logging = b.createModule(.{ .root_source_file = b.path("../../src/core/logging.zig"), .target = target, .optimize = optimize });
+    const diagnostics = b.createModule(.{ .root_source_file = b.path("../../src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize });
+    module.addImport("logging", logging);
+    module.addImport("diagnostics", diagnostics);
     const exe = b.addExecutable(.{ .name = if (git_variant) "dome-git" else "dome", .root_module = module });
     b.installArtifact(exe);
     const generated = b.addWriteFiles();
@@ -47,6 +53,8 @@ pub fn build(b: *std.Build) void {
     im.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
     im.addOptions("build_options", test_options);
     im.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    im.addImport("logging", logging);
+    im.addImport("diagnostics", diagnostics);
     const ie = b.addExecutable(.{ .name = "dome-test", .root_module = im });
     const integration = b.addSystemCommand(&.{ "python3", "tests/native.py", "--binary" });
     integration.addArtifactArg(ie);

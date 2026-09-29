@@ -13,6 +13,12 @@ pub fn build(b: *std.Build) void {
     m.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
     m.addOptions("build_options", options);
     m.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    // Shared by path with the parent tree so every executable renders identical
+    // log lines and redacts untrusted text the same way.
+    const logging = b.createModule(.{ .root_source_file = b.path("../../src/core/logging.zig"), .target = target, .optimize = optimize });
+    const diagnostics = b.createModule(.{ .root_source_file = b.path("../../src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize });
+    m.addImport("logging", logging);
+    m.addImport("diagnostics", diagnostics);
     const exe = b.addExecutable(.{ .name = command, .root_module = m });
     b.installArtifact(exe);
     b.installFile("resources/coral-dark.xml", b.fmt("share/{s}/styles/coral-dark.xml", .{command}));
@@ -47,6 +53,8 @@ pub fn build(b: *std.Build) void {
     im.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
     im.addOptions("build_options", io);
     im.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    im.addImport("logging", logging);
+    im.addImport("diagnostics", diagnostics);
     const ie = b.addExecutable(.{ .name = "coral-test", .root_module = im });
     const integration = b.addSystemCommand(&.{ "python3", "tests/native.py", "--binary" });
     integration.addArtifactArg(ie);

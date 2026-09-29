@@ -6,6 +6,8 @@ const pix = @import("gdkpixbuf2");
 const policy = @import("core/preview.zig");
 const a = std.heap.c_allocator;
 const providers = @import("platform/preview_providers.zig");
+const diagnostics = @import("diagnostics");
+const log = std.log.scoped(.platform);
 var selected_provider: policy.Provider = .builtin;
 var provider_version: [:0]const u8 = "builtin-v1";
 fn unavailableStatus(status: policy.Status) void {
@@ -62,7 +64,8 @@ fn decode(fd: c_int, kind: [*:0]const u8, edge: u32, limit: usize) ?*pix.Pixbuf 
     var decode_error: ?*glib.Error = null;
     defer if (decode_error) |e| {
         corrupt_input = e.matches(pix.PixbufError.quark(), @intFromEnum(pix.PixbufError.corrupt_image)) != 0;
-        glib.printerr("Preview decoder: %s\n", e.f_message orelse "failed");
+        const message: []const u8 = if (e.f_message) |text| std.mem.span(text) else "failed";
+        log.err("event=preview-decode-failed error={f}", .{diagnostics.safe(message)});
         e.free();
     };
     const loader = pix.PixbufLoader.newWithType(kind, &decode_error) orelse return null;
@@ -148,7 +151,8 @@ fn save(p: *pix.Pixbuf, cache_root: [:0]const u8, class: []const u8, uri: [*:0]c
     var len: usize = 0;
     var save_error: ?*glib.Error = null;
     defer if (save_error) |e| {
-        glib.printerr("Preview cache: %s\n", e.f_message orelse "failed");
+        const message: []const u8 = if (e.f_message) |text| std.mem.span(text) else "failed";
+        log.err("event=preview-cache-failed error={f}", .{diagnostics.safe(message)});
         e.free();
     };
     if (p.saveToBuffer(&png, &len, "png", @ptrCast(&save_error), @as([*:0]const u8, "tEXt::Thumb::URI"), uri, @as([*:0]const u8, "tEXt::Thumb::MTime"), mtime.ptr, @as([*:0]const u8, "tEXt::Thumb::Size"), source_size.ptr, @as([*:0]const u8, "tEXt::Phyto::MTimeNS"), nanos.ptr, @as([*:0]const u8, "tEXt::Phyto::Provider"), @as([*:0]const u8, @tagName(selected_provider)), @as([*:0]const u8, "tEXt::Phyto::ProviderVersion"), provider_version.ptr, @as([*:0]const u8, "tEXt::Software"), @as([*:0]const u8, "Phyto"), @as(?[*:0]const u8, null)) != 0) {

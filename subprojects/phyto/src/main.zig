@@ -6,6 +6,12 @@ const glib = u.glib;
 const gdk = @import("gdk4");
 const Window = @import("window.zig").Window;
 const Options = @import("window.zig").Options;
+const logging = @import("logging");
+const diagnostics = @import("diagnostics");
+const log = std.log.scoped(.cli);
+
+pub const std_options = logging.std_options;
+
 var windows: std.ArrayList(*Window) = .empty;
 var initial: ?*gio.File = null;
 var options: Options = .{};
@@ -38,9 +44,22 @@ pub fn main(init: std.process.Init) void {
         return;
     }
     var location: ?[:0]const u8 = null;
-    for (args[1..]) |arg| {
+    var index: usize = 1;
+    while (index < args.len) : (index += 1) {
+        const arg = args[index];
+        switch (logging.verbosity(args[index..])) {
+            .other => {},
+            .applied => {
+                index += 1;
+                continue;
+            },
+            .rejected => |rejection| {
+                logging.report(rejection, diagnostics.safe(rejection.value));
+                std.process.exit(2);
+            },
+        }
         if (std.mem.eql(u8, arg, "--help")) {
-            glib.print("Phyto — native Pearl file explorer\nUsage: phyto [--light] [--compact] [--native-theme] [--width=N] [--height=N] [PATH_OR_URI]\n\nCtrl+L location, Ctrl+F filter, Ctrl+T new tab, F3 split panes, F6 switch pane.\n");
+            glib.print("Phyto — native Pearl file explorer\nUsage: phyto [--light] [--compact] [--native-theme] [--width=N] [--height=N]\n             [--log-level LEVEL] [--log-scopes LIST] [PATH_OR_URI]\n\nCtrl+L location, Ctrl+F filter, Ctrl+T new tab, F3 split panes, F6 switch pane.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         } else if (std.mem.eql(u8, arg, "--version")) {
             glib.print("Phyto 0.1.0 (Zig 0.16.0 / GTK4)\n");
@@ -52,7 +71,7 @@ pub fn main(init: std.process.Init) void {
             options.height = std.fmt.parseInt(c_int, arg[9..], 10) catch 760;
             options.height = std.math.clamp(options.height, 400, 2160);
         } else if (std.mem.startsWith(u8, arg, "--") or location != null) {
-            glib.printerr("Unknown option or extra location: %s\n", arg.ptr);
+            log.err("Unknown option or extra location: {f}", .{diagnostics.safe(arg)});
             std.process.exit(2);
         } else location = init.arena.allocator().dupeZ(u8, arg) catch return;
     }

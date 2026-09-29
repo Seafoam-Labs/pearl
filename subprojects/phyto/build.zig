@@ -11,6 +11,12 @@ pub fn build(b: *std.Build) void {
     module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     module.addOptions("build_options", options);
     module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    // Shared by path with the parent tree so every executable renders identical
+    // log lines and redacts untrusted text the same way.
+    const logging = b.createModule(.{ .root_source_file = b.path("../../src/core/logging.zig"), .target = target, .optimize = optimize });
+    const diagnostics = b.createModule(.{ .root_source_file = b.path("../../src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize });
+    module.addImport("logging", logging);
+    module.addImport("diagnostics", diagnostics);
     const exe = b.addExecutable(.{ .name = "phyto", .root_module = module });
     b.installArtifact(exe);
     b.installFile("packaging/org.aqueous.Phyto.desktop", "share/applications/org.aqueous.Phyto.desktop");
@@ -36,6 +42,8 @@ pub fn build(b: *std.Build) void {
     test_options.addOption(bool, "test_hooks", true);
     test_module.addOptions("build_options", test_options);
     test_module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    test_module.addImport("logging", logging);
+    test_module.addImport("diagnostics", diagnostics);
     const test_exe = b.addExecutable(.{ .name = "phyto-test", .root_module = test_module });
     const integration = b.addSystemCommand(&.{ "python3", "tests/native.py", "--binary" });
     integration.addArtifactArg(test_exe);
