@@ -1,0 +1,34 @@
+# Where a shell-launched application's stderr lands
+# Source: artifacts/t15/latest/session/pearl.log (private headless session,
+# zig build test-dock-islands). The dock launched the fixture app through
+# gio.AppInfo; the harness merges the shell's stdout and stderr into one file.
+#
+# The two unenveloped lines are the launched application's own stdout and
+# stderr. They arrive on the shell's inherited descriptors, so in production
+# they are journald entries of pearl.service under SyslogIdentifier=pearl.
+# Coral, Dome and Phyto write the same descriptors, and their lines carry the
+# ts=/pid= envelope, so pid= separates them from the shell's.
+#
+# tests/integration/test_dock_islands.py asserts the marker reaches the
+# shell's stream (check: keyboard-gio-launch-and-pinned-running-group).
+
+13-ts=2026-09-29T07:43:59Z pid=54981 info(config): event=wallpaper-applications-applied generation=3 elapsed_us=6836 success=true
+14-ts=2026-09-29T07:44:00Z pid=54981 info(config): event=preferences-applied revision=2 mode=static cache=false
+15-ts=2026-09-29T07:44:00Z pid=54981 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=5043 success=true
+16-event=fixture-ready Alpha
+17:fixture-stderr-marker Alpha
+18-ts=2026-09-29T07:44:03Z pid=54981 info(ui): event=popup-opened output=1
+19-ts=2026-09-29T07:44:03Z pid=54981 info(desktop): event=launcher-results count=4 shown=4 publish_us=3482
+20-ts=2026-09-29T07:44:03Z pid=54981 info(ui): event=popup-closed
+21-ts=2026-09-29T07:44:03Z pid=54981 info(ui): event=popup-opened output=1
+22-ts=2026-09-29T07:44:03Z pid=54981 info(ui): event=popup-closed
+23-event=fixture-ready Alpha
+24:fixture-stderr-marker Alpha
+25-event=fixture-ready Alpha
+26:fixture-stderr-marker Alpha
+27-event=fixture-ready Alpha
+28:fixture-stderr-marker Alpha
+29-ts=2026-09-29T07:44:08Z pid=54981 info(config): event=preferences-applied revision=3 mode=static cache=false
+30-ts=2026-09-29T07:44:08Z pid=54981 info(config): event=wallpaper-applications-applied generation=7 elapsed_us=5155 success=true
+31-ts=2026-09-29T07:44:08Z pid=54981 info(config): event=preferences-applied revision=4 mode=static cache=false
+32-ts=2026-09-29T07:44:08Z pid=54981 info(config): event=wallpaper-applications-applied generation=9 elapsed_us=4955 success=true

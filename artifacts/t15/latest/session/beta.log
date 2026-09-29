@@ -1,1 +1,2 @@
 event=fixture-ready window
+fixture-stderr-marker window

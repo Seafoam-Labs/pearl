@@ -1,0 +1,19 @@
+# Phyto preview converter: structured failure line and live redaction
+# Input: /tmp/phyto-corrupt.png (PNG magic followed by garbage, 32 bytes).
+# Fresh XDG_CACHE_HOME, so no cached failure can short-circuit the decode.
+# The converter's stdout stays the PHT2 wire contract; diagnostics go to stderr.
+
+$ XDG_CACHE_HOME=/tmp/phyto-cache-ev phyto --preview-helper file:///tmp/phyto-corrupt.png 256 52428800 0 1 1790668285 936527 32
+exit=0
+
+## stdout (wire header, unchanged contract)
+0000000   P   H   T   2 003  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0
+0000020   I   m   a   g   e       i   s       d   a   m   a   g   e   d
+0000040       o   r       i   t   s       d   e   c   o   d   e   r    
+0000060   i   s       u   n   a   v   a   i   l   a   b   l   e   .
+
+## stderr (one line: the decoder message arrived with embedded newlines and a
+## sandbox notice; safe() replaced every control byte with ? so the text cannot
+## split or fake a journal entry)
+ts=2026-09-29T07:54:39Z pid=60667 error(platform): event=preview-decode-failed error=Remote error: org.gnome.glycin.Error.LoadingError: glycin-loaders/glycin-image-rs/src/main.rs:328:52: Format error decoding Png: ChunkType { type: AGE-, critical: true, private: false, reserved: false, safecopy: true } chunk appeared before IHDR chunk??stderr:?Setting process memory limit?Error setrlimit(RLIMIT_AS)?
+ts=2026-09-29T07:54:39Z pid=60667 error(platform): event=preview-cache-failed error=IO error: Resource temporarily unavailable (os error 11) 

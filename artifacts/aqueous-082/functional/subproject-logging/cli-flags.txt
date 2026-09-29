@@ -1,0 +1,122 @@
+# Subproject logging: headless CLI checks (ReleaseSafe builds, no display)
+# Each app shares src/core/logging.zig, so lines carry the ts=/pid= envelope.
+
+## coral
+
+$ coral --help
+exit=0
+stdout: Coral 0.1.0 — Zig / GTK4 text editor
+Usage: coral [--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]
+
+$ coral --version
+exit=0
+stdout: Coral 0.1.0
+
+$ coral --bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59531 error(cli): Unknown option: --bogus
+
+$ coral --log-level
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59534 error(cli): Missing value for --log-level.
+
+$ coral --log-level bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59538 error(cli): Unknown log level bogus; expected error, warning, info or debug.
+
+$ coral --log-scopes nope
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59541 error(cli): Unknown log scope in nope.
+
+$ coral --log-level debug --bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59545 error(cli): Unknown option: --bogus
+
+$ coral --log-scopes cli --bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59548 error(cli): Unknown option: --bogus
+
+$ coral --log-scopes ~cli --bogus
+exit=2
+
+## dome
+
+$ dome --help
+exit=0
+stdout: Dome — native Linux system monitor
+Usage: dome [--light|--dark|--native-theme] [--compact] [--page=0..8] [--width=N] [--height=N]
+
+$ dome --version
+exit=0
+stdout: Dome 0.1.0 (Zig 0.16.0 / GTK4)
+
+$ dome --bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59567 error(cli): Unknown option: --bogus
+
+$ dome --log-level
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59570 error(cli): Missing value for --log-level.
+
+$ dome --log-level bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59573 error(cli): Unknown log level bogus; expected error, warning, info or debug.
+
+$ dome --log-scopes nope
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59576 error(cli): Unknown log scope in nope.
+
+$ dome --log-level debug --bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59579 error(cli): Unknown option: --bogus
+
+$ dome --log-scopes cli --bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59582 error(cli): Unknown option: --bogus
+
+$ dome --log-scopes ~cli --bogus
+exit=2
+
+## phyto
+
+$ phyto --help
+exit=0
+stdout: Phyto — native Pearl file explorer
+Usage: phyto [--light] [--compact] [--native-theme] [--width=N] [--height=N]
+
+$ phyto --version
+exit=0
+stdout: Phyto 0.1.0 (Zig 0.16.0 / GTK4)
+
+$ phyto --bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59601 error(cli): Unknown option or extra location: --bogus
+
+$ phyto --log-level
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59605 error(cli): Missing value for --log-level.
+
+$ phyto --log-level bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59608 error(cli): Unknown log level bogus; expected error, warning, info or debug.
+
+$ phyto --log-scopes nope
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59612 error(cli): Unknown log scope in nope.
+
+$ phyto --log-level debug --bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59615 error(cli): Unknown option or extra location: --bogus
+
+$ phyto --log-scopes cli --bogus
+exit=2
+stderr: ts=2026-09-29T07:53:53Z pid=59619 error(cli): Unknown option or extra location: --bogus
+
+$ phyto --log-scopes ~cli --bogus
+exit=2
+
+## dome --dump stays product output on stdout
+
+$ dome --dump
+{"processes":417,"logical_cpus":16,"memory_total":58586128384,"disks":3,"networks":3,"gpus":1,"sensors":17,"collection_us":27970}
+exit=0

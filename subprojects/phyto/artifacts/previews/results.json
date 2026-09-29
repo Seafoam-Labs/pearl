@@ -12,7 +12,7 @@
     "Missing-provider and disabled-sandbox messages preserve keyboard navigation",
     "Deterministic in-flight cancellation and decoder timeout preserve responsive UI"
   ],
-  "binary_sha256": "4c92902776cf2ad9c474e12a719d8ac3d82b8804fd06cdb21a0dabb6530f5701",
+  "binary_sha256": "a58480ee929563c87a65980a3c1ff3f719140dcf58abfe11e92605f8d28ae05a",
   "providers": {
     "pdf": "Poppler first page",
     "video": [
@@ -28,14 +28,14 @@
       "VP9"
     ],
     "fault_injection": true,
-    "sampled_peak_process_tree_rss_bytes": 130633728
+    "sampled_peak_process_tree_rss_bytes": 108806144
   },
   "large_directory": {
     "entries": 10000,
-    "elapsed_seconds": 1.285,
-    "jobs_started": 56,
+    "elapsed_seconds": 1.579,
+    "jobs_started": 57,
     "texture_bytes": 10836288,
-    "cache_hits": 22,
-    "max_main_loop_gap_us_during_jobs": 16952
+    "cache_hits": 21,
+    "max_main_loop_gap_us_during_jobs": 19085
   }
 }

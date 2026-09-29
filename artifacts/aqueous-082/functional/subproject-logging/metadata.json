@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "checks": {
+    "shared-handler-and-envelope-in-all-three-apps": true,
+    "verbosity-flags-applied-and-rejected-with-exit-2": true,
+    "scope-filter-suppresses-cli-lines": true,
+    "usage-errors-redacted-through-safe-text": true,
+    "preview-decode-and-cache-failures-structured-and-redacted": true,
+    "event-catalog-walk-covers-subprojects": true,
+    "shell-launched-stderr-reaches-shell-stream": true,
+    "product-stdout-contracts-unchanged": true,
+    "coral-dome-phyto-private-session-suites-pass": true
+  },
+  "binary_sha256": {
+    "coral": "ab2a2225b53959921c1cc72ceee2b68dc9e4a079773de3423dd436b88d1d17cb",
+    "dome": "5561da78af5fb7f475c19b9e0b7bd52b1b1ac44d0bac19f9e30672ba997add91",
+    "phyto": "1e4e9fd20ea446e7f5b9ade3d15c8ac08015563eb75850022b1483763289c4d1"
+  }
+}

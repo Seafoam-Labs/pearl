@@ -1,5 +1,90 @@
 # Pearl implementation progress
 
+## Subproject logging, September 29, 2026
+
+Coral, Dome and Phyto now share the shell's log handler and redactor instead of
+writing bare `g_printerr`/`printerr` text. Each subproject `build.zig` wires
+`src/core/logging.zig` and `src/diagnostics/safe_text.zig` as modules by
+relative path into both the production and the instrumented executable module,
+and each root declares `pub const std_options`, so all three render the same
+`ts=<UTC> pid=<n> level(scope):` envelope with every level compiled in. Two
+Zig constraints shaped the wiring: a module cannot import outside its own
+directory, so `logging.zig` stays std-only and a rejecting flag's value is
+redacted by the caller; and a file may belong to only one module, so the
+redactor is wired as its own module rather than re-exported through the
+handler.
+
+All three accept `--log-level error|warning|info|debug` and `--log-scopes LIST`
+through the new `logging.verbosity` / `logging.report` pair, which keeps the
+parse and its rejection text in one tested place while each app keeps its own
+exit-2 usage contract. Usage errors now log through the handler with the
+offending argument redacted. Product output is untouched: `--help`,
+`--version`, `dome --dump`, `phyto --preview-capabilities` and the
+`CORAL_PROBE`/`DOME_*`/`PHYTO_*` test contracts still write the same bytes to
+stdout.
+
+New log sites, all declared in the event catalog: `preferences-save-failed`
+(Dome, `config`), `preview-decode-failed` and `preview-cache-failed` (Phyto's
+converter, `platform`), and `preview-failed status=<reason>` at Phyto's
+supervisor boundary. The boundary line is the one that reaches users: the
+converter is a sandboxed child whose stderr the supervisor pipes and drains, so
+in a production build its own lines go nowhere (instrumented builds echo them
+when a conversion fails). `preview-failed` logs the first occurrence of each
+reason at `warning` and repeats at `debug`, so a directory of unpreviewable
+files stays one line. The catalog test now walks the three subproject source
+trees as well as `src`.
+
+Where subproject logs go is answered with evidence rather than assumption: a
+`gio.AppInfo`-launched child inherits the launcher's fd 1 and fd 2 (only stdin
+becomes `/dev/null`), verified by probing a launched child's descriptors, so an
+application started from the dock or launcher writes into the shell's stream.
+In production that is `journalctl --user -u pearl.service` under
+`SyslogIdentifier=pearl`, told apart from the shell's own lines by `pid=`, and
+`pearlctl report` therefore already contains it. The session launcher suite now
+asserts this at runtime: the fixture application writes a stderr marker and the
+suite requires it to arrive in the shell's captured stream.
+
+Observation surfaced by the new logging, not caused by it: the previews suite
+records one `preview-cache-failed error=IO error: Resource temporarily
+unavailable (os error 11)` while the 10,000-file grid tears down, i.e. the PNG
+encoder loses its sandboxed backend during shutdown. The same text previously
+went into a drained pipe. Left alone here; it is a preview-cache defect, not a
+logging one.
+
+Checks actually run:
+
+- `zig build test -Doptimize=ReleaseSafe`: pass, 235 tests, including the new
+  verbosity recognition/application/rejection cases and the catalog walk over
+  all four roots. A planted `event=` literal under `subprojects/dome/src` fails
+  the catalog test with the file and name (verified, then removed).
+- `zig build -Doptimize=ReleaseSafe`: pass. `pearl --log-level bogus` and
+  `pearlctl --log-level bogus status` still exit 2.
+- `zig build` and `zig build test` in each of `subprojects/{coral,dome,phyto}`:
+  pass.
+- Headless CLI matrix for all three apps (help, version, unknown option,
+  missing value, bad level, bad scope list, level applied, scope filter
+  suppressing and admitting the `cli` scope, `dome --dump`): evidence in
+  `artifacts/aqueous-082/functional/subproject-logging/cli-flags.txt`.
+- Converter run on a corrupt PNG: both new Phyto events on one line each, with
+  the decoder message's embedded newlines and the sandbox notice replaced by
+  `?`, while stdout keeps the `PHT2` header
+  (`artifacts/aqueous-082/functional/subproject-logging/preview-decode-failed.txt`).
+- `zig build test-preview-providers` in Phyto: pass, including the
+  missing-tool, crash, output/stderr-flood, deadline, confinement and
+  descendant-cancellation checks.
+- Private sessions: `zig build test-dock-islands` (17 checks, including the new
+  stderr-attribution assertion; run with the established local Aqueous source
+  override, restored afterwards), `zig build integration` in each subproject
+  (Dome 8 groups, Coral 18, Phyto 13) and `zig build test-previews` in Phyto
+  (8 groups). Launch-attribution excerpt in
+  `artifacts/aqueous-082/functional/subproject-logging/launch-attribution.txt`.
+- `python3 scripts/release-source.py`, then Coral and Dome built and run from
+  the extracted archive: pass, so the relative module wiring survives
+  packaging. Phyto's wiring is identical; its build needs the pinned `gobject`
+  dependency fetch.
+
+Not run: the full release matrix, which is the final gate for this workstream.
+
 ## Support report and logging doc, September 29, 2026
 
 `pearlctl report` now writes the user-facing support artifact: a bounded text

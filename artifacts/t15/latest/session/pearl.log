@@ -1,55 +1,107 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info: event=app-index-ready entries=2 truncated=false
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-info(pearl): event=control-ready session=9a57ed79d4274c8e4ac26c8675e27c93
-info: event=preferences-applied revision=0 mode=static cache=false
-info: event=preferences-applied revision=1 mode=static cache=false
-info: event=preferences-applied revision=2 mode=static cache=false
+ts=2026-09-29T07:43:59Z pid=54981 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-29T07:43:59Z pid=54981 info(pearl): event=ready mode=session
+ts=2026-09-29T07:43:59Z pid=54981 info(desktop): event=app-index-ready entries=2 truncated=false
+ts=2026-09-29T07:43:59Z pid=54981 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-29T07:43:59Z pid=54981 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-29T07:43:59Z pid=54981 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-29T07:43:59Z pid=54981 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-09-29T07:43:59Z pid=54981 info(pearl): event=settings-backend-ready session_hash=f4e591acea212dfb
+ts=2026-09-29T07:43:59Z pid=54981 info(pearl): event=control-ready session_hash=f4e591acea212dfb
+ts=2026-09-29T07:43:59Z pid=54981 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-29T07:43:59Z pid=54981 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=6774 success=true
+ts=2026-09-29T07:43:59Z pid=54981 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-09-29T07:43:59Z pid=54981 info(config): event=wallpaper-applications-applied generation=3 elapsed_us=6836 success=true
+ts=2026-09-29T07:44:00Z pid=54981 info(config): event=preferences-applied revision=2 mode=static cache=false
+ts=2026-09-29T07:44:00Z pid=54981 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=5043 success=true
 event=fixture-ready Alpha
-info: event=popup-opened output=1
-info: event=launcher-results count=4 shown=4 publish_us=238
-info: event=launcher-painted latency_us=2843
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=preferences-applied revision=3 mode=static cache=false
-info: event=preferences-applied revision=4 mode=static cache=false
-info: event=preferences-applied revision=5 mode=static cache=false
-info: event=preferences-applied revision=6 mode=static cache=false
-info: event=preferences-applied revision=7 mode=static cache=false
-info: event=popup-opened output=1
-info: event=launcher-results count=4 shown=4 publish_us=229
-info: event=launcher-painted latency_us=6049
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=popup-closed
-info: event=preferences-applied revision=8 mode=gtk cache=false
-info: event=preferences-applied revision=9 mode=static cache=false
-info: event=preferences-applied revision=10 mode=static cache=false
-info: event=app-index-ready entries=16 truncated=false
-info: event=preferences-applied revision=11 mode=static cache=false
-info: event=preferences-applied revision=12 mode=static cache=false
-info: event=preferences-applied revision=13 mode=static cache=false
-info: event=preferences-applied revision=14 mode=static cache=false
-info(pearl): event=stopping reason=control-quit pending=false
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+fixture-stderr-marker Alpha
+ts=2026-09-29T07:44:03Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:03Z pid=54981 info(desktop): event=launcher-results count=4 shown=4 publish_us=3482
+ts=2026-09-29T07:44:03Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:03Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:03Z pid=54981 info(ui): event=popup-closed
+event=fixture-ready Alpha
+fixture-stderr-marker Alpha
+event=fixture-ready Alpha
+fixture-stderr-marker Alpha
+event=fixture-ready Alpha
+fixture-stderr-marker Alpha
+ts=2026-09-29T07:44:08Z pid=54981 info(config): event=preferences-applied revision=3 mode=static cache=false
+ts=2026-09-29T07:44:08Z pid=54981 info(config): event=wallpaper-applications-applied generation=7 elapsed_us=5155 success=true
+ts=2026-09-29T07:44:08Z pid=54981 info(config): event=preferences-applied revision=4 mode=static cache=false
+ts=2026-09-29T07:44:08Z pid=54981 info(config): event=wallpaper-applications-applied generation=9 elapsed_us=4955 success=true
+ts=2026-09-29T07:44:08Z pid=54981 info(config): event=preferences-applied revision=5 mode=static cache=false
+ts=2026-09-29T07:44:08Z pid=54981 info(config): event=wallpaper-applications-applied generation=11 elapsed_us=4717 success=true
+ts=2026-09-29T07:44:09Z pid=54981 info(config): event=preferences-applied revision=6 mode=static cache=false
+ts=2026-09-29T07:44:09Z pid=54981 info(config): event=wallpaper-applications-applied generation=13 elapsed_us=10509 success=true
+ts=2026-09-29T07:44:10Z pid=54981 info(config): event=preferences-applied revision=7 mode=static cache=false
+ts=2026-09-29T07:44:10Z pid=54981 info(config): event=wallpaper-applications-applied generation=15 elapsed_us=14657 success=true
+ts=2026-09-29T07:44:11Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:11Z pid=54981 info(desktop): event=launcher-results count=7 shown=7 publish_us=6397
+ts=2026-09-29T07:44:11Z pid=54981 info(desktop): event=launcher-results count=7 shown=7 publish_us=480
+ts=2026-09-29T07:44:12Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:12Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:12Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:12Z pid=54981 info(desktop): event=settings-focus target=heading
+ts=2026-09-29T07:44:12Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:12Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:12Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:12Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:12Z pid=54981 info(desktop): event=session-focus target=dnd
+ts=2026-09-29T07:44:13Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:13Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:13Z pid=54981 info(desktop): event=session-focus target=other
+ts=2026-09-29T07:44:13Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:13Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:13Z pid=54981 info(desktop): event=session-focus target=other
+ts=2026-09-29T07:44:13Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:13Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:13Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:13Z pid=54981 info(desktop): event=settings-focus target=heading
+ts=2026-09-29T07:44:14Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:14Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:14Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:15Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:15Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:16Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:16Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:17Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:17Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:17Z pid=54981 info(desktop): event=session-focus target=settings-other
+ts=2026-09-29T07:44:17Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:17Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:17Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:17Z pid=54981 info(desktop): event=settings-focus target=heading
+ts=2026-09-29T07:44:17Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:18Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:18Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:19Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:19Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:20Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:20Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:20Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:21Z pid=54981 info(desktop): event=settings-focus target=body
+ts=2026-09-29T07:44:21Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:21Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:22Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:22Z pid=54981 info(ui): event=popup-opened output=1
+ts=2026-09-29T07:44:22Z pid=54981 info(ui): event=popup-closed
+ts=2026-09-29T07:44:22Z pid=54981 info(config): event=preferences-applied revision=8 mode=gtk cache=false
+ts=2026-09-29T07:44:22Z pid=54981 info(config): event=wallpaper-applications-applied generation=17 elapsed_us=6539 success=true
+ts=2026-09-29T07:44:23Z pid=54981 info(config): event=preferences-applied revision=9 mode=static cache=false
+ts=2026-09-29T07:44:23Z pid=54981 info(config): event=wallpaper-applications-applied generation=19 elapsed_us=12243 success=true
+ts=2026-09-29T07:44:23Z pid=54981 info(config): event=preferences-applied revision=10 mode=static cache=false
+ts=2026-09-29T07:44:23Z pid=54981 info(config): event=wallpaper-applications-applied generation=21 elapsed_us=10026 success=true
+ts=2026-09-29T07:44:24Z pid=54981 info(desktop): event=app-index-ready entries=16 truncated=false
+ts=2026-09-29T07:44:24Z pid=54981 info(config): event=preferences-applied revision=11 mode=static cache=false
+ts=2026-09-29T07:44:24Z pid=54981 info(config): event=wallpaper-applications-applied generation=23 elapsed_us=17068 success=true
+ts=2026-09-29T07:44:28Z pid=54981 info(config): event=preferences-applied revision=12 mode=static cache=false
+ts=2026-09-29T07:44:28Z pid=54981 info(config): event=wallpaper-applications-applied generation=25 elapsed_us=10341 success=true
+ts=2026-09-29T07:44:28Z pid=54981 info(config): event=preferences-applied revision=13 mode=static cache=false
+ts=2026-09-29T07:44:28Z pid=54981 info(config): event=wallpaper-applications-applied generation=27 elapsed_us=5266 success=true
+ts=2026-09-29T07:44:29Z pid=54981 info(config): event=preferences-applied revision=14 mode=static cache=false
+ts=2026-09-29T07:44:29Z pid=54981 info(config): event=wallpaper-applications-applied generation=29 elapsed_us=3907 success=true
+ts=2026-09-29T07:44:29Z pid=54981 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-09-29T07:44:29Z pid=54981 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-29T07:44:29Z pid=54981 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-29T07:44:29Z pid=54981 info(pearl): event=stopped

@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "binary_sha256": "4adb245fee4bfd1b22950afc6e1996e60ebb4300851b2c2f99b449a2a5bfc927",
+  "binary_sha256": "3f3da696c847bb20911f77862e04fbc92f2ebf2c186e485afa29d7721e03a06e",
   "checks": [
     "Native startup, local file argument, dictionary discovery and suggestions",
     "Real Enchant correction, single-step undo/redo and asynchronous save",
@@ -52,7 +52,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 86
+        "max_spell_tick_us": 113
       }
     },
     {
@@ -85,7 +85,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 3112
+        "max_spell_tick_us": 7888
       }
     },
     {
@@ -118,7 +118,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 3112
+        "max_spell_tick_us": 7888
       }
     },
     {
@@ -151,7 +151,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 3112
+        "max_spell_tick_us": 7888
       }
     },
     {
@@ -184,7 +184,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 3112
+        "max_spell_tick_us": 7888
       }
     },
     {
@@ -217,7 +217,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 3112
+        "max_spell_tick_us": 7888
       }
     },
     {
@@ -250,7 +250,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 3112
+        "max_spell_tick_us": 7888
       }
     },
     {
@@ -283,7 +283,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 65
+        "max_spell_tick_us": 141
       }
     },
     {
@@ -316,7 +316,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 80
+        "max_spell_tick_us": 163
       }
     },
     {
@@ -349,7 +349,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 95
+        "max_spell_tick_us": 124
       }
     },
     {
@@ -382,7 +382,7 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 75
+        "max_spell_tick_us": 142
       }
     },
     {
@@ -415,12 +415,12 @@
         "inflight": false,
         "checking_enabled": true,
         "large": false,
-        "max_spell_tick_us": 23
+        "max_spell_tick_us": 67
       }
     }
   ],
   "one_mib": {
-    "open_edit_check_seconds": 3.109,
-    "max_main_thread_spelling_tick_us": 221
+    "open_edit_check_seconds": 3.13,
+    "max_main_thread_spelling_tick_us": 468
   }
 }

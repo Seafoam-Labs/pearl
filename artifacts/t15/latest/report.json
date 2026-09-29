@@ -10,6 +10,7 @@
     "intelligent-hiding-follows-visible-outer-geometry": true,
     "inactive-session-hides-dock-and-rejects-reveal": true,
     "popup-dock-keyboard-arbitration": true,
+    "context-actions-via-right-click-menu-key-and-shift-f10": true,
     "dark-light-mixed-scale-and-enlarged-surface-captures": true,
     "arbitrary-gtk-theme-colors-with-island-geometry": true,
     "island-gaps-deliver-click-to-independent-underlay": true,
@@ -18,6 +19,6 @@
     "continuous-bar-and-disabled-dock-options": true,
     "unpin-persistence-clean-exit-and-reservation-release": true
   },
-  "pearl_sha256": "5d24d392ee9543800b006e3da69ec67067bfd4c154d030de63604f752db6bc8c",
-  "ctl_sha256": "4839163ff6622f8b9ea92532419a85ca6c0e924b31925e58e6ebfad723272e30"
+  "pearl_sha256": "07746861d6f477d2ae41a10646b1b217dfa449149e15db54862cbb67574bd128",
+  "ctl_sha256": "8c629aecca5774a213f736cad9ac908b36d9a07bd0554ce4a1ec3876c4102211"
 }
