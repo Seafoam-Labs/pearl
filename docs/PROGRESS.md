@@ -1,5 +1,75 @@
 # Pearl implementation progress
 
+## Bar layout stability and the service suite, September 29, 2026
+
+`zig build test-services` was red at three moving sites. The bar's keyboard
+indicator was the driver: a driver's `wtype` creates a virtual keyboard, Aqueous
+makes it the seat's active keyboard, it publishes an empty layout name, and the
+resulting 66 px width swing flipped the workspace wrap, the painted panel height
+and the exclusive zone on every keystroke. `failures.md` issue 1 carries the
+traces, the earlier misreading it corrects, and the numbers before and after.
+
+The bar now budgets ellipsizing live text at its minimum in both layout passes,
+renders an empty layout name as the missing-keyboard placeholder, and reserves the
+workspaces grid's unwrapped width in the task-strip budget, so neither pass
+measures the other's output. Three `test_services.py` expectations were also
+wrong and were corrected against measurements, not guesses: the flyout is
+dismissed by the suite's own session-inactive, logind-preparing and bus-restart
+steps and has to be reopened; the audio reconnect budget was tighter than the
+backoff `docs/SERVICES.md` documents; and the log capture froze before the OSD
+surface-reuse assertion that counts across the whole log.
+
+Verified green: `test-services`, `test-bar-layout`, `test-running-apps`,
+`test-bar-autohide`, `test-desktop`, `test-settings-appearance`, `zig build test`.
+A full matrix re-record is still owed, and `test-settings-integration` now fails
+later, in the arch-git staging step, for the missing wasm and `-Dgit-variant`
+build products described in `failures.md` issue 3.
+
+## Logging and support diagnostics workstream: rejected alternatives and open items, September 29, 2026
+
+The workstream ran from a logging census plus a survey of two reference
+implementations (upstream Aqueous, Shelly), held as untracked working notes beside
+`plan.md`. All eight phases landed, `docs/LOGGING.md` carries the user-facing
+result, and the notes are deleted. What only they recorded:
+
+Rejected alternatives, so nobody re-litigates them:
+
+- No general in-process log file. Pearl runs as a systemd user service, so journald
+  owns indexing, access control, rate limiting and retention. A second copy doubles
+  flood exposure and makes Pearl reimplement retention worse. The bounded
+  `pearlctl report` bundle is the only diagnostic file Pearl writes.
+- No SIGSEGV handler, no backtrace or breakpad. ReleaseSafe keeps Zig's default
+  handler, so a panic already prints a stack trace to stderr, which now lands under
+  the unit's journal identity and inside a report. Both references rely on the same.
+- No `event=` format migration and no cosmetic renames (the four `*-focus` names for
+  one concept, the byte-identical duplicate message groups). The format is the
+  tree's most-scraped asset; renaming churns text tests depend on for no user gain.
+- No build-time `-D` verbosity flag. Runtime filtering makes it redundant and a build
+  flag cannot be handed to a user as a support step.
+- No logrotate, tmpfiles age rules or journald quota: retention stays documented, not
+  owned.
+- No greeter wrapper redirect. The greeter unit and the session it launches keep the
+  journal, since nothing in the spawn chain touches fd 1 or 2, so there is no
+  per-login tmpfs log as in Aqueous's launcher.
+
+Open, deliberately out of this workstream's scope:
+
+- Per-subsystem disposition review of the silent `catch {}` sites outside
+  `src/services`, which now has none. Which become `err`, which `debug`, which stay
+  silent is a review of intent, not logging infrastructure.
+- Crash culture: `catch unreachable` on attacker-reachable or OOM paths, most
+  prominently the greeter session-environment build in `src/greeter/screen.zig`; the
+  `catch @panic` allocation paths; asserts left on release paths; and the two
+  inverted gates that check an invariant only in test builds
+  (`src/core/application.zig:450`, `src/main.zig:90`).
+- Two ideas worth taking from the references that are not logging: a
+  recoverable-versus-failed field convention the UI can branch on, and surfacing a
+  child process's stderr as the user-visible error text. Pearl does the opposite on
+  compositor disconnect (`src/core/application.zig:230` logs `warn` and shows
+  nothing).
+- Unit-launched executables (greeter, lock, settings, themes, plugin host) take no
+  verbosity flags; their limitation is stated in `docs/LOGGING.md`.
+
 ## Harness truncation and final verification, September 29, 2026
 
 The private-session harness now makes log truncation loud: when a child hits
