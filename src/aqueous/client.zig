@@ -7,6 +7,8 @@ const codec = @import("codec.zig");
 const commands = @import("commands.zig");
 const Transport = @import("transport.zig").Transport;
 const icons = @import("icons.zig");
+const diagnostics = @import("../diagnostics/safe_text.zig");
+const log = std.log.scoped(.aqueous);
 pub const Action = commands.Action;
 pub const IconKey = icons.Key;
 pub const Model = @import("reducer.zig").Model;
@@ -142,6 +144,7 @@ pub const Client = struct {
             c.wire.framer.limit = c.limits.frame_bytes;
             c.connect_deadline = now() + @as(i64, self.request_ms) * 1000;
             c.wire.open(self.path) catch |err| {
+                log.err("event=ipc-connect-failed path={f}", .{diagnostics.safe(self.path)});
                 self.fail(err);
                 return;
             };
@@ -166,6 +169,7 @@ pub const Client = struct {
     }
     fn fail(self: *Client, err: anyerror) void {
         if (self.availability == .stopped or self.retry_at != 0) return;
+        log.warn("event=ipc-disconnected reason={s}", .{@errorName(err)});
         self.generation +%= 1;
         self.model.invalidate();
         self.capabilities = std.mem.zeroes(codec.Capabilities);
@@ -198,6 +202,7 @@ pub const Client = struct {
         defer a.free(frame);
         if (frame.len - 1 > channel.limits.request_bytes) return error.RequestTooLarge;
         try channel.wire.send(frame);
+        log.debug("event=ipc-request op={s}", .{op_name});
         channel.pending = p;
         self.retime();
     }
@@ -225,7 +230,13 @@ pub const Client = struct {
                 if (self.model.ready and event.batch.type != .delta) return error.UnexpectedSnapshot;
                 const delivery = try std.fmt.parseInt(u64, event.delivery, 10);
                 if (delivery <= self.last_delivery) return error.InvalidDelivery;
-                try self.model.apply(event.batch);
+                self.model.apply(event.batch) catch |err| {
+                    if (err == error.SequenceGap) log.warn("event=ipc-sequence-gap expected={d} got={d}", .{
+                        std.fmt.parseInt(u64, self.model.sequence, 10) catch 0,
+                        std.fmt.parseInt(u64, event.batch.base_sequence orelse "", 10) catch 0,
+                    });
+                    return err;
+                };
                 self.last_delivery = delivery;
                 self.delivery_len = event.delivery.len;
                 @memcpy(self.delivery[0..self.delivery_len], event.delivery);
@@ -238,6 +249,7 @@ pub const Client = struct {
             .failure => |failure| {
                 const p = c.pending orelse return error.UnexpectedResponse;
                 if (!eql(u8, p.id[0..p.len], failure.id) or c.wire.output != null) return error.ResponseId;
+                log.err("event=ipc-request-failed op={s} code={s}", .{ @tagName(p.op), @tagName(codec.FailureCode.parse(failure.code)) });
                 if (p.op != .command and p.op != .window_icon) return error.HandshakeRejected;
                 c.pending = null;
                 if (p.op == .command) {
@@ -253,6 +265,7 @@ pub const Client = struct {
                 const p = c.pending orelse return error.UnexpectedResponse;
                 if (!eql(u8, p.id[0..p.len], response.id) or c.wire.output != null) return error.ResponseId;
                 c.pending = null;
+                log.debug("event=ipc-response op={s}", .{@tagName(std.meta.activeTag(response.result))});
                 switch (response.result) {
                     .hello => |hello| {
                         c.hello = true;

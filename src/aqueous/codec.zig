@@ -118,6 +118,24 @@ pub const Hello = struct {
     }
 };
 pub const Operation = enum { hello, snapshot, subscribe, ack, command, window_icon };
+/// Closed rejection-code vocabulary for Pearl's own operations. Anything else
+/// collapses to `.other`, so wire strings never reach logs raw.
+pub const FailureCode = enum {
+    ambiguous_seat,
+    busy,
+    invalid,
+    locked,
+    not_found,
+    stale_revision,
+    stale_session,
+    unavailable,
+    unsupported,
+    other,
+
+    pub fn parse(code: []const u8) FailureCode {
+        return std.meta.stringToEnum(FailureCode, code) orelse .other;
+    }
+};
 pub const CommandResult = struct { status: enum { applied, accepted }, sequence: []const u8 };
 pub const IconResult = struct { revision: []const u8, width: u16, height: u16, format: enum { png }, data: []const u8 };
 pub const Result = union(Operation) {

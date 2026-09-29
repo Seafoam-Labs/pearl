@@ -43,11 +43,21 @@ test "captured server envelopes decode with operation-specific results" {
     var failure = try decode(f.failure, .command);
     defer failure.deinit();
     try t.expectEqualStrings("stale_session", failure.message.failure.code);
+    try t.expectEqual(c.FailureCode.stale_session, c.FailureCode.parse(failure.message.failure.code));
     var delta = try decode(f.delta, null);
     defer delta.deinit();
     try t.expectEqualStrings("final 🐟 \"quoted\"", delta.message.event.batch.upsert[0].workspace.name);
     try rejects(f.hello, error.UnexpectedResponse, null);
     try rejects(f.hello, error.MissingField, .ack);
+}
+
+test "reject codes map to the declared vocabulary and nothing else" {
+    inline for (@typeInfo(c.FailureCode).@"enum".fields) |field| {
+        if (comptime std.mem.eql(u8, field.name, "other")) continue;
+        try t.expectEqual(@field(c.FailureCode, field.name), c.FailureCode.parse(field.name));
+    }
+    for ([_][]const u8{ "", "stale-session", "Stale_Session", "OutOfMemory", "not_found " }) |code|
+        try t.expectEqual(c.FailureCode.other, c.FailureCode.parse(code));
 }
 
 test "NDJSON survives every byte split including UTF-8 and escaped quotes" {
