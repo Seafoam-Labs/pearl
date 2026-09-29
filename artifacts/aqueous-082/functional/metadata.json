@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "started": "2026-09-29T04:08:38.146320+00:00",
+  "targets": {
+    "unit": {
+      "exit_code": 0,
+      "seconds": 14.202208161000272,
+      "command": [
+        "zig",
+        "build",
+        "test",
+        "test-adapter-unit",
+        "test-bindings",
+        "test-release-tools",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all"
+      ]
+    },
+    "test-release": {
+      "exit_code": 0,
+      "seconds": 62.23918122899977,
+      "command": [
+        "zig",
+        "build",
+        "test-release",
+        "-Doptimize=ReleaseSafe",
+        "-Drelease=true",
+        "--summary",
+        "all",
+        "--",
+        "--output",
+        "/home/azdanov/Projects/pearl/artifacts/aqueous-082/functional/test-release"
+      ]
+    }
+  },
+  "source_fingerprint": "c985a225008cebe5d80934cf6c86feb1624786c0e49ee264fd1f475c9f4cf5bf",
+  "source_unchanged": true
+}

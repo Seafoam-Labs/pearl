@@ -1,5 +1,43 @@
 # Pearl implementation progress
 
+## Journal attribution, September 29, 2026
+
+Both packaged units now name their journal identity: `SyslogIdentifier=pearl` in
+`packaging/systemd/pearl.service` (user unit) and `SyslogIdentifier=pearl-greeter`
+in `packaging/greeter/pearl-greeter.service` (system unit). Users can filter with
+`journalctl --user -t pearl` / `-u pearl.service` and
+`journalctl -b -u pearl-greeter.service`; previously every entry was attributed
+per executable name. The staged-unit field tuple in
+`tests/integration/test_release.py` and the payload assertion in
+`tests/test_greeter_install.py` now require the keys, so neither unit can lose
+them silently.
+
+The greeter attribution question (does the authenticated session's stderr reach
+the system unit or the user journal?) is answered: the system unit. The chain
+never redirects fd 1/2: greetd's unit journal connection is inherited by
+`pearl-greeter-host`, the supervised compositor spawn only manipulates the fd 3
+lifecycle pipe (`src/greeter/host.zig`), and `pearl-greeter-session` `execve`s
+the desktop with fds untouched. The session launcher suite now records this at
+runtime: the fixture session's `Exec` writes a stderr marker and the suite
+asserts it arrives on the launcher's inherited fd 2. The journald half (messages
+on that fd are attributed to the unit and identifier captured when systemd
+created it) is documented systemd behavior, not observable in a private session
+without a real system unit; per the greeter decision it stays on the journal and
+the answer carries into the logging doc.
+
+Checks actually run:
+
+- `python3 tests/test_greeter_install.py`: pass, including the new
+  `SyslogIdentifier=pearl-greeter` payload assertion.
+- `zig build test-greeter-session -Doptimize=ReleaseSafe`: pass with the stderr
+  marker assertion.
+- `python3 scripts/release-validate.py --resume --targets test-release`:
+  `unit` and `test-release` exit 0, status `passed`; evidence in
+  `artifacts/aqueous-082/functional/`. `test_release.py` hardcodes the
+  reference-machine Aqueous source for the input fixture, so the run used the
+  established local override (`.cache/aqueous-activity-production/source`),
+  restored afterwards; the committed tree keeps the reference path.
+
 ## Silent subsystem logging, September 29, 2026
 
 The four quietest subsystems get their first structured log lines and the
