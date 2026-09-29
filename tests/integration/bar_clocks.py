@@ -6,6 +6,36 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 
+def drag_row(s, ipc, source_ref, target_field):
+    """Move or reorder a bar editor row with a real held-button drag."""
+    from test_settings_app import windows, probe
+    from test_settings_appearance import control
+    from test_settings_displays import drag_pointer
+    win = windows(ipc)[0]['geometry']
+    for _ in range(30):
+        v = probe(s, ipc); target = control(s, ipc, target_field); body = v['body_bounds']
+        if target['y'] >= body['y'] and target['y'] + target['height'] <= body['y'] + body['height']:
+            break
+        s.run(['wlrctl','pointer','move','-100000','-100000'])
+        s.run(['wlrctl','pointer','move',str(round(win['x']+body['x']+body['width']/2)),str(round(win['y']+body['y']+body['height']/2))])
+        below = target['y'] > body['y']
+        distance = target['y'] + target['height'] - body['y'] - body['height'] if below else body['y'] - target['y']
+        step = min(120, max(10, distance + 5))
+        s.run(['wlrctl','pointer','scroll',str(step if below else -step),'0'])
+        time.sleep(.1)
+    else:
+        raise AssertionError(('control not reachable', target_field, target, body))
+    source = control(s, ipc, 'bar.widget.' + source_ref)
+    x = round(win['x'] + source['x'] + source['width']/2)
+    y = round(win['y'] + source['y'] + source['height']/2)
+    s.run(['wlrctl','pointer','move','-100000','-100000'])
+    s.run(['wlrctl','pointer','move',str(x),str(y)])
+    time.sleep(.1)
+    drop_x = round(win['x'] + target['x'] + target['width']/2)
+    drop_y = round(win['y'] + target['y'] + 8)
+    drag_pointer(s, drop_x - x, drop_y - y)
+
+
 def verify_editor(s, ipc, peer, args, output, baseline, passed, app, shell):
     from test_settings_app import ctl, probe, capture, wait_for, keys, clean
     from test_settings_appearance import click, ready, type_text
@@ -55,8 +85,14 @@ def verify_editor(s, ipc, peer, args, output, baseline, passed, app, shell):
     london_ref, tokyo_ref = 'clock:' + london, 'clock:' + tokyo
     assert len(live()) == 1  # Draft never changes live clocks.
     assert document['outputs'] == baseline['outputs']
-    action(s, ipc, tokyo_ref, 'earlier')
-    action(s, ipc, tokyo_ref, 'move.right')
+    drag_row(s, ipc, tokyo_ref, 'bar.widget.' + london_ref)
+    ready(s, ipc)
+    center = json.loads(peer.document())['bar']['groups']['center'].split(',')
+    assert tokyo_ref in center and london_ref in center and center.index(tokyo_ref) == center.index(london_ref) - 1, center
+    drag_row(s, ipc, tokyo_ref, 'bar.widget.control')
+    ready(s, ipc)
+    groups = json.loads(peer.document())['bar']['groups']
+    assert 'clock:' + tokyo in groups['right'].split(',') and 'clock:' + tokyo not in groups['center'].split(','), groups
     action(s, ipc, tokyo_ref, 'remove')
     assert any(d['id'] == tokyo for d in json.loads(peer.document())['bar']['clocks'])
     choose(s, ipc, 'center', 'Tokyo', tokyo_ref)
