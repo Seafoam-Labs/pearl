@@ -11,6 +11,7 @@ ConditionEnvironment=!AQUEOUS_NESTED=1
 
 [Service]
 Type=simple
+SyslogIdentifier=pearl
 ExecCondition=/usr/bin/pearl --check-environment
 ExecStart=/usr/bin/pearl
 Restart=on-failure

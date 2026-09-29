@@ -7,6 +7,7 @@ StartLimitBurst=5
 
 [Service]
 Type=simple
+SyslogIdentifier=pearl-greeter
 ExecStart=/usr/bin/greetd --config /etc/greetd/config.toml
 IgnoreSIGPIPE=no
 SendSIGHUP=yes

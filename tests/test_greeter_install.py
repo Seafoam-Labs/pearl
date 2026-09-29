@@ -298,6 +298,7 @@ class GreeterInstall(unittest.TestCase):
         self.assertFalse((payload/'etc/pearl/greetd.toml').exists())
         service = (payload/'usr/lib/systemd/system/pearl-greeter.service').read_text()
         self.assertIn('ExecStart=/usr/bin/greetd --config /etc/greetd/config.toml', service)
+        self.assertIn('SyslogIdentifier=pearl-greeter', service)
         self.assertFalse((payload/'etc/pam.d').exists())
         self.assertFalse((payload/'usr/share/wayland-sessions').exists())
         self.assertFalse((payload/'usr/lib/pearl/pearl-aqueous-init').exists())

@@ -40,7 +40,7 @@ def main():
             assert (stage/'usr/share/pearl/release.json').is_file()
             assert not list(stage.rglob('*.wants'))
             unit=(stage/'usr/lib/systemd/user/pearl.service').read_text()
-            for field in ('KillMode=process','PartOf=graphical-session.target','Requisite=graphical-session.target','ConditionEnvironment=AQUEOUS_SOCKET','ConditionEnvironment=!AQUEOUS_NESTED=1','ExecCondition=/usr/bin/pearl --check-environment'):assert field in unit
+            for field in ('KillMode=process','PartOf=graphical-session.target','Requisite=graphical-session.target','ConditionEnvironment=AQUEOUS_SOCKET','ConditionEnvironment=!AQUEOUS_NESTED=1','ExecCondition=/usr/bin/pearl --check-environment','SyslogIdentifier=pearl'):assert field in unit
             # Never exercise this guard by invoking the installer against host /.
             installer=(ROOT/'packaging/install.sh').read_text()
             assert 'realpath -m -- "$destination") != /' in installer and 'DESTDIR:?' in installer
