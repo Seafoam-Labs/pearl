@@ -810,13 +810,19 @@ pub const Manager = struct {
         self.night_light.refresh();
         if (self.capture_hide) {
             self.capture_hide = false;
-            if (self.pane == .clipboard_capture) self.hidePopup();
+            if (self.pane == .clipboard_capture) {
+                log.info("event=popup-close-reason reason=capture-hide", .{});
+                self.hidePopup();
+            }
         }
         self.lifecycle.sync();
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
         if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
         self.syncClipboardPrivacy();
-        if (self.barInhibited()) self.hidePopup();
+        if (self.barInhibited()) {
+            log.info("event=popup-close-reason reason=bar-inhibited", .{});
+            self.hidePopup();
+        }
         if (!self.osdAllowed()) self.hideOsd();
         if (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or (self.lifecycle.session_id.slice().len != 0 and !self.lifecycle.gate.active)) self.hideIdentifiers();
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
@@ -889,7 +895,10 @@ pub const Manager = struct {
             const o = output.?;
             o.seen = true;
             if (o.preferences_revision != self.preferences.appearance) {
-                if (self.popup != null and self.pane == .running_apps) self.hidePopup();
+                if (self.popup != null and self.pane == .running_apps) {
+                    log.info("event=popup-close-reason reason=running-apps-appearance", .{});
+                    self.hidePopup();
+                }
                 const pref = self.preferences.prefs().forOutput(o.connector);
                 try o.reservations.bar(pref.edge, pref.size);
                 o.bar.?.edge = pref.edge;
@@ -901,7 +910,10 @@ pub const Manager = struct {
                 const content_hash = try self.barContentHash(pref);
                 if (o.bar_content_hash == null or o.bar_content_hash.? != content_hash) {
                     if (o.bar.?.autohide) |controller| controller.clearGesture();
-                    if (self.popup != null and self.popup.?.output == o) self.hidePopup();
+                    if (self.popup != null and self.popup.?.output == o) {
+                        log.info("event=popup-close-reason reason=bar-content", .{});
+                        self.hidePopup();
+                    }
                     try o.bar.?.bar.?.configure(pref.groups, pref.clocks);
                     o.bar_content_hash = content_hash;
                 }
@@ -923,7 +935,10 @@ pub const Manager = struct {
             };
             const gate = self.lifecycle.gate;
             const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active));
-            if (dock_locked and (self.pane == .running_apps or self.pane == .launcher_picker)) self.hidePopup();
+            if (dock_locked and (self.pane == .running_apps or self.pane == .launcher_picker)) {
+                log.info("event=popup-close-reason reason=dock-locked", .{});
+                self.hidePopup();
+            }
             if (suspendTasks(o)) |host| host.setSensitive(@intFromBool(!dock_locked));
             if (o.bar.?.autohide) |controller| {
                 var fullscreen = false;
@@ -944,7 +959,10 @@ pub const Manager = struct {
             const o = self.outputs.items[i];
             if (!o.seen) {
                 if (self.capture.target) |target| if (std.mem.eql(u8, target.name.slice(), o.connector)) self.capture.cancel();
-                if (self.popup != null and self.popup.?.output == o) self.hidePopup();
+                if (self.popup != null and self.popup.?.output == o) {
+                    log.info("event=popup-close-reason reason=output-removed", .{});
+                    self.hidePopup();
+                }
                 self.hideIdentifiers();
                 if ((self.osd != null and self.osd.?.output == o) or self.osd_pending_output == o) self.hideOsd();
                 if (self.notification != null and self.notification.?.output == o) self.hideNotifications();
@@ -955,7 +973,10 @@ pub const Manager = struct {
         }
         try self.syncSwitcher();
         if (self.popup) |popup| if (popup.launcher_picker) |view| {
-            if (view.update()) self.hidePopup();
+            if (view.update()) {
+                log.info("event=popup-close-reason reason=launcher-picker", .{});
+                self.hidePopup();
+            }
         };
         if (self.popup) |popup| {
             if (popup.running_apps) |view| try view.update();
@@ -984,6 +1005,7 @@ pub const Manager = struct {
         try self.syncNotifications();
         if (self.client.model.get(.session, "session").?.locked) {
             self.syncSettingsAccess();
+            log.info("event=popup-close-reason reason=locked", .{});
             self.hidePopup();
             self.hideIdentifiers();
             self.hideOsd();
@@ -1213,7 +1235,10 @@ pub const Manager = struct {
     fn cycleWindow(self: *Manager, output: *Output, direction: Switcher.Direction) !void {
         if (self.barInhibited()) return error.Locked;
         const action = try Switcher.action(&self.client.model, output.id, direction, self.preferences.prefs().reduced_motion, self.client.capabilities.global_window_switcher_v1);
-        if (direction != .dismiss) self.hidePopup();
+        if (direction != .dismiss) {
+            log.info("event=popup-close-reason reason=switcher", .{});
+            self.hidePopup();
+        }
         _ = try self.client.enqueue(action);
     }
     fn syncSwitcher(self: *Manager) !void {
@@ -1336,6 +1361,7 @@ pub const Manager = struct {
         defer context.unref();
         context.setTimestamp(0);
         try @import("../../settings/launch.zig").open(target, context.as(gio.AppLaunchContext), activation);
+        log.info("event=popup-close-reason reason=open-settings", .{});
         self.hidePopup();
     }
     fn settingsAction(self: *Manager, output_id: ?[]const u8, page: navigation.Route, intent: navigation.Intent) !void {
@@ -1381,6 +1407,7 @@ pub const Manager = struct {
         for (self.outputs.items) |o| if (o.dock) |dock| {
             if (dock.keyboard) dock.reveal(false);
         };
+        log.info("event=popup-close-reason reason=show-pane", .{});
         self.hidePopup();
         self.pane = pane;
         self.settings_page = if (pane == .control) page else null;
@@ -1664,6 +1691,7 @@ pub const Manager = struct {
             return surface.bar.?.layoutReport(alloc, @tagName(layer.getKeyboardMode(surface.window)));
         }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-settings-page")) {
+            log.info("event=settings-page-probe popup={} control={} pane={s}", .{ self.popup != null, if (self.popup) |p| p.control != null else false, @tagName(self.pane) });
             const popup = self.popup orelse return error.Unavailable;
             const control_page = popup.control orelse return error.Unavailable;
             return control_page.report(popup.window, alloc);
@@ -1847,6 +1875,7 @@ pub const Manager = struct {
             },
             .quit => {},
             .launcher_hide => if (self.pane == .launcher) {
+                log.info("event=popup-close-reason reason=launcher-hide", .{});
                 self.hidePopup();
             },
             .control_show, .control_toggle => try self.settingsAction(request.output, request.compactPage(), if (request.op == .control_toggle) .toggle else .show),
@@ -1858,7 +1887,10 @@ pub const Manager = struct {
                     else => .launcher,
                 };
                 const toggle = request.op == .launcher_toggle or request.op == .calendar_toggle;
-                if (toggle and self.popup != null and self.popup.?.output == output and self.pane == pane) self.hidePopup() else try self.showPane(output, pane);
+                if (toggle and self.popup != null and self.popup.?.output == output and self.pane == pane) {
+                    log.info("event=popup-close-reason reason=pane-toggle", .{});
+                    self.hidePopup();
+                } else try self.showPane(output, pane);
             },
             .bar_groups => {
                 const output = try self.selected(request.output);
@@ -1866,7 +1898,10 @@ pub const Manager = struct {
                 const groups: @import("../../desktop/policy.zig").Groups = .{ .left = request.left.?, .center = request.center.?, .right = request.right.? };
                 try groups.validate();
                 try @import("../../desktop/clock_policy.zig").validate(bar.clock_definitions, groups);
-                if (self.popup != null and self.popup.?.output == output) self.hidePopup();
+                if (self.popup != null and self.popup.?.output == output) {
+                    log.info("event=popup-close-reason reason=bar-groups", .{});
+                    self.hidePopup();
+                }
                 try bar.configure(groups, bar.clock_definitions);
             },
             .layout_get, .layout_set => {
@@ -1887,7 +1922,10 @@ pub const Manager = struct {
                 self.hidePopup();
                 return "{\"queued\":true}";
             },
-            .popup_hide => self.hidePopup(),
+            .popup_hide => {
+                log.info("event=popup-close-reason reason=popup-hide", .{});
+                self.hidePopup();
+            },
             .popup_show => try self.showPopup(try self.selected(request.output)),
             .popup_toggle => {
                 const o = try self.selected(request.output);
@@ -2076,7 +2114,10 @@ fn barAction(context: *anyopaque, event: Bar.Event) void {
                 self.positionPopup();
                 return;
             }
-            if (self.popup != null and self.popup.?.output == s.output and self.pane == pane) self.hidePopup() else self.showPane(s.output, pane) catch {};
+            if (self.popup != null and self.popup.?.output == s.output and self.pane == pane) {
+                log.info("event=popup-close-reason reason=bar-pane-toggle", .{});
+                self.hidePopup();
+            } else self.showPane(s.output, pane) catch {};
         },
         .workspace => |id| {
             self.enqueueAction(.{ .workspace_activate = .{ .id = id } });
@@ -2119,6 +2160,7 @@ fn runningAction(context: *anyopaque, event: Running.Event) void {
 }
 fn dismiss(context: *anyopaque) void {
     const self: *Manager = @ptrCast(@alignCast(context));
+    log.info("event=popup-close-reason reason=dismiss", .{});
     self.hidePopup();
 }
 fn layoutAction(context: *anyopaque, value: ?[]const u8) void {
@@ -2146,7 +2188,10 @@ fn controlTask(context: *anyopaque, task: Panels.Control.Task) void {
         .settings => barAction(s, .{ .pane = .settings }),
         .aqueous_settings => barAction(s, .{ .pane = .aqueous_settings }),
         .overview => barAction(s, .overview),
-        .close => s.manager.hidePopup(),
+        .close => {
+            log.info("event=popup-close-reason reason=panel-close", .{});
+            s.manager.hidePopup();
+        },
     }
 }
 fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.ModifierType, self: *Manager) callconv(.c) c_int {
@@ -2154,6 +2199,7 @@ fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.Modifie
     if (self.popup) |popup| if (popup.aqueous_settings) |view| {
         if (view.recording != null) return 0; // The recorder owns Escape and restores entry focus.
     };
+    log.info("event=popup-close-reason reason=escape", .{});
     self.hidePopup();
     return 1;
 }
@@ -2163,6 +2209,7 @@ fn outsideReleased(_: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Manage
     const picked = s.window.as(gtk.Widget).pick(x, y, .{});
     const inside = if (s.viewport) |viewport| viewport.as(gtk.Widget) else s.panel;
     if (picked) |widget| if (widget == inside or widget.isAncestor(inside) != 0) return;
+    log.info("event=popup-close-reason reason=outside-click", .{});
     self.hidePopup();
 }
 fn osdExpired(data: ?*anyopaque) callconv(.c) c_int {
