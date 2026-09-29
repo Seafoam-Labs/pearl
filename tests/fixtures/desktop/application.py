@@ -37,5 +37,9 @@ def activated(app):
         window.set_child(box)
     window.present()
     print('event=fixture-ready '+a.mark, flush=True)
+    # A shell-launched application inherits the launcher's stderr, so its
+    # diagnostics reach the launcher's own stream; suites assert this line
+    # arrives there to pin that attribution.
+    print('fixture-stderr-marker '+a.mark, file=sys.stderr, flush=True)
 app.connect('activate', activated)
 raise SystemExit(app.run([sys.argv[0]]))

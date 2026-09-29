@@ -57,6 +57,9 @@ def main():
             checks['default-islands-empty-dock-and-persistent-global-pin']=True
             ctl(s,args.ctl,'dock','show','--output',oid);keys(s,'space')
             wait_for(lambda:any(e['mark']=='Alpha' for e in entries(s)))
+            # A shell-launched app inherits the shell's stderr, so its diagnostics
+            # reach the shell's journal stream; the pid envelope separates them.
+            wait_for(lambda:any('fixture-stderr-marker' in line for line in app.lines))
             windows=wait_for(lambda:[e for e in ipc.state() if e['kind']=='window' and e.get('app_id')=='org.pearl.Alpha'])
             win=windows[0];ipc.call('command',action='window.move',fields=dict(id=win['id'],output=oid))
             wait_for(lambda:out()['dock']['groups']==1)
