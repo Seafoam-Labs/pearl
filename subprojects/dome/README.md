@@ -26,7 +26,9 @@ alternate staging directory; `-Dgit-variant=true` builds `dome-git` with the sep
 [implementation status and capability limits](docs/IMPLEMENTATION_STATUS.md).
 
 Useful options: `--light`, `--dark`, `--native-theme`, `--compact`, `--page=0..8`,
-`--width=N`, `--height=N`, `--dump` (one read-only JSON snapshot), `--version`.
+`--width=N`, `--height=N`, `--dump` (one read-only JSON snapshot), `--version`,
+`--log-level LEVEL`, `--log-scopes LIST`. Diagnostics share Pearl's log handler
+and land wherever stderr goes; see [logging](../../docs/LOGGING.md).
 NVIDIA support loads NVML optionally at runtime. Missing GPU metrics or systemd
 do not prevent resource and process monitoring.
 

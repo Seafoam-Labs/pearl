@@ -42,7 +42,9 @@ uses an isolated test dictionary. Missing dictionaries leave editing usable and
 show **Dictionary unavailable**. Choose an available language in Preferences.
 
 Options: `--light`, `--dark`, `--native-theme`, `--width=N`, `--height=N`,
-`--help`, `--version`, followed by local filenames or local file URIs.
+`--log-level LEVEL`, `--log-scopes LIST`, `--help`, `--version`, followed by
+local filenames or local file URIs. Diagnostics share Pearl's log handler and
+land wherever stderr goes; see [logging](../../docs/LOGGING.md).
 
 ## Implemented
 

@@ -13,6 +13,8 @@ sole diagnostic file Pearl writes is the `pearlctl report` bundle below.
 | Production session (user unit) | `journalctl --user -u pearl.service` (equivalently `journalctl --user -t pearl`) |
 | Greeter / login (system unit) | `sudo journalctl -b -u pearl-greeter.service` |
 | Session started by the greeter | also the system unit: the session inherits greetd's journal connection, so its stderr is attributed to `pearl-greeter.service` |
+| Coral, Dome or Phyto started from the shell | the shell's own stream: `journalctl --user -u pearl.service`, told apart by `pid=` |
+| Coral, Dome or Phyto started from a terminal | that terminal's stderr |
 | Development sessions | one `.log` per process under the launcher output, default `.cache/dev-session/` (`scripts/dev-session.py`) |
 | Integration suites | one `.log` per process under the suite's artifact output, e.g. `artifacts/t05/latest/surfaces/pearl.log` |
 
@@ -28,6 +30,7 @@ All levels are compiled in and filtered at runtime, so no rebuild is needed:
 - `pearl --log-scopes aqueous,~gallery` (comma-separated scopes, `all` for
   every scope, `~scope` to exclude one)
 - `pearlctl` accepts the same two flags on any command.
+- `coral`, `dome` and `phyto` accept the same two flags.
 
 Make it permanent with a systemd user drop-in (`systemctl --user edit
 pearl.service`):
@@ -41,6 +44,30 @@ ExecStart=/usr/bin/pearl --log-level debug
 Limitation: the unit-launched executables (greeter, lock, settings, themes,
 plugin host) take no flags and log at the build default; reaching them means
 editing their units or the greetd config.
+
+## Coral, Dome and Phyto
+
+The three bundled applications share the shell's log handler, so their lines
+carry the same `ts=<UTC> pid=<n> level(scope):` envelope and the same
+`event=<name> key=value` payload convention. They have no log file and no
+journal identity of their own. An application started from the dock or launcher
+inherits the shell's stdout and stderr, so its lines land in
+`journalctl --user -u pearl.service` under the `pearl` identifier beside the
+shell's, told apart by `pid=`; `pearlctl report` therefore already contains
+them. Started from a terminal, they log to that terminal instead.
+
+Scopes: `cli` for command-line problems, `config` for Dome's stored
+preferences, `platform` for Phyto's preview pipeline. What they log today is
+deliberately small: usage errors, `event=preferences-save-failed` when Dome
+cannot write its preferences, and `event=preview-failed status=<reason>` from
+Phyto.
+
+Phyto's preview converter is a sandboxed child whose stderr the supervisor
+drains, so the converter's own lines never reach the journal in a production
+build (instrumented builds echo them when a conversion fails). The visible
+signal is Phyto's `event=preview-failed`: the first occurrence of each reason
+at `warning`, repeats at `debug`, so a directory of unpreviewable files stays
+one line.
 
 ## When something fails
 
@@ -96,6 +123,16 @@ or regained the compositor IPC. The shell keeps its last known state and
 reconnects; check the compositor's own journal for the crash or restart that
 caused it, and `event=ipc-*` lines for the protocol-level detail.
 
+### A file preview is missing
+
+1. `journalctl --user -b -t pearl | grep event=preview-failed`: the `status=`
+   value names the reason.
+2. `missing_pdf` needs Poppler (`pdftoppm`), `missing_video` needs FFmpeg
+   (`ffmpeg` and `ffprobe`), `sandbox` needs bubblewrap. `limits`, `timeout`,
+   `unsupported` and `changed` describe the file, not a missing dependency.
+3. Phyto shows the same sentence as the preview caption, so the reason is
+   visible without the journal.
+
 ## Reporting a bug
 
 1. While the shell is running, execute `pearlctl report`.
@@ -123,5 +160,8 @@ irreversible fingerprints (`session_hash=` in log lines, the fingerprinted
 Every line carries a `ts=<UTC> pid=<n>` envelope ahead of the standard
 `level(scope):` prefix, and payload lines use the `event=<name> key=value`
 convention. Every event name is declared in `src/core/log_events.zig`, and a
-pure test fails on undeclared or stale names; runtime level/scope filtering
-lives in `src/core/logging.zig`.
+pure test walks the shell's and the three subprojects' sources and fails on
+undeclared or stale names; runtime level/scope filtering lives in
+`src/core/logging.zig`. Coral, Dome and Phyto wire both files as build modules
+by relative path rather than copying them, so one handler serves every
+executable in the tree.

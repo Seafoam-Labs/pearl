@@ -20,9 +20,11 @@ zig build -Doptimize=ReleaseSafe
 Within this Pearl checkout, the existing dependency cache can be reused with
 `ZIG_GLOBAL_CACHE_DIR=/home/zoey/Pearl/.cache/zig` before the build command.
 `zig build run -- PATH_OR_URI` also launches it. `--compact`, `--native-theme`,
-`--width=N` and `--height=N` are available. The compositor can override initial
-window size. Build installation stages a desktop entry and icon under `zig-out/`;
-no MIME defaults or system packages are changed.
+`--width=N` and `--height=N` are available, as are `--log-level LEVEL` and
+`--log-scopes LIST`: diagnostics share Pearl's log handler and land wherever
+stderr goes, see [logging](../../docs/LOGGING.md). The compositor can override
+initial window size. Build installation stages a desktop entry and icon under
+`zig-out/`; no MIME defaults or system packages are changed.
 
 ## Arch packages
 
