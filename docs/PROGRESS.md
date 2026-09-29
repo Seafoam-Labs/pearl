@@ -1,5 +1,57 @@
 # Pearl implementation progress
 
+## Support report and logging doc, September 29, 2026
+
+`pearlctl report` now writes the user-facing support artifact: a bounded text
+file at `$XDG_STATE_HOME/pearl/report-<UTC timestamp>.log` (directory `0700`,
+file `0600`, last 3 kept) carrying the shell's launch argv and version, the
+`--check-environment` verdict, the live `pearlctl status` JSON and the last
+500 lines of `journalctl --user -u pearl.service --no-pager`. The op is
+handled by the control server ahead of the desktop dispatch, so it also works
+while the session is locked. Every source is best effort: a missing journal
+degrades to `journal=unavailable`, a failing status to `{"unavailable":true}`,
+and only the file write itself can fail the op (`SaveFailed`). The system
+journal is never read. The status section replaces the live IPC session token
+with its fingerprint before it reaches the file, and journal lines pass
+through the log redactor, so the report can be attached to a public issue.
+The check-environment section re-runs the same `startup.validate` in process
+rather than spawning the binary: identical contract, and it keeps the handler
+down to a single subprocess.
+
+`docs/LOGGING.md` is the single support doc: destination table (including the
+journal-attribution answer that greeter-launched sessions log under the
+system unit), runtime verbosity flags with a systemd drop-in recipe and the
+unit-launched executables' limitation, seven failure runbooks keyed to real
+`event=` names, the bug-reporting promise, and the developer convention
+paragraph. README, GREETER.md and DEVELOPMENT.md now link to it instead of
+carrying their own partial logging text, and the Settings metainfo gained the
+`bugtracker` URL.
+
+Checks actually run:
+
+- `zig build test -Doptimize=ReleaseSafe`: pass, including the new pure
+  report tests (fixed-width sortable naming, retention selection, session
+  token redaction, marker/sanitization assembly) and the event catalog with
+  `report-written` / `report-failed`.
+- `zig build -Doptimize=ReleaseSafe`: pass. `pearl --help` and
+  `pearlctl --help` work headless; `pearlctl --log-level bogus report`
+  exits 2.
+- `tests/integration/test_surfaces.py` carries the report assertions
+  (bundle modes, markers, redaction, retention across two runs) for full
+  matrix runs. On this machine `basic()` still aborts early at the known
+  local-compositor panic (`OutputManager.zig:621` on output-off, the same
+  limitation recorded for `test_security.py`), so the identical assertions
+  were verified with a standalone private headless session driver instead:
+  file exists under the private `XDG_STATE_HOME`, dir `0700`, file `0600`,
+  header/footer markers, `check-environment exit=0`, status JSON with the
+  live token absent, three planted stale reports evicted across two runs,
+  journal section bounded (`-- No entries --` here: journalctl read the host
+  user journal, which has no `pearl.service` entries), clean `quit`
+  afterwards with no WARNING/CRITICAL lines. Evidence in
+  `artifacts/aqueous-082/functional/report-cli/`.
+- `python3 tests/test_release_tools.py`: pass. `appstreamcli validate` on
+  the metainfo: pass, with the same 2 pedantic notes as before the change.
+
 ## Journal attribution, September 29, 2026
 
 Both packaged units now name their journal identity: `SyslogIdentifier=pearl` in

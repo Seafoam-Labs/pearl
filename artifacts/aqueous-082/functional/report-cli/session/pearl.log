@@ -1,0 +1,17 @@
+ts=2026-09-29T05:06:17Z pid=37557 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-29T05:06:17Z pid=37557 info(pearl): event=ready mode=session
+ts=2026-09-29T05:06:17Z pid=37557 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-29T05:06:17Z pid=37557 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-29T05:06:17Z pid=37557 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-29T05:06:17Z pid=37557 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-09-29T05:06:17Z pid=37557 info(pearl): event=settings-backend-ready session_hash=c2cd3b4412f3a860
+ts=2026-09-29T05:06:17Z pid=37557 info(pearl): event=control-ready session_hash=c2cd3b4412f3a860
+ts=2026-09-29T05:06:17Z pid=37557 info(desktop): event=app-index-ready entries=145 truncated=false
+ts=2026-09-29T05:06:17Z pid=37557 info(cli): event=report-written path=/tmp/pearl-dev-ntl27bvz/state/pearl/report-20260929T050617Z.log
+ts=2026-09-29T05:06:17Z pid=37557 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-29T05:06:17Z pid=37557 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=6798 success=true
+ts=2026-09-29T05:06:18Z pid=37557 info(cli): event=report-written path=/tmp/pearl-dev-ntl27bvz/state/pearl/report-20260929T050618Z.log
+ts=2026-09-29T05:06:18Z pid=37557 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-09-29T05:06:18Z pid=37557 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-29T05:06:18Z pid=37557 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-29T05:06:18Z pid=37557 info(pearl): event=stopped

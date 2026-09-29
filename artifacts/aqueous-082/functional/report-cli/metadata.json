@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "checks": {
+    "report-bundle-modes-markers-and-retention": true,
+    "session-token-fingerprinted-in-status-section": true,
+    "check-environment-exit-0-in-report-header": true,
+    "journal-section-bounded-and-best-effort": true,
+    "shell-exits-clean-after-report-runs": true
+  },
+  "binary_sha256": {
+    "pearl": "ed0b55faa5b4c499a4bf81ad9e4794c0e59c280ae708208534f31af5a9452265",
+    "ctl": "2aa97ef43c987fd1f7b4b295027cbdeb7040097e111faa6e056ea2c7db032346"
+  }
+}
