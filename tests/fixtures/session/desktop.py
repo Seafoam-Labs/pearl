@@ -17,6 +17,7 @@ def own(name): return call('org.freedesktop.DBus','/org/freedesktop/DBus','org.f
 def release(name): call('org.freedesktop.DBus','/org/freedesktop/DBus','org.freedesktop.DBus','ReleaseName',V('(s)',(name,)))
 def emit(path,iface,name,args): bus.emit_signal(None,path,iface,name,args)
 def changed(path,iface): emit(path,'org.freedesktop.DBus.Properties','PropertiesChanged',V('(sa{sv}as)',(iface,objects[(path,iface)],[])))
+def raw(w,h,fill=255): return V('(iiibiiay)',(w,h,w*4,True,8,4,bytes([fill])*(w*h*4)))
 def metadata(title='Night drive',url=''):
     return V('a{sv}',{'xesam:title':V('s',title),'xesam:artist':V('as',['Pearl Ensemble']),'mpris:trackid':V('o','/track/one'),'mpris:length':V('x',240000000),'mpris:artUrl':V('s',url)})
 media={'PlaybackStatus':V('s','Playing'),'Rate':V('d',1),'Position':V('x',30000000),'Metadata':metadata(url=os.environ.get('PEARL_TEST_ART',''))}
@@ -88,7 +89,10 @@ def send_notification(data):
     hints={k:V('b',data[k]) for k in ('resident','transient') if k in data}
     if 'urgency' in data: hints['urgency']=V('y',data['urgency'])
     if 'desktop_entry' in data: hints['desktop-entry']=V('s',data['desktop_entry'])
-    result=call(nn,np,nn,'Notify',V('(susssasa{sv}i)',(data.get('app','Messages'),data.get('replaces',0),'',data.get('summary','Hello from Pearl'),data.get('body','A notification with <b>plain text</b>.'),data.get('actions',['default','Open']),hints,data.get('timeout',0))))
+    if 'image_path' in data: hints['image-path']=V('s',data['image_path'])
+    if 'icon_data' in data: hints['icon_data']=raw(*data['icon_data'])
+    if 'image_data' in data: hints['image-data']=raw(*data['image_data'])
+    result=call(nn,np,nn,'Notify',V('(susssasa{sv}i)',(data.get('app','Messages'),data.get('replaces',0),data.get('icon',''),data.get('summary','Hello from Pearl'),data.get('body','A notification with <b>plain text</b>.'),data.get('actions',['default','Open']),hints,data.get('timeout',0))))
     id=result.unpack()[0];note_ids.append(id);record('notification',id=id);return id
 def command(channel,condition):
     global delay,deny,revision,malformed

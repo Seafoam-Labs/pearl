@@ -148,7 +148,7 @@ visibility or bus changes; stale completions cannot replace the current image.
 | Resource | Limit |
 | --- | --- |
 | Outbound session-bus calls | 64 in flight; 3-second method timeout |
-| Notification request | 64 KiB; 64 retained records; 8 unique action pairs |
+| Notification request | 64 retained records; 8 unique action pairs |
 | Notification text | app 160, summary 256, body 2048, action key 96/label 160 UTF-8 bytes |
 | Toasts | 3 maximum, reduced for short outputs; 8-second presentation maximum |
 | Tray items / property reply | 32 / 1 MiB |

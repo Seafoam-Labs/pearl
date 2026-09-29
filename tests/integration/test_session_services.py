@@ -70,6 +70,9 @@ def main():
             id=notified(s,fixture);command(fixture,close=id);wait_for(lambda:closed(s,id,3))
             action(s,args.ctl,'dismiss',notification=id,code=4)
             checks['action-residency-transient-expiry-and-all-closure-reasons']=True
+            big=notified(s,fixture,summary='Large site icon',image_data=(160,160,200),timeout=150,transient=True)
+            assert big;wait_for(lambda:closed(s,big,1))
+            checks['oversized-image-data-still-delivers-and-expires']=True
             action(s,args.ctl,'dnd_on');id=notified(s,fixture,app='Mail',summary='Quiet delivery')
             assert state(s,args.ctl)['notifications']['toasts']==0 and not status(s,args.ctl)['notification']
             action(s,args.ctl,'dnd_off');assert state(s,args.ctl)['notifications']['toasts']==0

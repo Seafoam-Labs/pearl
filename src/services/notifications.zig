@@ -136,10 +136,6 @@ pub const Notifications = struct {
             }
             invocation.returnValue(null);
         } else if (std.mem.eql(u8, m, "Notify")) {
-            if (params.getSize() > 64 * 1024) {
-                invocation.returnDbusError("org.freedesktop.DBus.Error.LimitsExceeded", "Notification exceeds 64 KiB.");
-                return;
-            }
             var r: policy.Record = .{};
             r.owner.set(if (sender) |s| std.mem.span(s) else "");
             inline for (.{ .{ 0, "app", 160 }, .{ 2, "icon", 160 }, .{ 3, "summary", 256 }, .{ 4, "body", 2048 } }) |field| {
