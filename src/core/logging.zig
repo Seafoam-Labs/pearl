@@ -60,6 +60,67 @@ pub fn apply(level: ?std.log.Level, scopes: ?std.EnumSet(Scope)) void {
     if (scopes) |value| runtime_scopes = value;
 }
 
+/// Outcome of matching the two verbosity flags against the remaining arguments
+/// of an executable that parses its own command line.
+pub const Verbosity = union(enum) {
+    /// Neither flag: the caller's argument loop keeps ownership of the argument.
+    other,
+    /// Applied; the value behind the flag is consumed with it.
+    applied,
+    rejected: Rejection,
+};
+
+pub const Rejection = struct {
+    pub const Flag = enum { level, scopes };
+
+    flag: Flag,
+    /// Empty when the flag arrived without a value.
+    value: []const u8,
+};
+
+/// Recognises `--log-level LEVEL` and `--log-scopes LIST` at the head of the
+/// remaining arguments and applies them, so any executable can offer the same
+/// verbosity control without a shared argument parser.
+pub fn verbosity(args: []const []const u8) Verbosity {
+    if (args.len == 0) return .other;
+    const flag: Rejection.Flag = if (std.mem.eql(u8, args[0], "--log-level"))
+        .level
+    else if (std.mem.eql(u8, args[0], "--log-scopes"))
+        .scopes
+    else
+        return .other;
+    if (args.len < 2) return .{ .rejected = .{ .flag = flag, .value = "" } };
+    const value = args[1];
+    if (flag == .level) {
+        const parsed = parseLevel(value) orelse return .{ .rejected = .{ .flag = flag, .value = value } };
+        apply(parsed, null);
+    } else {
+        const parsed = parseScopes(value) orelse return .{ .rejected = .{ .flag = flag, .value = value } };
+        apply(null, parsed);
+    }
+    return .applied;
+}
+
+/// Renders a rejected flag on the `cli` scope. `value` is the rejected text as
+/// the caller wants it written, already wrapped for redaction: this module
+/// depends on nothing but std so any executable can wire it as a module. The
+/// exit code stays with the caller, which owns its own usage contract.
+pub fn report(rejection: Rejection, value: anytype) void {
+    const cli = std.log.scoped(.cli);
+    const flag = switch (rejection.flag) {
+        .level => "--log-level",
+        .scopes => "--log-scopes",
+    };
+    if (rejection.value.len == 0) {
+        cli.err("Missing value for {s}.", .{flag});
+        return;
+    }
+    switch (rejection.flag) {
+        .level => cli.err("Unknown log level {f}; expected error, warning, info or debug.", .{value}),
+        .scopes => cli.err("Unknown log scope in {f}.", .{value}),
+    }
+}
+
 /// Unscoped `.default` lines always pass: they are the unconverted and
 /// third-party sites a scope filter must never hide.
 fn passes(comptime level: std.log.Level, comptime scope: Scope) bool {
@@ -140,6 +201,32 @@ test "parseScopes handles all, lists and exclusions" {
     try std.testing.expect(excluded.contains(.core));
     for ([_][]const u8{ "", "bogus", "~bogus", "~", "core,,ui" }) |text|
         try std.testing.expectEqual(null, parseScopes(text));
+}
+
+test "verbosity flags are recognised, applied and rejected" {
+    const saved_level = runtime_level;
+    const saved_scopes = runtime_scopes;
+    defer {
+        runtime_level = saved_level;
+        runtime_scopes = saved_scopes;
+    }
+    for ([_][]const []const u8{ &.{}, &.{"--width=100"}, &.{"--log-levels"}, &.{ "--log-levelx", "debug" } }) |args|
+        try std.testing.expectEqual(Verbosity.other, verbosity(args));
+    try std.testing.expectEqual(Verbosity.applied, verbosity(&.{ "--log-level", "debug" }));
+    try std.testing.expectEqual(std.log.Level.debug, runtime_level);
+    try std.testing.expectEqual(Verbosity.applied, verbosity(&.{ "--log-scopes", "all,~cli" }));
+    try std.testing.expect(!runtime_scopes.contains(.cli) and runtime_scopes.contains(.ui));
+    const cases = [_]struct { args: []const []const u8, flag: Rejection.Flag, value: []const u8 }{
+        .{ .args = &.{"--log-level"}, .flag = .level, .value = "" },
+        .{ .args = &.{ "--log-level", "bogus" }, .flag = .level, .value = "bogus" },
+        .{ .args = &.{"--log-scopes"}, .flag = .scopes, .value = "" },
+        .{ .args = &.{ "--log-scopes", "" }, .flag = .scopes, .value = "" },
+    };
+    for (cases) |case| {
+        const rejected = verbosity(case.args).rejected;
+        try std.testing.expectEqual(case.flag, rejected.flag);
+        try std.testing.expectEqualStrings(case.value, rejected.value);
+    }
 }
 
 test "level gate admits only configured severity" {
