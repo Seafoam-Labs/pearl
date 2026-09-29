@@ -32,6 +32,7 @@ class Child:
         self.logfile = Path(logfile)
         self.logfile.parent.mkdir(parents=True, exist_ok=True)
         def collect():
+            truncated = False
             with self.logfile.open('w') as log:
                 for line in self.proc.stdout:
                     if len(self.lines) < log_limit:
@@ -40,6 +41,11 @@ class Child:
                         log.flush()
                         if echo:
                             print(line, end='', flush=True)
+                    elif not truncated:
+                        truncated = True
+                        log.write(f'TRUNCATED at log_limit={log_limit}; raise log_limit for this suite\n')
+                        log.flush()
+                        # Keep draining stdout so a flooding child never blocks on a full pipe.
         self.thread = threading.Thread(target=collect, daemon=True)
         self.thread.start()
 
