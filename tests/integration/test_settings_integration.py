@@ -26,7 +26,7 @@ def handoff(s, binary):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    for name in ('pearl','production-pearl','ctl','settings','production-settings','spike','locker'):
+    for name in ('pearl','production-pearl','ctl','settings','production-settings','spike','locker','themes'):
         p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--output',type=Path,default=ROOT/'artifacts/settings-app/s5/integration')
     args=p.parse_args()
@@ -35,7 +35,7 @@ def main():
     try:
       with tempfile.TemporaryDirectory(prefix='pearl-settings-stage-') as temp:
         root=Path(temp);source=root/'binaries';source.mkdir();stage=root/'installed tree'
-        for src,name in [(args.production_pearl,'pearl'),(args.ctl,'pearlctl'),(args.production_settings,'pearl-settings'),(args.locker,'pearl-lock')]:shutil.copy2(src,source/name)
+        for src,name in [(args.production_pearl,'pearl'),(args.ctl,'pearlctl'),(args.production_settings,'pearl-settings'),(args.locker,'pearl-lock'),(args.themes,'pearl-themes')]:shutil.copy2(src,source/name)
         subprocess.run(['bash',ROOT/'packaging/install.sh'],env=dict(os.environ,DESTDIR=str(stage),PEARL_BINARY_DIR=str(source)),check=True)
         bindir=stage/'usr/bin';shellbin=bindir/'pearl';ctlbin=bindir/'pearlctl';settings=bindir/'pearl-settings'
         desktop=stage/'usr/share/applications'/f'{APP_ID}.desktop'

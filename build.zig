@@ -586,6 +586,8 @@ pub fn build(b: *std.Build) void {
     settings_integration.addArtifactArg(spike);
     settings_integration.addArg("--locker");
     settings_integration.addArtifactArg(production_locker);
+    settings_integration.addArg("--themes");
+    settings_integration.addArtifactArg(themes_tool);
     if (b.args) |args| settings_integration.addArgs(args);
     b.step("test-settings-integration", "Verify staged Settings desktop, CLI and flyout launch integration").dependOn(&settings_integration.step);
 
