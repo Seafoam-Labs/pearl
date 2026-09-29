@@ -79,7 +79,8 @@ def click(session, x, y, outputs):
 
 
 def clean(child):
-    assert child.wait() == 0, child.lines[-20:]
+    status = child.wait()
+    assert status == 0, ('exit status', status, child.lines[-20:])
     assert not any(word in line for line in child.lines for word in ('CRITICAL', 'WARNING', 'panic:', 'event=css-error', 'protocol error')), child.lines[-30:]
 
 
