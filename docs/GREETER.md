@@ -64,8 +64,8 @@ Removal also restores the `.bak` when the config still matches Pearl's template.
 Run `sudo /usr/lib/pearl/pearl-greeter-setup restore` to restore it earlier.
 See [package setup and recovery](../packaging/arch-greeter/README.md) for details.
 
-For startup failures, inspect `journalctl -b -u pearl-greeter.service` and
-`coredumpctl info /usr/lib/pearl/pearl-greeter-host`. A GNOME Keyring warning for
+For startup failures, follow the greeter runbook in
+[LOGGING.md](LOGGING.md#the-greeter-does-not-appear). A GNOME Keyring warning for
 the greeter account is not itself evidence of a fatal PAM failure; look for the
 process exit or crash that follows it. The host, UI and session launcher initialize
 Zig's stderr environment cache before changing environment variables. This fixes

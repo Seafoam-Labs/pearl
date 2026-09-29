@@ -186,8 +186,8 @@ removes the CSS provider, disconnects signals, removes sources, releases objects
 and unregisters the resource bundle. Resource lookup is independent of the
 working directory or source checkout at runtime.
 
-Logs use `std.log.scoped(.pearl)` with lifecycle event fields. They do not log
-typed content, secrets or host environment dumps.
+Logging destinations, runtime verbosity, the `event=` convention and the
+support report bundle are documented in [LOGGING.md](LOGGING.md).
 
 ## Verification and limits
 

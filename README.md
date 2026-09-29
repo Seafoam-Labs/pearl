@@ -57,6 +57,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Fingerprint integration](docs/FINGERPRINT_LOGIN.md): PAM-controlled password fallback, automatic scan messages, locker compatibility and private tests; [real-device acceptance remains open](docs/FINGERPRINT_LOGIN_IMPLEMENTATION_PLAN.md).
 - [Development specification](docs/TASKS.md): implementation scope, dependencies, concrete deliverables, and acceptance criteria.
 - [Compatibility and reproduction](docs/COMPATIBILITY.md): verified dependencies, commands, capability gaps and baseline results.
+- [Logging and support diagnostics](docs/LOGGING.md): where logs go, runtime verbosity flags, failure runbooks and the `pearlctl report` bundle.
 - [Development guide](docs/DEVELOPMENT.md): run the gallery, use isolated sessions, and follow lifecycle/ownership conventions.
 - [Aqueous model](docs/AQUEOUS_MODEL.md): decoder limits, atomic updates, derived views and ownership contracts.
 - [Aqueous adapter](docs/AQUEOUS_ADAPTER.md): persistent connections, command completion, recovery and icon caching.
