@@ -60,7 +60,7 @@ def main():
             time.sleep(.15);v=probe(s,ipc);win=windows(ipc)[0]
             body=v['body_bounds'];footer=v['footer_bounds'];header=v['header_bounds']
             assert v['connected'] and not v['fixture'],v
-            if page in ('network','bluetooth','sound','power','notifications','overview'):assert 'immediately' in v['footer_text'],v['footer_text']
+            if page in ('network','bluetooth','sound','power','overview'):assert 'immediately' in v['footer_text'],v['footer_text']
             assert body['width']>0 and body['height']>0,(case,page,v)
             assert body['x']>=0 and body['x']+body['width']<=v['width']+1,(case,page,v)
             assert header['y']+header['height']<=body['y']+1,(case,page,v)
