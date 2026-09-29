@@ -12,6 +12,7 @@
   <launchable type="desktop-id">org.aqueous.Pearl.Settings.desktop</launchable>
   <provides><binary>pearl-settings</binary></provides>
   <url type="homepage">https://github.com/Seafoam-Labs/pearl</url>
+  <url type="bugtracker">https://github.com/Seafoam-Labs/pearl/issues</url>
   <developer id="org.aqueous"><name>Pearl contributors</name></developer>
   <content_rating type="oars-1.1"/>
 </component>
