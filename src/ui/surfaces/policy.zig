@@ -109,3 +109,41 @@ test "edge-anchored control and calendar remain inside usable bounds" {
     try std.testing.expectEqual(@as(i32, 48), tiny.y);
     try std.testing.expectEqual(@as(i32, 672), tiny.height);
 }
+
+/// Align a bar popup with its invoking widget, clamped to usable output space.
+/// Both the popup and widget are in output-local coordinates.
+pub fn followAnchor(rectangle: Rect, bounds: Rect, usable: Rect, anchor: Rect, edge: Edge) Rect {
+    var rect = rectangle;
+    if (edge == .top or edge == .bottom) {
+        const left = @max(0, usable.x - bounds.x);
+        const right = @min(bounds.width, usable.x - bounds.x + usable.width) - rect.width;
+        rect.x = @min(@max(anchor.x + @divTrunc(anchor.width, 2) - @divTrunc(rect.width, 2), left), @max(left, right));
+    } else {
+        const top = @max(0, usable.y - bounds.y);
+        const bottom = @min(bounds.height, usable.y - bounds.y + usable.height) - rect.height;
+        rect.y = @min(@max(anchor.y + @divTrunc(anchor.height, 2) - @divTrunc(rect.height, 2), top), @max(top, bottom));
+    }
+    return rect;
+}
+
+test "bar popup follows clicked icons on every edge and clamps to usable bounds" {
+    const t = std.testing;
+    const bounds: Rect = .{ .x = -800, .y = -100, .width = 800, .height = 600 };
+    const usable: Rect = .{ .x = -790, .y = -90, .width = 780, .height = 580 };
+    const rect: Rect = .{ .x = 20, .y = 30, .width = 200, .height = 100 };
+    const anchor: Rect = .{ .x = 350, .y = 250, .width = 20, .height = 20 };
+    for ([_]Edge{ .top, .bottom }) |edge| {
+        const placed = followAnchor(rect, bounds, usable, anchor, edge);
+        try t.expectEqual(@as(i32, 260), placed.x);
+        try t.expectEqual(rect.y, placed.y);
+        const clamped = followAnchor(rect, bounds, usable, .{ .x = 790, .y = 0, .width = 20, .height = 20 }, edge);
+        try t.expectEqual(@as(i32, 590), clamped.x);
+    }
+    for ([_]Edge{ .left, .right }) |edge| {
+        const placed = followAnchor(rect, bounds, usable, anchor, edge);
+        try t.expectEqual(@as(i32, 210), placed.y);
+        try t.expectEqual(rect.x, placed.x);
+        const clamped = followAnchor(rect, bounds, usable, .{ .x = 0, .y = 0, .width = 20, .height = 20 }, edge);
+        try t.expectEqual(@as(i32, 10), clamped.y);
+    }
+}

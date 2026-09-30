@@ -152,6 +152,34 @@ def main():
             ctl(s,args.ctl,'popup','hide');assert status(s,args.ctl)['media_views']==0
             time.sleep(.3);assert not state(s,args.ctl)['media']['timer']
             checks['bounded-cancellable-artwork-local-only-and-hidden-view-timers']=True
+            ctl(s,args.ctl,'tray','toggle','--output',output['id'])
+            focus_target(s,pearl,f'tray-choice-{traygen}')
+            capture(s,'tray-chooser-pixmap',output['connector'])
+            for index,(title,icon,pixmap) in enumerate([
+                ('', 'pearl-notifications-symbolic', True),
+                ('Electron — aplicação', 'pearl-missing-tray-icon', True),
+                ('x'*513, '', False),
+                ('Pearl fixture', '', True),
+            ]):
+                command(fixture,tray_title=title,tray_icon=icon,tray_pixmap=pixmap)
+                await_state(s,args.ctl,lambda v:v['tray']['items'][0]['image']==pixmap and v['tray']['items'][0]['title']==('' if len(title.encode())>512 else title))
+                time.sleep(.3)
+                capture(s,f'tray-chooser-variant-{index}',output['connector'])
+            key(s,'-k','space')
+            await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_ready'])
+            focus_target(s,pearl,'tray-1')
+            for cycle in range(5):
+                focus_target(s,pearl,'tray-back');key(s,'-k','space')
+                focus_target(s,pearl,f'tray-choice-{traygen}')
+                live=state(s,args.ctl)
+                assert live['tray']['count']==1 and live['tray']['items'][0]['nodes']==9
+                capture(s,f'tray-chooser-back-{cycle}',output['connector'])
+                key(s,'-k','space')
+                await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_ready'])
+                focus_target(s,pearl,'tray-1')
+            ctl(s,args.ctl,'popup','hide')
+            checks['tray-repeated-menu-back-keeps-item-and-node-counts-stable']=True
+            checks['tray-icon-chooser-title-variants-and-keyboard-menu-opening']=True
             action(s,args.ctl,'tray_activate',generation=traygen);action(s,args.ctl,'tray_secondary',generation=traygen)
             action(s,args.ctl,'tray_menu',generation=traygen);v=await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_ready']);menu_revision=v['tray']['items'][0]['menu_revision'];assert v['tray']['items'][0]['nodes']==9
             ctl(s,args.ctl,'tray','toggle','--output',output['id']);time.sleep(.3);capture(s,'tray-menu',output['connector'])

@@ -4,11 +4,32 @@ const w = @import("../ui/components/widgets.zig");
 const service = @import("../services/tray.zig");
 const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
+/// Use a named icon only when the current display's theme can resolve it.
+fn updateIcon(image: *gtk.Image, item: *const service.Item) void {
+    const theme = gtk.IconTheme.getForDisplay(image.as(gtk.Widget).getDisplay());
+    if (item.icon.len != 0 and theme.hasIcon(item.icon.z()) != 0) {
+        image.setFromIconName(item.icon.z());
+    } else if (item.image) |pixmap| {
+        image.setFromPixbuf(pixmap);
+    } else {
+        image.setFromIconName("pearl-application-x-executable-symbolic");
+    }
+    image.setPixelSize(20);
+}
+fn itemName(item: *const service.Item) [:0]const u8 {
+    if (item.title.len != 0) return item.title.z();
+    if (item.tooltip.len != 0) return item.tooltip.z();
+    return "Tray application";
+}
+fn describeItem(button: *gtk.Button, item: *const service.Item) void {
+    button.as(gtk.Widget).setTooltipText(if (item.tooltip.len != 0) item.tooltip.z() else itemName(item));
+    w.name(button.as(gtk.Widget), itemName(item));
+}
 const Button = struct { bar: *Bar, generation: u64 = 0, widget: *gtk.Button, image: *gtk.Image };
 pub const Bar = struct {
     service: *service.Tray,
     context: *anyopaque,
-    open: *const fn (*anyopaque) void,
+    open: *const fn (*anyopaque, *gtk.Widget) void,
     rows: [32]Button = undefined,
     overflow: *gtk.Button,
     limit: usize = 4,
@@ -21,6 +42,7 @@ pub const Bar = struct {
             const image = w.icon("pearl-application-x-executable-symbolic");
             button.setChild(image.as(gtk.Widget));
             button.as(gtk.Widget).addCssClass("pearl-bar-item");
+            button.as(gtk.Widget).addCssClass("pearl-tray-icon");
             row.* = .{ .bar = self, .widget = button, .image = image };
             _ = gtk.Button.signals.clicked.connect(button, *Button, activated, row, .{});
             const click = gtk.GestureClick.new();
@@ -51,7 +73,7 @@ pub const Bar = struct {
     }
     fn overflowClicked(_: *gtk.Button, self: *Bar) callconv(.c) void {
         self.service.selected = 0;
-        self.open(self.context);
+        self.open(self.context, self.overflow.as(gtk.Widget));
     }
     pub fn destroy(self: *Bar) void {
         a.destroy(self);
@@ -67,10 +89,8 @@ pub const Bar = struct {
             row.widget.as(gtk.Widget).setVisible(@intFromBool(visible));
             row.generation = item.generation;
             if (!visible) continue;
-            if (item.icon.len != 0) row.image.setFromIconName(item.icon.z()) else if (item.image) |image| row.image.setFromPixbuf(image) else row.image.setFromIconName("pearl-application-x-executable-symbolic");
-            row.image.setPixelSize(20);
-            row.widget.as(gtk.Widget).setTooltipText(item.tooltip.z());
-            w.name(row.widget.as(gtk.Widget), item.title.z());
+            updateIcon(row.image, item);
+            describeItem(row.widget, item);
             if (std.mem.eql(u8, item.status.slice(), "NeedsAttention")) row.widget.as(gtk.Widget).addCssClass("pearl-selected") else row.widget.as(gtk.Widget).removeCssClass("pearl-selected");
         }
         self.overflow.as(gtk.Widget).setVisible(@intFromBool(active > self.limit));
@@ -84,7 +104,7 @@ pub const Bar = struct {
             row.bar.service.contextMenu(row.generation) catch {};
             return;
         };
-        row.bar.open(row.bar.context);
+        row.bar.open(row.bar.context, row.widget.as(gtk.Widget));
     }
     fn menu(_: *gtk.GestureClick, _: c_int, _: f64, _: f64, row: *Button) callconv(.c) void {
         openMenu(row);
@@ -97,6 +117,7 @@ pub const Bar = struct {
         return 1;
     }
 };
+const ItemChoice = struct { view: *View, button: *gtk.Button, image: *gtk.Image, generation: u64 = 0 };
 const Row = struct { button: *gtk.Button, label: *gtk.Label, check: *gtk.Image, arrow: *gtk.Label };
 const Choice = struct { view: *View, row: Row, separator: ?*gtk.Separator = null, slot: ?*gtk.Box = null, id: i32 = 0, generation: u64 = 0, revision: u64 = 0, submenu: bool = false };
 
@@ -131,10 +152,12 @@ pub const View = struct {
     probe_focus: ?*gtk.Widget = null,
     service: *service.Tray,
     root: *gtk.Box,
+    pages: *gtk.Stack,
+    header: *gtk.Box,
     title: *gtk.Label,
     state: *gtk.Label,
     back: *gtk.Button,
-    choices: [32]Choice = undefined,
+    choices: [32]ItemChoice = undefined,
     nodes: [128]Choice = undefined,
     parent: i32 = 0,
     generation: u64 = 0,
@@ -150,13 +173,16 @@ pub const View = struct {
         back.as(gtk.Widget).addCssClass("pearl-icon");
         back.as(gtk.Widget).setTooltipText("Back");
         w.name(back.as(gtk.Widget), "Back");
-        const title = w.label("System tray", "pearl-card-title");
+        const title = w.label("", "pearl-card-title");
         header.append(back.as(gtk.Widget));
         header.append(title.as(gtk.Widget));
         root.append(header.as(gtk.Widget));
         const state = w.label("", "pearl-secondary");
         root.append(state.as(gtk.Widget));
-        self.* = .{ .service = tray, .root = root, .title = title, .state = state, .back = back };
+        const pages = gtk.Stack.new();
+        pages.setHhomogeneous(0);
+        pages.setVhomogeneous(0);
+        self.* = .{ .service = tray, .root = root, .pages = pages, .header = header, .title = title, .state = state, .back = back };
         _ = gtk.Button.signals.clicked.connect(back, *View, goBack, self, .{});
         const scroll = gtk.ScrolledWindow.new();
         scroll.setPolicy(.never, .automatic);
@@ -166,13 +192,21 @@ pub const View = struct {
         scroll.setPropagateNaturalHeight(1);
         scroll.as(gtk.Widget).setVexpand(1);
         const content = w.column(2);
-        scroll.setChild(content.as(gtk.Widget));
+        const menu_content = w.column(2);
+        _ = pages.addNamed(content.as(gtk.Widget), "chooser");
+        _ = pages.addNamed(menu_content.as(gtk.Widget), "menu");
+        scroll.setChild(pages.as(gtk.Widget));
         root.append(scroll.as(gtk.Widget));
         for (&self.choices) |*choice| {
-            const row = menuRow();
-            choice.* = .{ .view = self, .row = row };
-            _ = gtk.Button.signals.clicked.connect(row.button, *Choice, choose, choice, .{});
-            content.append(row.button.as(gtk.Widget));
+            const button = gtk.Button.new();
+            button.as(gtk.Widget).addCssClass("pearl-menu-item");
+            button.as(gtk.Widget).addCssClass("pearl-tray-icon");
+            button.as(gtk.Widget).setHalign(.start);
+            const image = w.icon("pearl-application-x-executable-symbolic");
+            button.setChild(image.as(gtk.Widget));
+            choice.* = .{ .view = self, .button = button, .image = image };
+            _ = gtk.Button.signals.clicked.connect(button, *ItemChoice, choose, choice, .{});
+            content.append(button.as(gtk.Widget));
         }
         for (&self.nodes) |*node| {
             const row = menuRow();
@@ -182,7 +216,7 @@ pub const View = struct {
             slot.append(row.button.as(gtk.Widget));
             node.* = .{ .view = self, .row = row, .separator = separator, .slot = slot };
             _ = gtk.Button.signals.clicked.connect(row.button, *Choice, clickNode, node, .{});
-            content.append(slot.as(gtk.Widget));
+            menu_content.append(slot.as(gtk.Widget));
         }
         self.update();
         return self;
@@ -191,6 +225,14 @@ pub const View = struct {
         const focus = window.getFocus();
         if (focus == self.probe_focus) return;
         self.probe_focus = focus;
+        if (focus == self.back.as(gtk.Widget)) {
+            log.info("event=session-focus target=tray-back", .{});
+            return;
+        }
+        for (&self.choices) |*choice| if (focus == choice.button.as(gtk.Widget)) {
+            log.info("event=session-focus target=tray-choice-{d}", .{choice.generation});
+            return;
+        };
         for (&self.nodes) |*node| if (focus == node.row.button.as(gtk.Widget)) {
             log.info("event=session-focus target=tray-{d}", .{node.id});
             return;
@@ -216,19 +258,25 @@ pub const View = struct {
             self.parent = 0;
         }
         const selected = self.service.find(self.generation);
-        self.title.setText(if (selected) |item| item.title.z() else "System tray");
+        self.pages.setVisibleChildName(if (selected == null) "chooser" else "menu");
+        self.header.as(gtk.Widget).setVisible(@intFromBool(selected != null));
+        self.title.setText(if (selected) |item| item.title.z() else "");
+        self.title.as(gtk.Widget).setVisible(@intFromBool(selected != null and self.title.getText()[0] != 0));
         self.state.setText(if (self.service.err) |err| blk: {
             var text: @import("../services/policy.zig").Text(512) = .{};
             text.set(err);
             self.state.setText(text.z());
             break :blk self.state.getText();
-        } else if (selected) |item| (if (item.menu_error) "Menu unavailable. Go back and reopen to retry." else if (!item.menu_ready) "Loading menu…" else "") else "Choose a tray item");
+        } else if (selected) |item| (if (item.menu_error) "Menu unavailable. Go back and reopen to retry." else if (!item.menu_ready) "Loading menu…" else "") else "");
         self.state.as(gtk.Widget).setVisible(@intFromBool(std.mem.span(self.state.getText()).len != 0));
         self.back.as(gtk.Widget).setVisible(@intFromBool(selected != null));
         for (&self.choices, &self.service.items) |*choice, *item| {
             choice.generation = item.generation;
-            choice.row.label.setText(item.title.z());
-            choice.row.button.as(gtk.Widget).setVisible(@intFromBool(selected == null and item.ready));
+            const visible = selected == null and item.ready;
+            choice.button.as(gtk.Widget).setVisible(@intFromBool(visible));
+            if (!visible) continue;
+            updateIcon(choice.image, item);
+            describeItem(choice.button, item);
         }
         for (&self.nodes, 0..) |*choice, i| {
             const slot = choice.slot.?;
@@ -260,7 +308,7 @@ pub const View = struct {
             choice.row.button.as(gtk.Widget).setSensitive(@intFromBool(node.enabled));
         }
     }
-    fn choose(_: *gtk.Button, choice: *Choice) callconv(.c) void {
+    fn choose(_: *gtk.Button, choice: *ItemChoice) callconv(.c) void {
         choice.view.service.openMenu(choice.generation, 0) catch {};
     }
     fn clickNode(_: *gtk.Button, choice: *Choice) callconv(.c) void {
@@ -274,7 +322,7 @@ pub const View = struct {
     }
     fn goBack(_: *gtk.Button, self: *View) callconv(.c) void {
         if (self.parent == 0) {
-            self.service.selected = 0;
+            self.service.showChooser();
         } else if (self.service.find(self.generation)) |item| {
             for (item.nodes[0..item.node_count]) |node| if (node.id == self.parent) {
                 self.parent = @max(0, node.parent);

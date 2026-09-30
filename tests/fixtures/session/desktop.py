@@ -113,6 +113,9 @@ def command(channel,condition):
         if 'capability' in data: media[data['capability']]=V('b',data['value']);changed(mp,mi)
         if 'playback' in data: media['PlaybackStatus']=V('s',data['playback']);changed(mp,mi)
         if 'status' in data: item['Status']=V('s',data['status']);changed('/StatusNotifierItem',si)
+        if 'tray_title' in data: item['Title']=V('s',data['tray_title']);changed('/StatusNotifierItem',si)
+        if 'tray_icon' in data: item['IconName']=V('s',data['tray_icon']);changed('/StatusNotifierItem',si)
+        if 'tray_pixmap' in data: item['IconPixmap']=V('a(iiay)',[(32,32,pixels)] if data['tray_pixmap'] else []);changed('/StatusNotifierItem',si)
         if data.get('bad_pixmap'): item['IconPixmap']=V('a(iiay)',[(2147483647,2,b'bad'),(32,32,b'bad')]);changed('/StatusNotifierItem',si)
         if 'menu_overflow' in data:
             malformed=data['menu_overflow'];revision+=1;emit('/Menu','com.canonical.dbusmenu','LayoutUpdated',V('(ui)',(revision,0)))

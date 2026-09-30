@@ -304,6 +304,11 @@ pub const Tray = struct {
         const item = self.find(generation) orelse return error.InvalidValue;
         try self.bus.call(self, generation, item.owner.z(), item.path.z(), item_iface, "Scroll", db.tuple(&.{ glib.Variant.newInt32(delta), db.str(if (vertical) "vertical" else "horizontal") }), "()", actionDone);
     }
+    /// Publish navigation so the popup manager also reconciles its geometry.
+    pub fn showChooser(self: *Tray) void {
+        self.selected = 0;
+        self.notify();
+    }
     pub fn openMenu(self: *Tray, generation: u64, parent: i32) !void {
         const item = self.find(generation) orelse return error.InvalidValue;
         if (!item.ready or item.menu.len == 0 or std.mem.eql(u8, item.menu.slice(), "/NO_DBUSMENU")) return error.Unsupported;
