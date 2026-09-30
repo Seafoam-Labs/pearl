@@ -29,6 +29,8 @@ pub const Item = struct {
     registration: Text(768) = .{},
     generation: u64 = 0,
     title: Text(512) = .{},
+    id: Text(512) = .{},
+    tooltip_title: Text(512) = .{},
     tooltip: Text(512) = .{},
     icon: Text(512) = .{},
     status: Text(512) = .{},
@@ -252,6 +254,7 @@ pub const Tray = struct {
         const props = v.getChildValue(0);
         defer props.unref();
         item.title = db.string(props, "Title", "s");
+        item.id = db.string(props, "Id", "s");
         item.status = db.string(props, "Status", "s");
         item.icon = db.string(props, if (std.mem.eql(u8, item.status.slice(), "NeedsAttention")) "AttentionIconName" else "IconName", "s");
         if (item.icon.len == 0) item.icon = db.string(props, "IconName", "s");
@@ -260,9 +263,11 @@ pub const Tray = struct {
             break;
         };
         item.tooltip = item.title;
+        item.tooltip_title = .{};
         if (db.lookup(props, "ToolTip", "(sa(iiay)ss)")) |tip| {
             defer tip.unref();
             const text = transport.childText(512, tip, 2);
+            item.tooltip_title = @import("notification_policy.zig").sanitize(512, text.slice());
             const detail = transport.childText(512, tip, 3);
             var buffer: [1025]u8 = undefined;
             item.tooltip = @import("notification_policy.zig").sanitize(512, std.fmt.bufPrint(&buffer, "{s}{s}{s}", .{ text.slice(), if (text.len > 0 and detail.len > 0) "\n" else "", detail.slice() }) catch "");

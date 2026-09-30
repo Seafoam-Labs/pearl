@@ -19,7 +19,8 @@ fn updateIcon(image: *gtk.Image, item: *const service.Item) void {
 }
 fn itemName(item: *const service.Item) [:0]const u8 {
     if (item.title.len != 0) return item.title.z();
-    if (item.tooltip.len != 0) return item.tooltip.z();
+    if (item.tooltip_title.len != 0) return item.tooltip_title.z();
+    if (item.id.len != 0) return item.id.z();
     return "Tray application";
 }
 fn describeItem(button: *gtk.Button, item: *const service.Item) void {
@@ -263,6 +264,7 @@ pub const View = struct {
         if (self.probe_back == null or self.probe_back.? != back_visible) {
             self.probe_back = back_visible;
             log.info("event=tray-choices back={s} parent={d} chooser={s}", .{ if (back_visible) "true" else "false", self.parent, if (self.service.menu_from_chooser) "true" else "false" });
+            if (self.service.find(self.generation) != null) log.info("event=tray-choices title={s}", .{std.mem.span(self.title.getText())});
         }
         var visible: usize = 0;
         for (&self.choices) |*choice| if (choice.button.as(gtk.Widget).getVisible() != 0) {
@@ -324,7 +326,7 @@ pub const View = struct {
         const selected = self.service.find(self.generation);
         self.pages.setVisibleChildName(if (selected == null) "chooser" else "menu");
         self.header.as(gtk.Widget).setVisible(@intFromBool(selected != null));
-        self.title.setText(if (selected) |item| item.title.z() else "");
+        self.title.setText(if (selected) |item| itemName(item) else "");
         self.title.as(gtk.Widget).setVisible(@intFromBool(selected != null and self.title.getText()[0] != 0));
         self.state.setText(if (self.service.err) |err| blk: {
             var text: @import("../services/policy.zig").Text(512) = .{};

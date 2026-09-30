@@ -154,6 +154,9 @@ Shift+F10 opens the context menu.
 Back returns from nested menus to their parent. At the menu root, Back returns
 to the expanded tray only when the menu was opened from that chooser; menus
 opened directly from bar icons have no root Back button.
+Menu headings and accessible icon names share the same fallback: `Title`, the
+`ToolTip` title, `Id`, then "Tray application". Tooltip descriptions remain in
+the hover tooltip rather than becoming part of the menu heading.
 
 Menus use `com.canonical.dbusmenu`: AboutToShow precedes display, GetLayout reads
 the nested tree, Event sends `clicked`, and LayoutUpdated or

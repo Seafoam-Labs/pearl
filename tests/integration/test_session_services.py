@@ -185,16 +185,25 @@ def main():
             key(s,'-k','Tab');focus_target(s,pearl,f'tray-choice-{traygen}')
             checks['overflow-left-click-activates-application']=True
             capture(s,'tray-chooser-pixmap',output['connector'])
-            for index,(title,icon,pixmap) in enumerate([
-                ('', 'pearl-notifications-symbolic', True),
-                ('Electron — aplicação', 'pearl-missing-tray-icon', True),
-                ('x'*513, '', False),
-                ('Pearl fixture', '', True),
+            for index,(title,icon,pixmap,tooltip,identity,expected) in enumerate([
+                ('', 'pearl-notifications-symbolic', True, 'Fixture tray tooltip', 'Fixture ID', 'Fixture tray tooltip'),
+                ('Tray — αβγ', 'pearl-missing-tray-icon', True, 'Fixture tray tooltip', 'Fixture ID', 'Tray — αβγ'),
+                ('x'*513, '', False, 'Fixture tray tooltip', 'Fixture ID', 'Fixture tray tooltip'),
+                ('', '', True, '', 'Fixture ID', 'Fixture ID'),
+                ('', '', True, '', '', 'Tray application'),
+                ('Pearl fixture', '', True, 'Fixture tray tooltip', '', 'Pearl fixture'),
             ]):
-                command(fixture,tray_title=title,tray_icon=icon,tray_pixmap=pixmap)
+                command(fixture,tray_title=title,tray_icon=icon,tray_pixmap=pixmap,tray_tooltip_title=tooltip,tray_id=identity)
                 await_state(s,args.ctl,lambda v:next(i for i in v['tray']['items'] if i['generation']==traygen)['image']==pixmap and next(i for i in v['tray']['items'] if i['generation']==traygen)['title']==('' if len(title.encode())>512 else title))
                 time.sleep(.3)
                 capture(s,f'tray-chooser-variant-{index}',output['connector'])
+                title_start=len(pearl.lines)
+                key(s,'-M','shift','-k','F10','-m','shift')
+                focus_target(s,pearl,'tray-1')
+                wait_for(lambda:any(f'event=tray-choices title={expected}' in line for line in pearl.lines[title_start:]))
+                focus_target(s,pearl,'tray-back');key(s,'-k','space')
+                focus_target(s,pearl,f'tray-choice-{traygen}')
+            checks['tray-menu-name-falls-back-through-tooltip-id-and-generic']=True
             key(s,'-M','shift','-k','F10','-m','shift')
             await_state(s,args.ctl,lambda v:next(i for i in v['tray']['items'] if i['generation']==traygen)['menu_ready'])
             focus_target(s,pearl,'tray-1')

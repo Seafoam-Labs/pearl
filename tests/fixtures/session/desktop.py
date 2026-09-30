@@ -122,6 +122,9 @@ def command(channel,condition):
                 else: release(name)
         if 'tray_is_menu' in data: item['ItemIsMenu']=V('b',data['tray_is_menu']);changed('/StatusNotifierItem',si)
         if 'tray_title' in data: item['Title']=V('s',data['tray_title']);changed('/StatusNotifierItem',si)
+        if 'tray_id' in data: item['Id']=V('s',data['tray_id']);changed('/StatusNotifierItem',si)
+        if 'tray_tooltip_title' in data:
+            item['ToolTip']=V('(sa(iiay)ss)',('',[],data['tray_tooltip_title'],'Nested menu test'));changed('/StatusNotifierItem',si)
         if 'tray_icon' in data: item['IconName']=V('s',data['tray_icon']);changed('/StatusNotifierItem',si)
         if 'tray_pixmap' in data: item['IconPixmap']=V('a(iiay)',[(32,32,pixels)] if data['tray_pixmap'] else []);changed('/StatusNotifierItem',si)
         if data.get('bad_pixmap'): item['IconPixmap']=V('a(iiay)',[(2147483647,2,b'bad'),(32,32,b'bad')]);changed('/StatusNotifierItem',si)
