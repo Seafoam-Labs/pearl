@@ -15,6 +15,10 @@
     "keyboard-seek-edit-survives-progress-timer-and-focus-change": true,
     "media-keyboard-controls-position-capabilities-and-rejection": true,
     "bounded-cancellable-artwork-local-only-and-hidden-view-timers": true,
+    "overflow-image-centered-in-panel": true,
+    "single-overflow-icon-popup-hugs-content": true,
+    "overflow-left-click-activates-application": true,
+    "overflow-excludes-bar-items-and-refreshes-after-owner-loss": true,
     "tray-repeated-menu-back-keeps-item-and-node-counts-stable": true,
     "tray-icon-chooser-title-variants-and-keyboard-menu-opening": true,
     "tray-activation-secondary-and-nested-dbusmenu-keyboard-actions": true,
@@ -26,7 +30,7 @@
     "queued-names-acquired-after-existing-services-exit": true,
     "production-session-bus-reconnect-restores-protocols": true
   },
-  "pearl_sha256": "3aa1eebccbb1c28d497bbf1e79f2f02cac9e852da04a6356f09e38b3750e6fef",
+  "pearl_sha256": "8c420951181840fba668080ef077e23c3b2f3bd8460a32bd8790cd0471d52f09",
   "ctl_sha256": "682cd5cab9f01c3b7be7d1effb8703b9814b36d8762865a8e236c0e910b75a95",
-  "production_sha256": "104b1e10afd220615459edfa0e5bee9907c4ecc28dae29ff5746492659a77751"
+  "production_sha256": "773725568eed1f73e62528beec73036d8e62fa239249a6b76d9fb119b7ba520d"
 }
