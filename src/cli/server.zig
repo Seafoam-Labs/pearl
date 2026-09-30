@@ -262,28 +262,122 @@ fn environmentCheck() struct { text: []const u8, exit: u8 } {
     return .{ .text = "Aqueous session environment is valid.", .exit = 0 };
 }
 
-fn commandLine(alloc: std.mem.Allocator) []const u8 {
-    const fd = std.c.open("/proc/self/cmdline", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, @as(c_uint, 0));
-    if (fd < 0) return "";
+/// Best effort read of a small procfs pseudo-file into caller storage.
+fn procText(path: [*:0]const u8, storage: []u8) ?[]const u8 {
+    const fd = std.c.open(path, .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, @as(c_uint, 0));
+    if (fd < 0) return null;
     defer _ = std.c.close(fd);
+    const n = std.c.read(fd, storage.ptr, storage.len);
+    if (n <= 0) return null;
+    return storage[0..@intCast(n)];
+}
+
+fn commandLine(alloc: std.mem.Allocator) []const u8 {
     var storage: [4096]u8 = undefined;
-    const n = std.c.read(fd, &storage, storage.len);
-    if (n <= 0) return "";
-    const text = alloc.dupe(u8, storage[0..@intCast(n)]) catch return "";
+    const raw = procText("/proc/self/cmdline", &storage) orelse return "";
+    const text = alloc.dupe(u8, raw) catch return "";
     for (text) |*byte| {
         if (byte.* == 0) byte.* = ' ';
     }
     return std.mem.trimEnd(u8, text, " ");
 }
 
-/// The user journal only, never the system journal: no privilege escalation
-/// for a support artifact. `null` degrades to `journal=unavailable`.
-fn journalExcerpt(alloc: std.mem.Allocator) ?[]const u8 {
+/// One journalctl invocation plus the exact command line to show for it, so the
+/// report header always reproduces the excerpt below it.
+const JournalQuery = struct { argv: []const [:0]const u8, command: []const u8 };
+
+const journal_lines = "500";
+/// Shared across attempts: `pearlctl` answers with a five second deadline, and
+/// the report must stay inside it however many streams it walks.
+const journal_budget_us = 2_000_000;
+
+fn journalQuery(alloc: std.mem.Allocator, specifier: []const u8, value: []const u8) ?JournalQuery {
+    const match = std.fmt.allocPrintSentinel(alloc, "{s}{s}", .{ specifier, value }, 0) catch return null;
+    const argv = alloc.alloc([:0]const u8, 6) catch return null;
+    argv[0] = "journalctl";
+    argv[1] = "--user";
+    argv[2] = match;
+    argv[3] = "-n";
+    argv[4] = journal_lines;
+    argv[5] = "--no-pager";
+    // Quoted so the header stays a command that reproduces the excerpt when the
+    // executable path holds a space (an `_EXE=` match can, a unit name cannot).
+    const quoted = std.mem.indexOfScalar(u8, match, ' ') != null;
+    const command = std.fmt.allocPrint(alloc, "journalctl --user {s}{s}{s} -n {s} --no-pager", .{ if (quoted) "\"" else "", match, if (quoted) "\"" else "", journal_lines }) catch return null;
+    return .{ .argv = argv, .command = command };
+}
+
+fn firstLine(text: []const u8) []const u8 {
+    var lines = std.mem.splitScalar(u8, text, '\n');
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (trimmed.len > 0) return trimmed;
+    }
+    return "";
+}
+
+/// journalctl prints a sentinel rather than nothing when a query matches no
+/// entry; echoing it would put a line in the report that reads like an entry.
+fn journalEntries(text: []const u8) []const u8 {
+    return if (std.mem.eql(u8, std.mem.trim(u8, text, " \t\r\n"), "-- No entries --")) "" else text;
+}
+
+/// The user journal only, never the system journal: no privilege escalation for
+/// a support artifact. The stream is resolved from this process rather than
+/// assumed from a unit name, because the shell's log lines are in whichever unit
+/// started it: Aqueous's integration units own the stream and are not named
+/// `pearl.service`, while a shell started from a terminal or a nested session is
+/// in a scope that must not be mined for its other output. A unit query that
+/// matches nothing falls through to the executable-scoped one; the header always
+/// names a stream that was actually looked in.
+fn journalExcerpt(alloc: std.mem.Allocator) report.Journal {
     const cancel = gio.Cancellable.new();
     defer cancel.unref();
-    const result = helper.run(alloc, &.{ "journalctl", "--user", "-u", "pearl.service", "-n", "500", "--no-pager" }, null, cancel, 2500) catch return null;
-    if (!result.success) return null;
-    return result.stdout;
+    var queries: [2]JournalQuery = undefined;
+    var count: usize = 0;
+    var storage: [4096]u8 = undefined;
+    if (procText("/proc/self/cgroup", &storage)) |text| {
+        if (report.unitFromCgroup(text)) |unit| {
+            if (journalQuery(alloc, "--unit=", unit)) |query| {
+                queries[count] = query;
+                count += 1;
+            }
+        }
+    }
+    var link: [4096]u8 = undefined;
+    const size = std.c.readlink("/proc/self/exe", &link, link.len);
+    if (size > 0) {
+        if (journalQuery(alloc, "_EXE=", link[0..@intCast(size)])) |query| {
+            queries[count] = query;
+            count += 1;
+        }
+    }
+    if (count == 0) return .{ .command = "journalctl --user", .text = "", .unavailable = "this process' journal stream is not resolvable" };
+    const started = glib.getMonotonicTime();
+    var reason: []const u8 = "";
+    for (queries[0..count]) |query| {
+        const left = started + journal_budget_us - glib.getMonotonicTime();
+        if (left <= 0) {
+            if (reason.len == 0) reason = "journal budget exhausted";
+            break;
+        }
+        const result = helper.run(alloc, query.argv, null, cancel, @divTrunc(left, 1000)) catch |err| {
+            if (reason.len == 0) reason = @errorName(err);
+            continue;
+        };
+        if (!result.success) {
+            if (reason.len == 0) reason = if (result.stderr.len > 0) firstLine(result.stderr) else "journalctl exited unsuccessfully";
+            continue;
+        }
+        const text = journalEntries(result.stdout);
+        if (text.len == 0) continue;
+        return .{ .command = query.command, .text = text };
+    }
+    // Nothing matched, so the header keeps the primary stream: a reader sees
+    // where Pearl looked, and a query that never answered is told apart from one
+    // that came back empty.
+    const unavailable: ?[]const u8 = if (reason.len > 0) reason else null;
+    return .{ .command = queries[0].command, .text = "", .unavailable = unavailable };
 }
 
 /// Retention runs after a successful write and never fails the report.

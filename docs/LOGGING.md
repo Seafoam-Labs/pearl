@@ -10,10 +10,12 @@ sole diagnostic file Pearl writes is the `pearlctl report` bundle below.
 
 | Context | Destination |
 | --- | --- |
-| Production session (user unit) | `journalctl --user -u pearl.service` (equivalently `journalctl --user -t pearl`) |
+| Production session started by Pearl's own unit | `journalctl --user -u pearl.service` (`pearl-git.service` in the git packages), equivalently `journalctl --user -t pearl` |
+| Production session started by Aqueous | Aqueous's integration unit, never Pearl's: `journalctl --user -u aqueous-git-pearl.service` ([unit layouts](AQUEOUS_PLUGIN_ACTIVITY.md#enable-live-reactions)). Those units set no `SyslogIdentifier`, so `-t pearl` matches nothing and the entries carry the launcher's identifier. |
+| Any install, name unknown | `journalctl --user _EXE=/usr/bin/pearl` matches this executable's own lines wherever the unit naming leads; it does not include the unit's `systemd` start/stop messages or the applications the shell launched |
 | Greeter / login (system unit) | `sudo journalctl -b -u pearl-greeter.service` |
 | Session started by the greeter | also the system unit: the session inherits greetd's journal connection, so its stderr is attributed to `pearl-greeter.service` |
-| Coral, Dome or Phyto started from the shell | the shell's own stream: `journalctl --user -u pearl.service`, told apart by `pid=` |
+| Coral, Dome or Phyto started from the shell | the shell's own unit stream, told apart by `pid=` |
 | Coral, Dome or Phyto started from a terminal | that terminal's stderr |
 | Development sessions | one `.log` per process under the launcher output, default `.cache/dev-session/` (`scripts/dev-session.py`) |
 | Integration suites | one `.log` per process under the suite's artifact output, e.g. `artifacts/t05/latest/surfaces/pearl.log` |
@@ -41,6 +43,9 @@ ExecStart=
 ExecStart=/usr/bin/pearl --log-level debug
 ```
 
+On an Aqueous-started shell the drop-in belongs to Aqueous's unit instead;
+`pearlctl report` prints the query it used, which names it.
+
 Limitation: the unit-launched executables (greeter, lock, settings, themes,
 plugin host) take no flags and log at the build default; reaching them means
 editing their units or the greetd config.
@@ -51,10 +56,10 @@ The three bundled applications share the shell's log handler, so their lines
 carry the same `ts=<UTC> pid=<n> level(scope):` envelope and the same
 `event=<name> key=value` payload convention. They have no log file and no
 journal identity of their own. An application started from the dock or launcher
-inherits the shell's stdout and stderr, so its lines land in
-`journalctl --user -u pearl.service` under the `pearl` identifier beside the
-shell's, told apart by `pid=`; `pearlctl report` therefore already contains
-them. Started from a terminal, they log to that terminal instead.
+inherits the shell's stdout and stderr, so its lines land in the shell's unit
+stream beside the shell's, told apart by `pid=`; `pearlctl report` therefore
+already contains them. Started from a terminal, they log to that terminal
+instead.
 
 Scopes: `cli` for command-line problems, `config` for Dome's stored
 preferences, `platform` for Phyto's preview pipeline. What they log today is
@@ -74,6 +79,8 @@ one line.
 `pearlctl` exits 0 on success, 2 on usage errors, 3 without a current Aqueous
 session environment, and 4 when the shell answered with an error
 ([SURFACES.md](SURFACES.md)). Event names below are greppable journal keys.
+Where a command says `pearl.service`, substitute the unit that started the shell
+(the table above); `pearlctl report` resolves it and prints the command it used.
 
 ### The shell does not start / black screen
 
@@ -142,11 +149,16 @@ caused it, and `event=ipc-*` lines for the protocol-level detail.
    a description of what you did and what happened.
 
 A report is one bounded text file: the shell's launch argv and version,
-`pearl --check-environment` output, the live `pearlctl status` JSON, and the
-last 500 lines of `journalctl --user -u pearl.service` (or
-`journal=unavailable` when the user journal cannot be read; a missing source
-never fails the report, and the system journal is never read). The directory
-is `0700`, files are `0600`, and the last 3 reports are kept.
+`pearl --check-environment` output, the live `pearlctl status` JSON, and the last
+500 lines of the shell's own journal stream. The section header is the exact
+`journalctl --user` query used: the unit read from the shell's own cgroup, or
+`_EXE=<its executable>` when the unit query does not answer (a terminal, a login
+scope, or a unit stream that matched nothing). A stream that yields
+nothing says `journal=no-entries` under the query that was tried, and one that
+could not be read says `journal=unavailable reason=…`; a missing source never
+fails the report, and the system journal is never read, so a greeter-launched
+session's lines are not included. The directory is `0700`, files are `0600`, and
+the last 3 reports are kept.
 
 Never in a report or the journal: typed content, passwords, passphrases,
 clipboard payloads or session tokens. Untrusted strings (compositor messages,

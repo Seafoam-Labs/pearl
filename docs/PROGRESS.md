@@ -1,5 +1,61 @@
 # Pearl implementation progress
 
+## Support report journal resolution, September 30, 2026
+
+`pearlctl report` no longer assumes the unit name. On this machine the shell runs in
+Aqueous's integration unit (`aqueous-git-pearl.service`, `ExecStart` wrapped by
+`aqueous-activity-launch`), which sets no `SyslogIdentifier`, so the fixed
+`journalctl --user -u pearl.service` returned `-- No entries --` in every report and
+`-t pearl` misses for the same reason. The bundle is assembled inside the shell, so
+`src/cli/server.zig` now resolves the stream from its own `/proc/self/cgroup`: the
+innermost `.service` leaf, the unit journald stamps as `_SYSTEMD_USER_UNIT` for a
+process in a unit's own cgroup. `.scope` leaves are rejected deliberately; a
+terminal or login scope would put other programs' output into a file the docs tell
+users to attach to a public issue. When no service is found, or the unit query
+matches nothing, a second query filters `_EXE=` from `/proc/self/exe`. Candidate
+names (`pearl.service`, `pearl-git.service`, `aqueous-*-pearl.service`) were rejected:
+Aqueous owns that naming and the cgroup is authoritative. `report.unitFromCgroup` is
+pure and charset-validated, so the unit name can neither break out of the header nor
+reach a subprocess argument. `report.Journal` carries the query, making the section
+header the command that reproduces the excerpt instead of a fixed string, and
+`journal=no-entries` is now distinguishable from
+`journal=unavailable reason=<journalctl's own line>`; the sentinel is no longer echoed
+as if it were an entry. Both queries share one 2 s budget so the report stays inside
+`pearlctl`'s 5 s client deadline. The system journal is still never read, so a
+greeter-launched session's stream stays outside the report.
+
+Checks actually run:
+
+- `zig build test -Doptimize=ReleaseSafe` and `zig build -Doptimize=ReleaseSafe`:
+  pass, including the parser cases for the live cgroup text, the scope/slice/delegated
+  rejections and the new marker and header assertions.
+- Both branches observed end to end, samples in
+  `artifacts/aqueous-082/functional/report-journal-resolution/`. `report-scope-session.log`:
+  a private headless session started from a terminal scope, so the header is
+  `=== journalctl --user _EXE=<worktree>/zig-out/bin/pearl -n 500 --no-pager ===` with
+  `journal=no-entries`. `report-unit-service.log`: the same private session hosted by a
+  transient unit (`systemd-run --user --wait --collect
+  --unit=pearl-report-journal-probe-2.service`), header
+  `=== journalctl --user --unit=pearl-report-journal-probe-2.service -n 500 --no-pager ===`
+  over a 16-line excerpt, 14 lines carrying the shell's `ts=<UTC> pid=<n>` envelope and
+  the rest the unit's own `systemd` start line. Both bundles: state dir `0700`, file
+  `0600`, status section carrying the session fingerprint rather than the token, clean
+  `quit`, and no `warning(`, `error(` or `critical(` line in either session's
+  `pearl.log`. Each probe unit was collected on exit; its journal entries stay under
+  those two names, the only residue on the live session.
+- The `tests/integration/test_surfaces.py` report assertions (resolved-query header,
+  non-empty section) were replayed against both samples outside the suite: pass. The
+  suite cannot carry them here yet: `zig build test-surfaces` stops before any check
+  because its `--effects-aqueous` default, `.cache/aqueous-effects/bin/aqueous`, is
+  absent on this machine, and with `--effects-aqueous .cache/aqueous/bin/aqueous` it
+  reaches `basic()` and aborts at the recorded local-compositor output-off limitation,
+  which is earlier than the report block.
+- Resolved commands run read-only against the host journal, the live Aqueous layout:
+  `journalctl --user --unit=aqueous-git-pearl.service -n 500 --no-pager` returns 501
+  lines including Pearl's envelope,
+  `journalctl --user _EXE=/usr/bin/pearl-git -n 500 --no-pager` returns 310.
+- `python3 -m py_compile tests/integration/test_surfaces.py`: pass.
+
 ## Notification icons: measured evidence and rejected alternatives, September 29, 2026
 
 Firefox web notifications that carry a site icon were dropped outright while

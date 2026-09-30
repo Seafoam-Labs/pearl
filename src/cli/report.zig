@@ -19,9 +19,61 @@ pub const Sections = struct {
     environment_exit: u8,
     /// Must already have its session token fingerprinted via `redactSession`.
     status: []const u8,
-    /// `null` when the user journal could not be read.
-    journal: ?[]const u8,
+    journal: Journal,
 };
+
+/// One user-journal excerpt with the query that produced it, so the section
+/// header is always a command that reproduces what follows.
+pub const Journal = struct {
+    /// Full command line, echoed as the section header: the query whose `text`
+    /// follows, or the primary one when nothing matched.
+    command: []const u8,
+    /// Journal entries. Empty means `command` ran and matched nothing.
+    text: []const u8,
+    /// Non-null when no excerpt could be produced: no query was runnable, or
+    /// every query that ran failed. The payload is journalctl's own first error
+    /// line (or a helper failure name), so a broken journal is not mistaken for
+    /// an empty one.
+    unavailable: ?[]const u8 = null,
+};
+
+/// The user unit expected to carry this process' journal stream: the innermost
+/// `.service` component of its own cgroup path. Returns `null` when the shell
+/// runs outside a user service (a login scope, a delegated subtree, a container
+/// without cgroup v2 paths), where the `_EXE=` query takes over.
+///
+/// Only `.service` leaves qualify. A transient `.scope` is the terminal or login
+/// session the shell happened to be started from, so filtering by it would put
+/// unrelated programs' output into a file the docs tell users to attach to a
+/// public issue.
+pub fn unitFromCgroup(text: []const u8) ?[]const u8 {
+    var lines = std.mem.splitScalar(u8, text, '\n');
+    while (lines.next()) |line| {
+        // `<id>:<controllers>:<path>` for cgroup v1, `0::<path>` for v2; the
+        // path itself never contains a colon, so the last one ends the header.
+        const colon = std.mem.lastIndexOfScalar(u8, line, ':') orelse continue;
+        var path = line[colon + 1 ..];
+        while (std.mem.endsWith(u8, path, "/")) path = path[0 .. path.len - 1];
+        const slash = std.mem.lastIndexOfScalar(u8, path, '/') orelse continue;
+        const unit = path[slash + 1 ..];
+        if (!std.mem.endsWith(u8, unit, ".service") or !validUnitName(unit)) continue;
+        return unit;
+    }
+    return null;
+}
+
+/// The unit name reaches the report header and a subprocess argument, so only a
+/// conservative subset of systemd's charset is accepted: `:` (the cgroup-line
+/// delimiter here) and `\` (escaped names are not decoded) are left out.
+fn validUnitName(candidate: []const u8) bool {
+    // systemd's UNIT_NAME_MAX; a leaf at or beyond it is not a name it assigned.
+    if (candidate.len >= 256 or candidate.len <= ".service".len) return false;
+    for (candidate) |byte| switch (byte) {
+        'a'...'z', 'A'...'Z', '0'...'9', '@', '.', '-', '_' => {},
+        else => return false,
+    };
+    return true;
+}
 
 /// `report-<YYYYMMDDTHHMMSSZ>.log`; fixed width, so name order is time order.
 pub fn name(seconds: u64, storage: *[32]u8) []const u8 {
@@ -66,21 +118,29 @@ pub fn redactSession(alloc: std.mem.Allocator, status: []const u8) ![]const u8 {
     return std.fmt.allocPrint(alloc, "{s}{f}{s}", .{ status[0..value], diagnostics.fingerprint(status[value..end]), status[end..] });
 }
 
-/// Journal text is the only untrusted section: every line passes through the
-/// log redactor, so control bytes cannot fake report structure and oversized
-/// lines are cut.
+/// The journal text and the query line both come from outside the shell (the unit
+/// name is read from its own cgroup), so both pass through the log redactor:
+/// control bytes cannot fake report structure and oversized lines are cut.
 pub fn write(writer: *std.Io.Writer, sections: Sections) std.Io.Writer.Error!void {
     try writer.print("{s}\nversion={s}\nargv={f}\n", .{ header, sections.version, diagnostics.safe(sections.argv) });
     try writer.print("=== check-environment exit={d} ===\n{s}\n", .{ sections.environment_exit, sections.environment });
     try writer.print("=== pearlctl status ===\n{s}\n", .{sections.status});
-    try writer.writeAll("=== journalctl --user -u pearl.service -n 500 --no-pager ===\n");
-    if (sections.journal) |journal| {
-        var lines = std.mem.splitScalar(u8, journal, '\n');
+    try writer.print("=== {f} ===\n", .{diagnostics.safe(sections.journal.command)});
+    if (sections.journal.unavailable) |reason| {
+        if (reason.len == 0) {
+            try writer.writeAll("journal=unavailable\n");
+        } else {
+            try writer.print("journal=unavailable reason={f}\n", .{diagnostics.safe(reason)});
+        }
+    } else if (sections.journal.text.len == 0) {
+        try writer.writeAll("journal=no-entries\n");
+    } else {
+        var lines = std.mem.splitScalar(u8, sections.journal.text, '\n');
         while (lines.next()) |line| {
             if (line.len == 0) continue;
             try writer.print("{f}\n", .{diagnostics.safe(line)});
         }
-    } else try writer.writeAll("journal=unavailable\n");
+    }
     try writer.writeAll(footer ++ "\n");
 }
 
@@ -126,6 +186,44 @@ test "the session token never survives into the report" {
     try t.expectEqualStrings("{\"availability\":\"ready\"}", plain);
 }
 
+test "the unit is the innermost service in the process cgroup" {
+    const t = std.testing;
+    // Aqueous integration unit and Pearl's own packaged unit, both cgroup v2.
+    try t.expectEqualStrings("aqueous-git-pearl.service", unitFromCgroup("0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice/aqueous-git-pearl.service\n").?);
+    try t.expectEqualStrings("pearl-git.service", unitFromCgroup("0::/user.slice/user-1000.slice/user@1000.service/session.slice/pearl-git.service").?);
+    // Instances keep their identifier.
+    try t.expectEqualStrings("getty@tty1.service", unitFromCgroup("0::/user.slice/user-1000.slice/user@1000.service/app.slice/getty@tty1.service/\n").?);
+    // cgroup v1 hierarchies carry the path after the second colon.
+    try t.expectEqualStrings("pearl.service", unitFromCgroup("12:pids:/user.slice/user-1000.slice/user@1000.service/session.slice/pearl.service\n1:name=systemd:/user.slice/user-1000.slice/user@1000.service/session.slice/pearl.service\n").?);
+    // A scope, a slice, a delegated subtree and a bare root are not Pearl's unit:
+    // filtering by them would pull other people's streams into the report.
+    try t.expect(unitFromCgroup("0::/user.slice/user-1000.slice/user@1000.service/session.slice/kitty-5228-0.scope\n") == null);
+    try t.expect(unitFromCgroup("0::/user.slice/user-1000.slice/user@1000.service/app.slice\n") == null);
+    try t.expect(unitFromCgroup("0::/user.slice/user-1000.slice/user@1000.service/app.slice/pearl.service/payload\n") == null);
+    try t.expect(unitFromCgroup("0::/\n") == null);
+    try t.expect(unitFromCgroup("") == null);
+    try t.expect(unitFromCgroup("garbage without colons\n") == null);
+    // Only unit-name characters survive: a cgroup is a path, not a place to put a
+    // header or an argument.
+    try t.expect(unitFromCgroup("0::/user.slice/x.service\n") != null);
+    try t.expect(unitFromCgroup("0::/user.slice/a b.service\n") == null);
+    try t.expect(unitFromCgroup("0::/user.slice/esc\x1b[1m.service\n") == null);
+    try t.expect(unitFromCgroup("0::/user.slice/.service\n") == null);
+    // The bound is systemd's UNIT_NAME_MAX: a leaf just under it is still a
+    // name, one at or beyond it is not.
+    const head = "0::/user.slice/";
+    var long_name: [200]u8 = undefined;
+    @memset(&long_name, 'a');
+    @memcpy(long_name[0..head.len], head);
+    @memcpy(long_name[long_name.len - ".service".len ..], ".service");
+    try t.expect(unitFromCgroup(&long_name) != null);
+    var oversized: [300]u8 = undefined;
+    @memset(&oversized, 'a');
+    @memcpy(oversized[0..head.len], head);
+    @memcpy(oversized[oversized.len - ".service".len ..], ".service");
+    try t.expect(unitFromCgroup(&oversized) == null);
+}
+
 test "assembly carries markers and degrades a missing journal" {
     const t = std.testing;
     const full: Sections = .{
@@ -134,7 +232,10 @@ test "assembly carries markers and degrades a missing journal" {
         .environment = "Aqueous session environment is valid.",
         .environment_exit = 0,
         .status = "{\"availability\":\"ready\"}",
-        .journal = "Sep 29 07:31:12 host pearl[9]: ts=2026-09-29T04:31:12Z pid=9 info(core): event=ready\n",
+        .journal = .{
+            .command = "journalctl --user -u aqueous-git-pearl.service -n 500 --no-pager",
+            .text = "Sep 29 07:31:12 host pearl[9]: ts=2026-09-29T04:31:12Z pid=9 info(core): event=ready\n",
+        },
     };
     var storage: [8192]u8 = undefined;
     var writer = std.Io.Writer.fixed(&storage);
@@ -145,15 +246,31 @@ test "assembly carries markers and degrades a missing journal" {
     try t.expect(std.mem.indexOf(u8, text, "version=1.0.0-rc.2\nargv=pearl\n") != null);
     try t.expect(std.mem.indexOf(u8, text, "=== check-environment exit=0 ===\nAqueous session environment is valid.\n") != null);
     try t.expect(std.mem.indexOf(u8, text, "=== pearlctl status ===\n{\"availability\":\"ready\"}\n") != null);
+    // The header is the query that produced the excerpt, so it can be re-run.
+    try t.expect(std.mem.indexOf(u8, text, "=== journalctl --user -u aqueous-git-pearl.service -n 500 --no-pager ===\nSep 29 07:31:12") != null);
     try t.expect(std.mem.indexOf(u8, text, "event=ready\n=== ") != null);
     try t.expect(std.mem.indexOf(u8, text, "journal=unavailable") == null);
+    try t.expect(std.mem.indexOf(u8, text, "journal=no-entries") == null);
 
     var degraded_storage: [8192]u8 = undefined;
     var degraded = std.Io.Writer.fixed(&degraded_storage);
-    const broken: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .environment = "Pearl requires a Wayland display.", .environment_exit = 2, .status = "{\"unavailable\":true}", .journal = null };
+    const broken: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .environment = "Pearl requires a Wayland display.", .environment_exit = 2, .status = "{\"unavailable\":true}", .journal = .{ .command = "journalctl --user -u pearl.service -n 500 --no-pager", .text = "", .unavailable = "" } };
     try write(&degraded, broken);
     try t.expect(std.mem.indexOf(u8, degraded.buffered(), "=== check-environment exit=2 ===\nPearl requires a Wayland display.\n") != null);
     try t.expect(std.mem.indexOf(u8, degraded.buffered(), "journal=unavailable\n" ++ footer) != null);
+
+    // A query that ran and matched nothing is not the same as an unreadable one,
+    // and a reason says which.
+    var empty_storage: [8192]u8 = undefined;
+    var empty_writer = std.Io.Writer.fixed(&empty_storage);
+    const empty: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .environment = "Aqueous session environment is valid.", .environment_exit = 0, .status = "{}", .journal = .{ .command = "journalctl --user -u pearl-greeter.service -n 500 --no-pager", .text = "" } };
+    try write(&empty_writer, empty);
+    try t.expect(std.mem.indexOf(u8, empty_storage[0..], "=== journalctl --user -u pearl-greeter.service -n 500 --no-pager ===\njournal=no-entries\n" ++ footer) != null);
+    var reason_storage: [8192]u8 = undefined;
+    var reason_writer = std.Io.Writer.fixed(&reason_storage);
+    const refused: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .environment = "Aqueous session environment is valid.", .environment_exit = 0, .status = "{}", .journal = .{ .command = "journalctl --user -u pearl.service -n 500 --no-pager", .text = "", .unavailable = "No journal files were found." } };
+    try write(&reason_writer, refused);
+    try t.expect(std.mem.indexOf(u8, reason_storage[0..], "journal=unavailable reason=No journal files were found.\n" ++ footer) != null);
 }
 
 test "journal lines cannot fake report structure" {
@@ -166,13 +283,16 @@ test "journal lines cannot fake report structure" {
         .environment = "Aqueous session environment is valid.",
         .environment_exit = 0,
         .status = "{}",
-        .journal = "line\x1b[one\n" ++ "x" ** 600,
+        .journal = .{
+            .command = "journalctl --user -u pea\x1brl.service -n 500 --no-pager",
+            .text = "line\x1b[one\n" ++ "x" ** 600,
+        },
     };
     try write(&writer, sections);
     const text = writer.buffered();
     try t.expect(std.mem.indexOf(u8, text, "\x1b") == null);
     try t.expect(std.mem.indexOf(u8, text, "argv=pearl?[1m\n") != null);
-    try t.expect(std.mem.indexOf(u8, text, "line?[one\n") != null);
+    try t.expect(std.mem.indexOf(u8, text, "=== journalctl --user -u pea?rl.service -n 500 --no-pager ===\nline?[one\n") != null);
     try t.expect(std.mem.indexOf(u8, text, "…[truncated]") != null);
     // The long line stayed one line: exactly one newline between it and the footer.
     const tail = std.mem.indexOf(u8, text, "x" ** 100).?;

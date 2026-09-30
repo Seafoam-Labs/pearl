@@ -221,7 +221,14 @@ def basic(args, checks):
             assert '=== check-environment exit=0 ===' in text
             assert 'Aqueous session environment is valid.' in text
             assert '=== pearlctl status ===' in text and '"availability"' in text
-            assert '=== journalctl --user -u pearl.service -n 500 --no-pager ===' in text
+            # The journal query names the stream the shell resolved itself (its own
+            # unit, else its executable); a guessed unit name is the bug this guards.
+            journal = re.search(r'^=== journalctl --user (.+) -n 500 --no-pager ===$', text, re.MULTILINE)
+            query = journal.group(1).strip('"') if journal else ''
+            assert journal and query.startswith(('--unit=', '_EXE=')), \
+                f'journal query must name the resolved stream: {journal and journal.group(0)}'
+            section = text[journal.end():].split('=== report complete')[0].strip()
+            assert section, 'journal section must carry entries or a marker, never nothing'
             assert text.rstrip().endswith('=== report complete exit=0 ===')
             assert status(s, args.ctl)['session'] not in text
             assert not stale[0].exists() and not stale[1].exists() and stale[3].exists()
