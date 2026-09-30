@@ -15,6 +15,8 @@
     "keyboard-seek-edit-survives-progress-timer-and-focus-change": true,
     "media-keyboard-controls-position-capabilities-and-rejection": true,
     "bounded-cancellable-artwork-local-only-and-hidden-view-timers": true,
+    "tray-repeated-menu-back-keeps-item-and-node-counts-stable": true,
+    "tray-icon-chooser-title-variants-and-keyboard-menu-opening": true,
     "tray-activation-secondary-and-nested-dbusmenu-keyboard-actions": true,
     "malformed-pixmaps-menu-limits-and-stale-menu-rejection": true,
     "owner-loss-restart-and-stale-replies-clean-cards": true,
@@ -24,7 +26,7 @@
     "queued-names-acquired-after-existing-services-exit": true,
     "production-session-bus-reconnect-restores-protocols": true
   },
-  "pearl_sha256": "a2832ad48d9505b01cf24e02e5b97ed3a1900f5f82eeb03e212388b039db8e4a",
-  "ctl_sha256": "77a896581e0308a0740ec51b2089f0d16182d33131f6fcf80225b01167ca6dc4",
-  "production_sha256": "dd10400b74129c0ce723193a162f328448662bf619c6fff6fb72ad967a101649"
+  "pearl_sha256": "3aa1eebccbb1c28d497bbf1e79f2f02cac9e852da04a6356f09e38b3750e6fef",
+  "ctl_sha256": "682cd5cab9f01c3b7be7d1effb8703b9814b36d8762865a8e236c0e910b75a95",
+  "production_sha256": "104b1e10afd220615459edfa0e5bee9907c4ecc28dae29ff5746492659a77751"
 }

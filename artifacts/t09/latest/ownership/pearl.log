@@ -1,18 +1,19 @@
-ts=2026-09-30T10:18:53Z pid=114975 info(platform): event=blur-capability available=false
-ts=2026-09-30T10:18:53Z pid=114975 info(pearl): event=aqueous-availability state=connecting
-ts=2026-09-30T10:18:53Z pid=114975 info(pearl): event=ready mode=session
-ts=2026-09-30T10:18:53Z pid=114975 info(pearl): event=aqueous-availability state=subscribing
-ts=2026-09-30T10:18:53Z pid=114975 info(ui): event=popup-close-reason reason=bar-inhibited
-ts=2026-09-30T10:18:53Z pid=114975 info(ui): event=popup-close-reason reason=bar-inhibited
-ts=2026-09-30T10:18:53Z pid=114975 info(pearl): event=aqueous-availability state=ready
-ts=2026-09-30T10:18:53Z pid=114975 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
-ts=2026-09-30T10:18:53Z pid=114975 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
-ts=2026-09-30T10:18:53Z pid=114975 info(pearl): event=settings-backend-ready session_hash=11362ff7658e1928
-ts=2026-09-30T10:18:53Z pid=114975 info(pearl): event=control-ready session_hash=11362ff7658e1928
-ts=2026-09-30T10:18:53Z pid=114975 info(desktop): event=app-index-ready entries=145 truncated=false
-ts=2026-09-30T10:18:53Z pid=114975 info(config): event=preferences-applied revision=0 mode=static cache=false
-ts=2026-09-30T10:18:53Z pid=114975 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=4563 success=true
-ts=2026-09-30T10:18:57Z pid=114975 info(pearl): event=stopping reason=control-quit pending=false
-ts=2026-09-30T10:18:57Z pid=114975 info(pearl): event=aqueous-availability state=stopped
-ts=2026-09-30T10:18:57Z pid=114975 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-09-30T10:18:57Z pid=114975 info(pearl): event=stopped
+ts=2026-09-30T15:18:23Z pid=674225 info(platform): event=blur-capability available=false
+ts=2026-09-30T15:18:23Z pid=674225 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-30T15:18:23Z pid=674225 info(pearl): event=ready mode=session
+ts=2026-09-30T15:18:23Z pid=674225 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-30T15:18:23Z pid=674225 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T15:18:23Z pid=674225 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T15:18:23Z pid=674225 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T15:18:23Z pid=674225 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-30T15:18:23Z pid=674225 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-30T15:18:23Z pid=674225 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-09-30T15:18:23Z pid=674225 info(pearl): event=settings-backend-ready session_hash=2c7083d387fd739e
+ts=2026-09-30T15:18:23Z pid=674225 info(pearl): event=control-ready session_hash=2c7083d387fd739e
+ts=2026-09-30T15:18:23Z pid=674225 info(desktop): event=app-index-ready entries=174 truncated=false
+ts=2026-09-30T15:18:23Z pid=674225 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-30T15:18:23Z pid=674225 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=2805 success=true
+ts=2026-09-30T15:18:26Z pid=674225 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-09-30T15:18:26Z pid=674225 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-30T15:18:26Z pid=674225 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-30T15:18:26Z pid=674225 info(pearl): event=stopped
