@@ -173,8 +173,19 @@ Rejected alternatives, so nobody re-litigates them:
 indicator was the driver: a driver's `wtype` creates a virtual keyboard, Aqueous
 makes it the seat's active keyboard, it publishes an empty layout name, and the
 resulting 66 px width swing flipped the workspace wrap, the painted panel height
-and the exclusive zone on every keystroke. `failures.md` issue 1 carries the
-traces, the earlier misreading it corrects, and the numbers before and after.
+and the exclusive zone on every keystroke. The button measured a natural width of
+108 px against 42 px with a blank label, and its minimum stayed 42 px both ways,
+so with siblings budgeted at natural width a bar of length 853 had 274 px
+available against 208 px: `per_line` 5 against 4, the grid one row against two,
+the painted panel 70 px against 102 px, and `set_exclusive_zone` rewritten on
+each pass, measured at 232 flips per bar surface over 8 s. At scale 1 the same
+swing does not cross the row threshold, which is why that case churned with zero
+zone changes and looked unrelated.
+
+The earlier reading, that `fitTasks` and `layoutWorkspaces` were measuring each
+other's output, was wrong for every capture taken: `fitTasks` returns at its
+first line unless the bar has a task strip, and neither the reproduction fixture
+nor the default group spec has one.
 
 The bar now budgets ellipsizing live text at its minimum in both layout passes,
 renders an empty layout name as the missing-keyboard placeholder, and reserves the
@@ -189,8 +200,9 @@ surface-reuse assertion that counts across the whole log.
 Verified green: `test-services`, `test-bar-layout`, `test-running-apps`,
 `test-bar-autohide`, `test-desktop`, `test-settings-appearance`, `zig build test`.
 A full matrix re-record is still owed, and `test-settings-integration` now fails
-later, in the arch-git staging step, for the missing wasm and `-Dgit-variant`
-build products described in `failures.md` issue 3.
+later, in the arch-git staging step, because `package()` stages
+`pearl-plugin-host` and the `coral-git` and `dome-git` variants, which that
+target does not build.
 
 ## Logging and support diagnostics workstream: rejected alternatives and open items, September 29, 2026
 
