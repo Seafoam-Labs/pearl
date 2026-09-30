@@ -30,6 +30,9 @@ pub const events: []const Event = &.{
     .{ .name = "desktop-action", .scopes = &.{.ui} },
     .{ .name = "desktop-action-dropped", .scopes = &.{.ui} },
     .{ .name = "dock-action", .scopes = &.{.desktop} },
+    .{ .name = "document-load-failed", .scopes = &.{.platform} },
+    .{ .name = "document-save-failed", .scopes = &.{.platform} },
+    .{ .name = "file-chooser-failed", .scopes = &.{.platform} },
     .{ .name = "gallery-error", .scopes = &.{.pearl} },
     .{ .name = "gallery-probe", .scopes = &.{.gallery} },
     .{ .name = "greeter-active-output", .scopes = &.{.greeter} },
@@ -66,6 +69,7 @@ pub const events: []const Event = &.{
     .{ .name = "network-failed", .scopes = &.{.services} },
     .{ .name = "night-light-failed", .scopes = &.{.services} },
     .{ .name = "notification-filter-config", .scopes = &.{.ui} },
+    .{ .name = "operation-finished", .scopes = &.{.platform} },
     .{ .name = "output-mapped", .scopes = &.{.ui} },
     .{ .name = "pearlctl-failed", .scopes = &.{.cli} },
     .{ .name = "plugin-callback-failed", .scopes = &.{.plugins} },
@@ -77,12 +81,14 @@ pub const events: []const Event = &.{
     .{ .name = "power-intent", .scopes = &.{.desktop} },
     .{ .name = "preferences-applied", .scopes = &.{.config} },
     .{ .name = "preferences-error", .scopes = &.{.config} },
+    .{ .name = "preferences-load-degraded", .scopes = &.{.cli} },
     .{ .name = "preferences-save-failed", .scopes = &.{.config} },
     .{ .name = "preview-cache-failed", .scopes = &.{.platform} },
     .{ .name = "preview-decode-failed", .scopes = &.{.platform} },
     .{ .name = "preview-failed", .scopes = &.{.platform} },
     .{ .name = "ready", .scopes = &.{.pearl} },
     .{ .name = "report-failed", .scopes = &.{.cli} },
+    .{ .name = "report-status-unavailable", .scopes = &.{.cli} },
     .{ .name = "report-written", .scopes = &.{.cli} },
     .{ .name = "resource-error", .scopes = &.{.pearl} },
     .{ .name = "sample-activated", .scopes = &.{.gallery} },
@@ -131,6 +137,27 @@ fn declared(name: []const u8) ?usize {
 
 const name_bytes = "abcdefghijklmnopqrstuvwxyz0123456789-";
 const marker = "event" ++ "=";
+const scope_marker = "std.log.scoped(.";
+
+/// The scopes a file binds through `std.log.scoped(.name)` declarations. An
+/// event emitted from this file must declare at least one of them, so a stale
+/// scope mapping fails the catalog test instead of quietly misleading a
+/// `--log-scopes` filter.
+fn fileScopes(text: []const u8) std.EnumSet(logging.Scope) {
+    var set = std.EnumSet(logging.Scope).empty;
+    var pos: usize = 0;
+    while (std.mem.indexOfPos(u8, text, pos, scope_marker)) |start| {
+        pos = start + scope_marker.len;
+        const end = pos + (std.mem.indexOfScalarPos(u8, text, pos, ')') orelse text.len - pos);
+        if (std.meta.stringToEnum(logging.Scope, text[pos..end])) |scope| set.insert(scope);
+    }
+    return set;
+}
+
+fn declaresScope(event: Event, scopes: std.EnumSet(logging.Scope)) bool {
+    for (event.scopes) |scope| if (scopes.contains(scope)) return true;
+    return false;
+}
 
 /// Coral, Dome and Phyto ship in the same source tree and their lines reach the
 /// same journal stream as the shell's, so their names are declared here too.
@@ -152,6 +179,9 @@ test "catalog matches the literal event names in the tree" {
             if (std.mem.eql(u8, entry.basename, "log_events.zig")) continue;
             const text = try dir.readFileAlloc(io, entry.path, t.allocator, .limited(16 << 20));
             defer t.allocator.free(text);
+            // A file that binds no scope logs on `.default`, which the catalog
+            // never declares; there is nothing to cross-check there.
+            const scopes = fileScopes(text);
             var pos: usize = 0;
             while (std.mem.indexOfPos(u8, text, pos, marker)) |start| {
                 pos = start + marker.len;
@@ -163,6 +193,10 @@ test "catalog matches the literal event names in the tree" {
                     return error.UndeclaredEventName;
                 }
                 seen[index.?] = true;
+                if (scopes.count() > 0 and !declaresScope(events[index.?], scopes)) {
+                    std.debug.print("{s}/{s}: event '{s}' declares scopes that this file does not bind\n", .{ root, entry.path, name });
+                    return error.EventScopeMismatch;
+                }
             }
         }
     }

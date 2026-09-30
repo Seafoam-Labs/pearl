@@ -5,6 +5,30 @@ const glib = @import("glib2");
 const a = std.heap.c_allocator;
 pub const Kind = enum { copy, move, trash, delete, mkdir, document, link, restore, empty_trash };
 pub const Failure = error{ Io, Cancelled, Conflict, InvalidTarget, Changed, Unsupported, Limit };
+
+/// One batch-level category for a finished job, so a large copy cannot flood the
+/// journal with per-item lines. A single aggregate count cannot tell a failed
+/// batch from a user cancellation or an optimistic-concurrency conflict, so each
+/// gets its own value.
+pub const Outcome = enum { ok, cancelled, conflict, partial, failed };
+
+/// Derives the batch category from the aggregate counts a finished job carries.
+/// Cancellation wins over everything; with no failures, a skipped item means a
+/// conflict was resolved by skipping; otherwise failures split into a partial
+/// batch (some completed) and a total failure (none did).
+pub fn outcome(cancelled: bool, successful: usize, skipped: usize, failed: usize) Outcome {
+    if (cancelled) return .cancelled;
+    if (failed == 0) return if (skipped > 0) .conflict else .ok;
+    return if (successful > 0) .partial else .failed;
+}
+
+/// The journal payload for a finished batch: kind, category and aggregate counts
+/// only. It deliberately carries no path, URI, document content or provider
+/// message, so it is safe to log without redaction.
+pub fn eventPayload(buffer: []u8, kind: Kind, result: Outcome, successful: usize, skipped: usize, failed: usize) []const u8 {
+    return std.fmt.bufPrint(buffer, "kind={s} outcome={s} completed={d} skipped={d} failed={d}", .{ @tagName(kind), @tagName(result), successful, skipped, failed }) catch buffer[0..0];
+}
+
 const attrs = "standard::*,unix::mode,time::modified,time::modified-usec,etag::value,id::file,trash::*";
 pub const Pair = struct {
     source: *gio.File,
@@ -35,6 +59,9 @@ pub const Job = struct {
     clipboard_serial: u64 = 0,
     bytes: std.atomic.Value(u64) = .init(0),
     nodes: usize = 0,
+    /// Count of items that failed (not cancelled, not skipped), accumulated
+    /// across the run/resume cycles of one batch.
+    failed: usize = 0,
     pub fn create(kind: Kind) *Job {
         const j = a.create(Job) catch unreachable;
         j.* = .{ .kind = kind, .cancel = gio.Cancellable.new() };
@@ -89,6 +116,7 @@ pub const Job = struct {
                 const line = std.fmt.allocPrint(a, "{s}: {s}\n", .{ uri, self.error_message orelse @errorName(err) }) catch unreachable;
                 defer a.free(line);
                 self.failures.appendSlice(a, line) catch unreachable;
+                self.failed += 1;
                 continue;
             };
             p.completed = true;
@@ -536,4 +564,56 @@ test "cross-filesystem moves verify a complete directory before source removal" 
     try std.testing.expect(source.queryExists(null) == 0);
     const actual = try move.contentDigest(destination);
     try std.testing.expectEqualSlices(u8, &expected, &actual);
+}
+
+test "batch outcome distinguishes cancellation, conflict, partial and total failure" {
+    const t = std.testing;
+    try t.expectEqual(Outcome.ok, outcome(false, 3, 0, 0));
+    try t.expectEqual(Outcome.cancelled, outcome(true, 1, 0, 0));
+    // A skipped item with no failures is a conflict resolved by skipping.
+    try t.expectEqual(Outcome.conflict, outcome(false, 2, 1, 0));
+    try t.expectEqual(Outcome.partial, outcome(false, 1, 0, 1));
+    try t.expectEqual(Outcome.failed, outcome(false, 0, 0, 2));
+    // Cancellation wins even when items also failed.
+    try t.expectEqual(Outcome.cancelled, outcome(true, 0, 0, 1));
+}
+
+test "the batch event payload carries counts and no path, uri or content" {
+    const t = std.testing;
+    var buffer: [128]u8 = undefined;
+    const text = eventPayload(&buffer, .copy, .partial, 1, 0, 1);
+    try t.expectEqualStrings("kind=copy outcome=partial completed=1 skipped=0 failed=1", text);
+    // Only closed tag names and numbers, so nothing can carry a filename, a URI
+    // scheme or document bytes into the journal.
+    try t.expect(std.mem.indexOf(u8, text, "/") == null);
+    try t.expect(std.mem.indexOf(u8, text, ":") == null);
+}
+
+test "a job counts failed items separately from completed ones" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const good = f.child("good");
+    defer good.unref();
+    writeFixture(good, "bytes");
+    const absent = f.child("absent");
+    defer absent.unref();
+    const dest_good = f.child("dest-good");
+    defer dest_good.unref();
+    const dest_absent = f.child("dest-absent");
+    defer dest_absent.unref();
+    const job = Job.create(.copy);
+    defer job.destroy();
+    // One missing source (fails) and one real source (succeeds): a partial batch.
+    job.add(absent, dest_absent);
+    job.add(good, dest_good);
+    job.run();
+    try std.testing.expectEqual(@as(usize, 1), job.failed);
+    var successful: usize = 0;
+    var skipped: usize = 0;
+    for (job.pairs.items) |p| {
+        if (p.completed) successful += 1;
+        if (p.skipped) skipped += 1;
+    }
+    try std.testing.expectEqual(@as(usize, 1), successful);
+    try std.testing.expectEqual(Outcome.partial, outcome(job.cancelled, successful, skipped, job.failed));
 }

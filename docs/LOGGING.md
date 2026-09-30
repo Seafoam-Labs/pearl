@@ -61,11 +61,27 @@ stream beside the shell's, told apart by `pid=`; `pearlctl report` therefore
 already contains them. Started from a terminal, they log to that terminal
 instead.
 
-Scopes: `cli` for command-line problems, `config` for Dome's stored
-preferences, `platform` for Phyto's preview pipeline. What they log today is
-deliberately small: usage errors, `event=preferences-save-failed` when Dome
-cannot write its preferences, and `event=preview-failed status=<reason>` from
-Phyto.
+Scopes: `cli` for command-line problems, `config` for stored preferences
+(Dome's and Coral's), `platform` for Phyto's preview pipeline and file
+operations and for Coral's document I/O. What they log is deliberately small,
+and none of it carries a path, a filename, document content or a provider
+message:
+
+- usage errors, on `cli`;
+- `event=preferences-save-failed error=<cause>` when Dome or Coral cannot write
+  its preferences, and `event=preferences-load-degraded outcome=<cause>` when
+  Dome's stored file is unreadable, malformed, or a version this build does not
+  understand. A missing file is the normal first run and is not logged;
+- `event=preview-failed status=<reason>` from Phyto's preview pipeline;
+- Coral document failures `event=document-load-failed`,
+  `event=document-save-failed` and `event=file-chooser-failed`, each carrying
+  only the `GError` `domain=` name and numeric `code=`. A dismissed dialog or
+  aborted transfer arrives as `G_IO_ERROR_CANCELLED` and is dropped, so an
+  abandoned chooser writes no error line;
+- `event=operation-finished kind=<op> outcome=<ok|cancelled|conflict|partial|failed>
+  completed=<n> skipped=<n> failed=<n>` from Phyto: one line per batch, never
+  per item, so a large copy cannot flood the stream. The per-item reasons stay
+  in the dialog, not the journal.
 
 Phyto's preview converter is a sandboxed child whose stderr the supervisor
 drains, so the converter's own lines never reach the journal in a production
@@ -148,9 +164,15 @@ caused it, and `event=ipc-*` lines for the protocol-level detail.
    [GitHub issue](https://github.com/Seafoam-Labs/pearl/issues), together with
    a description of what you did and what happened.
 
-A report is one bounded text file: the shell's launch argv and version,
-`pearl --check-environment` output, the live `pearlctl status` JSON, and the last
-500 lines of the shell's own journal stream. The section header is the exact
+A report is one bounded text file: the shell's launch argv, version and the
+effective `log-level`/`log-scopes` filter (so a reader knows whether the debug
+lines they want were even emitted by that run), `pearl --check-environment`
+output, the live `pearlctl status` JSON, and the last 500 lines of the shell's
+own journal stream. The status section is capped at the same 8192-byte frame a
+plain `pearlctl status` reply must satisfy; a probe that fails or exceeds it
+degrades to `{"unavailable":true,"error":"<name>"}` instead of dropping the
+section, and the same Zig error name is logged as
+`event=report-status-unavailable error=<name>`. The section header is the exact
 `journalctl --user` query used: the unit read from the shell's own cgroup, or
 `_EXE=<its executable>` when the unit query does not answer (a terminal, a login
 scope, or a unit stream that matched nothing). A stream that yields
@@ -165,7 +187,10 @@ clipboard payloads or session tokens. Untrusted strings (compositor messages,
 theme errors, peer ids) are sanitized before logging: control bytes replaced,
 a 512-byte cap, URL credentials redacted, and session tokens appear only as
 irreversible fingerprints (`session_hash=` in log lines, the fingerprinted
-`session` field in the report's status section).
+`session` field in the report's status section). `event=report-written` records
+only the report's `name=`, not its full state path: the path exposes home and
+deployment details to a stream other tools read, and the IPC reply already
+returns it to the requesting terminal.
 
 ## For developers
 
@@ -173,7 +198,8 @@ Every line carries a `ts=<UTC> pid=<n>` envelope ahead of the standard
 `level(scope):` prefix, and payload lines use the `event=<name> key=value`
 convention. Every event name is declared in `src/core/log_events.zig`, and a
 pure test walks the shell's and the three subprojects' sources and fails on
-undeclared or stale names; runtime level/scope filtering lives in
-`src/core/logging.zig`. Coral, Dome and Phyto wire both files as build modules
-by relative path rather than copying them, so one handler serves every
-executable in the tree.
+undeclared or stale names, or on an event whose declared scopes do not include a
+scope the emitting file actually binds with `std.log.scoped`; runtime
+level/scope filtering lives in `src/core/logging.zig`. Coral, Dome and Phyto
+wire both files as build modules by relative path rather than copying them, so
+one handler serves every executable in the tree.

@@ -7,7 +7,11 @@ const Document = @import("document.zig").Document;
 const codec = @import("platform/codec.zig");
 const spell = @import("spelling/checker.zig");
 const Settings = @import("platform/settings.zig").Settings;
+const diagnostics = @import("diagnostics");
+const file_error = @import("platform/file_error.zig");
 const test_hooks = @import("build_options").test_hooks;
+const log = std.log.scoped(.platform);
+const config_log = std.log.scoped(.config);
 pub var instance: *App = undefined;
 pub const App = struct {
     application: *c.GtkApplication,
@@ -758,6 +762,15 @@ const SaveOp = struct { doc: *Document, path: [:0]u8, data: []u8, revision: u64,
 fn boolZ(v: bool) [*:0]const u8 {
     return if (v) "true" else "false";
 }
+/// Logs a file-operation failure with its closed category. A cancelled
+/// operation (a dismissed dialog, an aborted transfer) is dropped rather than
+/// written as an error. `format` carries the literal event name plus the
+/// `{f}`/`{d}` placeholders for the redacted domain name and numeric code; the
+/// GError message and any path stay out of the journal.
+fn logFileFailure(comptime format: []const u8, err: ?*c.GError) void {
+    const cat = file_error.classify(err) orelse return;
+    log.err(format, .{ diagnostics.safe(cat.domain), cat.code });
+}
 fn readMore(_: [*c]const u8, size: i64, _: ?*anyopaque) callconv(.c) c_int {
     return @intFromBool(size <= 128 * 1024 * 1024);
 }
@@ -785,6 +798,7 @@ fn loaded(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) call
         return;
     }
     if (!ok) {
+        logFileFailure("event=document-load-failed domain={f} code={d}", err);
         if (err) |e| {
             self.message(std.mem.span(e.message));
             c.g_error_free(e);
@@ -900,6 +914,7 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
     } else {
         self.quitting = false;
         d.close_after_save = false;
+        logFileFailure("event=document-save-failed domain={f} code={d}", err);
         if (err) |e| {
             if (e.domain == c.g_io_error_quark() and e.code == c.G_IO_ERROR_WRONG_ETAG) {
                 self.message("File changed on disk. Save again to review the conflict; your edits are preserved.");
@@ -928,6 +943,7 @@ fn chosenOpen(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) 
             } else self.message("Only local files are supported.");
         }
     }
+    logFileFailure("event=file-chooser-failed domain={f} code={d}", err);
     if (err) |e| c.g_error_free(e);
 }
 fn chosenSave(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
@@ -947,6 +963,7 @@ fn chosenSave(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) 
         }
         self.message("Only local files are supported.");
     }
+    logFileFailure("event=file-chooser-failed domain={f} code={d}", err);
     if (err) |e| c.g_error_free(e);
     d.close_after_save = false;
     self.quitting = false;
@@ -998,7 +1015,10 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
             }
         },
         .preferences => {
-            if (!self.settings.save()) self.message("Could not save preferences. Check the configuration directory permissions.");
+            self.settings.save() catch |err| {
+                config_log.err("event=preferences-save-failed error={s}", .{@errorName(err)});
+                self.message("Could not save preferences. Check the configuration directory permissions.");
+            };
         },
         .goto => {
             if (response == 1) {
@@ -1382,7 +1402,7 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
             c.GDK_KEY_plus, c.GDK_KEY_equal, c.GDK_KEY_minus, c.GDK_KEY_0 => {
                 self.settings.font = if (key == c.GDK_KEY_0) 14 else std.math.clamp(self.settings.font + if (key == c.GDK_KEY_minus) @as(c_int, -1) else 1, 8, 32);
                 self.applySettings();
-                _ = self.settings.save();
+                self.settings.save() catch |err| config_log.err("event=preferences-save-failed error={s}", .{@errorName(err)});
             },
             c.GDK_KEY_z, c.GDK_KEY_Z, c.GDK_KEY_y => {
                 if (self.active()) |d| {
@@ -1456,13 +1476,13 @@ fn testCommand(self: *App) void {
         self.settings.theme = c.g_key_file_get_integer(file, "Test", "theme", null);
         self.settings.font = std.math.clamp(c.g_key_file_get_integer(file, "Test", "font", null), 8, 32);
         self.applySettings();
-        _ = self.settings.save();
+        self.settings.save() catch |err| config_log.err("event=preferences-save-failed error={s}", .{@errorName(err)});
     } else if (std.mem.eql(u8, action, "language")) {
         if (value != null) {
             self.settings.setLanguage(std.mem.span(value));
             self.dictionary = std.mem.span(value).len > 0;
             self.resetSpelling();
-            _ = self.settings.save();
+            self.settings.save() catch |err| config_log.err("event=preferences-save-failed error={s}", .{@errorName(err)});
         }
     } else if (std.mem.eql(u8, action, "replace-all")) {
         if (value != null) c.gtk_editable_set_text(u.cast(c.GtkEditable, self.replacement), value);

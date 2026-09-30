@@ -9,6 +9,7 @@ const a = u.a;
 const Window = @import("window.zig").Window;
 const Context = @import("context.zig").Context;
 pub const engine = @import("operations/engine.zig");
+const log = std.log.scoped(.platform);
 pub const Operations = struct {
     owner: *Window,
     busy: bool = false,
@@ -336,6 +337,17 @@ pub const Operations = struct {
         for (j.pairs.items) |p| {
             if (p.completed) successful += 1;
             if (p.skipped) skipped += 1;
+        }
+        // One batch-level line at the operation boundary. The payload carries
+        // only the kind, the category and aggregate counts, so a large copy
+        // cannot flood the journal and no path or content reaches it.
+        const result = engine.outcome(j.cancelled, successful, skipped, j.failed);
+        var payload: [128]u8 = undefined;
+        const text = engine.eventPayload(&payload, j.kind, result, successful, skipped, j.failed);
+        switch (result) {
+            .partial, .failed => log.warn("event=operation-finished {s}", .{text}),
+            .cancelled, .conflict => log.info("event=operation-finished {s}", .{text}),
+            .ok => log.debug("event=operation-finished {s}", .{text}),
         }
         a.free(self.result);
         self.result = u.format("{d} completed · {d} skipped{s}{s}", .{ successful, skipped, if (j.cancelled) " · Cancelled" else "", if (j.failures.items.len != 0) " · Some items failed" else "" });

@@ -6,6 +6,7 @@ const wire = @import("../aqueous/transport.zig");
 const protocol = @import("protocol.zig");
 const report = @import("report.zig");
 const startup = @import("../core/startup.zig");
+const logging = @import("../core/logging.zig");
 const files = @import("../config/io.zig");
 const helper = @import("../config/helper_process.zig");
 const a = std.heap.c_allocator;
@@ -231,7 +232,21 @@ fn writeReport(owner: *Server, request: protocol.Request, alloc: std.mem.Allocat
     errdefer |err| log.err("event=report-failed error={s}", .{@errorName(err)});
     var status_request = request;
     status_request.op = .status;
-    const status = owner.handle(owner.context, status_request, alloc) catch "{\"unavailable\":true}";
+    // A failed or oversized probe degrades to a marker object naming the Zig
+    // error instead of discarding the section, so the reason rides along in the
+    // report's own journal excerpt. The bound is the same 8192-byte frame a
+    // plain `pearlctl status` reply must satisfy.
+    const status = blk: {
+        const raw = owner.handle(owner.context, status_request, alloc) catch |err| {
+            log.err("event=report-status-unavailable error={s}", .{@errorName(err)});
+            break :blk report.degradedStatus(alloc, err) catch "{\"unavailable\":true}";
+        };
+        if (raw.len > protocol.max_frame) {
+            log.err("event=report-status-unavailable error=ResponseTooLarge", .{});
+            break :blk report.degradedStatus(alloc, error.ResponseTooLarge) catch "{\"unavailable\":true}";
+        }
+        break :blk raw;
+    };
     const environment = environmentCheck();
     const seconds_raw = std.Io.Clock.real.now(std.Options.debug_io).toSeconds();
     var name_storage: [32]u8 = undefined;
@@ -239,6 +254,8 @@ fn writeReport(owner: *Server, request: protocol.Request, alloc: std.mem.Allocat
     report.write(&out.writer, .{
         .argv = commandLine(alloc),
         .version = @import("../version.zig").string,
+        .log_level = logging.levelName(logging.runtime_level),
+        .log_scopes = try logging.scopeList(alloc, logging.runtime_scopes),
         .environment = environment.text,
         .environment_exit = environment.exit,
         .status = try report.redactSession(alloc, status),
@@ -249,7 +266,10 @@ fn writeReport(owner: *Server, request: protocol.Request, alloc: std.mem.Allocat
     const path = try std.fmt.allocPrintSentinel(alloc, "{s}/{s}", .{ directory, report.name(if (seconds_raw > 0) @intCast(seconds_raw) else 0, &name_storage) }, 0);
     files.atomic(path, out.written(), false) catch return error.SaveFailed;
     evictReports(alloc, directory);
-    log.info("event=report-written path={s}", .{path});
+    // Only the filename reaches the journal: the full state path exposes home
+    // and deployment details to a stream other tools read, and the IPC reply
+    // already returns the path to the requesting terminal.
+    log.info("event=report-written name={s}", .{std.fs.path.basename(path)});
     return std.json.Stringify.valueAlloc(alloc, .{ .path = path }, .{});
 }
 

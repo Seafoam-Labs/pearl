@@ -15,12 +15,27 @@ pub const footer = "=== report complete exit=0 ===";
 pub const Sections = struct {
     argv: []const u8,
     version: []const u8,
+    /// The live runtime log filter, so a reader knows whether the debug lines
+    /// they want were even emitted by the run that produced the report.
+    log_level: []const u8,
+    log_scopes: []const u8,
     environment: []const u8,
     environment_exit: u8,
     /// Must already have its session token fingerprinted via `redactSession`.
     status: []const u8,
     journal: Journal,
 };
+
+/// The status section when the live probe could not answer: a valid JSON object
+/// carrying the Zig error name, so the reason survives into the report instead
+/// of being swallowed by the section that degraded. Only a closed error name is
+/// embedded, never a GLib or provider message, so the section stays safe to put
+/// in a public artifact without the per-line redactor.
+pub fn degradedStatus(alloc: std.mem.Allocator, err: anyerror) ![]const u8 {
+    // A Zig error name is an identifier ([A-Za-z0-9_]), so it needs no JSON
+    // escaping; building the object directly keeps the section valid JSON.
+    return std.fmt.allocPrint(alloc, "{{\"unavailable\":true,\"error\":\"{s}\"}}", .{@errorName(err)});
+}
 
 /// One user-journal excerpt with the query that produced it, so the section
 /// header is always a command that reproduces what follows.
@@ -122,7 +137,7 @@ pub fn redactSession(alloc: std.mem.Allocator, status: []const u8) ![]const u8 {
 /// name is read from its own cgroup), so both pass through the log redactor:
 /// control bytes cannot fake report structure and oversized lines are cut.
 pub fn write(writer: *std.Io.Writer, sections: Sections) std.Io.Writer.Error!void {
-    try writer.print("{s}\nversion={s}\nargv={f}\n", .{ header, sections.version, diagnostics.safe(sections.argv) });
+    try writer.print("{s}\nversion={s}\nlog-level={s}\nlog-scopes={s}\nargv={f}\n", .{ header, sections.version, sections.log_level, sections.log_scopes, diagnostics.safe(sections.argv) });
     try writer.print("=== check-environment exit={d} ===\n{s}\n", .{ sections.environment_exit, sections.environment });
     try writer.print("=== pearlctl status ===\n{s}\n", .{sections.status});
     try writer.print("=== {f} ===\n", .{diagnostics.safe(sections.journal.command)});
@@ -229,6 +244,8 @@ test "assembly carries markers and degrades a missing journal" {
     const full: Sections = .{
         .argv = "pearl",
         .version = "1.0.0-rc.2",
+        .log_level = "info",
+        .log_scopes = "all",
         .environment = "Aqueous session environment is valid.",
         .environment_exit = 0,
         .status = "{\"availability\":\"ready\"}",
@@ -243,7 +260,7 @@ test "assembly carries markers and degrades a missing journal" {
     const text = writer.buffered();
     try t.expect(std.mem.startsWith(u8, text, header ++ "\n"));
     try t.expect(std.mem.endsWith(u8, text, footer ++ "\n"));
-    try t.expect(std.mem.indexOf(u8, text, "version=1.0.0-rc.2\nargv=pearl\n") != null);
+    try t.expect(std.mem.indexOf(u8, text, "version=1.0.0-rc.2\nlog-level=info\nlog-scopes=all\nargv=pearl\n") != null);
     try t.expect(std.mem.indexOf(u8, text, "=== check-environment exit=0 ===\nAqueous session environment is valid.\n") != null);
     try t.expect(std.mem.indexOf(u8, text, "=== pearlctl status ===\n{\"availability\":\"ready\"}\n") != null);
     // The header is the query that produced the excerpt, so it can be re-run.
@@ -254,7 +271,7 @@ test "assembly carries markers and degrades a missing journal" {
 
     var degraded_storage: [8192]u8 = undefined;
     var degraded = std.Io.Writer.fixed(&degraded_storage);
-    const broken: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .environment = "Pearl requires a Wayland display.", .environment_exit = 2, .status = "{\"unavailable\":true}", .journal = .{ .command = "journalctl --user -u pearl.service -n 500 --no-pager", .text = "", .unavailable = "" } };
+    const broken: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .log_level = "info", .log_scopes = "all", .environment = "Pearl requires a Wayland display.", .environment_exit = 2, .status = "{\"unavailable\":true}", .journal = .{ .command = "journalctl --user -u pearl.service -n 500 --no-pager", .text = "", .unavailable = "" } };
     try write(&degraded, broken);
     try t.expect(std.mem.indexOf(u8, degraded.buffered(), "=== check-environment exit=2 ===\nPearl requires a Wayland display.\n") != null);
     try t.expect(std.mem.indexOf(u8, degraded.buffered(), "journal=unavailable\n" ++ footer) != null);
@@ -263,12 +280,12 @@ test "assembly carries markers and degrades a missing journal" {
     // and a reason says which.
     var empty_storage: [8192]u8 = undefined;
     var empty_writer = std.Io.Writer.fixed(&empty_storage);
-    const empty: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .environment = "Aqueous session environment is valid.", .environment_exit = 0, .status = "{}", .journal = .{ .command = "journalctl --user -u pearl-greeter.service -n 500 --no-pager", .text = "" } };
+    const empty: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .log_level = "info", .log_scopes = "all", .environment = "Aqueous session environment is valid.", .environment_exit = 0, .status = "{}", .journal = .{ .command = "journalctl --user -u pearl-greeter.service -n 500 --no-pager", .text = "" } };
     try write(&empty_writer, empty);
     try t.expect(std.mem.indexOf(u8, empty_storage[0..], "=== journalctl --user -u pearl-greeter.service -n 500 --no-pager ===\njournal=no-entries\n" ++ footer) != null);
     var reason_storage: [8192]u8 = undefined;
     var reason_writer = std.Io.Writer.fixed(&reason_storage);
-    const refused: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .environment = "Aqueous session environment is valid.", .environment_exit = 0, .status = "{}", .journal = .{ .command = "journalctl --user -u pearl.service -n 500 --no-pager", .text = "", .unavailable = "No journal files were found." } };
+    const refused: Sections = .{ .argv = "pearl", .version = "1.0.0-rc.2", .log_level = "info", .log_scopes = "all", .environment = "Aqueous session environment is valid.", .environment_exit = 0, .status = "{}", .journal = .{ .command = "journalctl --user -u pearl.service -n 500 --no-pager", .text = "", .unavailable = "No journal files were found." } };
     try write(&reason_writer, refused);
     try t.expect(std.mem.indexOf(u8, reason_storage[0..], "journal=unavailable reason=No journal files were found.\n" ++ footer) != null);
 }
@@ -280,6 +297,8 @@ test "journal lines cannot fake report structure" {
     const sections: Sections = .{
         .argv = "pearl\x1b[1m",
         .version = "1.0.0-rc.2",
+        .log_level = "info",
+        .log_scopes = "all",
         .environment = "Aqueous session environment is valid.",
         .environment_exit = 0,
         .status = "{}",
@@ -298,4 +317,50 @@ test "journal lines cannot fake report structure" {
     const tail = std.mem.indexOf(u8, text, "x" ** 100).?;
     const end = std.mem.indexOf(u8, text[tail..], footer).? + tail;
     try t.expectEqual(@as(usize, 1), std.mem.count(u8, text[tail..end], "\n"));
+}
+
+test "a degraded status names the error and stays one json object" {
+    const t = std.testing;
+    const text = try degradedStatus(t.allocator, error.OutOfMemory);
+    defer t.allocator.free(text);
+    try t.expectEqualStrings("{\"unavailable\":true,\"error\":\"OutOfMemory\"}", text);
+    // Parses as a single object, so the section cannot forge a sibling header
+    // and needs no per-line redaction to stay safe in a public artifact.
+    const parsed = try std.json.parseFromSlice(std.json.Value, t.allocator, text, .{});
+    defer parsed.deinit();
+    try t.expectEqual(true, parsed.value.object.get("unavailable").?.bool);
+    try t.expectEqualStrings("OutOfMemory", parsed.value.object.get("error").?.string);
+}
+
+test "the assembled artifact stays within a documented bound" {
+    const t = std.testing;
+    // The worst case the server lets through: a status at the 8192-byte protocol
+    // frame cap and a journal of 500 lines each over the 512-byte redaction cap.
+    const status = try t.allocator.alloc(u8, 8192);
+    defer t.allocator.free(status);
+    @memset(status, 's');
+    var journal: std.ArrayList(u8) = .empty;
+    defer journal.deinit(t.allocator);
+    for (0..500) |_| {
+        try journal.appendSlice(t.allocator, "x" ** 600);
+        try journal.append(t.allocator, '\n');
+    }
+    const buffer = try t.allocator.alloc(u8, 512 * 1024);
+    defer t.allocator.free(buffer);
+    var writer = std.Io.Writer.fixed(buffer);
+    try write(&writer, .{
+        .argv = "pearl",
+        .version = "1.0.0-rc.2",
+        .log_level = "debug",
+        .log_scopes = "all",
+        .environment = "Aqueous session environment is valid.",
+        .environment_exit = 0,
+        .status = status,
+        .journal = .{ .command = "journalctl --user", .text = journal.items },
+    });
+    const text = writer.buffered();
+    // 500 lines cut to 512 bytes plus a marker, an 8 KiB status, small headers.
+    try t.expect(text.len < 300 * 1024);
+    // The per-line cap held across the whole batch: no oversized run survived.
+    try t.expect(std.mem.indexOf(u8, text, "x" ** 513) == null);
 }
