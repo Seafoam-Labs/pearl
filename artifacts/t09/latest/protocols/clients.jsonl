@@ -257,6 +257,45 @@
 {"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
 {"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
 {"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/ExtraTray0", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/ExtraTray1", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/ExtraTray2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/ExtraTray3", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.kde.StatusNotifierItem", "method": "Activate", "args": [0, 0]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.kde.StatusNotifierItem", "method": "Activate", "args": [0, 0]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
+{"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}
 {"kind": "call", "path": "/StatusNotifierItem", "interface": "org.kde.StatusNotifierItem", "method": "Activate", "args": [0, 0]}
 {"kind": "call", "path": "/StatusNotifierItem", "interface": "org.kde.StatusNotifierItem", "method": "SecondaryActivate", "args": [0, 0]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [0]}
@@ -265,8 +304,8 @@
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [4]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
-{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 14112283]}
-{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 14112682]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 94603096]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 94603489]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
 {"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}

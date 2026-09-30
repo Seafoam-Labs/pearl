@@ -145,6 +145,19 @@ acquire the queued name. Items must register with the new watcher, as usual.
 An existing notification daemon likewise retains its name; Pearl reports that
 notifications are unavailable until the name becomes available.
 
+The expanded tray shows ready items that are not currently visible on that
+output's bar. The list follows live bar capacity and item changes. Both bar and
+expanded icons use left click to Activate and right click to open the context
+menu; menu-only items use left click to open their menu too. Middle click sends
+SecondaryActivate. In the expanded tray, Space/Enter activates and Menu or
+Shift+F10 opens the context menu.
+Back returns from nested menus to their parent. At the menu root, Back returns
+to the expanded tray only when the menu was opened from that chooser; menus
+opened directly from bar icons have no root Back button.
+Menu headings and accessible icon names share the same fallback: `Title`, the
+`ToolTip` title, `Id`, then "Tray application". Tooltip descriptions remain in
+the hover tooltip rather than becoming part of the menu heading.
+
 Menus use `com.canonical.dbusmenu`: AboutToShow precedes display, GetLayout reads
 the nested tree, Event sends `clicked`, and LayoutUpdated or
 ItemsPropertiesUpdated invalidates/refetches the selected menu. Clicks require

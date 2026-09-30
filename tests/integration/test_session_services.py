@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """T09 protocol conversations on private session buses and headless Aqueous."""
-import argparse,hashlib,json,os,sys,time,zlib,struct
+import argparse,hashlib,json,os,re,sys,time,zlib,struct
 from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
-from test_surfaces import ctl,status,capture,clean
-from test_services import command
+from test_surfaces import ctl,status,capture,clean,eventually_status
 from t00 import Session as T00Session
 FIX=ROOT/'tests/fixtures/session/desktop.py'
+def command(child,**data):
+    # Repeated commands must wait for a new acknowledgement, not an old line.
+    payload=json.dumps(data,sort_keys=True);reply='command='+payload
+    count=sum(reply in line for line in child.lines)
+    child.proc.stdin.write(payload+'\n');child.proc.stdin.flush()
+    wait_for(lambda:sum(reply in line for line in child.lines)>count)
 def state(s,binary):
     value=ctl(s,binary,'session','status')['result'];page=value['next_offset']
     while page is not None:
@@ -152,16 +157,97 @@ def main():
             ctl(s,args.ctl,'popup','hide');assert status(s,args.ctl)['media_views']==0
             time.sleep(.3);assert not state(s,args.ctl)['media']['timer']
             checks['bounded-cancellable-artwork-local-only-and-hidden-view-timers']=True
+            command(fixture,release_tray=True)
+            await_state(s,args.ctl,lambda v:v['tray']['count']==0)
+            command(fixture,extra_trays=True)
+            await_state(s,args.ctl,lambda v:v['tray']['count']==4 and all(i['ready'] for i in v['tray']['items']))
+            command(fixture,own_tray=True);command(fixture,register=True)
+            live=await_state(s,args.ctl,lambda v:v['tray']['count']==5 and all(i['ready'] for i in v['tray']['items']))
+            traygen=next(i['generation'] for i in live['tray']['items'] if 'org.test.PearlTray/' in i['registration'])
+            ctl(s,args.ctl,'tray','toggle','--output',output['id'])
+            focus_target(s,pearl,f'tray-choice-{traygen}')
+            wait_for(lambda:any('event=tray-choices visible=1' in line for line in pearl.lines))
+            one=eventually_status(s,args.ctl,lambda v:v['popup'] is not None)['popup']['rect']
+            assert one['height']<=48, ('single tray icon reserves extra vertical space',one)
+            geometry=r'event=tray-choices panel=(\d+)x(\d+) image=(\d+)x(\d+) x=([\d.]+) y=([\d.]+)'
+            wait_for(lambda:any(re.search(geometry,line) for line in pearl.lines))
+            match=next(re.search(geometry,line) for line in reversed(pearl.lines) if re.search(geometry,line))
+            pw,ph,iw,ih,x,y=map(float,match.groups())
+            assert abs(2*x+iw-pw)<=1 and abs(2*y+ih-ph)<=1, ('tray image is not centered',match.group(0))
+            checks['overflow-image-centered-in-panel']=True
+            checks['single-overflow-icon-popup-hugs-content']=True
+            before=sum(r.get('method')=='Activate' for r in records(s))
+            key(s,'-k','space')
+            wait_for(lambda:sum(r.get('method')=='Activate' for r in records(s))>before)
+            key(s,'-k','space')
+            wait_for(lambda:sum(r.get('method')=='Activate' for r in records(s))>before+1)
+            assert not next(i for i in state(s,args.ctl)['tray']['items'] if i['generation']==traygen)['menu_ready']
+            key(s,'-k','Tab');focus_target(s,pearl,f'tray-choice-{traygen}')
+            checks['overflow-left-click-activates-application']=True
+            capture(s,'tray-chooser-pixmap',output['connector'])
+            for index,(title,icon,pixmap,tooltip,identity,expected) in enumerate([
+                ('', 'pearl-notifications-symbolic', True, 'Fixture tray tooltip', 'Fixture ID', 'Fixture tray tooltip'),
+                ('Tray — αβγ', 'pearl-missing-tray-icon', True, 'Fixture tray tooltip', 'Fixture ID', 'Tray — αβγ'),
+                ('x'*513, '', False, 'Fixture tray tooltip', 'Fixture ID', 'Fixture tray tooltip'),
+                ('', '', True, '', 'Fixture ID', 'Fixture ID'),
+                ('', '', True, '', '', 'Tray application'),
+                ('Pearl fixture', '', True, 'Fixture tray tooltip', '', 'Pearl fixture'),
+            ]):
+                command(fixture,tray_title=title,tray_icon=icon,tray_pixmap=pixmap,tray_tooltip_title=tooltip,tray_id=identity)
+                await_state(s,args.ctl,lambda v:next(i for i in v['tray']['items'] if i['generation']==traygen)['image']==pixmap and next(i for i in v['tray']['items'] if i['generation']==traygen)['title']==('' if len(title.encode())>512 else title))
+                time.sleep(.3)
+                capture(s,f'tray-chooser-variant-{index}',output['connector'])
+                title_start=len(pearl.lines)
+                key(s,'-M','shift','-k','F10','-m','shift')
+                focus_target(s,pearl,'tray-1')
+                wait_for(lambda:any(f'event=tray-choices title={expected}' in line for line in pearl.lines[title_start:]))
+                focus_target(s,pearl,'tray-back');key(s,'-k','space')
+                focus_target(s,pearl,f'tray-choice-{traygen}')
+            checks['tray-menu-name-falls-back-through-tooltip-id-and-generic']=True
+            key(s,'-M','shift','-k','F10','-m','shift')
+            await_state(s,args.ctl,lambda v:next(i for i in v['tray']['items'] if i['generation']==traygen)['menu_ready'])
+            focus_target(s,pearl,'tray-1')
+            for cycle in range(5):
+                focus_target(s,pearl,'tray-back');key(s,'-k','space')
+                focus_target(s,pearl,f'tray-choice-{traygen}')
+                live=state(s,args.ctl)
+                assert live['tray']['count']==5 and next(i for i in live['tray']['items'] if i['generation']==traygen)['nodes']==9
+                capture(s,f'tray-chooser-back-{cycle}',output['connector'])
+                if cycle==0:
+                    command(fixture,tray_is_menu=True);time.sleep(.3);key(s,'-k','space')
+                else: key(s,'-M','shift','-k','F10','-m','shift')
+                await_state(s,args.ctl,lambda v:next(i for i in v['tray']['items'] if i['generation']==traygen)['menu_ready'])
+                focus_target(s,pearl,'tray-1')
+            command(fixture,tray_is_menu=False)
+            focus_target(s,pearl,'tray-back');key(s,'-k','space')
+            focus_target(s,pearl,f'tray-choice-{traygen}')
+            start=len(pearl.lines)
+            command(fixture,extra_trays=False)
+            await_state(s,args.ctl,lambda v:v['tray']['count']==1)
+            wait_for(lambda:any('event=tray-choices visible=0' in line for line in pearl.lines[start:]))
+            ctl(s,args.ctl,'popup','hide')
+            checks['overflow-excludes-bar-items-and-refreshes-after-owner-loss']=True
+            checks['tray-repeated-menu-back-keeps-item-and-node-counts-stable']=True
+            checks['tray-icon-chooser-title-variants-and-keyboard-menu-opening']=True
             action(s,args.ctl,'tray_activate',generation=traygen);action(s,args.ctl,'tray_secondary',generation=traygen)
             action(s,args.ctl,'tray_menu',generation=traygen);v=await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_ready']);menu_revision=v['tray']['items'][0]['menu_revision'];assert v['tray']['items'][0]['nodes']==9
             ctl(s,args.ctl,'tray','toggle','--output',output['id']);time.sleep(.3);capture(s,'tray-menu',output['connector'])
+            wait_for(lambda:any('event=tray-choices back=false parent=0 chooser=false' in line for line in pearl.lines))
+            navigation_start=len(pearl.lines)
             focus_target(s,pearl,'tray-2');key(s,'-k','space');focus_target(s,pearl,'tray-4');key(s,'-k','space');focus_target(s,pearl,'tray-5');key(s,'-k','space');capture(s,'tray-nested-menu',output['connector'])
+            wait_for(lambda:any('event=tray-choices back=true' in line and 'chooser=false' in line for line in pearl.lines[navigation_start:]))
             v=await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_revision']>menu_revision);menu_revision=v['tray']['items'][0]['menu_revision']
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=5)
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=6,code=4)
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=8,code=4)
             wait_for(lambda:any(r['kind']=='call' and r['method']=='Event' and r['args'][0]==5 for r in records(s)))
             checks['tray-activation-secondary-and-nested-dbusmenu-keyboard-actions']=True
+            navigation_start=len(pearl.lines)
+            focus_target(s,pearl,'tray-back');key(s,'-k','space')
+            focus_target(s,pearl,'tray-back');key(s,'-k','space')
+            focus_target(s,pearl,'tray-2')
+            wait_for(lambda:any('event=tray-choices back=false parent=0 chooser=false' in line for line in pearl.lines[navigation_start:]))
+            checks['direct-tray-menu-back-stops-at-root']=True
             command(fixture,menu_overflow=True);await_state(s,args.ctl,lambda v:not v['tray']['items'][0]['menu_ready'] and v['tray']['items'][0]['nodes']==0)
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=5,code=4)
             command(fixture,menu_overflow=False);await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_ready'])

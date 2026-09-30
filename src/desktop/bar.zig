@@ -457,8 +457,9 @@ pub const Bar = struct {
             section.setVisible(@intFromBool(visible));
         };
     }
-    fn openTray(data: *anyopaque) void {
+    fn openTray(data: *anyopaque, widget: *gtk.Widget) void {
         const self: *Bar = @ptrCast(@alignCast(data));
+        self.recordPaneAnchor(widget);
         self.action(self.context, .{ .pane = .tray });
     }
     pub fn update(self: *Bar) void {

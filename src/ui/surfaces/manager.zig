@@ -985,7 +985,11 @@ pub const Manager = struct {
             if (popup.control) |panel| panel.update();
             if (popup.notifications) |view| view.update();
             if (popup.media) |view| view.update();
-            if (popup.tray) |view| view.update();
+            if (popup.tray) |view| {
+                const bar = if (popup.output.bar) |surface| surface.bar else null;
+                view.setBar(if (bar) |b| b.tray else null);
+                view.update();
+            }
             if (self.pane == .tray) self.positionPopup();
             if (popup.control != null and self.layout_stamp != self.workspaceStamp(popup.output)) {
                 self.layout.?.cancel();
@@ -1148,7 +1152,12 @@ pub const Manager = struct {
                         panel.append(scroll.as(gtk.Widget));
                         s.media = try @import("../../desktop/media.zig").View.create(content, &self.session_services.media);
                     },
-                    .tray => s.tray = try @import("../../desktop/tray.zig").View.create(panel, &self.session_services.tray),
+                    .tray => {
+                        s.tray = try @import("../../desktop/tray.zig").View.create(panel, &self.session_services.tray);
+                        const bar = if (output.bar) |surface| surface.bar else null;
+                        s.tray.?.setBar(if (bar) |b| b.tray else null);
+                        s.tray.?.update();
+                    },
                     .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested),
                     .control => {
                         s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, controlTask, settingsNavigate, self.settings_page.?, window, .{ .audio = &self.audio, .power = &self.power, .night_light = &self.night_light, .network = &self.network, .bluetooth = &self.bluetooth, .lifecycle = &self.lifecycle, .auth = &self.auth });
@@ -1439,32 +1448,26 @@ pub const Manager = struct {
         const prefs = self.preferences.prefs().popup;
         const launcher = self.pane == .launcher or self.pane == .launcher_picker;
         const settings = self.pane == .settings or self.pane == .aqueous_settings;
-        const centered = prefs.placement == .centered or launcher;
+        const centered = (prefs.placement == .centered and self.pane != .tray) or launcher;
         var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else if (self.pane == .wallpapers) 640 else 440), prefs.max_width);
         var height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else 560), prefs.max_height);
         if (self.pane == .tray) {
             // Tray menus hug their entries instead of reserving a full pane.
             if (s.tray) |view| {
                 const size = view.preferred();
-                width = @min(@max(size.width + 16, 220), width);
-                height = @min(@max(size.height + 16, 160), height);
+                width = @min(@max(size.width + 16, 48), width);
+                height = @min(@max(size.height + 16, 48), height);
             }
         }
         var rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
-        if (self.pane == .wallpapers) {
-            // Sit under the bar icon that opened the pane, the way the calendar
-            // sits under the clock. The bar spans the whole edge, so the
-            // cross-axis coordinate is already output-relative.
+        if (self.pane == .wallpapers or self.pane == .tray) {
             if (o.bar) |surface| if (surface.bar) |bar| if (bar.pane_anchor) |anchor| {
-                if (o.reservations.bar_edge == .top or o.reservations.bar_edge == .bottom) {
-                    const left = @max(0, o.usable.x - o.bounds.x);
-                    const right = @min(o.bounds.width, o.usable.x - o.bounds.x + o.usable.width) - rect.width;
-                    rect.x = @min(@max(anchor.x + @divTrunc(anchor.width, 2) - @divTrunc(rect.width, 2), left), @max(left, right));
-                } else {
-                    const top = @max(0, o.usable.y - o.bounds.y);
-                    const bottom = @min(o.bounds.height, o.usable.y - o.bounds.y + o.usable.height) - rect.height;
-                    rect.y = @min(@max(anchor.y + @divTrunc(anchor.height, 2) - @divTrunc(rect.height, 2), top), @max(top, bottom));
-                }
+                rect = policy.followAnchor(rect, o.bounds, o.usable, .{
+                    .x = anchor.x,
+                    .y = anchor.y,
+                    .width = anchor.width,
+                    .height = anchor.height,
+                }, o.reservations.bar_edge);
             };
         }
         if (self.popup_rect) |previous| if (std.meta.eql(previous, rect)) return;
