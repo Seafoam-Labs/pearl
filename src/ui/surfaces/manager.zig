@@ -985,7 +985,11 @@ pub const Manager = struct {
             if (popup.control) |panel| panel.update();
             if (popup.notifications) |view| view.update();
             if (popup.media) |view| view.update();
-            if (popup.tray) |view| view.update();
+            if (popup.tray) |view| {
+                const bar = if (popup.output.bar) |surface| surface.bar else null;
+                view.setBar(if (bar) |b| b.tray else null);
+                view.update();
+            }
             if (self.pane == .tray) self.positionPopup();
             if (popup.control != null and self.layout_stamp != self.workspaceStamp(popup.output)) {
                 self.layout.?.cancel();
@@ -1148,7 +1152,12 @@ pub const Manager = struct {
                         panel.append(scroll.as(gtk.Widget));
                         s.media = try @import("../../desktop/media.zig").View.create(content, &self.session_services.media);
                     },
-                    .tray => s.tray = try @import("../../desktop/tray.zig").View.create(panel, &self.session_services.tray),
+                    .tray => {
+                        s.tray = try @import("../../desktop/tray.zig").View.create(panel, &self.session_services.tray);
+                        const bar = if (output.bar) |surface| surface.bar else null;
+                        s.tray.?.setBar(if (bar) |b| b.tray else null);
+                        s.tray.?.update();
+                    },
                     .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested),
                     .control => {
                         s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, controlTask, settingsNavigate, self.settings_page.?, window, .{ .audio = &self.audio, .power = &self.power, .night_light = &self.night_light, .network = &self.network, .bluetooth = &self.bluetooth, .lifecycle = &self.lifecycle, .auth = &self.auth });

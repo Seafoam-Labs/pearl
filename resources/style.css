@@ -197,3 +197,5 @@
 
 /* Icon-only tray controls need less padding than text buttons. */
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-tray-icon, .pearl-root.$scope .pearl-menu-panel button.pearl-tray-icon { padding: 3px; min-width: 20px; min-height: 20px; }
+.pearl-root.$scope .pearl-menu-panel .pearl-tray-chooser button.pearl-tray-icon { margin: 0; border-width: 0; padding: 3px; }
+.pearl-root.$scope .pearl-tray-chooser image { margin: 0; padding: 0; }

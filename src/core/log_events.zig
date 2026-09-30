@@ -115,6 +115,7 @@ pub const events: []const Event = &.{
     .{ .name = "theme-command-failed", .scopes = &.{.theme} },
     .{ .name = "theme-index-offline", .scopes = &.{.theme} },
     .{ .name = "tile-changed", .scopes = &.{.gallery} },
+    .{ .name = "tray-choices", .scopes = &.{.desktop} },
     .{ .name = "tray-failed", .scopes = &.{.services} },
     .{ .name = "wallpaper-applications-applied", .scopes = &.{.config} },
     .{ .name = "wallpaper-changed", .scopes = &.{.config} },
