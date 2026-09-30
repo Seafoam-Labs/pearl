@@ -18,10 +18,12 @@
     "overflow-image-centered-in-panel": true,
     "single-overflow-icon-popup-hugs-content": true,
     "overflow-left-click-activates-application": true,
+    "tray-menu-name-falls-back-through-tooltip-id-and-generic": true,
     "overflow-excludes-bar-items-and-refreshes-after-owner-loss": true,
     "tray-repeated-menu-back-keeps-item-and-node-counts-stable": true,
     "tray-icon-chooser-title-variants-and-keyboard-menu-opening": true,
     "tray-activation-secondary-and-nested-dbusmenu-keyboard-actions": true,
+    "direct-tray-menu-back-stops-at-root": true,
     "malformed-pixmaps-menu-limits-and-stale-menu-rejection": true,
     "owner-loss-restart-and-stale-replies-clean-cards": true,
     "player-selection-falls-back-after-owner-exit": true,
@@ -30,7 +32,7 @@
     "queued-names-acquired-after-existing-services-exit": true,
     "production-session-bus-reconnect-restores-protocols": true
   },
-  "pearl_sha256": "8c420951181840fba668080ef077e23c3b2f3bd8460a32bd8790cd0471d52f09",
+  "pearl_sha256": "01a07b752aab766f159d1f09c3ce473558c54820d02d32e3969dac5a8837e9ff",
   "ctl_sha256": "682cd5cab9f01c3b7be7d1effb8703b9814b36d8762865a8e236c0e910b75a95",
-  "production_sha256": "773725568eed1f73e62528beec73036d8e62fa239249a6b76d9fb119b7ba520d"
+  "production_sha256": "6000f5bda5ea68b2011685a5658c39b438bee7fa519571916ede193ed40b72fb"
 }
