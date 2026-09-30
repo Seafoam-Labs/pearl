@@ -56,6 +56,7 @@ pub const Tray = struct {
     revision: u64 = 0,
     menu_sequence: u64 = 0,
     selected: u64 = 0,
+    menu_from_chooser: bool = false,
     exported: db.Export = .{},
     name_id: c_uint = 0,
     watcher: bool = false,
@@ -307,12 +308,19 @@ pub const Tray = struct {
     /// Publish navigation so the popup manager also reconciles its geometry.
     pub fn showChooser(self: *Tray) void {
         self.selected = 0;
+        self.menu_from_chooser = false;
+        self.notify();
+    }
+    pub fn openChooserMenu(self: *Tray, generation: u64) !void {
+        try self.openMenu(generation, 0);
+        self.menu_from_chooser = true;
         self.notify();
     }
     pub fn openMenu(self: *Tray, generation: u64, parent: i32) !void {
         const item = self.find(generation) orelse return error.InvalidValue;
         if (!item.ready or item.menu.len == 0 or std.mem.eql(u8, item.menu.slice(), "/NO_DBUSMENU")) return error.Unsupported;
         self.selected = generation;
+        if (parent == 0) self.menu_from_chooser = false;
         item.menu_error = false;
         try self.bus.call(self, generation, item.owner.z(), item.menu.z(), menu_iface, "AboutToShow", db.tuple(&.{glib.Variant.newInt32(parent)}), "(b)", aboutDone);
         self.notify();

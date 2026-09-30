@@ -73,7 +73,7 @@ pub const Bar = struct {
         self.update();
     }
     fn overflowClicked(_: *gtk.Button, self: *Bar) callconv(.c) void {
-        self.service.selected = 0;
+        self.service.showChooser();
         self.open(self.context, self.overflow.as(gtk.Widget));
     }
     pub fn destroy(self: *Bar) void {
@@ -152,6 +152,7 @@ fn menuRow() Row {
 pub const View = struct {
     probe_focus: ?*gtk.Widget = null,
     probe_choices: usize = std.math.maxInt(usize),
+    probe_back: ?bool = null,
     service: *service.Tray,
     root: *gtk.Box,
     host: *gtk.Box,
@@ -258,6 +259,11 @@ pub const View = struct {
         self.revision = std.math.maxInt(u64);
     }
     pub fn probe(self: *View, window: *gtk.Window) void {
+        const back_visible = self.back.as(gtk.Widget).getVisible() != 0;
+        if (self.probe_back == null or self.probe_back.? != back_visible) {
+            self.probe_back = back_visible;
+            log.info("event=tray-choices back={s} parent={d} chooser={s}", .{ if (back_visible) "true" else "false", self.parent, if (self.service.menu_from_chooser) "true" else "false" });
+        }
         var visible: usize = 0;
         for (&self.choices) |*choice| if (choice.button.as(gtk.Widget).getVisible() != 0) {
             visible += 1;
@@ -298,6 +304,7 @@ pub const View = struct {
     }
     pub fn destroy(self: *View) void {
         self.service.selected = 0;
+        self.service.menu_from_chooser = false;
         a.destroy(self);
     }
     /// Content size of the menu, used to size the popup surface to its entries.
@@ -324,9 +331,9 @@ pub const View = struct {
             text.set(err);
             self.state.setText(text.z());
             break :blk self.state.getText();
-        } else if (selected) |item| (if (item.menu_error) "Menu unavailable. Go back and reopen to retry." else if (!item.menu_ready) "Loading menu…" else "") else "");
+        } else if (selected) |item| (if (item.menu_error) "Menu unavailable. Close and reopen to retry." else if (!item.menu_ready) "Loading menu…" else "") else "");
         self.state.as(gtk.Widget).setVisible(@intFromBool(std.mem.span(self.state.getText()).len != 0));
-        self.back.as(gtk.Widget).setVisible(@intFromBool(selected != null));
+        self.back.as(gtk.Widget).setVisible(@intFromBool(selected != null and (self.parent != 0 or self.service.menu_from_chooser)));
         var visible_choices: usize = 0;
         for (&self.choices, &self.service.items) |*choice, *item| {
             choice.generation = item.generation;
@@ -375,7 +382,7 @@ pub const View = struct {
         if (item.is_menu) openChoiceMenu(choice) else choice.view.service.activate(choice.generation, false) catch {};
     }
     fn openChoiceMenu(choice: *ItemChoice) void {
-        choice.view.service.openMenu(choice.generation, 0) catch {
+        choice.view.service.openChooserMenu(choice.generation) catch {
             choice.view.service.contextMenu(choice.generation) catch {};
         };
     }
@@ -405,6 +412,7 @@ pub const View = struct {
     }
     fn goBack(_: *gtk.Button, self: *View) callconv(.c) void {
         if (self.parent == 0) {
+            if (!self.service.menu_from_chooser) return;
             self.service.showChooser();
         } else if (self.service.find(self.generation)) |item| {
             for (item.nodes[0..item.node_count]) |node| if (node.id == self.parent) {

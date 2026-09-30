@@ -151,6 +151,9 @@ expanded icons use left click to Activate and right click to open the context
 menu; menu-only items use left click to open their menu too. Middle click sends
 SecondaryActivate. In the expanded tray, Space/Enter activates and Menu or
 Shift+F10 opens the context menu.
+Back returns from nested menus to their parent. At the menu root, Back returns
+to the expanded tray only when the menu was opened from that chooser; menus
+opened directly from bar icons have no root Back button.
 
 Menus use `com.canonical.dbusmenu`: AboutToShow precedes display, GetLayout reads
 the nested tree, Event sends `clicked`, and LayoutUpdated or

@@ -223,13 +223,22 @@ def main():
             action(s,args.ctl,'tray_activate',generation=traygen);action(s,args.ctl,'tray_secondary',generation=traygen)
             action(s,args.ctl,'tray_menu',generation=traygen);v=await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_ready']);menu_revision=v['tray']['items'][0]['menu_revision'];assert v['tray']['items'][0]['nodes']==9
             ctl(s,args.ctl,'tray','toggle','--output',output['id']);time.sleep(.3);capture(s,'tray-menu',output['connector'])
+            wait_for(lambda:any('event=tray-choices back=false parent=0 chooser=false' in line for line in pearl.lines))
+            navigation_start=len(pearl.lines)
             focus_target(s,pearl,'tray-2');key(s,'-k','space');focus_target(s,pearl,'tray-4');key(s,'-k','space');focus_target(s,pearl,'tray-5');key(s,'-k','space');capture(s,'tray-nested-menu',output['connector'])
+            wait_for(lambda:any('event=tray-choices back=true' in line and 'chooser=false' in line for line in pearl.lines[navigation_start:]))
             v=await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_revision']>menu_revision);menu_revision=v['tray']['items'][0]['menu_revision']
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=5)
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=6,code=4)
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=8,code=4)
             wait_for(lambda:any(r['kind']=='call' and r['method']=='Event' and r['args'][0]==5 for r in records(s)))
             checks['tray-activation-secondary-and-nested-dbusmenu-keyboard-actions']=True
+            navigation_start=len(pearl.lines)
+            focus_target(s,pearl,'tray-back');key(s,'-k','space')
+            focus_target(s,pearl,'tray-back');key(s,'-k','space')
+            focus_target(s,pearl,'tray-2')
+            wait_for(lambda:any('event=tray-choices back=false parent=0 chooser=false' in line for line in pearl.lines[navigation_start:]))
+            checks['direct-tray-menu-back-stops-at-root']=True
             command(fixture,menu_overflow=True);await_state(s,args.ctl,lambda v:not v['tray']['items'][0]['menu_ready'] and v['tray']['items'][0]['nodes']==0)
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=5,code=4)
             command(fixture,menu_overflow=False);await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_ready'])
