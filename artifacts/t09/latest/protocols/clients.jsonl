@@ -6,31 +6,40 @@
 {"kind": "notification-signal", "signal": "ActionInvoked", "args": [1, "default"]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [1, 2]}
 {"kind": "notification", "id": 2}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [2, 1]}
+{"kind": "notification-signal", "signal": "ActionInvoked", "args": [2, "open"]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [2, 2]}
 {"kind": "notification", "id": 3}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [3, 3]}
 {"kind": "notification", "id": 4}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [4, 1]}
 {"kind": "notification", "id": 5}
 {"kind": "notification", "id": 6}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [3, 2]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [4, 2]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [5, 2]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [6, 2]}
+{"kind": "error", "message": "g-dbus-error-quark: GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: Action keys must contain 1\u201396 bytes. (16)"}
+{"kind": "error", "message": "g-dbus-error-quark: GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: At most eight action pairs are supported. (16)"}
+{"kind": "error", "message": "g-dbus-error-quark: GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: At most eight action pairs are supported. (16)"}
 {"kind": "notification", "id": 7}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [7, 1]}
 {"kind": "notification", "id": 8}
-{"kind": "notification", "id": 9}
-{"kind": "notification", "id": 10}
-{"kind": "notification", "id": 10}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [5, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [6, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [7, 3]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [8, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [9, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [10, 3]}
+{"kind": "notification", "id": 9}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [9, 1]}
+{"kind": "notification", "id": 10}
 {"kind": "notification", "id": 11}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [11, 3]}
 {"kind": "notification", "id": 12}
 {"kind": "notification", "id": 13}
 {"kind": "notification", "id": 14}
 {"kind": "notification", "id": 15}
+{"kind": "notification", "id": 15}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [10, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [11, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [12, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [13, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [14, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [15, 3]}
 {"kind": "notification", "id": 16}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [16, 3]}
 {"kind": "notification", "id": 17}
 {"kind": "notification", "id": 18}
 {"kind": "notification", "id": 19}
@@ -126,11 +135,11 @@
 {"kind": "notification", "id": 109}
 {"kind": "notification", "id": 110}
 {"kind": "notification", "id": 111}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [12, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [13, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [14, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [15, 3]}
-{"kind": "notification-signal", "signal": "NotificationClosed", "args": [16, 3]}
+{"kind": "notification", "id": 112}
+{"kind": "notification", "id": 113}
+{"kind": "notification", "id": 114}
+{"kind": "notification", "id": 115}
+{"kind": "notification", "id": 116}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [17, 3]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [18, 3]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [19, 3]}
@@ -226,8 +235,13 @@
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [109, 3]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [110, 3]}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [111, 3]}
-{"kind": "notification", "id": 112}
 {"kind": "notification-signal", "signal": "NotificationClosed", "args": [112, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [113, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [114, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [115, 3]}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [116, 3]}
+{"kind": "notification", "id": 117}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [117, 3]}
 {"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "PlayPause", "args": []}
 {"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
 {"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "Play", "args": []}
@@ -251,8 +265,8 @@
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "AboutToShow", "args": [4]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
-{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 55821065]}
-{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 55821459]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 14112283]}
+{"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "Event", "args": [5, "clicked", 0, 14112682]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
 {"kind": "call", "path": "/Menu", "interface": "com.canonical.dbusmenu", "method": "GetLayout", "args": [0, 8, []]}
 {"kind": "call", "path": "/StatusNotifierItem", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.kde.StatusNotifierItem"]}

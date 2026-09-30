@@ -5,6 +5,8 @@
     "truthful-notification-capabilities": true,
     "replacement-history-and-toast-popup-coexistence": true,
     "notification-action-through-gtk-keyboard": true,
+    "nonresident-action-invokes-and-closes": true,
+    "unreadable-captions-drop-and-key-bounds-still-reject": true,
     "action-residency-transient-expiry-and-all-closure-reasons": true,
     "oversized-image-data-still-delivers-and-expires": true,
     "icon-priority-chain-image-bounds-and-atomic-replacement": true,
@@ -22,7 +24,7 @@
     "queued-names-acquired-after-existing-services-exit": true,
     "production-session-bus-reconnect-restores-protocols": true
   },
-  "pearl_sha256": "58f0c5883301e0273a221bd45e7e0b25f7e738cea19d65289c3933c1efcbd503",
-  "ctl_sha256": "8c629aecca5774a213f736cad9ac908b36d9a07bd0554ce4a1ec3876c4102211",
-  "production_sha256": "827d62d5e58f1f28172737bd988887107b0ad21342de41a1d88c76b209cf32b4"
+  "pearl_sha256": "a2832ad48d9505b01cf24e02e5b97ed3a1900f5f82eeb03e212388b039db8e4a",
+  "ctl_sha256": "77a896581e0308a0740ec51b2089f0d16182d33131f6fcf80225b01167ca6dc4",
+  "production_sha256": "dd10400b74129c0ce723193a162f328448662bf619c6fff6fb72ad967a101649"
 }

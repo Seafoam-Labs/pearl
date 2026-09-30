@@ -129,6 +129,25 @@ pub fn sanitize(comptime n: usize, value: []const u8) Text(n) {
     }
     return out;
 }
+/// An action the user cannot read is an action they cannot choose, so it is not offered.
+/// Blankness is ASCII only: no Unicode whitespace table, so an exotic space still reads as a caption.
+pub fn usableAction(label: []const u8) bool {
+    return std.mem.trim(u8, label, " \t\r\n").len != 0;
+}
+
+test "action captions that read as blank are dropped, readable ones are not" {
+    const t = std.testing;
+    for (&[_][]const u8{ "", " ", "\t", "\n", "\r", " \t\r\n", "\x1b", "\x07\x1b" }) |raw| {
+        const caption = sanitize(160, raw);
+        try t.expect(!usableAction(caption.slice()));
+    }
+    const long = "x" ** 160;
+    for (&[_][]const u8{ "Open", "Öffnen", "a", long, "\xc2\xa0", " \xc2\xa0 " }) |raw| {
+        const caption = sanitize(160, raw);
+        try t.expect(usableAction(caption.slice()));
+    }
+}
+
 test "replacement, sender isolation, ID wrap, DND and bounded history" {
     const t = std.testing;
     var m: Model = .{};

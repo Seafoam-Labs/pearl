@@ -1,5 +1,69 @@
 # Pearl implementation progress
 
+## Notification action captions, September 30, 2026
+
+kitty 0.49.1 puts `actions = {'default': ' '}` on every notification it
+forwards for another program, ahead of and independently of any buttons that
+program asked for; its own comment is "dbus requires string to not be empty".
+Qwen Code 0.24.7 asks kitty for `a=focus` and sends no captions of its own, so
+the injected pair is the only one on the wire. Pearl turned every pair into a
+button, which is how a captionless pill appeared beside Dismiss. The pill
+measured 114 px wide against Dismiss's 112 px in the reported capture because
+the button row is a homogeneous `GtkFlowBox` (`w.flow`), so the blank button
+borrowed the widest sibling's width; no CSS rule targets those buttons.
+
+The pair is now dropped in the pure model. `notification_policy.usableAction`
+reports a sanitized caption as blank when trimming ASCII space, tab, line feed
+and carriage return leaves nothing, and the Notify parse loop skips such a pair
+before the key bounds. The model is the only place that fixes the toast card,
+the notification centre, the standalone Settings page and the `session status`
+action count together; a view-side filter would have needed two edits and still
+reported a phantom count. Skipping before the key bounds is what lets `['','']`
+and an over-long key carried by a blank caption deliver instead of costing the
+whole notification, and before the duplicate scan so `['a','','a','A']` does not
+raise a false uniqueness error. The sanitized caption is computed once and
+stored, so a kept pair is not sanitized twice.
+
+Rejected:
+
+- Dropping the reserved `default` key regardless of caption: Pearl's own
+  fixture and two drivers use `['default','Open']`, a labelled button that must
+  keep rendering, and the specification only says implementations are free not
+  to display the name.
+- Removing `actions` from `GetCapabilities`: kitty builds the pair outside the
+  capability check, so it would not stop the payload, and it would make the
+  advertised list untruthful about a button Pearl does render.
+- A fallback caption derived from the key: cosmetic, keeps a button the sender
+  never labelled and adds a string to translate.
+- Rejecting the whole Notify: the same over-rejection the oversized-icon change
+  removed.
+
+Deliberately not done. Blankness is ASCII only: `std.unicode` has no whitespace
+predicate, so a Unicode-aware check means a hand-rolled codepoint table in a
+pure module for a caption no measured sender produces; a U+00A0-only caption is
+asserted as kept in the pure test so widening the rule later is a named change.
+An empty action key with a readable caption still rejects the notification as
+before: unlike the blank caption it has no measured sender behind it, and an
+unaddressable action whose caption promises a control is a different trade from
+a caption nobody can read.
+
+Checks actually run:
+
+- `zig build test -Doptimize=ReleaseSafe`: 251/251 pass, including the new
+  caption test in `src/services/notification_policy.zig`.
+- `zig build test-session-services -Doptimize=ReleaseSafe` on the unmodified
+  tree carrying only the new nonresident-action probe: 21 groups pass, so the
+  close-with-reason-2 branch of `invoke`, previously uncovered, is measured
+  before the rule lands.
+- The same suite after the change: 22 groups pass, recorded in
+  `artifacts/t09/latest/`. The new group asserts that the reported kitty
+  payload keeps its message and loses only the phantom pair, that a blank
+  caption hides a repeated key instead of rejecting the notification, that
+  `['','']` and a 97-byte key with a blank caption deliver with zero actions,
+  and that `['','Open']`, an odd child count and 18 children still return
+  InvalidArgs. `protocols/notification-center-actions.png` shows the surviving
+  cards with labelled buttons and Dismiss only.
+
 ## Support report journal resolution, September 30, 2026
 
 `pearlctl report` no longer assumes the unit name. On this machine the shell runs in

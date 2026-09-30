@@ -187,6 +187,11 @@ pub const Notifications = struct {
             }
             var i: usize = 0;
             while (i < actions.nChildren()) : (i += 2) {
+                const raw_label = transport.childText(160, actions, i + 1);
+                const caption = policy.sanitize(160, raw_label.slice());
+                // Dropped before the key bounds: those reject the whole notification, and the
+                // duplicate scan would misfire on a pair that is about to be discarded.
+                if (!policy.usableAction(caption.slice())) continue;
                 const raw_key = actions.getChildValue(i);
                 defer raw_key.unref();
                 const key_slice = std.mem.span(raw_key.getString(null));
@@ -198,9 +203,7 @@ pub const Notifications = struct {
                     invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "Action keys must be unique.");
                     return;
                 };
-                const key = transport.childText(96, actions, i);
-                const label = transport.childText(160, actions, i + 1);
-                r.actions[r.action_count] = .{ .key = key, .label = policy.sanitize(160, label.slice()) };
+                r.actions[r.action_count] = .{ .key = transport.childText(96, actions, i), .label = caption };
                 r.action_count += 1;
             }
             const hints = params.getChildValue(6);

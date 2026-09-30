@@ -27,6 +27,12 @@ def notified(s,fixture,**kw):
     n=sum(x['kind']=='notification' for x in records(s));command(fixture,notify=kw)
     values=[x for x in records(s) if x['kind']=='notification'];assert len(values)==n+1,records(s)[-5:];return values[-1]['id']
 def closed(s,id,reason): return any(r['kind']=='notification-signal' and r['signal']=='NotificationClosed' and r['args']==[id,reason] for r in records(s))
+def refused(s,fixture,**kw):
+    errors=sum(x['kind']=='error' for x in records(s));notes=sum(x['kind']=='notification' for x in records(s))
+    command(fixture,notify=kw)
+    values=[x for x in records(s) if x['kind']=='error']
+    assert len(values)==errors+1 and sum(x['kind']=='notification' for x in records(s))==notes,records(s)[-3:]
+    return values[-1]['message']
 def png(path):
     def chunk(k,v): return struct.pack('>I',len(v))+k+v+struct.pack('>I',zlib.crc32(k+v))
     path.write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',96,96,8,6,0,0,0))+chunk(b'IDAT',zlib.compress((b'\0'+bytes([171,150,211,255])*96)*96))+chunk(b'IEND',b''))
@@ -67,6 +73,24 @@ def main():
             wait_for(lambda:any(r['kind']=='notification-signal' and r['signal']=='ActionInvoked' and r['args']==[id,'default'] for r in records(s)))
             assert state(s,args.ctl)['notifications']['active']==1
             action(s,args.ctl,'dismiss',notification=id);wait_for(lambda:closed(s,id,2))
+            id=notified(s,fixture,summary='Action closes',actions=['open','Open'])
+            focus_target(s,pearl,'notification-action');key(s,'-k','space')
+            wait_for(lambda:any(r['kind']=='notification-signal' and r['signal']=='ActionInvoked' and r['args']==[id,'open'] for r in records(s)))
+            wait_for(lambda:closed(s,id,2) and not record_with(s,args.ctl,id)['active'])
+            checks['nonresident-action-invokes-and-closes']=True
+            blank=notified(s,fixture,summary='Blank caption pair',actions=['default',' ','open','Open'])
+            assert record_with(s,args.ctl,blank)['actions']==1
+            dupes=notified(s,fixture,summary='Blank caption hides a repeated key',actions=['a','','a','A'])
+            assert record_with(s,args.ctl,dupes)['actions']==1
+            keyless=notified(s,fixture,summary='Keyless pair',actions=['',''])
+            assert record_with(s,args.ctl,keyless)['actions']==0
+            overlong=notified(s,fixture,summary='Over-long key with a blank caption',actions=['k'*97,' '])
+            assert record_with(s,args.ctl,overlong)['actions']==0
+            capture(s,'notification-center-actions',output['connector'])
+            for stale in (blank,dupes,keyless,overlong): action(s,args.ctl,'dismiss',notification=stale)
+            for bad in ({'actions':['','Open']},{'actions':['default']},{'actions':['k%d'%i for i in range(18)]}):
+                assert 'InvalidArgs' in refused(s,fixture,summary='Rejected action list',**bad), bad
+            checks['unreadable-captions-drop-and-key-bounds-still-reject']=True
             id=notified(s,fixture,timeout=150,transient=True);wait_for(lambda:closed(s,id,1));assert all(n['id']!=id for n in state(s,args.ctl)['notifications']['records'])
             id=notified(s,fixture);command(fixture,close=id);wait_for(lambda:closed(s,id,3))
             action(s,args.ctl,'dismiss',notification=id,code=4)

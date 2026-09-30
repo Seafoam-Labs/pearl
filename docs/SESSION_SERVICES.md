@@ -67,6 +67,16 @@ expiration. Replacement/CloseNotification only affect records belonging to the
 calling unique bus owner. Unknown/closed/foreign IDs return InvalidArgs when
 closed. The UI's same-user control endpoint can dismiss or invoke active records.
 
+An action pair whose caption sanitizes to ASCII whitespace only is dropped
+before the key bounds are checked: it renders no button, is absent from the
+`actions` count and cannot be invoked by key, while the notification itself
+still arrives. Senders that inject the reserved `default` key with a
+placeholder caption therefore keep every pair they actually labelled. Blankness
+is ASCII space, tab, line feed and carriage return only, so a caption of
+exotic spaces such as U+00A0 still counts as readable and renders. `default`
+is otherwise an ordinary key, and there is no click-on-the-card activation
+for it.
+
 NotificationClosed is emitted after invalidation with reason **1** for expiry,
 **2** for user dismissal or a nonresident action, **3** for CloseNotification,
 and **4** for a filter-blocked arrival.
