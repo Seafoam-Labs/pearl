@@ -39,7 +39,9 @@ def main():
             bluetooth = s.child('bluetooth', ['python3', FIX/'connectivity.py', 'bluetooth'], input_pipe=True)
             power = s.child('power', ['python3', FIX/'power.py'], input_pipe=True)
             for child in (network, bluetooth, power): child.expect('event=ready')
-            app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings')
+            # The popup-opened lines this suite counts are debug; the scope list keeps the
+            # captured log well under log_limit, where counting would silently stop.
+            app = s.child('pearl', [args.pearl, '--log-level', 'debug', '--log-scopes', 'pearl,ui'], G_DEBUG='fatal-warnings')
             app.expect('event=control-ready')
             await_state(s, args.ctl, lambda v: v['network']['registered'] and v['bluetooth']['registered'] and not v['network']['settings_loading'])
             await_services(s, args.ctl, lambda v: v['brightness']['available'])
@@ -57,7 +59,7 @@ def main():
             for edge in ('top', 'left'):
                 ctl(s, args.ctl, 'popup', 'hide')
                 ctl(s, args.ctl, 'bar', 'set', '--output', output['id'], '--edge', edge, '--size', '48')
-                open_page('sound'); count = opens()
+                open_page('sound'); count = opens(); assert count, 'popup-opened never reached the captured log'
                 capture(s, f'{edge}-sound', output['connector'])
                 for page in ('network', 'bluetooth', 'power', 'overview'):
                     open_page(page, 'toggle')

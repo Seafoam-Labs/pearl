@@ -203,3 +203,13 @@ scope the emitting file actually binds with `std.log.scoped`; runtime
 level/scope filtering lives in `src/core/logging.zig`. Coral, Dome and Phyto
 wire both files as build modules by relative path rather than copying them, so
 one handler serves every executable in the tree.
+
+Level choice: `info` carries what a support report needs without asking the
+user to raise verbosity — lifecycle transitions, capability changes, failures,
+and a popup the shell closed on its own (`event=popup-close-reason` for reasons
+such as `bar-inhibited` or `output-removed`). Traces of ordinary interaction,
+such as opening or dismissing a popup and per-keystroke search timings, are
+`debug`: at `info` they dominate the journal and bury the lines that explain a
+failure. A driver that asserts on a debug line must run its child with
+`--log-level debug` and a scope list narrow enough to stay under the harness
+`log_limit`, past which captured lines are silently dropped.

@@ -315,7 +315,7 @@ pub const Launcher = struct {
         const detail = if (job.hits.items.len > self.count) std.fmt.bufPrintZ(&buffer, "{d} / {d} · {s}", .{ self.count, job.hits.items.len, tr("Refine your search for more results", "Suche eingrenzen für weitere Ergebnisse") }) catch unreachable else message;
         self.message.setText(self.action_message orelse if (job.calculation.explicit and job.calculation.outcome != .value) calculationMessage(job.calculation.outcome) else if (job.calculation.outcome == .value) tr("↑ ↓ to choose · Enter to copy calculation · = to continue", "↑ ↓ wählen · Eingabe kopiert die Berechnung · = rechnet weiter") else detail);
         self.render_started = job.started;
-        log.info("event=launcher-results count={d} shown={d} publish_us={d}", .{ job.hits.items.len, self.count, glib.getMonotonicTime() - job.started });
+        log.debug("event=launcher-results count={d} shown={d} publish_us={d}", .{ job.hits.items.len, self.count, glib.getMonotonicTime() - job.started });
     }
     fn edited(_: *gtk.Editable, self: *Launcher) callconv(.c) void {
         self.action_message = null;
