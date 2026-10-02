@@ -204,6 +204,7 @@ const Screen = struct {
         }
         self.clearSecrets();
         self.waiting = false;
+        self.message.set("Authenticating…");
         const fd = object.ext.cast(unix.OutputStream, self.auth.?.getStdinPipe().?).?.getFd();
         if (!wire.write(fd, &packet)) {
             self.cancelAuth();
