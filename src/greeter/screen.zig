@@ -59,6 +59,7 @@ const Screen = struct {
     date: *gtk.Label,
     job_generation: u64 = 0,
     selected_explicitly: bool = false,
+    account_count: usize = 0,
     account_names: [256][257:0]u8 = @splat(@splat(0)),
     catalog: ?sessions.Catalog = null,
     texture: ?*gdk.Texture = null,
@@ -104,7 +105,7 @@ const Screen = struct {
         if (options.test_hooks) log.info("event=greeter-state state={s}", .{@tagName(c.state)});
         switch (c.state) {
             .idle => {
-                self.setMessage(if (self.selection_error) "The selected desktop changed. Refresh and choose it again." else if (self.auth_error) "Authentication failed. Try again." else if (self.service_error) "Login service rejected the request. Try again later." else "Choose your account and desktop.");
+                self.setMessage(if (self.client.timed_out) "Authentication timed out. Try again." else if (self.selection_error) "The selected desktop changed. Refresh and choose it again." else if (self.auth_error) "Authentication failed. Try again." else if (self.service_error) "Login service rejected the request. Try again later." else "Choose your account and desktop.");
                 if (self.confirmed_power) self.performPower();
             },
             .connecting => self.setMessage("Authenticating…"),
@@ -204,9 +205,18 @@ const Screen = struct {
     }
     fn selectedAccount(_: *object.Object, _: *object.ParamSpec, self: *Screen) callconv(.c) void {
         if (self.selecting or self.client.controller.state != .idle) return;
+        if (self.job != null) return;
+        self.applyAccount();
+        self.focusAccount();
+    }
+    fn applyAccount(self: *Screen) void {
         const n = self.account_chooser.getSelected();
-        if (n > 0 and n <= 256 and self.account_names[n - 1][0] != 0) self.username.as(gtk.Editable).setText(@ptrCast(&self.account_names[n - 1]));
-        _ = self.username.as(gtk.Widget).grabFocus();
+        const known = n < self.account_count;
+        self.username.as(gtk.Editable).setText(if (known) @ptrCast(&self.account_names[n]) else "");
+        self.username.as(gtk.Widget).setVisible(@intFromBool(!known));
+    }
+    fn focusAccount(self: *Screen) void {
+        _ = (if (self.username.as(gtk.Widget).getVisible() != 0) self.username.as(gtk.Widget) else self.account_chooser.as(gtk.Widget)).grabFocus();
     }
     fn submit(_: *gtk.Button, self: *Screen) callconv(.c) void {
         self.submitCurrent();
@@ -472,16 +482,27 @@ const Screen = struct {
         self.chooser.setSelected(index);
         const account_model = gtk.StringList.new(null);
         defer account_model.unref();
-        account_model.append("Enter username manually");
+        const previous_user = a.dupe(u8, std.mem.span(self.username.as(gtk.Editable).getText())) catch unreachable;
+        defer a.free(previous_user);
+        var account_index: c_uint = if (self.catalog != null and self.username.as(gtk.Widget).getVisible() != 0) @intCast(job.account_list.len) else 0;
+        self.account_count = job.account_list.len;
         self.account_names = @splat(@splat(0));
         for (job.account_list, 0..) |account, i| {
+            if (std.mem.eql(u8, previous_user, account.username)) account_index = @intCast(i);
             @memcpy(self.account_names[i][0..account.username.len], account.username);
             const label = z(account.label);
             defer a.free(label);
             account_model.append(label);
         }
+        account_model.append("Other user…");
         self.account_chooser.setModel(account_model.as(gio.ListModel));
-        self.account_chooser.setSelected(0);
+        self.account_chooser.setSelected(account_index);
+        self.applyAccount();
+        if (account_index == self.account_count) {
+            const previous_z = z(previous_user);
+            defer a.free(previous_z);
+            self.username.as(gtk.Editable).setText(previous_z);
+        }
         self.account_chooser.as(gtk.Widget).setVisible(@intFromBool(job.account_list.len > 0));
         if (self.catalog) |*old| old.deinit();
         self.catalog = next;
@@ -494,6 +515,7 @@ const Screen = struct {
         for (&self.views) |*view| if (view.*) |*v| v.picture.setPaintable(if (self.texture) |texture| texture.as(gdk.Paintable) else null);
         if (self.selected_id[0] == 0) self.setMessage("No usable desktop sessions. Install a session or check its dependencies.");
         self.update();
+        self.focusAccount();
         if (options.test_hooks) log.info("event=greeter-ready sessions={d}", .{self.catalog.?.entries.items.len});
     }
     fn contrastChanged(button: *gtk.CheckButton, self: *Screen) callconv(.c) void {
@@ -639,7 +661,7 @@ const Screen = struct {
         layer.setKeyboardMode(v.window, .exclusive);
         self.clear();
         self.update();
-        if (self.client.controller.state == .idle) _ = self.username.as(gtk.Widget).grabFocus();
+        if (self.client.controller.state == .idle) self.focusAccount();
     }
     fn detach(self: *Screen, v: *View) void {
         self.clear();

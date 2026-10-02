@@ -1,9 +1,19 @@
-//! Optional account labels only. Lookup is never an authentication decision.
+//! Account discovery only. Lookup is never an authentication decision.
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
-pub const Account = struct { username: []const u8, label: []const u8 };
+pub const Account = @import("local_accounts.zig").Account;
 pub fn load(a: std.mem.Allocator, cancel: *gio.Cancellable) ![]const Account {
+    const cached = cachedAccounts(a, cancel) catch &.{};
+    if (cached.len > 0 or cancel.isCancelled() != 0) return cached;
+    const trusted = @import("trusted.zig");
+    const passwd = trusted.read(a, "/etc/passwd", 1024 * 1024) catch return &.{};
+    defer a.free(passwd);
+    const definitions = trusted.read(a, "/etc/login.defs", 65536) catch null;
+    defer if (definitions) |bytes| a.free(bytes);
+    return @import("local_accounts.zig").parse(a, passwd, definitions orelse "");
+}
+fn cachedAccounts(a: std.mem.Allocator, cancel: *gio.Cancellable) ![]const Account {
     const bus = gio.busGetSync(.system, cancel, null) orelse return &.{};
     defer bus.unref();
     const answer = bus.callSync("org.freedesktop.Accounts", "/org/freedesktop/Accounts", "org.freedesktop.Accounts", "ListCachedUsers", null, null, .{ .no_auto_start = true }, 1000, cancel, null) orelse return &.{};

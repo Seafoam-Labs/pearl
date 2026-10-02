@@ -130,7 +130,7 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `remember_session` | Opt-in accepted selection memory per username; defaults off |
 | `allow_uwsm` | Defaults true; permits UWSM-managed sessions. Set false to disable entries that directly invoke `uwsm`; use `allow` to constrain the catalog |
 | `x11` | Defaults false; enabling also requires startx and the packaged X11 adapter, plus distribution/VM verification |
-| `accounts`, `power`, `screen_reader` | Optional AccountsService labels, permitted logind controls and fixed Orca launcher |
+| `accounts`, `power`, `screen_reader` | Account discovery, permitted logind controls and fixed Orca launcher |
 | `fingerprint_hint` | Optional generic fingerprint guidance; defaults off and does not enable authentication or inspect enrollment |
 | `auth_timeout_seconds` | 30–300 seconds for the absolute attempt deadline and input inactivity; transport/cancellation and handoff deadlines are separately bounded |
 
@@ -158,6 +158,16 @@ Startup waits at most one second for optional identity metadata. An active card
 stays on its current monitor when other monitors appear or metadata arrives late;
 if its monitor disappears, the preferences are applied again to available monitors.
 Monitors with missing or identical serial numbers may share an identifier.
+
+With `accounts` enabled (the default), the account dropdown selects the first
+discovered user and hides the username textbox. AccountsService supplies the list;
+if it has no cached users or is unavailable, local users from `/etc/passwd` are
+listed in file order, respecting `UID_MIN` from `/etc/login.defs` (default 1000)
+and excluding root, nobody and non-login shells. “Other user…” opens manual entry
+for unlisted accounts. Manual entry is also available when discovery finds no
+users or `accounts` is disabled. Refresh preserves a selected user when present.
+Account discovery never grants authentication; greetd still verifies the login.
+Authentication timeouts are shown explicitly when the greeter returns to selection.
 
 IDs look like `wayland:gnome.desktop` or `x11:xfce.desktop`; display labels use
 localized desktop names and distinguish identical names. Selection memory contains

@@ -19,6 +19,7 @@ pub const Client = struct {
     history: @import("status_history.zig").History = .{},
     timeout_ms: c_uint = 120000,
     accepted: bool = false,
+    timed_out: bool = false,
     recover_after_cancel: bool = false,
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
@@ -46,11 +47,13 @@ pub const Client = struct {
     fn attemptExpired(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Client = @ptrCast(@alignCast(data.?));
         self.attempt_deadline = 0;
+        self.timed_out = true;
         self.cancel() catch self.fail();
         return 0;
     }
     fn expiredAttempt(self: *Client) bool {
         if (self.attempt_ends_us == 0 or glib.getMonotonicTime() < self.attempt_ends_us) return false;
+        self.timed_out = true;
         self.cancel() catch self.fail();
         return true;
     }
@@ -75,6 +78,7 @@ pub const Client = struct {
     fn expired(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Client = @ptrCast(@alignCast(data.?));
         self.deadline = 0;
+        self.timed_out = true;
         if (self.controller.state == .cancelling or self.controller.start_submitted) self.fail() else self.cancel() catch self.fail();
         return 0;
     }
@@ -87,6 +91,7 @@ pub const Client = struct {
         self.attempt_ends_us = glib.getMonotonicTime() + @as(i64, self.timeout_ms) * 1000;
         self.attempt_deadline = glib.timeoutAdd(self.timeout_ms, attemptExpired, self);
         self.accepted = false;
+        self.timed_out = false;
         self.recover_after_cancel = false;
         self.username = @splat(0);
         @memcpy(self.username[0..username.len], username);
