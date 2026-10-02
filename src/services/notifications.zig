@@ -157,7 +157,7 @@ pub const Notifications = struct {
         if (std.mem.eql(u8, m, "GetCapabilities")) {
             invocation.returnValue(db.tuple(&.{db.array("s", &.{ db.str("body"), db.str("actions"), db.str("persistence"), db.str("icon-static") })}));
         } else if (std.mem.eql(u8, m, "GetServerInformation")) {
-            invocation.returnValue(db.tuple(&.{ db.str("Pearl"), db.str("Aqueous"), db.str("0.1.0"), db.str("1.2") }));
+            invocation.returnValue(db.tuple(&.{ db.str("Pearl"), db.str("Aqueous"), db.str(@import("../version.zig").string), db.str("1.2") }));
         } else if (std.mem.eql(u8, m, "CloseNotification")) {
             const v = params.getChildValue(0);
             defer v.unref();
