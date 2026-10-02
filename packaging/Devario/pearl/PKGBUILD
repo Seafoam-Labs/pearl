@@ -1,5 +1,5 @@
-# Build the v0.2.0 release tag. scripts/release-source.py can also generate
-# a checksum-locked recipe for a local source archive.
+# Devario Core: build the v0.2.0 Pearl release tag.
+# The login greeter is packaged separately as pearl-greeter.
 pkgname=pearl
 pkgver=0.2.0
 pkgrel=1
