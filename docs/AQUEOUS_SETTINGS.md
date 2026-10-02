@@ -348,3 +348,28 @@ focus query used to verify actual keyboard navigation. Wrapping disclosure butto
 at larger text sizes, and a bounded viewport keeps the panel inside its output.
 Escape cancels recording and returns focus to the shortcut entry. Advanced also exposes the latest operation receipt and
 validated candidate effects. Physical screen-reader acceptance remains separate.
+
+## Single tiled window centering
+
+With an Aqueous helper that advertises `layout.center_single_window` and
+`layout.single_window_aspect_ratio`, the Layouts page automatically shows a
+checkbox and numeric aspect-ratio control. The helper also advertises overrides
+for tile, grid, rows, dwindle, and reverse-dwindle. Omitted overrides display the
+effective inherited global value. The ratio caps width relative to the available
+height; approximately 1.778 gives 16:9. Opening another tile resumes normal tiling.
+Older helpers omit these fields, so the controls are absent with those versions.
+
+The feature-specific integration test uses an explicit local prefix containing
+matching `aqueous`, `aqueousctl`, and `aqueous-config` binaries:
+
+```sh
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-single-window-centering \
+  -Doptimize=ReleaseSafe -- --prefix /path/to/local/aqueous
+```
+
+It verifies generated controls, real pointer edits, saved global values,
+inherited per-layout values, an explicit override, and live geometry after
+reload. Captured fields and results go to `artifacts/single-window-centering`.
+The pinned master fixtures and `scripts/aqueous-target.json` remain tied to their
+recorded commits; advance and recapture them after the Aqueous implementation
+has a published commit rather than assigning an existing commit to local edits.

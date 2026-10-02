@@ -799,6 +799,14 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| aqueous_settings.addArgs(args);
     b.step("test-aqueous-settings", "Verify matching-master settings, receipts and native display leases").dependOn(&aqueous_settings.step);
     b.step("test-aqueous-master", "Verify pinned Aqueous master transactions").dependOn(&aqueous_settings.step);
+    const single_window = b.addSystemCommand(&.{ "python3", "tests/integration/test_single_window_centering.py", "--pearl" });
+    single_window.addArtifactArg(app);
+    single_window.addArg("--ctl");
+    single_window.addArtifactArg(ctl);
+    single_window.addArg("--settings");
+    single_window.addArtifactArg(settings_test_app);
+    if (b.args) |args| single_window.addArgs(args);
+    b.step("test-single-window-centering", "Verify centering settings with a local Aqueous prefix (-- --prefix PATH)").dependOn(&single_window.step);
     const preview_lifecycle = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_preview.py", "--pearl" });
     preview_lifecycle.addArtifactArg(app);
     preview_lifecycle.addArg("--ctl");
