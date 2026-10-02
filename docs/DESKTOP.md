@@ -48,8 +48,17 @@ multi-window groups show a count; a hollow marker means all windows are minimize
 The strip fits the remaining bar length on any edge. Its overflow button opens
 additional application groups; if space is very limited it opens the entire
 list. All windows remain reachable. Long chooser lists load in batches of 50
-through **Show more**. Focus changes preserve application order; new applications
-append after existing groups. The strip disappears when no taskbar windows exist.
+through **Show more**. When Aqueous publishes `layout_index`, tasks follow display
+position, workspace number, then layout order; focus alone does not reorder them.
+Without published indices, window order remains ID-based and new application
+groups append after existing groups. The strip disappears when no taskbar windows exist.
+
+Enable **One taskbar button per window** in Bar & dock settings, or set
+`bar.running_apps_per_window` to `true` (default `false`). Output-specific bar
+settings can override it. Each button activates that window and uses its supplied
+icon pixels when available, falling back to the application icon. The chooser
+stays grouped; per-window overflow opens the complete application list so that
+interleaved and partially visible groups remain reachable.
 
 For a keyboard binding, use `pearlctl running-apps show [--output ID]`. The
 chooser owns keyboard input; arrows/Tab navigate, Enter activates and Escape

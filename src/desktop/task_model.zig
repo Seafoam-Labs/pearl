@@ -36,7 +36,9 @@ pub fn resolve(apps: []const Application, win: entities.Window, choices: []const
     }
     return match(apps, win, pins);
 }
-pub const Window = struct { id: [:0]const u8, title: [:0]const u8, workspace: ?[:0]const u8, output: ?[:0]const u8, focused: bool, minimized: bool, can_activate: bool };
+pub const Window = struct { id: [:0]const u8, title: [:0]const u8, workspace: ?[:0]const u8, output: ?[:0]const u8, focused: bool, minimized: bool, can_activate: bool, icon: ?entities.Icon = null };
+/// A flat task order alongside the chooser groups. Strings share the snapshot arena.
+pub const Task = struct { window: Window, group: [:0]const u8 };
 pub const Group = struct {
     key: [:0]const u8,
     desktop: ?[:0]const u8,
@@ -54,6 +56,7 @@ pub const Group = struct {
 pub const Snapshot = struct {
     arena: std.heap.ArenaAllocator,
     groups: []const Group = &.{},
+    windows: []const Task = &.{},
     revision: u64 = 0,
     digest: ?u64 = null,
     session: []const u8 = "",
@@ -99,7 +102,15 @@ pub const Snapshot = struct {
         next.pin_hash = pin_hash;
         var groups: std.ArrayList(Group) = .empty;
         var map: std.StringHashMapUnmanaged(usize) = .empty;
-        for (try model.windows(a, .{ .purpose = .taskbar })) |win| {
+        const ordered = try model.windows(a, .{ .purpose = .taskbar });
+        var indexed = false;
+        for (ordered) |win| if (win.layout_index != null) {
+            indexed = true;
+            break;
+        };
+        if (indexed) std.mem.sort(*const entities.Window, ordered, model, layoutOrderLess);
+        const windows = try a.alloc(Task, ordered.len);
+        for (ordered, 0..) |win, i| {
             const app = resolve(apps, win.*, choices, pins);
             const identity = nonempty(win.app_id) orelse nonempty(win.class);
             const key = if (app) |v| try std.fmt.allocPrintSentinel(a, "desktop:{s}", .{v.id}, 0) else try std.fmt.allocPrintSentinel(a, "{s}:{s}", .{ if (nonempty(win.app_id) != null) "app" else if (identity != null) "class" else "window", identity orelse win.id }, 0);
@@ -110,10 +121,12 @@ pub const Snapshot = struct {
             }
             const ws = if (win.workspace) |id| model.get(.workspace, id) else null;
             const output = if (win.output) |id| model.get(.output, id) else null;
-            try groups.items[slot.value_ptr.*].windows.append(a, .{ .id = try a.dupeZ(u8, win.id), .title = try a.dupeZ(u8, nonempty(win.title) orelse identity orelse "Application"), .workspace = if (ws) |v| try a.dupeZ(u8, v.name) else null, .output = if (output) |v| try a.dupeZ(u8, v.name) else null, .focused = win.focused, .minimized = win.minimized, .can_activate = win.can_activate });
+            try groups.items[slot.value_ptr.*].windows.append(a, .{ .id = try a.dupeZ(u8, win.id), .title = try a.dupeZ(u8, nonempty(win.title) orelse identity orelse "Application"), .workspace = if (ws) |v| try a.dupeZ(u8, v.name) else null, .output = if (output) |v| try a.dupeZ(u8, v.name) else null, .focused = win.focused, .minimized = win.minimized, .can_activate = win.can_activate, .icon = try entities.clone(?entities.Icon, a, win.icon) });
+            const group = groups.items[slot.value_ptr.*];
+            windows[i] = .{ .window = group.windows.items[group.windows.items.len - 1], .group = group.key };
         }
         const previous = if (std.mem.eql(u8, self.session, model.session)) self.groups else &.{};
-        std.mem.sort(Group, groups.items, previous, struct {
+        if (!indexed) std.mem.sort(Group, groups.items, previous, struct {
             fn rank(old: []const Group, key: []const u8) usize {
                 for (old, 0..) |g, i| if (std.mem.eql(u8, g.key, key)) return i;
                 return std.math.maxInt(usize);
@@ -127,10 +140,15 @@ pub const Snapshot = struct {
             }
         }.less);
         next.groups = try groups.toOwnedSlice(a);
+        next.windows = windows;
         var hash = std.hash.Wyhash.init(generation);
         hash.update(model.session);
         for (next.groups) |g| {
             hash.update(try std.json.Stringify.valueAlloc(a, .{ g.key, g.desktop, g.name, g.windows.items }, .{}));
+        }
+        for (windows) |task| {
+            hash.update(std.mem.asBytes(&task.window.id.len));
+            hash.update(task.window.id);
         }
         next.digest = hash.final();
         next.revision = self.revision +% @as(u64, @intFromBool(self.digest == null or self.digest.? != next.digest.?));
@@ -138,6 +156,30 @@ pub const Snapshot = struct {
         self.* = next;
     }
 };
+fn scopeOrder(x: ?[]const u8, y: ?[]const u8) std.math.Order {
+    if (x == null or y == null) return if (x == null and y == null) .eq else if (x == null) .gt else .lt;
+    return std.mem.order(u8, x.?, y.?);
+}
+fn layoutOrderLess(model: *const Model, x: *const entities.Window, y: *const entities.Window) bool {
+    const xo = if (x.output) |id| model.get(.output, id) else null;
+    const yo = if (y.output) |id| model.get(.output, id) else null;
+    if ((xo == null) != (yo == null)) return yo == null;
+    if (xo) |left| if (yo) |right| {
+        if (left.bounds.x != right.bounds.x) return left.bounds.x < right.bounds.x;
+        if (left.bounds.y != right.bounds.y) return left.bounds.y < right.bounds.y;
+    };
+    const output = scopeOrder(x.output, y.output);
+    if (output != .eq) return output == .lt;
+    const xw = if (x.workspace) |id| model.get(.workspace, id) else null;
+    const yw = if (y.workspace) |id| model.get(.workspace, id) else null;
+    if ((xw == null) != (yw == null)) return yw == null;
+    if (xw) |left| if (yw) |right| if (left.number != right.number) return left.number < right.number;
+    const workspace = scopeOrder(x.workspace, y.workspace);
+    if (workspace != .eq) return workspace == .lt;
+    if ((x.layout_index == null) != (y.layout_index == null)) return y.layout_index == null;
+    if (x.layout_index) |left| if (y.layout_index) |right| if (left != right) return left < right;
+    return std.mem.lessThan(u8, x.id, y.id);
+}
 fn nonempty(value: ?[]const u8) ?[]const u8 {
     return if (value) |v| if (v.len != 0) v else null else null;
 }
@@ -291,4 +333,61 @@ test "pin changes alone reclassify the global snapshot and removing pins restore
     try t.expect(snapshot.find("desktop:App.desktop") != null);
     try snapshot.updateWithLaunchers(&model, &apps, 1, &.{}, &.{});
     try t.expect(snapshot.find("desktop:Custom.desktop") != null);
+}
+
+test "task order spans scopes and applications while chooser groups stay intact" {
+    const t = std.testing;
+    var model = try Model.init(t.allocator, (@import("../aqueous/codec.zig").Limits{}).state_bytes);
+    defer model.deinit();
+    var snapshot = Snapshot.init(t.allocator);
+    defer snapshot.deinit();
+    const token = "0123456789abcdef0123456789abcdef";
+    var values = [_]entities.Entity{
+        .{ .session = .{ .id = "session", .locked = false, .default_seat = null, .overview_output = null, .overview_window = null } },
+        .{ .output = std.mem.zeroInit(entities.Output, .{ .id = "left", .name = "Left", .scale = 1, .transform = "normal", .active_workspace = "ws1" }) },
+        .{ .output = std.mem.zeroInit(entities.Output, .{ .id = "right", .name = "Right", .scale = 1, .transform = "normal", .bounds = .{ .x = 1920, .y = 0, .width = 1920, .height = 1080 } }) },
+        .{ .workspace = .{ .id = "ws1", .output = "left", .name = "1", .number = 1, .active = true, .urgent = false } },
+        .{ .workspace = .{ .id = "ws2", .output = "left", .name = "2", .number = 2, .active = false, .urgent = false } },
+        .{ .workspace = .{ .id = "ws3", .output = "right", .name = "1", .number = 1, .active = false, .urgent = false } },
+        .{ .window = fixtureWindow("z", "Alpha") },
+        .{ .window = fixtureWindow("y", "Beta") },
+        .{ .window = fixtureWindow("x", "Alpha") },
+        .{ .window = fixtureWindow("u", "Alpha") },
+        .{ .window = fixtureWindow("w", "Alpha") },
+        .{ .window = fixtureWindow("v", "Alpha") },
+        .{ .window = fixtureWindow("a", null) },
+    };
+    for (values[6..12], 0..) |*value, i| {
+        value.window.output = if (i == 5) "right" else "left";
+        value.window.workspace = if (i == 5) "ws3" else if (i == 4) "ws2" else "ws1";
+        value.window.layout_index = if (i == 3) null else if (i >= 4) 0 else @intCast(i);
+    }
+    values[9].window.minimized = true;
+    try model.apply(.{ .type = .snapshot, .session = token, .sequence = "1", .base_sequence = null, .upsert = &values, .removed = &.{} });
+    try snapshot.update(&model, &.{}, 0);
+    const expected = [_][]const u8{ "z", "y", "x", "u", "w", "v", "a" };
+    for (expected, snapshot.windows) |id, task| try t.expectEqualStrings(id, task.window.id);
+    try t.expectEqual(@as(usize, 3), snapshot.groups.len);
+    try t.expectEqual(@as(usize, 5), snapshot.find("app:Alpha").?.windows.items.len);
+    const before = snapshot.revision;
+    // Moving Beta past Alpha's second window changes only the flat order:
+    // application order and the order inside each application remain the same.
+    values[7].window.layout_index = 2;
+    values[8].window.layout_index = 1;
+    try model.apply(.{ .type = .delta, .session = token, .sequence = "2", .base_sequence = "1", .upsert = values[7..9], .removed = &.{} });
+    try snapshot.update(&model, &.{}, 0);
+    try t.expect(snapshot.revision > before);
+    try t.expectEqualStrings("x", snapshot.windows[1].window.id);
+    try t.expectEqualStrings("y", snapshot.windows[2].window.id);
+    // Without any published indices preserve the reducer's ID order.
+    for (values[6..]) |*value| value.window.layout_index = null;
+    try model.apply(.{ .type = .delta, .session = token, .sequence = "3", .base_sequence = "2", .upsert = values[6..], .removed = &.{} });
+    try snapshot.update(&model, &.{}, 0);
+    const fallback = [_][]const u8{ "a", "u", "v", "w", "x", "y", "z" };
+    for (fallback, snapshot.windows) |id, task| try t.expectEqualStrings(id, task.window.id);
+    // Closing a window drops it from both presentations.
+    try model.apply(.{ .type = .delta, .session = token, .sequence = "4", .base_sequence = "3", .upsert = &.{}, .removed = &.{.{ .kind = .window, .id = "y" }} });
+    try snapshot.update(&model, &.{}, 0);
+    try t.expectEqual(@as(usize, 6), snapshot.windows.len);
+    try t.expect(snapshot.find("app:Beta") == null);
 }

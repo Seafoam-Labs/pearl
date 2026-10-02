@@ -1,0 +1,27 @@
+{
+  "rendered": [
+    "layout.center_single_window",
+    "layout.single_window_aspect_ratio",
+    "layout.options.tile.center_single_window",
+    "layout.options.tile.single_window_aspect_ratio",
+    "layout.options.grid.center_single_window",
+    "layout.options.grid.single_window_aspect_ratio",
+    "layout.options.rows.center_single_window",
+    "layout.options.rows.single_window_aspect_ratio",
+    "layout.options.dwindle.center_single_window",
+    "layout.options.dwindle.single_window_aspect_ratio",
+    "layout.options.reverse-dwindle.center_single_window",
+    "layout.options.reverse-dwindle.single_window_aspect_ratio"
+  ],
+  "pointer_edits": true,
+  "save": true,
+  "reload": "applied",
+  "inheritance": true,
+  "per_layout_override": true,
+  "live_geometry": {
+    "x": 136,
+    "y": 48,
+    "width": 1008,
+    "height": 672
+  }
+}
