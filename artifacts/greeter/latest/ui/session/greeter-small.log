@@ -1,11 +1,18 @@
-info: event=greeter-outputs interactive=1
-info: event=greeter-ready sessions=2
-info: event=greeter-state state=connecting
-info: event=greeter-state state=authenticating
-info: event=greeter-state state=prompt
-info: event=greeter-state state=authenticating
-info: event=greeter-state state=prompt
-info: event=greeter-state state=authenticating
-info: event=greeter-state state=authenticated
-info: event=greeter-state state=starting
-info: event=greeter-state state=handoff
+ts=2026-10-02T10:49:50Z pid=389774 info(greeter): event=greeter-active-output connector=HEADLESS-2
+ts=2026-10-02T10:49:50Z pid=389774 info(greeter): event=greeter-outputs interactive=1
+ts=2026-10-02T10:49:50Z pid=389774 info(greeter): event=greeter-ready sessions=2
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=connecting
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=prompt
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=prompt
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=prompt
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=prompt
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=prompt
+ts=2026-10-02T10:49:51Z pid=389774 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-02T10:49:52Z pid=389774 info(greeter): event=greeter-state state=authenticated
+ts=2026-10-02T10:49:52Z pid=389774 info(greeter): event=greeter-state state=starting
+ts=2026-10-02T10:49:52Z pid=389774 info(greeter): event=greeter-state state=handoff
