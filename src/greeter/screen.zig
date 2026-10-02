@@ -214,6 +214,7 @@ const Screen = struct {
         const known = n < self.account_count;
         self.username.as(gtk.Editable).setText(if (known) @ptrCast(&self.account_names[n]) else "");
         self.username.as(gtk.Widget).setVisible(@intFromBool(!known));
+        if (options.test_hooks) log.info("event=greeter-account count={d} selected={d} manual={}", .{ self.account_count, n, self.username.as(gtk.Widget).getVisible() != 0 });
     }
     fn focusAccount(self: *Screen) void {
         _ = (if (self.username.as(gtk.Widget).getVisible() != 0) self.username.as(gtk.Widget) else self.account_chooser.as(gtk.Widget)).grabFocus();

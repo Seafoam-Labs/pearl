@@ -31,6 +31,15 @@ alter the ordinary Pearl build/install. Test binaries accept private fixture
 configuration and socket peers; production binaries do not accept those hooks.
 Tests need private Unix sockets and, for UI tests, the repository's private
 Aqueous tools. UI screenshots are under `artifacts/greeter/latest/ui/session`.
+The graphical suite supplies an isolated passwd fixture with two login users and
+excluded system users. Theme captures exercise the account dropdown with the
+first discovered user selected. Additional cases verify switching users,
+preserving selection on refresh, “Other user…” manual entry, empty discovery,
+and disabled discovery. The fake greetd checks the exact selected username and
+one session handoff. `report.json` lists the screenshots produced by that run;
+`greeter-accounts-switch-menu.png` shows the available choices and
+`greeter-password-accounts-switch.png` shows the selected user's password prompt.
+The passwd override exists only in test builds.
 Never type real credentials into a mock preview.
 
 The production `--catalog` command performs read-only discovery using the fixed

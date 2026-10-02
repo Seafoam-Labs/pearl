@@ -4,6 +4,15 @@ const gio = @import("gio2");
 const glib = @import("glib2");
 pub const Account = @import("local_accounts.zig").Account;
 pub fn load(a: std.mem.Allocator, cancel: *gio.Cancellable) ![]const Account {
+    // Private UI fixtures never enumerate the developer's real accounts.
+    // This override is compiled out of production binaries.
+    if (@import("build_options").test_hooks) {
+        if (glib.getenv("PEARL_TEST_GREETER_PASSWD")) |path| {
+            const bytes = try @import("trusted.zig").read(a, std.mem.span(path), 1024 * 1024);
+            defer a.free(bytes);
+            return @import("local_accounts.zig").parse(a, bytes, "UID_MIN 1000\n");
+        }
+    }
     const cached = cachedAccounts(a, cancel) catch &.{};
     if (cached.len > 0 or cancel.isCancelled() != 0) return cached;
     const trusted = @import("trusted.zig");
