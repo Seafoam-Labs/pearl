@@ -905,6 +905,7 @@ pub const Manager = struct {
                 sizeEdge(o.bar.?, pref.edge, pref.size);
                 try o.bar.?.bar.?.launcher_icon.want(pref.launcher_icon, false);
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
+                o.bar.?.bar.?.running_apps_per_window = pref.running_apps_per_window;
                 if (o.bar.?.bar.?.islands != pref.islands) if (o.bar.?.autohide) |controller| controller.clearGesture();
                 o.bar.?.bar.?.setIslands(pref.islands);
                 const content_hash = try self.barContentHash(pref);

@@ -55,7 +55,7 @@ pub const Wallpaper = struct {
 };
 pub const Dock = @import("../desktop/dock_policy.zig").Config;
 pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
-pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
+pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, running_apps_per_window: bool = false, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
 pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
@@ -376,4 +376,18 @@ test "notification preferences default empty, own strings, roundtrip and enforce
         \\{"notifications":{"rules":[{"id":"bad","name":"Bad","action":"allow","conditions":[{"field":"body","value":"x"}]}]}}
     ));
     try t.expectError(error.InvalidConfig, parse(a, document ++ " " ** max_bytes));
+}
+
+test "per-window taskbar preference defaults off and supports output overrides" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try std.testing.expect(!(try parse(a, "{}")).bar.running_apps_per_window);
+    const prefs = try parse(a,
+        \\{"bar":{"running_apps_per_window":true},"outputs":[{"connector":"DP-1","bar":{"running_apps_per_window":false}}]}
+    );
+    try std.testing.expect(prefs.forOutput("DP-2").running_apps_per_window);
+    try std.testing.expect(!prefs.forOutput("DP-1").running_apps_per_window);
+    const encoded = try std.json.Stringify.valueAlloc(a, prefs, .{});
+    try std.testing.expect((try parse(a, encoded)).bar.running_apps_per_window);
 }

@@ -25,7 +25,7 @@ def main():
     report = dict(status='running', cases=[])
     try:
         with PrivateSession(args.output / 'session', tool_prefix=ROOT / '.cache/aqueous-activity-production') as s:
-            s.args = SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
+            s.args = SimpleNamespace(aqueous_source=str(ROOT/'.cache/aqueous-activity-production/source'))
             T00Session.input_fixture(s)
             app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings')
             app.expect('event=control-ready')

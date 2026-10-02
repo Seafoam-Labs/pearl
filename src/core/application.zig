@@ -243,6 +243,7 @@ fn aqueousChanged(context: *anyopaque, event: adapter.Event) void {
         if (self.surfaces) |*surfaces| surfaces.completion(event.completion);
     }
     if (self.logout_requested) return;
+    if (event == .icons) if (self.surfaces) |*surfaces| surfaces.schedule();
     if (event == .availability or event == .state) {
         if (self.surfaces) |*surfaces| {
             surfaces.syncClipboardPrivacy();

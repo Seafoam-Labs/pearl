@@ -60,6 +60,7 @@ pub const Bar = struct {
     sections: [3]?*gtk.Widget = @splat(null),
     vertical: bool = false,
     compact: bool = false,
+    running_apps_per_window: bool = false,
     length: i32 = 1280,
     thickness: i32 = 48,
     pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager, tasks: *const @import("task_model.zig").Snapshot, app_index: *@import("apps.zig").Index) !*Bar {
@@ -263,7 +264,7 @@ pub const Bar = struct {
                 const widget: *gtk.Widget = switch (item) {
                     .running_apps => blk: {
                         const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
-                        self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.vertical, self, runningAction);
+                        self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.client, self.vertical, self, runningAction);
                         break :blk host.as(gtk.Widget);
                     },
                     .tray => blk: {
@@ -421,6 +422,7 @@ pub const Bar = struct {
     fn fitTasks(self: *Bar) void {
         const view = self.running_apps orelse return;
         view.compact = self.thickness < 40;
+        view.per_window = self.running_apps_per_window;
         const orientation: gtk.Orientation = if (self.vertical) .vertical else .horizontal;
         const grid = self.widgets[@intFromEnum(policy.Item.workspaces)];
         var used: c_int = 64;

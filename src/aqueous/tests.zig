@@ -659,3 +659,33 @@ test "global switcher negotiates independently and carries no stale workspace co
     window.workspace = "missing";
     try t.expect(!switcher.globalEligible(&m, window));
 }
+
+test "layout order is optional and strictly typed" {
+    var baseline = try decode(f.desktop, null);
+    defer baseline.deinit();
+    for (baseline.message.event.batch.upsert) |entity| if (entity == .window) try t.expectEqual(null, entity.window.layout_index);
+    const field = "\"layout\":";
+    inline for (.{ .{ "null", @as(?u32, null) }, .{ "0", @as(?u32, 0) }, .{ "4294967295", @as(?u32, 4294967295) } }) |case| {
+        const raw = try replace(f.desktop, field, "\"layout_index\":" ++ case[0] ++ "," ++ field);
+        defer a.free(raw);
+        var d = try decode(raw, null);
+        defer d.deinit();
+        for (d.message.event.batch.upsert) |entity| if (entity == .window) {
+            try t.expectEqual(case[1], entity.window.layout_index);
+            break;
+        };
+    }
+    inline for (.{ .{ "-1", error.InvalidRange }, .{ "4294967296", error.InvalidRange }, .{ "\"0\"", error.InvalidType } }) |case| {
+        const raw = try replace(f.desktop, field, "\"layout_index\":" ++ case[0] ++ "," ++ field);
+        defer a.free(raw);
+        try rejects(raw, case[1], null);
+    }
+    var old = try decode(f.hello, .hello);
+    defer old.deinit();
+    try t.expect(!old.message.response.result.hello.capabilities.window_order);
+    const raw = try replace(f.hello, "\"state\":true", "\"state\":true,\"window_order\":true");
+    defer a.free(raw);
+    var new = try decode(raw, .hello);
+    defer new.deinit();
+    try t.expect(new.message.response.result.hello.capabilities.window_order);
+}
