@@ -27,23 +27,10 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info: raised file descriptor limit of the river process to 4096
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
-info(ipc): protocol=1 listening on /tmp/pearl-dev-fb3b27g5/run/aqueous-git/847f252653381a70a9a685910bd6708b/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-fb3b27g5/run/aqueous-git/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-aar1eji9/run/aqueous-git/4895750474d8468338bfe4bddee8c5b1/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-aar1eji9/run/aqueous-git/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
@@ -140,62 +127,6 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
-error(wlroots): [types/wlr_linux_dmabuf_v1.c:1176] Failed to get backend DRM FD
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(wlroots): [types/wlr_linux_dmabuf_v1.c:1176] Failed to get backend DRM FD
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(wlroots): [types/wlr_linux_dmabuf_v1.c:1176] Failed to get backend DRM FD
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
@@ -256,20 +187,6 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
-error(wlroots): [types/wlr_linux_dmabuf_v1.c:1176] Failed to get backend DRM FD
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
@@ -286,6 +203,70 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(wlroots): [types/wlr_linux_dmabuf_v1.c:1176] Failed to get backend DRM FD
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(wlroots): [types/wlr_linux_dmabuf_v1.c:1176] Failed to get backend DRM FD
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
 error(wlroots): [types/wlr_linux_dmabuf_v1.c:1176] Failed to get backend DRM FD
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
@@ -331,7 +312,9 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
-error(wlroots): [types/wlr_linux_dmabuf_v1.c:1176] Failed to get backend DRM FD
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
+error(input): inactive text input tried to commit an update, client bug?
 info: destroyed Vulkan blur after 0 checkpoints, 0 offscreen draws, and 0 composites (0 cache hits, 0 partial rebuilds, 0 full rebuilds, 0 pixels processed)
 info: Vulkan blur resources created: 0 scratch sets, 0 images, 0 descriptors, 0 cache images, 0 composite pipelines
 info: destroyed Vulkan rounded effects after 0 texture and 0 rect draws (0 normal, 0 swapchain, 0 explicit-sync)
