@@ -1,7 +1,7 @@
-# Build the v0.2.0 release tag. scripts/release-source.py can also generate
+# Build the v0.2.1 release tag. scripts/release-source.py can also generate
 # a checksum-locked recipe for a local source archive.
 pkgname=pearl
-pkgver=0.2.0
+pkgver=0.2.1
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1

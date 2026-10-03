@@ -10,7 +10,7 @@ no Flatpak-wide support is claimed. Before downgrade/removal, disable Qt managem
 and complete conditional restoration using the [recovery procedure](QT_THEMING.md#shared-files-conflicts-and-recovery).
 Preserve user ownership records; package scripts must not remove them.
 
-Pearl `0.2.0` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
+Pearl `0.2.1` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
 This candidate adds current-master transactions, collection forms and native capture.
 This is a release candidate: physical, actual login-session, screen-reader and
 visual/presentation signoffs remain required. The project also needs its owner's
@@ -22,9 +22,9 @@ that evidence does not grant public release acceptance.
 
 ## Build and package
 
-The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.0`.
-Its Arch version is `1:0.2.0-1`; the epoch allows upgrades from the earlier
-`1.0.0rc2` packages. The source and runtime version are also `0.2.0`.
+The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.1`.
+Its Arch version is `1:0.2.1-1`; the epoch allows upgrades from the earlier
+`1.0.0rc2` packages. The source and runtime version are also `0.2.1`.
 Pearl and the standalone greeter recipes in `packaging/Devario` use the same tag.
 The tag must be published before these recipes can fetch the release. Git sources
 use `SKIP` in `sha256sums`; downloaded SDK archives retain their pinned checksums.
