@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-03",
+  "base_commit": "25805901726d7ae7000bb8ab8df42ee611954929",
+  "build_gtk_pkgconfig": "4.22.5",
+  "build_gtk_package": "1:4.22.5-1.1",
+  "modern_gtk_package": "1:4.24.1-2",
+  "modern_gtk_source": "/home/zoey/Devario/devario-os/work/retry-1791006292/image/root/usr/lib/libgtk-4.so.1.2400.1",
+  "version_boundary": "4.23.3",
+  "source_sha256": {
+    "src/platform/wayland/effects.zig": "1554a4dfc2e689bd3cd073d429570f3644d157fe1ac72b0c6a98a38c28d5c655",
+    "src/core/application.zig": "3f69357525e4ed0b33432baaea27f9bee5034d6ef1ce3b0fc3d60aee2bc83fff",
+    "src/core/log_events.zig": "9eab7ff4e794a1061d63840b8234476217ada4ad42b2109477ed27fbf9c6648b",
+    "resources/gtk-background-blur.css": "32c7289e24d248528a4211d8275e85eab187fc4973989e413e43fd2ba083fc08",
+    "resources/pearl.gresource.xml": "919d8ce4fb5f97f56a2c72835dc9de459d452e8727e8d850874eea620632a5ad",
+    "tests/integration/test_surfaces.py": "b58fdc44a169ec779e7e32c5fdc47462dd4640dccbab9754f2c75f52bcf6d621",
+    "tests/integration/background_effect_trace.py": "a34e5e0796ce1232bb49fd7379f89bfc409e92edab34ca09e6125a6d3fdb9593",
+    "tests/test_background_effect_trace.py": "e5c71c7c3a258fd55ae66987a519d8f48f5eb8fe45a1bd11635bef706a14b761"
+  },
+  "unit_tests": "zig build test -Doptimize=ReleaseSafe: passed (259 tests)",
+  "trace_ledger_tests": "python3 tests/test_background_effect_trace.py: passed (4 tests)",
+  "environment_workaround": false,
+  "live_machine": "pending target/access",
+  "iso": "not rebuilt: repaired Pearl needs a signed core-repository artifact",
+  "package_build": "passed; package-build.json",
+  "package_payload": "passed on both GTK runtimes; gtk-422/package-results.json and gtk-424/package-results.json",
+  "blur_hotplug": "passed on both GTK runtimes; hotplug-results.json and traces"
+}

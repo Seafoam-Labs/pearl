@@ -1,0 +1,52 @@
+[
+  {
+    "effect": 76,
+    "surface": 73,
+    "namespace": "pearl:wallpaper",
+    "manager": 31,
+    "updates": 0,
+    "nonempty_commits": 0,
+    "empty_commits": 5,
+    "destroyed": true
+  },
+  {
+    "effect": 90,
+    "surface": 103,
+    "namespace": "pearl:bar",
+    "manager": 31,
+    "updates": 2,
+    "nonempty_commits": 5,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 142,
+    "surface": 139,
+    "namespace": "pearl:wallpaper",
+    "manager": 31,
+    "updates": 0,
+    "nonempty_commits": 0,
+    "empty_commits": 4,
+    "destroyed": true
+  },
+  {
+    "effect": 152,
+    "surface": 165,
+    "namespace": "pearl:bar",
+    "manager": 31,
+    "updates": 2,
+    "nonempty_commits": 4,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 258,
+    "surface": 229,
+    "namespace": "pearl:popup",
+    "manager": 31,
+    "updates": 2,
+    "nonempty_commits": 4,
+    "empty_commits": 1,
+    "destroyed": true
+  }
+]

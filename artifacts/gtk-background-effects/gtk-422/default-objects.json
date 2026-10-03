@@ -1,0 +1,32 @@
+[
+  {
+    "effect": 135,
+    "surface": 100,
+    "namespace": "pearl:bar",
+    "manager": 51,
+    "updates": 3,
+    "nonempty_commits": 3,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 196,
+    "surface": 161,
+    "namespace": "pearl:bar",
+    "manager": 51,
+    "updates": 3,
+    "nonempty_commits": 2,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 218,
+    "surface": 207,
+    "namespace": "pearl:popup",
+    "manager": 51,
+    "updates": 2,
+    "nonempty_commits": 17,
+    "empty_commits": 0,
+    "destroyed": true
+  }
+]

@@ -139,7 +139,7 @@ remain compatible. Service updates expire after 1.8 seconds and stay on their
 selected output during a burst. Bottom placement accounts for Pearl's bar/frame
 reservation. See [Audio and OSD](SERVICES.md#cli-and-osd) for trigger policy.
 
-## Native background blur
+## Background blur ownership
 
 `src/platform/wayland/effects.zig` uses pinned generated Zig Wayland bindings and
 Ghostty's `gdkwayland4` accessors. It borrows GTK's display and actual rendered
@@ -147,8 +147,25 @@ Ghostty's `gdkwayland4` accessors. It borrows GTK's display and actual rendered
 roundtrip, and never attaches or commits a GTK buffer. GTK dispatches its
 registry listeners on the default queue.
 
-Bar, popup and OSD request rounded, surface-local blur regions through
-`ext-background-effect-v1`. An after-paint callback observes actual panel
+Ownership is selected from the loaded GTK version before Pearl surfaces are
+created and remains fixed for their lifetime. GTK 4.22.5 retains Pearl's native
+protocol implementation. Upstream GTK 4.23.3 first acquired an effect for every
+Wayland surface (MR !10145); GTK 4.24 therefore owns these objects itself.
+Pearl still binds the manager to observe capabilities on both paths, but only
+the native path calls `get_background_effect` or destroys an effect.
+
+On the GTK path, a separate built-in `gtk-background-blur.css` provider requests
+`backdrop-filter: blur(14px)` on the existing effect panel, or individual bar
+islands. GTK clips this to their rounded CSS border boxes, including island
+padding, while empty host space stays clear. The CSS value becomes GSK radius
+28, above GTK's compositor-blur extraction threshold of 20. This is a request
+for a region, not a change to Aqueous's configured blur radius. The provider is
+loaded only on that runtime path and remains separate from theme providers and
+the custom CSS allowlist. No new GTK ABI symbols or binding regeneration are
+required; the build and package minimum remains 4.22.5.
+
+Bars, docks, popups, notifications, OSDs and the switcher request rounded,
+surface-local blur. An after-paint callback observes actual panel
 allocation. Changes update blur/input regions and queue one GTK draw for the
 next double-buffered commit. Unchanged geometry produces no extra frame. The
 capability event controls background alpha: unavailable/disabled effects use
@@ -156,8 +173,11 @@ opaque panel tokens in Automatic mode. A user-selected Custom bar background
 opacity applies its absolute alpha independently of blur availability, including
 0% and 100%; it changes only the continuous bar panel or individual island
 backgrounds. Foregrounds and input regions retain their existing behavior.
-Other surfaces retain the automatic fallback. Global removal destroys owned effect objects. Wallpaper
-and frame surfaces never request blur.
+Other surfaces retain the automatic fallback. Window opacity below 0.72 clears
+the native region or GTK CSS request while keeping the translucent theme class.
+Unmap, detach, capability loss and global removal clear the GTK request without
+touching GTK's protocol object. Native cleanup destroys only Pearl's own object.
+Wallpaper and frame surfaces never request blur (GTK may own an empty effect).
 
 Pearl does not write Aqueous rules or set global widget opacity. A native request
 on a main layer surface needs no enabling rule; the compositor still applies
@@ -168,6 +188,27 @@ does not report individual rule vetoes to Pearl, so `status.blur` reports the
 global native capability, not whether every panel's effect is allowed.
 
 See [binding inputs and regeneration](../bindings/protocols/README.md).
+
+`zig build test-surfaces -Doptimize=ReleaseSafe` runs the real-compositor gate.
+Repeat with `-- --gtk-library-path /path/to/staged/lib --output /tmp/surfaces-gtk424`
+to run the same binary against a newer loaded GTK runtime. The staged directory
+must include that GTK's required GLib libraries. The option applies only to test
+clients, after private Aqueous starts. `--blur-only` selects the focused blur gate.
+Results record the loaded library path, hash, runtime version, chosen owner and
+binary hashes. Traces track live surface/effect lifetimes, committed nonempty and
+cleared regions, padded island bounds, rounded corners, remaps and capability
+changes; screenshots retain the compositor rule-veto comparison. Default and
+explicit Vulkan launches run without protocol-disable variables. The driver may
+emit `VK_SUBOPTIMAL_KHR` during resizing; those warnings are recorded, while
+protocol errors, CSS errors and other warnings still fail the test.
+
+The first affected release is verified by the
+[4.23.3 release notes](https://github.com/GNOME/gtk/blob/4.23.3/NEWS),
+[4.23.2 surface implementation](https://github.com/GNOME/gtk/blob/4.23.2/gdk/wayland/gdksurface-wayland.c),
+and [4.23.3 surface implementation](https://github.com/GNOME/gtk/blob/4.23.3/gdk/wayland/gdksurface-wayland.c).
+A downstream backport that changes ownership without changing its GTK runtime
+version needs a separately documented compatibility contract; guessing private
+GTK objects or falling back to native ownership is unsafe.
 
 ## pearlctl and control v1
 

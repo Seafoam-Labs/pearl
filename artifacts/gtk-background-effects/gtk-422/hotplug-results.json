@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "checks": {
+    "gtk-runtime": {
+      "version": "4.22.5",
+      "owner": "native",
+      "libraries": [
+        "/usr/lib/libgtk-4.so.1.2200.5"
+      ],
+      "sha256": {
+        "/usr/lib/libgtk-4.so.1.2200.5": "2bba868080c1cc803936779aca3abd7c638899870f4739c86f3c2efb5d26ed52"
+      }
+    },
+    "blur-enabled-output-removal-return-and-popup-destruction": true
+  }
+}

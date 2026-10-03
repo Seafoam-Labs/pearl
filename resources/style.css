@@ -63,6 +63,8 @@
 .pearl-root.$scope label selection { background: $primary_container$; color: $on_container$; }
 
 /* Session surfaces: background alpha is independent of compositor opacity. */
+/* Compositor blur is requested separately: native on 4.22, or the conditional
+ * gtk-background-blur.css provider with GTK-owned effects. */
 .pearl-root.$scope.pearl-shell { background: transparent; }
 .pearl-root.$scope.pearl-wallpaper { background: linear-gradient(135deg, $surface$, $primary_container$); }
 .pearl-root.$scope.pearl-shell .pearl-surface-panel { background: $container$; color: $text$; border-radius: 14px; }

@@ -119,8 +119,11 @@ cannot establish blur availability in the normal Vulkan-effects build.
 
 Protocol presence and current blur capability are separate: the manager sends
 capability updates based on global blur enablement and positive radius/passes.
-Pearl now consumes those updates and requests per-surface blur regions through
-the native protocol. A matching layer rule is not required for native main-layer
+Pearl consumes those updates and requests per-surface blur through its native
+protocol path on GTK 4.22.5, or GTK rendering on upstream GTK >=4.23.3. Ownership
+uses the loaded library version and never changes with capability. See
+[ownership and cross-runtime testing](SURFACES.md#background-blur-ownership).
+A matching layer rule is not required for native main-layer
 blur; explicit deny rules and the documented popup policy still apply. Keep
 user-authored rules intact. An opaque fallback covers unavailable or disabled
 effects, not a presumed lack of Aqueous support.

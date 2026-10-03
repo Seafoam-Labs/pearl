@@ -11,9 +11,21 @@ const ext = @import("wayland").client.ext;
 const log = std.log.scoped(.platform);
 const a = std.heap.c_allocator;
 const Rect = @import("../../ui/surfaces/policy.zig").Rect;
+pub const Owner = enum { gtk, native };
+
+pub fn runtimeOwner() Owner {
+    // First upstream release claiming every wl_surface: 4.23.3 (MR !10145).
+    // 4.23.2 has no get_background_effect; 4.24 retains this ownership.
+    // Read the loaded library: binaries built with 4.22 also run after upgrades.
+    const major = gtk.getMajorVersion();
+    const minor = gtk.getMinorVersion();
+    return if (major > 4 or (major == 4 and (minor > 23 or (minor == 23 and gtk.getMicroVersion() >= 3)))) .gtk else .native;
+}
+
 pub const Effects = struct {
     display: *gdk.Display,
     registry: *wl.Registry,
+    effect_owner: Owner,
     compositor: ?*wl.Compositor = null,
     manager: ?*ext.BackgroundEffectManagerV1 = null,
     manager_name: u32 = 0,
@@ -26,7 +38,9 @@ pub const Effects = struct {
     pub fn init(display: *gdk.Display) !Effects {
         const wayland = object.ext.cast(backend.WaylandDisplay, display) orelse return error.NotWayland;
         const connection: *wl.Display = @ptrCast(wayland.getWlDisplay() orelse return error.NotWayland);
-        return .{ .display = display, .registry = try connection.getRegistry() };
+        const effect_owner = runtimeOwner();
+        log.info("event=background-effect-owner owner={s} gtk={d}.{d}.{d}", .{ @tagName(effect_owner), gtk.getMajorVersion(), gtk.getMinorVersion(), gtk.getMicroVersion() });
+        return .{ .display = display, .registry = try connection.getRegistry(), .effect_owner = effect_owner };
     }
     pub fn start(self: *Effects) void {
         self.registry.setListener(*Effects, registryEvent, self);
@@ -92,6 +106,7 @@ pub const Effects = struct {
 };
 pub const Surface = struct {
     owner: *Effects,
+    effect_owner: Owner,
     window: *gtk.Window,
     panel: ?*gtk.Widget,
     blur: bool,
@@ -110,14 +125,18 @@ pub const Surface = struct {
     geometry_context: ?*anyopaque = null,
     geometry_changed: ?*const fn (*anyopaque) void = null,
     pub fn init(self: *Surface, owner: *Effects, window: *gtk.Window, panel: ?*gtk.Widget, blur: bool, input: @FieldType(Surface, "input")) !void {
-        self.* = .{ .owner = owner, .window = window, .panel = panel, .blur = blur, .input = input };
+        self.* = .{ .owner = owner, .effect_owner = owner.effect_owner, .window = window, .panel = panel, .blur = blur, .input = input };
         try owner.surfaces.append(a, self);
+        // Mark exactly the same widget used for native bounds. Island hosts are
+        // transparent: the built-in provider filters their individual children.
+        if (self.effect_owner == .gtk and blur) if (panel) |widget| widget.addCssClass("pearl-blur-target");
         self.map_signal = gtk.Widget.signals.map.connect(window.as(gtk.Widget), *Surface, mapped, self, .{});
         self.unmap_signal = gtk.Widget.signals.unmap.connect(window.as(gtk.Widget), *Surface, unmapped, self, .{});
         self.unrealize_signal = gtk.Widget.signals.unrealize.connect(window.as(gtk.Widget), *Surface, unmapped, self, .{});
     }
     pub fn deinit(self: *Surface) void {
         self.detach();
+        if (self.effect_owner == .gtk and self.blur) if (self.panel) |widget| widget.removeCssClass("pearl-blur-target");
         disconnect(self.window.as(object.Object), self.map_signal);
         disconnect(self.window.as(object.Object), self.unmap_signal);
         disconnect(self.window.as(object.Object), self.unrealize_signal);
@@ -155,6 +174,11 @@ pub const Surface = struct {
         self.last = null;
     }
     fn clearEffect(self: *Surface) void {
+        // A null native effect is expected for GTK ownership. Never acquire or
+        // manipulate GTK's object, including when capability disappears.
+        self.window.as(gtk.Widget).removeCssClass("pearl-gtk-blur");
+        self.window.as(gtk.Widget).removeCssClass("pearl-blur");
+        std.debug.assert(self.effect_owner == .native or self.effect == null);
         if (self.effect) |v| v.destroy();
         self.effect = null;
         self.last = null;
@@ -171,10 +195,10 @@ pub const Surface = struct {
         // fading surface would keep a full-strength blur. Drop the region early
         // in the fade; the theme class follows capability only.
         const blurred = available and self.window.as(gtk.Widget).getOpacity() >= 0.72;
+        if (self.effect_owner == .gtk and blurred) self.window.as(gtk.Widget).addCssClass("pearl-gtk-blur") else self.window.as(gtk.Widget).removeCssClass("pearl-gtk-blur");
         var allocation: gtk.Allocation = undefined;
         if (self.panel) |panel| panel.getAllocation(&allocation) else allocation = .{ .f_x = 0, .f_y = 0, .f_width = native.getWidth(), .f_height = native.getHeight() };
         const rect: Rect = .{ .x = allocation.f_x, .y = allocation.f_y, .width = allocation.f_width, .height = allocation.f_height };
-        if (rect.width <= 0 or rect.height <= 0) return;
         var shapes: [3]?Rect = @splat(null);
         if (self.islands) |widgets| {
             for (widgets.*, 0..) |maybe, i| if (maybe) |widget| {
@@ -183,7 +207,7 @@ pub const Surface = struct {
                 if (widget.getVisible() != 0 and widget.translateCoordinates(self.window.as(gtk.Widget), 0, 0, &x, &y) != 0 and widget.getWidth() > 0 and widget.getHeight() > 0)
                     shapes[i] = .{ .x = @intFromFloat(x), .y = @intFromFloat(y), .width = widget.getWidth(), .height = widget.getHeight() };
             };
-        } else shapes[0] = rect;
+        } else if (rect.width > 0 and rect.height > 0) shapes[0] = rect;
         if (self.last) |last| if (std.meta.eql(last, rect) and std.meta.eql(shapes, self.last_shapes) and blurred == self.last_available) return;
         self.last_shapes = shapes;
         self.last = rect;
@@ -194,29 +218,36 @@ pub const Surface = struct {
             if (maybe) |r| rounded(region, r, 14);
         };
         if (self.input == .full) native.setInputRegion(null) else native.setInputRegion(region);
-        if (blurred) {
-            if (self.effect == null) {
-                const wayland = object.ext.cast(backend.WaylandSurface, native) orelse return;
-                const surface: *wl.Surface = @ptrCast(wayland.getWlSurface() orelse return);
-                self.effect = self.owner.manager.?.getBackgroundEffect(surface) catch return;
-            }
-            const blur_region = self.owner.compositor.?.createRegion() catch return;
-            defer blur_region.destroy();
-            const shape = cairo.Region.create();
-            defer shape.destroy();
-            for (shapes) |maybe| if (maybe) |r| rounded(shape, r, 14);
-            for (0..@intCast(shape.numRectangles())) |i| {
-                var r: cairo.RectangleInt = undefined;
-                shape.getRectangle(@intCast(i), &r);
-                blur_region.add(r.x, r.y, r.width, r.height);
-            }
-            self.effect.?.setBlurRegion(blur_region);
-        } else if (self.effect) |effect| effect.setBlurRegion(null);
+        if (self.effect_owner == .native) self.updateNativeBlur(native, shapes, blurred);
         // Region state is double buffered. Ask GTK for the next commit; never
         // commit/attach GTK's wl_surface ourselves or read its display socket.
         self.window.as(gtk.Widget).queueDraw();
         self.owner.display.flush();
         if (self.geometry_changed) |notify| notify(self.geometry_context.?);
+    }
+
+    fn updateNativeBlur(self: *Surface, native: *gdk.Surface, shapes: [3]?Rect, blurred: bool) void {
+        std.debug.assert(self.effect_owner == .native);
+        if (!blurred) {
+            if (self.effect) |effect| effect.setBlurRegion(null);
+            return;
+        }
+        if (self.effect == null) {
+            const wayland = object.ext.cast(backend.WaylandSurface, native) orelse return;
+            const surface: *wl.Surface = @ptrCast(wayland.getWlSurface() orelse return);
+            self.effect = self.owner.manager.?.getBackgroundEffect(surface) catch return;
+        }
+        const blur_region = self.owner.compositor.?.createRegion() catch return;
+        defer blur_region.destroy();
+        const shape = cairo.Region.create();
+        defer shape.destroy();
+        for (shapes) |maybe| if (maybe) |r| rounded(shape, r, 14);
+        for (0..@intCast(shape.numRectangles())) |i| {
+            var r: cairo.RectangleInt = undefined;
+            shape.getRectangle(@intCast(i), &r);
+            blur_region.add(r.x, r.y, r.width, r.height);
+        }
+        self.effect.?.setBlurRegion(blur_region);
     }
 };
 fn rounded(region: *cairo.Region, rect: Rect, radius: i32) void {

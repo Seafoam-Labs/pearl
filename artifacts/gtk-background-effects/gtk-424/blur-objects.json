@@ -1,0 +1,212 @@
+[
+  {
+    "effect": 76,
+    "surface": 73,
+    "namespace": "pearl:wallpaper",
+    "manager": 31,
+    "updates": 0,
+    "nonempty_commits": 0,
+    "empty_commits": 44,
+    "destroyed": true
+  },
+  {
+    "effect": 83,
+    "surface": 80,
+    "namespace": "pearl:bar",
+    "manager": 31,
+    "updates": 15,
+    "nonempty_commits": 54,
+    "empty_commits": 16,
+    "destroyed": true
+  },
+  {
+    "effect": 89,
+    "surface": 86,
+    "namespace": "pearl:dock-reveal",
+    "manager": 31,
+    "updates": 0,
+    "nonempty_commits": 0,
+    "empty_commits": 90,
+    "destroyed": true
+  },
+  {
+    "effect": 95,
+    "surface": 92,
+    "namespace": "pearl:wallpaper",
+    "manager": 31,
+    "updates": 0,
+    "nonempty_commits": 0,
+    "empty_commits": 18,
+    "destroyed": true
+  },
+  {
+    "effect": 101,
+    "surface": 79,
+    "namespace": "pearl:bar",
+    "manager": 31,
+    "updates": 16,
+    "nonempty_commits": 37,
+    "empty_commits": 17,
+    "destroyed": true
+  },
+  {
+    "effect": 125,
+    "surface": 133,
+    "namespace": "pearl:popup",
+    "manager": 31,
+    "updates": 3,
+    "nonempty_commits": 32,
+    "empty_commits": 7,
+    "destroyed": true
+  },
+  {
+    "effect": 132,
+    "surface": 131,
+    "namespace": "pearl:popup",
+    "manager": 31,
+    "updates": 1,
+    "nonempty_commits": 6,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 114,
+    "surface": 126,
+    "namespace": "pearl:popup",
+    "manager": 31,
+    "updates": 1,
+    "nonempty_commits": 7,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 132,
+    "surface": 134,
+    "namespace": "pearl:popup",
+    "manager": 31,
+    "updates": 2,
+    "nonempty_commits": 19,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 113,
+    "surface": 129,
+    "namespace": "pearl:osd",
+    "manager": 31,
+    "updates": 1,
+    "nonempty_commits": 4,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 129,
+    "surface": 133,
+    "namespace": "pearl:osd",
+    "manager": 31,
+    "updates": 1,
+    "nonempty_commits": 4,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 116,
+    "surface": 130,
+    "namespace": "pearl:osd",
+    "manager": 31,
+    "updates": 1,
+    "nonempty_commits": 4,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 116,
+    "surface": 115,
+    "namespace": "pearl:notification",
+    "manager": 31,
+    "updates": 1,
+    "nonempty_commits": 3,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 111,
+    "surface": 114,
+    "namespace": "pearl:notification",
+    "manager": 31,
+    "updates": 1,
+    "nonempty_commits": 3,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 111,
+    "surface": 132,
+    "namespace": "pearl:window-switcher",
+    "manager": 31,
+    "updates": 1,
+    "nonempty_commits": 3,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 126,
+    "surface": 138,
+    "namespace": "pearl:window-switcher",
+    "manager": 31,
+    "updates": 1,
+    "nonempty_commits": 3,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 118,
+    "surface": 111,
+    "namespace": "pearl:dock",
+    "manager": 31,
+    "updates": 2,
+    "nonempty_commits": 12,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 131,
+    "surface": 130,
+    "namespace": "pearl:dock",
+    "manager": 31,
+    "updates": 2,
+    "nonempty_commits": 10,
+    "empty_commits": 1,
+    "destroyed": true
+  },
+  {
+    "effect": 129,
+    "surface": 114,
+    "namespace": "pearl:dock-reveal",
+    "manager": 31,
+    "updates": 0,
+    "nonempty_commits": 0,
+    "empty_commits": 13,
+    "destroyed": true
+  },
+  {
+    "effect": 113,
+    "surface": 128,
+    "namespace": "pearl:bar-reveal",
+    "manager": 31,
+    "updates": 0,
+    "nonempty_commits": 0,
+    "empty_commits": 15,
+    "destroyed": true
+  },
+  {
+    "effect": 119,
+    "surface": 154,
+    "namespace": "pearl:bar-reveal",
+    "manager": 31,
+    "updates": 0,
+    "nonempty_commits": 0,
+    "empty_commits": 14,
+    "destroyed": true
+  }
+]

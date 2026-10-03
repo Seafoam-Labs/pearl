@@ -1,0 +1,12 @@
+/* Loaded only with GTK-owned Wayland effects (upstream GTK >= 4.23.3).
+ * This application provider is independent of theme CSS and its allowlist.
+ * GTK's background extraction requires a GSK blur radius of at least 20px
+ * (gsk/gskblurutils.c). CSS 14px becomes GSK 28px, as in GTK's transparent
+ * demo. This requests blur; Aqueous controls compositor radius
+ * and may veto the effect. Never filter the transparent window/island host.
+ */
+.pearl-root.pearl-shell.pearl-gtk-blur .pearl-blur-target:not(.pearl-islands),
+.pearl-root.pearl-shell.pearl-gtk-blur .pearl-blur-target.pearl-islands .pearl-island {
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+}

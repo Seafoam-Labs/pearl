@@ -18,6 +18,7 @@ pub const events: []const Event = &.{
     .{ .name = "application-launch", .scopes = &.{.desktop} },
     .{ .name = "aqueous-availability", .scopes = &.{.pearl} },
     .{ .name = "aqueous-disconnected", .scopes = &.{.pearl} },
+    .{ .name = "background-effect-owner", .scopes = &.{.platform} },
     .{ .name = "bar-autohide-unavailable", .scopes = &.{.ui} },
     .{ .name = "bluetooth-failed", .scopes = &.{.services} },
     .{ .name = "blur-capability", .scopes = &.{.platform} },

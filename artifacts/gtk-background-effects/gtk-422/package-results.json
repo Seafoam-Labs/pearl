@@ -1,0 +1,58 @@
+{
+  "status": "passed",
+  "checks": {
+    "gtk-runtime": {
+      "version": "4.22.5",
+      "owner": "native",
+      "libraries": [
+        "/usr/lib/libgtk-4.so.1.2200.5"
+      ],
+      "sha256": {
+        "/usr/lib/libgtk-4.so.1.2200.5": "2bba868080c1cc803936779aca3abd7c638899870f4739c86f3c2efb5d26ed52"
+      }
+    },
+    "native-blur-pixel-difference-under-rule-veto": 1.3699009324009321,
+    "rule-restored-pixel-difference": 0.0,
+    "custom-bar-opacity-survives-blur-capability-change": true,
+    "osd-blur-and-destruction": true,
+    "notification-blur-and-destruction": true,
+    "switcher-blur-lifetimes": true,
+    "dock-resize-blur-lifetimes": true,
+    "blur-island-bounds-rounded-corners-mixed-scale-and-rotation": true,
+    "bar-fade-clears-before-unmap-and-restores-on-remap": true,
+    "gtk-owned-surface-native-protocol-capability-resize-remap-lifecycle": true,
+    "default-launch": {
+      "command": [
+        "/home/zoey/Pearl/.cache/background-effect-repair/root/usr/bin/pearl"
+      ],
+      "renderer": null,
+      "effects": 3,
+      "warnings": [
+        "(pearl:290748): Gdk-WARNING **: 11:06:56.628: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290748): Gdk-WARNING **: 11:06:56.680: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290748): Gdk-WARNING **: 11:06:56.681: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290748): Gdk-WARNING **: 11:06:56.682: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290748): Gdk-WARNING **: 11:06:56.697: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290748): Gdk-WARNING **: 11:06:56.713: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)"
+      ]
+    },
+    "vulkan-launch": {
+      "command": [
+        "/home/zoey/Pearl/.cache/background-effect-repair/root/usr/bin/pearl"
+      ],
+      "renderer": "vulkan",
+      "effects": 3,
+      "warnings": [
+        "(pearl:290865): Gdk-WARNING **: 11:06:57.955: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290865): Gdk-WARNING **: 11:06:57.970: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290865): Gdk-WARNING **: 11:06:57.979: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290865): Gdk-WARNING **: 11:06:57.980: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290865): Gdk-WARNING **: 11:06:57.986: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:290865): Gdk-WARNING **: 11:06:58.002: vkAcquireNextImageKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)"
+      ]
+    }
+  },
+  "pearl_sha256": "e583d393cbb9fcdf48f098fb45e3b14c5f7669869844c06eb0446ae18a2d0aae",
+  "ctl_sha256": "8ff44e101faa7e684e924f520d442e97c70cbd9e0588b423638cfc48359e62d6",
+  "effects_aqueous_sha256": "99d6e49491a82b8f5874974c9b68add322fbc6e2ec3950c65c9f7bc63d8ed845"
+}

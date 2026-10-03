@@ -671,13 +671,15 @@ pub fn build(b: *std.Build) void {
     b.step("test-components", "Exercise gallery keyboard behavior and capture private Aqueous visuals").dependOn(&components.step);
 
     const surfaces = b.addSystemCommand(&.{ "python3", "tests/integration/test_surfaces.py", "--pearl" });
+    const effect_trace_tests = b.addSystemCommand(&.{ "python3", "tests/test_background_effect_trace.py" });
+    surfaces.step.dependOn(&effect_trace_tests.step);
     surfaces.addArtifactArg(app);
     surfaces.addArg("--ctl");
     surfaces.addArtifactArg(ctl);
     surfaces.addArg("--spike");
     surfaces.addArtifactArg(spike);
     if (b.args) |args| surfaces.addArgs(args);
-    b.step("test-surfaces", "Verify surfaces, CLI isolation and native blur in private Aqueous").dependOn(&surfaces.step);
+    b.step("test-surfaces", "Verify surfaces, CLI isolation and GTK/native blur ownership in private Aqueous").dependOn(&surfaces.step);
 
     const window_switcher = b.addSystemCommand(&.{ "python3", "tests/integration/test_window_switcher.py", "--pearl" });
     window_switcher.addArtifactArg(integration_app);
