@@ -39,6 +39,8 @@ const Surface = struct {
     window: *gtk.Window,
     panel: *gtk.Widget,
     viewport: ?*gtk.ScrolledWindow = null,
+    popup_had_focus: bool = false,
+    popup_had_seat_focus: bool = false,
     effects: native.Surface = undefined,
     edge: Edge = .top,
     switcher_label: ?*gtk.Label = null,
@@ -806,6 +808,19 @@ pub const Manager = struct {
         return 0;
     }
     fn sync(self: *Manager) !void {
+        if (self.popup) |popup| {
+            const picker_active = if (popup.settings) |view| if (view.wallpaper_picker) |picker| picker.as(gtk.Window).isActive() != 0 else false else false;
+            var seat_focus_lost = false;
+            if (self.client.model.focus(null)) |focus| {
+                if (focus.seat.focus_kind == .layer_surface) {
+                    popup.popup_had_seat_focus = true;
+                } else seat_focus_lost = popup.popup_had_seat_focus;
+            } else |_| {}
+            if (!picker_active and (seat_focus_lost or (popup.popup_had_focus and popup.window.isActive() == 0))) {
+                log.debug("event=popup-close-reason reason=focus-lost", .{});
+                self.hidePopup();
+            }
+        }
         self.night_light.configure(self.preferences.prefs().night_light);
         self.night_light.refresh();
         if (self.capture_hide) {
@@ -972,6 +987,7 @@ pub const Manager = struct {
                 o.destroy();
             } else i += 1;
         }
+        self.syncPopupDismissRegions();
         try self.syncSwitcher();
         if (self.popup) |popup| if (popup.launcher_picker) |view| {
             if (view.update()) {
@@ -1051,7 +1067,8 @@ pub const Manager = struct {
             .switcher, .popup, .osd, .notification => .overlay,
         });
         layer.setExclusiveZone(window, 0);
-        layer.setKeyboardMode(window, if (kind == .popup) .exclusive else .none);
+        // Flyouts must yield to application activation and monitor/workspace bindings.
+        layer.setKeyboardMode(window, if (kind == .popup) .on_demand else .none);
         const panel = gtk.Box.new(.vertical, 12);
         const panel_widget = panel.as(gtk.Widget);
         _ = panel_widget.ref();
@@ -1072,6 +1089,13 @@ pub const Manager = struct {
             if (s.tray) |view| view.destroy();
             if (s.aqueous_settings) |view| view.destroy();
             if (s.settings) |view| view.destroy();
+        }
+        if (kind == .wallpaper or kind == .bar) {
+            const click = gtk.GestureClick.new();
+            click.as(gtk.GestureSingle).setButton(0);
+            click.as(gtk.EventController).setPropagationPhase(.capture);
+            _ = gtk.GestureClick.signals.pressed.connect(click, *Surface, otherOutputPressed, s, .{});
+            window.as(gtk.Widget).addController(click.as(gtk.EventController));
         }
         switch (kind) {
             .wallpaper => {
@@ -1119,6 +1143,7 @@ pub const Manager = struct {
                 window.setChild(panel_widget);
             },
             .popup => {
+                _ = object.Object.signals.notify.connect(window.as(object.Object), *Manager, popupFocusChanged, self, .{ .detail = "is-active" });
                 anchors(window, null);
                 const fixed = gtk.Fixed.new();
                 if (self.pane == .aqueous_settings or self.pane == .launcher_picker) {
@@ -1169,6 +1194,7 @@ pub const Manager = struct {
                 _ = gtk.EventControllerKey.signals.key_pressed.connect(keys, *Manager, keyPressed, self, .{});
                 window.as(gtk.Widget).addController(keys.as(gtk.EventController));
                 const click = gtk.GestureClick.new();
+                click.as(gtk.GestureSingle).setButton(0);
                 click.as(gtk.EventController).setPropagationPhase(.capture);
                 _ = gtk.GestureClick.signals.released.connect(click, *Manager, outsideReleased, self, .{});
                 window.as(gtk.Widget).addController(click.as(gtk.EventController));
@@ -1423,6 +1449,7 @@ pub const Manager = struct {
         self.settings_page = if (pane == .control) page else null;
         errdefer self.settings_page = null;
         self.popup = try self.create(output, .popup);
+        self.syncPopupDismissRegions();
         if (output.bar.?.autohide) |controller| controller.holdPopup(true);
         self.positionPopup();
         self.popup.?.window.present();
@@ -1479,9 +1506,22 @@ pub const Manager = struct {
         positioned.setSizeRequest(rect.width, rect.height);
         self.positionNotifications();
     }
+    fn syncPopupDismissRegions(self: *Manager) void {
+        // Wallpapers normally pass all input through to the compositor. While
+        // a flyout is open, let them dismiss it on otherwise empty monitors.
+        for (self.outputs.items) |output| if (output.wallpaper) |wallpaper| {
+            const input: @FieldType(native.Surface, "input") = if (self.popup != null and self.preferences.prefs().popup.dismiss_outside) .full else .empty;
+            if (wallpaper.effects.input == input) continue;
+            wallpaper.effects.input = input;
+            wallpaper.effects.last = null;
+            wallpaper.effects.refresh();
+            wallpaper.window.as(gtk.Widget).queueDraw();
+        };
+    }
     pub fn hidePopup(self: *Manager) void {
         if (self.popup) |s| {
             self.popup = null;
+            self.syncPopupDismissRegions();
             self.settings_page = null;
             self.popup_rect = null;
             if (s.output.bar.?.autohide) |controller| controller.holdPopup(false);
@@ -2206,6 +2246,20 @@ fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.Modifie
     log.debug("event=popup-close-reason reason=escape", .{});
     self.hidePopup();
     return 1;
+}
+fn otherOutputPressed(_: *gtk.GestureClick, _: c_int, _: f64, _: f64, surface: *Surface) callconv(.c) void {
+    const self = surface.manager;
+    const popup = self.popup orelse return;
+    if (!self.preferences.prefs().popup.dismiss_outside) return;
+    if (surface.kind == .bar and popup.output == surface.output) return;
+    log.debug("event=popup-close-reason reason=other-output-click", .{});
+    self.hidePopup();
+}
+fn popupFocusChanged(window: *object.Object, _: *object.ParamSpec, self: *Manager) callconv(.c) void {
+    const popup = self.popup orelse return;
+    if (window != popup.window.as(object.Object)) return;
+    if (popup.window.isActive() != 0) popup.popup_had_focus = true;
+    self.schedule();
 }
 fn outsideReleased(_: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Manager) callconv(.c) void {
     if (!self.preferences.prefs().popup.dismiss_outside) return;
