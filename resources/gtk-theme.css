@@ -58,6 +58,12 @@
 .pearl-root.pearl-gtk .pearl-bar-vertical .pearl-island { padding: 6px 0; }
 .pearl-root.pearl-gtk .pearl-bar-vertical button { padding: 2px 0; min-width: 0; }
 .pearl-root.pearl-gtk .pearl-bar-vertical .pearl-bar-value { font-size: 0.8em; }
+/* Resource monitor: the installed theme supplies the track and accent colours. */
+.pearl-root.pearl-gtk .pearl-resource-grid { padding: 0 4px; }
+.pearl-root.pearl-gtk .pearl-resource-graph { background: mix(@theme_bg_color, @theme_fg_color, 0.15); border-radius: 4px; color: @theme_selected_bg_color; }
+.pearl-root.pearl-gtk .pearl-resource-card { border-radius: 14px; }
+.pearl-root.pearl-gtk .pearl-resource-readout { background: mix(@theme_bg_color, @theme_fg_color, 0.08); border-radius: 14px; padding: 8px 6px; }
+.pearl-root.pearl-gtk .pearl-resource-value { font-weight: 600; }
 .pearl-root.pearl-gtk .pearl-dock { padding: 6px; border-radius: 14px; }
 .pearl-root.pearl-gtk .pearl-dock button { padding: 3px; min-height: 24px; }
 

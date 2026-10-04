@@ -34,5 +34,6 @@
     <file>icons/scalable/actions/pearl-system-reboot-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-system-shutdown-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-microphone-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-utilities-system-monitor-symbolic.svg</file>
   </gresource>
 </gresources>

@@ -9,6 +9,7 @@ const clock_policy = @import("../desktop/clock_policy.zig");
 const clock_time = @import("../desktop/clock_time.zig");
 const tr = @import("../desktop/text.zig").tr;
 const workspace_policy = @import("../desktop/workspace_policy.zig");
+const resource_model = @import("../desktop/resource_model.zig");
 const policy = @import("../desktop/policy.zig");
 const model = @import("bar_model.zig");
 const protocol = @import("editor_protocol.zig");
@@ -17,7 +18,7 @@ const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Group = model.Group;
 const Icon = @import("../ui/components/launcher_icon.zig");
-const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, clock_zone, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
+const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, clock_zone, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, resource_mode: prefs.ResourceMode, resource_series: resource_model.Series, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
 const Binding = struct { view: *View, id: []const u8, intent: Intent };
 /// G_TYPE_STRING: fundamental type index 16 (2 is G_TYPE_INTERFACE) shifted into GType space.
 const g_type_string: usize = 16 << 2;
@@ -59,6 +60,7 @@ pub const View = struct {
     popup_hash: [64]u8 = undefined,
     popup_error: ?*gtk.Label = null,
     popup_workspace_mode: prefs.WorkspaceMode = .large,
+    popup_resource_mode: prefs.ResourceMode = .icon,
     destination: ?*gtk.DropDown = null,
     search: ?*gtk.Entry = null,
     zone_list: ?*gtk.ScrolledWindow = null,
@@ -378,6 +380,7 @@ pub const View = struct {
                     labels.append(detail.as(gtk.Widget));
                 }
                 if (builtin == .workspaces) labels.append(w.label(document.bar.workspace_mode.label(), "pearl-secondary").as(gtk.Widget));
+                if (builtin == .resources) labels.append(w.label(document.bar.resource_mode.label(), "pearl-secondary").as(gtk.Widget));
                 if (builtin == null) {
                     const detail = w.label(try pluginDetail(alloc, document, id, plugins), "pearl-secondary");
                     detail.setMaxWidthChars(18);
@@ -516,6 +519,42 @@ pub const View = struct {
                     binding.* = .{ .view = self, .id = "workspaces", .intent = .{ .workspace_mode = mode } };
                     _ = gtk.CheckButton.signals.toggled.connect(choice_, *Binding, modeToggled, binding, .{});
                     try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.workspace.mode.{s}", .{@tagName(mode)}), .widget = choice_.as(gtk.Widget) });
+                }
+            }
+            if (std.mem.eql(u8, id, "resources")) {
+                box.append(w.label("Bar appearance", "settings-row-title").as(gtk.Widget));
+                self.popup_resource_mode = document.bar.resource_mode;
+                var appearance: ?*gtk.CheckButton = null;
+                for (std.enums.values(prefs.ResourceMode)) |mode| {
+                    const choice_ = gtk.CheckButton.new();
+                    const label = w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ mode.label(), mode.description() }, 0), null);
+                    label.setMaxWidthChars(28);
+                    label.as(gtk.Widget).setCanTarget(0);
+                    choice_.as(gtk.Widget).setSizeRequest(-1, 32);
+                    choice_.setChild(label.as(gtk.Widget));
+                    if (appearance) |leader| choice_.setGroup(leader) else appearance = choice_;
+                    choice_.setActive(@intFromBool(mode == document.bar.resource_mode));
+                    box.append(choice_.as(gtk.Widget));
+                    w.name(choice_.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "{s}: {s}", .{ mode.label(), mode.description() }, 0));
+                    const binding = try alloc.create(Binding);
+                    binding.* = .{ .view = self, .id = "resources", .intent = .{ .resource_mode = mode } };
+                    _ = gtk.CheckButton.signals.toggled.connect(choice_, *Binding, resourceModeToggled, binding, .{});
+                    try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.resource.mode.{s}", .{@tagName(mode)}), .widget = choice_.as(gtk.Widget) });
+                }
+                box.append(w.label("Graphs shown when opened", "settings-row-title").as(gtk.Widget));
+                for (resource_model.series) |kind| {
+                    const choice_ = gtk.CheckButton.new();
+                    const label = w.label(kind.label(), null);
+                    label.as(gtk.Widget).setCanTarget(0);
+                    choice_.as(gtk.Widget).setSizeRequest(-1, 32);
+                    choice_.setChild(label.as(gtk.Widget));
+                    choice_.setActive(@intFromBool(kind.enabled(document.bar.resource_series)));
+                    box.append(choice_.as(gtk.Widget));
+                    w.name(choice_.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Show the {s} graph", .{kind.label()}, 0));
+                    const binding = try alloc.create(Binding);
+                    binding.* = .{ .view = self, .id = "resources", .intent = .{ .resource_series = kind } };
+                    _ = gtk.CheckButton.signals.toggled.connect(choice_, *Binding, seriesToggled, binding, .{});
+                    try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.resource.series.{s}", .{@tagName(kind)}), .widget = choice_.as(gtk.Widget) });
                 }
             }
             const remove = try self.button(box, "Remove from bar", "bar.action.remove", id, .{ .change = .remove }, true);
@@ -696,6 +735,49 @@ pub const View = struct {
         self.rememberFocus("bar.widget.workspaces");
         self.popup.?.popdown();
         self.queue();
+    }
+    fn mutateResourceMode(self: *View, mode: prefs.ResourceMode) !void {
+        if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const alloc = temp.allocator();
+        const document = try prefs.parse(alloc, self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
+        const next = try model.patchResourceMode(alloc, self.editor.text(), mode);
+        self.editing = true;
+        defer self.editing = false;
+        try self.editor.edit(next);
+        self.host.as(gtk.Accessible).announce(try std.fmt.allocPrintSentinel(alloc, "Resource monitor: {s}. Unsaved changes.", .{mode.label()}, 0), .medium);
+        self.rememberFocus("bar.widget.resources");
+        self.popup.?.popdown();
+        self.queue();
+    }
+    /// Unlike the appearance choice, several graphs are usually picked in a row,
+    /// so the menu reopens in place instead of returning to the widget row.
+    fn mutateResourceSeries(self: *View, kind: resource_model.Series, enabled: bool) !void {
+        if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const alloc = temp.allocator();
+        const document = try prefs.parse(alloc, self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
+        var selection = document.bar.resource_series;
+        switch (kind) {
+            .cpu => selection.cpu = enabled,
+            .gpu => selection.gpu = enabled,
+            .memory => selection.memory = enabled,
+            .network => selection.network = enabled,
+        }
+        const next = try model.patchResourceSeries(alloc, self.editor.text(), selection);
+        const anchor = self.popup.?.as(gtk.Widget).getParent().?;
+        self.editing = true;
+        errdefer self.editing = false;
+        try self.editor.edit(next);
+        self.editing = false;
+        self.host.as(gtk.Accessible).announce(try std.fmt.allocPrintSentinel(alloc, "{s} graph {s}. Unsaved changes.", .{ kind.label(), if (enabled) "shown" else "hidden" }, 0), .medium);
+        self.clearPopup();
+        self.rememberFocus("bar.widget.resources");
+        try self.showMenu(anchor, "resources", null);
     }
     fn openClock(self: *View, ref: ?[]const u8) !void {
         var temp = std.heap.ArenaAllocator.init(a);
@@ -1000,6 +1082,25 @@ pub const View = struct {
             };
         };
     }
+    fn resourceModeToggled(choice_: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
+        const self = binding.view;
+        if (choice_.getActive() == 0 or self.editing) return;
+        self.mutateResourceMode(binding.intent.resource_mode) catch |err| {
+            self.report(err);
+            // A rejected draft edit must not leave a falsely selected appearance.
+            self.editing = true;
+            defer self.editing = false;
+            for (self.menu_controls.items) |control| if (std.mem.startsWith(u8, control.id, "bar.resource.mode.") and std.mem.endsWith(u8, control.id, @tagName(self.popup_resource_mode))) {
+                if (object.ext.cast(gtk.CheckButton, control.widget)) |previous| previous.setActive(1);
+            };
+        };
+    }
+    fn seriesToggled(choice_: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
+        const self = binding.view;
+        // A checkbox fires on both edges, so the new state decides the patch.
+        if (self.editing) return;
+        self.mutateResourceSeries(binding.intent.resource_series, choice_.getActive() != 0) catch |err| self.report(err);
+    }
     fn clicked(button_: *gtk.Button, binding: *Binding) callconv(.c) void {
         const self = binding.view;
         switch (binding.intent) {
@@ -1026,6 +1127,9 @@ pub const View = struct {
             .actions => self.showMenu(button_.as(gtk.Widget), binding.id, null) catch |err| self.report(err),
             .change => |action| self.mutate(binding.id, action) catch |err| self.report(err),
             .workspace_mode => |mode| self.mutateWorkspaceMode(mode) catch |err| self.report(err),
+            .resource_mode => |mode| self.mutateResourceMode(mode) catch |err| self.report(err),
+            // Checkboxes drive the graph picker through `toggled`, never a click.
+            .resource_series => {},
             .focus => |group| if (self.cards[@intFromEnum(group)]) |card| {
                 _ = card.grabFocus();
             },

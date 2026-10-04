@@ -13,7 +13,7 @@ const a = std.heap.c_allocator;
 const clocks = @import("clock_policy.zig");
 const Clock = @import("clock_view.zig").View;
 const Running = @import("running_apps.zig");
-pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers };
+pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers, resources };
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
@@ -33,6 +33,7 @@ pub const Bar = struct {
     plugins: ?*@import("../plugins/manager.zig").Manager = null,
     plugin_views: std.ArrayList(*@import("../plugins/view.zig").View) = .empty,
     tray: ?*@import("tray.zig").Bar = null,
+    resources: ?*@import("resource_view.zig").View = null,
     /// Geometry of the widget that last opened a pane, in bar-window coordinates.
     pane_anchor: ?struct { x: i32, y: i32, width: i32, height: i32 } = null,
     notification_label: ?*gtk.Label = null,
@@ -51,6 +52,7 @@ pub const Bar = struct {
     workspace_handlers: std.ArrayList(*Button) = .empty,
     workspace_hash: ?u64 = null,
     workspace_mode: workspace_policy.Mode = .large,
+    resource_mode: @import("resource_model.zig").Mode = .icon,
     title: ?*gtk.Label = null,
     clock_views: std.ArrayList(Clock) = .empty,
     clock_arena: std.heap.ArenaAllocator = .init(a),
@@ -102,6 +104,8 @@ pub const Bar = struct {
         self.sections = @splat(null);
         if (self.tray) |tray| tray.destroy();
         self.tray = null;
+        if (self.resources) |view| view.destroy();
+        self.resources = null;
         self.notification_label = null;
         self.media_label = null;
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
@@ -152,6 +156,10 @@ pub const Bar = struct {
         self.workspace_mode = mode;
         self.workspace_hash = null;
         self.update();
+    }
+    /// The bar content hash carries this, so the manager rebuilds around it.
+    pub fn setResourceMode(self: *Bar, mode: @import("resource_model.zig").Mode) void {
+        self.resource_mode = mode;
     }
     pub fn setBackgroundOpacity(self: *Bar, config: @import("bar_opacity.zig").Config, color: gdk.RGBA) !void {
         const alpha = config.alpha();
@@ -270,6 +278,15 @@ pub const Bar = struct {
                         const tray_host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
                         self.tray = try @import("tray.zig").Bar.create(tray_host, &self.session_services.tray, self, openTray);
                         break :blk tray_host.as(gtk.Widget);
+                    },
+                    .resources => blk: {
+                        const resources = @import("resource_view.zig");
+                        const button = if (self.resource_mode == .icon)
+                            try self.makeButton(.{ .pane = .resources }, "pearl-utilities-system-monitor-symbolic", tr("Resource monitor", "Ressourcenmonitor"), false)
+                        else
+                            try self.makeButton(.{ .pane = .resources }, null, "", false);
+                        self.resources = try resources.View.create(button, self.vertical, self.resource_mode);
+                        break :blk button.as(gtk.Widget);
                     },
                     .notifications, .media => blk: {
                         const button = try self.makeButton(.{ .pane = if (item == .media) .media else .notifications }, null, "", false);

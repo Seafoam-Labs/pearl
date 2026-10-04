@@ -53,6 +53,7 @@ const Surface = struct {
     control: ?*Panels.Control = null,
     calendar: ?*@import("../../desktop/calendar.zig").View = null,
     wallpapers: ?*@import("../../desktop/wallpapers.zig").View = null,
+    resources: ?*@import("../../desktop/resource_view.zig").Detail = null,
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
     media: ?*@import("../../desktop/media.zig").View = null,
     tray: ?*@import("../../desktop/tray.zig").View = null,
@@ -83,6 +84,7 @@ const Surface = struct {
         if (self.control) |control| control.destroy();
         if (self.calendar) |view| view.destroy();
         if (self.wallpapers) |view| view.destroy();
+        if (self.resources) |view| view.destroy();
         if (self.measure_clock) |clock| {
             if (object.signalHandlerIsConnected(clock.as(object.Object), self.measure_signal) != 0) object.signalHandlerDisconnect(clock.as(object.Object), self.measure_signal);
             clock.unref();
@@ -485,6 +487,7 @@ pub const Manager = struct {
         for ([_]?*Surface{ self.popup, self.osd, self.notification, self.switcher }) |maybe| if (maybe) |surface| self.styleSurface(surface);
         if (self.popup) |surface| if (surface.settings) |view| view.update();
         if (self.popup) |surface| if (surface.wallpapers) |view| view.update();
+        if (self.popup) |surface| if (surface.resources) |view| view.update(self.preferences.prefs().forOutput(surface.output.connector).resource_series);
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
         self.slideshow.configure();
         if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
@@ -905,6 +908,7 @@ pub const Manager = struct {
                 sizeEdge(o.bar.?, pref.edge, pref.size);
                 try o.bar.?.bar.?.launcher_icon.want(pref.launcher_icon, false);
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
+                o.bar.?.bar.?.setResourceMode(pref.resource_mode);
                 if (o.bar.?.bar.?.islands != pref.islands) if (o.bar.?.autohide) |controller| controller.clearGesture();
                 o.bar.?.bar.?.setIslands(pref.islands);
                 const content_hash = try self.barContentHash(pref);
@@ -1012,7 +1016,7 @@ pub const Manager = struct {
         }
     }
     fn barContentHash(self: *Manager, bar_prefs: anytype) !u64 {
-        const content = try std.json.Stringify.valueAlloc(a, .{ .groups = bar_prefs.groups, .clocks = bar_prefs.clocks, .plugins = self.preferences.prefs().plugins }, .{});
+        const content = try std.json.Stringify.valueAlloc(a, .{ .groups = bar_prefs.groups, .clocks = bar_prefs.clocks, .resource_mode = bar_prefs.resource_mode, .plugins = self.preferences.prefs().plugins }, .{});
         defer a.free(content);
         return std.hash.Wyhash.hash(0, content);
     }
@@ -1062,6 +1066,7 @@ pub const Manager = struct {
             if (s.control) |panel_control| panel_control.destroy();
             if (s.calendar) |view| view.destroy();
             if (s.wallpapers) |view| view.destroy();
+            if (s.resources) |view| view.destroy();
             if (s.notifications) |view| view.destroy();
             if (s.media) |view| view.destroy();
             if (s.tray) |view| view.destroy();
@@ -1138,6 +1143,7 @@ pub const Manager = struct {
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss, copyCalculator),
                     .calendar => s.calendar = try @import("../../desktop/calendar.zig").View.create(panel),
                     .wallpapers => s.wallpapers = try @import("../../desktop/wallpapers.zig").View.create(panel, &self.preferences),
+                    .resources => s.resources = try @import("../../desktop/resource_view.zig").Detail.create(panel, self.preferences.prefs().forOutput(output.connector).resource_series),
                     .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
                     .media => {
                         const scroll = gtk.ScrolledWindow.new();
@@ -1440,8 +1446,8 @@ pub const Manager = struct {
         const launcher = self.pane == .launcher or self.pane == .launcher_picker;
         const settings = self.pane == .settings or self.pane == .aqueous_settings;
         const centered = prefs.placement == .centered or launcher;
-        var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else if (self.pane == .wallpapers) 640 else 440), prefs.max_width);
-        var height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else 560), prefs.max_height);
+        var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else if (self.pane == .wallpapers or self.pane == .resources) 640 else 440), prefs.max_width);
+        var height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else if (self.pane == .resources) 280 else 560), prefs.max_height);
         if (self.pane == .tray) {
             // Tray menus hug their entries instead of reserving a full pane.
             if (s.tray) |view| {
@@ -1451,7 +1457,7 @@ pub const Manager = struct {
             }
         }
         var rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
-        if (self.pane == .wallpapers) {
+        if (self.pane == .wallpapers or self.pane == .resources) {
             // Sit under the bar icon that opened the pane, the way the calendar
             // sits under the clock. The bar spans the whole edge, so the
             // cross-axis coordinate is already output-relative.

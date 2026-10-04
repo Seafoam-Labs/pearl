@@ -48,6 +48,7 @@ test {
     _ = @import("services/notification_policy.zig");
     _ = @import("services/connectivity_policy.zig");
     _ = @import("desktop/policy.zig");
+    _ = @import("desktop/resource_model.zig");
     _ = @import("desktop/settings_navigation.zig");
     _ = @import("desktop/calendar_model.zig");
     _ = @import("services/view_ownership.zig");
