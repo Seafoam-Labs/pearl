@@ -7,6 +7,10 @@
     "notification-action-through-gtk-keyboard": true,
     "nonresident-action-invokes-and-closes": true,
     "unreadable-captions-drop-and-key-bounds-still-reject": true,
+    "reserved-key-registers-and-invokes-without-a-caption": true,
+    "pressing-a-captionless-toast-invokes-the-reserved-key": true,
+    "a-pill-press-never-reaches-the-card-gesture": true,
+    "centre-cards-activate-only-the-reserved-key-and-keep-the-popup": true,
     "action-residency-transient-expiry-and-all-closure-reasons": true,
     "oversized-image-data-still-delivers-and-expires": true,
     "icon-priority-chain-image-bounds-and-atomic-replacement": true,
@@ -32,7 +36,7 @@
     "queued-names-acquired-after-existing-services-exit": true,
     "production-session-bus-reconnect-restores-protocols": true
   },
-  "pearl_sha256": "01a07b752aab766f159d1f09c3ce473558c54820d02d32e3969dac5a8837e9ff",
-  "ctl_sha256": "682cd5cab9f01c3b7be7d1effb8703b9814b36d8762865a8e236c0e910b75a95",
-  "production_sha256": "6000f5bda5ea68b2011685a5658c39b438bee7fa519571916ede193ed40b72fb"
+  "pearl_sha256": "7ed4cdd4a969005339fb6b0d6c7d33598e4e441007e5d2f271c22ec1286c958b",
+  "ctl_sha256": "58aeb312ae1a08e4b172c7ef387badb7ed15f51f5f61dd0f837c85a3fe9070fe",
+  "production_sha256": "1b86ff991b1746d26ecff3939207c341e9670942ba600d579e3cd23a88a335d5"
 }

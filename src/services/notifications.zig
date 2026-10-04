@@ -84,12 +84,11 @@ pub const Notifications = struct {
         if (!self.available or self.model.locked) return error.Unavailable;
         const r = self.model.find(id) orelse return error.InvalidValue;
         if (!r.active) return error.InvalidValue;
-        for (r.actions[0..r.action_count]) |action| if (std.mem.eql(u8, key, action.key.slice())) {
-            self.bus.emit(r.owner.z(), path, name, "ActionInvoked", db.tuple(&.{ glib.Variant.newUint32(id), db.str(action.key.z()) }));
-            if (!r.resident) _ = self.close(id, 2);
-            return;
-        };
-        return error.InvalidValue;
+        const stored = for (r.actions[0..r.action_count]) |action| {
+            if (std.mem.eql(u8, key, action.key.slice())) break action.key.z();
+        } else if (r.default_key.len != 0 and std.mem.eql(u8, key, r.default_key.slice())) r.default_key.z() else return error.InvalidValue;
+        self.bus.emit(r.owner.z(), path, name, "ActionInvoked", db.tuple(&.{ glib.Variant.newUint32(id), db.str(stored) }));
+        if (!r.resident) _ = self.close(id, 2);
     }
     pub fn update(self: *Notifications) void {
         if (self.timer != 0) _ = glib.Source.remove(self.timer);
@@ -189,22 +188,34 @@ pub const Notifications = struct {
             while (i < actions.nChildren()) : (i += 2) {
                 const raw_label = transport.childText(160, actions, i + 1);
                 const caption = policy.sanitize(160, raw_label.slice());
-                // Dropped before the key bounds: those reject the whole notification, and the
-                // duplicate scan would misfire on a pair that is about to be discarded.
-                if (!policy.usableAction(caption.slice())) continue;
                 const raw_key = actions.getChildValue(i);
                 defer raw_key.unref();
                 const key_slice = std.mem.span(raw_key.getString(null));
+                const kind = policy.pairAction(key_slice, caption.slice());
+                // Classified before the key bounds: those reject the whole notification, and a
+                // pair that is about to be discarded must not be able to fail it.
+                if (kind == .skip) continue;
                 if (key_slice.len == 0 or key_slice.len > 96) {
                     invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "Action keys must contain 1–96 bytes.");
                     return;
                 }
-                for (r.actions[0..r.action_count]) |old| if (std.mem.eql(u8, old.key.slice(), key_slice)) {
-                    invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "Action keys must be unique.");
-                    return;
-                };
-                r.actions[r.action_count] = .{ .key = transport.childText(96, actions, i), .label = caption };
-                r.action_count += 1;
+                const key = transport.childText(96, actions, i);
+                if (kind == .render) {
+                    for (r.actions[0..r.action_count]) |old| if (std.mem.eql(u8, old.key.slice(), key_slice)) {
+                        invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "Action keys must be unique.");
+                        return;
+                    };
+                    r.actions[r.action_count] = .{ .key = key, .label = caption };
+                    r.action_count += 1;
+                }
+                // One owner for the reserved key, whether or not its caption rendered.
+                if (std.mem.eql(u8, key_slice, "default")) {
+                    if (r.default_key.len != 0) {
+                        invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "Action keys must be unique.");
+                        return;
+                    }
+                    r.default_key = key;
+                }
             }
             const hints = params.getChildValue(6);
             defer hints.unref();

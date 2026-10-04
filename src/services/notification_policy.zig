@@ -17,6 +17,9 @@ pub const Record = struct {
     icon: Text(160) = .{},
     actions: [8]Action = @splat(.{}),
     action_count: usize = 0,
+    /// The reserved key activates the notification itself, so it is kept even when its
+    /// caption never renders, and lives outside the list the surfaces present as buttons.
+    default_key: Text(96) = .{},
     urgency: u8 = 1,
     deadline: i64 = 0,
     toast_until: i64 = 0,
@@ -134,6 +137,14 @@ pub fn sanitize(comptime n: usize, value: []const u8) Text(n) {
 pub fn usableAction(label: []const u8) bool {
     return std.mem.trim(u8, label, " \t\r\n").len != 0;
 }
+pub const Pair = enum { render, register_only, skip };
+/// A pair with an unreadable caption is not offered, but the reserved key still registers:
+/// senders that expect a click on the notification itself send it with a placeholder caption.
+pub fn pairAction(key: []const u8, caption: []const u8) Pair {
+    if (usableAction(caption)) return .render;
+    if (std.mem.eql(u8, key, "default")) return .register_only;
+    return .skip;
+}
 
 test "action captions that read as blank are dropped, readable ones are not" {
     const t = std.testing;
@@ -145,6 +156,25 @@ test "action captions that read as blank are dropped, readable ones are not" {
     for (&[_][]const u8{ "Open", "Öffnen", "a", long, "\xc2\xa0", " \xc2\xa0 " }) |raw| {
         const caption = sanitize(160, raw);
         try t.expect(usableAction(caption.slice()));
+    }
+}
+
+test "an unreadable caption hides a pair but the reserved key still registers" {
+    const t = std.testing;
+    const cases = [_]struct { key: []const u8, raw: []const u8, want: Pair }{
+        .{ .key = "default", .raw = " ", .want = .register_only },
+        .{ .key = "default", .raw = "\x1b", .want = .register_only },
+        .{ .key = "default", .raw = "Open", .want = .render },
+        .{ .key = "open", .raw = "Open", .want = .render },
+        .{ .key = "open", .raw = " ", .want = .skip },
+        .{ .key = "", .raw = "", .want = .skip },
+        .{ .key = "", .raw = "Open", .want = .render },
+        .{ .key = "k" ** 97, .raw = " ", .want = .skip },
+        .{ .key = "DEFAULT", .raw = " ", .want = .skip },
+        .{ .key = "default", .raw = "\xc2\xa0", .want = .render },
+    };
+    for (cases) |case| {
+        try t.expectEqual(case.want, pairAction(case.key, sanitize(160, case.raw).slice()));
     }
 }
 

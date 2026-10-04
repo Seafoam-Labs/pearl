@@ -8,7 +8,7 @@ const tr = @import("text.zig").tr;
 const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const Action = struct { view: *View, id: u32 = 0, key: service.policy.Action = .{}, button: *gtk.Button, dismiss: bool = false };
-const Card = struct { icon: *gtk.Image, box: *gtk.Box, header: *gtk.Label, title: *gtk.Label, body: *gtk.Label, actions: [9]Action = undefined, id: u32 = 0 };
+const Card = struct { view: *View, icon: *gtk.Image, box: *gtk.Box, header: *gtk.Label, title: *gtk.Label, body: *gtk.Label, actions: [9]Action = undefined, id: u32 = 0 };
 pub const View = struct {
     probe_focus: ?*gtk.Widget = null,
     service: *service.Notifications,
@@ -64,7 +64,13 @@ pub const View = struct {
             box.append(heading.as(gtk.Widget));
             box.append(title.as(gtk.Widget));
             box.append(body.as(gtk.Widget));
-            row.* = .{ .icon = icon, .box = box, .header = header, .title = title, .body = body };
+            row.* = .{ .view = self, .icon = icon, .box = box, .header = header, .title = title, .body = body };
+            // Pressing the card itself is the reserved action's activation route; a child
+            // button claims its own sequence, so a pill press never reaches here.
+            const press = gtk.GestureClick.new();
+            press.as(gtk.GestureSingle).setButton(1);
+            _ = gtk.GestureClick.signals.released.connect(press, *Card, activate, row, .{});
+            box.as(gtk.Widget).addController(press.as(gtk.EventController));
             const buttons = w.flow(3);
             for (&row.actions, 0..) |*action, i| {
                 const button = gtk.Button.newWithLabel(if (i == 8) tr("Dismiss", "Schließen") else "");
@@ -130,6 +136,7 @@ pub const View = struct {
             if (!visible) continue;
             const r = records[i];
             row.id = r.id;
+            row.box.as(gtk.Widget).setCursorFromName(if (r.active and r.default_key.len != 0) "pointer" else null);
             if (self.service.imageFor(r.id)) |image| row.icon.setFromPixbuf(image) else row.icon.setFromIconName(if (r.icon.len > 0) r.icon.z() else "pearl-notifications-symbolic");
             row.header.setText(if (r.app.len == 0) "Application" else r.app.z());
             row.title.setText(r.summary.z());
@@ -152,11 +159,35 @@ pub const View = struct {
     fn newer(_: void, l: *service.policy.Record, r: *service.policy.Record) bool {
         return l.serial > r.serial;
     }
+    /// Compiled only by the integration hook: measure the allocated cards. Rects are relative
+    /// to `root`, offset by the window origin so the driver adds only the output origin.
+    pub fn report(self: *View, alloc: std.mem.Allocator, root: *gtk.Widget, origin_x: f64, origin_y: f64) ![]const u8 {
+        const Rect = struct { x: f64, y: f64, width: i32, height: i32 };
+        const Measured = struct { id: u32, rect: Rect, dismiss: Rect };
+        const at = struct {
+            fn read(widget: *gtk.Widget, host: *gtk.Widget, dx: f64, dy: f64) Rect {
+                var x: f64 = 0;
+                var y: f64 = 0;
+                _ = widget.translateCoordinates(host, 0, 0, &x, &y);
+                return .{ .x = x + dx, .y = y + dy, .width = widget.getWidth(), .height = widget.getHeight() };
+            }
+        }.read;
+        var cards: std.ArrayList(Measured) = .empty;
+        for (self.rows[0..self.count]) |*row| {
+            if (row.box.as(gtk.Widget).getVisible() == 0) continue;
+            try cards.append(alloc, .{ .id = row.id, .rect = at(row.box.as(gtk.Widget), root, origin_x, origin_y), .dismiss = at(row.actions[8].button.as(gtk.Widget), root, origin_x, origin_y) });
+        }
+        return std.json.Stringify.valueAlloc(alloc, cards.items, .{});
+    }
     fn clicked(_: *gtk.Button, action: *Action) callconv(.c) void {
         if (action.view.service.model.locked) return;
         if (action.dismiss) {
             _ = action.view.service.close(action.id, 2);
         } else action.view.service.invoke(action.id, action.key.key.slice()) catch {};
+    }
+    fn activate(_: *gtk.GestureClick, presses: c_int, _: f64, _: f64, row: *Card) callconv(.c) void {
+        if (presses != 1 or row.view.service.model.locked) return;
+        row.view.service.invoke(row.id, "default") catch {};
     }
     fn toggleDnd(_: *gtk.Button, self: *View) callconv(.c) void {
         self.service.setDnd(!self.service.model.dnd);

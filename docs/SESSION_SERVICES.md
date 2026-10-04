@@ -68,14 +68,18 @@ calling unique bus owner. Unknown/closed/foreign IDs return InvalidArgs when
 closed. The UI's same-user control endpoint can dismiss or invoke active records.
 
 An action pair whose caption sanitizes to ASCII whitespace only is dropped
-before the key bounds are checked: it renders no button, is absent from the
-`actions` count and cannot be invoked by key, while the notification itself
-still arrives. Senders that inject the reserved `default` key with a
-placeholder caption therefore keep every pair they actually labelled. Blankness
-is ASCII space, tab, line feed and carriage return only, so a caption of
-exotic spaces such as U+00A0 still counts as readable and renders. `default`
-is otherwise an ordinary key, and there is no click-on-the-card activation
-for it.
+before the key bounds are checked: it renders no button and is absent from the
+`actions` count, while the notification itself still arrives. The reserved
+`default` key is the exception. It names the action a user invokes by pressing
+the notification itself, so senders that rely on that route send it with a
+placeholder caption. Pearl keeps the key invokable and stores it outside the
+shared action list, so no surface renders a blank pill and pressing a card
+whose sender registered it emits `ActionInvoked`. A card with no registered
+`default` is not activatable, and a keyboard route to the key exists only where
+its caption rendered as a button. A repeated `default` key is rejected like any
+other duplicate, whether or not the first pair rendered. Blankness is ASCII
+space, tab, line feed and carriage return only, so a caption of exotic spaces
+such as U+00A0 still counts as readable and renders.
 
 NotificationClosed is emitted after invalidation with reason **1** for expiry,
 **2** for user dismissal or a nonresident action, **3** for CloseNotification,

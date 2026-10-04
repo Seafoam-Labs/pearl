@@ -1694,6 +1694,22 @@ pub const Manager = struct {
             const surface = output.bar orelse return error.Unavailable;
             return surface.bar.?.layoutReport(alloc, @tagName(layer.getKeyboardMode(surface.window)));
         }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-notifications:toast")) {
+            const surface = self.notification orelse return error.Unavailable;
+            const view = surface.notifications orelse return error.Unavailable;
+            const usable = surface.output.usable;
+            const window = surface.window.as(gtk.Widget);
+            // A toast hugs an edge instead of spanning the output, so fold the window origin
+            // in here and leave the driver one usable-space addition for either surface.
+            const x: f64 = if (layer.getAnchor(surface.window, .left) != 0) layer.getMargin(surface.window, .left) else usable.width - layer.getMargin(surface.window, .right) - window.getWidth();
+            const y: f64 = if (layer.getAnchor(surface.window, .top) != 0) layer.getMargin(surface.window, .top) else usable.height - layer.getMargin(surface.window, .bottom) - window.getHeight();
+            return view.report(alloc, window, x, y);
+        }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-notifications:centre")) {
+            const surface = self.popup orelse return error.Unavailable;
+            const view = surface.notifications orelse return error.Unavailable;
+            return view.report(alloc, surface.window.as(gtk.Widget), 0, 0);
+        }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-settings-page")) {
             log.info("event=settings-page-probe popup={} control={} pane={s}", .{ self.popup != null, if (self.popup) |p| p.control != null else false, @tagName(self.pane) });
             const popup = self.popup orelse return error.Unavailable;

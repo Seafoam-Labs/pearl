@@ -1,5 +1,92 @@
 # Pearl implementation progress
 
+## Notification default action activation, October 4, 2026
+
+Pressing a notification is the activation route for the reserved `default`
+action key. Notification specification 1.3 says the default action is "usually
+invoked by clicking the notification" and that implementations are free not to
+display its name. kitty 0.49.2 sends exactly that, `actions = {'default': ' '}`
+at `notifications.py:797` with its own comment "dbus requires string to not be
+empty", and reads the reply back as a focus request: `button = 0 if extra ==
+'default'` at `:765`, handled at `:925` by `self.channel.focus(...)`. The click
+is the sender's focus mechanism, not a Pearl convenience. Dropping pairs whose
+caption sanitizes to blank removed the captionless pill and the key with it, so
+clicking a kitty notification did nothing where KDE Plasma focuses the
+terminal. ghostty 1.3.1 was not verified: `strings` found no
+`org.freedesktop.Notifications` match in it, and Pearl cannot tell which
+terminal sent a notification, so kitty's payload shape covers the same path.
+
+The caption rule is a classification now, not a drop.
+`notification_policy.pairAction` returns `render`, `register_only` or `skip`
+for a raw key and a sanitized caption, and the reserved key is stored in a new
+`Record.default_key` outside `actions[]`. Keeping it out of the shared list is
+what makes the toast card, the notification centre, the standalone Settings
+page and the `session status` action count agree by construction: all four
+count `actions[]`, so none renders a blank pill and none reports a phantom
+button. `invoke()` matches the stored key after the rendered list and emits it
+verbatim, so `ActionInvoked` still carries the exact registered key, and
+resident and non-resident closing is untouched. Both non-skip classes finish in
+one registration step, so `['default',' ','default','Go']` is rejected as a
+duplicate instead of holding the key twice. The specification carries no
+action-key uniqueness rule ("unique" there covers notification ids only), so
+the basis is Pearl's own existing duplicate rejection, extended to the reserved
+registration.
+
+Activation is a `GtkGestureClick` on the shared card box: button 1, `released`,
+`n_press == 1`, one attach point covering both surfaces. Measured rather than
+assumed: a `GtkButton` child claims the sequence, so a Dismiss press closes with
+reason 2 and emits no `ActionInvoked`, and no `pick`/`isAncestor` guard was
+needed. An activatable card also gets a `pointer` cursor while its record is
+active, because the affordance has no caption to advertise it; `cursor` is not a
+GTK 4 CSS property on 4.22.5, so it is the widget API.
+
+Rejected:
+
+- Reverting the blank-caption drop: restores the captionless pill next to
+  Dismiss, which is the defect that drop fixed.
+- A `renderable` flag on `policy.Action` with skip logic in each consumer: one
+  source of truth, but the invariant lands in four loops including the toast's
+  two-button limit, and forgetting one reproduces the original bug.
+- Synthesizing a caption for `default`: no new input handling, but it renders
+  invented text where the sender deliberately sent none.
+- Registering `default_key` only when the caption is blank: smallest diff, but
+  then activation depends on the sender's labelling habit, an incoherent rule.
+
+Deliberately not done. Keyboard activation of a captionless `default`: the toast
+layer surface has keyboard mode `none`, and making a card body focusable would
+change tab order and the `session-focus` vocabulary the accessibility driver
+asserts. A keyboard route already exists wherever the caption rendered, because
+the pill is focusable. Pressing a card in the centre does not close the popup,
+mirroring an action button there. The standalone Settings notifications page
+stays button-only: it is a management list, not a notification presentation. A
+press on the button row's empty area does activate the notification; the
+specification says "somewhere on the notification itself".
+
+Pointer delivery to the `.notification` layer surface had never been measured,
+because the suite drove every notification action with `wtype` Tab plus space.
+It is measured through a `test-notifications:{toast,centre}` hook reporting
+allocated card rects, following `test-bar-layout` and `test-running-apps`. The
+toast variant folds the window origin in from the live layer-shell anchors and
+margins, so the driver adds only the output usable origin for either surface
+even though a toast hugs an edge and moves to the left while the popup is open.
+
+Checks actually run:
+
+- `zig build test -Doptimize=ReleaseSafe`: pass, including the new `pairAction`
+  classification table in `src/services/notification_policy.zig`.
+- `zig build test-session-services -Doptimize=ReleaseSafe`: 34 groups pass,
+  recorded in `artifacts/t09/latest/`. Four are new: the reserved key
+  registering with no caption and invoking over `session action`, a captionless
+  toast activating on a real `wlrctl` press, a Dismiss press emitting no
+  `ActionInvoked`, and a centre card activating only when its sender registered
+  the key while the popup stays open. The pre-existing `actions == 1` assertion
+  for `['default',' ','open','Open']` is the guard that the count did not move.
+- `zig build -Doptimize=ReleaseSafe` and `zig build build-integration`.
+- Not re-run: `test-notification-filter-settings`. Its only `default` assertion
+  (`test_notification_filters.py:173`) invokes a labelled key through
+  `session action`, a path this change does not alter, and its pointer clicks
+  all target the standalone Settings filters UI, never a notification card.
+
 ## Notification action captions, September 30, 2026
 
 kitty 0.49.1 puts `actions = {'default': ' '}` on every notification it

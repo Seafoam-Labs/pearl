@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
-from test_surfaces import ctl,status,capture,clean,eventually_status
+from test_surfaces import ctl,status,capture,clean,eventually_status,click
 from t00 import Session as T00Session
 FIX=ROOT/'tests/fixtures/session/desktop.py'
 def command(child,**data):
@@ -32,6 +32,7 @@ def notified(s,fixture,**kw):
     n=sum(x['kind']=='notification' for x in records(s));command(fixture,notify=kw)
     values=[x for x in records(s) if x['kind']=='notification'];assert len(values)==n+1,records(s)[-5:];return values[-1]['id']
 def closed(s,id,reason): return any(r['kind']=='notification-signal' and r['signal']=='NotificationClosed' and r['args']==[id,reason] for r in records(s))
+def invoked(s,id,key): return any(r['kind']=='notification-signal' and r['signal']=='ActionInvoked' and r['args']==[id,key] for r in records(s))
 def refused(s,fixture,**kw):
     errors=sum(x['kind']=='error' for x in records(s));notes=sum(x['kind']=='notification' for x in records(s))
     command(fixture,notify=kw)
@@ -75,12 +76,12 @@ def main():
             checks['replacement-history-and-toast-popup-coexistence']=True
             focus_target(s,pearl,'notification-action');key(s,'-k','space')
             checks['notification-action-through-gtk-keyboard']=True
-            wait_for(lambda:any(r['kind']=='notification-signal' and r['signal']=='ActionInvoked' and r['args']==[id,'default'] for r in records(s)))
+            wait_for(lambda:invoked(s,id,'default'))
             assert state(s,args.ctl)['notifications']['active']==1
             action(s,args.ctl,'dismiss',notification=id);wait_for(lambda:closed(s,id,2))
             id=notified(s,fixture,summary='Action closes',actions=['open','Open'])
             focus_target(s,pearl,'notification-action');key(s,'-k','space')
-            wait_for(lambda:any(r['kind']=='notification-signal' and r['signal']=='ActionInvoked' and r['args']==[id,'open'] for r in records(s)))
+            wait_for(lambda:invoked(s,id,'open'))
             wait_for(lambda:closed(s,id,2) and not record_with(s,args.ctl,id)['active'])
             checks['nonresident-action-invokes-and-closes']=True
             blank=notified(s,fixture,summary='Blank caption pair',actions=['default',' ','open','Open'])
@@ -93,9 +94,40 @@ def main():
             assert record_with(s,args.ctl,overlong)['actions']==0
             capture(s,'notification-center-actions',output['connector'])
             for stale in (blank,dupes,keyless,overlong): action(s,args.ctl,'dismiss',notification=stale)
-            for bad in ({'actions':['','Open']},{'actions':['default']},{'actions':['k%d'%i for i in range(18)]}):
+            for bad in ({'actions':['','Open']},{'actions':['default']},{'actions':['default',' ','default','Go']},{'actions':['k%d'%i for i in range(18)]}):
                 assert 'InvalidArgs' in refused(s,fixture,summary='Rejected action list',**bad), bad
             checks['unreadable-captions-drop-and-key-bounds-still-reject']=True
+            reserved=notified(s,fixture,summary='Terminal focus request',actions=['default',' '])
+            assert record_with(s,args.ctl,reserved)['actions']==0
+            action(s,args.ctl,'invoke',notification=reserved,text='default')
+            wait_for(lambda:invoked(s,reserved,'default') and closed(s,reserved,2))
+            checks['reserved-key-registers-and-invokes-without-a-caption']=True
+            geometry={o['id']:o for o in status(s,args.ctl)['outputs']};origin=geometry[output['id']]['usable']
+            def press(surface,id,part='rect'):
+                row=wait_for(lambda:next((c for c in ctl(s,args.ctl,'aqueous','status','--text','test-notifications:'+surface)['result'] if c['id']==id and c[part]['width']>0),None))
+                rect=row[part];dx,dy=(rect['width']/2,rect['height']/2) if part=='dismiss' else (8,6)
+                click(s,origin['x']+rect['x']+dx,origin['y']+rect['y']+dy,geometry)
+            def uninvoked(id): return not any(r['kind']=='notification-signal' and r['signal']=='ActionInvoked' and r['args'][0]==id for r in records(s))
+            toast=notified(s,fixture,summary='Press to focus the terminal',actions=['default',' '])
+            wait_for(lambda:status(s,args.ctl)['notification']);time.sleep(.2)
+            press('toast',toast)
+            wait_for(lambda:invoked(s,toast,'default') and closed(s,toast,2))
+            checks['pressing-a-captionless-toast-invokes-the-reserved-key']=True
+            dismissed=notified(s,fixture,summary='Dismiss claims the press',actions=['default',' '])
+            wait_for(lambda:status(s,args.ctl)['notification']);time.sleep(.2)
+            press('toast',dismissed,'dismiss')
+            wait_for(lambda:closed(s,dismissed,2));time.sleep(.3);assert uninvoked(dismissed),records(s)[-5:]
+            checks['a-pill-press-never-reaches-the-card-gesture']=True
+            assert status(s,args.ctl)['popup']['pane']=='notifications'
+            centre=notified(s,fixture,summary='Centre card activates too',actions=['default','Open'])
+            press('centre',centre)
+            wait_for(lambda:invoked(s,centre,'default'));assert status(s,args.ctl)['popup'] is not None
+            capture(s,'notification-card-activatable',output['connector'])
+            plain=notified(s,fixture,summary='No reserved key registered',actions=['open','Open'])
+            press('centre',plain);time.sleep(.3);assert uninvoked(plain),records(s)[-5:]
+            capture(s,'notification-card-inactive',output['connector'])
+            checks['centre-cards-activate-only-the-reserved-key-and-keep-the-popup']=True
+            action(s,args.ctl,'dismiss',notification=plain);action(s,args.ctl,'clear_history')
             id=notified(s,fixture,timeout=150,transient=True);wait_for(lambda:closed(s,id,1));assert all(n['id']!=id for n in state(s,args.ctl)['notifications']['records'])
             id=notified(s,fixture);command(fixture,close=id);wait_for(lambda:closed(s,id,3))
             action(s,args.ctl,'dismiss',notification=id,code=4)
