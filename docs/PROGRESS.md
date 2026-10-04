@@ -1,5 +1,86 @@
 # Pearl implementation progress
 
+## Brightness OSD, October 4, 2026
+
+The themed OSD card now appears for external brightness changes, the same way
+the volume card already appears for external `wpctl`/`pactl` writes, and
+Pearl's own confirmed writes switched from the generic text popup to the same
+card. `src/services/brightness_feedback.zig` mirrors the audio observer: every
+scan diffs a complete snapshot of the selected backlight (device name plus
+displayed percent) and emits `.brightness`, or suppresses the event as a first
+snapshot, a repeat, a device rename, or a removal.
+
+External writes were invisible because the only scan triggers were the
+directory monitor on the backlight root (device add/remove), the panel-open
+two-second poll, and Pearl's own SetBrightness confirmation. A `brightnessctl`
+run writes `<root>/<device>/brightness`, one level below the monitored
+directory. Measured with a Gio probe on this machine: the directory monitor
+emits nothing for the nested write while a single-file monitor emits
+CREATED/CHANGED/CHANGES_DONE. All writer paths (root, unprivileged via logind,
+brightness daemons) converge on that one sysfs write, so one file monitor on
+the selected device covers them. The pinned gobject package already exports
+`gio.File.monitor`; no binding regeneration was needed.
+
+Policy decisions:
+
+- Change detection compares the displayed percent, not the raw sysfs value:
+  it matches the card's unit and avoids card churn from firmware micro-steps.
+- Only the selected backlight is monitored; external writes to non-selected
+  devices stay quiet, the same policy as non-default sinks.
+- The volume card's widgets and `pearl-volume-osd` CSS are reused; the
+  brightness variant swaps in the display-brightness icon, the localized
+  caption and the percent, and the meter's accessible label follows the
+  content. No long-label bound applies: the caption is fixed and the device
+  name is not rendered on the card.
+- Generic-text suppression is keyed to the same ownership rule as volume: an
+  `.applied` event queues no text while the snapshot observer owns brightness
+  feedback. A failed write changes no sysfs file, so the observer emits
+  nothing and the error text stays the only feedback; there is no path from a
+  denial to a success card.
+- Card invalidation mirrors volume: displayed or pending brightness content
+  drops when the backlight becomes unavailable or the selected device
+  changes. A percent difference alone does not drop the card, because the
+  next observed delta replaces it on the same surface; the drop path destroys
+  the layer surface and the suite counts surface creations.
+
+Rejected:
+
+- Periodic polling: forever wakeups, misses fast bursts, and more machinery
+  than reusing the existing FileMonitor path.
+- Monitoring every backlight device's `brightness` file: per-device arrays
+  and cleanup for a case that is deliberately quiet.
+- Regenerating bindings for `g_file_monitor`: already in the pinned package.
+
+The panel-open two-second refresh stays as a safety net for kernel drivers
+that change the attribute without an inotify event. The docs previously
+claimed sysfs brightness attributes do not reliably emit file-monitor events;
+the single-file monitor measurement disproved that for the selected device,
+and `docs/SERVICES.md` is reworded accordingly. `osd_detail.kind` gains
+`brightness`, reusing `name` (backlight device) and `percent`; text and
+volume payloads are unchanged.
+
+Checks actually run:
+
+- `zig build test -Doptimize=ReleaseSafe`: pass, including the new
+  `brightness_feedback` policy tests (silent startup, repeat unchanged,
+  external delta, rename and removal resets, suppressed observations advance
+  the baseline without replay).
+- `zig build test-services -Doptimize=ReleaseSafe`, unqualified: all 26
+  checks pass, recorded in `artifacts/t07/latest/`. New: an external sysfs
+  write pops the card (`osd_detail.kind == 'brightness'` with device name and
+  percent), refreshes reuse one layer surface and expire 1,800 ms after the
+  last write, a local confirmed write shows the card and never the generic
+  text, and backlight removal dismisses a visible card. A new
+  `brightness_osd.py` module records dark, light and 1.5-scale captures.
+  Locked-session display suppression has no integration step here; it shares
+  the volume card's lock dismissal and the pure-policy no-replay test.
+- Feature evidence: dedicated `test-services` and `test-surfaces` runs under
+  `artifacts/brightness-osd/`.
+- The suite ran against the cached composite Aqueous prefix
+  (`PEARL_TEST_AQUEOUS_PREFIX`/`PEARL_TEST_AQUEOUS_SOURCE`), because the
+  older `.cache/aqueous` T00 binary predates the upstream output-disable fix
+  and panics at the volume suite's `wlr-randr --off` step.
+
 ## Notification default action activation, October 4, 2026
 
 Pressing a notification is the activation route for the reserved `default`

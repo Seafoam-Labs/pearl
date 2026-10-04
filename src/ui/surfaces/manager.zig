@@ -599,10 +599,24 @@ pub const Manager = struct {
     fn powerChanged(context: *anyopaque, event: @import("../../services/power.zig").Event) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.servicesChanged();
-        if (event == .failure and self.power.err != null) self.queueOsd(self.power.err.?) else if (event == .applied) {
-            var buffer: [128]u8 = undefined;
-            self.queueOsd(if (self.power.feedback != null) std.fmt.bufPrint(&buffer, "Brightness · {d}%", .{self.power.backlight.percent()}) catch "Brightness updated" else "Power service accepted the change");
+        // Invalidate stale cards even on service loss, before considering new feedback.
+        if (self.osd_content) |content| if (content == .brightness and !self.validBrightness(&content.brightness)) self.hideOsd();
+        if (self.osd_pending) |content| if (content == .brightness and !self.validBrightness(&content.brightness)) self.cancelPendingOsd();
+        if (event == .failure and self.power.err != null) {
+            self.queueOsd(self.power.err.?);
+            return;
         }
+        if (self.power.brightness_change == .brightness) {
+            if (self.power.observed.baseline) |brightness| self.queueOsdContent(.{ .brightness = brightness });
+        }
+        // The complete-snapshot observer owns brightness feedback; a failed write
+        // changes no sysfs file, so it only ever produces the error text above.
+        if (event == .applied and self.power.feedback != .brightness) self.queueOsd("Power service accepted the change");
+    }
+    fn validBrightness(self: *Manager, brightness: *const Osd.Brightness) bool {
+        if (!self.power.brightnessAvailable()) return false;
+        const current = Osd.Brightness.from(self.power.backlight);
+        return brightness.sameDevice(&current);
     }
     fn queueOsd(self: *Manager, text: []const u8) void {
         var content: Osd.Content = .{ .text = .{} };
@@ -630,6 +644,7 @@ pub const Manager = struct {
         self.osd_pending = null;
         self.osd_pending_output = null;
         if (content == .volume and !self.validVolume(&content.volume)) return 0;
+        if (content == .brightness and !self.validBrightness(&content.brightness)) return 0;
         self.showOsd(output, content, 1800) catch {};
         return 0;
     }
@@ -1986,13 +2001,14 @@ pub const Manager = struct {
         }
         return "{\"applied\":true}";
     }
-    const OsdStatus = struct { kind: enum { text, volume }, output: []const u8, device: ?@import("../../services/policy.zig").Key = null, name: ?[]const u8 = null, percent: ?u8 = null, muted: ?bool = null };
+    const OsdStatus = struct { kind: enum { text, volume, brightness }, output: []const u8, device: ?@import("../../services/policy.zig").Key = null, name: ?[]const u8 = null, percent: ?u8 = null, muted: ?bool = null };
     fn osdStatus(self: *Manager) ?OsdStatus {
         const surface = self.osd orelse return null;
         const content = if (self.osd_content) |*value| value else return null;
         return switch (content.*) {
             .text => .{ .kind = .text, .output = surface.output.id },
             .volume => |*v| .{ .kind = .volume, .output = surface.output.id, .device = v.key, .name = v.name.slice(), .percent = v.percent, .muted = v.muted },
+            .brightness => |*b| .{ .kind = .brightness, .output = surface.output.id, .name = b.name.slice(), .percent = b.percent },
         };
     }
     const ServiceStatus = struct {

@@ -94,6 +94,8 @@ def main():
             gen=live['audio']['generation']
             from volume_osd import exercise
             exercise(s,args.ctl,pearl,power,command,checks,args.spike.resolve())
+            from brightness_osd import exercise as brightness_exercise
+            brightness_exercise(s,args.ctl,checks)
             show_page(s,args.ctl,'power',ui_output['id'])
             burst(s,args.ctl,'audio_set',[{'volume':n} for n in range(5,81)],kind='sink',device=first['index'],generation=gen)
             final=await_services(s,args.ctl,lambda v:not v['audio']['pending'] and any(d['index']==first['index'] and d['kind']=='sink' and d['volume']==80 for d in v['audio']['devices']))
@@ -154,6 +156,22 @@ def main():
             await_services(s,args.ctl,lambda v:not v['power']['pending'] and v['power']['profile']=='performance')
             profile_writes=[r for r in records(s) if r['kind']=='profile']; assert len(profile_writes)<10,profile_writes
             checks['delayed-brightness-and-profile-writes-coalesce-final-intent']=True
+            # Any writer of the selected backlight's brightness file pops the card,
+            # not only Pearl's own confirmed writes; refreshes reuse the surface.
+            eventually_status(s,args.ctl,lambda v:not v['osd'])
+            surfaces=lambda:sum('get_layer_surface' in line and '"pearl:osd"' in line for line in pearl.lines)
+            before_cards=surfaces()
+            (root/'test_panel/brightness').write_text('550\n')
+            eventually_status(s,args.ctl,lambda v:v.get('osd_detail') and v['osd_detail']['kind']=='brightness' and v['osd_detail']['percent']==55 and v['osd_detail']['name']=='test_panel')
+            (root/'test_panel/brightness').write_text('570\n')
+            eventually_status(s,args.ctl,lambda v:v.get('osd_detail') and v['osd_detail']['kind']=='brightness' and v['osd_detail']['percent']==57)
+            assert surfaces()==before_cards+1,'Brightness refresh must reuse the card surface'
+            eventually_status(s,args.ctl,lambda v:not v['osd'])
+            checks['external-brightness-writes-refresh-one-expiring-card']=True
+            ctl(s,args.ctl,'brightness','set','--percent','62')
+            await_services(s,args.ctl,lambda v:not v['brightness']['pending'] and v['brightness']['percent']==62)
+            eventually_status(s,args.ctl,lambda v:v.get('osd_detail') and v['osd_detail']['kind']=='brightness' and v['osd_detail']['percent']==62 and 'Power service accepted' not in v['osd_text'])
+            checks['local-brightness-writes-show-the-card-instead-of-generic-text']=True
             command(power,delay=1200)
             ctl(s,args.ctl,'profile','set','--profile','balanced')
             await_services(s,args.ctl,lambda v:v['power']['profile_in_flight'])
@@ -161,7 +179,7 @@ def main():
             command(power,deny='brightness',delay=150)
             ctl(s,args.ctl,'brightness','set','--percent','15')
             denied=await_services(s,args.ctl,lambda v:v['power']['err'] is not None and 'Permission denied' in v['power']['err'])
-            assert denied['brightness']['percent']==88
+            assert denied['brightness']['percent']==62
             eventually_status(s,args.ctl,lambda v:'Permission denied' in v['osd_text'])
             capture(s,'permission-denied',ui_output['connector'])
             await_services(s,args.ctl,lambda v:not v['power']['pending'] and v['power']['profile']=='power-saver')
@@ -181,8 +199,12 @@ def main():
             command(power,preparing=False)
             checks['battery-removal-session-inactive-and-logind-preparation']=True
             # Remove the validated fixture device; no privileged file writes are used.
+            await_services(s,args.ctl,lambda v:v['brightness']['available'])
+            (root/'test_panel/brightness').write_text('640\n')
+            eventually_status(s,args.ctl,lambda v:v.get('osd_detail') and v['osd_detail']['kind']=='brightness' and v['osd_detail']['percent']==64)
             (root/'test_panel/brightness').unlink(); (root/'test_panel/max_brightness').unlink(); (root/'test_panel').rmdir()
             await_services(s,args.ctl,lambda v:not v['brightness']['available'])
+            eventually_status(s,args.ctl,lambda v:not v['osd'])
             checks['backlight-removal-does-not-crash-open-panel']=True
             # Owner loss drops an in-flight profile plus the queued replacement.
             command(power,delay=2000)

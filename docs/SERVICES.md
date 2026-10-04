@@ -110,10 +110,13 @@ hardware value to keep the panel lit. Permission denial retains observed state.
 A 40 ms source coalesces writes; a queued update survives an in-flight reply and
 is read back after success. Device removal drops pending intent for that device.
 
-Directory monitoring discovers additions/removals. While a Power page owner has
-live interest and a backlight exists, a two-second worker refresh observes changes because
-sysfs brightness attributes do not reliably emit ordinary file-monitor events.
-The poll stops after the last Power owner leaves. There is one scan worker, one coalesced rescan and
+Directory monitoring discovers additions/removals, and a single-file monitor on
+the selected backlight's `brightness` attribute discovers value writes from any
+writer (`brightnessctl`, brightness daemons, logind). Non-selected devices stay
+quiet, matching the non-default-sink audio policy. While a Power page owner has
+live interest and a backlight exists, a two-second worker refresh remains as a
+safety net for kernel drivers that change the attribute without an inotify
+event. The poll stops after the last Power owner leaves. There is one scan worker, one coalesced rescan and
 one brightness write at a time. No backlight means an explicit unavailable state.
 Only the instrumented integration executable accepts the private fixture root;
 the production binary always uses `/sys/class/backlight`.
@@ -155,19 +158,24 @@ capabilities and errors; brightness includes device/range/readback state. Pages
 are current snapshots, not a transaction across multiple queries; consumers must
 revalidate identity/generation when acting.
 
-OSD keeps **one surface, one pending payload and one expiry source**. Text and
-volume content reuse that surface. The volume card shows a speaker/mute icon,
-ellipsized device name, percentage, and level meter. Muting retains the stored
-percentage with a subdued meter; zero volume without mute displays `0%`.
-Service feedback coalesces for 80 ms and expires 1,800 ms after its latest
-displayed update. Unchanged observations do not extend expiry. A newer direct
-OSD request cancels older queued feedback.
+OSD keeps **one surface, one pending payload and one expiry source**. Text,
+volume and brightness content reuse that surface. The volume card shows a
+speaker/mute icon, ellipsized device name, percentage, and level meter. Muting
+retains the stored percentage with a subdued meter; zero volume without mute
+displays `0%`. The brightness card shows a display-brightness icon, the
+localized caption, percentage, and the same level meter. It appears for any
+writer of the selected backlight's `brightness` file, not only Pearl's own
+confirmed writes; a rejected write changes no file, so it never produces a
+success card. Service feedback coalesces for 80 ms and expires 1,800 ms after
+its latest displayed update. Unchanged observations do not extend expiry. A
+newer direct OSD request cancels older queued feedback.
 
 Service bursts stay on their initially selected display. Cards are centered at
 the bottom with 24 logical pixels of clearance above Pearl's bottom reservation.
 Output changes replace the surface; removal discards pending feedback.
 `status.osd_text` remains a readable summary. Additive `status.osd_detail` reports
-the content kind, display, and (for volume) device key/name, percent, and mute.
+the content kind, display, and (for volume) device key/name, percent, and mute,
+or (for brightness) the backlight device name and percent.
 Existing layer-shell keyboard mode/input-region policies keep it non-focusable
 and click-through. Lock, inactive session, and compositor loss dismiss and discard
 feedback. OSD never queues an unbounded history or replays across lock/loss.

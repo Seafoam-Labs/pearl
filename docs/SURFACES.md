@@ -134,8 +134,8 @@ This primitive deliberately uses modal keyboard focus. Future nonmodal menus
 must explicitly choose their own focus policy. OSD is a single replaceable,
 expiring display (default two seconds) that neither takes focus nor handles
 pointer input. Locked state dismisses popup/OSD and rejects control mutations.
-Audio feedback uses the same surface for a volume card; generic text commands
-remain compatible. Service updates expire after 1.8 seconds and stay on their
+Audio and brightness feedback use the same surface for volume/brightness cards;
+generic text commands remain compatible. Service updates expire after 1.8 seconds and stay on their
 selected output during a burst. Bottom placement accounts for Pearl's bar/frame
 reservation. See [Audio and OSD](SERVICES.md#cli-and-osd) for trigger policy.
 
@@ -269,8 +269,9 @@ connector, scale, global bounds/usable bounds, bar edge/measured size and frame
 sizes in **top, right, bottom, left** order.
 `osd_text` contains the current readable summary. `osd_detail` is null when
 hidden, otherwise `{kind, output, device, name, percent, muted}`. `kind` is
-`text` or `volume`; audio fields are null for text. `device` is the audio key
-`{generation, kind, index}`, and `name` is its service name.
+`text`, `volume` or `brightness`; audio fields are null for text and
+brightness. `device` is the audio key `{generation, kind, index}`; `name` is
+the audio service name or the backlight device name.
 
 Failure is `{"pearl":1,"id":"7","ok":false,"err":{"code":"EdgeOccupied"}}`.
 Stable server codes are `Version`, `InvalidRequest`, `StaleSession`,

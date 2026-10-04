@@ -1,0 +1,13 @@
+ts=2026-10-04T17:45:04Z pid=314685 info(platform): event=background-effect-owner owner=native gtk=4.22.5
+ts=2026-10-04T17:45:04Z pid=314685 info(platform): event=blur-capability available=false
+ts=2026-10-04T17:45:04Z pid=314685 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-04T17:45:04Z pid=314685 info(pearl): event=ready mode=session
+ts=2026-10-04T17:45:04Z pid=314685 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-04T17:45:04Z pid=314685 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-04T17:45:04Z pid=314685 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-04T17:45:04Z pid=314685 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-04T17:45:04Z pid=314685 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-04T17:45:04Z pid=314685 error(pearl): event=session-error error=SessionDisplayMismatch
+ts=2026-10-04T17:45:04Z pid=314685 info(pearl): event=stopping reason=session-error pending=false
+ts=2026-10-04T17:45:04Z pid=314685 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-04T17:45:04Z pid=314685 info(pearl): event=cleanup pending=false watched_objects=0

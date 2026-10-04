@@ -1,0 +1,60 @@
+{
+  "status": "passed",
+  "checks": {
+    "mixed-scale-negative-origin-mapping-and-single-reservation": true,
+    "instance-lock-preserves-running-server": true,
+    "bar-move-frame-exclusion-and-conflict": true,
+    "popup-clamping-keyboard-escape-and-arbitration": true,
+    "osd-does-not-steal-focus-and-is-click-through": true,
+    "outside-click-dismissal-does-not-leak-and-frame-interior-passes-input": true,
+    "custom-bar-opacity-restored-after-output-hotplug": true,
+    "hotplug-invalidates-mapping-and-dismisses-target-popup": true,
+    "rotated-output-popup-clamping": true,
+    "report-bundle-modes-markers-and-retention": true,
+    "idle-cpu-ticks-over-1.5s": 0,
+    "kill-restores-usable-bounds": true,
+    "stale-socket-recovery-and-graceful-reservation-removal": true,
+    "native-wayland-session-matches-ipc-before-surfaces-or-control": true,
+    "control-schema-frame-limit-eight-client-bound-and-partial-request-deadline": true,
+    "private-nested-stale-session-and-cross-display-cli-isolation": true,
+    "gtk-runtime": {
+      "version": "4.22.5",
+      "owner": "native",
+      "libraries": [
+        "/usr/lib/libgtk-4.so.1.2200.5"
+      ],
+      "sha256": {
+        "/usr/lib/libgtk-4.so.1.2200.5": "2bba868080c1cc803936779aca3abd7c638899870f4739c86f3c2efb5d26ed52"
+      }
+    },
+    "native-blur-pixel-difference-under-rule-veto": 1.3669449511840817,
+    "rule-restored-pixel-difference": 0.0,
+    "custom-bar-opacity-survives-blur-capability-change": true,
+    "osd-blur-and-destruction": true,
+    "notification-blur-and-destruction": true,
+    "switcher-blur-lifetimes": true,
+    "dock-resize-blur-lifetimes": true,
+    "blur-island-bounds-rounded-corners-mixed-scale-and-rotation": true,
+    "bar-fade-clears-before-unmap-and-restores-on-remap": true,
+    "gtk-owned-surface-native-protocol-capability-resize-remap-lifecycle": true,
+    "default-launch": {
+      "command": [
+        "/home/azdanov/Projects/pearl/.zig-cache/o/1d53a8f9ad51857b6d13bbdbc841f0a8/pearl"
+      ],
+      "renderer": null,
+      "effects": 3,
+      "warnings": []
+    },
+    "vulkan-launch": {
+      "command": [
+        "/home/azdanov/Projects/pearl/.zig-cache/o/1d53a8f9ad51857b6d13bbdbc841f0a8/pearl"
+      ],
+      "renderer": "vulkan",
+      "effects": 3,
+      "warnings": []
+    }
+  },
+  "pearl_sha256": "931f62c29a7699878146914971129b161c2a71ab34721ab58cb02fba96d12b1c",
+  "ctl_sha256": "58aeb312ae1a08e4b172c7ef387badb7ed15f51f5f61dd0f837c85a3fe9070fe",
+  "effects_aqueous_sha256": "2821aad99bf0fe1f6dfffad09722ca27a9a49059bf69e5999322d2c15ae8ca88"
+}

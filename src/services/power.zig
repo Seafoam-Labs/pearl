@@ -7,6 +7,7 @@ const glib = @import("glib2");
 const object = @import("gobject2");
 const policy = @import("policy.zig");
 const Text = policy.Text;
+const brightness_feedback = @import("brightness_feedback.zig");
 const a = std.heap.c_allocator;
 const log = std.log.scoped(.services);
 pub const Event = @import("audio.zig").Event;
@@ -56,6 +57,11 @@ pub const Power = struct {
     scan_again: bool = false,
     monitor: ?*gio.FileMonitor = null,
     monitor_signal: c_ulong = 0,
+    brightness_monitor: ?*gio.FileMonitor = null,
+    brightness_monitor_signal: c_ulong = 0,
+    monitored: Text(128) = .{},
+    observed: brightness_feedback.Observer = .{},
+    brightness_change: ?brightness_feedback.Change = null,
     interest: ownership.Interest = .{},
     panel_open: bool = false,
     poll_source: c_uint = 0,
@@ -109,6 +115,9 @@ pub const Power = struct {
             m.unref();
         }
         self.monitor = null;
+        self.unwatchBrightness();
+        self.observed = .{};
+        self.brightness_change = null;
         for (&self.slots) |*slot| closeSlot(slot);
         self.cancel.unref();
     }
@@ -160,6 +169,8 @@ pub const Power = struct {
         self.can_reboot = false;
         self.brightness_pending = false;
         self.brightness_wanted = null;
+        self.observed = .{};
+        self.brightness_change = null;
         self.profile_pending = false;
         self.profile_wanted = null;
         self.action_pending = false;
@@ -498,6 +509,31 @@ pub const Power = struct {
     fn backlightChanged(_: *gio.FileMonitor, _: *gio.File, _: ?*gio.File, _: gio.FileMonitorEvent, self: *Power) callconv(.c) void {
         self.scan();
     }
+    // The directory monitor only reports device add/remove; a single-file monitor on the
+    // selected backlight's brightness attribute reports writes by any external writer.
+    fn watchBrightness(self: *Power) void {
+        if (self.brightness_monitor != null and self.backlight.maximum > 0 and std.mem.eql(u8, self.monitored.slice(), self.backlight.name.slice())) return;
+        self.unwatchBrightness();
+        if (self.backlight.maximum == 0) return;
+        var buffer: [768]u8 = undefined;
+        const path = std.fmt.bufPrintZ(&buffer, "{s}/{s}/brightness", .{ self.backlight_root.slice(), self.backlight.name.slice() }) catch return;
+        const file = gio.File.newForPath(path.ptr);
+        defer file.unref();
+        const monitor = file.monitor(.{}, self.cancel, null) orelse return;
+        self.brightness_monitor = monitor;
+        self.brightness_monitor_signal = gio.FileMonitor.signals.changed.connect(monitor, *Power, backlightChanged, self, .{});
+        self.monitored.set(self.backlight.name.slice());
+    }
+    fn unwatchBrightness(self: *Power) void {
+        if (self.brightness_monitor) |m| {
+            object.signalHandlerDisconnect(m.as(object.Object), self.brightness_monitor_signal);
+            _ = m.cancel();
+            m.unref();
+        }
+        self.brightness_monitor = null;
+        self.brightness_monitor_signal = 0;
+        self.monitored = .{};
+    }
     pub fn scan(self: *Power) void {
         if (!self.running) return;
         if (self.scan_pending) {
@@ -563,10 +599,13 @@ pub const Power = struct {
         if (!self.running) return;
         if (!std.mem.eql(u8, self.backlight.name.slice(), job.result.name.slice())) self.brightness_wanted = null;
         self.backlight = job.result;
+        self.brightness_change = self.observed.observe(if (self.backlight.maximum > 0) brightness_feedback.Brightness.from(self.backlight) else null);
+        self.watchBrightness();
         if (self.feedback != null and self.backlight.maximum == 0) {
             self.err = "Backlight unavailable after the change; final brightness was not confirmed.";
             self.changed(self.context, .failure);
         } else self.changed(self.context, if (self.feedback != null) .applied else .state);
+        self.brightness_change = null;
         self.feedback = null;
         if (self.scan_again) {
             self.scan_again = false;

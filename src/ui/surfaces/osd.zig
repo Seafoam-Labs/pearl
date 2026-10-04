@@ -1,12 +1,14 @@
-//! Bounded OSD content and an informational, non-interactive volume card.
+//! Bounded OSD content and an informational, non-interactive volume/brightness card.
 const std = @import("std");
 const gtk = @import("gtk4");
 const policy = @import("../../services/policy.zig");
 const tr = @import("../../desktop/text.zig").tr;
 pub const Volume = @import("../../services/audio_feedback.zig").Volume;
+pub const Brightness = @import("../../services/brightness_feedback.zig").Brightness;
 pub const Content = union(enum) {
     text: policy.Text(512),
     volume: Volume,
+    brightness: Brightness,
 
     pub fn summary(self: *const Content) policy.Text(512) {
         switch (self.*) {
@@ -15,6 +17,12 @@ pub const Content = union(enum) {
                 var result: policy.Text(512) = .{};
                 var buffer: [512]u8 = undefined;
                 result.set(std.fmt.bufPrint(&buffer, "{s} · {d}%{s}{s}", .{ v.label.slice(), v.percent, if (v.muted) " · " else "", if (v.muted) tr("Muted", "Stumm") else "" }) catch "");
+                return result;
+            },
+            .brightness => |b| {
+                var result: policy.Text(512) = .{};
+                var buffer: [512]u8 = undefined;
+                result.set(std.fmt.bufPrint(&buffer, "{s} · {d}%", .{ tr("Brightness", "Helligkeit"), b.percent }) catch "");
                 return result;
             },
         }
@@ -63,7 +71,7 @@ pub const View = struct {
 
     pub fn update(self: *View, content: *const Content) void {
         self.text.as(gtk.Widget).setVisible(@intFromBool(content.* == .text));
-        self.card.as(gtk.Widget).setVisible(@intFromBool(content.* == .volume));
+        self.card.as(gtk.Widget).setVisible(@intFromBool(content.* != .text));
         switch (content.*) {
             .text => |t| self.text.setText(t.z()),
             .volume => |v| {
@@ -74,7 +82,16 @@ pub const View = struct {
                 self.meter.setFraction(@as(f64, @floatFromInt(v.percent)) / 100);
                 if (v.muted) self.card.as(gtk.Widget).addCssClass("pearl-volume-muted") else self.card.as(gtk.Widget).removeCssClass("pearl-volume-muted");
             },
+            .brightness => |b| {
+                self.label.setText(tr("Brightness", "Helligkeit"));
+                self.icon.setFromIconName("pearl-display-brightness-symbolic");
+                var buffer: [80]u8 = undefined;
+                self.value.setText(std.fmt.bufPrintZ(&buffer, "{d}%", .{b.percent}) catch "");
+                self.meter.setFraction(@as(f64, @floatFromInt(b.percent)) / 100);
+                self.card.as(gtk.Widget).removeCssClass("pearl-volume-muted");
+            },
         }
+        self.meter.as(gtk.Accessible).updateProperty(.label, (if (content.* == .brightness) tr("Brightness", "Helligkeit") else tr("Output volume", "Ausgabelautstärke")).ptr, @as(c_int, -1));
         const summary = content.summary();
         self.root.as(gtk.Accessible).updateProperty(.label, summary.z().ptr, @as(c_int, -1));
     }
