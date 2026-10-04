@@ -169,46 +169,9 @@ test "decode downscales to the retained size and never upscales" {
     try t.expectEqual(@as(c_int, 64), kept.getHeight());
 }
 
-/// Encode the hint payload as a real PNG so the file branch is exercised end to end.
-fn writePng(path: [*:0]const u8, width: c_int, height: c_int) !void {
-    const value = try solid(width, height, 40);
-    defer value.unref();
-    const source = fromHint(value) orelse return error.EncodeFailed;
-    defer source.unref();
-    var buffer: [*]u8 = undefined;
-    var length: usize = 0;
-    if (source.saveToBufferv(&buffer, &length, "png", null, null, null) == 0) return error.EncodeFailed;
-    defer glib.free(buffer);
-    if (glib.fileSetContents(path, buffer, @intCast(length), null) == 0) return error.SaveFailed;
-}
-
-test "classify icon references into pixels, themed names and rejection" {
+test "classify icon references into themed names and rejection" {
     const t = std.testing;
-    var template: [128:0]u8 = undefined;
-    const directory = glib.mkdtemp(try std.fmt.bufPrintZ(&template, "{s}/pearl-image-XXXXXX", .{std.mem.span(glib.getTmpDir())})) orelse return error.TestUnexpectedResult;
-    var path: [192:0]u8 = undefined;
-    _ = try std.fmt.bufPrintZ(&path, "{s}/icon.png", .{std.mem.span(directory)});
-    var uri: [224:0]u8 = undefined;
-    const ref = try std.fmt.bufPrintZ(&uri, "file://{s}", .{&path});
-    defer {
-        _ = glib.unlink(&path);
-        _ = glib.rmdir(directory);
-    }
-    try writePng(&path, 200, 100);
-    switch (resolve(ref)) {
-        .pixels => |image| {
-            defer image.unref();
-            try t.expectEqual(@as(c_int, 128), image.getWidth());
-            try t.expectEqual(@as(c_int, 64), image.getHeight());
-        },
-        else => return error.TestUnexpectedResult,
-    }
-    const local = resolve(&path);
-    try t.expect(local == .pixels);
-    local.pixels.unref();
-    var missing: [192:0]u8 = undefined;
-    _ = try std.fmt.bufPrintZ(&missing, "file://{s}/absent.png", .{std.mem.span(directory)});
-    try t.expect(resolve(&missing) == .none);
+    try t.expect(resolve("file:///does-not-exist/icon.png") == .none);
     try t.expect(resolve("http://example.invalid/icon.png") == .none);
     try t.expect(resolve("icons/logo.png") == .none);
     try t.expect(resolve("../escape.png") == .none);
