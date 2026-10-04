@@ -42,9 +42,20 @@ def main():
         (root/'pearl.desktop').write_text('[Desktop Entry]\nType=Application\nName=Pearl (Aqueous)\nExec=/usr/bin/true\nDesktopNames=Aqueous;\n')
         (root/'other.desktop').write_text('[Desktop Entry]\nType=Application\nName=Other desktop\nExec=/usr/bin/true\nDesktopNames=Other;\n')
         config=session.base/'greeter.json'
+        passwd=session.base/'passwd'
+        # Deliberately non-alphabetical: first discovered user must win.
+        passwd.write_text('root:x:0:0::/root:/bin/sh\n'
+                          'fixture-user:x:1001:1001::/home/fixture-user:/bin/sh\n'
+                          'another-user:x:1002:1002::/home/another-user:/bin/sh\n'
+                          'service:x:999:999::/:/bin/sh\n')
+        empty_passwd=session.base/'empty-passwd';empty_passwd.write_text('')
+        report['screenshots']=[]
         def key(*keys):session.run(['wtype','-s','120',*keys,'-s','120'])
-        for theme in ('material_dark','material_light','gtk','solid','contain','contrast','small','stale','fingerprint','fingerprint_cancel'):
-            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':False,'power':False,'remember_session':theme=='material_light','fingerprint_hint':theme=='fingerprint','font_size':24 if theme=='fingerprint' else 16,'wallpaper':str(wallpaper) if theme in ('material_light','contain') else None,'wallpaper_fit':'contain' if theme=='contain' else 'cover','wallpaper_color':'#123456' if theme in ('solid','contain') else None}))
+        for theme in ('material_dark','material_light','gtk','solid','contain','contrast','small','stale','fingerprint','fingerprint_cancel','accounts-switch','accounts-other','accounts-empty','accounts-disabled'):
+            accounts_enabled=theme not in ('contrast','accounts-disabled')
+            known_accounts=accounts_enabled and theme!='accounts-empty'
+            expected_user='another-user' if theme=='accounts-switch' else 'fixture-user'
+            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':accounts_enabled,'power':False,'remember_session':theme=='material_light','fingerprint_hint':theme=='fingerprint','font_size':24 if theme=='fingerprint' else 16,'wallpaper':str(wallpaper) if theme in ('material_light','contain') else None,'wallpaper_fit':'contain' if theme=='contain' else 'cover','wallpaper_color':'#123456' if theme in ('solid','contain') else None}))
             if theme=='small':session.run(['wlr-randr','--output',primary,'--scale','2'])
             server=socket.socket(socket.AF_UNIX);path=str(session.base/f'greetd-{theme}.sock');server.bind(path);server.listen();server.settimeout(args.idle_seconds+30)
             errors=[];requests=[];info_ack=threading.Event();allow_success=threading.Event();scan_ready=threading.Event();continue_scan=threading.Event()
@@ -54,7 +65,7 @@ def main():
                     with conn:
                         conn.settimeout(args.idle_seconds+30)
                         create=receive(conn);requests.append(create)
-                        assert create=={'type':'create_session','username':'fixture-user'},create
+                        assert create=={'type':'create_session','username':expected_user},create
                         for kind,text in [('info','Touch the fingerprint reader'),('error','Remove finger and retry'),('info','指をセンサーに置いてください · Touch the reader')]:
                             send(conn,{'type':'auth_message','auth_message_type':kind,'auth_message':text})
                             assert receive(conn)=={'type':'post_auth_message_response','response':None}
@@ -88,8 +99,23 @@ def main():
                         send(conn,{'type':'success'})
                 except Exception as e:errors.append(e)
             thread=threading.Thread(target=daemon,daemon=True);thread.start()
-            child=session.child('greeter-'+theme,[args.greeter.resolve()],GREETD_SOCK=path,PEARL_TEST_GREETER_CONFIG=str(config),PEARL_TEST_GREETER_STATE=str(session.base/'selections.json'),GTK_A11Y='test',G_DEBUG='fatal-warnings')
+            child=session.child('greeter-'+theme,[args.greeter.resolve()],GREETD_SOCK=path,PEARL_TEST_GREETER_CONFIG=str(config),PEARL_TEST_GREETER_STATE=str(session.base/'selections.json'),PEARL_TEST_GREETER_PASSWD=str(empty_passwd if theme=='accounts-empty' else passwd),GTK_A11Y='test',G_DEBUG='fatal-warnings')
             child.expect('event=greeter-ready')
+            if known_accounts:
+                child.expect('event=greeter-account count=2 selected=0 manual=false')
+                if theme in ('accounts-switch','accounts-other'):
+                    key('-k','space')
+                    time.sleep(.3);capture(session,'greeter-'+theme+'-menu',primary)
+                    report['screenshots'].append('session/greeter-'+theme+'-menu.png')
+                    key('-k','Down',*(['-k','Down'] if theme=='accounts-other' else []),'-k','Return')
+                    child.expect('event=greeter-account count=2 selected='+('2 manual=true' if theme=='accounts-other' else '1 manual=false'))
+                if theme=='accounts-switch':
+                    # Refresh through the real button, preserving the chosen user.
+                    key('-k','Tab','-k','Tab','-k','space')
+                    wait_for(lambda:sum('event=greeter-ready' in line for line in child.lines)==2)
+                    assert sum('count=2 selected=1 manual=false' in line for line in child.lines)==2
+            else:
+                child.expect('event=greeter-account count=0 selected=0 manual=true')
             if theme=='contrast':
                 key(*(['-k','Tab']*6),'-k','space')
                 child.expect('event=greeter-contrast enabled=true')
@@ -110,13 +136,18 @@ def main():
                 from PIL import Image
                 assert Image.open(session.output/'greeter-wallpaper-hotplug.png').convert('RGB').getpixel((0,0))==(28,26,34)
             time.sleep(.3);capture(session,'greeter-'+theme,primary)
+            report['screenshots'].append('session/greeter-'+theme+'.png')
             if theme in ('solid','contain'):
                 from PIL import Image
                 with Image.open(session.output/('greeter-'+theme+'.png')) as screenshot:
                     pixels=screenshot.convert('RGB')
                     assert pixels.getpixel((0,0))==(18,52,86)
                     if theme=='contain':assert pixels.getpixel((pixels.width//2,0))==(28,26,34)
-            key('fixture-user','-k','Return')
+            if known_accounts and theme!='accounts-other':
+                # Account -> desktop -> refresh -> Sign in. No username typing.
+                key('-k','Tab','-k','Tab','-k','Tab','-k','Return')
+            else:
+                key('fixture-user','-k','Return')
             assert scan_ready.wait(5),'scan messages did not advance automatically'
             time.sleep(.3);capture(session,'greeter-scan-'+theme,primary)
             if theme=='fingerprint_cancel':
@@ -135,7 +166,11 @@ def main():
                 session.run(['wlr-randr','--output',primary,'--on'])
                 time.sleep(.3)
                 capture(session,'greeter-secret-prompt',primary)
-            if theme!='fingerprint':key('fixture-secret','-k','Return')
+            if theme!='fingerprint':
+                if known_accounts:
+                    time.sleep(.2);capture(session,'greeter-password-'+theme,primary)
+                    report['screenshots'].append('session/greeter-password-'+theme+'.png')
+                key('fixture-secret','-k','Return')
             assert info_ack.wait(5),'passive message required user input'
             if theme=='stale':
                 with (root/'pearl.desktop').open('a') as f:f.write('Comment=changed during authentication\n')
@@ -151,6 +186,7 @@ def main():
                 state=json.loads((session.base/'selections.json').read_text());assert state==[{'username':'fixture-user','session':'wayland:pearl.desktop'}]
             if theme=='small':session.run(['wlr-randr','--output',primary,'--scale','1'])
             assert not any('fixture-secret' in line for line in child.lines)
+            if theme.startswith('accounts-'):report['checks'].append(theme+' selected username verified by mock greetd; one session start')
             report['checks'].append(theme+' passive scan, '+('no password input' if theme=='fingerprint' else 'password fallback')+' and single handoff')
     report['status']='passed';(args.output/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
 
