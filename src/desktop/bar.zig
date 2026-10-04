@@ -62,6 +62,7 @@ pub const Bar = struct {
     sections: [3]?*gtk.Widget = @splat(null),
     vertical: bool = false,
     compact: bool = false,
+    running_apps_per_window: bool = false,
     length: i32 = 1280,
     thickness: i32 = 48,
     pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager, tasks: *const @import("task_model.zig").Snapshot, app_index: *@import("apps.zig").Index) !*Bar {
@@ -271,7 +272,7 @@ pub const Bar = struct {
                 const widget: *gtk.Widget = switch (item) {
                     .running_apps => blk: {
                         const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
-                        self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.vertical, self, runningAction);
+                        self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.client, self.vertical, self, runningAction);
                         break :blk host.as(gtk.Widget);
                     },
                     .tray => blk: {
@@ -411,19 +412,49 @@ pub const Bar = struct {
         const self: *Bar = @ptrCast(@alignCast(data));
         self.action(self.context, .{ .running_apps = event });
     }
+    /// Unwrapped width of the workspaces grid. `layoutWorkspaces` wraps that grid
+    /// into the width left beside its siblings, so measuring the wrapped grid here
+    /// would let the strip's own width decide the budget it is derived from.
+    fn workspaceSpan(grid: *gtk.Widget, orientation: gtk.Orientation) c_int {
+        var cell: c_int = 0;
+        var count: c_int = 0;
+        var child = grid.getFirstChild();
+        while (child) |widget| : (child = widget.getNextSibling()) {
+            var natural: c_int = 0;
+            widget.measure(orientation, -1, null, &natural, null, null);
+            cell = @max(cell, natural);
+            count += 1;
+        }
+        return count * (cell + 2);
+    }
+    /// Items whose label carries live text and ellipsizes. Their natural width
+    /// follows the content, so budgeting them at natural makes the wrap decision,
+    /// and with it the bar height and the exclusive zone, move on every update.
+    fn liveText(self: *Bar, widget: *gtk.Widget) bool {
+        inline for (.{ policy.Item.title, policy.Item.keyboard, policy.Item.media, policy.Item.notifications }) |item| {
+            if (self.widgets[@intFromEnum(item)]) |candidate| if (candidate == widget) return true;
+        }
+        return false;
+    }
     fn fitTasks(self: *Bar) void {
         const view = self.running_apps orelse return;
         view.compact = self.thickness < 40;
+        view.per_window = self.running_apps_per_window;
         const orientation: gtk.Orientation = if (self.vertical) .vertical else .horizontal;
+        const grid = self.widgets[@intFromEnum(policy.Item.workspaces)];
         var used: c_int = 64;
         for (self.sections) |maybe| if (maybe) |section| {
             var child = section.getFirstChild();
             while (child) |widget| : (child = widget.getNextSibling()) {
                 if (widget == view.host.as(gtk.Widget) or widget.getVisible() == 0) continue;
+                if (grid != null and widget == grid.?) {
+                    used += workspaceSpan(widget, orientation);
+                    continue;
+                }
                 var minimum: c_int = 0;
                 var natural: c_int = 0;
                 widget.measure(orientation, -1, &minimum, &natural, null, null);
-                used += (if (widget == self.widgets[@intFromEnum(policy.Item.title)]) minimum else natural) + 4;
+                used += (if (self.liveText(widget)) minimum else natural) + 4;
             }
         };
         var cell: c_int = 40;
@@ -445,8 +476,9 @@ pub const Bar = struct {
             section.setVisible(@intFromBool(visible));
         };
     }
-    fn openTray(data: *anyopaque) void {
+    fn openTray(data: *anyopaque, widget: *gtk.Widget) void {
         const self: *Bar = @ptrCast(@alignCast(data));
+        self.recordPaneAnchor(widget);
         self.action(self.context, .{ .pane = .tray });
     }
     pub fn update(self: *Bar) void {
@@ -522,7 +554,10 @@ pub const Bar = struct {
         }
         if (self.keyboard) |label| {
             const keyboard = if (focus) |f| f.keyboard else null;
-            const text = if (keyboard) |k| (if (k.layouts.len > 0) k.layouts[k.index] else "—") else "—";
+            const layout = if (keyboard) |k| if (k.layouts.len > 0) k.layouts[k.index] else "" else "";
+            // A virtual keyboard can publish an empty layout name; show the same
+            // placeholder as for a missing keyboard instead of an empty control.
+            const text = if (layout.len != 0) layout else "—";
             const value = a.dupeZ(u8, text) catch return;
             defer a.free(value);
             if (self.vertical) {
@@ -587,14 +622,14 @@ pub const Bar = struct {
         const host = self.widgets[@intFromEnum(policy.Item.workspaces)] orelse return;
         const orientation: gtk.Orientation = if (self.vertical) .vertical else .horizontal;
         // Account for the host margins, island padding, group gaps and sibling
-        // controls. The optional window title can ellipsize to leave room.
+        // controls. Live text ellipsizes to leave room.
         var available = self.length - 64;
-        for (self.widgets, 0..) |maybe, i| if (maybe) |widget| {
+        for (self.widgets) |maybe| if (maybe) |widget| {
             if (widget == host or widget.getVisible() == 0) continue;
             var minimum: c_int = 0;
             var natural: c_int = 0;
             widget.measure(orientation, -1, &minimum, &natural, null, null);
-            available -= (if (i == @intFromEnum(policy.Item.title)) minimum else natural) + 4;
+            available -= (if (self.liveText(widget)) minimum else natural) + 4;
         };
         for (self.clock_views.items) |view| {
             var minimum: c_int = 0;

@@ -15,6 +15,28 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
 from PIL import Image, ImageChops, ImageStat
+from background_effect_trace import BackgroundEffects
+
+
+def runtime(session, args):
+    # Set only the clients' library search path after the compositor has started.
+    # A build against 4.22 can therefore exercise a real 4.24 library upgrade.
+    if args.gtk_library_path:
+        session.env['LD_LIBRARY_PATH'] = str(args.gtk_library_path) + ':' + session.env.get('LD_LIBRARY_PATH', '')
+    assert 'GDK_WAYLAND_DISABLE' not in session.env
+
+
+def runtime_evidence(app, checks):
+    app.expect('event=background-effect-owner')
+    line = next(line for line in app.lines if 'event=background-effect-owner' in line)
+    owner, version = re.search(r'owner=(\w+) gtk=([\d.]+)', line).groups()
+    expected = 'gtk' if tuple(map(int, version.split('.'))) >= (4, 23, 3) else 'native'
+    assert owner == expected, line
+    maps = Path(f'/proc/{app.proc.pid}/maps').read_text()
+    libraries = sorted({line.split()[-1] for line in maps.splitlines() if '/libgtk-4.so' in line})
+    assert libraries, 'no loaded GTK library recorded'
+    checks['gtk-runtime'] = dict(version=version, owner=owner, libraries=libraries,
+                                 sha256={p: hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in libraries})
 
 
 class IPC:
@@ -25,7 +47,9 @@ class IPC:
         self.file = self.sock.makefile('r')
         self.serial = 0
         self.session = None
-        self.session = self.call('hello')['session']
+        hello = self.call('hello')
+        self.session = hello['session']
+        self.capabilities = hello['capabilities']
 
     def call(self, op, **params):
         self.serial += 1
@@ -78,10 +102,12 @@ def click(session, x, y, outputs):
     time.sleep(.15)
 
 
-def clean(child):
+def clean(child, allowed_warnings=()):
     status = child.wait()
     assert status == 0, ('exit status', status, child.lines[-20:])
-    assert not any(word in line for line in child.lines for word in ('CRITICAL', 'WARNING', 'panic:', 'event=css-error', 'protocol error')), child.lines[-30:]
+    assert not any(word in line for line in child.lines
+                   if not any(allowed in line for allowed in allowed_warnings)
+                   for word in ('CRITICAL', 'WARNING', 'panic:', 'event=css-error', 'protocol error')), child.lines[-30:]
 
 
 def capture(session, name, output=None):
@@ -93,6 +119,7 @@ def capture(session, name, output=None):
 
 def basic(args, checks):
     with PrivateSession(args.output / 'surfaces') as s:
+        runtime(s, args)
         ipc = IPC(s)
         try:
             before = ipc.outputs()
@@ -221,7 +248,14 @@ def basic(args, checks):
             assert '=== check-environment exit=0 ===' in text
             assert 'Aqueous session environment is valid.' in text
             assert '=== pearlctl status ===' in text and '"availability"' in text
-            assert '=== journalctl --user -u pearl.service -n 500 --no-pager ===' in text
+            # The journal query names the stream the shell resolved itself (its own
+            # unit, else its executable); a guessed unit name is the bug this guards.
+            journal = re.search(r'^=== journalctl --user (.+) -n 500 --no-pager ===$', text, re.MULTILINE)
+            query = journal.group(1).strip('"') if journal else ''
+            assert journal and query.startswith(('--unit=', '_EXE=')), \
+                f'journal query must name the resolved stream: {journal and journal.group(0)}'
+            section = text[journal.end():].split('=== report complete')[0].strip()
+            assert section, 'journal section must carry entries or a marker, never nothing'
             assert text.rstrip().endswith('=== report complete exit=0 ===')
             assert status(s, args.ctl)['session'] not in text
             assert not stale[0].exists() and not stale[1].exists() and stale[3].exists()
@@ -255,10 +289,12 @@ def basic(args, checks):
 
 def isolation(args, checks):
     with PrivateSession(args.output / 'isolation-parent') as parent:
+        runtime(parent, args)
         app = parent.child('pearl', [args.pearl], G_DEBUG='fatal-warnings')
         app.expect('event=control-ready')
         parent_state = eventually_status(parent, args.ctl, lambda v: len(v['outputs']) == 2)
         with PrivateSession(args.output / 'isolation-nested', backend='nested', parent_display=parent.display_path, inherited=parent.env) as nested:
+            runtime(nested, args)
             child = nested.child('pearl', [args.pearl], G_DEBUG='fatal-warnings')
             child.expect('event=control-ready')
             nested_state = eventually_status(nested, args.ctl, lambda v: len(v['outputs']) == 1)
@@ -325,11 +361,28 @@ def isolation(args, checks):
 
 
 def blur(args, checks):
-    with PrivateSession(args.output / 'blur', aqueous=args.effects_aqueous, renderer='vulkan', wm_extra='[blur]\nenabled = true\nradius = 8\npasses = 2\n') as s:
+    prefix = args.effects_aqueous.parent.parent
+    with PrivateSession(args.output / 'blur', aqueous=args.effects_aqueous,
+                        tool_prefix=prefix if (prefix / 'bin/aqueous-config').is_file() else None,
+                        renderer='vulkan', wm_extra='[blur]\nenabled = true\nradius = 8\npasses = 2\n') as s:
+        runtime(s, args)
+        applications = Path(s.env['XDG_DATA_HOME']) / 'applications'
+        applications.mkdir(parents=True, exist_ok=True)
+        (applications / 'blur.desktop').write_text('[Desktop Entry]\nType=Application\nName=Blur fixture\nExec=true\nIcon=application-x-executable\n')
+        # Dock visibility requires an active login session. Use the existing
+        # private login1/polkit fixture, never the workstation's system bus.
+        s.env['DBUS_SYSTEM_BUS_ADDRESS'] = 'unix:path=' + str(s.runtime / 'system-bus')
+        s.child('system-bus', ['dbus-daemon', '--session', '--nofork', '--address=' + s.env['DBUS_SYSTEM_BUS_ADDRESS']])
+        wait_for(lambda: s.run(['busctl', '--address=' + s.env['DBUS_SYSTEM_BUS_ADDRESS'], 'list'], check=False).returncode == 0)
+        s.env['PEARL_SECURITY_LOG'] = str(s.output / 'security.jsonl')
+        Path(s.env['PEARL_SECURITY_LOG']).write_text('')
+        authority = s.child('authority', ['python3', ROOT / 'tests/fixtures/session_security.py'], input_pipe=True)
+        authority.expect('event=ready')
         gallery = s.child('gallery', [args.pearl, '--demo'], G_DEBUG='fatal-warnings')
         gallery.expect('event=work-finished applied=true')
-        app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings', WAYLAND_DEBUG='client')
+        app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings', WAYLAND_DEBUG='client', log_limit=500000)
         app.expect('event=control-ready')
+        runtime_evidence(app, checks)
         live = eventually_status(s, args.ctl, lambda v: v['blur'] and len(v['outputs']) == 2)
         ipc = IPC(s)
         window = next(e for e in ipc.state() if e['kind'] == 'window')
@@ -337,6 +390,8 @@ def blur(args, checks):
         ctl(s, args.ctl, 'popup', 'show', '--output', target['id'])
         time.sleep(.3)
         enabled = capture(s, 'native-blur', target['connector'])
+        BackgroundEffects(app.lines).assert_blurred('pearl:popup')
+        BackgroundEffects(app.lines).assert_bar_shapes(status(s, args.ctl)['outputs'], checks['gtk-runtime']['owner'] == 'gtk')
         # Aqueous now reaches Pearl's notification daemon on each config reload.
         # Suppress those toasts so this experiment measures only the blur rule.
         ctl(s, args.ctl, 'session', 'action', '--command', 'dnd_on')
@@ -374,6 +429,7 @@ def blur(args, checks):
         eventually_status(s, args.ctl, lambda v: not v['blur'])
         time.sleep(.2)
         custom_plain = capture(s, 'bar-opacity-without-blur', target['connector']).getpixel((7,24))
+        BackgroundEffects(app.lines).assert_clear()
         assert max(abs(a-b) for a,b in zip(custom_blur, custom_plain)) <= 3, (custom_blur, custom_plain)
         assert custom_plain != (224,128,32), custom_plain
         checks['custom-bar-opacity-survives-blur-capability-change'] = True
@@ -388,19 +444,123 @@ def blur(args, checks):
         ctl(s, args.ctl, 'bar', 'set', '--output', target['id'], '--edge', 'top', '--size', '80')
         time.sleep(.3)
         capture(s, 'resized-remapped', target['connector'])
+        BackgroundEffects(app.lines).assert_blurred('pearl:popup')
         ctl(s, args.ctl, 'popup', 'hide')
+        for i in range(3):
+            ctl(s, args.ctl, 'osd', 'show', '--output', target['id'], '--text', 'Blur lifecycle', '--duration', '900')
+            time.sleep(.15)
+            BackgroundEffects(app.lines).assert_blurred('pearl:osd')
+            eventually_status(s, args.ctl, lambda v: not v['osd'])
+        checks['osd-blur-and-destruction'] = True
+        ctl(s, args.ctl, 'session', 'action', '--command', 'dnd_off')
+        for _ in range(2):
+            s.run(['notify-send', '-t', '900', 'Blur lifecycle', 'Rounded notification panel'])
+            eventually_status(s, args.ctl, lambda v: v['notification'])
+            time.sleep(.15)
+            BackgroundEffects(app.lines).assert_blurred('pearl:notification')
+            eventually_status(s, args.ctl, lambda v: not v['notification'])
+        checks['notification-blur-and-destruction'] = True
+        capabilities = ipc.capabilities
+        if capabilities.get('workspace_switcher_v1') or capabilities.get('global_window_switcher_v1'):
+            windows = []
+            for i in range(2):
+                plain = s.child(f'switcher-window-{i}', [args.spike], input_pipe=True,
+                                PEARL_T00_ISOLATED='1', WLR_BACKENDS='headless', PEARL_T00_MODE='plain')
+                plain.expect('event=ready mode=plain')
+                windows.append(plain)
+            for _ in range(2):
+                ctl(s, args.ctl, 'window-switcher', 'next', '--output', target['id'])
+                eventually_status(s, args.ctl, lambda v: v['window_switcher'] is not None)
+                time.sleep(.15)
+                BackgroundEffects(app.lines).assert_blurred('pearl:window-switcher')
+                ctl(s, args.ctl, 'window-switcher', 'dismiss', '--output', target['id'])
+                eventually_status(s, args.ctl, lambda v: v['window_switcher'] is None)
+            for plain in windows:
+                plain.proc.stdin.write('quit\n'); plain.proc.stdin.flush(); clean(plain)
+            checks['switcher-blur-lifetimes'] = True
+        else:
+            checks['switcher-blur-lifetimes'] = 'not exercised: compositor lacks switcher capability'
+        dock_preferences = copy.deepcopy(saved_preferences)
+        dock_preferences['pinned_apps'] = ['blur.desktop']
+        dock_preferences['dock'].update(enabled=True, mode='always')
+        for size in (40, 64):
+            dock_preferences['dock']['icon_size'] = size
+            apply(s, args.ctl, dock_preferences)
+            eventually_status(s, args.ctl, lambda v: all(o['dock']['reason'] == 'visible' and o['dock']['rect']['width'] > 0 for o in v['outputs']))
+            time.sleep(.2)
+            BackgroundEffects(app.lines).assert_blurred('pearl:dock')
+        apply(s, args.ctl, saved_preferences)
+        checks['dock-resize-blur-lifetimes'] = True
+        # Exercise GTK's scale/transform projection and output lifetime while
+        # blur is enabled, in addition to basic()'s input/hotplug checks.
+        other = next(o for o in live['outputs'] if o['id'] != target['id'])
+        s.run(['wlr-randr', '--output', other['connector'], '--scale', '1.5', '--transform', '90'])
+        eventually_status(s, args.ctl, lambda v: any(o['scale'] == 1.5 for o in v['outputs']))
+        time.sleep(.3)
+        BackgroundEffects(app.lines).assert_bar_shapes(status(s, args.ctl)['outputs'], checks['gtk-runtime']['owner'] == 'gtk')
+        checks['blur-island-bounds-rounded-corners-mixed-scale-and-rotation'] = True
+        # Autohide fades through the 0.72 cutoff while the surface is still
+        # mapped. Require a committed clear on that same effect before unmap.
+        fade_preferences = copy.deepcopy(saved_preferences)
+        fade_preferences['bar']['mode'] = 'autohide'
+        fade_preferences['outputs'] = []
+        fade_preferences['reduced_motion'] = False
+        fading = BackgroundEffects(app.lines).active('pearl:bar')
+        fading_ids = {e['id'] for e in fading}
+        apply(s, args.ctl, fade_preferences)
+        eventually_status(s, args.ctl, lambda v: all(not o['bar_visible'] for o in v['outputs']))
+        after_fade = BackgroundEffects(app.lines)
+        for effect in after_fade.history:
+            if effect['id'] in fading_ids and effect['surface']['namespace'] == 'pearl:bar':
+                assert effect['commits'] and not effect['commits'][-1] and any(effect['commits']), 'fade retained blur'
+        apply(s, args.ctl, saved_preferences)
+        eventually_status(s, args.ctl, lambda v: all(o['bar_visible'] for o in v['outputs']))
+        time.sleep(.2)
+        BackgroundEffects(app.lines).assert_blurred('pearl:bar')
+        checks['bar-fade-clears-before-unmap-and-restores-on-remap'] = True
         ctl(s, args.ctl, 'quit'); clean(app)
         gallery.signal(); clean(gallery)
         ipc.close()
         trace = '\n'.join(app.lines)
-        effects = re.findall(r'get_background_effect\(new id ext_background_effect_surface_v1#(\d+), wl_surface#(\d+)\)', trace)
-        assert len(effects) >= 6, effects
-        for effect, surface in effects:
-            assert f'wl_surface#{surface}.attach(' in trace, 'effect was not attached to a GTK-rendered surface'
-            assert f'ext_background_effect_surface_v1#{effect}.destroy()' in trace
+        ledger = BackgroundEffects(app.lines)
+        ledger.assert_finished()
+        assert len(ledger.history) >= 6
+        # GTK creates valid empty effects even for wallpaper and reveal strips.
+        # Every request in a modern client must come from GTK's original binding.
+        if checks['gtk-runtime']['owner'] == 'gtk':
+            assert len({effect['manager'] for effect in ledger.history}) == 1
         assert 'capabilities(0)' in trace and 'capabilities(1)' in trace
         assert '.set_blur_region(nil)' in trace
         checks['gtk-owned-surface-native-protocol-capability-resize-remap-lifecycle'] = True
+
+
+def renderer_launches(args, checks):
+    for renderer in ('default', 'vulkan'):
+        with PrivateSession(args.output / renderer, aqueous=args.effects_aqueous,
+                            renderer='vulkan', wm_extra='[blur]\nenabled = true\nradius = 8\npasses = 2\n') as s:
+            runtime(s, args)
+            s.env.pop('GSK_RENDERER', None)
+            if renderer != 'default':
+                s.env['GSK_RENDERER'] = renderer
+            app = s.child('pearl', [args.pearl], WAYLAND_DEBUG='client',
+                          G_DEBUG='fatal-criticals', log_limit=500000)
+            app.expect('event=control-ready')
+            live = eventually_status(s, args.ctl, lambda v: v['blur'] and len(v['outputs']) == 2)
+            ctl(s, args.ctl, 'popup', 'show', '--output', live['outputs'][0]['id'])
+            time.sleep(.4)
+            capture(s, 'blur')
+            BackgroundEffects(app.lines).assert_blurred('pearl:popup')
+            # Test normal launch semantics. This driver may report a usable but
+            # suboptimal swapchain during resize; retain the warning as evidence.
+            ctl(s, args.ctl, 'quit')
+            clean(app, allowed_warnings=('(VK_SUBOPTIMAL_KHR) (1000001003)',))
+            ledger = BackgroundEffects(app.lines)
+            assert not ledger.effects and any(any(e['commits']) for e in ledger.history)
+            assert len({e['manager'] for e in ledger.history}) == 1
+            checks[renderer + '-launch'] = dict(
+                command=[str(args.pearl)], renderer=s.env.get('GSK_RENDERER'),
+                effects=len(ledger.history),
+                warnings=[line for line in app.lines if 'WARNING' in line])
 
 
 def main():
@@ -410,20 +570,30 @@ def main():
     parser.add_argument('--spike', type=Path, required=True)
     parser.add_argument('--effects-aqueous', type=Path, default=Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', ROOT / '.cache/aqueous-effects')) / 'bin/aqueous')
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/t05/latest')
+    parser.add_argument('--gtk-library-path', type=Path, help='client-only staged GTK runtime libraries')
+    parser.add_argument('--blur-only', action='store_true', help='run the real-compositor blur gate only')
     args = parser.parse_args()
     for name in ('pearl','ctl','spike','effects_aqueous','output'):
         setattr(args, name, getattr(args, name).resolve())
     args.output.mkdir(parents=True, exist_ok=True)
+    if args.gtk_library_path:
+        args.gtk_library_path = args.gtk_library_path.resolve()
     checks = {}
     result = dict(status='running', checks=checks, pearl_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest(), ctl_sha256=hashlib.sha256(args.ctl.read_bytes()).hexdigest(), effects_aqueous_sha256=hashlib.sha256(args.effects_aqueous.read_bytes()).hexdigest())
     try:
-        basic(args, checks)
-        print('PASS surfaces, reservations, input and hotplug', flush=True)
-        isolation(args, checks)
-        print('PASS CLI isolation', flush=True)
+        if not args.blur_only:
+            basic(args, checks)
+            print('PASS surfaces, reservations, input and hotplug', flush=True)
+            isolation(args, checks)
+            print('PASS CLI isolation', flush=True)
         blur(args, checks)
-        print('PASS native GTK blur', flush=True)
+        print('PASS blur ownership, regions and visual veto', flush=True)
+        renderer_launches(args, checks)
+        print('PASS default and Vulkan launches', flush=True)
         result['status'] = 'passed'
+    except Exception as error:
+        result.update(status='failed', error=str(error))
+        raise
     finally:
         (args.output / 'results.json').write_text(json.dumps(result, indent=2)+'\n')
 

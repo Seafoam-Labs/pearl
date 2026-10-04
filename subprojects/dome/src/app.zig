@@ -1178,7 +1178,7 @@ pub const App = struct {
             self.prefs.sort_column = @intCast(i);
         };
         self.prefs.sort_descending = c.gtk_column_view_sorter_get_primary_sort_order(sorter) == c.GTK_SORT_DESCENDING;
-        if (!self.prefs.save()) log.err("event=preferences-save-failed", .{});
+        self.prefs.save() catch |err| log.err("event=preferences-save-failed error={s}", .{@errorName(err)});
         if (self.dialog) |dialog| {
             c.gtk_window_destroy(u.cast(c.GtkWindow, dialog));
             self.dialog = null;
@@ -1290,7 +1290,7 @@ pub const App = struct {
             self.applyTheme();
             self.processes.per_core = self.prefs.per_core;
             if (self.snapshot) |s| self.processes.updateProcesses(s.processes);
-            _ = self.prefs.save();
+            self.prefs.save() catch |err| log.err("event=preferences-save-failed error={s}", .{@errorName(err)});
         }
         if (self.target) |target| {
             target.close();

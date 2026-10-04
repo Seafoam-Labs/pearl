@@ -60,6 +60,33 @@ pub fn apply(level: ?std.log.Level, scopes: ?std.EnumSet(Scope)) void {
     if (scopes) |value| runtime_scopes = value;
 }
 
+/// The spelling `parseLevel` accepts, so a report can echo the live filter in a
+/// form a reader could replay on the command line.
+pub fn levelName(level: std.log.Level) []const u8 {
+    return switch (level) {
+        .err => "error",
+        .warn => "warning",
+        .info => "info",
+        .debug => "debug",
+    };
+}
+
+/// Inverse of `parseScopes`: `all` when every scope is enabled, otherwise the
+/// comma-separated active names. A support report carries this so a reader knows
+/// whether the debug lines they want were even compiled into the run.
+pub fn scopeList(alloc: std.mem.Allocator, scopes: std.EnumSet(Scope)) ![]const u8 {
+    const all = std.enums.values(Scope);
+    if (scopes.count() == all.len) return try alloc.dupe(u8, "all");
+    var out: std.ArrayList(u8) = .empty;
+    errdefer out.deinit(alloc);
+    for (all) |scope| {
+        if (!scopes.contains(scope)) continue;
+        if (out.items.len > 0) try out.append(alloc, ',');
+        try out.appendSlice(alloc, @tagName(scope));
+    }
+    return try out.toOwnedSlice(alloc);
+}
+
 /// Outcome of matching the two verbosity flags against the remaining arguments
 /// of an executable that parses its own command line.
 pub const Verbosity = union(enum) {
@@ -201,6 +228,27 @@ test "parseScopes handles all, lists and exclusions" {
     try std.testing.expect(excluded.contains(.core));
     for ([_][]const u8{ "", "bogus", "~bogus", "~", "core,,ui" }) |text|
         try std.testing.expectEqual(null, parseScopes(text));
+}
+
+test "levelName round-trips through parseLevel" {
+    for (std.enums.values(std.log.Level)) |level|
+        try std.testing.expectEqual(level, parseLevel(levelName(level)).?);
+}
+
+test "scopeList renders all and exclusions replayably" {
+    const t = std.testing;
+    const all = try scopeList(t.allocator, .full);
+    defer t.allocator.free(all);
+    try t.expectEqualStrings("all", all);
+    // A single excluded scope lists every other name, so parseScopes replays it.
+    const minus_gallery = try scopeList(t.allocator, parseScopes("all,~gallery").?);
+    defer t.allocator.free(minus_gallery);
+    try t.expect(std.mem.indexOf(u8, minus_gallery, "gallery") == null);
+    try t.expect(std.mem.indexOf(u8, minus_gallery, "core") != null);
+    try t.expectEqual(parseScopes("all,~gallery").?, parseScopes(minus_gallery).?);
+    const pair = try scopeList(t.allocator, parseScopes("core,ui").?);
+    defer t.allocator.free(pair);
+    try t.expectEqualStrings("core,ui", pair);
 }
 
 test "verbosity flags are recognised, applied and rejected" {

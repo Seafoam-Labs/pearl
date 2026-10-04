@@ -91,6 +91,7 @@ pub const Capabilities = struct {
     shortcut_inhibition: bool,
     icon_metadata: bool = false,
     icon_fetch: bool = false,
+    window_order: bool = false,
     config_reload: bool = false,
 };
 pub const Hello = struct {

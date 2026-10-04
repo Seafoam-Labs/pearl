@@ -26,7 +26,15 @@ fn startup(_: ?*c.GApplication, _: ?*anyopaque) callconv(.c) void {
 }
 pub fn main(init: std.process.Init) void {
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch return;
-    prefs = Preferences.load();
+    const loaded = Preferences.load();
+    prefs = loaded.prefs;
+    // A missing file is the normal first run; an unreadable, malformed or
+    // version-mismatched file silently fell back to defaults and is worth a
+    // line so the fallback is not mistaken for stored state.
+    switch (loaded.outcome) {
+        .first_run, .loaded => {},
+        else => log.err("event=preferences-load-degraded outcome={s}", .{@tagName(loaded.outcome)}),
+    }
     var dump = false;
     var index: usize = 1;
     while (index < args.len) : (index += 1) {

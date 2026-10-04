@@ -12,6 +12,7 @@ const Probe = struct {
     fn changed(context: *anyopaque) void {
         const self: *Probe = @ptrCast(@alignCast(context));
         log.info("event=greeter-state state={s}", .{@tagName(self.client.controller.state)});
+        if (self.client.timed_out) log.info("event=greeter-timeout", .{});
         switch (self.client.controller.state) {
             .prompt => {
                 if ((glib.getenv("PEARL_TEST_GREETER_CANCEL") != null and !self.cancelled) or (self.remaining > 0 and self.client.controller.needsInput())) {
@@ -25,6 +26,7 @@ const Probe = struct {
                     std.debug.assert(self.client.answer(c.prompt_generation, null) == error.NoInputQuestion);
                     return;
                 }
+                if (glib.getenv("PEARL_TEST_GREETER_WAIT") != null) return;
                 self.client.answer(c.prompt_generation, switch (c.kind) {
                     .visible => "fixture-user",
                     .secret => "fixture-secret",

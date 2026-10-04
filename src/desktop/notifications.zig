@@ -130,7 +130,7 @@ pub const View = struct {
             if (!visible) continue;
             const r = records[i];
             row.id = r.id;
-            row.icon.setFromIconName(if (r.icon.len > 0) r.icon.z() else "pearl-notifications-symbolic");
+            if (self.service.imageFor(r.id)) |image| row.icon.setFromPixbuf(image) else row.icon.setFromIconName(if (r.icon.len > 0) r.icon.z() else "pearl-notifications-symbolic");
             row.header.setText(if (r.app.len == 0) "Application" else r.app.z());
             row.title.setText(r.summary.z());
             row.body.setText(r.body.z());

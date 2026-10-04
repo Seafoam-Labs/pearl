@@ -29,6 +29,8 @@ pub const Item = struct {
     registration: Text(768) = .{},
     generation: u64 = 0,
     title: Text(512) = .{},
+    id: Text(512) = .{},
+    tooltip_title: Text(512) = .{},
     tooltip: Text(512) = .{},
     icon: Text(512) = .{},
     status: Text(512) = .{},
@@ -56,6 +58,7 @@ pub const Tray = struct {
     revision: u64 = 0,
     menu_sequence: u64 = 0,
     selected: u64 = 0,
+    menu_from_chooser: bool = false,
     exported: db.Export = .{},
     name_id: c_uint = 0,
     watcher: bool = false,
@@ -251,6 +254,7 @@ pub const Tray = struct {
         const props = v.getChildValue(0);
         defer props.unref();
         item.title = db.string(props, "Title", "s");
+        item.id = db.string(props, "Id", "s");
         item.status = db.string(props, "Status", "s");
         item.icon = db.string(props, if (std.mem.eql(u8, item.status.slice(), "NeedsAttention")) "AttentionIconName" else "IconName", "s");
         if (item.icon.len == 0) item.icon = db.string(props, "IconName", "s");
@@ -259,9 +263,11 @@ pub const Tray = struct {
             break;
         };
         item.tooltip = item.title;
+        item.tooltip_title = .{};
         if (db.lookup(props, "ToolTip", "(sa(iiay)ss)")) |tip| {
             defer tip.unref();
             const text = transport.childText(512, tip, 2);
+            item.tooltip_title = @import("notification_policy.zig").sanitize(512, text.slice());
             const detail = transport.childText(512, tip, 3);
             var buffer: [1025]u8 = undefined;
             item.tooltip = @import("notification_policy.zig").sanitize(512, std.fmt.bufPrint(&buffer, "{s}{s}{s}", .{ text.slice(), if (text.len > 0 and detail.len > 0) "\n" else "", detail.slice() }) catch "");
@@ -304,10 +310,22 @@ pub const Tray = struct {
         const item = self.find(generation) orelse return error.InvalidValue;
         try self.bus.call(self, generation, item.owner.z(), item.path.z(), item_iface, "Scroll", db.tuple(&.{ glib.Variant.newInt32(delta), db.str(if (vertical) "vertical" else "horizontal") }), "()", actionDone);
     }
+    /// Publish navigation so the popup manager also reconciles its geometry.
+    pub fn showChooser(self: *Tray) void {
+        self.selected = 0;
+        self.menu_from_chooser = false;
+        self.notify();
+    }
+    pub fn openChooserMenu(self: *Tray, generation: u64) !void {
+        try self.openMenu(generation, 0);
+        self.menu_from_chooser = true;
+        self.notify();
+    }
     pub fn openMenu(self: *Tray, generation: u64, parent: i32) !void {
         const item = self.find(generation) orelse return error.InvalidValue;
         if (!item.ready or item.menu.len == 0 or std.mem.eql(u8, item.menu.slice(), "/NO_DBUSMENU")) return error.Unsupported;
         self.selected = generation;
+        if (parent == 0) self.menu_from_chooser = false;
         item.menu_error = false;
         try self.bus.call(self, generation, item.owner.z(), item.menu.z(), menu_iface, "AboutToShow", db.tuple(&.{glib.Variant.newInt32(parent)}), "(b)", aboutDone);
         self.notify();

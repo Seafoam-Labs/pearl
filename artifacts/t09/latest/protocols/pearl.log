@@ -1,49 +1,250 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-info(pearl): event=control-ready session=93c47a26a97f502b6f289b1cf16ee2a6
-info: event=app-index-ready entries=158 truncated=false
-info: event=popup-opened output=1
-info: event=session-focus target=dnd
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=notification-action
-info: event=session-focus target=other
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=media-position
-info: event=session-focus target=media-previous
-info: event=session-focus target=media-play_pause
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=media-position
-info: event=session-focus target=media-previous
-info: event=session-focus target=media-play_pause
-info: event=session-focus target=media-next
-info: event=session-focus target=media-stop
-info: event=session-focus target=media-seek
-info: event=session-focus target=other
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=session-focus target=other
-info: event=session-focus target=tray-1
-info: event=session-focus target=tray-2
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=tray-3
-info: event=session-focus target=tray-4
-info: event=session-focus target=other
-info: event=session-focus target=other
-info: event=session-focus target=tray-5
-info: event=session-focus target=other
-info(pearl): event=stopping reason=control-quit pending=false
-info: event=popup-closed
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-09-30T17:24:46Z pid=827572 info(platform): event=blur-capability available=false
+ts=2026-09-30T17:24:46Z pid=827572 info(pearl): event=aqueous-availability state=connecting
+ts=2026-09-30T17:24:46Z pid=827572 info(pearl): event=ready mode=session
+ts=2026-09-30T17:24:46Z pid=827572 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T17:24:46Z pid=827572 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-09-30T17:24:46Z pid=827572 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T17:24:46Z pid=827572 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T17:24:46Z pid=827572 info(pearl): event=aqueous-availability state=ready
+ts=2026-09-30T17:24:46Z pid=827572 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-09-30T17:24:46Z pid=827572 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-09-30T17:24:46Z pid=827572 info(pearl): event=settings-backend-ready session_hash=4e891ac6ed7f10fc
+ts=2026-09-30T17:24:46Z pid=827572 info(pearl): event=control-ready session_hash=4e891ac6ed7f10fc
+ts=2026-09-30T17:24:46Z pid=827572 info(desktop): event=app-index-ready entries=174 truncated=false
+ts=2026-09-30T17:24:47Z pid=827572 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-09-30T17:24:47Z pid=827572 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=2793 success=true
+ts=2026-09-30T17:24:47Z pid=827572 info(ui): event=popup-close-reason reason=show-pane
+ts=2026-09-30T17:24:47Z pid=827572 info(ui): event=popup-opened output=1
+ts=2026-09-30T17:24:47Z pid=827572 info(desktop): event=session-focus target=dnd
+ts=2026-09-30T17:24:47Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:48Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:48Z pid=827572 info(desktop): event=session-focus target=notification-action
+ts=2026-09-30T17:24:49Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:49Z pid=827572 info(desktop): event=session-focus target=dnd
+ts=2026-09-30T17:24:50Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:50Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:50Z pid=827572 info(desktop): event=session-focus target=notification-action
+ts=2026-09-30T17:24:51Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-closed
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-close-reason reason=locked
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-close-reason reason=locked
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-close-reason reason=locked
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-close-reason reason=locked
+ts=2026-09-30T17:24:53Z pid=827572 info(config): event=wallpaper-applications-applied generation=3 elapsed_us=1247 success=true
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-close-reason reason=show-pane
+ts=2026-09-30T17:24:53Z pid=827572 info(ui): event=popup-opened output=1
+ts=2026-09-30T17:24:53Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:53Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:54Z pid=827572 info(desktop): event=session-focus target=media-position
+ts=2026-09-30T17:24:54Z pid=827572 info(desktop): event=session-focus target=media-previous
+ts=2026-09-30T17:24:54Z pid=827572 info(desktop): event=session-focus target=media-play_pause
+ts=2026-09-30T17:24:55Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:55Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:56Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:24:56Z pid=827572 info(desktop): event=session-focus target=media-position
+ts=2026-09-30T17:24:57Z pid=827572 info(desktop): event=session-focus target=media-previous
+ts=2026-09-30T17:24:57Z pid=827572 info(desktop): event=session-focus target=media-play_pause
+ts=2026-09-30T17:24:58Z pid=827572 info(desktop): event=session-focus target=media-next
+ts=2026-09-30T17:24:58Z pid=827572 info(desktop): event=session-focus target=media-stop
+ts=2026-09-30T17:24:59Z pid=827572 info(desktop): event=session-focus target=media-seek
+ts=2026-09-30T17:25:00Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:01Z pid=827572 info(ui): event=popup-close-reason reason=popup-hide
+ts=2026-09-30T17:25:01Z pid=827572 info(ui): event=popup-closed
+ts=2026-09-30T17:25:02Z pid=827572 info(ui): event=popup-close-reason reason=show-pane
+ts=2026-09-30T17:25:02Z pid=827572 info(ui): event=popup-opened output=1
+ts=2026-09-30T17:25:02Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:02Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:02Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:02Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:02Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:04Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:04Z pid=827572 info(desktop): event=tray-choices title=Fixture tray tooltip
+ts=2026-09-30T17:25:04Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:04Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:05Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:05Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:06Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:06Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:06Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:06Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:06Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:06Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:06Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:07Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:07Z pid=827572 info(desktop): event=tray-choices title=Tray — αβγ
+ts=2026-09-30T17:25:07Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:07Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:08Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:08Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:09Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:09Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:09Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:09Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:09Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:09Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:09Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:10Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:10Z pid=827572 info(desktop): event=tray-choices title=Fixture tray tooltip
+ts=2026-09-30T17:25:10Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:10Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:11Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:11Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:11Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:12Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:12Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:12Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:12Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:12Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:12Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:13Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:13Z pid=827572 info(desktop): event=tray-choices title=Fixture ID
+ts=2026-09-30T17:25:13Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:13Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:14Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:14Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:14Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:15Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:15Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:15Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:15Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:15Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:15Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:16Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:16Z pid=827572 info(desktop): event=tray-choices title=Tray application
+ts=2026-09-30T17:25:16Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:16Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:16Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:17Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:17Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:18Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:18Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:18Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:18Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:18Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:18Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:19Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:19Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:19Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:19Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:19Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:20Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:20Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:21Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:22Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:22Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:23Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:23Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:23Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:23Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:23Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:23Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:23Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:24Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:24Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:24Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:24Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:25Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:25Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:25Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:26Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:26Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:26Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:26Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:26Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:26Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:27Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:27Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:27Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:27Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:27Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:28Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:28Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:28Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:29Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:29Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:29Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:29Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:29Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:29Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:29Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:29Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:29Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:30Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:30Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:31Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:31Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:31Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:31Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:31Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:31Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:31Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:32Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:32Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:32Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:32Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:32Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:33Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:33Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=tray-choices back=true parent=0 chooser=true
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:34Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:35Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:35Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:36Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:36Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:36Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:36Z pid=827572 info(desktop): event=tray-choices visible=1
+ts=2026-09-30T17:25:36Z pid=827572 info(desktop): event=tray-choices panel=32x32 button=20x20 x=6 y=6
+ts=2026-09-30T17:25:36Z pid=827572 info(desktop): event=tray-choices panel=32x32 image=20x20 x=6 y=6
+ts=2026-09-30T17:25:36Z pid=827572 info(desktop): event=session-focus target=tray-choice-6
+ts=2026-09-30T17:25:37Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:37Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:37Z pid=827572 info(ui): event=popup-close-reason reason=popup-hide
+ts=2026-09-30T17:25:37Z pid=827572 info(ui): event=popup-closed
+ts=2026-09-30T17:25:37Z pid=827572 info(ui): event=popup-close-reason reason=show-pane
+ts=2026-09-30T17:25:37Z pid=827572 info(ui): event=popup-opened output=1
+ts=2026-09-30T17:25:37Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:37Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:37Z pid=827572 info(desktop): event=tray-choices visible=0
+ts=2026-09-30T17:25:37Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:37Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:38Z pid=827572 info(desktop): event=tray-choices back=true parent=2 chooser=false
+ts=2026-09-30T17:25:38Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:38Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:38Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:39Z pid=827572 info(desktop): event=session-focus target=tray-3
+ts=2026-09-30T17:25:39Z pid=827572 info(desktop): event=session-focus target=tray-4
+ts=2026-09-30T17:25:39Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:40Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:40Z pid=827572 info(desktop): event=session-focus target=tray-5
+ts=2026-09-30T17:25:41Z pid=827572 info(desktop): event=session-focus target=tray-back
+ts=2026-09-30T17:25:42Z pid=827572 info(desktop): event=tray-choices back=false parent=0 chooser=false
+ts=2026-09-30T17:25:42Z pid=827572 info(desktop): event=tray-choices title=Pearl fixture
+ts=2026-09-30T17:25:42Z pid=827572 info(desktop): event=session-focus target=tray-1
+ts=2026-09-30T17:25:42Z pid=827572 info(desktop): event=session-focus target=tray-2
+ts=2026-09-30T17:25:43Z pid=827572 info(desktop): event=session-focus target=other
+ts=2026-09-30T17:25:45Z pid=827572 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-09-30T17:25:45Z pid=827572 info(ui): event=popup-closed
+ts=2026-09-30T17:25:45Z pid=827572 info(pearl): event=aqueous-availability state=stopped
+ts=2026-09-30T17:25:45Z pid=827572 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-09-30T17:25:45Z pid=827572 info(pearl): event=stopped

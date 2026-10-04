@@ -52,6 +52,8 @@ pub const Window = struct {
     can_activate: bool,
     switcher_eligible: ?bool = null,
     icon: ?Icon = null,
+    /// Zero-based layout position, comparable only within output/workspace.
+    layout_index: ?u32 = null,
     tag: ?[]const u8 = null,
     description: ?[]const u8 = null,
 };

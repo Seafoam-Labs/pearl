@@ -44,6 +44,12 @@ private accessibility, helper-failure and resource tests.
 Use **Zig 0.16.0** and the packages in [COMPATIBILITY.md](COMPATIBILITY.md).
 `glib-compile-resources` is also required for ordinary application builds.
 
+Use an ASCII-only checkout path with the pinned Zig toolchain. A path containing
+non-ASCII characters can fail during PulseAudio header translation with
+`escape sequence out of range`: C assertions embed the source filename. If this
+occurs, copy or move the checkout to an ASCII-only path and rebuild there; leave
+the pinned headers and assertion settings intact.
+
 ```sh
 export ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig"
 zig build -Doptimize=ReleaseSafe

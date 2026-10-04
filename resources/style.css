@@ -63,6 +63,8 @@
 .pearl-root.$scope label selection { background: $primary_container$; color: $on_container$; }
 
 /* Session surfaces: background alpha is independent of compositor opacity. */
+/* Compositor blur is requested separately: native on 4.22, or the conditional
+ * gtk-background-blur.css provider with GTK-owned effects. */
 .pearl-root.$scope.pearl-shell { background: transparent; }
 .pearl-root.$scope.pearl-wallpaper { background: linear-gradient(135deg, $surface$, $primary_container$); }
 .pearl-root.$scope.pearl-shell .pearl-surface-panel { background: $container$; color: $text$; border-radius: 14px; }
@@ -202,3 +204,8 @@
 
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-task-compact { min-width: 20px; min-height: 20px; padding: 1px 3px; }
 .pearl-root.$scope .pearl-task-badge { background: $container$; color: $text$; border-radius: 3px; }
+
+/* Icon-only tray controls need less padding than text buttons. */
+.pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-tray-icon, .pearl-root.$scope .pearl-menu-panel button.pearl-tray-icon { padding: 3px; min-width: 20px; min-height: 20px; }
+.pearl-root.$scope .pearl-menu-panel .pearl-tray-chooser button.pearl-tray-icon { margin: 0; border-width: 0; padding: 3px; }
+.pearl-root.$scope .pearl-tray-chooser image { margin: 0; padding: 0; }

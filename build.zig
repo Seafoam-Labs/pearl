@@ -671,13 +671,15 @@ pub fn build(b: *std.Build) void {
     b.step("test-components", "Exercise gallery keyboard behavior and capture private Aqueous visuals").dependOn(&components.step);
 
     const surfaces = b.addSystemCommand(&.{ "python3", "tests/integration/test_surfaces.py", "--pearl" });
+    const effect_trace_tests = b.addSystemCommand(&.{ "python3", "tests/test_background_effect_trace.py" });
+    surfaces.step.dependOn(&effect_trace_tests.step);
     surfaces.addArtifactArg(app);
     surfaces.addArg("--ctl");
     surfaces.addArtifactArg(ctl);
     surfaces.addArg("--spike");
     surfaces.addArtifactArg(spike);
     if (b.args) |args| surfaces.addArgs(args);
-    b.step("test-surfaces", "Verify surfaces, CLI isolation and native blur in private Aqueous").dependOn(&surfaces.step);
+    b.step("test-surfaces", "Verify surfaces, CLI isolation and GTK/native blur ownership in private Aqueous").dependOn(&surfaces.step);
 
     const window_switcher = b.addSystemCommand(&.{ "python3", "tests/integration/test_window_switcher.py", "--pearl" });
     window_switcher.addArtifactArg(integration_app);
@@ -799,6 +801,14 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| aqueous_settings.addArgs(args);
     b.step("test-aqueous-settings", "Verify matching-master settings, receipts and native display leases").dependOn(&aqueous_settings.step);
     b.step("test-aqueous-master", "Verify pinned Aqueous master transactions").dependOn(&aqueous_settings.step);
+    const single_window = b.addSystemCommand(&.{ "python3", "tests/integration/test_single_window_centering.py", "--pearl" });
+    single_window.addArtifactArg(app);
+    single_window.addArg("--ctl");
+    single_window.addArtifactArg(ctl);
+    single_window.addArg("--settings");
+    single_window.addArtifactArg(settings_test_app);
+    if (b.args) |args| single_window.addArgs(args);
+    b.step("test-single-window-centering", "Verify centering settings with a local Aqueous prefix (-- --prefix PATH)").dependOn(&single_window.step);
     const preview_lifecycle = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_preview.py", "--pearl" });
     preview_lifecycle.addArtifactArg(app);
     preview_lifecycle.addArg("--ctl");

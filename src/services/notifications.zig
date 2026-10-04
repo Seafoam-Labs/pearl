@@ -3,6 +3,8 @@ const transport = @import("session_bus.zig");
 const db = transport.db;
 const gio = db.gio;
 const glib = db.glib;
+const pixbuf = @import("gdkpixbuf2");
+const icon_image = @import("notification_image.zig");
 pub const policy = @import("notification_policy.zig");
 const name = "org.freedesktop.Notifications";
 const path = "/org/freedesktop/Notifications";
@@ -16,6 +18,9 @@ pub const Notifications = struct {
     available: bool = false,
     timer: c_uint = 0,
     filters: ?@import("notification_filter_policy.zig").Compiled = null,
+    /// Pixels live outside the pure model: it is imported by the GObject-free test root.
+    /// One slot per retained record, pruned against the model on every mutation.
+    images: [64]struct { id: u32 = 0, pixels: ?*pixbuf.Pixbuf = null } = @splat(.{}),
     pub fn configure(self: *Notifications, config: @import("notification_filter_policy.zig").Config) !void {
         const next = try @import("notification_filter_policy.zig").Compiled.init(std.heap.c_allocator, config);
         if (self.filters) |*old| old.deinit();
@@ -42,6 +47,7 @@ pub const Notifications = struct {
         for (&self.model.records) |*r| if (r.active) {
             _ = self.model.close(r.id);
         };
+        self.pruneImages();
         self.changed(self.context);
     }
     fn acquired(_: *gio.DBusConnection, _: [*:0]const u8, data: ?*anyopaque) callconv(.c) void {
@@ -95,7 +101,33 @@ pub const Notifications = struct {
             if (r.toast_until > 0) next = @min(next, r.toast_until);
         }
         if (next != std.math.maxInt(i64) and self.available) self.timer = glib.timeoutAdd(@intCast(@min(std.math.maxInt(u32), @max(1, @divTrunc(next - now + 999, 1000)))), tick, self);
+        self.pruneImages();
         self.changed(self.context);
+    }
+    pub fn imageFor(self: *Notifications, id: u32) ?*pixbuf.Pixbuf {
+        if (id == 0) return null;
+        for (&self.images) |slot| if (slot.id == id) return slot.pixels;
+        return null;
+    }
+    /// Replacement reuses the id, so an insert overwrites the slot instead of appending.
+    fn putImage(self: *Notifications, id: u32, pixels: ?*pixbuf.Pixbuf) void {
+        for (&self.images) |*slot| if (slot.id == id) {
+            if (slot.pixels) |old| old.unref();
+            slot.pixels = pixels;
+            return;
+        };
+        const kept = pixels orelse return;
+        for (&self.images) |*slot| if (slot.id == 0) {
+            slot.* = .{ .id = id, .pixels = kept };
+            return;
+        };
+        kept.unref();
+    }
+    fn pruneImages(self: *Notifications) void {
+        for (&self.images) |*slot| if (slot.id != 0 and self.model.find(slot.id) == null) {
+            if (slot.pixels) |old| old.unref();
+            slot.* = .{};
+        };
     }
     fn tick(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Notifications = @ptrCast(@alignCast(data.?));
@@ -123,9 +155,9 @@ pub const Notifications = struct {
         }
         const m = std.mem.span(member);
         if (std.mem.eql(u8, m, "GetCapabilities")) {
-            invocation.returnValue(db.tuple(&.{db.array("s", &.{ db.str("body"), db.str("actions"), db.str("persistence") })}));
+            invocation.returnValue(db.tuple(&.{db.array("s", &.{ db.str("body"), db.str("actions"), db.str("persistence"), db.str("icon-static") })}));
         } else if (std.mem.eql(u8, m, "GetServerInformation")) {
-            invocation.returnValue(db.tuple(&.{ db.str("Pearl"), db.str("Aqueous"), db.str("0.1.0"), db.str("1.2") }));
+            invocation.returnValue(db.tuple(&.{ db.str("Pearl"), db.str("Aqueous"), db.str(@import("../version.zig").string), db.str("1.2") }));
         } else if (std.mem.eql(u8, m, "CloseNotification")) {
             const v = params.getChildValue(0);
             defer v.unref();
@@ -136,22 +168,17 @@ pub const Notifications = struct {
             }
             invocation.returnValue(null);
         } else if (std.mem.eql(u8, m, "Notify")) {
-            if (params.getSize() > 64 * 1024) {
-                invocation.returnDbusError("org.freedesktop.DBus.Error.LimitsExceeded", "Notification exceeds 64 KiB.");
-                return;
-            }
             var r: policy.Record = .{};
             r.owner.set(if (sender) |s| std.mem.span(s) else "");
-            inline for (.{ .{ 0, "app", 160 }, .{ 2, "icon", 160 }, .{ 3, "summary", 256 }, .{ 4, "body", 2048 } }) |field| {
+            inline for (.{ .{ 0, "app", 160 }, .{ 3, "summary", 256 }, .{ 4, "body", 2048 } }) |field| {
                 const v = params.getChildValue(field[0]);
                 defer v.unref();
                 @field(r, field[1]) = policy.sanitize(field[2], std.mem.span(v.getString(null)));
             }
-            // Only themed names, never remote URLs or arbitrary paths.
-            for (r.icon.slice()) |c| if (!(std.ascii.isAlphanumeric(c) or c == '-' or c == '_' or c == '.')) {
-                r.icon = .{};
-                break;
-            };
+            // Read raw: resolution below admits only [0-9A-Za-z._-] for a themed name,
+            // a strict subset of what sanitize passes through unchanged.
+            const app_icon = params.getChildValue(2);
+            defer app_icon.unref();
             const actions = params.getChildValue(5);
             defer actions.unref();
             if (actions.nChildren() % 2 != 0 or actions.nChildren() > 16) {
@@ -160,6 +187,11 @@ pub const Notifications = struct {
             }
             var i: usize = 0;
             while (i < actions.nChildren()) : (i += 2) {
+                const raw_label = transport.childText(160, actions, i + 1);
+                const caption = policy.sanitize(160, raw_label.slice());
+                // Dropped before the key bounds: those reject the whole notification, and the
+                // duplicate scan would misfire on a pair that is about to be discarded.
+                if (!policy.usableAction(caption.slice())) continue;
                 const raw_key = actions.getChildValue(i);
                 defer raw_key.unref();
                 const key_slice = std.mem.span(raw_key.getString(null));
@@ -171,9 +203,7 @@ pub const Notifications = struct {
                     invocation.returnDbusError("org.freedesktop.DBus.Error.InvalidArgs", "Action keys must be unique.");
                     return;
                 };
-                const key = transport.childText(96, actions, i);
-                const label = transport.childText(160, actions, i + 1);
-                r.actions[r.action_count] = .{ .key = key, .label = policy.sanitize(160, label.slice()) };
+                r.actions[r.action_count] = .{ .key = transport.childText(96, actions, i), .label = caption };
                 r.action_count += 1;
             }
             const hints = params.getChildValue(6);
@@ -206,12 +236,44 @@ pub const Notifications = struct {
                 return;
             }
             r.history_only = decision == .history_only;
+            const icon = resolveIcon(hints, std.mem.span(app_icon.getString(null)), &r);
             const record = self.model.add(r, replace.getUint32(), timeout.getInt32(), glib.getMonotonicTime()) catch {
+                if (icon) |pixels| pixels.unref();
                 invocation.returnDbusError("org.freedesktop.DBus.Error.LimitsExceeded", "Active notification limit reached.");
                 return;
             };
+            self.putImage(record.id, icon);
             invocation.returnValue(db.tuple(&.{glib.Variant.newUint32(record.id)}));
             self.update();
         } else invocation.returnDbusError("org.freedesktop.DBus.Error.UnknownMethod", "Unknown method.");
+    }
+    /// First usable candidate wins; a rejected one falls through to the next.
+    fn resolveIcon(hints: *glib.Variant, app_icon: [:0]const u8, r: *policy.Record) ?*pixbuf.Pixbuf {
+        if (db.lookup(hints, "image-data", "(iiibiiay)")) |v| {
+            defer v.unref();
+            if (icon_image.fromHint(v)) |pixels| return pixels;
+        }
+        for ([_][:0]const u8{ "image-path", "image_path" }) |key| {
+            if (db.lookup(hints, key, "s")) |v| {
+                defer v.unref();
+                if (claim(icon_image.resolve(std.mem.span(v.getString(null))), r)) |pixels| return pixels;
+                if (r.icon.len != 0) return null;
+            }
+        }
+        if (db.lookup(hints, "icon_data", "(iiibiiay)")) |v| {
+            defer v.unref();
+            if (icon_image.fromHint(v)) |pixels| return pixels;
+        }
+        return claim(icon_image.resolve(app_icon), r);
+    }
+    fn claim(value: icon_image.Resolved, r: *policy.Record) ?*pixbuf.Pixbuf {
+        return switch (value) {
+            .pixels => |pixels| pixels,
+            .themed => |themed| {
+                r.icon = themed;
+                return null;
+            },
+            .none => null,
+        };
     }
 };

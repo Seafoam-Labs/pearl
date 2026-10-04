@@ -1,9 +1,9 @@
-# Build the checksum-locked published release. scripts/release-source.py can
-# also generate a recipe for a local source archive.
+# Build the v0.2.1 release tag. scripts/release-source.py can also generate
+# a checksum-locked recipe for a local source archive.
 pkgname=pearl
-pkgver=0.1.0
+pkgver=0.2.1
 pkgrel=1
-# The first published tag follows packages previously numbered 1.0.0rc2.
+# Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
 pkgdesc='GTK desktop shell exclusively for Aqueous (release candidate)'
 arch=('x86_64')
@@ -19,7 +19,7 @@ depends=('curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant' 'hunspell'
 # Live plugin input requires the matching Aqueous Pearl integration service.
 # See docs/AQUEOUS_PLUGIN_ACTIVITY.md; the general version floor is unchanged.
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
-makedepends=('zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
+makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
              'rust' 'rust-wasm' 'librsvg')
 optdepends=('gvfs: Trash, remote locations, and administrative filesystems in Phyto'
             'file-roller: archive context menu actions in Phyto'
@@ -41,11 +41,11 @@ options=('!strip' '!debug')
 _wasmtime=48.0.2
 _wit_bindgen=0.62.0
 _wasm_tools=1.259.0
-source=("pearl-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+source=("pearl-$pkgver::git+$url.git#tag=v$pkgver"
         "https://github.com/bytecodealliance/wasmtime/releases/download/v$_wasmtime/wasmtime-v$_wasmtime-x86_64-linux-c-api.tar.xz"
         "https://github.com/bytecodealliance/wit-bindgen/releases/download/v$_wit_bindgen/wit-bindgen-$_wit_bindgen-x86_64-linux.tar.gz"
         "https://github.com/bytecodealliance/wasm-tools/releases/download/v$_wasm_tools/wasm-tools-$_wasm_tools-x86_64-linux.tar.gz")
-sha256sums=('9c8b025541b29fc23cf516edea8a69f0331392ea9f6590ecb7e281f33d3dbd08'
+sha256sums=('SKIP'
             'd9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9'
             '3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe'
             '3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160')

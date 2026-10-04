@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "checks": {
+    "report-resolves-its-own-journal-stream-instead-of-a-guessed-unit": true,
+    "user-service-launch-renders-the-resolved-unit-query-with-entries": true,
+    "scope-launch-falls-back-to-the-executable-query": true,
+    "empty-stream-renders-a-marker-under-the-query-header": true,
+    "report-directory-0700-file-0600": true,
+    "shell-quits-clean-after-report": true,
+    "report-section-assertions-evaluated-against-both-samples": true
+  },
+  "binary_sha256": {
+    "pearl": "a1ad090145dc84e1900da42bc43e523da6267612344b0edc1a24485627dad6d2",
+    "pearlctl": "8c629aecca5774a213f736cad9ac908b36d9a07bd0554ce4a1ec3876c4102211"
+  }
+}

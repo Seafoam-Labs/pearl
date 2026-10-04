@@ -70,8 +70,9 @@ def main():
             # Minimal fixture policy publishes effective defaults separately from configured defaults.
             s.run(['pw-metadata','-n','default','0','default.audio.sink','{"name":"test_output_a"}','Spa:String:JSON'])
             s.run(['pw-metadata','-n','default','0','default.audio.source','{"name":"test_output_a"}','Spa:String:JSON'])
-            # Full native traffic otherwise exhausts the default diagnostic buffer before keyboard checks.
-            pearl=s.child('pearl',[args.pearl],log_limit=100000,G_DEBUG='fatal-warnings',WAYLAND_DEBUG='client'); pearl.expect('event=control-ready')
+            # Full native traffic otherwise exhausts the default diagnostic buffer before keyboard checks,
+            # and the OSD surface-reuse assertion near the end counts across the whole capture.
+            pearl=s.child('pearl',[args.pearl],log_limit=400000,G_DEBUG='fatal-warnings',WAYLAND_DEBUG='client'); pearl.expect('event=control-ready')
             live=await_services(s,args.ctl,lambda v:v['audio']['ready'] and v['audio']['count']>=4 and v['power']['can_reboot'] and v['brightness']['available'] and all(v['power']['profiles']))
             assert live['power']['battery_present'] and live['power']['percentage']==72.5 and live['brightness']['percent']==42,live
             checks['initial-audio-battery-logind-profiles-and-validated-backlight']=True
@@ -208,10 +209,17 @@ def main():
             checks['system-bus-restart-does-not-exit-shell']=True
             pulse.stop()
             await_services(s,args.ctl,lambda v:not v['audio']['ready'] and v['audio']['count']==0)
+            # The session-gate loss behind the steps above (bus restart, inactive
+            # session, logind preparation) inhibits the bar, and sync() dismisses
+            # the flyout while it is inhibited. Reopen once panes are accepted.
+            wait_for(lambda:s.run([args.ctl,'control-center','show','--output',ui_output['id']],check=False).returncode==0,25)
             choose_page(s,args.ctl,'sound'); capture(s,'audio-disconnected',ui_output['connector'])
             pulse=s.child('pulse-restarted',['pipewire-pulse','-c',FIX/'pulse.conf']); wait_for(lambda:s.run(['pactl','info'],check=False).returncode==0)
             s.run(['pactl','load-module','module-null-sink','sink_name=test_restarted'])
-            await_services(s,args.ctl,lambda v:v['audio']['ready'] and v['audio']['generation']>gen and any(d['name']=='test_restarted' for d in v['audio']['devices']))
+            # Reconnect backoff is documented as one to 30 seconds, so the daemon
+            # can return just after an attempt and cost a full backoff plus the
+            # five-second connect deadline. Measured: 15.1 s for a 6.1 s outage.
+            await_services(s,args.ctl,lambda v:v['audio']['ready'] and v['audio']['generation']>gen and any(d['name']=='test_restarted' for d in v['audio']['devices']),timeout=40)
             response=ctl(s,args.ctl,'audio','set','--kind','sink','--generation',str(gen),'--device',str(first['index']),'--volume','50',code=4)
             assert response['err']['code']=='Unavailable',response
             checks['audio-server-restart-reenumerates-and-rejects-stale-generation']=True

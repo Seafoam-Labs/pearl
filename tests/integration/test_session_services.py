@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """T09 protocol conversations on private session buses and headless Aqueous."""
-import argparse,hashlib,json,os,sys,time,zlib,struct
+import argparse,hashlib,json,os,re,sys,time,zlib,struct
 from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
-from test_surfaces import ctl,status,capture,clean
-from test_services import command
+from test_surfaces import ctl,status,capture,clean,eventually_status
 from t00 import Session as T00Session
 FIX=ROOT/'tests/fixtures/session/desktop.py'
+def command(child,**data):
+    # Repeated commands must wait for a new acknowledgement, not an old line.
+    payload=json.dumps(data,sort_keys=True);reply='command='+payload
+    count=sum(reply in line for line in child.lines)
+    child.proc.stdin.write(payload+'\n');child.proc.stdin.flush()
+    wait_for(lambda:sum(reply in line for line in child.lines)>count)
 def state(s,binary):
     value=ctl(s,binary,'session','status')['result'];page=value['next_offset']
     while page is not None:
@@ -17,6 +22,7 @@ def state(s,binary):
         page=more['next_offset']
     return value
 def await_state(s,b,p,timeout=12): return wait_for(lambda:(lambda v:v if p(v) else False)(state(s,b)),timeout)
+def record_with(s,b,id): return wait_for(lambda:next((n for n in state(s,b)['notifications']['records'] if n['id']==id),False))
 def action(s,b,name,code=0,**kw):
     args=['session','action','--command',name]
     for k,v in kw.items(): args.extend(['--'+k.replace('_','-'),str(v)])
@@ -26,6 +32,12 @@ def notified(s,fixture,**kw):
     n=sum(x['kind']=='notification' for x in records(s));command(fixture,notify=kw)
     values=[x for x in records(s) if x['kind']=='notification'];assert len(values)==n+1,records(s)[-5:];return values[-1]['id']
 def closed(s,id,reason): return any(r['kind']=='notification-signal' and r['signal']=='NotificationClosed' and r['args']==[id,reason] for r in records(s))
+def refused(s,fixture,**kw):
+    errors=sum(x['kind']=='error' for x in records(s));notes=sum(x['kind']=='notification' for x in records(s))
+    command(fixture,notify=kw)
+    values=[x for x in records(s) if x['kind']=='error']
+    assert len(values)==errors+1 and sum(x['kind']=='notification' for x in records(s))==notes,records(s)[-3:]
+    return values[-1]['message']
 def png(path):
     def chunk(k,v): return struct.pack('>I',len(v))+k+v+struct.pack('>I',zlib.crc32(k+v))
     path.write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',96,96,8,6,0,0,0))+chunk(b'IDAT',zlib.compress((b'\0'+bytes([171,150,211,255])*96)*96))+chunk(b'IEND',b''))
@@ -52,10 +64,10 @@ def main():
             assert initial['tray']['items'][0]['image'];gen=initial['media']['players'][0]['generation'];traygen=initial['tray']['items'][0]['generation'];output=status(s,args.ctl)['outputs'][0]
             checks['initial-mpris-owner-discovery-and-sni-registration-pixmap']=True
             caps=s.run(['gdbus','call','--session','--dest','org.freedesktop.Notifications','--object-path','/org/freedesktop/Notifications','--method','org.freedesktop.Notifications.GetCapabilities']).stdout
-            assert all(x in caps for x in ["'body'","'actions'","'persistence'"]) and 'markup' not in caps
+            assert all(x in caps for x in ["'body'","'actions'","'persistence'","'icon-static'"]) and 'markup' not in caps and 'icon-multi' not in caps
             checks['truthful-notification-capabilities']=True
-            id=notified(s,fixture,summary='New message',body='Hello <b>world</b>\x1b',resident=True)
-            assert notified(s,fixture,replaces=id,summary='Updated message',resident=True)==id
+            id=notified(s,fixture,summary='New message',body='Hello <b>world</b>\x1b',resident=True,image_data=(64,64,230))
+            assert notified(s,fixture,replaces=id,summary='Updated message',resident=True,image_data=(64,64,230))==id
             assert state(s,args.ctl)['notifications']['active']==1
             wait_for(lambda:status(s,args.ctl)['notification'])
             ctl(s,args.ctl,'notifications','toggle','--output',output['id']);time.sleep(.4);capture(s,'notification-center',output['connector'])
@@ -66,10 +78,48 @@ def main():
             wait_for(lambda:any(r['kind']=='notification-signal' and r['signal']=='ActionInvoked' and r['args']==[id,'default'] for r in records(s)))
             assert state(s,args.ctl)['notifications']['active']==1
             action(s,args.ctl,'dismiss',notification=id);wait_for(lambda:closed(s,id,2))
+            id=notified(s,fixture,summary='Action closes',actions=['open','Open'])
+            focus_target(s,pearl,'notification-action');key(s,'-k','space')
+            wait_for(lambda:any(r['kind']=='notification-signal' and r['signal']=='ActionInvoked' and r['args']==[id,'open'] for r in records(s)))
+            wait_for(lambda:closed(s,id,2) and not record_with(s,args.ctl,id)['active'])
+            checks['nonresident-action-invokes-and-closes']=True
+            blank=notified(s,fixture,summary='Blank caption pair',actions=['default',' ','open','Open'])
+            assert record_with(s,args.ctl,blank)['actions']==1
+            dupes=notified(s,fixture,summary='Blank caption hides a repeated key',actions=['a','','a','A'])
+            assert record_with(s,args.ctl,dupes)['actions']==1
+            keyless=notified(s,fixture,summary='Keyless pair',actions=['',''])
+            assert record_with(s,args.ctl,keyless)['actions']==0
+            overlong=notified(s,fixture,summary='Over-long key with a blank caption',actions=['k'*97,' '])
+            assert record_with(s,args.ctl,overlong)['actions']==0
+            capture(s,'notification-center-actions',output['connector'])
+            for stale in (blank,dupes,keyless,overlong): action(s,args.ctl,'dismiss',notification=stale)
+            for bad in ({'actions':['','Open']},{'actions':['default']},{'actions':['k%d'%i for i in range(18)]}):
+                assert 'InvalidArgs' in refused(s,fixture,summary='Rejected action list',**bad), bad
+            checks['unreadable-captions-drop-and-key-bounds-still-reject']=True
             id=notified(s,fixture,timeout=150,transient=True);wait_for(lambda:closed(s,id,1));assert all(n['id']!=id for n in state(s,args.ctl)['notifications']['records'])
             id=notified(s,fixture);command(fixture,close=id);wait_for(lambda:closed(s,id,3))
             action(s,args.ctl,'dismiss',notification=id,code=4)
             checks['action-residency-transient-expiry-and-all-closure-reasons']=True
+            large=notified(s,fixture,summary='Large site icon',image_data=(160,160,200),timeout=150,transient=True)
+            assert large;wait_for(lambda:closed(s,large,1))
+            checks['oversized-image-data-still-delivers-and-expires']=True
+            site=art.as_uri()
+            hint_id=notified(s,fixture,summary='Raw hint beats themed app icon',icon='pearl-notifications-symbolic',image_data=(8,8,7))
+            assert record_with(s,args.ctl,hint_id)['image']
+            fell=notified(s,fixture,summary='Oversized hint falls through to path',image_path=site,image_data=(2048,1,7))
+            assert record_with(s,args.ctl,fell)['image']
+            themed=notified(s,fixture,summary='Themed path outranks raw hint',image_path='pearl-notifications-symbolic',icon_data=(8,8,7))
+            assert not record_with(s,args.ctl,themed)['image']
+            ranked=notified(s,fixture,summary='Themed path outranks app icon path',icon=str(art),image_path='pearl-notifications-symbolic')
+            assert not record_with(s,args.ctl,ranked)['image']
+            legacy=notified(s,fixture,summary='Legacy icon_data hint',icon_data=(8,8,7))
+            assert record_with(s,args.ctl,legacy)['image']
+            absolute=notified(s,fixture,summary='Absolute app icon path',icon=str(art))
+            assert record_with(s,args.ctl,absolute)['image']
+            assert notified(s,fixture,replaces=absolute,summary='Absolute app icon path')==absolute
+            await_state(s,args.ctl,lambda v:not next(n for n in v['notifications']['records'] if n['id']==absolute)['image'])
+            for stale in (hint_id,fell,themed,ranked,legacy,absolute): command(fixture,close=stale)
+            checks['icon-priority-chain-image-bounds-and-atomic-replacement']=True
             action(s,args.ctl,'dnd_on');id=notified(s,fixture,app='Mail',summary='Quiet delivery')
             assert state(s,args.ctl)['notifications']['toasts']==0 and not status(s,args.ctl)['notification']
             action(s,args.ctl,'dnd_off');assert state(s,args.ctl)['notifications']['toasts']==0
@@ -107,16 +157,97 @@ def main():
             ctl(s,args.ctl,'popup','hide');assert status(s,args.ctl)['media_views']==0
             time.sleep(.3);assert not state(s,args.ctl)['media']['timer']
             checks['bounded-cancellable-artwork-local-only-and-hidden-view-timers']=True
+            command(fixture,release_tray=True)
+            await_state(s,args.ctl,lambda v:v['tray']['count']==0)
+            command(fixture,extra_trays=True)
+            await_state(s,args.ctl,lambda v:v['tray']['count']==4 and all(i['ready'] for i in v['tray']['items']))
+            command(fixture,own_tray=True);command(fixture,register=True)
+            live=await_state(s,args.ctl,lambda v:v['tray']['count']==5 and all(i['ready'] for i in v['tray']['items']))
+            traygen=next(i['generation'] for i in live['tray']['items'] if 'org.test.PearlTray/' in i['registration'])
+            ctl(s,args.ctl,'tray','toggle','--output',output['id'])
+            focus_target(s,pearl,f'tray-choice-{traygen}')
+            wait_for(lambda:any('event=tray-choices visible=1' in line for line in pearl.lines))
+            one=eventually_status(s,args.ctl,lambda v:v['popup'] is not None)['popup']['rect']
+            assert one['height']<=48, ('single tray icon reserves extra vertical space',one)
+            geometry=r'event=tray-choices panel=(\d+)x(\d+) image=(\d+)x(\d+) x=([\d.]+) y=([\d.]+)'
+            wait_for(lambda:any(re.search(geometry,line) for line in pearl.lines))
+            match=next(re.search(geometry,line) for line in reversed(pearl.lines) if re.search(geometry,line))
+            pw,ph,iw,ih,x,y=map(float,match.groups())
+            assert abs(2*x+iw-pw)<=1 and abs(2*y+ih-ph)<=1, ('tray image is not centered',match.group(0))
+            checks['overflow-image-centered-in-panel']=True
+            checks['single-overflow-icon-popup-hugs-content']=True
+            before=sum(r.get('method')=='Activate' for r in records(s))
+            key(s,'-k','space')
+            wait_for(lambda:sum(r.get('method')=='Activate' for r in records(s))>before)
+            key(s,'-k','space')
+            wait_for(lambda:sum(r.get('method')=='Activate' for r in records(s))>before+1)
+            assert not next(i for i in state(s,args.ctl)['tray']['items'] if i['generation']==traygen)['menu_ready']
+            key(s,'-k','Tab');focus_target(s,pearl,f'tray-choice-{traygen}')
+            checks['overflow-left-click-activates-application']=True
+            capture(s,'tray-chooser-pixmap',output['connector'])
+            for index,(title,icon,pixmap,tooltip,identity,expected) in enumerate([
+                ('', 'pearl-notifications-symbolic', True, 'Fixture tray tooltip', 'Fixture ID', 'Fixture tray tooltip'),
+                ('Tray — αβγ', 'pearl-missing-tray-icon', True, 'Fixture tray tooltip', 'Fixture ID', 'Tray — αβγ'),
+                ('x'*513, '', False, 'Fixture tray tooltip', 'Fixture ID', 'Fixture tray tooltip'),
+                ('', '', True, '', 'Fixture ID', 'Fixture ID'),
+                ('', '', True, '', '', 'Tray application'),
+                ('Pearl fixture', '', True, 'Fixture tray tooltip', '', 'Pearl fixture'),
+            ]):
+                command(fixture,tray_title=title,tray_icon=icon,tray_pixmap=pixmap,tray_tooltip_title=tooltip,tray_id=identity)
+                await_state(s,args.ctl,lambda v:next(i for i in v['tray']['items'] if i['generation']==traygen)['image']==pixmap and next(i for i in v['tray']['items'] if i['generation']==traygen)['title']==('' if len(title.encode())>512 else title))
+                time.sleep(.3)
+                capture(s,f'tray-chooser-variant-{index}',output['connector'])
+                title_start=len(pearl.lines)
+                key(s,'-M','shift','-k','F10','-m','shift')
+                focus_target(s,pearl,'tray-1')
+                wait_for(lambda:any(f'event=tray-choices title={expected}' in line for line in pearl.lines[title_start:]))
+                focus_target(s,pearl,'tray-back');key(s,'-k','space')
+                focus_target(s,pearl,f'tray-choice-{traygen}')
+            checks['tray-menu-name-falls-back-through-tooltip-id-and-generic']=True
+            key(s,'-M','shift','-k','F10','-m','shift')
+            await_state(s,args.ctl,lambda v:next(i for i in v['tray']['items'] if i['generation']==traygen)['menu_ready'])
+            focus_target(s,pearl,'tray-1')
+            for cycle in range(5):
+                focus_target(s,pearl,'tray-back');key(s,'-k','space')
+                focus_target(s,pearl,f'tray-choice-{traygen}')
+                live=state(s,args.ctl)
+                assert live['tray']['count']==5 and next(i for i in live['tray']['items'] if i['generation']==traygen)['nodes']==9
+                capture(s,f'tray-chooser-back-{cycle}',output['connector'])
+                if cycle==0:
+                    command(fixture,tray_is_menu=True);time.sleep(.3);key(s,'-k','space')
+                else: key(s,'-M','shift','-k','F10','-m','shift')
+                await_state(s,args.ctl,lambda v:next(i for i in v['tray']['items'] if i['generation']==traygen)['menu_ready'])
+                focus_target(s,pearl,'tray-1')
+            command(fixture,tray_is_menu=False)
+            focus_target(s,pearl,'tray-back');key(s,'-k','space')
+            focus_target(s,pearl,f'tray-choice-{traygen}')
+            start=len(pearl.lines)
+            command(fixture,extra_trays=False)
+            await_state(s,args.ctl,lambda v:v['tray']['count']==1)
+            wait_for(lambda:any('event=tray-choices visible=0' in line for line in pearl.lines[start:]))
+            ctl(s,args.ctl,'popup','hide')
+            checks['overflow-excludes-bar-items-and-refreshes-after-owner-loss']=True
+            checks['tray-repeated-menu-back-keeps-item-and-node-counts-stable']=True
+            checks['tray-icon-chooser-title-variants-and-keyboard-menu-opening']=True
             action(s,args.ctl,'tray_activate',generation=traygen);action(s,args.ctl,'tray_secondary',generation=traygen)
             action(s,args.ctl,'tray_menu',generation=traygen);v=await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_ready']);menu_revision=v['tray']['items'][0]['menu_revision'];assert v['tray']['items'][0]['nodes']==9
             ctl(s,args.ctl,'tray','toggle','--output',output['id']);time.sleep(.3);capture(s,'tray-menu',output['connector'])
+            wait_for(lambda:any('event=tray-choices back=false parent=0 chooser=false' in line for line in pearl.lines))
+            navigation_start=len(pearl.lines)
             focus_target(s,pearl,'tray-2');key(s,'-k','space');focus_target(s,pearl,'tray-4');key(s,'-k','space');focus_target(s,pearl,'tray-5');key(s,'-k','space');capture(s,'tray-nested-menu',output['connector'])
+            wait_for(lambda:any('event=tray-choices back=true' in line and 'chooser=false' in line for line in pearl.lines[navigation_start:]))
             v=await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_revision']>menu_revision);menu_revision=v['tray']['items'][0]['menu_revision']
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=5)
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=6,code=4)
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=8,code=4)
             wait_for(lambda:any(r['kind']=='call' and r['method']=='Event' and r['args'][0]==5 for r in records(s)))
             checks['tray-activation-secondary-and-nested-dbusmenu-keyboard-actions']=True
+            navigation_start=len(pearl.lines)
+            focus_target(s,pearl,'tray-back');key(s,'-k','space')
+            focus_target(s,pearl,'tray-back');key(s,'-k','space')
+            focus_target(s,pearl,'tray-2')
+            wait_for(lambda:any('event=tray-choices back=false parent=0 chooser=false' in line for line in pearl.lines[navigation_start:]))
+            checks['direct-tray-menu-back-stops-at-root']=True
             command(fixture,menu_overflow=True);await_state(s,args.ctl,lambda v:not v['tray']['items'][0]['menu_ready'] and v['tray']['items'][0]['nodes']==0)
             action(s,args.ctl,'tray_click',generation=traygen,revision=menu_revision,menu_id=5,code=4)
             command(fixture,menu_overflow=False);await_state(s,args.ctl,lambda v:v['tray']['items'][0]['menu_ready'])

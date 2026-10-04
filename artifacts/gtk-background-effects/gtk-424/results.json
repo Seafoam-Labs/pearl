@@ -1,0 +1,71 @@
+{
+  "status": "passed",
+  "checks": {
+    "mixed-scale-negative-origin-mapping-and-single-reservation": true,
+    "instance-lock-preserves-running-server": true,
+    "bar-move-frame-exclusion-and-conflict": true,
+    "popup-clamping-keyboard-escape-and-arbitration": true,
+    "osd-does-not-steal-focus-and-is-click-through": true,
+    "outside-click-dismissal-does-not-leak-and-frame-interior-passes-input": true,
+    "custom-bar-opacity-restored-after-output-hotplug": true,
+    "hotplug-invalidates-mapping-and-dismisses-target-popup": true,
+    "rotated-output-popup-clamping": true,
+    "report-bundle-modes-markers-and-retention": true,
+    "idle-cpu-ticks-over-1.5s": 0,
+    "kill-restores-usable-bounds": true,
+    "stale-socket-recovery-and-graceful-reservation-removal": true,
+    "native-wayland-session-matches-ipc-before-surfaces-or-control": true,
+    "control-schema-frame-limit-eight-client-bound-and-partial-request-deadline": true,
+    "private-nested-stale-session-and-cross-display-cli-isolation": true,
+    "gtk-runtime": {
+      "version": "4.24.1",
+      "owner": "gtk",
+      "libraries": [
+        "/home/zoey/Pearl/.cache/gtk-4.24/lib/libgtk-4.so.1.2400.1"
+      ],
+      "sha256": {
+        "/home/zoey/Pearl/.cache/gtk-4.24/lib/libgtk-4.so.1.2400.1": "1f33e5bdb0eda46d1b58f638e73fac1549350d6160d69d46fd90eeb9c29deda0"
+      }
+    },
+    "native-blur-pixel-difference-under-rule-veto": 1.3699009324009321,
+    "rule-restored-pixel-difference": 0.0,
+    "custom-bar-opacity-survives-blur-capability-change": true,
+    "osd-blur-and-destruction": true,
+    "notification-blur-and-destruction": true,
+    "switcher-blur-lifetimes": true,
+    "dock-resize-blur-lifetimes": true,
+    "blur-island-bounds-rounded-corners-mixed-scale-and-rotation": true,
+    "bar-fade-clears-before-unmap-and-restores-on-remap": true,
+    "gtk-owned-surface-native-protocol-capability-resize-remap-lifecycle": true,
+    "default-launch": {
+      "command": [
+        "/home/zoey/Pearl/.zig-cache/o/fb8f034417e4a91e5db55af2d98cea88/pearl"
+      ],
+      "renderer": null,
+      "effects": 5,
+      "warnings": [
+        "(pearl:280460): Gdk-WARNING **: 11:03:52.060: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:280460): Gdk-WARNING **: 11:03:52.332: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:280460): Gdk-WARNING **: 11:03:52.333: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:280460): Gdk-WARNING **: 11:03:52.336: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:280460): Gdk-WARNING **: 11:03:52.352: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)"
+      ]
+    },
+    "vulkan-launch": {
+      "command": [
+        "/home/zoey/Pearl/.zig-cache/o/fb8f034417e4a91e5db55af2d98cea88/pearl"
+      ],
+      "renderer": "vulkan",
+      "effects": 5,
+      "warnings": [
+        "(pearl:280511): Gdk-WARNING **: 11:03:53.530: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:280511): Gdk-WARNING **: 11:03:53.822: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:280511): Gdk-WARNING **: 11:03:53.824: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)",
+        "(pearl:280511): Gdk-WARNING **: 11:03:53.827: vkQueuePresentKHR(): A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully. (VK_SUBOPTIMAL_KHR) (1000001003)"
+      ]
+    }
+  },
+  "pearl_sha256": "6e71d03e8708391d1c9f7d91988fbd4248adf61da1a9f30d2aa8a32c37108855",
+  "ctl_sha256": "a297fe340ca788e62f257e6e7ab7b157ac56ecc83f6df9416db393a022cb4c8e",
+  "effects_aqueous_sha256": "99d6e49491a82b8f5874974c9b68add322fbc6e2ec3950c65c9f7bc63d8ed845"
+}

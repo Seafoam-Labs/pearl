@@ -108,9 +108,8 @@ def main():
             assert LOG_LINE.match(ready), ready
             checks['log_lines_carry_the_timestamp_and_pid_envelope'] = 'pass'
 
-            # No debug-level call sites exist yet, so raising the level must
-            # leave the default output untouched while error level and a scope
-            # filter both suppress the known info events.
+            # Error level and a scope filter must both suppress the known info
+            # events from a demo run.
             for name, flag in [('error-level', ['--log-level', 'error']), ('scope-filter', ['--log-scopes', 'all,~pearl'])]:
                 quiet = outer.child('quiet-' + name, [args.pearl, '--demo', *flag], **common, PEARL_TEST_CLOSE_MS='200')
                 assert quiet.wait(timeout=30) == 0, '\n'.join(quiet.lines)

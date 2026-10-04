@@ -36,17 +36,46 @@ navigation, separators, disabled/hidden entries and check/radio toggle state.
 
 `org.freedesktop.Notifications` at `/org/freedesktop/Notifications` implements
 GetCapabilities, GetServerInformation, Notify and CloseNotification. Advertised
-capabilities are exactly `body`, `actions`, and `persistence`. The reported
+capabilities are exactly `body`, `actions`, `persistence` and `icon-static`;
+`icon-multi` is never advertised, because the specification makes the two
+mutually exclusive and specifying both a protocol error. The reported
 specification version is 1.2. Body markup, hyperlinks, embedded body images,
-image hints, sound and activation tokens are **not advertised**. Bodies are
-plain GTK labels: markup is literal text, control characters and bidi overrides
-are removed, and truncation preserves UTF-8. App icons accept themed names only.
+sound and activation tokens are **not advertised**. Bodies are plain GTK
+labels: markup is literal text, control characters and bidi overrides are
+removed, and truncation preserves UTF-8.
+
+Icons resolve from the first usable candidate in specification section 5.1
+order: `image-data`, then `image-path` (and the legacy `image_path`), then
+`icon_data`, then `app_icon`. A rejected candidate falls through to the next
+rather than giving up. Each image is bounded at 1024 × 1024 or 4 MiB of raw
+payload and is retained at most 128 × 128, aspect preserved and never
+upscaled; an oversized or malformed image never costs the notification.
+`record.icon` only ever holds a themed name validated against
+`[0-9A-Za-z._-]`; everything that resolves to pixels lives in a service-side
+table keyed by notification id and pruned against the model, so no pixels are
+retained for an id that is gone.
+
+Pearl opens absolute paths and `file://` URIs named by any session-bus client,
+bounded to a 128 px decode, and never logs the path. Relative paths and other
+schemes are rejected. The session bus is already a same-UID trust boundary and
+every reference implementation reads the same hints, so the residual exposure
+is accepted and recorded here rather than left implicit.
 
 IDs are nonzero uint32 values, including at wraparound. Replacing an active
 notification preserves its ID and atomically replaces content, actions and
 expiration. Replacement/CloseNotification only affect records belonging to the
 calling unique bus owner. Unknown/closed/foreign IDs return InvalidArgs when
 closed. The UI's same-user control endpoint can dismiss or invoke active records.
+
+An action pair whose caption sanitizes to ASCII whitespace only is dropped
+before the key bounds are checked: it renders no button, is absent from the
+`actions` count and cannot be invoked by key, while the notification itself
+still arrives. Senders that inject the reserved `default` key with a
+placeholder caption therefore keep every pair they actually labelled. Blankness
+is ASCII space, tab, line feed and carriage return only, so a caption of
+exotic spaces such as U+00A0 still counts as readable and renders. `default`
+is otherwise an ordinary key, and there is no click-on-the-card activation
+for it.
 
 NotificationClosed is emitted after invalidation with reason **1** for expiry,
 **2** for user dismissal or a nonresident action, **3** for CloseNotification,
@@ -116,6 +145,19 @@ acquire the queued name. Items must register with the new watcher, as usual.
 An existing notification daemon likewise retains its name; Pearl reports that
 notifications are unavailable until the name becomes available.
 
+The expanded tray shows ready items that are not currently visible on that
+output's bar. The list follows live bar capacity and item changes. Both bar and
+expanded icons use left click to Activate and right click to open the context
+menu; menu-only items use left click to open their menu too. Middle click sends
+SecondaryActivate. In the expanded tray, Space/Enter activates and Menu or
+Shift+F10 opens the context menu.
+Back returns from nested menus to their parent. At the menu root, Back returns
+to the expanded tray only when the menu was opened from that chooser; menus
+opened directly from bar icons have no root Back button.
+Menu headings and accessible icon names share the same fallback: `Title`, the
+`ToolTip` title, `Id`, then "Tray application". Tooltip descriptions remain in
+the hover tooltip rather than becoming part of the menu heading.
+
 Menus use `com.canonical.dbusmenu`: AboutToShow precedes display, GetLayout reads
 the nested tree, Event sends `clicked`, and LayoutUpdated or
 ItemsPropertiesUpdated invalidates/refetches the selected menu. Clicks require
@@ -148,7 +190,7 @@ visibility or bus changes; stale completions cannot replace the current image.
 | Resource | Limit |
 | --- | --- |
 | Outbound session-bus calls | 64 in flight; 3-second method timeout |
-| Notification request | 64 KiB; 64 retained records; 8 unique action pairs |
+| Notification request | 64 retained records; 8 unique action pairs; icon at most 1024 × 1024 or 4 MiB raw, retained at 128 × 128 |
 | Notification text | app 160, summary 256, body 2048, action key 96/label 160 UTF-8 bytes |
 | Toasts | 3 maximum, reduced for short outputs; 8-second presentation maximum |
 | Tray items / property reply | 32 / 1 MiB |

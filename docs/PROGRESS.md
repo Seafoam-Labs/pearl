@@ -1,5 +1,318 @@
 # Pearl implementation progress
 
+## Notification action captions, September 30, 2026
+
+kitty 0.49.1 puts `actions = {'default': ' '}` on every notification it
+forwards for another program, ahead of and independently of any buttons that
+program asked for; its own comment is "dbus requires string to not be empty".
+Qwen Code 0.24.7 asks kitty for `a=focus` and sends no captions of its own, so
+the injected pair is the only one on the wire. Pearl turned every pair into a
+button, which is how a captionless pill appeared beside Dismiss. The pill
+measured 114 px wide against Dismiss's 112 px in the reported capture because
+the button row is a homogeneous `GtkFlowBox` (`w.flow`), so the blank button
+borrowed the widest sibling's width; no CSS rule targets those buttons.
+
+The pair is now dropped in the pure model. `notification_policy.usableAction`
+reports a sanitized caption as blank when trimming ASCII space, tab, line feed
+and carriage return leaves nothing, and the Notify parse loop skips such a pair
+before the key bounds. The model is the only place that fixes the toast card,
+the notification centre, the standalone Settings page and the `session status`
+action count together; a view-side filter would have needed two edits and still
+reported a phantom count. Skipping before the key bounds is what lets `['','']`
+and an over-long key carried by a blank caption deliver instead of costing the
+whole notification, and before the duplicate scan so `['a','','a','A']` does not
+raise a false uniqueness error. The sanitized caption is computed once and
+stored, so a kept pair is not sanitized twice.
+
+Rejected:
+
+- Dropping the reserved `default` key regardless of caption: Pearl's own
+  fixture and two drivers use `['default','Open']`, a labelled button that must
+  keep rendering, and the specification only says implementations are free not
+  to display the name.
+- Removing `actions` from `GetCapabilities`: kitty builds the pair outside the
+  capability check, so it would not stop the payload, and it would make the
+  advertised list untruthful about a button Pearl does render.
+- A fallback caption derived from the key: cosmetic, keeps a button the sender
+  never labelled and adds a string to translate.
+- Rejecting the whole Notify: the same over-rejection the oversized-icon change
+  removed.
+
+Deliberately not done. Blankness is ASCII only: `std.unicode` has no whitespace
+predicate, so a Unicode-aware check means a hand-rolled codepoint table in a
+pure module for a caption no measured sender produces; a U+00A0-only caption is
+asserted as kept in the pure test so widening the rule later is a named change.
+An empty action key with a readable caption still rejects the notification as
+before: unlike the blank caption it has no measured sender behind it, and an
+unaddressable action whose caption promises a control is a different trade from
+a caption nobody can read.
+
+Checks actually run:
+
+- `zig build test -Doptimize=ReleaseSafe`: 251/251 pass, including the new
+  caption test in `src/services/notification_policy.zig`.
+- `zig build test-session-services -Doptimize=ReleaseSafe` on the unmodified
+  tree carrying only the new nonresident-action probe: 21 groups pass, so the
+  close-with-reason-2 branch of `invoke`, previously uncovered, is measured
+  before the rule lands.
+- The same suite after the change: 22 groups pass, recorded in
+  `artifacts/t09/latest/`. The new group asserts that the reported kitty
+  payload keeps its message and loses only the phantom pair, that a blank
+  caption hides a repeated key instead of rejecting the notification, that
+  `['','']` and a 97-byte key with a blank caption deliver with zero actions,
+  and that `['','Open']`, an odd child count and 18 children still return
+  InvalidArgs. `protocols/notification-center-actions.png` shows the surviving
+  cards with labelled buttons and Dismiss only.
+
+## Support report journal resolution, September 30, 2026
+
+`pearlctl report` no longer assumes the unit name. On this machine the shell runs in
+Aqueous's integration unit (`aqueous-git-pearl.service`, `ExecStart` wrapped by
+`aqueous-activity-launch`), which sets no `SyslogIdentifier`, so the fixed
+`journalctl --user -u pearl.service` returned `-- No entries --` in every report and
+`-t pearl` misses for the same reason. The bundle is assembled inside the shell, so
+`src/cli/server.zig` now resolves the stream from its own `/proc/self/cgroup`: the
+innermost `.service` leaf, the unit journald stamps as `_SYSTEMD_USER_UNIT` for a
+process in a unit's own cgroup. `.scope` leaves are rejected deliberately; a
+terminal or login scope would put other programs' output into a file the docs tell
+users to attach to a public issue. When no service is found, or the unit query
+matches nothing, a second query filters `_EXE=` from `/proc/self/exe`. Candidate
+names (`pearl.service`, `pearl-git.service`, `aqueous-*-pearl.service`) were rejected:
+Aqueous owns that naming and the cgroup is authoritative. `report.unitFromCgroup` is
+pure and charset-validated, so the unit name can neither break out of the header nor
+reach a subprocess argument. `report.Journal` carries the query, making the section
+header the command that reproduces the excerpt instead of a fixed string, and
+`journal=no-entries` is now distinguishable from
+`journal=unavailable reason=<journalctl's own line>`; the sentinel is no longer echoed
+as if it were an entry. Both queries share one 2 s budget so the report stays inside
+`pearlctl`'s 5 s client deadline. The system journal is still never read, so a
+greeter-launched session's stream stays outside the report.
+
+Checks actually run:
+
+- `zig build test -Doptimize=ReleaseSafe` and `zig build -Doptimize=ReleaseSafe`:
+  pass, including the parser cases for the live cgroup text, the scope/slice/delegated
+  rejections and the new marker and header assertions.
+- Both branches observed end to end, samples in
+  `artifacts/aqueous-082/functional/report-journal-resolution/`. `report-scope-session.log`:
+  a private headless session started from a terminal scope, so the header is
+  `=== journalctl --user _EXE=<worktree>/zig-out/bin/pearl -n 500 --no-pager ===` with
+  `journal=no-entries`. `report-unit-service.log`: the same private session hosted by a
+  transient unit (`systemd-run --user --wait --collect
+  --unit=pearl-report-journal-probe-2.service`), header
+  `=== journalctl --user --unit=pearl-report-journal-probe-2.service -n 500 --no-pager ===`
+  over a 16-line excerpt, 14 lines carrying the shell's `ts=<UTC> pid=<n>` envelope and
+  the rest the unit's own `systemd` start line. Both bundles: state dir `0700`, file
+  `0600`, status section carrying the session fingerprint rather than the token, clean
+  `quit`, and no `warning(`, `error(` or `critical(` line in either session's
+  `pearl.log`. Each probe unit was collected on exit; its journal entries stay under
+  those two names, the only residue on the live session.
+- The `tests/integration/test_surfaces.py` report assertions (resolved-query header,
+  non-empty section) were replayed against both samples outside the suite: pass. The
+  suite cannot carry them here yet: `zig build test-surfaces` stops before any check
+  because its `--effects-aqueous` default, `.cache/aqueous-effects/bin/aqueous`, is
+  absent on this machine, and with `--effects-aqueous .cache/aqueous/bin/aqueous` it
+  reaches `basic()` and aborts at the recorded local-compositor output-off limitation,
+  which is earlier than the report block.
+- Resolved commands run read-only against the host journal, the live Aqueous layout:
+  `journalctl --user --unit=aqueous-git-pearl.service -n 500 --no-pager` returns 501
+  lines including Pearl's envelope,
+  `journalctl --user _EXE=/usr/bin/pearl-git -n 500 --no-pager` returns 310.
+- `python3 -m py_compile tests/integration/test_surfaces.py`: pass.
+
+## Notification icons: measured evidence and rejected alternatives, September 29, 2026
+
+Firefox web notifications that carry a site icon were dropped outright while
+Chromium's identical notifications arrived. The diagnosis and the fix live in
+the two commits that remove the whole-message Notify bound and add bounded
+icon decoding; `docs/SESSION_SERVICES.md` carries the resulting behavior and
+limits. This section keeps only what the untracked working notes recorded and
+the tree cannot recover.
+
+Wire capture, Firefox (`firefox-developer-edition` 157.0b5), five notifications
+from one page load of the bennish probe, sender `:1.378`, against `pearl-git`
+1459 owning `org.freedesktop.Notifications`:
+
+| summary | hints | pixel bytes | reply |
+| --- | --- | --- | --- |
+| probe plain | desktop-entry, sender-pid, suppress-sound | 0 | id 79 |
+| probe bennish 160x160 | plus image-data | 102400 | LimitsExceeded |
+| probe icon32 | plus image-data | 4096 | id 80 |
+| probe icon256 | plus image-data | 262144 | LimitsExceeded |
+| probe interaction | desktop-entry, sender-pid, suppress-sound | 0 | id 81 |
+
+Chromium 153.0.8010.52, same five notifications, sender `:1.376`: all five
+accepted, no error replies, `byte_payload` of 1 for every call including the
+256x256 icon. Chromium writes the icon to a temp file and sends the path both
+as `app_icon` and as `image-path`/`image_path`, so its message stays in the
+hundreds of bytes regardless of icon size; Firefox converts the icon to a
+pixbuf and sends raw RGBA in `image-data`, so size scales with
+width x height x 4.
+
+Why Firefox stays completely silent: `nsAlertsIconListener::ShowAlert` treats a
+failed show as terminal and the native-versus-XUL choice is made earlier in
+`InitAlert`, so a `LimitsExceeded` reply yields neither a toast nor an
+in-browser popup; Firefox neither retries nor falls back. The portal route was
+ruled out: `ShouldUsePortal(PortalKind::Notification)` forces
+`autoBehavior = false`, so unsandboxed Firefox always takes libnotify, and the
+capture confirms the Notify calls come from the Firefox process. Separate and
+unrelated to delivery, both browsers fail portal host-app registration
+(`Could not register app ID: App info not found for 'org.mozilla.firefox'` and
+the same for `'org.chromium.Chromium'`) because the app ID does not match the
+installed desktop file name; upstream Bugzilla 1945770.
+
+libnotify sends the pixbuf verbatim with no downscaling and picks the hint name
+from the server's reported spec version: `image-data` at >= 1.2, `image_data`
+at 1.1, `icon_data` below. Pearl reports 1.2, so Firefox sends `image-data`;
+the legacy names only matter for hand-rolled clients.
+
+Measured transport ceiling on a private `dbus-daemon` with a GLib server and
+client, host session bus untouched. By the time the handler runs GLib has
+already deserialized the message, so a message bound measures memory that is
+allocated regardless:
+
+| payload | wire bytes | result |
+| --- | --- | --- |
+| 1 to 32 MiB | up to 33554552 | accepted, handler ran |
+| 63 MiB | 66060408 | accepted, handler ran, `get_size()` = 66060408 |
+| 64 MiB | 67108984 | connection torn down |
+
+`/usr/share/dbus-1/session.conf` sets this machine's daemon limits to 1 GB, so
+the 64 MiB ceiling is GLib's, not the daemon's. A hostile page could already
+hand Pearl a 63 MiB `image-data` array; the old bound stopped none of it and
+only converted a paid-for payload into a lost notification.
+
+Reference implementations, none of which bounds the message: mako
+(`dbus/xdg.c handle_notify`) has no bound, `calloc`s the full payload and
+always renders, falling through to `resolve_icon` when the raw image is
+absent; dunst (`src/dbus.c`) has no bound, reads `image-data` then
+`image_data` then `icon_data`, defers the decode until rules supply the icon
+size and rejects only on a length mismatch; GNOME Shell
+(`js/ui/notificationDaemon.js`) has no bound and uses
+`Shell.util_create_pixbuf_from_data`, splitting `file://` / leading `/` /
+themed name; SwayNotificationCenter (GTK4, closest analogue) has no bound, wraps
+the raw bytes in a `Gdk.Pixbuf`, `scale_simple`s to the widget's preferred
+size and `set_from_paintable`s it. The working note's claim that dropping the
+image "matches dunst and mako" was wrong: neither degrades. The ecosystem
+answer is accept the notification always and bound plus downscale the image.
+
+Reproduction, for re-running the browser check on a private nested Aqueous
+session. Throwaway profiles, no changes to the real ones; serve a page that
+fires notifications on load (`new Notification("probe bennish 160x160",
+{ body: "...", icon: "sexy_ben.jpeg" })`). Firefox grants notification
+permission for every origin through a temp profile `user.js`:
+`user_pref("permissions.default.desktop-notification", 1);`. Chromium grants it
+per origin through `Default/Preferences` in a temp `--user-data-dir`, written
+before first launch:
+`{"profile":{"content_settings":{"exceptions":{"notifications":{"http://127.0.0.1:8765,*":{"setting":1}}}}}}`.
+Capture with `busctl --user monitor org.freedesktop.Notifications` (systemd 262
+accepts service names only, not match rules). Launch with
+`firefox-developer-edition -no-remote -new-instance -profile <tmp> http://127.0.0.1:8765/probe.html`
+and `chromium --user-data-dir=<tmp> --no-first-run http://127.0.0.1:8765/probe.html`.
+A 160x160 icon makes the monitor log grow by megabytes because every pixel
+byte is printed; extract summaries rather than reading it.
+
+Rejected alternatives, so nobody re-litigates them:
+
+- Raising the message bound to a larger finite value. Still loses
+  notifications over a large icon while buying no wire protection, since GLib
+  has already allocated the payload before the handler runs.
+- Keeping any message bound at all, for the same reason.
+- Storing pixels inline in `policy.Record`. Record grows from about 5.6 KB to
+  about 22 KB and Model from about 358 KB to about 1.4 MB permanently resident,
+  plus a 22 KB stack frame for `var r: policy.Record` in the handler.
+- An opaque pointer on `Record`. `Model.add`'s `slot.?.* = input` and
+  `Model.close`'s `r.* = .{}` would drop it without release, and adding a
+  release hook to the pure model is more machinery than keeping pixels outside
+  it.
+- Reading image files at paint time as SwayNotificationCenter does. Chromium's
+  temp file is deleted on exit and Pearl retains 64 records of history for the
+  whole session, so the path would dangle.
+- Widening `icon` to `Text(512)`. Unnecessary once `icon` only ever holds a
+  themed name.
+
+## Bar layout stability and the service suite, September 29, 2026
+
+`zig build test-services` was red at three moving sites. The bar's keyboard
+indicator was the driver: a driver's `wtype` creates a virtual keyboard, Aqueous
+makes it the seat's active keyboard, it publishes an empty layout name, and the
+resulting 66 px width swing flipped the workspace wrap, the painted panel height
+and the exclusive zone on every keystroke. The button measured a natural width of
+108 px against 42 px with a blank label, and its minimum stayed 42 px both ways,
+so with siblings budgeted at natural width a bar of length 853 had 274 px
+available against 208 px: `per_line` 5 against 4, the grid one row against two,
+the painted panel 70 px against 102 px, and `set_exclusive_zone` rewritten on
+each pass, measured at 232 flips per bar surface over 8 s. At scale 1 the same
+swing does not cross the row threshold, which is why that case churned with zero
+zone changes and looked unrelated.
+
+The earlier reading, that `fitTasks` and `layoutWorkspaces` were measuring each
+other's output, was wrong for every capture taken: `fitTasks` returns at its
+first line unless the bar has a task strip, and neither the reproduction fixture
+nor the default group spec has one.
+
+The bar now budgets ellipsizing live text at its minimum in both layout passes,
+renders an empty layout name as the missing-keyboard placeholder, and reserves the
+workspaces grid's unwrapped width in the task-strip budget, so neither pass
+measures the other's output. Three `test_services.py` expectations were also
+wrong and were corrected against measurements, not guesses: the flyout is
+dismissed by the suite's own session-inactive, logind-preparing and bus-restart
+steps and has to be reopened; the audio reconnect budget was tighter than the
+backoff `docs/SERVICES.md` documents; and the log capture froze before the OSD
+surface-reuse assertion that counts across the whole log.
+
+Verified green: `test-services`, `test-bar-layout`, `test-running-apps`,
+`test-bar-autohide`, `test-desktop`, `test-settings-appearance`, `zig build test`.
+A full matrix re-record is still owed, and `test-settings-integration` now fails
+later, in the arch-git staging step, because `package()` stages
+`pearl-plugin-host` and the `coral-git` and `dome-git` variants, which that
+target does not build.
+
+## Logging and support diagnostics workstream: rejected alternatives and open items, September 29, 2026
+
+The workstream ran from a logging census plus a survey of two reference
+implementations (upstream Aqueous, Shelly), held as untracked working notes beside
+`plan.md`. All eight phases landed, `docs/LOGGING.md` carries the user-facing
+result, and the notes are deleted. What only they recorded:
+
+Rejected alternatives, so nobody re-litigates them:
+
+- No general in-process log file. Pearl runs as a systemd user service, so journald
+  owns indexing, access control, rate limiting and retention. A second copy doubles
+  flood exposure and makes Pearl reimplement retention worse. The bounded
+  `pearlctl report` bundle is the only diagnostic file Pearl writes.
+- No SIGSEGV handler, no backtrace or breakpad. ReleaseSafe keeps Zig's default
+  handler, so a panic already prints a stack trace to stderr, which now lands under
+  the unit's journal identity and inside a report. Both references rely on the same.
+- No `event=` format migration and no cosmetic renames (the four `*-focus` names for
+  one concept, the byte-identical duplicate message groups). The format is the
+  tree's most-scraped asset; renaming churns text tests depend on for no user gain.
+- No build-time `-D` verbosity flag. Runtime filtering makes it redundant and a build
+  flag cannot be handed to a user as a support step.
+- No logrotate, tmpfiles age rules or journald quota: retention stays documented, not
+  owned.
+- No greeter wrapper redirect. The greeter unit and the session it launches keep the
+  journal, since nothing in the spawn chain touches fd 1 or 2, so there is no
+  per-login tmpfs log as in Aqueous's launcher.
+
+Open, deliberately out of this workstream's scope:
+
+- Per-subsystem disposition review of the silent `catch {}` sites outside
+  `src/services`, which now has none. Which become `err`, which `debug`, which stay
+  silent is a review of intent, not logging infrastructure.
+- Crash culture: `catch unreachable` on attacker-reachable or OOM paths, most
+  prominently the greeter session-environment build in `src/greeter/screen.zig`; the
+  `catch @panic` allocation paths; asserts left on release paths; and the two
+  inverted gates that check an invariant only in test builds
+  (`src/core/application.zig:450`, `src/main.zig:90`).
+- Two ideas worth taking from the references that are not logging: a
+  recoverable-versus-failed field convention the UI can branch on, and surfacing a
+  child process's stderr as the user-visible error text. Pearl does the opposite on
+  compositor disconnect (`src/core/application.zig:230` logs `warn` and shows
+  nothing).
+- Unit-launched executables (greeter, lock, settings, themes, plugin host) take no
+  verbosity flags; their limitation is stated in `docs/LOGGING.md`.
+
 ## Harness truncation and final verification, September 29, 2026
 
 The private-session harness now makes log truncation loud: when a child hits

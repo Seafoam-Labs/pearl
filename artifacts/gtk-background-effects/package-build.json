@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "method": "makepkg dependency check, build, check(), staging package(); no installation or service activation",
+  "source": {
+    "archive": "pearl-0.2.0.tar.gz",
+    "sha256": "220eb5658914a8c7172de2d2d748239503b1845f5c66838e2fb40fc9c7f28287",
+    "source_date_epoch": 1789344000,
+    "version": "0.2.0",
+    "files": 1111
+  },
+  "package": "pearl-1:0.2.0-1-x86_64.pkg.tar.zst",
+  "sha256": "c876c99f1784f624973652db437a8557439899f233e3ff3e8c7c1ffa91db11eb",
+  "plugin_payload_sha256": {
+    "usr/bin/pearl-plugin-host": "3433f2a447aea84b04c580a9e388060b4426e8718dfd74fb7edd93b2f4f15824",
+    "usr/share/pearl/plugins/companion-c/LICENSE.assets": "81d7ab4ab2828b50afdbf366499d1275069808680743505dffccfcb217ed72af",
+    "usr/share/pearl/plugins/companion-c/cat.png": "4bf30a5aa5cc6b1ddaf26a794309131085cce8d258624cb3a76e7ee5c2a96eb9",
+    "usr/share/pearl/plugins/companion-c/plugin.json": "124fd0928dc12d3003fce65fec2ba922636326e7de5f3bdca9e09d472a4a60e0",
+    "usr/share/pearl/plugins/companion-c/plugin.wasm": "dc11709b1a6d673e6cb351951dd25cbfad92403c55f9dc0497d2a8f0b02b181e",
+    "usr/share/pearl/plugins/counter-rust/plugin.json": "ae468baf733fdc7ac164130a20117287bae2a8e224d523d2de6714d35975ad58",
+    "usr/share/pearl/plugins/counter-rust/plugin.wasm": "acc6ec6dac02889b72bcf34e9fce727d9ef8f8a524cdeade157799af0e4a2533",
+    "usr/share/pearl/plugins/counter-zig/plugin.json": "8a2109d60baf5a25144161b9800bbc3316158335359e2eb04331d0c8341a59e9",
+    "usr/share/pearl/plugins/counter-zig/plugin.wasm": "2a513e8720a9a3e644fa37b9684ac6e71d60180aae2f307cf17f8d4d1ada1ee9",
+    "usr/share/pearl/plugins/timer-c/plugin.json": "bab61f9680ac06b4552e1adb6e30dfca89af2b2fffbe58acc4ddeb99ed69670f",
+    "usr/share/pearl/plugins/timer-c/plugin.wasm": "a3cd67c01527c2ec3a6ff298fa98ea10e2f30701bc90c358d47f5cce8f55971a"
+  },
+  "coral_sha256": "6a63f15164e842c14cb20ead60302939254cda11941265474d1247e269f8cf5c",
+  "dome_sha256": "aaeb00813bcedca2a37ca7e618ee26bbf6184d9abeed36bdaa27813f803a8417",
+  "phyto_sha256": "02c61e1703b986951e517bc58171f8609b98a8f607f8ff971e6fc1bfb217c269",
+  "binary_sha256": {
+    "pearl": "e583d393cbb9fcdf48f098fb45e3b14c5f7669869844c06eb0446ae18a2d0aae",
+    "pearlctl": "8ff44e101faa7e684e924f520d442e97c70cbd9e0588b423638cfc48359e62d6",
+    "pearl-lock": "9926fd233ff859b1552f86446e9e890454ebc576c5337d7ebe3a269aa50c0363",
+    "pearl-settings": "05f3e47e4815275a376b2672a2a9734a24db3d0b26c6c68a73e20d6ae6cd0302"
+  }
+}

@@ -42,7 +42,7 @@ def main():
     parser.add_argument('--greeter', type=Path, required=True)
     args = parser.parse_args()
     checks = []
-    for mode in ('conversation', 'cancel', 'denied', 'huge', 'truncated', 'duplicate', 'alias', 'bad_utf8', 'unsolicited', 'lost_start', 'blocked', 'cancel_blocked'):
+    for mode in ('conversation', 'cancel', 'denied', 'huge', 'truncated', 'duplicate', 'alias', 'bad_utf8', 'unsolicited', 'lost_start', 'blocked', 'cancel_blocked', 'prompt_timeout'):
         with tempfile.TemporaryDirectory(prefix='pearl-greetd-') as tmp:
             server = socket.socket(socket.AF_UNIX)
             server.bind(tmp+'/greetd.sock'); server.listen(); server.settimeout(10)
@@ -70,6 +70,13 @@ def main():
                                     # A second socket must not extend cancellation indefinitely.
                                     assert second.recv(1) == b''
                             return
+                        if mode == 'prompt_timeout':
+                            send(conn, {'type':'auth_message','auth_message_type':'secret','auth_message':'Password:'})
+                            second, _ = server.accept()
+                            with second:
+                                assert receive(second) == {'type':'cancel_session'}
+                                send(second, {'type':'success'})
+                            return
                         if mode == 'denied':
                             send(conn, {'type':'error','error_type':'auth_error','description':'Denied'})
                         else:
@@ -92,6 +99,7 @@ def main():
                     errors.append(e)
             thread = threading.Thread(target=daemon, daemon=True); thread.start()
             env = dict(os.environ, GREETD_SOCK=tmp+'/greetd.sock')
+            if mode == 'prompt_timeout': env['PEARL_TEST_GREETER_WAIT']='1'
             if mode == 'cancel': env['PEARL_TEST_GREETER_CANCEL']='1'
             child = subprocess.run([str(args.greeter.resolve()), '--probe'], env=env, capture_output=True, text=True, timeout=12)
             thread.join(11); server.close()
@@ -100,6 +108,9 @@ def main():
             success = mode in ('conversation','cancel','lost_start','unsolicited')
             assert (child.returncode == 0) == success, (mode, child.returncode, child.stderr)
             if mode in ('blocked','cancel_blocked'):assert 'state=unavailable' in child.stderr and 'state=idle' not in child.stderr
+            if mode == 'prompt_timeout':
+                assert 'event=greeter-timeout' in child.stderr and 'state=idle' in child.stderr, child.stderr
+                assert not starts
             assert len(starts) <= 1
             assert 'fixture-secret' not in child.stdout + child.stderr
             checks.append(mode)

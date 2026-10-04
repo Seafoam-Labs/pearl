@@ -93,6 +93,7 @@ test {
     _ = @import("config/aqueous_client.zig");
     _ = @import("services/artwork.zig");
     _ = @import("services/tray.zig");
+    _ = @import("services/notification_image.zig");
     _ = adapter;
     _ = @import("aqueous/icons.zig");
     _ = @import("aqueous/transport.zig");

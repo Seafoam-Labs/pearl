@@ -1,2 +1,2 @@
 //! Release-candidate identity; release acceptance is tracked separately.
-pub const string = "1.0.0-rc.2";
+pub const string = "0.2.1";

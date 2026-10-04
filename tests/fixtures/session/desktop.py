@@ -17,6 +17,7 @@ def own(name): return call('org.freedesktop.DBus','/org/freedesktop/DBus','org.f
 def release(name): call('org.freedesktop.DBus','/org/freedesktop/DBus','org.freedesktop.DBus','ReleaseName',V('(s)',(name,)))
 def emit(path,iface,name,args): bus.emit_signal(None,path,iface,name,args)
 def changed(path,iface): emit(path,'org.freedesktop.DBus.Properties','PropertiesChanged',V('(sa{sv}as)',(iface,objects[(path,iface)],[])))
+def raw(w,h,fill=255): return V('(iiibiiay)',(w,h,w*4,True,8,4,bytes([fill])*(w*h*4)))
 def metadata(title='Night drive',url=''):
     return V('a{sv}',{'xesam:title':V('s',title),'xesam:artist':V('as',['Pearl Ensemble']),'mpris:trackid':V('o','/track/one'),'mpris:length':V('x',240000000),'mpris:artUrl':V('s',url)})
 media={'PlaybackStatus':V('s','Playing'),'Rate':V('d',1),'Position':V('x',30000000),'Metadata':metadata(url=os.environ.get('PEARL_TEST_ART',''))}
@@ -88,7 +89,10 @@ def send_notification(data):
     hints={k:V('b',data[k]) for k in ('resident','transient') if k in data}
     if 'urgency' in data: hints['urgency']=V('y',data['urgency'])
     if 'desktop_entry' in data: hints['desktop-entry']=V('s',data['desktop_entry'])
-    result=call(nn,np,nn,'Notify',V('(susssasa{sv}i)',(data.get('app','Messages'),data.get('replaces',0),'',data.get('summary','Hello from Pearl'),data.get('body','A notification with <b>plain text</b>.'),data.get('actions',['default','Open']),hints,data.get('timeout',0))))
+    if 'image_path' in data: hints['image-path']=V('s',data['image_path'])
+    if 'icon_data' in data: hints['icon_data']=raw(*data['icon_data'])
+    if 'image_data' in data: hints['image-data']=raw(*data['image_data'])
+    result=call(nn,np,nn,'Notify',V('(susssasa{sv}i)',(data.get('app','Messages'),data.get('replaces',0),data.get('icon',''),data.get('summary','Hello from Pearl'),data.get('body','A notification with <b>plain text</b>.'),data.get('actions',['default','Open']),hints,data.get('timeout',0))))
     id=result.unpack()[0];note_ids.append(id);record('notification',id=id);return id
 def command(channel,condition):
     global delay,deny,revision,malformed
@@ -109,6 +113,20 @@ def command(channel,condition):
         if 'capability' in data: media[data['capability']]=V('b',data['value']);changed(mp,mi)
         if 'playback' in data: media['PlaybackStatus']=V('s',data['playback']);changed(mp,mi)
         if 'status' in data: item['Status']=V('s',data['status']);changed('/StatusNotifierItem',si)
+        if 'extra_trays' in data:
+            for i in range(4):
+                name=f'org.test.PearlExtraTray{i}';path=f'/ExtraTray{i}'
+                if data['extra_trays']:
+                    register(path,si,dict(item),meth('Activate','ii')+meth('SecondaryActivate','ii')+meth('ContextMenu','ii')+meth('Scroll','is'))
+                    own(name);call(wn,'/StatusNotifierWatcher',wn,'RegisterStatusNotifierItem',V('(s)',(name+path,)))
+                else: release(name)
+        if 'tray_is_menu' in data: item['ItemIsMenu']=V('b',data['tray_is_menu']);changed('/StatusNotifierItem',si)
+        if 'tray_title' in data: item['Title']=V('s',data['tray_title']);changed('/StatusNotifierItem',si)
+        if 'tray_id' in data: item['Id']=V('s',data['tray_id']);changed('/StatusNotifierItem',si)
+        if 'tray_tooltip_title' in data:
+            item['ToolTip']=V('(sa(iiay)ss)',('',[],data['tray_tooltip_title'],'Nested menu test'));changed('/StatusNotifierItem',si)
+        if 'tray_icon' in data: item['IconName']=V('s',data['tray_icon']);changed('/StatusNotifierItem',si)
+        if 'tray_pixmap' in data: item['IconPixmap']=V('a(iiay)',[(32,32,pixels)] if data['tray_pixmap'] else []);changed('/StatusNotifierItem',si)
         if data.get('bad_pixmap'): item['IconPixmap']=V('a(iiay)',[(2147483647,2,b'bad'),(32,32,b'bad')]);changed('/StatusNotifierItem',si)
         if 'menu_overflow' in data:
             malformed=data['menu_overflow'];revision+=1;emit('/Menu','com.canonical.dbusmenu','LayoutUpdated',V('(ui)',(revision,0)))

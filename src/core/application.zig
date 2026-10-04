@@ -25,6 +25,7 @@ const State = struct {
     app: *gtk.Application,
     builder: *gtk.Builder,
     css: *gtk.CssProvider,
+    blur_css: ?*gtk.CssProvider = null,
     cancel: *gio.Cancellable,
     display: *gdk.Display,
     main_thread: *glib.Thread,
@@ -243,6 +244,7 @@ fn aqueousChanged(context: *anyopaque, event: adapter.Event) void {
         if (self.surfaces) |*surfaces| surfaces.completion(event.completion);
     }
     if (self.logout_requested) return;
+    if (event == .icons) if (self.surfaces) |*surfaces| surfaces.schedule();
     if (event == .availability or event == .state) {
         if (self.surfaces) |*surfaces| {
             surfaces.syncClipboardPrivacy();
@@ -443,6 +445,10 @@ fn cleanup(self: *State) void {
         window.unref();
     }
     gtk.StyleContext.removeProviderForDisplay(self.display, self.css.as(gtk.StyleProvider));
+    if (self.blur_css) |css| {
+        gtk.StyleContext.removeProviderForDisplay(self.display, css.as(gtk.StyleProvider));
+        css.unref();
+    }
     self.builder.unref();
     self.css.unref();
     self.cancel.unref();
@@ -500,6 +506,15 @@ pub fn run(mode: Mode, hooks: TestHooks) !u8 {
     css.loadFromString(generated_css);
     if (self.failed) return error.InvalidCss;
     gtk.StyleContext.addProviderForDisplay(self.display, css.as(gtk.StyleProvider), 600);
+    if (@import("../platform/wayland/effects.zig").runtimeOwner() == .gtk) {
+        const blur_css = gtk.CssProvider.new();
+        self.blur_css = blur_css;
+        self.watch(blur_css.as(gobject.Object));
+        self.remember(blur_css.as(gobject.Object), gtk.CssProvider.signals.parsing_error.connect(blur_css, *State, cssError, &self, .{}));
+        blur_css.loadFromResource("/org/aqueous/Pearl/gtk-background-blur.css");
+        if (self.failed) return error.InvalidCss;
+        gtk.StyleContext.addProviderForDisplay(self.display, blur_css.as(gtk.StyleProvider), 600);
+    }
     self.remember(app.as(gobject.Object), gio.Application.signals.activate.connect(app.as(gio.Application), *State, activate, &self, .{}));
     self.sources[0] = unix.signalAdd(2, signalStop, &self);
     self.sources[1] = unix.signalAdd(15, signalStop, &self);

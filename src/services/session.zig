@@ -72,7 +72,7 @@ pub const Session = struct {
         }
     }
     pub fn status(self: *Session, a: std.mem.Allocator, offset: usize) ![]const u8 {
-        const N = struct { id: u32, app: []const u8, summary: []const u8, active: bool, toast: bool, actions: usize };
+        const N = struct { id: u32, app: []const u8, summary: []const u8, image: bool, active: bool, toast: bool, actions: usize };
         const P = struct { generation: u64, name: []const u8, title: []const u8, playback: []const u8, ready: bool, busy: bool, position: i64, length: i64, seek: bool };
         const I = struct { generation: u64, registration: []const u8, title: []const u8, ready: bool, image: bool, menu_ready: bool, menu_revision: u64, nodes: usize };
         var notes: std.ArrayList(N) = .empty;
@@ -86,7 +86,7 @@ pub const Session = struct {
         for (&self.notifications.model.records) |*r| if (r.id != 0) {
             if (r.active) active += 1;
             if (r.toast_until > 0) toasts += 1;
-            if (n >= offset and n < offset + 4) try notes.append(a, .{ .id = r.id, .app = preview(r.app.slice()), .summary = if (self.notifications.model.locked) "" else preview(r.summary.slice()), .active = r.active, .toast = r.toast_until > 0, .actions = r.action_count });
+            if (n >= offset and n < offset + 4) try notes.append(a, .{ .id = r.id, .app = preview(r.app.slice()), .summary = if (self.notifications.model.locked) "" else preview(r.summary.slice()), .image = self.notifications.imageFor(r.id) != null, .active = r.active, .toast = r.toast_until > 0, .actions = r.action_count });
             n += 1;
         };
         for (&self.media.players) |*p| if (p.name.len != 0) {

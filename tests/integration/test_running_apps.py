@@ -16,6 +16,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pearl', type=Path, required=True)
     parser.add_argument('--ctl', type=Path, required=True)
+    parser.add_argument('--require-order', action='store_true')
+    parser.add_argument('--aqueous-prefix', type=Path, default=ROOT/'.cache/aqueous-activity-production')
     parser.add_argument('--output', type=Path, default=ROOT/'artifacts/running-apps')
     args = parser.parse_args()
     args.pearl=args.pearl.resolve();args.ctl=args.ctl.resolve();args.output=args.output.resolve()
@@ -24,9 +26,9 @@ def main():
     def passed(name):
         report['checks'][name]=True;print('PASS',name,flush=True)
     try:
-        with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
-            T00Session.input_fixture(s)
+        with PrivateSession(args.output/'session',tool_prefix=args.aqueous_prefix) as s:
+            s.args=SimpleNamespace(aqueous_source=str(s.tool_prefix/'source'))
+            keyboard=T00Session.input_fixture(s)
             desktop(s,"Tasks0","Workbench","StartupWMClass=org.pearl.Tasks0\nIcon=org.gnome.TextEditor\n")
             ipc=IPC(s)
             shell=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
@@ -71,6 +73,25 @@ def main():
             wait_for(lambda:len(probe()['groups'])==3)
             check=probe();assert all(x['keyboard_mode']=='none' for x in check['strips']);assert next(g for g in check['groups'] if g['key']=='desktop:Tasks0.desktop')['count']==3
             passed('global-groups-include-inactive-workspaces-other-output-and-minimized-windows')
+            per_window=copy.deepcopy(prefs)
+            per_window['bar']['running_apps_per_window']=True
+            apply(s,args.ctl,per_window)
+            def window_buttons(): return [r for r in strip()['rows'] if r['kind']=='window']
+            wait_for(lambda:len(window_buttons())==5)
+            assert {r['id'] for r in window_buttons()}=={w['id'] for w in windows()}
+            # On an older compositor, the global fallback is opaque ID order.
+            if not any(w.get('layout_index') is not None for w in windows()):
+                assert [r['id'] for r in window_buttons()]==sorted(w['id'] for w in windows())
+            show()
+            assert len([r for r in probe()['rows'] if r['kind']=='group'])==3
+            close()
+            click_strip('window',remote)
+            wait_for(lambda:window(remote)['focused'] and not window(remote)['minimized'])
+            assert probe()['popup_output'] is None
+            apply(s,args.ctl,prefs)
+            wait_for(lambda:len([r for r in strip()['rows'] if r['kind']=='group'])==3)
+            command('window.minimized',id=remote,value=True)
+            passed('per-window-strip-keeps-grouped-chooser-and-activates-exact-window')
             command('workspace.activate', id=first_ws[4]['id'])
             large_slots=strip()['slots']; all_groups=probe()['groups']
             small=copy.deepcopy(prefs);small['bar']['workspace_mode']='small';apply(s,args.ctl,small)
@@ -139,6 +160,30 @@ def main():
             capture(s,'gtk-large-text-mixed-scale',first['connector']);close()
             apply(s,args.ctl,prefs);s.run(['wlr-randr','--output',second['connector'],'--scale','1'])
             passed('gtk-theme-large-text-and-mixed-scale')
+            publishes_order=all('layout_index' in w for w in windows())
+            if args.require_order: assert publishes_order, windows()
+            if publishes_order:
+                # Put the remaining windows into one tiled scope, then exercise a real
+                # compositor reorder while the strip displays individual windows.
+                ordered_count=len(windows())
+                for w in windows():command('window.move',id=w['id'],workspace=first_ws[0]['id'])
+                command('workspace.activate',id=first_ws[0]['id'])
+                ctl(s,args.ctl,'layout','set','--output',oid,'--layout','tile')
+                def ordered_ids():
+                    current=windows()
+                    if len(current)!=ordered_count or any(w.get('layout_index') is None for w in current):return None
+                    return [w['id'] for w in sorted(current,key=lambda w:(w['layout_index'],w['id']))]
+                before=wait_for(ordered_ids)
+                apply(s,args.ctl,per_window)
+                wait_for(lambda:[r['id'] for r in window_buttons()]==ordered_ids())
+                command('window.activate',id=before[0]);wait_for(lambda:window(before[0])['focused'])
+                assert ordered_ids()==before
+                keyboard.proc.stdin.write('chord 106 65\n');keyboard.proc.stdin.flush()
+                wait_for(lambda:ordered_ids() and ordered_ids()!=before)
+                wait_for(lambda:[r['id'] for r in window_buttons()]==ordered_ids())
+                show();assert len([r for r in probe()['rows'] if r['kind']=='group'])==3;close()
+                apply(s,args.ctl,prefs)
+                passed('published-layout-order-follows-real-window-move-and-focus-is-stable')
             fixture.stop();wait_for(lambda:len(probe()['groups'])==0)
             many=s.child('many',['python3',ROOT/'tests/fixtures/desktop/task_windows.py','--groups','36','--windows','70']);many.expect('event=tasks-ready',timeout=30)
             wait_for(lambda:len(probe()['groups'])==36,timeout=30)
@@ -150,10 +195,46 @@ def main():
             for _ in range(51):keys(s,'Down')
             assert row('more')['focused'];keys(s,'Return');wait_for(lambda:len([r for r in probe()['rows'] if r['kind']=='window'])==70)
             passed('more-than-32-apps-and-64-windows-remain-reachable')
+            close();apply(s,args.ctl,per_window)
+            wait_for(lambda:len(window_buttons())==strip()['shown'])
+            assert strip()['shown']<len(windows())
+            click_strip('overflow');wait_for(lambda:probe()['popup_output']==oid)
+            assert len([r for r in probe()['rows'] if r['kind']=='group'])==36
+            passed('per-window-overflow-keeps-all-application-groups-reachable')
             close();many.stop();wait_for(lambda:len(probe()['groups'])==0)
+            icon_dir=s.runtime/'icons';icon_dir.mkdir()
+            generated=[]
+            protocols=Path('/usr/share/wayland-protocols')
+            for name,xml in {
+                'xdg-shell':protocols/'stable/xdg-shell/xdg-shell.xml',
+                'xdg-toplevel-icon':protocols/'staging/xdg-toplevel-icon/xdg-toplevel-icon-v1.xml',
+                'security-context':protocols/'staging/security-context/security-context-v1.xml',
+                'single-pixel-buffer':protocols/'staging/single-pixel-buffer/single-pixel-buffer-v1.xml',
+            }.items():
+                s.run(['wayland-scanner','client-header',xml,icon_dir/(name+'-client-protocol.h')])
+                code=icon_dir/(name+'.c');generated.append(code)
+                s.run(['wayland-scanner','private-code',xml,code])
+            s.run(['cc','-I'+str(icon_dir),s.tool_prefix/'source/compositor/scripts/fixtures/xdg-toplevel-icon.c',*generated,'-lwayland-client','-o',icon_dir/'client'])
+            icons=s.child('icons',[icon_dir/'client'],input_pipe=True);icons.expect('"ready":true')
+            def icon_command(line):
+                icons.proc.stdin.write(line+'\n');icons.proc.stdin.flush();time.sleep(.05)
+            for line in ('icon 0','buffer 0 32 32 ffff0000 0','add 0 0 1','window 0 0 1'):icon_command(line)
+            wait_for(lambda:len(window_buttons())==1)
+            def icon_color(rgb):
+                rect=window_buttons()[0]['rect']
+                shot=capture(s,'window-icon',first['connector'])
+                crop=shot.crop((int(rect['x']),int(rect['y']),int(rect['x']+rect['width']),int(rect['y']+rect['height'])))
+                return sum(count for count,pixel in crop.getcolors(crop.width*crop.height) if all(abs(pixel[i]-rgb[i])<8 for i in range(3)))>20
+            wait_for(lambda:icon_color((255,0,0)))
+            for line in ('icon 1','buffer 1 32 32 ff00ff00 0','add 1 1 1','set 0 1','commit 0'):icon_command(line)
+            wait_for(lambda:icon_color((0,255,0)))
+            icon_command('set 0 -1');icon_command('commit 0')
+            wait_for(lambda:not icon_color((0,255,0)))
+            icons.stop();wait_for(lambda:len(probe()['groups'])==0)
+            passed('window-icon-pixels-refresh-and-removal-restores-application-icon')
             ctl(s,args.ctl,'running-apps','show','--output',second['id'])
             wait_for(lambda:probe()['popup_output']==second['id'])
-            protocol=ROOT/'.cache/aqueous-activity-production/source/compositor/protocol/upstream/wlr-output-power-management-unstable-v1.xml'
+            protocol=s.tool_prefix/'source/compositor/protocol/upstream/wlr-output-power-management-unstable-v1.xml'
             power_dir=s.runtime/'output-power';power_dir.mkdir()
             # The cached compositor's SPDX comment precedes its XML declaration.
             normalized=power_dir/'protocol.xml'

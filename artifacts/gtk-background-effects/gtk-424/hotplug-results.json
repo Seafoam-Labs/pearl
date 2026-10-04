@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "checks": {
+    "gtk-runtime": {
+      "version": "4.24.1",
+      "owner": "gtk",
+      "libraries": [
+        "/home/zoey/Pearl/.cache/gtk-4.24/lib/libgtk-4.so.1.2400.1"
+      ],
+      "sha256": {
+        "/home/zoey/Pearl/.cache/gtk-4.24/lib/libgtk-4.so.1.2400.1": "1f33e5bdb0eda46d1b58f638e73fac1549350d6160d69d46fd90eeb9c29deda0"
+      }
+    },
+    "blur-enabled-output-removal-return-and-popup-destruction": true
+  }
+}
