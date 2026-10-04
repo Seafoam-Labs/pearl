@@ -809,14 +809,14 @@ pub const Manager = struct {
     }
     fn sync(self: *Manager) !void {
         if (self.popup) |popup| {
-            const picker_active = if (popup.settings) |view| if (view.wallpaper_picker) |picker| picker.as(gtk.Window).isActive() != 0 else false else false;
+            const picker_open = if (popup.settings) |view| view.wallpaper_picker != null else false;
             var seat_focus_lost = false;
             if (self.client.model.focus(null)) |focus| {
                 if (focus.seat.focus_kind == .layer_surface) {
                     popup.popup_had_seat_focus = true;
                 } else seat_focus_lost = popup.popup_had_seat_focus;
             } else |_| {}
-            if (!picker_active and (seat_focus_lost or (popup.popup_had_focus and popup.window.isActive() == 0))) {
+            if (!picker_open and (seat_focus_lost or (popup.popup_had_focus and popup.window.isActive() == 0))) {
                 log.debug("event=popup-close-reason reason=focus-lost", .{});
                 self.hidePopup();
             }
@@ -1143,6 +1143,7 @@ pub const Manager = struct {
                 window.setChild(panel_widget);
             },
             .popup => {
+                _ = gtk.Widget.signals.map.connect(window.as(gtk.Widget), *Manager, popupMapped, self, .{});
                 _ = object.Object.signals.notify.connect(window.as(object.Object), *Manager, popupFocusChanged, self, .{ .detail = "is-active" });
                 anchors(window, null);
                 const fixed = gtk.Fixed.new();
@@ -2254,6 +2255,14 @@ fn otherOutputPressed(_: *gtk.GestureClick, _: c_int, _: f64, _: f64, surface: *
     if (surface.kind == .bar and popup.output == surface.output) return;
     log.debug("event=popup-close-reason reason=other-output-click", .{});
     self.hidePopup();
+}
+fn popupMapped(widget: *gtk.Widget, self: *Manager) callconv(.c) void {
+    const popup = self.popup orelse return;
+    if (widget != popup.window.as(gtk.Widget)) return;
+    // A chooser may remap its parent to restore nonexclusive keyboard focus.
+    // Wait for the new focus grant before interpreting a focus loss.
+    popup.popup_had_focus = false;
+    popup.popup_had_seat_focus = false;
 }
 fn popupFocusChanged(window: *object.Object, _: *object.ParamSpec, self: *Manager) callconv(.c) void {
     const popup = self.popup orelse return;
