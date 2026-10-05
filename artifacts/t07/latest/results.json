@@ -28,6 +28,6 @@
     "real-power-button-requires-confirmation-and-reflects-denial-and-acceptance": true,
     "pending-service-shutdown-and-no-incidental-power-off": true
   },
-  "pearl_sha256": "19d076e86cb6f67b53a692e53a3f71eab3b10222e74096afa281aa8d4663b86b",
-  "ctl_sha256": "58aeb312ae1a08e4b172c7ef387badb7ed15f51f5f61dd0f837c85a3fe9070fe"
+  "pearl_sha256": "60626f9cff7f06f40d7eaa7cebc6f2f01cb9ba917cc5d4457c699db0b60b2733",
+  "ctl_sha256": "ba84717ba8f973ed762c889213ad57d510b1f3f16c46f71bfb6509fd6ed7fb16"
 }

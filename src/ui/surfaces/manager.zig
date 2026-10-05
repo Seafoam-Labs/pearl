@@ -234,6 +234,7 @@ pub const Manager = struct {
         self.auth.start();
         try self.lifecycle.start();
         self.power.start();
+        self.power.useSession(self.lifecycle.sessionObjectPath());
         self.network.start();
         self.bluetooth.start();
         try self.session_services.start(if (self.preferences.live != null) self.preferences.prefs().notifications else null);
@@ -443,6 +444,7 @@ pub const Manager = struct {
         if (self.lifecycle.gate.locked or self.lifecycle.gate.requesting or self.lifecycle.gate.preparing or (self.lifecycle.session_id.slice().len != 0 and !self.lifecycle.gate.active)) self.hideIdentifiers();
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
+        self.power.useSession(self.lifecycle.sessionObjectPath());
         self.schedule();
     }
     fn authChanged(context: *anyopaque) void {
@@ -2013,7 +2015,7 @@ pub const Manager = struct {
     }
     const ServiceStatus = struct {
         audio: struct { ready: bool, generation: u64, count: usize, truncated: bool, pending: bool, in_flight: bool, err: ?[]const u8, default_sink: ?u32, default_source: ?u32, devices: []const DeviceStatus, next_offset: ?usize },
-        power: struct { battery_present: bool, percentage: f64, state: u32, on_battery: bool, time_to_empty: i64, time_to_full: i64, profile: []const u8, profiles: [3]bool, degraded: []const u8, can_power_off: bool, can_reboot: bool, session_active: bool, preparing: bool, pending: bool, profile_in_flight: bool, err: ?[]const u8 },
+        power: struct { battery_present: bool, percentage: f64, state: u32, on_battery: bool, time_to_empty: i64, time_to_full: i64, profile: []const u8, profiles: [3]bool, degraded: []const u8, can_power_off: bool, can_reboot: bool, session_active: bool, session_source: ?[]const u8, preparing: bool, pending: bool, profile_in_flight: bool, err: ?[]const u8 },
         brightness: struct { available: bool, device: []const u8, maximum: u32, value: u32, percent: u8, pending: bool, in_flight: bool },
     };
     const DeviceStatus = struct { kind: @import("../../services/audio.zig").Kind, index: u32, name: []const u8, label: []const u8, volume: u8, mute: bool, target: u32, writable: bool };
@@ -2025,7 +2027,7 @@ pub const Manager = struct {
         const power = &self.power;
         return .{
             .audio = .{ .ready = self.audio.ready, .generation = self.audio.generation, .count = self.audio.count, .truncated = self.audio.truncated, .pending = self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null, .in_flight = self.audio.active != null, .err = self.audio.err, .default_sink = if (self.audio.default(.sink)) |d| d.key.index else null, .default_source = if (self.audio.default(.source)) |d| d.key.index else null, .devices = devices.items, .next_offset = if (end < self.audio.count) end else null },
-            .power = .{ .battery_present = power.battery_present, .percentage = power.percentage, .state = power.battery_state, .on_battery = power.on_battery, .time_to_empty = power.time_to_empty, .time_to_full = power.time_to_full, .profile = power.profile.slice(), .profiles = power.profiles, .degraded = power.degraded.slice(), .can_power_off = power.can_off, .can_reboot = power.can_reboot, .session_active = power.session_active, .preparing = power.preparing, .pending = power.profile_pending or power.profile_wanted != null or power.action_pending, .profile_in_flight = power.profile_pending, .err = power.err },
+            .power = .{ .battery_present = power.battery_present, .percentage = power.percentage, .state = power.battery_state, .on_battery = power.on_battery, .time_to_empty = power.time_to_empty, .time_to_full = power.time_to_full, .profile = power.profile.slice(), .profiles = power.profiles, .degraded = power.degraded.slice(), .can_power_off = power.can_off, .can_reboot = power.can_reboot, .session_active = power.session_active, .session_source = if (power.session_path.len != 0) @tagName(self.lifecycle.session_source) else null, .preparing = power.preparing, .pending = power.profile_pending or power.profile_wanted != null or power.action_pending, .profile_in_flight = power.profile_pending, .err = power.err },
             .brightness = .{ .available = power.brightnessAvailable(), .device = power.backlight.name.slice(), .maximum = power.backlight.maximum, .value = power.backlight.value, .percent = power.backlight.percent(), .pending = power.brightness_pending or power.brightness_wanted != null, .in_flight = power.brightness_pending },
         };
     }

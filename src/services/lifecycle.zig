@@ -80,6 +80,13 @@ pub const Lifecycle = struct {
         if (self.locker) |p| p.unref();
         self.locker = null;
     }
+
+    /// Adoptable only once the session's class and user validated; a bare
+    /// lookup reply can still name a path this service must reject.
+    pub fn sessionObjectPath(self: *const Lifecycle) [:0]const u8 {
+        return if (self.session_id.len != 0) self.session_path.z() else "";
+    }
+
     pub fn configure(self: *Lifecycle, config: policy.Config, on_battery: bool) void {
         if (std.meta.eql(self.config, config) and self.on_battery == on_battery) return;
         self.config = config;

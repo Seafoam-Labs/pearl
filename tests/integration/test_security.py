@@ -7,7 +7,7 @@ ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
 from t00 import Session as T00Session
-from test_surfaces import IPC,ctl,status,capture,clean
+from test_surfaces import IPC,ctl,status,capture,clean,eventually_status
 
 def managed_compositor_session(args,checks):
     # UWSM keeps session identity in the compositor unit's EnvironmentFile and
@@ -47,12 +47,16 @@ def main():
     checks={}; report={'status':'running','checks':checks,'binaries':{name:hashlib.sha256(getattr(args,name).read_bytes()).hexdigest() for name in ('pearl','ctl','locker','pam_module')}}
     try:
         managed_compositor_session(args,checks)
-        with PrivateSession(args.output/'session') as s:
+        # The stale default T00 compositor panics on output-management applies;
+        # PEARL_TEST_AQUEOUS_PREFIX selects a current build, as elsewhere.
+        with PrivateSession(args.output/'session',aqueous=Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX',str(ROOT/'.cache/aqueous')))/'bin/aqueous') as s:
             s.env['DBUS_SYSTEM_BUS_ADDRESS']='unix:path='+str(s.runtime/'system-bus')
             s.child('system-bus',['dbus-daemon','--session','--nofork','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS']])
             wait_for(lambda:s.run(['busctl','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS'],'list'],check=False).returncode==0)
             s.env['PEARL_SECURITY_LOG']=str(s.output/'security.jsonl');Path(s.env['PEARL_SECURITY_LOG']).write_text('')
             s.env['PEARL_TEST_LOCKER']=str(args.locker)
+            s.env['PEARL_TEST_BACKLIGHT']=str(s.base/'backlight');backlight_root=Path(s.env['PEARL_TEST_BACKLIGHT']);(backlight_root/'test_panel').mkdir(parents=True)
+            (backlight_root/'test_panel/max_brightness').write_text('1000\n');(backlight_root/'test_panel/brightness').write_text('420\n')
             s.env['PEARL_TEST_SESSION_DISCOVERY']='no-pid'
             s.env['PEARL_TEST_COMPOSITOR_PID']=str(s.compositor.proc.pid)
             pam_dir=s.base/'pam';pam_dir.mkdir();s.env['PEARL_TEST_PAM_DIR']=str(pam_dir)
@@ -74,6 +78,14 @@ def main():
             def key(*args): s.run(['wtype','-s','150',*args,'-s','200'])
             def unlock(secret='fixture-secret'):
                 key('fixture-user','-k','Return');time.sleep(.3);key(secret,'-k','Return')
+            # The power service must mirror the lifecycle resolver: same active
+            # state, same session_source, and brightness availability following it.
+            def services(): return ctl(s,args.ctl,'services','status')['result']
+            def mirror(active,refused=False,timeout=12):
+                def check():
+                    value=services();source=value['power'].get('session_source')
+                    return value if value['power']['session_active']==active and value['brightness']['available']==active and (source is None if refused else source==state()['session_source']) else False
+                return wait_for(check,timeout)
             # An older Wayland login remains User.Display=3 while Aqueous is
             # on active session 5. Resolve the connected compositor, including
             # when Pearl inherited a stale session ID from the user manager.
@@ -97,11 +109,25 @@ def main():
                 if expected is None:
                     value=wait(lambda v:v['session_error'] is not None)
                     assert value['session_id']=='' and not value['active'] and not value['authentication']['registered'],value
+                    mirror(False,refused=True)
+                    if discovery=='compositor-foreign':
+                        # An external writer during a refused session must stay
+                        # silent (no card) and leave the shell answering.
+                        (backlight_root/'test_panel/brightness').write_text('560\n')
+                        time.sleep(1)
+                        assert not status(s,args.ctl)['osd'],status(s,args.ctl).get('osd_detail')
+                        assert not services()['brightness']['available'],services()
                 else:
                     value=wait(lambda v:v['authentication']['registered'])
                     assert value['session_id']==expected and value['session_source']==source and value['active']==(expected=='5'),value
                     assert not any(r.get('method')=='GetUser' for r in records()[start:]),records()[start:]
                     assert any(r.get('event')=='registered' and r.get('session')==expected for r in records()[start:])
+                    mirror(expected=='5')
+                    if discovery=='compositor-dual':
+                        (backlight_root/'test_panel/brightness').write_text('550\n')
+                        eventually_status(s,args.ctl,lambda v:v.get('osd_detail') and v['osd_detail']['kind']=='brightness' and v['osd_detail']['percent']==55 and v['osd_detail']['name']=='test_panel')
+                        assert services()['brightness']['available'],services()
+                        eventually_status(s,args.ctl,lambda v:not v['osd'])
                     command(begin=True)
                     if expected=='5':
                         wait(lambda v:v['authentication']['pending'])
@@ -136,8 +162,19 @@ def main():
                 if discovery in ('missing','foreign','greeter'):
                     value=wait(lambda v:v['session_error'] is not None)
                     assert not value['active'] and value['session_id']=='' and not value['authentication']['registered'],value
+                    mirror(False,refused=True)
                 else:
                     wait(lambda v:v['active'] and v['authentication']['registered'] and v['session_error'] is None)
+                    mirror(True)
+                    if discovery=='manager':
+                        # The fixture never emits PropertiesChanged on /manager, so
+                        # only a proxy on the verified display session follows the flip.
+                        command(active=False)
+                        wait(lambda v:not v['active'])
+                        mirror(False)
+                        command(active=True)
+                        wait(lambda v:v['active'])
+                        mirror(True)
             command(discovery='missing',restart='org.freedesktop.login1')
             wait(lambda v:v['session_error'] is not None and not v['authentication']['registered'])
             command(discovery='no-pid',session_new=True)

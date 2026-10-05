@@ -66,8 +66,12 @@ and estimated times; the root object provides on-battery state.
 
 logind's `CanPowerOff`/`CanReboot` replies determine availability. They are queried
 on owner acquisition and panel opening, with at most one pending query each.
-`GetSessionByPID` identifies Pearl's session; its `Active` property gates
-brightness. PrepareForSleep/PrepareForShutdown invalidate relevant availability.
+The power service resolves no session of its own: it adopts the logind session
+the lifecycle resolver verified, the same object path locking and polkit
+authenticate against, and that session's `Active` property gates brightness. An
+unresolved or revoked session closes the session proxy and drops pending
+brightness writes. PrepareForSleep/PrepareForShutdown invalidate relevant
+availability.
 T12 now implements suspend/hibernate and native lock/inhibitor orchestration;
 see [SESSION_SECURITY.md](SESSION_SECURITY.md). Pearl waits for verified lock
 acquisition before requesting suspend.

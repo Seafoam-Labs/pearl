@@ -48,7 +48,7 @@ def main():
     args.pearl=args.pearl.resolve(); args.ctl=args.ctl.resolve(); args.output=args.output.resolve(); args.output.mkdir(parents=True,exist_ok=True)
     checks={}; result=dict(status='running',checks=checks,pearl_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest(),ctl_sha256=hashlib.sha256(args.ctl.read_bytes()).hexdigest())
     try:
-        with PrivateSession(args.output/'services') as s:
+        with PrivateSession(args.output/'services',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
             s.env['DBUS_SYSTEM_BUS_ADDRESS']='unix:path='+str(s.runtime/'system-bus')
             system_bus=s.child('system-bus',['dbus-daemon','--session','--nofork','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS']])
             wait_for(lambda:s.run(['busctl','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS'],'list'],check=False).returncode==0)

@@ -70,6 +70,7 @@
     "can_power_off": true,
     "can_reboot": true,
     "session_active": true,
+    "session_source": "compositor",
     "preparing": false,
     "pending": false,
     "profile_in_flight": false,

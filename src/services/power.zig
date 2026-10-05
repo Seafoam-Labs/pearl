@@ -9,7 +9,6 @@ const policy = @import("policy.zig");
 const Text = policy.Text;
 const brightness_feedback = @import("brightness_feedback.zig");
 const a = std.heap.c_allocator;
-const log = std.log.scoped(.services);
 pub const Event = @import("audio.zig").Event;
 const Tag = enum { battery, upower, login, session, profiles, legacy_profiles };
 const names = [_][:0]const u8{ "org.freedesktop.UPower", "org.freedesktop.UPower", "org.freedesktop.login1", "org.freedesktop.login1", "org.freedesktop.UPower.PowerProfiles", "net.hadess.PowerProfiles" };
@@ -17,7 +16,7 @@ const paths = [_][:0]const u8{ "/org/freedesktop/UPower/devices/DisplayDevice", 
 const interfaces = [_][:0]const u8{ "org.freedesktop.UPower.Device", "org.freedesktop.UPower", "org.freedesktop.login1.Manager", "org.freedesktop.login1.Session", "org.freedesktop.UPower.PowerProfiles", "net.hadess.PowerProfiles" };
 const Slot = struct { service: *Power, tag: Tag, proxy: ?*gio.DBusProxy = null, creating: bool = false, generation: u64 = 0, owner: Text(256) = .{}, bus_signal: c_ulong = 0, signals: [3]c_ulong = .{ 0, 0, 0 } };
 const Creation = struct { slot: *Slot, generation: u64 };
-const Purpose = enum { can_off, can_reboot, session, brightness, profile, power_off, reboot };
+const Purpose = enum { can_off, can_reboot, brightness, profile, power_off, reboot };
 const Call = struct { service: *Power, tag: Tag, generation: u64, purpose: Purpose };
 pub const Backlight = struct {
     name: Text(128) = .{},
@@ -218,10 +217,7 @@ pub const Power = struct {
                     closeSlot(&self.slots[@intFromEnum(Tag.session)]);
                     self.brightness_wanted = null;
                     self.brightness_pending = false;
-                    if (name.len != 0) {
-                        self.capabilities();
-                        self.call(slot, .session, "GetSessionByPID", tuple(&.{glib.Variant.newUint32(@intCast(std.c.getpid()))}), null) catch |err| log.debug("event=power-failed op=GetSessionByPID error={s}", .{@errorName(err)});
-                    }
+                    if (name.len != 0) self.capabilities();
                 },
                 .profiles, .legacy_profiles => {
                     self.profile_pending = false;
@@ -361,6 +357,21 @@ pub const Power = struct {
         self.err = null;
         self.changed(self.context, .state);
     }
+    // The session identity is not resolved here: the verified lifecycle result
+    // is pushed in, and an unchanged path is a no-op so notification storms do
+    // not thrash the proxy. Closing the slot first drops in-flight writes via
+    // the generation check in called().
+    pub fn useSession(self: *Power, path: [:0]const u8) void {
+        if (std.mem.eql(u8, self.session_path.slice(), path)) return;
+        self.session_path.set(path);
+        self.session_active = false;
+        self.brightness_wanted = null;
+        self.brightness_pending = false;
+        const slot = &self.slots[@intFromEnum(Tag.session)];
+        closeSlot(slot);
+        if (path.len != 0) self.create(slot);
+        self.refresh();
+    }
     fn arm(self: *Power) void {
         if (self.write_source == 0) self.write_source = glib.timeoutAdd(40, pump, self);
         self.changed(self.context, .state);
@@ -407,7 +418,6 @@ pub const Power = struct {
         self.app.hold();
         const reply_type = glib.VariantType.new(switch (purpose) {
             .can_off, .can_reboot => "(s)",
-            .session => "(o)",
             else => "()",
         });
         defer reply_type.free();
@@ -439,15 +449,6 @@ pub const Power = struct {
                     defer text.unref();
                     const yes = std.mem.eql(u8, std.mem.span(text.getString(null)), "yes");
                     if (job.purpose == .can_off) self.can_off = yes else self.can_reboot = yes;
-                },
-                .session => if (is(v, "(o)")) {
-                    const path = v.getChildValue(0);
-                    defer path.unref();
-                    const text = std.mem.span(path.getString(null));
-                    if (std.mem.startsWith(u8, text, "/org/freedesktop/login1/session/") and text.len < 512) {
-                        self.session_path.set(text);
-                        self.create(&self.slots[@intFromEnum(Tag.session)]);
-                    }
                 },
                 .brightness => {
                     self.feedback = .brightness;

@@ -1,6 +1,12 @@
 {
   "status": "passed",
   "checks": {
+    "uwsm-compositor-session-without-shell-session-environment": true,
+    "compositor-session-overrides-inactive-user-display-and-stale-environment": true,
+    "managed-compositor-inherited-session-validated-by-logind": true,
+    "foreign-greeter-missing-and-inactive-sessions-cannot-authenticate": true,
+    "user-service-without-pid-session-registers-for-display-session": true,
+    "display-session-validation-recovery-and-inactivity-cancellation": true,
     "logind-session-native-idle-and-authority-registration": true,
     "authority-identities-cancellation-and-unsupported-identity": true,
     "authority-restart-and-escape-cleanup": true,
@@ -19,13 +25,15 @@
     "shell-exit-preserves-independent-lock": true,
     "false-ready-times-out-no-suspend-and-failed-preparation-retains-delay": true,
     "locker-crash-fails-closed-and-aqueous-allows-authenticated-recovery": true,
-    "acknowledged-aqueous-logout-stops-shell": true
+    "shell-sigkill-preserves-owned-locker-and-authentication": true,
+    "acknowledged-aqueous-logout-stops-shell": true,
+    "ipc-session-token-reaches-logs-only-as-a-digest": true
   },
   "binaries": {
-    "pearl": "fe6369d7d479c00d284f56d7e40ad39aad2a7c76375d8564163e4677bcd80e0b",
-    "ctl": "b52942ec037ce5bc51c2dd37c0a493c4ed7e61d0f504bae1aba8704453f1c8ec",
-    "locker": "2fffd0340d593f2c5895e7b857082f4636899175741cfcb041773a1283f3651c",
-    "pam_module": "83ccc1f803d12c5291bf9335d2c23ecf277dde2babf65b776de3905698950198"
+    "pearl": "60626f9cff7f06f40d7eaa7cebc6f2f01cb9ba917cc5d4457c699db0b60b2733",
+    "ctl": "ba84717ba8f973ed762c889213ad57d510b1f3f16c46f71bfb6509fd6ed7fb16",
+    "locker": "1f63bf4e7d20c96c7ecf492fe8f8c9d989eb79a084e7e102fe4a3fd193a10efb",
+    "pam_module": "386382b691d4ad7a31e4bcf965b643ae1c128e597a57c7c474345e64989dbc20"
   },
   "locked_capture_allowed": true
 }

@@ -1,8 +1,127 @@
-/home/zoey/Pearl/tests/fixtures/session_security.py:53: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
+/home/azdanov/Projects/pearl/tests/fixtures/session_security.py:87: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
   for iface in Gio.DBusNodeInfo.new_for_xml(xml).interfaces: bus.register_object(path,iface,method,None,None)
 event=ready
+command={"discovery": "compositor-dual", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
 event=delay-acquired
 event=registered
+command={"begin": true}
+command={"active": false}
+event=authentication
+command={"active": true}
+event=delay-released
+event=unregistered
+command={"discovery": "process-dual", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"begin": true}
+command={"active": false}
+event=authentication
+command={"active": true}
+event=delay-released
+event=unregistered
+command={"discovery": "compositor-manager", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"begin": true}
+command={"active": false}
+event=authentication
+command={"active": true}
+event=delay-released
+event=unregistered
+command={"discovery": "environment-dual", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"begin": true}
+command={"active": false}
+event=authentication
+command={"active": true}
+event=delay-released
+event=unregistered
+command={"discovery": "compositor-foreign", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+command={"discovery": "compositor-greeter", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+command={"discovery": "environment-foreign", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+command={"discovery": "environment-greeter", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+command={"discovery": "environment-dual", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+command={"discovery": "environment-dual", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"begin": true}
+event=authentication
+event=delay-released
+event=unregistered
+command={"discovery": "no-pid", "restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"discovery": "manager", "restart": "org.freedesktop.login1"}
+event=delay-released
+event=unregistered
+event=session-lookup
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"active": false}
+command={"active": true}
+command={"discovery": "missing", "restart": "org.freedesktop.login1"}
+event=delay-released
+event=unregistered
+event=session-lookup
+event=session-lookup
+event=session-lookup
+command={"discovery": "foreign", "restart": "org.freedesktop.login1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+command={"discovery": "greeter", "restart": "org.freedesktop.login1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+command={"discovery": "direct", "restart": "org.freedesktop.login1"}
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"discovery": "missing", "restart": "org.freedesktop.login1"}
+event=delay-released
+event=unregistered
+event=session-lookup
+event=session-lookup
+event=session-lookup
+command={"discovery": "no-pid", "session_new": true}
+event=session-lookup
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"begin": true}
+command={"active": false}
+event=authentication
+command={"active": true}
 command={"begin": true}
 command={"cancel": true}
 event=authentication
@@ -40,12 +159,18 @@ event=delay-acquired
 command={"restart": "org.freedesktop.login1"}
 event=delay-released
 event=unregistered
+event=session-lookup
+event=session-lookup
+event=session-lookup
 event=delay-acquired
 event=registered
 command={"active": false}
 command={"active": true}
 event=delay-released
 event=unregistered
+event=session-lookup
+event=session-lookup
+event=session-lookup
 event=delay-acquired
 event=registered
 event=prepare
@@ -53,8 +178,33 @@ command={"prepare": true}
 event=prepare
 command={"prepare": false}
 event=delay-released
-event=unregistered
+event=session-lookup
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=delay-released
+command={"restart": "org.freedesktop.PolicyKit1"}
+event=session-lookup
+event=session-lookup
+event=session-lookup
 event=delay-acquired
 event=registered
-event=delay-released
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/site-packages/gi/overrides/GLib.py", line 796, in func_fdtransform
+    return callback(channel, cond, *data)
+  File "/home/azdanov/Projects/pearl/tests/fixtures/session_security.py", line 70, in released
+    os.close(fd); record('delay-released',lease=lease,locked=locked()); return False
+                                                             ~~~~~~^^
+  File "/home/azdanov/Projects/pearl/tests/fixtures/session_security.py", line 21, in locked
+    s.sendall(b'{"ipc":1,"id":"1","op":"hello","params":{}}\n'); session=json.loads(f.readline())['result']['session']
+                                                                         ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 event=unregistered

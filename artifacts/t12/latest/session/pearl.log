@@ -1,23 +1,285 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=app-index-ready entries=158 truncated=false
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-info(pearl): event=control-ready session=52e2234df3d28c559f9a5ed17639fabb
-info: event=popup-opened output=1
-info: event=session-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=preferences-applied revision=0 mode=static cache=false
-info: event=popup-closed
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-info: event=preferences-applied revision=1 mode=static cache=false
-info: event=preferences-applied revision=2 mode=gtk cache=false
-info: event=preferences-applied revision=3 mode=static cache=false
-info: event=preferences-applied revision=4 mode=static cache=false
-info(pearl): event=stopping reason=control-quit pending=false
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-10-05T12:15:34Z pid=90779 info(platform): event=background-effect-owner owner=native gtk=4.22.5
+ts=2026-10-05T12:15:34Z pid=90779 info(platform): event=blur-capability available=false
+ts=2026-10-05T12:15:34Z pid=90779 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-05T12:15:34Z pid=90779 info(pearl): event=ready mode=session
+ts=2026-10-05T12:15:34Z pid=90779 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-05T12:15:34Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:34Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:34Z pid=90779 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-05T12:15:34Z pid=90779 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-05T12:15:34Z pid=90779 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-05T12:15:34Z pid=90779 info(pearl): event=settings-backend-ready session_hash=1797088dbf47fbff
+ts=2026-10-05T12:15:34Z pid=90779 info(pearl): event=control-ready session_hash=1797088dbf47fbff
+ts=2026-10-05T12:15:34Z pid=90779 info(desktop): event=app-index-ready entries=145 truncated=false
+ts=2026-10-05T12:15:34Z pid=90779 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-10-05T12:15:34Z pid=90779 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=6994 success=true
+ts=2026-10-05T12:15:34Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:34Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:35Z pid=90779 warning(services): event=logind-session-unavailable reason=No logind display session. Start Pearl from an authenticated desktop login.
+ts=2026-10-05T12:15:35Z pid=90779 warning(services): event=logind-session-unavailable reason=Logind session is not a login session owned by this user.
+ts=2026-10-05T12:15:35Z pid=90779 warning(services): event=logind-session-unavailable reason=Logind session is not a login session owned by this user.
+ts=2026-10-05T12:15:36Z pid=90779 warning(services): event=logind-session-unavailable reason=No logind display session. Start Pearl from an authenticated desktop login.
+ts=2026-10-05T12:15:36Z pid=90779 info(services): event=activity-auth-presented
+ts=2026-10-05T12:15:36Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:36Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:36Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:36Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:36Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:36Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:36Z pid=90779 info(desktop): event=settings-focus target=body
+ts=2026-10-05T12:15:36Z pid=90779 info(desktop): event=settings-focus target=heading
+ts=2026-10-05T12:15:37Z pid=90779 info(services): event=activity-auth-presented
+ts=2026-10-05T12:15:37Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:37Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:38Z pid=90779 info(services): event=activity-auth-presented
+ts=2026-10-05T12:15:38Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:38Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:38Z pid=90779 info(services): event=activity-auth-presented
+ts=2026-10-05T12:15:38Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:38Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:38Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:39Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:40Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:40Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:40Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:40Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:41Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:41Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:41Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:41Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:42Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:42Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:42Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:42Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:44Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:44Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:44Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:44Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:44Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:44Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:45Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:45Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:45Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:45Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:45Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:45Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(config): event=wallpaper-applications-applied generation=3 elapsed_us=301 success=true
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-10-05T12:15:46Z pid=90779 info(config): event=wallpaper-applications-applied generation=4 elapsed_us=10494 success=true
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:46Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:47Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:47Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:47Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:47Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(config): event=preferences-applied revision=2 mode=gtk cache=false
+ts=2026-10-05T12:15:48Z pid=90779 info(config): event=wallpaper-applications-applied generation=7 elapsed_us=10164 success=true
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:48Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:49Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:49Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:49Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:49Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:50Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:50Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:50Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:50Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:50Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:50Z pid=90779 info(config): event=wallpaper-applications-applied generation=9 elapsed_us=183 success=true
+ts=2026-10-05T12:15:50Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:50Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:50Z pid=90779 info(config): event=preferences-applied revision=3 mode=static cache=false
+ts=2026-10-05T12:15:50Z pid=90779 info(config): event=wallpaper-applications-applied generation=10 elapsed_us=10846 success=true
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:51Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(config): event=wallpaper-applications-applied generation=12 elapsed_us=224 success=true
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:52Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:53Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:53Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:53Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:53Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:15:53Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:53Z pid=90779 info(config): event=wallpaper-applications-applied generation=13 elapsed_us=221 success=true
+ts=2026-10-05T12:15:53Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:53Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:53Z pid=90779 info(config): event=preferences-applied revision=4 mode=static cache=false
+ts=2026-10-05T12:15:53Z pid=90779 info(config): event=wallpaper-applications-applied generation=14 elapsed_us=4212 success=true
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:00Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:02Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:02Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:02Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:02Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:04Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:05Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:05Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:05Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:05Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:05Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:05Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:05Z pid=90779 info(config): event=wallpaper-applications-applied generation=16 elapsed_us=150 success=true
+ts=2026-10-05T12:16:05Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:05Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:06Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:07Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:07Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:07Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:07Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:08Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:08Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:08Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:08Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:10Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:10Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:10Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:10Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:11Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:11Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:11Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:11Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:11Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:11Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(config): event=wallpaper-applications-applied generation=17 elapsed_us=229 success=true
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:16:12Z pid=90779 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-05T12:16:12Z pid=90779 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-10-05T12:16:12Z pid=90779 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-05T12:16:12Z pid=90779 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-05T12:16:12Z pid=90779 info(pearl): event=stopped

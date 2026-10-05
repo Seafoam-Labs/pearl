@@ -80,7 +80,6 @@ pub const events: []const Event = &.{
     .{ .name = "popup-close-reason", .scopes = &.{.ui} },
     .{ .name = "popup-closed", .scopes = &.{.ui} },
     .{ .name = "popup-opened", .scopes = &.{.ui} },
-    .{ .name = "power-failed", .scopes = &.{.services} },
     .{ .name = "power-intent", .scopes = &.{.desktop} },
     .{ .name = "preferences-applied", .scopes = &.{.config} },
     .{ .name = "preferences-error", .scopes = &.{.config} },

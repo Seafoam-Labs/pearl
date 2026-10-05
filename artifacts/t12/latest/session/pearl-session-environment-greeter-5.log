@@ -1,0 +1,17 @@
+ts=2026-10-05T12:15:33Z pid=90710 info(platform): event=background-effect-owner owner=native gtk=4.22.5
+ts=2026-10-05T12:15:33Z pid=90710 info(platform): event=blur-capability available=false
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=ready mode=session
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-05T12:15:33Z pid=90710 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-05T12:15:33Z pid=90710 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-05T12:15:33Z pid=90710 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=settings-backend-ready session_hash=1797088dbf47fbff
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=control-ready session_hash=1797088dbf47fbff
+ts=2026-10-05T12:15:33Z pid=90710 info(desktop): event=app-index-ready entries=145 truncated=false
+ts=2026-10-05T12:15:33Z pid=90710 warning(services): event=logind-session-unavailable reason=Logind session is not a login session owned by this user.
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-05T12:15:33Z pid=90710 info(pearl): event=stopped

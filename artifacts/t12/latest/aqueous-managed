@@ -1,0 +1,3 @@
+#!/bin/sh
+export XDG_SESSION_ID=5
+exec /home/azdanov/Projects/pearl/.cache/aqueous-activity-production/bin/aqueous "$@"

@@ -1,0 +1,31 @@
+ts=2026-10-05T12:15:29Z pid=90578 info(platform): event=background-effect-owner owner=native gtk=4.22.5
+ts=2026-10-05T12:15:29Z pid=90578 info(platform): event=blur-capability available=false
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=ready mode=session
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=settings-backend-ready session_hash=1797088dbf47fbff
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=control-ready session_hash=1797088dbf47fbff
+ts=2026-10-05T12:15:29Z pid=90578 info(desktop): event=app-index-ready entries=145 truncated=false
+ts=2026-10-05T12:15:29Z pid=90578 info(services): event=activity-auth-presented
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-10-05T12:15:29Z pid=90578 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=5263 success=true
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-05T12:15:29Z pid=90578 info(pearl): event=stopped
