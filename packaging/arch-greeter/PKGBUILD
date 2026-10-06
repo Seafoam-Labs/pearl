@@ -1,8 +1,10 @@
 # Standalone greeter from upstream Git. Installation selects Pearl for next boot;
 # it never stops or restarts the running display manager.
 pkgname=pearl-greeter-git
-pkgver=1.0.0rc2.r36.g45f341b
-pkgrel=2
+pkgver=0.2.2.r175.g82fbfcf
+pkgrel=1
+# Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
+epoch=1
 pkgdesc='GTK greetd login screen hosted by ordinary Aqueous (Git version)'
 arch=('x86_64')
 url='https://github.com/Seafoam-Labs/pearl'

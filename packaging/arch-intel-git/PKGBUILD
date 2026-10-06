@@ -2,8 +2,10 @@
 # Build the latest upstream Git revision. Nothing is enabled or started during
 # installation.
 pkgname=pearl-intel-git
-pkgver=1.0.0rc2.r22.ga002d24
-pkgrel=7
+pkgver=0.2.2.r175.g82fbfcf
+pkgrel=1
+# Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
+epoch=1
 pkgdesc='GTK desktop shell exclusively for Aqueous (Intel baseline, Git version)'
 arch=('x86_64')
 url='https://github.com/Seafoam-Labs/pearl'

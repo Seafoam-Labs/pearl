@@ -4,7 +4,7 @@ Pearl is a **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with
 
 Pearl's initial design and implementation used **spec-driven development**. Written specifications defined the product's behavior, visual direction, architecture and acceptance criteria before implementation. Those specifications guided AI-assisted implementation and verification, keeping the work tied to explicit requirements and testable outcomes.
 
-Version **0.2.1** includes floating islands, a dock, migration tooling and Arch packaging. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
+Version **0.2.2** includes floating islands, a dock, migration tooling and Arch packaging. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
 
 The pinned Zig 0.16.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
@@ -70,6 +70,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Night Light](docs/NIGHT_LIGHT.md): saved temperature/schedule controls and native Aqueous warming; physical output qualification remains pending. [Implementation plan](docs/NIGHT_MODE_IMPLEMENTATION_PLAN.md).
 - [Application themes](docs/CUSTOM_THEMES.md#application-management-and-recovery): opt-in Matugen profiles, [base Material defaults for 23 targets](docs/BASE_MATERIAL_PROFILES.md), package defaults, independent app choices and owned-file recovery.
 - [Community themes](docs/CUSTOM_THEMES.md): configurable HTTPS repositories, independent palettes/styles, static image assets, automatic local discovery and native Zig author tools. Start with the [step-by-step theme creation guide](docs/CREATE_COMMUNITY_THEME.md). [Repository publishing](docs/THEME_REPOSITORIES.md) and [completion plan](docs/CUSTOM_THEMES_COMPLETION_PLAN.md) for images, automatic discovery, application profiles and the default GitHub repository.
+- [Theme authoring simplification plan](docs/THEME_AUTHORING_SIMPLIFICATION_PLAN.md): proposed single-file palettes, live local editing, Noctalia palette import, reusable application templates and simpler author tools.
 - [Notifications, tray and media](docs/SESSION_SERVICES.md) and [session-service visual evidence](artifacts/t09/comparison.html): protocol contracts, bounds, keyboard controls, ownership and session-bus recovery.
 - [Network and Bluetooth](docs/CONNECTIVITY.md) and [connectivity visual evidence](artifacts/t08/comparison.html): connection/pairing agents, bounded discovery, credential handling and hardware acceptance.
 - [Audio and power](docs/SERVICES.md) and [audio/power visual evidence](artifacts/t07/comparison.html): service behavior, CLI, permissions and physical release checks.

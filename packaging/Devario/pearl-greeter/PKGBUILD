@@ -1,7 +1,7 @@
-# Devario Core: standalone greeter from the v0.2.1 Pearl release tag.
+# Devario Core: standalone greeter from the v0.2.2 Pearl release tag.
 # Installation selects Pearl Greeter for next boot without restarting services.
 pkgname=pearl-greeter
-pkgver=0.2.1
+pkgver=0.2.2
 pkgrel=1
 pkgdesc='GTK greetd login screen hosted by ordinary Aqueous'
 arch=('x86_64')
