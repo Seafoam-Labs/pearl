@@ -1,0 +1,20 @@
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-active-output connector=HEADLESS-2
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-outputs interactive=1
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-account count=2 selected=0 manual=false
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-ready sessions=2
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-state state=connecting
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-state state=prompt
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-state state=prompt
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-state state=prompt
+ts=2026-10-06T16:50:06Z pid=742669 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-06T16:50:07Z pid=742669 info(greeter): event=greeter-state state=prompt
+ts=2026-10-06T16:50:07Z pid=742669 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-06T16:50:07Z pid=742669 info(greeter): event=greeter-state state=prompt
+ts=2026-10-06T16:50:07Z pid=742669 info(greeter): event=greeter-state state=authenticating
+ts=2026-10-06T16:50:07Z pid=742669 info(greeter): event=greeter-state state=authenticated
+ts=2026-10-06T16:50:07Z pid=742669 info(greeter): event=greeter-state state=cancelling
+ts=2026-10-06T16:50:07Z pid=742669 info(greeter): event=greeter-state state=cancelling
+ts=2026-10-06T16:50:07Z pid=742669 info(greeter): event=greeter-state state=idle

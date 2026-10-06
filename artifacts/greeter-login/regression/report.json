@@ -1,0 +1,66 @@
+{
+  "binary_sha256": "30f7af7eae1e0a5a1998046641cd91e5e665bb6c56c05239cad8945f68a70ec8",
+  "evidence": "private Aqueous and fake greetd only",
+  "checks": [
+    "material_dark passive scan, password fallback and single handoff",
+    "material_light passive scan, password fallback and single handoff",
+    "gtk passive scan, password fallback and single handoff",
+    "solid passive scan, password fallback and single handoff",
+    "contain passive scan, password fallback and single handoff",
+    "contrast passive scan, password fallback and single handoff",
+    "small passive scan, password fallback and single handoff",
+    "changed selection cancels without a start",
+    "fingerprint passive scan, no password input and single handoff",
+    "cancel in-flight scan returns to daemon recovery without start",
+    "accounts-switch selected username verified by mock greetd; one session start",
+    "accounts-switch passive scan, password fallback and single handoff",
+    "accounts-other selected username verified by mock greetd; one session start",
+    "accounts-other passive scan, password fallback and single handoff",
+    "accounts-empty selected username verified by mock greetd; one session start",
+    "accounts-empty passive scan, password fallback and single handoff",
+    "accounts-disabled selected username verified by mock greetd; one session start",
+    "accounts-disabled passive scan, password fallback and single handoff"
+  ],
+  "aqueous": {
+    "path": "/home/zoey/Pearl/.cache/aqueous/bin/aqueous",
+    "sha256": "1c612d3e503fe5b28c3af2595bac52b7b4441b808e259ba5fd303de2259eade1"
+  },
+  "screenshots": [
+    "session/greeter-material_dark.png",
+    "session/greeter-password-material_dark.png",
+    "session/greeter-material_light.png",
+    "session/greeter-password-material_light.png",
+    "session/greeter-gtk.png",
+    "session/greeter-password-gtk.png",
+    "session/greeter-solid.png",
+    "session/greeter-password-solid.png",
+    "session/greeter-contain.png",
+    "session/greeter-password-contain.png",
+    "session/greeter-contrast.png",
+    "session/greeter-small.png",
+    "session/greeter-password-small.png",
+    "session/greeter-stale.png",
+    "session/greeter-password-stale.png",
+    "session/greeter-fingerprint.png",
+    "session/greeter-fingerprint_cancel.png",
+    "session/greeter-accounts-switch-menu.png",
+    "session/greeter-accounts-switch.png",
+    "session/greeter-password-accounts-switch.png",
+    "session/greeter-accounts-other-menu.png",
+    "session/greeter-accounts-other.png",
+    "session/greeter-password-accounts-other.png",
+    "session/greeter-accounts-empty.png",
+    "session/greeter-accounts-disabled.png"
+  ],
+  "compositor_idle": {
+    "pss_bytes": 23239680,
+    "cpu_ticks": 1,
+    "interval_seconds": 65
+  },
+  "idle": {
+    "pss_bytes": 37931008,
+    "cpu_ticks": 1,
+    "interval_seconds": 65
+  },
+  "status": "passed"
+}

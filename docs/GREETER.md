@@ -22,7 +22,7 @@ real-reader login remains unaccepted. See its [checklist](FINGERPRINT_LOGIN_IMPL
 ```sh
 ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build build-greeter -Doptimize=ReleaseSafe
 ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-greeter-unit -Doptimize=ReleaseSafe
-ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-greeter-ipc test-greeter-catalog test-greeter-session test-greeter-services test-greeter-ui test-greeter-host test-greeter-soak -Doptimize=ReleaseSafe
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-greeter-ipc test-greeter-catalog test-greeter-session test-greeter-services test-greeter-ui test-greeter-login test-greeter-host test-greeter-soak -Doptimize=ReleaseSafe
 ```
 
 `build-greeter` stages production binaries under `zig-out/greeter/bin` and test
@@ -41,6 +41,13 @@ one session handoff. `report.json` lists the screenshots produced by that run;
 `greeter-password-accounts-switch.png` shows the selected user's password prompt.
 The passwd override exists only in test builds.
 Never type real credentials into a mock preview.
+
+`test-greeter-login` covers the native form with password pre-entry enabled:
+one Enter press, user switching, manual entry, empty/disabled discovery,
+fingerprint success, blank responses, additional questions, input clearing,
+cancellation, denied authentication and changed desktop metadata. It also checks
+oversized UTF-8 input, changed policy, failed catalog validation and pending-input
+timeout cleanup. Its screenshots and report are under `artifacts/greeter-login/native`.
 
 The production `--catalog` command performs read-only discovery using the fixed
 administrator config. `--version` works without a display or configuration. The
@@ -140,6 +147,7 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `allow_uwsm` | Defaults true; permits UWSM-managed sessions. Set false to disable entries that directly invoke `uwsm`; use `allow` to constrain the catalog |
 | `x11` | Defaults false; enabling also requires startx and the packaged X11 adapter, plus distribution/VM verification |
 | `accounts`, `power`, `screen_reader` | Account discovery, permitted logind controls and fixed Orca launcher |
+| `password_first` | Defaults false. Enable only when the administrator has verified that the first PAM input question is a password; allows password pre-entry and one Sign in action |
 | `fingerprint_hint` | Optional generic fingerprint guidance; defaults off and does not enable authentication or inspect enrollment |
 | `auth_timeout_seconds` | 30–300 seconds for the absolute attempt deadline and input inactivity; transport/cancellation and handoff deadlines are separately bounded |
 
@@ -177,6 +185,35 @@ for unlisted accounts. Manual entry is also available when discovery finds no
 users or `accounts` is disabled. Refresh preserves a selected user when present.
 Account discovery never grants authentication; greetd still verifies the login.
 Authentication timeouts are shown explicitly when the greeter returns to selection.
+
+The [user selection and password entry implementation](GREETER_LOGIN_FORM_IMPLEMENTATION_PLAN.md)
+keeps User, Password and Desktop session together in the initial card. Known
+users use the dropdown; manual entry adds a labeled Username field. Changing a
+user, username or desktop, and refreshing discovery, clears password input.
+
+With `password_first: false`, the visible password field is disabled with
+**Available when requested** until PAM asks for input. With `password_first: true`,
+it accepts a password immediately; one Sign in action starts authentication and
+sends that value once to the first secret question. Passive instructions are
+acknowledged normally. A visible question arriving first discards the queued
+password; every later question requires fresh input in the same card. Prompt
+text is never used to guess which question asks for a password.
+
+A blank initial field starts authentication without queuing an empty response,
+which supports fingerprint-only login. If PAM requests an empty password, submit
+an empty response explicitly through Continue. All pending secret storage is
+wiped on consumption, cancellation, timeout, failure and handoff. Moving the
+card to another monitor preserves one pending attempt while clearing unsent
+widget input.
+
+For a verified password-first installation, add `"password_first": true` to the
+existing root-owned `/etc/pearl/greeter.json` and restart the greeter when it is
+safe to end its current attempt. Leave the default false for policies that ask
+for a PIN, code or another response first. The packaged setting remains false;
+private fake-greetd tests do not establish the deployed PAM prompt order.
+
+See the [interactive design mockup](mockups/greeter-login/index.html) and
+[native validation record](../artifacts/greeter-login/README.md).
 
 IDs look like `wayland:gnome.desktop` or `x11:xfce.desktop`; display labels use
 localized desktop names and distinguish identical names. Selection memory contains

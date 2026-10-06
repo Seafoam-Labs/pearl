@@ -1,0 +1,1 @@
+Native greeter sync: appearance copy, image assets, clearing, policy preservation and invalid-input checks passed.

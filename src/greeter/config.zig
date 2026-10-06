@@ -25,6 +25,8 @@ pub const Config = struct {
     x11: bool = false,
     remember_session: bool = false,
     accounts: bool = true,
+    // Administrator declares the first PAM input question to be a password.
+    password_first: bool = false,
     power: bool = true,
     screen_reader: bool = false,
     fingerprint_hint: bool = false,

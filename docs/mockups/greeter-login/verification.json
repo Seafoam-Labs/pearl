@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "scope": "Offline HTML design mockup only; no native GTK, greetd, PAM or desktop handoff validation",
+  "checks": [
+    "user-and-password-on-initial-form",
+    "dropdown-includes-known-and-other-users",
+    "escape-restores-dropdown-focus",
+    "keyboard-user-change-clears-secret-and-focuses-password",
+    "other-user-shows-username-and-password",
+    "manual-user-validation-focus",
+    "single-enter-submission-clears-input-and-locks-selection",
+    "cancel-prevents-delayed-completion",
+    "refresh-preserves-account-and-clears-input",
+    "inline-error-with-empty-secret",
+    "fingerprint-status-with-escape-cancellation",
+    "additional-prompt-uses-empty-response",
+    "no-account-discovery-falls-back-to-manual-entry",
+    "light-theme-and-high-contrast-controls",
+    "reachable-form-without-horizontal-overflow-390x844",
+    "reachable-form-without-horizontal-overflow-640x480",
+    "no-runtime-errors-network-requests-or-storage"
+  ],
+  "runtime_errors": []
+}

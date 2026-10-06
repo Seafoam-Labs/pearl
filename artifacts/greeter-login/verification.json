@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "scope": "Native Pearl GTK and fake greetd on private Aqueous; no real PAM, reader or installed login changes",
+  "test_binary_sha256": "30f7af7eae1e0a5a1998046641cd91e5e665bb6c56c05239cad8945f68a70ec8",
+  "unit_tests": 23,
+  "login_scenarios": 20,
+  "ui_regression_checks": 18,
+  "other_checks": [
+    "greetd IPC (13 adversarial cases)",
+    "catalog and config boolean validation",
+    "private account and power services",
+    "output identity and hotplug",
+    "appearance sync preserves password_first",
+    "staged package and production test hook exclusion"
+  ],
+  "source_sha256": {
+    "src/greeter/screen.zig": "42e95034b52de7b846cd11de5456df0cbe207579edf4d64c8c91f7e5b77b6dff",
+    "src/greeter/pending_password.zig": "d61135551b7e03fefe2bed84c485907b5dd71407048a57d41ed88f90ed4d31b4",
+    "src/greeter/config.zig": "f3a7d3da15007e0b0a8f6bedeb3be95a530840cec3c7e8b4c64f5c77dabec627",
+    "src/greeter/local_accounts.zig": "067c48eb3afe7be0af47296b211b8487f7041dc187b5380459e1cb569f7ffc8d"
+  }
+}

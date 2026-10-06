@@ -177,7 +177,7 @@ pub fn build(b: *std.Build) void {
             greeter_build.dependOn(&install.step);
             if (instrumented and std.mem.eql(u8, component, "greeter")) {
                 greeter_test_executable = exe;
-                for ([_][]const u8{ "ipc", "ui", "catalog", "services", "soak", "outputs" }) |suite| {
+                for ([_][]const u8{ "ipc", "ui", "login", "catalog", "services", "soak", "outputs" }) |suite| {
                     const check = b.addSystemCommand(&.{ "python3", b.fmt("tests/integration/test_greeter_{s}.py", .{suite}), "--greeter" });
                     check.addArtifactArg(exe);
                     if (b.args) |args| check.addArgs(args);

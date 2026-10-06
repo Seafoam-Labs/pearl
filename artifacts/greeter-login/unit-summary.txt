@@ -1,0 +1,10 @@
+Build Summary: 8/8 steps succeeded; 23/23 tests passed
+test-greeter-unit success
++- run test 19 pass (19 total) 3ms MaxRSS:5M
+|  +- compile test ReleaseSafe native cached 10ms MaxRSS:54M
++- run test 4 pass (4 total) 28ms MaxRSS:73M
+   +- compile test ReleaseSafe native cached 16ms MaxRSS:58M
+      +- options cached
+      +- run exe zig-wayland-scanner (wayland.zig) cached
+         +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:52M
+

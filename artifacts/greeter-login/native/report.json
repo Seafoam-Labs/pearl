@@ -1,0 +1,41 @@
+{
+  "evidence": "private native GTK and fake greetd; no real PAM",
+  "binary_sha256": "30f7af7eae1e0a5a1998046641cd91e5e665bb6c56c05239cad8945f68a70ec8",
+  "checks": [
+    "password",
+    "switch",
+    "other",
+    "empty",
+    "disabled",
+    "fingerprint",
+    "blank",
+    "otp",
+    "visible",
+    "refresh",
+    "desktop-change",
+    "cancel",
+    "failure",
+    "stale",
+    "oversize",
+    "oversize-utf8",
+    "policy-change",
+    "changed-before-begin",
+    "catalog-failure",
+    "timeout"
+  ],
+  "screenshots": [
+    "session/login-initial.png",
+    "session/login-switch-menu.png",
+    "session/login-other-menu.png",
+    "session/login-other-user.png",
+    "session/login-otp-additional-prompt.png",
+    "session/login-visible-additional-prompt.png",
+    "session/login-failure.png",
+    "session/login-oversize.png",
+    "session/login-oversize-utf8.png",
+    "session/login-policy-change.png",
+    "session/login-changed-before-begin.png",
+    "session/login-catalog-failure.png"
+  ],
+  "status": "passed"
+}

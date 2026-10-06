@@ -40,6 +40,11 @@ def main():
             value['preferred_output_edid']=edid;config.write_text(json.dumps(value));catalog()
         for edid in ('', 'DP-1', 'sha256:', 'g'*64, 'a'*63, 'a'*65, 123):
             value['preferred_output_edid']=edid;config.write_text(json.dumps(value));catalog(False)
+        value.pop('preferred_output_edid')
+        for password_first in (False, True):
+            value['password_first']=password_first;config.write_text(json.dumps(value));catalog()
+        for password_first in ('true', 1, None):
+            value['password_first']=password_first;config.write_text(json.dumps(value));catalog(False)
         config.write_text('{"version":1,"version":1}');catalog(False)
         print('Catalog: precedence, masking, type identity, metadata, dependencies, Exec rejection, symlinks, fingerprint and policy passed')
 

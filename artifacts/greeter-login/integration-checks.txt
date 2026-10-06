@@ -1,0 +1,4 @@
+Catalog: precedence, masking, type identity, metadata, dependencies, Exec rejection, symlinks, fingerprint and policy passed
+Greeter outputs: real identity protocol, unavailable-hash fallback, active hotplug and stable placement passed
+Accounts filter and yes/no/challenge power capability passed on private D-Bus; requests were noninteractive.
+{"status": "passed", "evidence": "private mock daemon only", "checks": ["conversation", "cancel", "denied", "huge", "truncated", "duplicate", "alias", "bad_utf8", "unsolicited", "lost_start", "blocked", "cancel_blocked", "prompt_timeout"]}

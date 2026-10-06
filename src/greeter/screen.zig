@@ -18,6 +18,7 @@ const w = @import("../ui/components/widgets.zig");
 const options = @import("build_options");
 const output_identity = @import("output_identity.zig");
 const OutputWatch = @import("output_watch.zig").Watch;
+const passwords = @import("pending_password.zig");
 const log = std.log.scoped(.greeter);
 const a = std.heap.c_allocator;
 const View = struct { window: *gtk.Window, monitor: *gdk.Monitor, picture: *gtk.Picture, clock: *gtk.Label, date: *gtk.Label, active: bool, scroll: ?*gtk.ScrolledWindow = null, monitor_signal: c_ulong };
@@ -31,6 +32,7 @@ const Job = struct {
     account_list: []const accounts.Account = &.{},
     image: ?*pixbuf.Pixbuf = null,
     failed: bool = false,
+    password_first: bool = false,
 };
 const Screen = struct {
     config: cfg.Config,
@@ -42,7 +44,11 @@ const Screen = struct {
     column: *gtk.Box,
     panel: *gtk.Box,
     username: *gtk.Entry,
+    username_field: *gtk.Box,
+    account_field: *gtk.Box,
     entry: *gtk.Entry,
+    entry_label: *gtk.Label,
+    password_hint: *gtk.Label,
     chooser: *gtk.DropDown,
     account_chooser: *gtk.DropDown,
     message: *gtk.Label,
@@ -81,6 +87,8 @@ const Screen = struct {
     high_contrast: bool = false,
     reduced_motion: bool = true,
     status: u8 = 1,
+    pending_password: passwords.Pending = .{},
+    focused_prompt: u64 = 0,
     fn z(text: []const u8) [:0]u8 {
         return a.dupeZ(u8, text) catch unreachable;
     }
@@ -96,16 +104,30 @@ const Screen = struct {
         self.setMessage(text);
     }
     fn clear(self: *Screen) void {
+        self.pending_password.clear();
+        self.clearEntry();
+    }
+    fn clearEntry(self: *Screen) void {
         self.entry.as(gtk.Editable).setText("");
+    }
+    fn selection(self: *Screen) passwords.Selection {
+        return .{ .username = std.mem.span(self.username.as(gtk.Editable).getText()), .desktop = std.mem.sliceTo(&self.selected_id, 0), .fingerprint = self.selected_fingerprint, .job = self.job_generation };
+    }
+    fn readyMessage(self: *Screen) void {
+        self.setMessage(if (self.config.password_first) "Enter your password to sign in." else "Choose your account and desktop.");
     }
     fn changed(context: *anyopaque) void {
         const self: *Screen = @ptrCast(@alignCast(context));
-        self.clear();
+        self.clearEntry();
         const c = &self.client.controller;
+        switch (c.state) {
+            .idle, .cancelling, .authenticated, .starting, .handoff, .failed, .unavailable => self.pending_password.clear(),
+            else => {},
+        }
         if (options.test_hooks) log.info("event=greeter-state state={s}", .{@tagName(c.state)});
         switch (c.state) {
             .idle => {
-                self.setMessage(if (self.client.timed_out) "Authentication timed out. Try again." else if (self.selection_error) "The selected desktop changed. Refresh and choose it again." else if (self.auth_error) "Authentication failed. Try again." else if (self.service_error) "Login service rejected the request. Try again later." else "Choose your account and desktop.");
+                self.setMessage(if (self.client.timed_out) "Authentication timed out. Try again." else if (self.selection_error) "The selected desktop changed. Refresh and choose it again." else if (self.auth_error) "Authentication failed. Try again." else if (self.service_error) "Login service rejected the request. Try again later." else if (self.config.password_first) "Enter your password to sign in." else "Choose your account and desktop.");
                 if (self.confirmed_power) self.performPower();
             },
             .connecting => self.setMessage("Authenticating…"),
@@ -114,7 +136,19 @@ const Screen = struct {
             },
             .prompt => {
                 if (c.needsInput()) self.setMessage(self.client.response.z()) else self.passiveMessage();
-                self.entry.setVisibility(@intFromBool(c.kind == .visible));
+                if (self.config.password_first) {
+                    var scratch: [4096]u8 = @splat(0);
+                    defer std.crypto.secureZero(u8, &scratch);
+                    if (self.pending_password.take(c, self.selection(), &scratch)) |answer| {
+                        // Pending storage is already wiped; Client.answer may reenter changed.
+                        self.client.answer(c.prompt_generation, answer) catch {
+                            self.clear();
+                            self.setMessage("Response is too long or no longer current.");
+                            self.update();
+                        };
+                        return;
+                    }
+                }
             },
             .cancelling => self.setMessage("Cancelling authentication…"),
             .authenticated => {
@@ -140,22 +174,31 @@ const Screen = struct {
             },
         }
         self.update();
+        if (c.needsInput() and self.focused_prompt != c.prompt_generation) {
+            self.focused_prompt = c.prompt_generation;
+            _ = self.entry.as(gtk.Widget).grabFocus();
+        } else if (c.state == .idle and self.job == null and self.pending_power == null) self.focusAccount();
     }
     fn update(self: *Screen) void {
         const c = &self.client.controller;
         const idle = c.state == .idle and self.job == null and self.pending_power == null and !self.power.pending and !self.power.completed;
-        const prompt = c.state == .prompt;
         const secret = c.needsInput();
         self.username.as(gtk.Editable).setEditable(@intFromBool(idle));
         self.chooser.as(gtk.Widget).setSensitive(@intFromBool(idle and self.config.force_session == null));
         self.account_chooser.as(gtk.Widget).setSensitive(@intFromBool(idle));
         self.refresh_button.as(gtk.Widget).setSensitive(@intFromBool(idle));
-        self.entry.as(gtk.Widget).setVisible(@intFromBool(secret));
-        self.entry.as(gtk.Editable).setEditable(@intFromBool(secret));
-        self.entry.setInputPurpose(if (c.kind == .visible) .free_form else .password);
-        self.entry.setPlaceholderText(if (c.kind == .visible) "Response" else "Password");
-        w.name(self.entry.as(gtk.Widget), if (prompt) self.client.response.z() else "Authentication response");
-        self.button.setLabel(if (prompt) "Continue" else "Sign in");
+        const editable = secret or (idle and self.config.password_first);
+        const visible_response = secret and c.kind == .visible;
+        self.entry.as(gtk.Widget).setVisible(1);
+        self.entry.as(gtk.Widget).setSensitive(@intFromBool(editable));
+        self.entry.as(gtk.Editable).setEditable(@intFromBool(editable));
+        self.entry.setVisibility(@intFromBool(visible_response));
+        self.entry.setInputPurpose(if (visible_response) .free_form else .password);
+        self.entry.setPlaceholderText(if (visible_response) "Response" else "Password");
+        self.entry_label.setText(if (secret) self.client.response.z() else "Password");
+        self.password_hint.as(gtk.Widget).setVisible(@intFromBool(c.state == .idle and !self.config.password_first));
+        w.name(self.entry.as(gtk.Widget), if (secret) self.client.response.z() else "Password");
+        self.button.setLabel(if (secret) "Continue" else "Sign in");
         self.button.as(gtk.Widget).setVisible(@intFromBool(c.state == .idle or secret));
         self.button.as(gtk.Widget).setSensitive(@intFromBool((idle and self.selected_id[0] != 0) or secret));
         self.cancel_button.as(gtk.Widget).setVisible(@intFromBool(c.state != .idle or self.job != null));
@@ -164,17 +207,26 @@ const Screen = struct {
         self.off_button.as(gtk.Widget).setSensitive(@intFromBool(self.power.off and !c.start_submitted and self.pending_power == null));
         self.confirm.as(gtk.Widget).setVisible(@intFromBool(self.pending_power != null));
         self.cancel_power.as(gtk.Widget).setVisible(@intFromBool(self.pending_power != null));
-        if (secret) _ = self.entry.as(gtk.Widget).grabFocus();
         if (options.test_hooks) {
             std.debug.assert(object.ext.cast(gtk.PasswordEntryBuffer, self.entry.getBuffer()) != null);
+            if (idle) {
+                std.debug.assert(self.pending_password.phase == .empty);
+                std.debug.assert(self.entry.as(gtk.Widget).getVisible() != 0);
+                std.debug.assert((self.entry.as(gtk.Widget).getSensitive() != 0) == self.config.password_first);
+                std.debug.assert(self.entry.getVisibility() == 0);
+            }
+            if (c.state == .cancelling or c.state == .authenticated or c.state == .failed or c.state == .unavailable or c.state == .handoff) {
+                std.debug.assert(self.pending_password.phase == .empty);
+            }
             if (c.passiveToken() != null or (c.state == .authenticating and (c.kind == .info or c.kind == .@"error") and self.client.history.latest() != null)) {
-                std.debug.assert(self.entry.as(gtk.Widget).getVisible() == 0);
+                std.debug.assert(self.entry.as(gtk.Widget).getVisible() != 0);
+                std.debug.assert(self.entry.as(gtk.Widget).getSensitive() == 0);
                 std.debug.assert(self.button.as(gtk.Widget).getVisible() == 0);
                 std.debug.assert(std.mem.span(self.entry.as(gtk.Editable).getText()).len == 0);
                 std.debug.assert(std.mem.eql(u8, std.mem.span(self.message.getText()), self.client.history.latest().?));
             }
             if (glib.getenv("GTK_A11Y")) |backend| if (std.mem.eql(u8, std.mem.span(backend), "test")) {
-                const fail = gtk.testAccessibleCheckProperty(self.entry.as(gtk.Accessible), .label, if (prompt) self.client.response.z() else @as([*:0]const u8, "Authentication response"));
+                const fail = gtk.testAccessibleCheckProperty(self.entry.as(gtk.Accessible), .label, if (secret) self.client.response.z() else @as([*:0]const u8, "Password"));
                 std.debug.assert(@intFromPtr(fail) == 0);
             };
         }
@@ -182,6 +234,7 @@ const Screen = struct {
     fn selected(_: *object.Object, _: *object.ParamSpec, self: *Screen) callconv(.c) void {
         if (self.selecting or self.client.controller.state != .idle or self.job != null) return;
         self.selected_explicitly = true;
+        self.clear();
         self.choose(self.chooser.getSelected());
         self.update();
     }
@@ -201,23 +254,28 @@ const Screen = struct {
         self.selected_fingerprint = e.fingerprint;
         self.selected_kind = @splat(0);
         @memcpy(self.selected_kind[0..e.kind.len], e.kind);
-        self.setMessage("Choose your account and desktop.");
+        self.readyMessage();
     }
     fn selectedAccount(_: *object.Object, _: *object.ParamSpec, self: *Screen) callconv(.c) void {
         if (self.selecting or self.client.controller.state != .idle) return;
         if (self.job != null) return;
+        self.clear();
         self.applyAccount();
+        self.readyMessage();
         self.focusAccount();
     }
     fn applyAccount(self: *Screen) void {
         const n = self.account_chooser.getSelected();
         const known = n < self.account_count;
         self.username.as(gtk.Editable).setText(if (known) @ptrCast(&self.account_names[n]) else "");
-        self.username.as(gtk.Widget).setVisible(@intFromBool(!known));
-        if (options.test_hooks) log.info("event=greeter-account count={d} selected={d} manual={}", .{ self.account_count, n, self.username.as(gtk.Widget).getVisible() != 0 });
+        self.username_field.as(gtk.Widget).setVisible(@intFromBool(!known));
+        if (options.test_hooks) log.info("event=greeter-account count={d} selected={d} manual={}", .{ self.account_count, n, !known });
     }
     fn focusAccount(self: *Screen) void {
-        _ = (if (self.username.as(gtk.Widget).getVisible() != 0) self.username.as(gtk.Widget) else self.account_chooser.as(gtk.Widget)).grabFocus();
+        _ = (if (self.username_field.as(gtk.Widget).getVisible() != 0) self.username.as(gtk.Widget) else if (self.config.password_first) self.entry.as(gtk.Widget) else self.account_chooser.as(gtk.Widget)).grabFocus();
+    }
+    fn usernameChanged(_: *gtk.Editable, self: *Screen) callconv(.c) void {
+        self.clear();
     }
     fn submit(_: *gtk.Button, self: *Screen) callconv(.c) void {
         self.submitCurrent();
@@ -234,10 +292,13 @@ const Screen = struct {
         if (c.state == .idle) {
             const user = std.mem.span(self.username.as(gtk.Editable).getText());
             if (user.len == 0 or !@import("protocol.zig").validText(user, 256)) {
+                self.clear();
                 self.setMessage("Enter a username (maximum 256 UTF-8 bytes).");
+                _ = self.username.as(gtk.Widget).grabFocus();
                 return;
             }
             if (self.selected_id[0] == 0) {
+                self.clear();
                 self.setMessage("Select an available desktop.");
                 return;
             }
@@ -258,6 +319,18 @@ const Screen = struct {
             self.auth_error = false;
             self.service_error = false;
             self.selection_error = false;
+            self.pending_password.clear();
+            if (self.config.password_first) {
+                var selection_value = self.selection();
+                selection_value.job +%= 1;
+                self.pending_password.capture(selection_value, std.mem.span(self.entry.as(gtk.Editable).getText())) catch {
+                    self.clear();
+                    self.setMessage("Password is too long (maximum 4096 UTF-8 bytes).");
+                    _ = self.entry.as(gtk.Widget).grabFocus();
+                    return;
+                };
+            }
+            self.clearEntry();
             self.refresh(.begin);
         } else if (c.needsInput()) {
             const answer = std.mem.span(self.entry.as(gtk.Editable).getText());
@@ -357,10 +430,13 @@ const Screen = struct {
     }
     fn refresh(self: *Screen, purpose: Purpose) void {
         if (self.job != null or (purpose == .refresh and self.client.controller.state != .idle)) return;
+        if (purpose == .refresh) self.clear();
         const job = a.create(Job) catch {
+            self.clear();
             self.setMessage("Unable to load desktops.");
             return;
         };
+        self.job_generation +%= 1;
         job.* = .{ .screen = self, .purpose = purpose, .generation = self.job_generation, .cancel = gio.Cancellable.new() };
         self.job = job;
         self.update();
@@ -384,6 +460,7 @@ const Screen = struct {
             return;
         };
         defer current.deinit();
+        job.password_first = current.value.password_first;
         job.catalog = sessions.load(a, current.value, locale()) catch null;
         job.failed = job.catalog == null;
         if (job.purpose == .refresh and job.catalog != null) {
@@ -412,6 +489,7 @@ const Screen = struct {
             a.destroy(job);
         }
         if (job.failed) {
+            self.clear();
             self.setMessage("Desktop configuration is unavailable.");
             if (self.client.controller.state == .authenticated) self.client.cancel() catch {};
             self.update();
@@ -420,6 +498,7 @@ const Screen = struct {
         var next = job.catalog.?;
         if (job.generation != self.job_generation) {
             next.deinit();
+            self.clear();
             self.update();
             return;
         }
@@ -427,6 +506,7 @@ const Screen = struct {
             defer next.deinit();
             const e = next.find(std.mem.sliceTo(&self.selected_id, 0));
             if (e == null or !e.?.available or !std.mem.eql(u8, &e.?.fingerprint, &self.selected_fingerprint)) {
+                self.clear();
                 self.selection_error = true;
                 self.setMessage("The selected desktop changed. Refresh and choose it again.");
                 self.selected_id = @splat(0);
@@ -435,7 +515,19 @@ const Screen = struct {
                 return;
             }
             if (job.purpose == .begin and self.client.controller.state == .idle) {
-                self.client.begin(std.mem.span(self.username.as(gtk.Editable).getText())) catch self.setMessage("Login service unavailable.");
+                if (job.password_first != self.config.password_first) {
+                    self.clear();
+                    self.setMessage("Login policy changed. Restart the login screen.");
+                    self.update();
+                    return;
+                }
+                self.client.begin(std.mem.span(self.username.as(gtk.Editable).getText())) catch {
+                    self.clear();
+                    self.setMessage("Login service unavailable.");
+                    self.update();
+                    return;
+                };
+                self.pending_password.bind(&self.client.controller, self.selection());
             } else if (job.purpose == .start and self.client.controller.state == .authenticated) {
                 const id = std.fmt.allocPrint(a, "PEARL_SESSION_ID={s}", .{std.mem.sliceTo(&self.selected_id, 0)}) catch unreachable;
                 defer a.free(id);
@@ -485,7 +577,7 @@ const Screen = struct {
         defer account_model.unref();
         const previous_user = a.dupe(u8, std.mem.span(self.username.as(gtk.Editable).getText())) catch unreachable;
         defer a.free(previous_user);
-        var account_index: c_uint = if (self.catalog != null and self.username.as(gtk.Widget).getVisible() != 0) @intCast(job.account_list.len) else 0;
+        var account_index: c_uint = if (self.catalog != null and self.username_field.as(gtk.Widget).getVisible() != 0) @intCast(job.account_list.len) else 0;
         self.account_count = job.account_list.len;
         self.account_names = @splat(@splat(0));
         for (job.account_list, 0..) |account, i| {
@@ -504,6 +596,7 @@ const Screen = struct {
             defer a.free(previous_z);
             self.username.as(gtk.Editable).setText(previous_z);
         }
+        self.account_field.as(gtk.Widget).setVisible(@intFromBool(job.account_list.len > 0));
         self.account_chooser.as(gtk.Widget).setVisible(@intFromBool(job.account_list.len > 0));
         if (self.catalog) |*old| old.deinit();
         self.catalog = next;
@@ -643,8 +736,12 @@ const Screen = struct {
             self.clock.as(gtk.Widget).setVisible(@intFromBool(!short));
             self.date.as(gtk.Widget).setVisible(@intFromBool(!short));
         }
-        if (geometry.f_width < 500 or geometry.f_height < 600) v.window.as(gtk.Widget).addCssClass("pearl-lock-small") else v.window.as(gtk.Widget).removeCssClass("pearl-lock-small");
-        if (v.active) self.panel.setSpacing(if (short) 8 else 16);
+        const compact = geometry.f_width < 500 or geometry.f_height < 850;
+        if (compact) v.window.as(gtk.Widget).addCssClass("pearl-lock-small") else v.window.as(gtk.Widget).removeCssClass("pearl-lock-small");
+        if (v.active) {
+            self.panel.setSpacing(if (compact) 8 else 12);
+            self.column.setSpacing(if (compact) 10 else 16);
+        }
     }
     fn attach(self: *Screen, v: *View) void {
         // The column retains an explicit ref while moving between outputs.
@@ -660,12 +757,13 @@ const Screen = struct {
         v.active = true;
         if (options.test_hooks) log.info("event=greeter-active-output connector={s}", .{if (v.monitor.getConnector()) |name| std.mem.span(name) else "unknown"});
         layer.setKeyboardMode(v.window, .exclusive);
-        self.clear();
+        self.clearEntry();
         self.update();
         if (self.client.controller.state == .idle) self.focusAccount();
+        if (self.client.controller.needsInput()) _ = self.entry.as(gtk.Widget).grabFocus();
     }
     fn detach(self: *Screen, v: *View) void {
-        self.clear();
+        self.clearEntry();
         if (v.scroll) |scroll| {
             if (self.column.as(gtk.Widget).getParent()) |parent| object.ext.cast(gtk.Viewport, parent).?.setChild(null);
             const overlay = object.ext.cast(gtk.Overlay, v.window.getChild().?).?;
@@ -820,13 +918,32 @@ pub fn run() !void {
     panel.append(title.as(gtk.Widget));
     const account = gtk.DropDown.new(null, null);
     w.name(account.as(gtk.Widget), "Account");
-    panel.append(account.as(gtk.Widget));
+    const account_field = w.column(4);
+    account_field.append(w.label("User", "pearl-secondary").as(gtk.Widget));
+    account_field.append(account.as(gtk.Widget));
+    panel.append(account_field.as(gtk.Widget));
     account.as(gtk.Widget).setVisible(0);
     const username = gtk.Entry.new();
     username.setMaxLength(257);
     username.setPlaceholderText("Username");
     w.name(username.as(gtk.Widget), "Username");
-    panel.append(username.as(gtk.Widget));
+    const username_field = w.column(4);
+    username_field.append(w.label("Username", "pearl-secondary").as(gtk.Widget));
+    username_field.append(username.as(gtk.Widget));
+    panel.append(username_field.as(gtk.Widget));
+    const entry_field = w.column(4);
+    const entry_label = w.label("Password", "pearl-secondary");
+    entry_label.setWrap(1);
+    entry_label.setMaxWidthChars(36);
+    entry_field.append(entry_label.as(gtk.Widget));
+    const entry = presentation.secureEntry(4097);
+    entry_field.append(entry.as(gtk.Widget));
+    const password_hint = w.label("Available when requested", "pearl-secondary");
+    entry_field.append(password_hint.as(gtk.Widget));
+    panel.append(entry_field.as(gtk.Widget));
+    const caps = w.label("Caps Lock is on", "pearl-secondary");
+    caps.as(gtk.Widget).setVisible(0);
+    panel.append(caps.as(gtk.Widget));
     const chooser = gtk.DropDown.new(null, null);
     const factory = gtk.SignalListItemFactory.new();
     _ = gtk.SignalListItemFactory.signals.setup.connect(factory, ?*anyopaque, sessionSetup, null, .{});
@@ -835,24 +952,18 @@ pub fn run() !void {
     chooser.setListFactory(factory.as(gtk.ListItemFactory));
     factory.unref();
     w.name(chooser.as(gtk.Widget), "Desktop session");
-    panel.append(chooser.as(gtk.Widget));
     const refresh = w.iconButton("view-refresh-symbolic", "Refresh desktops");
     const session_row = w.row(8);
-    chooser.ref();
-    panel.remove(chooser.as(gtk.Widget));
     session_row.append(chooser.as(gtk.Widget));
-    chooser.unref();
     chooser.as(gtk.Widget).setHexpand(1);
     session_row.append(refresh.as(gtk.Widget));
-    panel.append(session_row.as(gtk.Widget));
+    const session_field = w.column(4);
+    session_field.append(w.label("Desktop session", "pearl-secondary").as(gtk.Widget));
+    session_field.append(session_row.as(gtk.Widget));
+    panel.append(session_field.as(gtk.Widget));
     const message = w.label("Loading installed desktops…", "pearl-secondary");
     message.setMaxWidthChars(36);
     panel.append(message.as(gtk.Widget));
-    const entry = presentation.secureEntry(4097);
-    panel.append(entry.as(gtk.Widget));
-    const caps = w.label("Caps Lock is on", "pearl-secondary");
-    caps.as(gtk.Widget).setVisible(0);
-    panel.append(caps.as(gtk.Widget));
     const button = gtk.Button.newWithLabel("Sign in");
     button.as(gtk.Widget).addCssClass("pearl-primary");
     panel.append(button.as(gtk.Widget));
@@ -894,7 +1005,7 @@ pub fn run() !void {
     const cancel_power = gtk.Button.newWithLabel("Cancel power action");
     footer.append(confirm.as(gtk.Widget));
     footer.append(cancel_power.as(gtk.Widget));
-    var self: Screen = .{ .config = config, .loop = glib.MainLoop.new(null, 0), .display = display, .column = column, .panel = panel, .username = username, .entry = entry, .chooser = chooser, .account_chooser = account, .message = message, .caps = caps, .button = button, .cancel_button = cancel, .refresh_button = refresh, .reboot_button = reboot, .off_button = off, .confirm = confirm, .cancel_power = cancel_power, .layout_label = layout_label, .clock = clock, .date = date };
+    var self: Screen = .{ .config = config, .loop = glib.MainLoop.new(null, 0), .display = display, .column = column, .panel = panel, .username = username, .username_field = username_field, .account_field = account_field, .entry = entry, .entry_label = entry_label, .password_hint = password_hint, .chooser = chooser, .account_chooser = account, .message = message, .caps = caps, .button = button, .cancel_button = cancel, .refresh_button = refresh, .reboot_button = reboot, .off_button = off, .confirm = confirm, .cancel_power = cancel_power, .layout_label = layout_label, .clock = clock, .date = date };
     self.reduced_motion = config.reduced_motion;
     self.client = .{ .path = std.mem.span(socket), .context = &self, .changed = Screen.changed, .timeout_ms = @as(c_uint, config.auth_timeout_seconds) * 1000 };
     self.client.init();
@@ -904,6 +1015,7 @@ pub fn run() !void {
     _ = gtk.Editable.signals.changed.connect(entry.as(gtk.Editable), *Screen, Screen.activity, &self, .{});
     _ = gtk.Entry.signals.activate.connect(entry, *Screen, Screen.entered, &self, .{});
     _ = gtk.Entry.signals.activate.connect(username, *Screen, Screen.entered, &self, .{});
+    _ = gtk.Editable.signals.changed.connect(username.as(gtk.Editable), *Screen, Screen.usernameChanged, &self, .{});
     _ = gtk.Button.signals.clicked.connect(cancel, *Screen, Screen.cancelled, &self, .{});
     _ = gtk.Button.signals.clicked.connect(refresh, *Screen, Screen.refreshed, &self, .{});
     _ = gtk.Button.signals.clicked.connect(reboot, *Screen, Screen.reboot, &self, .{});

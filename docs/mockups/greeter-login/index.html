@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pearl greeter login mockup</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mockup.js" defer></script>
+</head>
+<body>
+  <header class="review-bar">
+    <div><strong>Pearl greeter</strong><span class="review-caption">Single screen login concept · sample accounts only</span></div>
+    <div class="review-controls">
+      <label>Preview <select id="preview"><option value="ready">Ready to sign in</option><option value="error">Incorrect password</option><option value="fingerprint">Fingerprint instructions</option><option value="otp">Additional authentication</option><option value="empty">No listed accounts</option></select></label>
+      <label>Theme <select id="theme"><option value="dark">Dark</option><option value="light">Light</option></select></label>
+      <button id="reset" type="button">Reset</button>
+    </div>
+  </header>
+  <main class="desktop">
+    <div class="login-column">
+      <div class="clock" aria-hidden="true">10:41</div>
+      <p class="date">Tuesday, October 6</p>
+      <form id="login" class="card" autocomplete="off">
+        <svg class="avatar" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="9" r="6"/><path d="M5 26c0-7 4-10 11-10s11 3 11 10v2H5z"/></svg>
+        <h1>Sign in to your desktop</h1>
+        <div id="account-field" class="field">
+          <span id="account-label" class="field-label">User</span>
+          <div class="account-picker">
+            <button id="account" class="input account-button" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="accounts" aria-labelledby="account-label account-value"><span id="account-value">zoey</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+            <ul id="accounts" class="account-menu" role="listbox" aria-labelledby="account-label" tabindex="-1" hidden>
+              <li role="option" data-user="zoey" aria-selected="true"><span><strong>zoey</strong><small>Local account</small></span><span class="check" aria-hidden="true">✓</span></li>
+              <li role="option" data-user="alex" aria-selected="false"><span><strong>alex</strong><small>Local account</small></span><span class="check" aria-hidden="true">✓</span></li>
+              <li role="option" data-user="other" aria-selected="false"><span><strong>Other user…</strong><small>Enter a username</small></span><span class="check" aria-hidden="true">✓</span></li>
+            </ul>
+          </div>
+        </div>
+        <label id="username-field" class="field" hidden><span class="field-label">Username</span><input id="username" class="input" type="text" placeholder="Enter your username" autocapitalize="none" spellcheck="false" maxlength="256"></label>
+        <label class="field"><span id="password-label" class="field-label">Password</span><input id="password" class="input" type="password" placeholder="Enter your password" autocomplete="off" aria-describedby="status caps"></label>
+        <p id="caps" class="caps" hidden>Caps Lock is on</p>
+        <div class="field"><label class="field-label" for="session">Desktop session</label><div class="session-row"><select id="session" class="input"><option value="pearl">Pearl (Aqueous) · Wayland</option><option value="gnome">GNOME · Wayland</option><option value="plasma">Plasma · Wayland</option></select><button id="refresh" class="round-button" type="button" aria-label="Refresh desktops"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M20 12a8 8 0 1 0-2 5M20 7l-3-3"/></svg></button></div></div>
+        <p id="status" class="status" role="status" aria-live="polite">Enter your password to sign in.</p>
+        <button id="submit" class="primary" type="submit">Sign in</button>
+        <button id="cancel" class="cancel" type="button" hidden>Cancel authentication</button>
+      </form>
+      <footer class="accessibility">
+        <div class="footer-row"><button id="larger" type="button">Larger text</button><button id="move" type="button">Move login card</button></div>
+        <span class="layout">English (US)</span>
+        <div class="footer-row toggles"><label><input id="contrast" type="checkbox"> High contrast</label><label><input id="motion" type="checkbox" checked> Reduced motion</label></div>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>
