@@ -28,7 +28,9 @@ pub fn build(b: *std.Build) void {
     }
     for ([_]bool{ false, true }) |instrumented| {
         const tm = b.createModule(.{ .root_source_file = b.path("src/themes_main.zig"), .target = target, .optimize = optimize, .link_libc = true, .strip = release and !instrumented });
-        for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| tm.addImport(name, bindings.module(name));
+        for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| tm.addImport(name, bindings.module(name));
+        tm.addAnonymousImport("settings_base_style", .{ .root_source_file = b.path("resources/style.css") });
+        tm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
         for ([_][]const u8{ "gio-2.0", "libcurl", "libarchive", "libpng" }) |name| tm.linkSystemLibrary(name, .{ .use_pkg_config = .force });
         const options = b.addOptions();
         options.addOption(bool, "test_hooks", instrumented);
@@ -366,6 +368,8 @@ pub fn build(b: *std.Build) void {
     theme_completion.addArtifactArg(app);
     theme_completion.addArg("--settings");
     theme_completion.addArtifactArg(settings_test_app);
+    theme_completion.addArg("--themes");
+    theme_completion.addArtifactArg(themes_tool);
     if (b.args) |args| theme_completion.addArgs(args);
     b.step("test-theme-completion", "Verify image transfer, discovery and committed application profiles in a private session").dependOn(&theme_completion.step);
     const wallpaper_profiles = b.addSystemCommand(&.{ "python3", "tests/integration/test_wallpaper_profiles.py", "--pearl" });

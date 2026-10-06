@@ -33,7 +33,13 @@ pub fn build(a: std.mem.Allocator, path: [:0]const u8, output: [:0]const u8, can
         var temporary = std.heap.ArenaAllocator.init(std.heap.c_allocator);
         defer temporary.deinit();
         const temp = temporary.allocator();
-        const package = try @import("package.zig").load(temp, try temp.dupeZ(u8, record.path));
+        const compiled_path = try std.fmt.allocPrintSentinel(temp, "{s}/.compiled-{d}", .{ output, releases.items.len }, 0);
+        defer @import("install.zig").removeTree(temp, compiled_path) catch {};
+        const package = if (std.mem.endsWith(u8, record.path, ".json")) blk: {
+            var diagnostic: @import("palette_model.zig").Diagnostic = .{};
+            const palette = try @import("palette_file.zig").inspect(temp, try temp.dupeZ(u8, record.path), cancel, &diagnostic);
+            break :blk try @import("palette_file.zig").exportPackage(temp, palette, compiled_path, palette.document.source.publication orelse return error.PublicationMetadataRequired);
+        } else try @import("package.zig").load(temp, try temp.dupeZ(u8, record.path));
         const m = package.manifest;
         // Publication requires attribution even though private local packages
         // may be used without redistribution documentation.

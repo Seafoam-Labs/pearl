@@ -9,6 +9,7 @@ pub const Resolved = struct {
     palette: ?palette.Palette = null,
     tokens: style.Tokens = .{},
     css: []const u8 = "",
+    palette_css: []const u8 = "",
     digest: []const u8 = "",
     images: []const @import("assets.zig").Image = &.{},
     blobs: []const @import("assets.zig").Blob = &.{},
@@ -20,6 +21,11 @@ pub const Resolved = struct {
                     if (self.images.len > 0) {
                         try writer.objectField(field.name);
                         try writer.write(self.images);
+                    }
+                } else if (comptime std.mem.eql(u8, field.name, "palette_css")) {
+                    if (self.palette_css.len > 0) {
+                        try writer.objectField(field.name);
+                        try writer.write(self.palette_css);
                     }
                 } else {
                     try writer.objectField(field.name);
@@ -36,11 +42,19 @@ pub fn resolve(a: std.mem.Allocator, p: prefs.Theme, c: catalog.Catalog, check_r
     const active = if (p.package_id.len > 0) (try c.get(p.package_id)).package else null;
     var result: Resolved = .{ .digest = try a.dupe(u8, &c.revision) };
     if (p.mode == .package) {
-        const selected = (try c.get(if (p.palette_id.len > 0) p.palette_id else p.package_id)).package;
-        result.palette = (if (p.variant == .dark) selected.dark else selected.light) orelse return error.ThemeVariantUnavailable;
+        const entry = try c.get(if (p.palette_id.len > 0) p.palette_id else p.package_id);
+        if (entry.palette_file) |file| {
+            result.palette = if (p.variant == .dark) file.document.dark else file.document.light;
+            result.palette_css = try @import("palette_resolver.zig").shellCss(a, file.document, p.variant == .light);
+        } else {
+            const selected = entry.package.?;
+            result.palette = (if (p.variant == .dark) selected.dark else selected.light) orelse return error.ThemeVariantUnavailable;
+            if (selected.palette_hover) |hover| result.palette_css = try @import("palette_resolver.zig").hoverCss(a, if (p.variant == .light) hover.light else hover.dark);
+        }
     }
     if (!std.mem.eql(u8, p.style_id, "pearl.default")) {
         const selected = if (p.style_id.len > 0) (try c.get(p.style_id)).package else active;
+        if (p.style_id.len > 0 and selected == null) return error.ThemeStyleUnavailable;
         if (selected) |s| {
             if (p.style_id.len > 0 and s.manifest.style == null) return error.ThemeStyleUnavailable;
             result.tokens = s.tokens;

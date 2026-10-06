@@ -125,7 +125,7 @@ pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snap
     const input = snapshot.render_json orelse return error.CompleteRenderPaletteUnavailable;
     const version = try context.getVersion(a, cancel);
     try io.mkdir(scratch_root);
-    const key = model.hash(try std.json.Stringify.valueAlloc(a, .{ .adapter_api = @as(u32, 3), .renderer = version, .captured = captured, .input = input, .variant = snapshot.variant }, .{}));
+    const key = model.hash(try std.json.Stringify.valueAlloc(a, .{ .adapter_api = @as(u32, 4), .renderer = version, .captured = captured, .input = input, .variant = snapshot.variant }, .{}));
     const slot = std.fmt.parseInt(u8, key[0..2], 16) catch unreachable;
     // Three bounded slots per adapter prevent another application's render from
     // evicting the current input. Retrying a failed target reuses the others.
@@ -151,6 +151,7 @@ pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snap
     try @import("../config/preferences.zig").boundedJson(input, 131072, 16);
     var document = try std.json.parseFromSliceLeaky(std.json.Value, a, input, .{});
     if (document != .object) return error.InvalidRenderData;
+    try @import("terminal_colors.zig").populate(a, &document, @tagName(captured.application));
     for ([_][]const u8{ "colors", "base16" }) |section| {
         const colors = document.object.getPtr(section) orelse return error.InvalidRenderData;
         if (colors.* != .object) return error.InvalidRenderData;
@@ -649,19 +650,27 @@ test "all built-in Material templates render complete static palettes and packag
     const cancel = gio.Cancellable.new();
     defer cancel.unref();
     const material = @import("material.zig");
+    var diagnostic: @import("palette_model.zig").Diagnostic = .{};
+    const authored = try @import("palette_resolver.zig").compile(a,
+        \\{"dark":{"surface":"#101c19","on_surface":"#e8f4e9","primary":"#a4dfb0","terminal":{"cursor":"#012abc","bright":{"red":"#feabba"}}}}
+    , &diagnostic);
     var context: @import("generator.zig").Context = .{};
     for (std.enums.values(profiles.Application)) |app| {
         const descriptor = try material.descriptor(a, app);
         try descriptor.validate();
         const captured: provider.Captured = .{ .application = app, .id = descriptor.id, .origin = "Base Material", .descriptor = descriptor, .templates = material.files(app) };
-        for (descriptor.variants) |variant| {
-            const outputs = renderWithContext(a, captured, .{ .render_json = material.palette, .variant = if (variant == .dark) .dark else .light }, root, cancel, &context) catch |err| {
+        for ([_][]const u8{ material.palette, authored.render_json }) |input| for (descriptor.variants) |variant| {
+            const outputs = renderWithContext(a, captured, .{ .render_json = input, .variant = if (variant == .dark) .dark else .light }, root, cancel, &context) catch |err| {
                 std.debug.print("Material {s}/{s}: {s}\n", .{ @tagName(app), @tagName(variant), @errorName(err) });
                 return err;
             };
             try std.testing.expectEqual(descriptor.templates.len, outputs.len);
+            if (input.ptr == authored.render_json.ptr and (app == .ghostty or app == .kitty or app == .foot or app == .alacritty or app == .wezterm)) {
+                try std.testing.expect(std.mem.indexOf(u8, outputs[0].bytes, "feabba") != null);
+                try std.testing.expect(std.mem.indexOf(u8, outputs[0].bytes, "012abc") != null);
+            }
             if (app == .vscode) try std.testing.expect(std.mem.startsWith(u8, try @import("vscode_theme.zig").pack(a, outputs), "PK"));
-        }
+        };
     }
 }
 

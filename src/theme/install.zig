@@ -148,7 +148,7 @@ pub const Store = struct {
         }
         // A same-ID system/manual package cannot be silently shadowed.
         const catalog = try @import("catalog.zig").scan(self.a);
-        for (catalog.entries) |entry| if (std.mem.eql(u8, entry.package.manifest.id, id) and !std.mem.eql(u8, entry.path, destination)) return error.DuplicateThemeId;
+        for (catalog.entries) |entry| if (std.mem.eql(u8, entry.id(), id) and !std.mem.eql(u8, entry.path, destination)) return error.DuplicateThemeId;
         const tmp = try std.fmt.allocPrintSentinel(self.a, "{s}/.stage-XXXXXX", .{self.root}, 0);
         if (mkdtemp(tmp) == null) return error.ThemeStagingFailed;
         var journaled = false;

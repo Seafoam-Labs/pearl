@@ -1,5 +1,10 @@
 {
   "status": "passed",
+  "binaries": {
+    "pearl": "73f1d10aa91d9dfb88e7e4b1d43245eb57778ec868c8655a774d484fd20d2f66",
+    "settings": "91fe91bca5396556a69aeed0273a0d14f74480f010f0924e645c30d2be894265",
+    "themes": "7622a991e50ea436c067d80143207d1f3b1809889c38bf6df6b6dac243a66e2d"
+  },
   "package": {
     "id": "original.completion",
     "name": "Sample Theme",
@@ -9,7 +14,10 @@
     "dark": true,
     "light": false,
     "style": true,
-    "error_code": null
+    "error_code": null,
+    "editable": false,
+    "path": "",
+    "fallback": ""
   },
   "renderer": "matugen 4.2.0",
   "render_data_sha256": "a2a1cef0c4d903302343d9e6aaa9f8262f2884280e1b11a90d1763ac44e5fb50",
@@ -31,6 +39,13 @@
     "inherited_zed_steam_off",
     "committed_template_retry",
     "image_profile_restart",
-    "off_preserves_user_edit"
+    "off_preserves_user_edit",
+    "palette_editor_create_save_preview",
+    "local_palette_application_defaults",
+    "live_atomic_edits_preserve_draft",
+    "watched_cli_preview_isolation",
+    "invalid_palette_last_good",
+    "palette_invalid_to_valid_and_burst_replacements",
+    "missing_palette_restart"
   ]
 }

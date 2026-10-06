@@ -152,6 +152,31 @@ def main():
             del routes[f'/api/repos/{REPO}/commits/HEAD']
             offline = run('refresh', id='seafoam-community')
             assert offline['offline'] and offline['index'] == first
+            # Compact palettes compile through the existing install pipeline.
+            routes[f'/api/repos/{REPO}/commits/HEAD'] = dict(sha=REVISION)
+            palette_path='palettes/meadow.json'
+            compact=dict(name='Compact Meadow',dark=dict(surface='#101c19',on_surface='#e8f4e9',primary='#a4dfb0'),publication=dict(id='org.example.compact',author='Fixture',license='CC0-1.0',source=URL,version='1.0.0',license_text='Original test fixture, dedicated to the public domain.',attribution='Original test fixture palette.'))
+            def update_palette():
+                data=json.dumps(compact).encode()
+                palette_entry.update(sha=hashlib.sha1(f'blob {len(data)}\0'.encode()+data).hexdigest(),size=len(data))
+                routes[f'/raw/{REPO}/{REVISION}/{palette_path}']=data
+            palette_entry=dict(path=palette_path,type='blob',mode='100644')
+            update_palette();folders.append(palette_entry)
+            compact_release=run('refresh',id='seafoam-community')['index']['releases'][0]
+            assert compact_release['github']['kind']=='palette' and len(compact_release['github']['compiler'])==64
+            request=dict(repository='seafoam-community',id=compact_release['id'],version=compact_release['version'],sha256=compact_release['sha256'])
+            assert run('install',**request)['id']==compact_release['id']
+            installed=root/'data/pearl/themes'/compact_release['id']
+            assert (installed/'palette-source.json').is_file()
+            assert run('preview',theme=dict(mode='package',package_id=compact_release['id']))['palette']['surface']=='#101c19'
+            raw=f'/raw/{REPO}/{REVISION}/{palette_path}'
+            original=routes[raw];routes[raw]=original.replace(b'#101c19',b'#101c18')
+            run('install',error='ThemeDownloadDigestMismatch',**request);routes[raw]=original
+            compact['dark']['primary']='#abcdef';update_palette()
+            run('refresh',id='seafoam-community',error='MutableThemeRelease')
+            compact['publication']['version']='1.0.1';update_palette()
+            newer=run('refresh',id='seafoam-community')['index']['releases'][0]
+            assert newer['version']=='1.0.1' and newer['sha256']!=compact_release['sha256']
             run('source_remove', id='seafoam-community')
             assert all(s['id'] != 'seafoam-community' for s in run('catalog')['sources'])
             print('PASS direct GitHub discovery, pinned pagination, raw installation, preview, integrity, hostile entries, legacy URL, offline cache and default removal')

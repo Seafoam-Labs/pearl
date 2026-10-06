@@ -1094,7 +1094,12 @@ pub const Window = struct {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
             }
             for ([_][]const @import("themes_view.zig").Control{ view.themes.controls.items, view.themes.row_controls.items }) |bindings| for (bindings) |binding| {
-                try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget else false, .enabled = binding.widget.isSensitive() != 0, .bounds = self.bounds(binding.widget) });
+                const entry_text: ?[]const u8 = blk: {
+                    const palette_editor = view.themes.palette_editor;
+                    for ([_]*gtk.Entry{ palette_editor.title, palette_editor.slug, palette_editor.colors[0], palette_editor.colors[1], palette_editor.colors[2] }) |entry| if (binding.widget == entry.as(gtk.Widget)) break :blk std.mem.span(entry.as(gtk.Editable).getText());
+                    break :blk null;
+                };
+                try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget or f.isAncestor(binding.widget) != 0 else false, .enabled = binding.widget.isSensitive() != 0, .text = entry_text, .bounds = self.bounds(binding.widget) });
             };
             for ([_]*gtk.Widget{ view.profiles.enabled.as(gtk.Widget), view.profiles.defaults.as(gtk.Widget), view.profiles.source.as(gtk.Widget), view.profiles.seed.as(gtk.Widget) }, [_][]const u8{ "applications.enabled", "applications.defaults", "applications.source", "applications.seed" }) |widget, name| {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });

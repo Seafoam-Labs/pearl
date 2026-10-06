@@ -151,6 +151,7 @@ fn below(path: []const u8, root: []const u8) bool {
 fn allRoots(alloc: std.mem.Allocator) ![]const [:0]const u8 {
     var roots: std.ArrayList([:0]const u8) = .empty;
     try roots.appendSlice(alloc, try catalog.roots(alloc));
+    try roots.append(alloc, try @import("palette_file.zig").root(alloc));
     try roots.appendSlice(alloc, try @import("theme_provider.zig").roots(alloc));
     return roots.items;
 }

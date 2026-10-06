@@ -1,5 +1,8 @@
 # Custom themes and application profiles
 
+Start with [Create a theme from three colors](THEME_CREATION_TUTORIAL.md) for local
+palettes, Settings/CLI editing, Noctalia color import, and community export.
+
 See [Create a community theme](CREATE_COMMUNITY_THEME.md) for package authoring
 and [theme repositories](THEME_REPOSITORIES.md) for discovery and installation.
 
@@ -16,7 +19,7 @@ shell's theme selection.
 
 Application colors can follow Pearl, use an independent seed, or use the current
 wallpaper. Follow Pearl uses the complete dynamic palette or the fixed render
-data supplied by a package. Built-in static Material supplies complete, fixed
+data supplied by a package or compiled from an editable local palette. Built-in static Material supplies complete, fixed
 dark/light render data; GTK shell themes do not supply a complete Matugen palette. Independent wallpaper colors work with every shell mode.
 
 After committing a wallpaper selection, image edits and replacements update the

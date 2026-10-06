@@ -10,7 +10,13 @@ const Progress = @import("progress.zig").Progress;
 extern fn mkdtemp([*:0]u8) ?[*:0]u8;
 
 pub const legacy_url = "https://raw.githubusercontent.com/Seafoam-Labs/pearl-community-themes/main/index.json";
-pub const Snapshot = struct { repository: []const u8, revision: []const u8, path: []const u8, tree: []const u8 };
+pub const Snapshot = struct { repository: []const u8, revision: []const u8, path: []const u8, tree: []const u8, kind: enum { package, palette } = .package, compiler: []const u8 = "" };
+fn compilerIdentity() [64]u8 {
+    return model.hash(@embedFile("material/palette.json") ++ std.fmt.comptimePrint("\npalette-compiler-{d}", .{@import("palette_model.zig").compiler_version}));
+}
+fn releaseDigest(a: std.mem.Allocator, snapshot: Snapshot) ![64]u8 {
+    return if (snapshot.kind == .package) model.hash(snapshot.tree) else model.hash(try std.fmt.allocPrint(a, "{s}\n{s}", .{ snapshot.tree, snapshot.compiler }));
+}
 const Location = struct { repository: []const u8, revision: ?[]const u8 = null, offset: usize = 0 };
 const Entry = struct { path: []const u8, mode: []const u8, type: []const u8, sha: []const u8, size: usize = 0 };
 const Tree = struct { sha: []const u8, truncated: bool, tree: []const Entry };
@@ -116,9 +122,16 @@ pub fn validate(snapshot: Snapshot, release: repository.Release, source: reposit
     try oid(snapshot.revision);
     try oid(snapshot.tree);
     try model.relative(snapshot.path);
-    if (!std.mem.startsWith(u8, snapshot.path, "themes/") or std.mem.indexOfScalar(u8, snapshot.path[7..], '/') != null) return error.InvalidGithubThemePath;
+    if (snapshot.kind == .package) {
+        if (!std.mem.startsWith(u8, snapshot.path, "themes/") or std.mem.indexOfScalar(u8, snapshot.path[7..], '/') != null) return error.InvalidGithubThemePath;
+    } else {
+        if (!std.mem.startsWith(u8, snapshot.path, "palettes/") or !std.mem.endsWith(u8, snapshot.path, ".json") or std.mem.indexOfScalar(u8, snapshot.path[9..], '/') != null) return error.InvalidGithubThemePath;
+        if (!std.mem.eql(u8, snapshot.compiler, &compilerIdentity())) return error.UnsupportedPaletteCompiler;
+    }
     const origin = (try location(source.url)) orelse return error.InvalidGithubRepository;
-    if (!std.mem.eql(u8, origin.repository, snapshot.repository) or !std.mem.eql(u8, release.sha256, &model.hash(snapshot.tree))) return error.ThemeDownloadDigestMismatch;
+    var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
+    defer arena.deinit();
+    if (!std.mem.eql(u8, origin.repository, snapshot.repository) or !std.mem.eql(u8, release.sha256, &try releaseDigest(arena.allocator(), snapshot))) return error.ThemeDownloadDigestMismatch;
 }
 pub fn index(a: std.mem.Allocator, source: repository.Source, address: []const u8, cancel: *gio.Cancellable) !repository.Index {
     const target = (try location(address)) orelse return error.InvalidGithubRepository;
@@ -132,6 +145,11 @@ pub fn index(a: std.mem.Allocator, source: repository.Source, address: []const u
     const listing = try tree(a, target.repository, revision, cancel);
     var manifests: std.ArrayList(Entry) = .empty;
     for (listing.tree) |entry| {
+        if (std.mem.startsWith(u8, entry.path, "palettes/") and std.mem.endsWith(u8, entry.path, ".json") and std.mem.indexOfScalar(u8, entry.path[9..], '/') == null) {
+            try model.relative(entry.path);
+            try manifests.append(a, entry);
+            continue;
+        }
         if (!std.mem.startsWith(u8, entry.path, "themes/") or !std.mem.endsWith(u8, entry.path, "/theme.json")) continue;
         const folder = entry.path[7 .. entry.path.len - "/theme.json".len];
         if (folder.len == 0 or std.mem.indexOfScalar(u8, folder, '/') != null) continue;
@@ -148,6 +166,15 @@ pub fn index(a: std.mem.Allocator, source: repository.Source, address: []const u
     var releases: std.ArrayList(repository.Release) = .empty;
     for (manifests.items[target.offset..end]) |entry| {
         if (entry.size > 65536) return error.ThemeFileLimit;
+        if (std.mem.startsWith(u8, entry.path, "palettes/")) {
+            var diagnostic: @import("palette_model.zig").Diagnostic = .{};
+            const document = try @import("palette_resolver.zig").compile(a, try blob(a, target.repository, revision, entry.path, entry, cancel, null), &diagnostic);
+            const publication = document.source.publication orelse return error.PublicationMetadataRequired;
+            const snapshot: Snapshot = .{ .repository = target.repository, .revision = revision, .path = entry.path, .tree = entry.sha, .kind = .palette, .compiler = try a.dupe(u8, &compilerIdentity()) };
+            const slug = std.fs.path.basename(entry.path);
+            try releases.append(a, .{ .id = publication.id, .name = if (document.source.name.len > 0) document.source.name else slug[0 .. slug.len - 5], .author = publication.author, .license = publication.license, .source = publication.source, .version = publication.version, .url = try std.fmt.allocPrint(a, "https://github.com/{s}/blob/{s}/{s}", .{ target.repository, revision, try escaped(a, entry.path) }), .sha256 = try a.dupe(u8, &try releaseDigest(a, snapshot)), .size = entry.size, .requires = .{ .palette_api = 1, .render_data_api = 1 }, .variants = &.{ "dark", "light" }, .style = false, .github = snapshot });
+            continue;
+        }
         const m = try model.parse(model.Manifest, a, try blob(a, target.repository, revision, entry.path, entry, cancel, null), 65536);
         try m.validate();
         const path = entry.path[0 .. entry.path.len - "/theme.json".len];
@@ -166,13 +193,20 @@ pub fn index(a: std.mem.Allocator, source: repository.Source, address: []const u
 }
 pub fn load(a: std.mem.Allocator, release: repository.Release, cancel: *gio.Cancellable, progress: ?*Progress) !pkg.Package {
     const snapshot = release.github orelse return error.InvalidGithubRepository;
-    const listing = try tree(a, snapshot.repository, snapshot.tree, cancel);
-    if (!std.mem.eql(u8, listing.sha, snapshot.tree) or try packageSize(listing.tree, "") != release.size) return error.ThemeDownloadDigestMismatch;
     const root = try std.fmt.allocPrintSentinel(a, "{s}/pearl/theme-downloads", .{std.mem.span(glib.getUserCacheDir())}, 0);
     try io.mkdir(root);
     const temporary = try std.fmt.allocPrintSentinel(a, "{s}/github-XXXXXX", .{root}, 0);
     if (mkdtemp(temporary) == null) return error.ThemeStagingFailed;
     defer @import("install.zig").removeTree(a, temporary) catch {};
+    if (snapshot.kind == .palette) {
+        if (!std.mem.eql(u8, snapshot.compiler, &compilerIdentity())) return error.UnsupportedPaletteCompiler;
+        const bytes = try blob(a, snapshot.repository, snapshot.revision, snapshot.path, .{ .path = snapshot.path, .sha = snapshot.tree, .size = release.size, .mode = "100644", .type = "blob" }, cancel, progress);
+        var diagnostic: @import("palette_model.zig").Diagnostic = .{};
+        const document = try @import("palette_resolver.zig").compile(a, bytes, &diagnostic);
+        return @import("palette_file.zig").exportPackage(a, .{ .id = release.id, .name = release.name, .document = document }, try std.fmt.allocPrintSentinel(a, "{s}/package", .{temporary}, 0), document.source.publication orelse return error.PublicationMetadataRequired);
+    }
+    const listing = try tree(a, snapshot.repository, snapshot.tree, cancel);
+    if (!std.mem.eql(u8, listing.sha, snapshot.tree) or try packageSize(listing.tree, "") != release.size) return error.ThemeDownloadDigestMismatch;
     for (listing.tree) |entry| {
         if (std.mem.eql(u8, entry.type, "tree")) continue;
         const bytes = try blob(a, snapshot.repository, snapshot.revision, try std.fmt.allocPrint(a, "{s}/{s}", .{ snapshot.path, entry.path }), entry, cancel, progress);

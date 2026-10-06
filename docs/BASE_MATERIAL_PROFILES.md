@@ -4,7 +4,9 @@ Open **Settings → Appearance → Application themes**, choose **Use Material
 defaults**, then **Apply & save**. First enablement also adopts these defaults.
 Static Material dark/light themes supply complete fixed colors. Dynamic themes
 reuse Pearl's seed or wallpaper palette; independent application colors remain
-available. Matugen 4.x renders application templates; the static Pearl shell
+available. [Editable local palettes](THEME_CREATION_TUTORIAL.md) and exported
+color-only packages reuse these templates with their compiled colors.
+Matugen 4.x renders application templates; the static Pearl shell
 continues working without it.
 
 Management remains disabled by default. Existing enabled configurations retain
@@ -68,7 +70,8 @@ from activation in a running application.
 
 ## Ownership and recovery
 
-Changes apply only after commit. Preview, opening Settings and Discard do not
+Selections apply after commit. Saved edits to an active editable local palette
+also update committed application colors live. Preview, opening Settings and Discard do not
 write application files. The renderer uses private configuration and never runs
 contributed hooks or the user's global Matugen configuration. Template bytes and
 fixed color input are retained in committed snapshots; **Use current profile

@@ -1,5 +1,10 @@
 # Create a community theme, step by step
 
+For ordinary color themes, start with [Create a theme from three colors](THEME_CREATION_TUTORIAL.md).
+It covers one-file palettes, live editing, reusable application templates, and
+export without a source checkout. This guide covers richer packages with custom
+widget styles, images, and profiles; their existing format remains supported.
+
 This walkthrough creates a Pearl theme with dark and light colors, widget styling,
 and a package you can publish in a public GitHub repository. Start with the
 included Meadow example and replace its identity and colors with your own.

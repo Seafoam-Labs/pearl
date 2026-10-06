@@ -12,7 +12,10 @@ DMS `dank16.colorN` references use Matugen base16 roles with this ANSI mapping:
 0→00, 1→08, 2→0b, 3→0a, 4→0d, 5→0e, 6→0c, 7→05, 8→03, 9→08, 10→0b,
 11→0a, 12→0d, 13→0e, 14→0c, 15→07. This retains the existing Pearl terminal
 mapping, including shared normal/bright chromatic slots; it does not reproduce
-DMS Dank16 harmonization. Foot selects the matching dark/light section. VS Code
+DMS Dank16 harmonization. Editable palettes can override each terminal normal
+and bright slot independently. The terminal templates consume `terminal_*`
+semantic tokens; legacy render input receives the previous per-adapter defaults.
+Foot selects the matching dark/light section. VS Code
 JSONC comments are removed so shipped outputs are strict JSON. Pywalfox uses an
 empty wallpaper metadata string; Pearl never interpolates an unescaped path.
 

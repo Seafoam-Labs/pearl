@@ -24,6 +24,8 @@ pub const Job = struct {
     stage: enum { prepare, recover, persist, applications, integrate } = .prepare,
     generation: u64 = 0,
     image_event: bool = false,
+    palette_event: bool = false,
+    local_palette: ?@import("../theme/palette_file.zig").File = null,
     image_hash: ?[64]u8 = null,
     verify_image: bool = false,
     image_changed: bool = false,
@@ -43,6 +45,7 @@ pub const Job = struct {
     prefs: model.Preferences = .{},
     json: []const u8 = "{}",
     css: [:0]const u8 = "",
+    appearance_style_css: []const u8 = "",
     image: ?*pixbuf.Pixbuf = null,
     texture: ?*gdk.Texture = null,
     provider: ?*gtk.CssProvider = null,
@@ -101,6 +104,7 @@ pub const Service = struct {
     publication_initialized: bool = false,
     integration_retry: bool = false,
     pending_image: bool = false,
+    pending_palette: bool = false,
     image_retry: bool = false,
     watcher_error: ?[]const u8 = null,
     application_action_generation: u64 = 0,
@@ -228,7 +232,13 @@ pub const Service = struct {
     }
     fn themeCatalogChanged(context: *anyopaque) void {
         const self: *Service = @ptrCast(@alignCast(context));
-        if (self.running) self.notify();
+        if (self.running) {
+            if (@import("../theme/palette_file.zig").editable(@import("../theme/palette_file.zig").selected(self.prefs().theme))) {
+                self.pending_palette = true;
+                self.queueReload(true);
+            }
+            self.notify();
+        }
     }
     fn themeJobFinished(context: *anyopaque) void {
         const self: *Service = @ptrCast(@alignCast(context));
@@ -239,7 +249,7 @@ pub const Service = struct {
         self.updateApplicationJob();
         if (self.pending_reload and self.debounce == 0) self.debounce = glib.timeoutAdd(1, debounced, self);
         if (self.theme_jobs.error_code == null) switch (self.theme_jobs.last_action) {
-            .catalog, .install, .import_archive, .remove, .rollback => self.theme_discovery.request(),
+            .catalog, .install, .import_archive, .remove, .rollback, .palette_init, .palette_write, .palette_import => self.theme_discovery.request(),
             else => {},
         };
     }
@@ -328,6 +338,7 @@ pub const Service = struct {
             } else if (j.requested == null) {
                 self.force_reload = self.force_reload or !j.skip_unchanged;
                 self.pending_image = self.pending_image or j.image_event;
+                self.pending_palette = self.pending_palette or j.palette_event;
                 j.obsolete = true;
                 j.cancel.cancel();
             }
@@ -418,8 +429,10 @@ pub const Service = struct {
         self.application_status.desired_generation = j.generation;
         self.application_status.busy = true;
         j.image_event = self.pending_image;
+        j.palette_event = self.pending_palette;
         j.started_us = glib.getMonotonicTime();
         self.pending_image = false;
+        self.pending_palette = false;
         if (requested) |json| {
             j.requested = try j.arena.allocator().dupe(u8, json);
             if (self.draft.text) |draft| {
@@ -629,6 +642,9 @@ pub const Service = struct {
         j.palette = if (p.theme.variant == .dark) theme.dark else theme.light;
         if (p.theme.mode != .gtk and (p.theme.mode == .package or p.theme.package_id.len > 0 or p.theme.style_id.len > 0)) {
             const custom = @import("../theme/resolve.zig");
+            const palette_file = @import("../theme/palette_file.zig");
+            const local_id = palette_file.selected(p.theme);
+            const local = palette_file.editable(local_id);
             const snapshot = try std.fmt.allocPrintSentinel(alloc, "{s}/theme-snapshots/{s}.json", .{ j.service.dir, p.theme.snapshot_digest }, 0);
             // A restart reuses the committed appearance, even after package updates.
             const saved = if (j.requested == null and p.theme.snapshot_digest.len == 64) io.read(alloc, snapshot, 16384, j.cancel) catch null else null;
@@ -637,8 +653,39 @@ pub const Service = struct {
                 j.custom = try modelParseCustom(alloc, saved.?.bytes);
                 j.custom.blobs = try @import("../theme/asset_store.zig").load(alloc, try std.fmt.allocPrintSentinel(alloc, "{s}/theme-assets", .{self.dir}, 0), j.custom.images);
             } else {
-                if (j.requested == null and p.theme.snapshot_digest.len == 64) return error.ThemeSnapshotMissing;
-                j.custom = try custom.resolve(alloc, p.theme, try @import("../theme/catalog.zig").scan(alloc), j.requested != null);
+                if (j.requested == null and p.theme.snapshot_digest.len == 64 and !local) return error.ThemeSnapshotMissing;
+                if (!local or j.requested != null) j.custom = try custom.resolve(alloc, p.theme, try @import("../theme/catalog.zig").scan(alloc), j.requested != null);
+            }
+            if (local) {
+                if (j.requested == null) {
+                    if (@import("../theme/palette_runtime.zig").load(alloc, self.dir, p.theme) catch null) |runtime| {
+                        j.custom = try modelParseCustom(alloc, try std.json.Stringify.valueAlloc(alloc, runtime.custom, .{}));
+                        j.custom.blobs = try @import("../theme/asset_store.zig").load(alloc, try std.fmt.allocPrintSentinel(alloc, "{s}/theme-assets", .{self.dir}, 0), j.custom.images);
+                        var diagnostic: @import("../theme/palette_model.zig").Diagnostic = .{};
+                        const document = try @import("../theme/palette_resolver.zig").compile(alloc, try std.json.Stringify.valueAlloc(alloc, runtime.source, .{}), &diagnostic);
+                        j.local_palette = .{ .id = local_id, .name = runtime.source.name, .document = document };
+                    }
+                }
+                var diagnostic: @import("../theme/palette_model.zig").Diagnostic = .{};
+                const path = try palette_file.filename(alloc, local_id["local.palette.".len..]);
+                const current = palette_file.load(alloc, path, j.cancel, &diagnostic) catch |err| blk: {
+                    if (j.requested != null or j.custom.palette == null) return err;
+                    j.warning = err;
+                    break :blk null;
+                };
+                if (current) |file| {
+                    j.local_palette = file;
+                    j.custom.palette = if (p.theme.variant == .dark) file.document.dark else file.document.light;
+                    j.custom.palette_css = try @import("../theme/palette_resolver.zig").shellCss(alloc, file.document, p.theme.variant == .light);
+                    j.custom.digest = "";
+                    j.custom.digest = try alloc.dupe(u8, &io.digest(try std.json.Stringify.valueAlloc(alloc, .{ .source = file.document.digest, .appearance = j.custom }, .{})));
+                }
+                if (j.palette_event and !j.image_event and j.requested == null and self.live != null and
+                    j.disk != null and std.mem.eql(u8, &j.disk.?.hash, &j.expected) and std.mem.eql(u8, j.custom.digest, self.live.?.custom.digest))
+                {
+                    j.unchanged = true;
+                    return;
+                }
             }
             if (j.custom.palette) |value| j.palette = value;
         } else j.custom = .{};
@@ -678,7 +725,9 @@ pub const Service = struct {
         const token_template = try @import("../theme/style.zig").tokenCss(alloc, j.custom.tokens, p.reduced_motion);
         const tokens = try theme.scopedCss(alloc, token_template, "pearl-custom", j.palette);
         // Authentication surfaces keep built-in layout and receive colors only.
-        const extra = if (self.shell_appearance) try theme.scopedCss(alloc, j.custom.css, "pearl-custom", j.palette) else "";
+        const custom_css = if (self.shell_appearance) j.custom.css else "";
+        j.appearance_style_css = if (j.custom.palette_css.len > 0) try std.fmt.allocPrint(alloc, "{s}\n{s}", .{ custom_css, j.custom.palette_css }) else custom_css;
+        const extra = try theme.scopedCss(alloc, j.appearance_style_css, "pearl-custom", j.palette);
         j.css = try std.fmt.allocPrintSentinel(alloc, "{s}\n{s}\n{s}\n{s}{s}", .{ bytes, if (self.shell_appearance) tokens else "", extra, font, wallpaper }, 0);
         if (j.custom.digest.len > 0) {
             const snapshot_bytes = try std.json.Stringify.valueAlloc(alloc, j.custom, .{});
@@ -718,6 +767,10 @@ pub const Service = struct {
             j.application_snapshot = try app_provider.capture(alloc, p, j.dynamic_json, image, j.cancel, scratch, &j.renderer);
             j.prefs.matugen.snapshot_digest = try alloc.dupe(u8, &io.digest(try std.json.Stringify.valueAlloc(alloc, j.application_snapshot, .{})));
         }
+        if (j.local_palette) |local| if (p.matugen.colors.source == .follow_pearl) {
+            j.application_snapshot.render_json = local.document.render_json;
+            try app_provider.refreshColors(alloc, &j.application_snapshot, p, j.dynamic_json, image, j.cancel, scratch, &j.renderer);
+        };
         j.application_digest = try alloc.dupe(u8, &io.digest(try std.json.Stringify.valueAlloc(alloc, j.application_snapshot, .{})));
         if (previous) |old| if (old.prefs.matugen.enabled and std.mem.eql(u8, old.application_digest, j.application_digest) and
             old.cancel.isCancelled() == 0 and applicationSucceeded(old.application_result))
@@ -755,6 +808,12 @@ pub const Service = struct {
         }
         if (j.requested != null) try io.replace(self.path, j.json, j.disk.?, j.cancel);
         if (j.requested == null and j.cancel.isCancelled() != 0) return error.Cancelled;
+        if (j.local_palette) |local| {
+            const guard: @import("../theme/publication.zig").Guard = .{ .gate = &self.publication, .generation = j.generation };
+            try guard.begin(j.cancel);
+            defer guard.end();
+            try @import("../theme/palette_runtime.zig").save(j.arena.allocator(), self.dir, j.prefs.theme, local.document.source, j.custom);
+        }
         if (!j.recovered) io.atomic(self.good_path, j.json, false) catch |err| {
             j.warning = err;
         };
@@ -971,10 +1030,11 @@ pub const Service = struct {
                 j.destroy();
             }
         } else {
-            const resume_integration = j.unchanged and self.live != null and self.live.?.cancel.isCancelled() != 0 and
+            const resume_integration = j.unchanged and !j.obsolete and !self.pending_reload and self.live != null and self.live.?.cancel.isCancelled() != 0 and
                 self.integration_allowed and !self.live.?.recovered;
-            if (j.unchanged) {
+            if (j.unchanged and !j.obsolete) {
                 if (j.image_event) self.err = null;
+                if (j.palette_event) self.err = j.warning;
                 self.application_status.desired_generation = j.previous_desired_generation;
             }
             self.application_status.busy = false;
@@ -1112,5 +1172,6 @@ fn modelParseCustom(alloc: std.mem.Allocator, bytes: []const u8) !@import("../th
     if (result.palette) |p| try theme.validate(p);
     try result.tokens.validate();
     if (result.css.len > 3072) return error.ThemeCssTooLarge;
+    if (result.palette_css.len > 256) return error.ThemeCssTooLarge;
     return result;
 }

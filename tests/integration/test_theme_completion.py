@@ -9,19 +9,19 @@ import shutil
 from pathlib import Path
 from PIL import Image
 from test_settings_app import ROOT, PrivateSession, IPC, wait_for, probe, capture, resize, clean
-from test_settings_appearance import ready, settled, click
+from test_settings_appearance import ready, settled, click, type_text
 from test_custom_themes import Peer
 from test_theme_packages import fixture
 
 
 def main():
     parser = argparse.ArgumentParser()
-    for name in ('pearl', 'settings'):
+    for name in ('pearl', 'settings', 'themes'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--output', type=Path, default=ROOT/'artifacts/theme-completion')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    report = {'status': 'running'}
+    report = {'status': 'running', 'binaries': {name: hashlib.sha256(getattr(args,name).read_bytes()).hexdigest() for name in ('pearl','settings','themes')}}
     (args.output/'acceptance.json').write_text(json.dumps(report))
     with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'
@@ -124,8 +124,114 @@ def main():
         state = settled(peer)
         assert state['applications']['targets'][0]['state'] == 'conflict', state
         assert installed.read_text() == 'user edit'
+        # Author through the real Settings controls and native backend.
+        app = s.child('palette-settings', [args.settings.resolve(), '--page', 'appearance'], G_DEBUG='fatal-warnings')
+        app.expect('event=settings-window-created'); ready(s, ipc)
+        wait_for(lambda: any(c['field']=='palettes.create' for c in probe(s,ipc)['controls']),15)
+        click(s,ipc,'palettes.expander')
+        click(s,ipc,'palettes.name');type_text(s,'Live Meadow')
+        assert next(c['text'] for c in probe(s,ipc)['controls'] if c['field']=='palettes.name')=='Live Meadow'
+        click(s,ipc,'palettes.create')
+        local=Path(s.env['XDG_CONFIG_HOME'])/'pearl/palettes/meadow.json'
+        wait_for(local.exists,15)
+        wait_for(lambda: not probe(s,ipc)['theme_busy'],15)
+        wait_for(lambda: any(c['field']=='themes.select.0' for c in probe(s,ipc)['controls']),15)
+        assert json.loads(local.read_text())['name']=='Live Meadow', (local.read_text(),probe(s,ipc))
+        assert not peer.state()['dirty']
+        click(s,ipc,'themes.select.0');ready(s,ipc)
+        click(s,ipc,'themes.default_style.0');ready(s,ipc)
+        click(s,ipc,'apply');settled(peer);ready(s,ipc)
+        def appearance():
+            check=Peer(s,ipc)
+            value=check.appearance
+            check.close()
+            return value
+        assert appearance()['palette']['primary']=='#a4dfb0'
+        assert appearance()['palette']['surface']=='#101c19'
+        # Manual application choices and Off override inherited defaults.
+        applications=['zed','equibop','fluxer','starship','steam','gtk','qt5ct','qt6ct','kcolorscheme','ghostty','kitty','foot','alacritty','wezterm','nvim','vscode','emacs','firefox','zenbrowser','pywalfox','vesktop','vencord','fcitx5']
+        prefs=json.loads(peer.document('committed'))
+        choices={name:dict(mode='off',profile_id='') for name in applications}
+        choices['ghostty']=dict(mode='theme',profile_id='')
+        choices['kitty']=dict(mode='profile',profile_id='pearl.material.kitty')
+        prefs['matugen']=dict(enabled=True,defaults_revision=1,applications=choices)
+        peer.keep(json.dumps(prefs));assert peer.action('apply')['state']=='succeeded'
+        wait_for(lambda: not peer.state()['busy'] and not peer.state()['applications']['busy'],30)
+        ghostty=Path(s.env['XDG_CONFIG_HOME'])/'ghostty/themes/pearl-material'
+        kitty=Path(s.env['XDG_CONFIG_HOME'])/'kitty/pearl-material.conf'
+        wait_for(ghostty.exists,15)
+        assert '#a4dfb0' in ghostty.read_text()
+        # In-memory editor changes are isolated until Save palette.
+        prior=local.read_bytes()
+        click(s,ipc,'palettes.primary');type_text(s,'#abcdef')
+        assert local.read_bytes()==prior and appearance()['palette']['primary']=='#a4dfb0'
+        click(s,ipc,'palettes.save')
+        wait_for(lambda: appearance()['palette']['primary']=='#abcdef',20)
+        wait_for(lambda: '#abcdef' in ghostty.read_text(),20)
+        assert peer.state()['applications']['targets'][0]['state']=='unmanaged'
+        ready(s,ipc);capture(s,'local-palette-editor',output['name'])
+        # Live file updates leave the on-disk selection and unsaved draft intact.
+        disk=Path(s.env['XDG_CONFIG_HOME'])/'pearl/preferences.json'
+        disk_before=disk.read_bytes()
+        draft=json.loads(peer.document('committed'));draft['font_size']=19
+        peer.keep(json.dumps(draft));draft_before=peer.document('draft')
+        valid=json.loads(local.read_text())
+        valid['dark']['primary']='#a4dfb0'
+        valid['dark']['terminal']=dict(cursor='#012abc',bright=dict(red='#feabba'))
+        valid['dark'].update(hover='#244136',on_hover='#e8f4e9')
+        replacement=local.with_suffix('.tmp');replacement.write_text(json.dumps(valid));replacement.replace(local)
+        wait_for(lambda: appearance()['palette']['primary']=='#a4dfb0',20)
+        wait_for(lambda: 'palette = 9=#feabba' in ghostty.read_text(),20)
+        assert 'cursor-color = #012abc' in ghostty.read_text()
+        assert '#feabba' in kitty.read_text()
+        assert '#244136' in appearance()['style_css']
+        assert peer.document('draft')==draft_before and peer.state()['dirty']
+        assert disk.read_bytes()==disk_before
+        revision=appearance()['revision']
+        generation=peer.state()['theme_catalog_generation']
+        other=local.parent/'unselected.json';other.write_text(json.dumps(valid))
+        wait_for(lambda: peer.state()['theme_catalog_generation']!=generation,15)
+        assert appearance()['revision']==revision
+        preview=s.child('author-preview',[args.themes.resolve(),'preview',other,'--watch'],G_DEBUG='fatal-warnings')
+        wait_for(lambda: any(w.get('app_id')=='org.aqueous.Pearl.PalettePreview' for w in ipc.state()),15)
+        preview_source=json.loads(other.read_text());preview_source['dark']['surface']='#090e12'
+        replacement=other.with_suffix('.tmp');replacement.write_text(json.dumps(preview_source));replacement.replace(other)
+        def preview_updated():
+            capture(s,'watched-author-preview',output['name'])
+            pixels=Image.open(s.output/'watched-author-preview.png').convert('RGB')
+            return sum(n for n,c in pixels.getcolors(pixels.width*pixels.height) if c==(9,14,18))>1000
+        wait_for(preview_updated,15)
+        assert appearance()['revision']==revision and peer.document('draft')==draft_before
+        assert disk.read_bytes()==disk_before
+        preview_window=next(w for w in ipc.state() if w.get('app_id')=='org.aqueous.Pearl.PalettePreview')
+        ipc.call('command',action='window.close',fields=dict(id=preview_window['id']))
+        clean(preview)
+        # Invalid edits and a missing source preserve the most recently valid colors.
+        local.write_text('{"dark":')
+        wait_for(lambda: peer.state()['error_code'] is not None,20)
+        assert appearance()['palette']['primary']=='#a4dfb0'
+        assert disk.read_bytes()==disk_before and peer.document('draft')==draft_before
+        local.write_text(json.dumps(valid))
+        try:
+            wait_for(lambda: peer.state()['error_code'] is None and not peer.state()['busy'],20)
+        except TimeoutError:
+            state=peer.state()
+            raise AssertionError({key:state[key] for key in ('error_code','busy','revision','theme_catalog_generation')} | dict(source=local.read_text()))
+        # Burst replacements publish only the final valid source.
+        for color in ['#abcdef','#b9e0f4','#a4dfb0']:
+            valid['dark']['primary']=color
+            replacement.write_text(json.dumps(valid));replacement.replace(local)
+        wait_for(lambda: appearance()['palette']['primary']=='#a4dfb0' and not peer.state()['busy'],20)
+        assert peer.document('draft')==draft_before and disk.read_bytes()==disk_before
+        local.unlink()
+        app.stop();clean(app);peer.close();shell.stop();clean(shell)
+        shell=s.child('palette-restart',[args.pearl.resolve()],G_DEBUG='fatal-warnings')
+        shell.expect('event=control-ready');peer=Peer(s,ipc);settled(peer)
+        assert appearance()['palette']['primary']=='#a4dfb0'
+        wait_for(lambda: 'palette = 9=#feabba' in ghostty.read_text(),20)
+        assert disk.read_bytes()==disk_before
         peer.close(); shell.stop(); clean(shell)
-        report.update(status='passed', images=images, checks=['automatic_local_discovery', 'multi_chunk_assets', 'gtk_images_preview', 'application_controls_shared_draft_discard', 'fixed_render_data', 'inherited_zed_steam_off', 'committed_template_retry', 'image_profile_restart', 'off_preserves_user_edit'])
+        report.update(status='passed', images=images, checks=['automatic_local_discovery', 'multi_chunk_assets', 'gtk_images_preview', 'application_controls_shared_draft_discard', 'fixed_render_data', 'inherited_zed_steam_off', 'committed_template_retry', 'image_profile_restart', 'off_preserves_user_edit', 'palette_editor_create_save_preview', 'local_palette_application_defaults', 'live_atomic_edits_preserve_draft', 'watched_cli_preview_isolation', 'invalid_palette_last_good', 'palette_invalid_to_valid_and_burst_replacements', 'missing_palette_restart'])
         (args.output/'acceptance.json').write_text(json.dumps(report, indent=2)+'\n')
         print('PASS completion assets, discovery, application profiles and recovery')
 

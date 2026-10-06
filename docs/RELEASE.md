@@ -10,7 +10,7 @@ no Flatpak-wide support is claimed. Before downgrade/removal, disable Qt managem
 and complete conditional restoration using the [recovery procedure](QT_THEMING.md#shared-files-conflicts-and-recovery).
 Preserve user ownership records; package scripts must not remove them.
 
-Pearl `0.2.1` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
+Pearl `0.2.2` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
 This candidate adds current-master transactions, collection forms and native capture.
 This is a release candidate: physical, actual login-session, screen-reader and
 visual/presentation signoffs remain required. The project also needs its owner's
@@ -22,9 +22,9 @@ that evidence does not grant public release acceptance.
 
 ## Build and package
 
-The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.1`.
-Its Arch version is `1:0.2.1-1`; the epoch allows upgrades from the earlier
-`1.0.0rc2` packages. The source and runtime version are also `0.2.1`.
+The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.2`.
+Its Arch version is `1:0.2.2-1`; the epoch allows upgrades from the earlier
+`1.0.0rc2` packages. The source and runtime version are also `0.2.2`.
 Pearl and the standalone greeter recipes in `packaging/Devario` use the same tag.
 The tag must be published before these recipes can fetch the release. Git sources
 use `SKIP` in `sha256sums`; downloaded SDK archives retain their pinned checksums.
@@ -109,7 +109,7 @@ makepkg
 
 This fetches the upstream repository's default branch and generates a version
 from its release metadata, commit count and abbreviated commit hash (for example,
-`1.0.0rc2.r22.ga002d24`). It uses the same dependencies, ReleaseSafe build and
+`1:0.2.2.r175.g82fbfcf-1`). It uses the same dependencies, ReleaseSafe build and
 checks as the release recipe, with `-Dcpu=baseline` for baseline x86-64 CPU
 compatibility. The moving Git source uses `SKIP` for its checksum;
 the release archive recipe remains checksum-locked. Install the resulting package

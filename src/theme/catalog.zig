@@ -3,7 +3,20 @@ const glib = @import("glib2");
 const pkg = @import("package.zig");
 const model = @import("package_model.zig");
 const c = pkg.c;
-pub const Entry = struct { path: [:0]const u8, package: pkg.Package };
+pub const Entry = struct {
+    path: [:0]const u8,
+    package: ?pkg.Package = null,
+    palette_file: ?@import("palette_file.zig").File = null,
+    pub fn id(self: Entry) []const u8 {
+        return if (self.palette_file) |p| p.id else self.package.?.manifest.id;
+    }
+    pub fn name(self: Entry) []const u8 {
+        return if (self.palette_file) |p| p.name else self.package.?.manifest.name;
+    }
+    pub fn digest(self: Entry) [64]u8 {
+        return if (self.palette_file) |p| p.document.digest else self.package.?.digest;
+    }
+};
 pub const Diagnostic = struct { path: []const u8, error_code: []const u8 };
 pub const Catalog = struct {
     entries: []const Entry,
@@ -11,7 +24,7 @@ pub const Catalog = struct {
     revision: [64]u8,
     pub fn get(self: Catalog, id: []const u8) !Entry {
         var found: ?Entry = null;
-        for (self.entries) |entry| if (std.mem.eql(u8, entry.package.manifest.id, id)) {
+        for (self.entries) |entry| if (std.mem.eql(u8, entry.id(), id)) {
             if (found != null) return error.DuplicateThemeId;
             found = entry;
         };
@@ -72,6 +85,30 @@ pub fn scan(a: std.mem.Allocator) !Catalog {
             try entries.append(a, .{ .path = path, .package = retained });
         }
     }
+    const palette_root = try @import("palette_file.zig").root(a);
+    const fd = c.open(palette_root, c.O_RDONLY | c.O_DIRECTORY | c.O_NOFOLLOW | c.O_CLOEXEC);
+    if (fd >= 0) {
+        const dir = c.fdopendir(fd) orelse {
+            _ = c.close(fd);
+            return error.ThemeDirectory;
+        };
+        defer _ = c.closedir(dir);
+        while (c.readdir(dir)) |item| {
+            const name = std.mem.sliceTo(item.*.d_name[0..], 0);
+            if (name.len == 0 or name[0] == '.' or !std.mem.endsWith(u8, name, ".json")) continue;
+            count += 1;
+            if (count > 256) return error.ThemeCatalogLimit;
+            const path = try std.fmt.allocPrintSentinel(a, "{s}/{s}", .{ palette_root, name }, 0);
+            var diagnostic: @import("palette_model.zig").Diagnostic = .{};
+            const file = @import("palette_file.zig").load(a, path, null, &diagnostic) catch |err| {
+                try diagnostics.append(a, .{ .path = path, .error_code = @errorName(err) });
+                continue;
+            };
+            bytes += file.document.render_json.len + @import("palette_model.zig").max_bytes;
+            if (bytes > 64 * 1024 * 1024) return error.ThemeCatalogBytesLimit;
+            try entries.append(a, .{ .path = path, .palette_file = file });
+        }
+    }
     std.mem.sort(Entry, entries.items, {}, struct {
         fn less(_: void, x: Entry, y: Entry) bool {
             return std.mem.lessThan(u8, x.path, y.path);
@@ -81,7 +118,7 @@ pub fn scan(a: std.mem.Allocator) !Catalog {
     for (entries.items) |entry| {
         sha.update(entry.path);
         sha.update(&.{0});
-        sha.update(&entry.package.digest);
+        sha.update(&entry.digest());
     }
     var raw: [32]u8 = undefined;
     sha.final(&raw);

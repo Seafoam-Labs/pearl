@@ -9,6 +9,7 @@ test {
     _ = @import("desktop/task_model.zig");
     _ = @import("settings/bar_model.zig");
     _ = @import("theme/package_model.zig");
+    _ = @import("theme/palette_resolver.zig");
     _ = @import("theme/style.zig");
     _ = @import("plugins/model.zig");
     _ = @import("plugins/placement.zig");

@@ -7,7 +7,7 @@ const w = @import("../ui/components/widgets.zig");
 const Editor = @import("editor.zig").Editor;
 const cmd = @import("../theme/commands.zig");
 const a = std.heap.c_allocator;
-const Kind = enum { installed, installed_next, community, next, source_select, source_add, source_remove, source_default, import_archive, cancel, defaults, builtin, inherit_colors, default_style, select, colors, style, preview, preview_draft, install, remove, rollback };
+const Kind = enum { installed, installed_next, community, next, source_select, source_add, source_remove, source_default, import_archive, cancel, defaults, builtin, inherit_colors, default_style, select, colors, style, preview, preview_draft, install, remove, rollback, edit_palette };
 const Action = struct { owner: *View, kind: Kind, index: usize = 0 };
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
 pub const View = struct {
@@ -23,6 +23,7 @@ pub const View = struct {
     archive_path: *gtk.Entry,
     preview_root: *gtk.Box,
     provider: *gtk.CssProvider,
+    palette_editor: *@import("palette_editor.zig").View = undefined,
     arena: std.heap.ArenaAllocator,
     rows: std.heap.ArenaAllocator,
     catalog_data: std.heap.ArenaAllocator = .init(a),
@@ -54,7 +55,9 @@ pub const View = struct {
         const list = w.column(8);
         const status = w.label("", "pearl-secondary");
         self.* = .{ .editor = editor, .root = root, .list = list, .status = status, .search = gtk.Entry.new(), .source_id = gtk.Entry.new(), .source_name = gtk.Entry.new(), .source_url = gtk.Entry.new(), .archive_path = gtk.Entry.new(), .preview_root = w.column(8), .provider = gtk.CssProvider.new(), .arena = .init(a), .rows = .init(a) };
-        root.append(w.label("Community themes", "pearl-card-title").as(gtk.Widget));
+        root.append(w.label("Palette and widget style", "pearl-card-title").as(gtk.Widget));
+        self.palette_editor = try @import("palette_editor.zig").View.create(root, self, paletteCommand);
+        for (self.palette_editor.controls.items) |control| try self.controls.append(self.arena.allocator(), .{ .id = control.id, .widget = control.widget });
         self.selection = w.label("", "pearl-secondary");
         root.append(self.selection.as(gtk.Widget));
         root.append(w.label("Download a community theme, choose Use theme, then Apply & save. Preview shows a sample without selecting it. Use colors and Use style let you mix themes.", "pearl-secondary").as(gtk.Widget));
@@ -119,6 +122,7 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(button_, *Action, clicked, data, .{});
     }
     pub fn destroy(self: *View) void {
+        self.palette_editor.destroy();
         gtk.StyleContext.removeProviderForDisplay(self.root.as(gtk.Widget).getDisplay(), self.provider.as(gtk.StyleProvider));
         self.provider.unref();
         if (self.seen) |s| a.free(s);
@@ -139,6 +143,10 @@ pub const View = struct {
         self.last = request.action;
         self.status.setText("Working…");
     }
+    fn paletteCommand(context: *anyopaque, request: cmd.Request) anyerror!void {
+        const self: *View = @ptrCast(@alignCast(context));
+        try self.send(request);
+    }
     fn clicked(_: *gtk.Button, action: *Action) callconv(.c) void {
         const self = action.owner;
         self.perform(action.kind, action.index) catch |err| self.status.setText(@errorName(err));
@@ -146,6 +154,7 @@ pub const View = struct {
     fn perform(self: *View, kind: Kind, index: usize) !void {
         self.automatic_refresh = false;
         switch (kind) {
+            .edit_palette => try self.send(.{ .action = .palette_read, .path = self.entries[index].path }),
             .source_default => try self.send(.{ .action = .source_default }),
             .installed => try self.send(.{ .action = .catalog }),
             .installed_next => try self.send(.{ .action = .catalog, .offset = self.next_offset orelse return, .revision = self.revision }),
@@ -286,18 +295,28 @@ pub const View = struct {
                 try self.button(box, "Preview", .preview, i, true);
                 const manage = w.row(4);
                 box.append(manage.as(gtk.Widget));
-                try self.button(manage, "Remove installed package", .remove, i, true);
-                try self.button(manage, "Roll back installed version", .rollback, i, true);
+                if (e.editable) {
+                    try self.button(manage, "Edit colors", .edit_palette, i, true);
+                    box.append(w.label(if (e.fallback.len > 0) "Editable local palette · one variant supplies both modes · saved edits apply live" else "Editable local palette · saved edits apply live", "pearl-secondary").as(gtk.Widget));
+                } else {
+                    try self.button(manage, "Remove installed package", .remove, i, true);
+                    try self.button(manage, "Roll back installed version", .rollback, i, true);
+                }
             }
             if (self.next_offset != null) try self.button(self.list, "More installed themes", .installed_next, 0, true);
         }
     }
     pub fn update(self: *View) void {
+        const author_busy = self.editor.theme_busy and switch (self.last) {
+            .palette_read, .palette_init, .palette_write, .palette_import, .palette_export => true,
+            else => false,
+        };
+        self.palette_editor.root.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable() and !author_busy));
         self.updateSelection();
         defer self.refreshCatalog();
         for ([_][]const Control{ self.controls.items, self.row_controls.items }) |bindings| for (bindings) |binding| {
             const cancel = std.mem.startsWith(u8, binding.id, "themes.cancel.");
-            binding.widget.setSensitive(@intFromBool(if (cancel) self.editor.theme_busy else self.editor.editable() and !self.editor.theme_busy));
+            binding.widget.setSensitive(@intFromBool(if (cancel) self.editor.theme_busy else self.editor.editable() and !(if (std.mem.startsWith(u8, binding.id, "palettes.")) author_busy else self.editor.theme_busy)));
         };
         if (self.draft_selection and self.editor.local == null and !self.editor.state.dirty and !self.editor.state.busy) {
             self.draft_selection = false;
@@ -339,7 +358,7 @@ pub const View = struct {
         const preferences = @import("../config/preferences.zig").parse(alloc, self.editor.text()) catch return;
         const p = preferences.theme;
         const colors = if (p.mode != .package) @tagName(p.mode) else if (p.palette_id.len > 0) p.palette_id else p.package_id;
-        const style_id = if (p.mode == .gtk) "GTK" else if (p.style_id.len > 0) p.style_id else if (p.package_id.len > 0) p.package_id else "pearl.default";
+        const style_id = if (p.mode == .gtk) "GTK" else if (p.style_id.len > 0) p.style_id else if (p.package_id.len > 0 and !@import("../theme/palette_file.zig").editable(p.package_id)) p.package_id else "pearl.default";
         var missing = false;
         for ([_][]const u8{ p.package_id, if (p.mode == .package) p.palette_id else "", p.style_id }) |id| {
             if (id.len == 0 or std.mem.eql(u8, id, "pearl.default")) continue;
@@ -356,6 +375,7 @@ pub const View = struct {
         var temporary = std.heap.ArenaAllocator.init(a);
         defer temporary.deinit();
         switch (self.last) {
+            .palette_read, .palette_init, .palette_write, .palette_import, .palette_export => try self.palette_editor.consume(bytes),
             .catalog => {
                 _ = self.catalog_data.reset(.free_all);
                 self.entries = &.{};
@@ -399,7 +419,7 @@ pub const View = struct {
                 const theme = @import("../theme/theme.zig");
                 const p = resolved.palette orelse theme.dark;
                 const tokens = try @import("../theme/style.zig").tokenCss(alloc, resolved.tokens, true);
-                const template = try std.fmt.allocPrint(alloc, "{s}\n{s}\n{s}", .{ @embedFile("settings_base_style"), tokens, resolved.css });
+                const template = try std.fmt.allocPrint(alloc, "{s}\n{s}\n{s}\n{s}", .{ @embedFile("settings_base_style"), tokens, resolved.css, resolved.palette_css });
                 self.provider.loadFromString(try theme.scopedCss(alloc, template, "pearl-theme-preview", p));
                 self.preview_root.as(gtk.Widget).setVisible(1);
                 self.status.setText(if (resolved.palette == null) "Style preview uses default dark colors; generated colors apply on save." else "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save.");

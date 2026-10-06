@@ -60,6 +60,7 @@ pub fn remaining(a: std.mem.Allocator, path: [:0]const u8) ![]const File {
     return files.items;
 }
 pub const Package = struct {
+    palette_hover: ?struct { dark: [2][]const u8, light: [2][]const u8 } = null,
     manifest: model.Manifest,
     files: []const File,
     digest: [64]u8,
@@ -103,6 +104,16 @@ pub fn load(a: std.mem.Allocator, path: [:0]const u8) !Package {
     var result: Package = .{ .manifest = undefined, .files = files.items, .digest = std.fmt.bytesToHex(raw, .lower) };
     result.manifest = try model.parse(model.Manifest, a, try result.asset("theme.json"), 65536);
     try result.manifest.validate();
+    if (result.manifest.style == null and result.manifest.render_data != null) {
+        if (result.asset("palette-hover.json") catch null) |hover| {
+            const Pair = @typeInfo(@FieldType(Package, "palette_hover")).optional.child;
+            result.palette_hover = try model.parse(Pair, a, hover, 512);
+            for ([_][2][]const u8{ result.palette_hover.?.dark, result.palette_hover.?.light }) |colors| {
+                for (colors) |hex| if (!@import("../config/preferences.zig").hex(hex)) return error.InvalidPalette;
+                if (@import("palette_resolver.zig").contrast(colors[0], colors[1]) < 4.5) return error.InsufficientContrast;
+            }
+        }
+    }
     if (result.manifest.palettes.dark) |p| result.dark = try model.palette(a, try result.asset(p));
     if (result.manifest.palettes.light) |p| result.light = try model.palette(a, try result.asset(p));
     const assets = @import("assets.zig");

@@ -6,8 +6,15 @@ GitHub repositories can be added by their `https://github.com/OWNER/REPO` URL.
 Commit each complete theme under `themes/<folder>/`, with `theme.json` and all
 referenced assets. No `index.json`, ZIP, tarball or GitHub release is needed.
 
+Color-only contributions can instead use flat `palettes/*.json` sources with
+`name`, dark/light colors, and a `publication` metadata object. See
+[the palette publication tutorial](THEME_CREATION_TUTORIAL.md#9-publish-a-compact-palette-in-a-github-repository).
+Pearl pins the source blob and compiler identity and compiles it through the
+same package installer. Increment `publication.version` when changing a published
+palette. Native `publish_build` also accepts these sources as package-record paths.
+
 On explicit refresh, Pearl resolves the default branch to a commit and discovers
-`themes/*/theme.json` through GitHub's tree API. Results have sixteen themes per
+`themes/*/theme.json` and `palettes/*.json` through GitHub's tree API. Results have sixteen themes per
 page; pagination retains that commit even if the branch moves. Installation
 fetches ordinary raw files at that commit, checks every file against its Git blob
 SHA-1 and size, and uses the normal package validator and atomic installer.
@@ -20,7 +27,8 @@ rate limits apply; Pearl does not request credentials or run Git locally.
 Custom HTTPS index repositories with immutable tar.gz releases remain supported.
 The following index and publication instructions apply to that optional format.
 Use schema 2 for image/profile requirements. Schema 3 is Pearl's cached direct
-GitHub catalog format and contains the repository, commit, folder and tree ID.
+GitHub catalog format and contains the repository, commit, folder/tree or
+palette blob, and compiler identity for compact sources.
 
 Use [the author guide](CUSTOM_THEMES.md) and native `pearl-themes validate` and
 `pack` operations. Include source/license attribution and preview evidence for

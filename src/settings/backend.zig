@@ -198,7 +198,7 @@ pub const Backend = struct {
             .@"theme.start" => {
                 const v = try p.fields(struct { request: []const u8 }, alloc, params);
                 try self.allowed(self.context);
-                var command = try @import("../theme/package_model.zig").parse(@import("../theme/commands.zig").Request, alloc, v.request, 16384);
+                var command = try @import("../theme/package_model.zig").parse(@import("../theme/commands.zig").Request, alloc, v.request, @import("../theme/commands.zig").request_limit);
                 self.service.theme_jobs.publication_guard = .{};
                 if (command.action == .application_review or command.action == .application_install or command.action == .application_retry or command.action == .application_refresh) {
                     if (self.service.job != null or self.service.pending_reload) return error.Busy;

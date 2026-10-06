@@ -34,7 +34,7 @@ pub const Manifest = struct {
         if (self.schema_version != 1 and self.schema_version != 2) return error.UnsupportedThemeSchema;
         if (self.schema_version == 1 and (self.images.len != 0 or self.profiles.len != 0 or self.defaults.len != 0 or self.render_data != null or self.requires.profile_api != null or self.requires.render_data_api != null or self.requires.style_api == 2)) return error.UnsupportedThemeSchema;
         try identifier(self.id);
-        if (std.mem.startsWith(u8, self.id, "pearl.")) return error.ReservedThemeId;
+        if (std.mem.startsWith(u8, self.id, "pearl.") or std.mem.startsWith(u8, self.id, "local.palette.")) return error.ReservedThemeId;
         for ([_][]const u8{ self.name, self.author, self.license, self.source }) |s| try text(s, 256);
         _ = try version(self.asset_version);
         if (self.requires.palette_api) |v| if (v != 1) return error.UnsupportedPaletteApi;

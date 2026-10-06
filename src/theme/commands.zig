@@ -1,5 +1,6 @@
 //! Shared backend/author-tool operations. Call only from a worker.
 const std = @import("std");
+pub const request_limit = 192 * 1024;
 const gio = @import("gio2");
 const model = @import("package_model.zig");
 const repository = @import("repository.zig");
@@ -9,7 +10,7 @@ const diagnostics = @import("../diagnostics/safe_text.zig");
 const log = std.log.scoped(.theme);
 extern fn mkdtemp([*:0]u8) ?[*:0]u8;
 pub const Request = struct {
-    action: enum { catalog, profiles_catalog, application_review, application_install, application_retry, application_refresh, validate, verify_profiles, validate_index, pack, publish_build, preview, preview_render, source_add, source_remove, source_default, refresh, install, import_archive, remove, rollback },
+    action: enum { catalog, profiles_catalog, application_review, application_install, application_retry, application_refresh, validate, verify_profiles, validate_index, pack, publish_build, preview, preview_render, source_add, source_remove, source_default, refresh, install, import_archive, remove, rollback, palette_init, palette_read, palette_validate, palette_preview, palette_write, palette_import, palette_export },
     id: []const u8 = "",
     name: []const u8 = "",
     url: []const u8 = "",
@@ -22,6 +23,10 @@ pub const Request = struct {
     revision: []const u8 = "",
     theme: ?@import("../config/preferences.zig").Theme = null,
     wallpaper: @import("../config/preferences.zig").Wallpaper = .{},
+    contents: []const u8 = "",
+    expected: []const u8 = "",
+    publication: ?@import("palette_model.zig").Publication = null,
+    metadata_path: []const u8 = "",
 };
 pub const Entry = struct {
     id: []const u8,
@@ -33,6 +38,9 @@ pub const Entry = struct {
     light: bool,
     style: bool,
     error_code: ?[]const u8 = null,
+    editable: bool = false,
+    path: []const u8 = "",
+    fallback: []const u8 = "",
 };
 pub fn run(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress) ![]const u8 {
     return runWithAssets(a, request, cancel, report, null);
@@ -57,6 +65,7 @@ fn targetOf(request: Request) []const u8 {
 fn runGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, report: ?*@import("progress.zig").Progress, blobs: ?*[]const @import("assets.zig").Blob, guard: @import("publication.zig").Guard) ![]const u8 {
     if (cancel.isCancelled() != 0) return error.Cancelled;
     switch (request.action) {
+        .palette_init, .palette_read, .palette_validate, .palette_preview, .palette_write, .palette_import, .palette_export => return @import("palette_commands.zig").run(a, request, cancel),
         .application_review, .application_install, .application_retry, .application_refresh => {
             const glib = @import("glib2");
             const config = std.mem.span(glib.getUserConfigDir());
@@ -137,16 +146,16 @@ fn runGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, 
             if (request.offset > catalog.entries.len) return error.InvalidCatalogOffset;
             var entries: std.ArrayList(Entry) = .empty;
             var ids: std.ArrayList([]const u8) = .empty;
-            for (catalog.entries) |entry| try ids.append(a, entry.package.manifest.id);
+            for (catalog.entries) |entry| try ids.append(a, entry.id());
             const end = @min(catalog.entries.len, @as(usize, request.offset) + 16);
             for (catalog.entries[request.offset..end]) |entry| {
                 const p = entry.package;
                 var failure: ?[]const u8 = null;
-                _ = catalog.get(p.manifest.id) catch |err| blk: {
+                _ = catalog.get(entry.id()) catch |err| blk: {
                     failure = @errorName(err);
                     break :blk entry;
                 };
-                try entries.append(a, .{ .id = p.manifest.id, .name = p.manifest.name, .author = p.manifest.author, .version = p.manifest.asset_version, .digest = try a.dupe(u8, &p.digest), .dark = p.dark != null, .light = p.light != null, .style = p.manifest.style != null, .error_code = failure });
+                try entries.append(a, .{ .id = entry.id(), .name = entry.name(), .author = if (p) |package| package.manifest.author else "Local palette", .version = if (p) |package| package.manifest.asset_version else "editable", .digest = try a.dupe(u8, &entry.digest()), .dark = if (p) |package| package.dark != null else true, .light = if (p) |package| package.light != null else true, .style = if (p) |package| package.manifest.style != null else false, .error_code = failure, .editable = entry.palette_file != null, .path = if (entry.palette_file != null) entry.path else "", .fallback = if (entry.palette_file) |file| if (file.document.source.dark == null) "light" else if (file.document.source.light == null) "dark" else "" else "" });
             }
             return std.json.Stringify.valueAlloc(a, .{ .entries = entries.items, .ids = ids.items, .next_offset = if (end < catalog.entries.len) @as(?usize, end) else null, .diagnostics = catalog.diagnostics[0..@min(8, catalog.diagnostics.len)], .diagnostic_count = catalog.diagnostics.len, .revision = catalog.revision[0..], .sources = (try repository.sources(a)).sources }, .{});
         },

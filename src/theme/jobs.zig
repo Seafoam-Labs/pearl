@@ -33,7 +33,7 @@ pub const Manager = struct {
         job.* = .{ .manager = self, .app = app, .arena = .init(a), .cancel = gio.Cancellable.new(), .request = undefined };
         errdefer job.destroy();
         job.publication_guard = self.publication_guard;
-        job.request = try @import("package_model.zig").parse(@import("commands.zig").Request, job.arena.allocator(), text, 16384);
+        job.request = try @import("package_model.zig").parse(@import("commands.zig").Request, job.arena.allocator(), text, @import("commands.zig").request_limit);
         self.last_action = job.request.action;
         self.application_revision = std.fmt.parseInt(u64, job.request.revision, 10) catch 0;
         self.error_code = null;

@@ -1,13 +1,13 @@
 [colors]
-background = '{{colors.background.default.hex}}'
-foreground = '{{colors.on_surface.default.hex}}'
+background = '{{colors.terminal_background.default.hex}}'
+foreground = '{{colors.terminal_foreground.default.hex}}'
 
-cursor_bg = '{{colors.primary.default.hex}}'
-cursor_fg = '{{colors.background.default.hex}}'
-cursor_border = '{{colors.primary.default.hex}}'
+cursor_bg = '{{colors.terminal_cursor.default.hex}}'
+cursor_fg = '{{colors.terminal_cursor_text.default.hex}}'
+cursor_border = '{{colors.terminal_cursor.default.hex}}'
 
-selection_bg = '{{colors.primary_container.default.hex}}'
-selection_fg = '{{colors.on_surface.default.hex}}'
+selection_bg = '{{colors.terminal_selection_bg.default.hex}}'
+selection_fg = '{{colors.terminal_selection_fg.default.hex}}'
 
-ansi = ['{{base16.base00.default.hex}}', '{{base16.base08.default.hex}}', '{{base16.base0b.default.hex}}', '{{base16.base0a.default.hex}}', '{{base16.base0d.default.hex}}', '{{base16.base0e.default.hex}}', '{{base16.base0c.default.hex}}', '{{base16.base05.default.hex}}']
-brights = ['{{base16.base03.default.hex}}', '{{base16.base08.default.hex}}', '{{base16.base0b.default.hex}}', '{{base16.base0a.default.hex}}', '{{base16.base0d.default.hex}}', '{{base16.base0e.default.hex}}', '{{base16.base0c.default.hex}}', '{{base16.base07.default.hex}}']
+ansi = ['{{colors.terminal_normal_black.default.hex}}', '{{colors.terminal_normal_red.default.hex}}', '{{colors.terminal_normal_green.default.hex}}', '{{colors.terminal_normal_yellow.default.hex}}', '{{colors.terminal_normal_blue.default.hex}}', '{{colors.terminal_normal_magenta.default.hex}}', '{{colors.terminal_normal_cyan.default.hex}}', '{{colors.terminal_normal_white.default.hex}}']
+brights = ['{{colors.terminal_bright_black.default.hex}}', '{{colors.terminal_bright_red.default.hex}}', '{{colors.terminal_bright_green.default.hex}}', '{{colors.terminal_bright_yellow.default.hex}}', '{{colors.terminal_bright_blue.default.hex}}', '{{colors.terminal_bright_magenta.default.hex}}', '{{colors.terminal_bright_cyan.default.hex}}', '{{colors.terminal_bright_white.default.hex}}']

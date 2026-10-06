@@ -37,10 +37,12 @@ pub fn catalog(a: std.mem.Allocator, themes: @import("catalog.zig").Catalog) !Ca
         const descriptor = try material.descriptor(a, app);
         try entries.append(a, .{ .descriptor = descriptor, .path = "", .origin = "Base Material", .digest = try a.dupe(u8, &hash(material.files(app))) });
     }
-    for (themes.entries) |entry| for (entry.package.profiles) |descriptor| {
-        if (std.mem.startsWith(u8, descriptor.id, "pearl.material.")) return error.ReservedThemeProfile;
-        if (entries.items.len >= 256) return error.ProfileCatalogLimit;
-        try entries.append(a, .{ .descriptor = descriptor, .path = entry.path, .origin = entry.package.manifest.id, .digest = try a.dupe(u8, &entry.package.digest) });
+    for (themes.entries) |entry| if (entry.package) |package| {
+        for (package.profiles) |descriptor| {
+            if (std.mem.startsWith(u8, descriptor.id, "pearl.material.")) return error.ReservedThemeProfile;
+            if (entries.items.len >= 256) return error.ProfileCatalogLimit;
+            try entries.append(a, .{ .descriptor = descriptor, .path = entry.path, .origin = package.manifest.id, .digest = try a.dupe(u8, &package.digest) });
+        }
     };
     const c = pkg.c;
     for (try roots(a)) |root| {
@@ -138,7 +140,8 @@ pub fn capture(a: std.mem.Allocator, p: Preferences, dynamic_json: ?[]const u8, 
     const active = if (p.theme.mode != .gtk and p.theme.package_id.len > 0) (try themes.get(p.theme.package_id)).package else null;
     var selected: std.ArrayList(Captured) = .empty;
     for (std.enums.values(profiles.Application)) |application| {
-        var inherited: ?[]const u8 = if (baseMaterial(p) and p.matugen.defaults_revision > 0 and application != .qt5ct and application != .qt6ct) (try material.descriptor(a, application)).id else null;
+        const palette_defaults = baseMaterial(p) or (active != null and active.?.manifest.style == null and active.?.manifest.profiles.len == 0 and active.?.manifest.render_data != null);
+        var inherited: ?[]const u8 = if (palette_defaults and p.matugen.defaults_revision > 0 and application != .qt5ct and application != .qt6ct) (try material.descriptor(a, application)).id else null;
         if (active) |package| for (package.manifest.defaults) |default| {
             if (std.mem.eql(u8, default.application, @tagName(application))) inherited = default.profile;
         };
@@ -177,11 +180,14 @@ pub fn capture(a: std.mem.Allocator, p: Preferences, dynamic_json: ?[]const u8, 
         if (p.theme.mode == .dynamic) result.render_json = dynamic_json;
         if (p.theme.mode == .package) {
             const palette = try themes.get(if (p.theme.palette_id.len > 0) p.theme.palette_id else p.theme.package_id);
-            if (palette.package.manifest.render_data) |data| {
-                if (if (p.theme.variant == .dark) data.dark else data.light) |path| {
-                    const captured = try pkg.load(a, palette.path);
-                    if (!std.mem.eql(u8, &captured.digest, &palette.package.digest)) return error.ThemeCatalogChanged;
-                    result.render_json = try captured.asset(path);
+            if (palette.palette_file) |file| result.render_json = file.document.render_json;
+            if (palette.package) |package| {
+                if (package.manifest.render_data) |data| {
+                    if (if (p.theme.variant == .dark) data.dark else data.light) |path| {
+                        const captured = try pkg.load(a, palette.path);
+                        if (!std.mem.eql(u8, &captured.digest, &package.digest)) return error.ThemeCatalogChanged;
+                        result.render_json = try captured.asset(path);
+                    }
                 }
             }
         }
@@ -194,7 +200,8 @@ const Preferences = @import("../config/preferences.zig").Preferences;
 const generator = @import("generator.zig");
 
 pub fn baseMaterial(p: Preferences) bool {
-    return (p.theme.mode == .static or p.theme.mode == .dynamic) and p.theme.package_id.len == 0;
+    return ((p.theme.mode == .static or p.theme.mode == .dynamic) and p.theme.package_id.len == 0) or
+        @import("palette_file.zig").editable(@import("palette_file.zig").selected(p.theme));
 }
 
 /// The template selection identity deliberately excludes wallpaper bytes/path.
