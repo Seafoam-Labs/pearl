@@ -417,14 +417,40 @@ widget; add it through the selection editor to any group. Its scope is all
 workspaces and displays, even in a per-output layout. `wallpaper` is the optional
 **Wallpaper** widget; it opens a thumbnail browser for the slideshow folder and
 applies the clicked image immediately, and its **Choose folder…** button sets
-that same folder. There are no additional
-widget preferences. Older binaries reject this token, so remove it before a
-downgrade. The supported names are documented in
+that same folder. `resources` is the optional **Resource monitor** widget, and it
+is the only widget with preferences of its own; see below. Otherwise there are no
+additional widget preferences. Older binaries reject these tokens, so remove them
+before a downgrade. The supported names are documented in
 [DESKTOP.md](DESKTOP.md). The minimum bar size is 32–160 logical pixels; GTK's
 actual measurement remains the reservation authority. Existing frame
 reservations are checked before applying a conflicting bar edge. The older
 `bar set` / `bar groups` commands remain temporary controls; the next preference
 application restores the persisted policy.
+
+## Resource monitor widget
+
+`bar.resource_mode` accepts `icon` (default) or `graph`, and
+`bar.resource_series` is an object of four booleans, all true by default:
+
+```json
+{
+  "bar": {
+    "resource_mode": "graph",
+    "resource_series": { "cpu": true, "gpu": true, "memory": false, "network": true }
+  }
+}
+```
+
+Configure both through **Bar & dock → Resource monitor → ⋯**, then Apply. The
+mode chooses the bar button's appearance: a plain icon, or a 2×2 grid of live
+sparklines. Either way the button opens the same popup, and the series object
+decides which graphs that popup draws; with all four false the popup shows a hint
+instead of an empty grid. Sampling always covers all four series regardless of
+the selection, so the button's tooltip keeps reporting every figure. As with the
+workspace mode, an output override omitting these fields falls back to its own
+schema defaults rather than inheriting the global bar object, and removing and
+re-adding the widget retains both choices. Older binaries reject the fields;
+remove them from global and output bar objects before downgrading.
 
 ## Wallpaper and generator bounds
 

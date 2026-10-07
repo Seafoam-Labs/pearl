@@ -20,6 +20,7 @@ pub fn metadata(item: policy.Item) Metadata {
         .battery => .{ .name = "Battery", .description = "Charge and power status", .icon = "pearl-battery-symbolic" },
         .network => .{ .name = "Network", .description = "Connection status and networks", .icon = "pearl-network-wireless-symbolic" },
         .bluetooth => .{ .name = "Bluetooth", .description = "Connections and paired devices", .icon = "pearl-bluetooth-active-symbolic" },
+        .resources => .{ .name = "Resource monitor", .description = "CPU, GPU, memory and network history", .icon = "pearl-utilities-system-monitor-symbolic" },
         .notifications => .{ .name = "Notifications", .description = "Alerts and notification history", .icon = "pearl-notifications-symbolic" },
         .media => .{ .name = "Media", .description = "Playback and track information", .icon = "pearl-media-symbolic" },
         .tray => .{ .name = "System tray", .description = "Background application icons", .icon = "pearl-view-grid-symbolic" },
@@ -122,6 +123,26 @@ pub fn patchWorkspaceMode(a: std.mem.Allocator, text: []const u8, mode: prefs.Wo
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("workspaces") == null) return error.WidgetNotFound;
     document.bar.workspace_mode = mode;
+    try document.validate();
+    const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
+    if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
+    return result;
+}
+pub fn patchResourceMode(a: std.mem.Allocator, text: []const u8, mode: prefs.ResourceMode) ![]const u8 {
+    var document = try prefs.parse(a, text);
+    const layout = try Layout.parse(a, document.bar.groups);
+    if (layout.find("resources") == null) return error.WidgetNotFound;
+    document.bar.resource_mode = mode;
+    try document.validate();
+    const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
+    if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
+    return result;
+}
+pub fn patchResourceSeries(a: std.mem.Allocator, text: []const u8, selection: prefs.ResourceSelection) ![]const u8 {
+    var document = try prefs.parse(a, text);
+    const layout = try Layout.parse(a, document.bar.groups);
+    if (layout.find("resources") == null) return error.WidgetNotFound;
+    document.bar.resource_series = selection;
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -255,6 +276,38 @@ test "workspace mode patch preserves layout and unrelated preferences and surviv
         const restored = try patch(a, removed, "workspaces", .{ .add = .center });
         try std.testing.expectEqual(mode, (try prefs.parse(a, restored)).bar.workspace_mode);
     }
+}
+
+test "resource patches need the widget placed and preserve every unrelated preference" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var expected: prefs.Preferences = .{ .font_size = 19, .bar = .{ .resource_mode = .graph }, .outputs = &.{.{ .connector = "DP-1", .bar = .{ .workspace_mode = .small } }} };
+    const text = try std.json.Stringify.valueAlloc(a, expected, .{});
+    // The widget is optional, so its settings are refused until it is placed.
+    try std.testing.expectError(error.WidgetNotFound, patchResourceMode(a, text, .icon));
+    try std.testing.expectError(error.WidgetNotFound, patchResourceSeries(a, text, .{}));
+    const placed = try patch(a, text, "resources", .{ .add = .right });
+    expected.bar.groups.right = try std.fmt.allocPrint(a, "{s},resources", .{expected.bar.groups.right});
+    for (std.enums.values(prefs.ResourceMode)) |mode| {
+        expected.bar.resource_mode = mode;
+        try std.testing.expectEqualDeep(expected, try prefs.parse(a, try patchResourceMode(a, placed, mode)));
+    }
+    for ([_]prefs.ResourceSelection{ .{}, .{ .cpu = false, .gpu = false, .memory = false, .network = true }, .{ .cpu = false, .gpu = false, .memory = false, .network = false } }) |selection| {
+        expected.bar.resource_series = selection;
+        try std.testing.expectEqualDeep(expected, try prefs.parse(a, try patchResourceSeries(a, placed, selection)));
+    }
+    const removed = try patch(a, placed, "resources", .remove);
+    try std.testing.expectError(error.WidgetNotFound, patchResourceSeries(a, removed, .{}));
+    // Both choices outlive removal, exactly as the workspace mode does.
+    const restored = try prefs.parse(a, try patch(a, removed, "resources", .{ .add = .center }));
+    try std.testing.expectEqual(prefs.ResourceMode.graph, restored.bar.resource_mode);
+    try std.testing.expectEqualDeep(prefs.ResourceSelection{}, restored.bar.resource_series);
+    try std.testing.expectEqual(@as(u16, 19), restored.font_size);
+    try std.testing.expectEqualStrings("DP-1", restored.outputs[0].connector);
+    // An unrelated per-output bar policy is untouched by both patches.
+    try std.testing.expectEqual(prefs.WorkspaceMode.small, restored.outputs[0].bar.workspace_mode);
+    try std.testing.expectEqual(prefs.ResourceMode.icon, restored.outputs[0].bar.resource_mode);
 }
 
 pub fn patchLauncherIcon(a: std.mem.Allocator, text: []const u8, icon: @import("../desktop/launcher_icon_policy.zig").Config) ![]const u8 {

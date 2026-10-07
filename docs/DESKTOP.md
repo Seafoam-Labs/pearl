@@ -94,6 +94,58 @@ regenerates its palette. With no folder set the pane shows a hint instead of a
 grid. Before downgrading to a Pearl version without this widget, remove
 `wallpaper` from saved layouts.
 
+## Resource monitor in the bar
+
+Add **Resource monitor** in Settings → Bar & dock → Add widget. Its builtin
+layout token is `resources`. Like Wallpaper it is a button, and clicking it opens
+a popup anchored under the bar icon. The popup shows one large graph per enabled
+series, four across and two deep: the graph on the top row, and a readout card
+underneath carrying the series name and its live value. Every graph is plotted as
+a share of its own ceiling with quarter guides at 25, 50 and 75%, so the vertical
+axis always reads out of 100. Each graph keeps the last 60 one-second samples, so
+the newest reading is always at the right edge and the line grows leftwards while
+the window fills.
+
+The placed widget's **⋯** menu carries both of its settings. **Bar appearance**
+chooses between **Icon** — the same compact button as every other widget — and
+**Mini graphs**, which replaces the icon with a 2×2 grid of sparklines (smaller
+cells on side bars) so trends are readable without opening anything. Both modes
+open the same popup. **Graphs shown when opened** picks which of CPU, GPU, Memory
+and Network the popup renders; with none selected the popup says so instead of
+showing an empty grid. Both live in `bar.resource_mode` and `bar.resource_series`
+and accept per-output overrides like every other bar preference. Changing the
+appearance rebuilds that output's bar; changing the graph selection re-lays the
+open popup in place, so several graphs can be picked in a row.
+
+One sampler runs per process, not per widget, output or popup, matching the
+shared clock timer. CPU comes from the aggregate `/proc/stat` line as the busy
+share of elapsed ticks, counting `idle` and `iowait` as idle and skipping
+`guest`/`guest_nice`, which the kernel already includes in `user`/`nice`. Memory
+is `MemTotal` minus `MemAvailable`, so caches and reclaimable slab read as free.
+Network sums `/proc/net/dev` byte counters for every interface except loopback,
+in both directions at once. Sampling ignores the graph selection, so the bar
+button's tooltip and accessible name always report all four figures.
+
+GPU usage takes the busiest card over two independent sources: `gpu_busy_percent`
+under `/sys/class/drm/card0`–`card7` for AMD and Intel, and NVML for NVIDIA,
+reached by `dlopen`ing `libnvidia-ml.so.1` at runtime so no build dependency is
+added and an absent driver costs one failed lookup. A machine with no supported
+counter keeps the GPU graph visibly absent and reads **Unavailable** rather than
+showing a flat line that would read as an idle card.
+
+Network is drawn as two lines on one shared scale: **in** solid and **out**
+dashed. Its readout carries both on a single line in compact units —
+`I:1.2M O:340K` — ellipsised to the card's fixed width rather than allowed to
+resize the grid. Throughput has no natural ceiling, so that shared scale is the
+peak of either direction over the visible window, quantised to 1, 2, 5 or 10
+times a power of ten above a 1 KiB/s floor that keeps an idle link flat instead
+of amplifying stray packets. The quantisation stops ordinary fluctuation moving
+the scale — and with it the drawn lines — from one second to the next; the scale
+itself is never printed. All readout cards keep a fixed character width for the
+same reason: a changing figure must not resize the grid.
+Before downgrading to a Pearl version without this widget, remove `resources`
+from saved layouts.
+
 ## Compact settings navigation
 
 Speaker, Network, Bluetooth and Battery open **Sound**, **Network**,
