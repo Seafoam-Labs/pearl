@@ -1,7 +1,8 @@
 pkgbase = pearl-git
 	pkgdesc = GTK desktop shell exclusively for Aqueous (Git version)
-	pkgver = 1.0.0rc2.r22.ga002d24
-	pkgrel = 10
+	pkgver = 0.2.2.r177.gcdf7436
+	pkgrel = 1
+	epoch = 1
 	url = https://github.com/Seafoam-Labs/pearl
 	install = pearl-git.install
 	arch = x86_64
@@ -38,6 +39,9 @@ pkgbase = pearl-git
 	depends = uwsm>=0.26.7
 	optdepends = gvfs: Trash, remote locations, and administrative filesystems in Phyto
 	optdepends = file-roller: archive context menu actions in Phyto
+	optdepends = poppler: PDF first-page previews in Phyto (requires bubblewrap)
+	optdepends = ffmpeg: video still previews in Phyto (requires bubblewrap)
+	optdepends = bubblewrap: sandbox required for PDF and video previews in Phyto
 	optdepends = hunspell-en_us: English spelling dictionary for Coral (other Enchant dictionaries supported)
 	optdepends = nvidia-utils: optional NVIDIA GPU metrics in Dome
 	optdepends = qtengine: shared Qt 5/6 application appearance management

@@ -1,7 +1,7 @@
 # Build the latest upstream Git revision. Nothing is enabled or started during
 # installation.
 pkgname=pearl-git
-pkgver=0.2.2.r175.g82fbfcf
+pkgver=0.2.2.r177.gcdf7436
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
