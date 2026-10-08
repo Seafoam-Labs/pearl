@@ -11,7 +11,7 @@
     {"path": "/usr/share/xsessions", "type": "x11"}
   ],
   "accounts": true,
-  "password_first": false,
+  "password_first": true,
   "power": true,
   "remember_session": false,
   "fingerprint_hint": false,

@@ -55,24 +55,31 @@ def main():
             capture(session, name, primary)
             report['screenshots'].append('session/' + name + '.png')
 
-        for mode in ('password', 'switch', 'other', 'empty', 'disabled', 'fingerprint',
-                     'blank', 'otp', 'visible', 'refresh', 'desktop-change', 'cancel', 'failure', 'stale',
+        for mode in ('password', 'button', 'repeat-enter', 'remembered', 'remembered-switch', 'remembered-manual', 'remembered-override', 'refresh-user',
+                     'switch', 'other', 'empty', 'disabled', 'fingerprint',
+                     'blank', 'otp', 'visible', 'refresh', 'desktop-change', 'cancel', 'failure', 'failure-manual', 'stale',
                      'oversize', 'oversize-utf8', 'policy-change', 'changed-before-begin', 'catalog-failure', 'timeout'):
             entry.write_text('[Desktop Entry]\nType=Application\nName=Pearl (Aqueous)\nExec=/usr/bin/true\nDesktopNames=Aqueous;\n')
             value = {'roots': [{'path': str(root), 'type': 'wayland'}], 'power': False,
-                     'accounts': mode != 'disabled', 'password_first': True,
+                     'accounts': mode not in ('disabled', 'remembered-manual', 'failure-manual'),
+                     'remember_session': mode.startswith('remembered') or mode == 'refresh-user',
                      'preferred_output': primary,
                      'auth_timeout_seconds': 30,
                      'default_session': 'wayland:pearl.desktop'}
             config.write_text(json.dumps(value))
-            expected_user = 'another-user' if mode == 'switch' else 'fixture-user'
+            state = session.base / 'selections.json'
+            state.write_text(json.dumps([{'username': 'another-user' if mode in ('remembered-switch', 'refresh-user') else 'fixture-user',
+                                          'session': 'wayland:other.desktop'}]))
+            state.chmod(0o600)
+            expected_user = 'another-user' if mode in ('switch', 'remembered-switch', 'refresh-user') else 'fixture-user'
+            expected_desktop = 'other' if (mode.startswith('remembered') and mode != 'remembered-override') or mode in ('desktop-change', 'refresh-user') else 'pearl'
             server = socket.socket(socket.AF_UNIX)
             path = str(session.base / ('greetd-' + mode + '.sock'))
             server.bind(path); server.listen(); server.settimeout(40 if mode == 'timeout' else 10)
             errors, requests = [], []
             passive_ready, continue_auth, input_ready, second_ready, result_ready, release_result = [threading.Event() for _ in range(6)]
 
-            def daemon():
+            def daemon(retry=False):
                 try:
                     conn, _ = server.accept()
                     with conn:
@@ -104,13 +111,14 @@ def main():
                                 assert not select.select([conn], [], [], .35)[0], 'password replayed into another secret question'
                                 second_ready.set()
                                 assert receive(conn) == {'type': 'post_auth_message_response', 'response': 'fresh-code'}
-                        if mode == 'failure':
+                        if mode.startswith('failure') and not retry:
                             send(conn, {'type': 'error', 'error_type': 'auth_error', 'description': 'Denied'})
                             cancel, _ = server.accept()
                             with cancel:
                                 assert receive(cancel) == {'type': 'cancel_session'}
                                 send(cancel, {'type': 'success'})
                             result_ready.set()
+                            daemon(retry=True)
                             return
                         send(conn, {'type': 'auth_message', 'auth_message_type': 'info', 'auth_message': 'Authentication complete'})
                         assert receive(conn) == {'type': 'post_auth_message_response', 'response': None}
@@ -125,7 +133,7 @@ def main():
                             return
                         start = receive(conn); requests.append(start)
                         assert start['type'] == 'start_session' and start['cmd'] == ['/usr/lib/pearl/pearl-greeter-session']
-                        assert 'PEARL_SESSION_ID=wayland:pearl.desktop' in start['env']
+                        assert f'PEARL_SESSION_ID=wayland:{expected_desktop}.desktop' in start['env']
                         send(conn, {'type': 'success'})
                 except Exception as error:
                     errors.append(repr(error))
@@ -154,27 +162,52 @@ def main():
                     report['checks'].append(mode)
                     continue
                 thread.start()
-                if mode in ('switch', 'other'):
+                if mode in ('switch', 'other', 'remembered-switch'):
                     key('discard-on-user-change'); back(); key('-k', 'space')
                     snapshot('login-' + mode + '-menu')
                     key('-k', 'Down', *(['-k', 'Down'] if mode == 'other' else []), '-k', 'Return')
                     child.expect('selected=' + ('2 manual=true' if mode == 'other' else '1 manual=false'))
                     if mode == 'other': snapshot('login-other-user')
-                if mode in ('other', 'empty', 'disabled'):
+                if mode in ('other', 'empty', 'disabled', 'remembered-manual', 'failure-manual'):
+                    assert [line for line in child.lines if 'event=greeter-form' in line][-1].endswith('ready=false')
                     key('fixture-user', '-k', 'Tab')
+                    wait_for(lambda: [line for line in child.lines if 'event=greeter-form' in line][-1].endswith('ready=true'))
+                if mode.startswith('remembered'):
+                    # Verify the displayed selection BEFORE submission, not just the launch.
+                    wait_for(lambda: [line for line in child.lines if 'event=greeter-selection' in line][-1].endswith('desktop=wayland:other.desktop'))
+                    snapshot('login-' + mode)
+                if mode == 'remembered-override':
+                    key('-k', 'Tab', '-k', 'space', '-k', 'End', '-k', 'Return')
+                    back()
+                    assert [line for line in child.lines if 'event=greeter-selection' in line][-1].endswith('desktop=wayland:pearl.desktop')
+                if mode == 'refresh-user':
+                    # Explicit selection belongs to the old account. Removing it
+                    # during refresh must apply the replacement user's preference.
+                    key('-k', 'Tab', '-k', 'space', '-k', 'Home', '-k', 'Return')
+                    key('-k', 'space', '-k', 'End', '-k', 'Return')
+                    passwd.write_text('another-user:x:1002:1002::/home/another:/bin/sh\n')
+                    key('-k', 'Tab', '-k', 'space')
+                    wait_for(lambda: sum('event=greeter-ready' in line for line in child.lines) == 2)
+                    assert [line for line in child.lines if 'event=greeter-selection' in line][-1].endswith('desktop=wayland:other.desktop')
+                    passwd.write_text('fixture-user:x:1001:1001::/home/fixture:/bin/sh\nanother-user:x:1002:1002::/home/another:/bin/sh\n')
                 if mode == 'refresh':
                     key('discard-on-refresh', '-k', 'Tab', '-k', 'Tab', '-k', 'space')
                     wait_for(lambda: sum('event=greeter-ready' in line for line in child.lines) == 2)
                 if mode == 'desktop-change':
-                    # Change the selected desktop away and back; neither change keeps the password.
-                    key('discard-on-desktop-change', '-k', 'Tab', '-k', 'space', '-k', 'Home', '-k', 'Return')
-                    key('-k', 'space', '-k', 'End', '-k', 'Return')
+                    # Choose a different desktop after typing; the password must survive.
+                    key('fixture-secret', '-k', 'Tab', '-k', 'space', '-k', 'Home', '-k', 'Return')
                     back()
                 if mode == 'password': snapshot('login-initial')
-                if mode != 'blank': key('fixture-secret')
+                if mode not in ('blank', 'desktop-change'): key('fixture-secret')
                 # One Enter creates the session and later supplies the first secret answer.
-                key('-k', 'Return')
+                if mode == 'button':
+                    key('-k', 'Tab', '-k', 'Tab', '-k', 'Tab', '-k', 'space')
+                else:
+                    key('-k', 'Return')
                 assert passive_ready.wait(5), (mode, errors, child.lines[-12:])
+                if mode == 'repeat-enter':
+                    key('-k', 'Return', '-k', 'Return', '-k', 'Return')
+                    assert not select.select([server], [], [], .2)[0], 'duplicate attempt'
                 if mode == 'password':
                     # A pending password survives moving the single card between outputs.
                     session.run(['wlr-randr', '--output', primary, '--off'])
@@ -194,9 +227,14 @@ def main():
                         snapshot('login-' + mode + '-additional-prompt')
                         key('fresh-code', '-k', 'Return')
                     assert result_ready.wait(5), (mode, errors, child.lines[-12:])
-                    if mode == 'failure':
+                    if mode.startswith('failure'):
                         child.expect('event=greeter-state state=idle')
-                        snapshot('login-failure'); child.stop()
+                        snapshot('login-' + mode)
+                        result_ready.clear()
+                        key('fixture-secret', '-k', 'Return')
+                        assert result_ready.wait(5), (mode, errors, child.lines[-12:])
+                        release_result.set()
+                        assert child.wait() == 0, child.lines[-20:]
                     else:
                         if mode == 'stale':
                             with entry.open('a') as f: f.write('Comment=changed after authentication\n')
@@ -206,7 +244,7 @@ def main():
                         else: assert child.wait() == 0, child.lines[-20:]
                 thread.join(3)
                 assert not thread.is_alive() and not errors, (mode, errors)
-                assert len(requests) == (1 if mode in ('cancel', 'timeout', 'failure', 'stale') else 2), requests
+                assert len(requests) == (3 if mode.startswith('failure') else 1 if mode in ('cancel', 'timeout', 'stale') else 2), requests
                 assert not any(secret in line for line in child.lines for secret in ('fixture-secret', 'fresh-code', 'discard-on-'))
                 report['checks'].append(mode)
             finally:

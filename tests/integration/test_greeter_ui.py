@@ -55,7 +55,7 @@ def main():
             accounts_enabled=theme not in ('contrast','accounts-disabled')
             known_accounts=accounts_enabled and theme!='accounts-empty'
             expected_user='another-user' if theme=='accounts-switch' else 'fixture-user'
-            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':accounts_enabled,'power':False,'remember_session':theme=='material_light','fingerprint_hint':theme=='fingerprint','font_size':24 if theme=='fingerprint' else 16,'wallpaper':str(wallpaper) if theme in ('material_light','contain') else None,'wallpaper_fit':'contain' if theme=='contain' else 'cover','wallpaper_color':'#123456' if theme in ('solid','contain') else None}))
+            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':accounts_enabled,'password_first':False,'power':False,'remember_session':theme=='material_light','fingerprint_hint':theme=='fingerprint','font_size':24 if theme=='fingerprint' else 16,'wallpaper':str(wallpaper) if theme in ('material_light','contain') else None,'wallpaper_fit':'contain' if theme=='contain' else 'cover','wallpaper_color':'#123456' if theme in ('solid','contain') else None}))
             if theme=='small':session.run(['wlr-randr','--output',primary,'--scale','2'])
             server=socket.socket(socket.AF_UNIX);path=str(session.base/f'greetd-{theme}.sock');server.bind(path);server.listen();server.settimeout(args.idle_seconds+30)
             errors=[];requests=[];info_ack=threading.Event();allow_success=threading.Event();scan_ready=threading.Event();continue_scan=threading.Event()
@@ -117,13 +117,14 @@ def main():
             else:
                 child.expect('event=greeter-account count=0 selected=0 manual=true')
             if theme=='contrast':
-                key(*(['-k','Tab']*6),'-k','space')
+                # Sign in is disabled until the manual username is valid.
+                key(*(['-k','Tab']*5),'-k','space')
                 child.expect('event=greeter-contrast enabled=true')
                 key('-k','Tab','-k','space')
                 child.expect('event=greeter-reduced-motion enabled=false')
                 key('-k','space')
                 child.expect('event=greeter-reduced-motion enabled=true')
-                for _ in range(7):key('-M','shift','-k','ISO_Left_Tab','-m','shift')
+                for _ in range(6):key('-M','shift','-k','ISO_Left_Tab','-m','shift')
             if theme=='material_dark':
                 time.sleep(2); before=metrics(child.proc.pid);host_before=metrics(session.compositor.proc.pid);time.sleep(args.idle_seconds);after=metrics(child.proc.pid);host_after=metrics(session.compositor.proc.pid)
                 report['compositor_idle']={'pss_bytes':host_after['pss_bytes'],'cpu_ticks':host_after['cpu_ticks']-host_before['cpu_ticks'],'interval_seconds':args.idle_seconds}

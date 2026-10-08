@@ -1,0 +1,9 @@
+ts=2026-10-08T18:38:22Z pid=301717 info(greeter): event=greeter-active-output connector=HEADLESS-2
+ts=2026-10-08T18:38:22Z pid=301717 info(greeter): event=greeter-form ready=false
+ts=2026-10-08T18:38:22Z pid=301717 info(greeter): event=greeter-outputs interactive=1
+ts=2026-10-08T18:38:22Z pid=301717 info(greeter): event=greeter-account count=2 selected=0 manual=false
+ts=2026-10-08T18:38:22Z pid=301717 info(greeter): event=greeter-selection desktop=wayland:pearl.desktop
+ts=2026-10-08T18:38:22Z pid=301717 info(greeter): event=greeter-selection desktop=wayland:pearl.desktop
+ts=2026-10-08T18:38:22Z pid=301717 info(greeter): event=greeter-form ready=true
+ts=2026-10-08T18:38:22Z pid=301717 info(greeter): event=greeter-ready sessions=2
+ts=2026-10-08T18:38:23Z pid=301717 info(greeter): event=greeter-form ready=false

@@ -293,6 +293,7 @@ class GreeterInstall(unittest.TestCase):
             self.assertTrue((payload/name).is_file(), name)
         config = json.loads((payload/'etc/pearl/greeter.json').read_text())
         self.assertTrue(config['allow_uwsm'])
+        self.assertTrue(config['password_first'])
         self.assertEqual(config['default_session'], 'wayland:aqueous.desktop')
         self.assertFalse((payload/'etc/greetd').exists())
         self.assertFalse((payload/'etc/pearl/greetd.toml').exists())

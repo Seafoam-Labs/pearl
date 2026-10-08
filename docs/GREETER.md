@@ -147,7 +147,7 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `allow_uwsm` | Defaults true; permits UWSM-managed sessions. Set false to disable entries that directly invoke `uwsm`; use `allow` to constrain the catalog |
 | `x11` | Defaults false; enabling also requires startx and the packaged X11 adapter, plus distribution/VM verification |
 | `accounts`, `power`, `screen_reader` | Account discovery, permitted logind controls and fixed Orca launcher |
-| `password_first` | Defaults false. Enable only when the administrator has verified that the first PAM input question is a password; allows password pre-entry and one Sign in action |
+| `password_first` | Defaults true for standard password-first PAM stacks; accepts a password immediately and signs in with one Enter or Sign in action. Set false for custom stacks that request another credential first |
 | `fingerprint_hint` | Optional generic fingerprint guidance; defaults off and does not enable authentication or inspect enrollment |
 | `auth_timeout_seconds` | 30–300 seconds for the absolute attempt deadline and input inactivity; transport/cancellation and handoff deadlines are separately bounded |
 
@@ -189,15 +189,28 @@ Authentication timeouts are shown explicitly when the greeter returns to selecti
 The [user selection and password entry implementation](GREETER_LOGIN_FORM_IMPLEMENTATION_PLAN.md)
 keeps User, Password and Desktop session together in the initial card. Known
 users use the dropdown; manual entry adds a labeled Username field. Changing a
-user, username or desktop, and refreshing discovery, clears password input.
+user or username, and refreshing discovery, clears password input. Changing only
+the desktop preserves an unsubmitted password. Account changes immediately apply
+the remembered session (when enabled), with fallback to the configured default.
+An explicit desktop selection remains selected until the account changes.
+Username and response length validation update Sign in readiness as you type;
+authentication starts only when you submit.
 
-With `password_first: false`, the visible password field is disabled with
-**Available when requested** until PAM asks for input. With `password_first: true`,
-it accepts a password immediately; one Sign in action starts authentication and
-sends that value once to the first secret question. Passive instructions are
-acknowledged normally. A visible question arriving first discards the queued
-password; every later question requires fresh input in the same card. Prompt
-text is never used to guess which question asks for a password.
+With the default `password_first: true`, the password field accepts input
+immediately. Enter and Sign in share one submission path: validate the displayed
+selection, start authentication, send the password once to the first secret
+question, and launch the selected desktop after success. User, password and
+session controls stay visible during authentication; editing is temporarily
+locked. Passive instructions update automatically in the same card.
+
+Custom PAM stacks that request a PIN, code or another credential before the
+password must explicitly set `password_first: false`. This compatibility mode
+keeps the password field disabled with **Available when requested** until PAM
+asks for input. A visible question arriving first discards any queued password;
+every later question requires fresh input in the same card. Prompt text is never
+used to guess which question asks for a password. Authentication failure clears
+the password, preserves the user and selected session, and focuses Password for
+another attempt.
 
 A blank initial field starts authentication without queuing an empty response,
 which supports fingerprint-only login. If PAM requests an empty password, submit
@@ -206,11 +219,18 @@ wiped on consumption, cancellation, timeout, failure and handoff. Moving the
 card to another monitor preserves one pending attempt while clearing unsent
 widget input.
 
-For a verified password-first installation, add `"password_first": true` to the
-existing root-owned `/etc/pearl/greeter.json` and restart the greeter when it is
-safe to end its current attempt. Leave the default false for policies that ask
-for a PIN, code or another response first. The packaged setting remains false;
-private fake-greetd tests do not establish the deployed PAM prompt order.
+On upgrade, configurations that omit `password_first` automatically use the new
+true default. The packaged configuration also sets it to true. Pacman preserves
+modified `/etc/pearl/greeter.json` files: if an existing file explicitly contains
+`"password_first": false`, use `sudoedit /etc/pearl/greeter.json` to change it to
+true for a standard password-first PAM stack, and merge any desired `.pacnew`
+changes. Keep false for custom code-first stacks. The package upgrade notice
+explains this migration; it does not overwrite an explicit authentication policy.
+Changes take effect the next time the greeter starts.
+
+Private tests exercise the default form and prompt sequencing using fake greetd.
+They do not establish successful authentication with real account credentials;
+real greetd/PAM login and desktop handoff remain deployment acceptance checks.
 
 See the [interactive design mockup](mockups/greeter-login/index.html) and
 [native validation record](../artifacts/greeter-login/README.md).

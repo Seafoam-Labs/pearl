@@ -25,8 +25,9 @@ pub const Config = struct {
     x11: bool = false,
     remember_session: bool = false,
     accounts: bool = true,
-    // Administrator declares the first PAM input question to be a password.
-    password_first: bool = false,
+    // Standard login stacks ask for a password first. Custom code-first stacks
+    // can explicitly opt into the prompt-driven compatibility flow.
+    password_first: bool = true,
     power: bool = true,
     screen_reader: bool = false,
     fingerprint_hint: bool = false,

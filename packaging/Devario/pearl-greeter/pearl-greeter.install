@@ -48,6 +48,9 @@ post_upgrade() {
     _provision_pearl_greeter || return 1
     _install_greetd_config || return 1
     echo '==> Pearl Greeter updated; original greetd config remains in /etc/greetd/config.toml.bak.'
+    echo '    Password entry is now enabled before Sign in by default.'
+    echo '    If your preserved /etc/pearl/greeter.json has password_first: false, set it to true for one-action password login.'
+    echo '    Keep false only for custom PAM stacks that request another credential before the password.'
 }
 
 pre_remove() {

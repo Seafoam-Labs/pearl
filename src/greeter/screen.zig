@@ -89,6 +89,7 @@ const Screen = struct {
     status: u8 = 1,
     pending_password: passwords.Pending = .{},
     focused_prompt: u64 = 0,
+    last_ready: ?bool = null,
     fn z(text: []const u8) [:0]u8 {
         return a.dupeZ(u8, text) catch unreachable;
     }
@@ -114,7 +115,29 @@ const Screen = struct {
         return .{ .username = std.mem.span(self.username.as(gtk.Editable).getText()), .desktop = std.mem.sliceTo(&self.selected_id, 0), .fingerprint = self.selected_fingerprint, .job = self.job_generation };
     }
     fn readyMessage(self: *Screen) void {
-        self.setMessage(if (self.config.password_first) "Enter your password to sign in." else "Choose your account and desktop.");
+        const user = std.mem.span(self.username.as(gtk.Editable).getText());
+        if (user.len == 0) {
+            self.setMessage("Enter your username to sign in.");
+        } else if (!@import("protocol.zig").validText(user, 256)) {
+            self.setMessage("Enter a username (maximum 256 UTF-8 bytes).");
+        } else if (self.selected_id[0] == 0) {
+            self.setMessage("Select an available desktop.");
+        } else if (!@import("protocol.zig").validText(std.mem.span(self.entry.as(gtk.Editable).getText()), 4096)) {
+            self.setMessage("Password is too long (maximum 4096 UTF-8 bytes).");
+        } else {
+            self.setMessage(if (self.config.password_first) "Enter your password and sign in." else "Choose your account and desktop.");
+        }
+    }
+    fn updateReadiness(self: *Screen) void {
+        const c = &self.client.controller;
+        const idle = c.state == .idle and self.job == null and self.pending_power == null and !self.power.pending and !self.power.completed;
+        const user = std.mem.span(self.username.as(gtk.Editable).getText());
+        const valid_user = user.len > 0 and @import("protocol.zig").validText(user, 256);
+        const valid_response = @import("protocol.zig").validText(std.mem.span(self.entry.as(gtk.Editable).getText()), 4096);
+        const ready = valid_response and ((idle and valid_user and self.selected_id[0] != 0) or c.needsInput());
+        self.button.as(gtk.Widget).setSensitive(@intFromBool(ready));
+        if (options.test_hooks and self.last_ready != ready) log.info("event=greeter-form ready={}", .{ready});
+        self.last_ready = ready;
     }
     fn changed(context: *anyopaque) void {
         const self: *Screen = @ptrCast(@alignCast(context));
@@ -200,7 +223,7 @@ const Screen = struct {
         w.name(self.entry.as(gtk.Widget), if (secret) self.client.response.z() else "Password");
         self.button.setLabel(if (secret) "Continue" else "Sign in");
         self.button.as(gtk.Widget).setVisible(@intFromBool(c.state == .idle or secret));
-        self.button.as(gtk.Widget).setSensitive(@intFromBool((idle and self.selected_id[0] != 0) or secret));
+        self.updateReadiness();
         self.cancel_button.as(gtk.Widget).setVisible(@intFromBool(c.state != .idle or self.job != null));
         self.cancel_button.as(gtk.Widget).setSensitive(@intFromBool((c.state != .idle or self.job != null) and c.state != .cancelling and !c.start_submitted));
         self.reboot_button.as(gtk.Widget).setSensitive(@intFromBool(self.power.reboot and !c.start_submitted and self.pending_power == null));
@@ -234,7 +257,9 @@ const Screen = struct {
     fn selected(_: *object.Object, _: *object.ParamSpec, self: *Screen) callconv(.c) void {
         if (self.selecting or self.client.controller.state != .idle or self.job != null) return;
         self.selected_explicitly = true;
-        self.clear();
+        // An unsubmitted password belongs to the account, not a desktop.
+        // The final desktop is bound into the attempt only on submission.
+        self.pending_password.clear();
         self.choose(self.chooser.getSelected());
         self.update();
     }
@@ -255,6 +280,7 @@ const Screen = struct {
         self.selected_kind = @splat(0);
         @memcpy(self.selected_kind[0..e.kind.len], e.kind);
         self.readyMessage();
+        if (options.test_hooks) log.info("event=greeter-selection desktop={s}", .{e.id});
     }
     fn selectedAccount(_: *object.Object, _: *object.ParamSpec, self: *Screen) callconv(.c) void {
         if (self.selecting or self.client.controller.state != .idle) return;
@@ -262,6 +288,7 @@ const Screen = struct {
         self.clear();
         self.applyAccount();
         self.readyMessage();
+        self.update();
         self.focusAccount();
     }
     fn applyAccount(self: *Screen) void {
@@ -272,16 +299,47 @@ const Screen = struct {
         if (options.test_hooks) log.info("event=greeter-account count={d} selected={d} manual={}", .{ self.account_count, n, !known });
     }
     fn focusAccount(self: *Screen) void {
-        _ = (if (self.username_field.as(gtk.Widget).getVisible() != 0) self.username.as(gtk.Widget) else if (self.config.password_first) self.entry.as(gtk.Widget) else self.account_chooser.as(gtk.Widget)).grabFocus();
+        const user = std.mem.span(self.username.as(gtk.Editable).getText());
+        const manual = self.username_field.as(gtk.Widget).getVisible() != 0;
+        _ = (if (manual and (user.len == 0 or !self.config.password_first)) self.username.as(gtk.Widget) else if (self.config.password_first) self.entry.as(gtk.Widget) else self.account_chooser.as(gtk.Widget)).grabFocus();
+    }
+    fn selectPreferredSession(self: *Screen) void {
+        const catalog = if (self.catalog) |*value| value else return;
+        if (self.selected_explicitly) return;
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const user = std.mem.span(self.username.as(gtk.Editable).getText());
+        const remembered = if (self.config.remember_session) @import("state.zig").remembered(arena.allocator(), user) else null;
+        const wanted = catalog.selected(self.config, remembered);
+        var index: c_uint = gtk.INVALID_LIST_POSITION;
+        if (wanted) |value| for (catalog.entries.items, 0..) |entry, i| {
+            if (std.mem.eql(u8, entry.id, value.id)) {
+                index = @intCast(i);
+                break;
+            }
+        };
+        self.selecting = true;
+        self.chooser.setSelected(index);
+        self.selecting = false;
+        self.choose(index);
     }
     fn usernameChanged(_: *gtk.Editable, self: *Screen) callconv(.c) void {
         self.clear();
+        if (self.selecting) return;
+        self.selected_explicitly = false;
+        self.selectPreferredSession();
+        self.readyMessage();
+        self.update();
     }
     fn submit(_: *gtk.Button, self: *Screen) callconv(.c) void {
         self.submitCurrent();
     }
     fn activity(_: *gtk.Editable, self: *Screen) callconv(.c) void {
         self.client.activity();
+        // Entry clearing also emits changed during submission; do not interrupt
+        // the status of an attempt that already owns the submitted password.
+        if (self.client.controller.state == .idle and self.job == null and self.pending_password.phase == .empty) self.readyMessage();
+        self.updateReadiness();
     }
     fn entered(_: *gtk.Entry, self: *Screen) callconv(.c) void {
         self.submitCurrent();
@@ -301,20 +359,6 @@ const Screen = struct {
                 self.clear();
                 self.setMessage("Select an available desktop.");
                 return;
-            }
-            if (self.config.remember_session and !self.selected_explicitly and self.catalog != null) {
-                var arena = std.heap.ArenaAllocator.init(a);
-                defer arena.deinit();
-                const remembered = @import("state.zig").remembered(arena.allocator(), user);
-                if (self.catalog.?.selected(self.config, remembered)) |wanted| {
-                    for (self.catalog.?.entries.items, 0..) |e, i| if (std.mem.eql(u8, e.id, wanted.id)) {
-                        self.selecting = true;
-                        self.chooser.setSelected(@intCast(i));
-                        self.selecting = false;
-                        self.choose(@intCast(i));
-                        break;
-                    };
-                }
             }
             self.auth_error = false;
             self.service_error = false;
@@ -601,7 +645,9 @@ const Screen = struct {
         if (self.catalog) |*old| old.deinit();
         self.catalog = next;
         self.selecting = false;
+        if (!std.mem.eql(u8, previous_user, std.mem.span(self.username.as(gtk.Editable).getText()))) self.selected_explicitly = false;
         self.choose(index);
+        self.selectPreferredSession();
         if (job.image) |image| {
             if (self.texture) |texture| texture.unref();
             self.texture = gdk.Texture.newForPixbuf(image);
