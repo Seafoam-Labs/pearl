@@ -60,6 +60,15 @@ def main():
             for n in range(24):
                 offer('text', 'entry-'+str(n)); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']=='entry-'+str(n))
             assert len(clip()['entries']) == 20
+            # A re-copied duplicate is promoted, so it survives the eviction that drops the least-recently used tail.
+            recopied = clip()['entries'][-1]['preview']
+            offer('text',recopied); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']==recopied)
+            lru = clip()['entries'][-1]['preview']
+            offer('text','entry-24'); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']=='entry-24')
+            previews = [e['preview'] for e in clip()['entries']]
+            assert previews[:2]==['entry-24',recopied] and len(previews)==20, previews
+            assert lru not in previews, previews
+            checks['re-copied-duplicates-are-promoted-and-survive-eviction'] = True
             victim = clip()['entries'][0]['id']; ctl(s,args.ctl,'clipboard','delete','--generation',str(victim)); assert len(clip()['entries']) == 19
             assert ctl(s,args.ctl,'clipboard','select','--generation',str(victim),code=4)['err']['code'] == 'Stale'
             checks['bounded-history-and-stale-entry-actions'] = True

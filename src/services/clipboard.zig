@@ -168,15 +168,12 @@ pub const Clipboard = struct {
         std.crypto.secureZero(u8, bytes);
         a.free(bytes);
     }
-    /// Promote a retained entry to most-recent in place, keeping its id so pending
-    /// generation-scoped actions stay valid; eviction pops from the tail, so a copy
-    /// that is still in use is the last entry eligible to fall out.
+    /// Promote a retained entry to most-recent, keeping its id so pending
+    /// generation-scoped actions stay valid. Eviction pops the tail, so a copy still
+    /// in use falls out last. Removing first frees the slot the insert needs.
     fn bumpToFront(self: *Clipboard, index: usize) void {
         if (index == 0) return;
-        const entry = self.entries.items[index];
-        var i = index;
-        while (i > 0) : (i -= 1) self.entries.items[i] = self.entries.items[i - 1];
-        self.entries.items[0] = entry;
+        self.entries.insertAssumeCapacity(0, self.entries.orderedRemove(index));
     }
     pub fn delete(self: *Clipboard, id: u64) !void {
         for (self.entries.items, 0..) |e, i| if (e.id == id) {
@@ -230,7 +227,6 @@ pub const Clipboard = struct {
         if (self.locked) return error.Locked;
         const device = self.device orelse return error.Unavailable;
         for (self.entries.items, 0..) |e, i| if (e.id == id) {
-            self.bumpToFront(i);
             const bytes = try a.dupe(u8, e.bytes);
             errdefer wipe(bytes);
             const source = try self.manager.?.createDataSource();
@@ -242,6 +238,8 @@ pub const Clipboard = struct {
             self.owned = .{ .id = e.id, .bytes = bytes, .kind = e.kind };
             device.setSelection(source);
             self.display.flush();
+            // Promotion follows publication: a copy that cannot start must leave the order alone.
+            self.bumpToFront(i);
             self.message = "Copied — paste in the destination application";
             self.changed(self.context);
             return;
