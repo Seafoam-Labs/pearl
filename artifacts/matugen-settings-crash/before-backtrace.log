@@ -1,0 +1,54 @@
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+[New Thread 0x7ffff07ff6c0 (LWP 363565) (id 2)]
+[New Thread 0x7fffef7fe6c0 (LWP 363566) (id 3)]
+[New Thread 0x7fffee7fd6c0 (LWP 363567) (id 4)]
+[New Thread 0x7fffed7fc6c0 (LWP 363568) (id 5)]
+ts=2026-10-08T18:48:58Z pid=363562 info(settings): event=settings-launch activation_context=false
+[New Thread 0x7fffdffff6c0 (LWP 363569) (id 6)]
+ts=2026-10-08T18:48:58Z pid=363562 info(settings): event=settings-instance-ready session_hash=18263bc6ba5b1900
+ts=2026-10-08T18:48:58Z pid=363562 info(settings): event=settings-page page=overview
+ts=2026-10-08T18:48:58Z pid=363562 info(settings): event=settings-page page=appearance
+[New Thread 0x7fffdeffe6c0 (LWP 363570) (id 7)]
+[New Thread 0x7fffddffd6c0 (LWP 363571) (id 8)]
+[New Thread 0x7fffcbfff6c0 (LWP 363572) (id 9)]
+[New Thread 0x7fffcaffe6c0 (LWP 363573) (id 10)]
+[New Thread 0x7fffc9ffd6c0 (LWP 363574) (id 11)]
+ts=2026-10-08T18:48:58Z pid=363562 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-08T18:48:58Z pid=363562 info(settings): event=settings-page page=appearance
+
+Thread 1 "pearl-settings-" received signal SIGSEGV, Segmentation fault.
+0x00007ffff7ef5cc4 in g_type_check_instance_is_fundamentally_a () from /usr/lib/libgobject-2.0.so.0
+#0  0x00007ffff7ef5cc4 in g_type_check_instance_is_fundamentally_a () from /usr/lib/libgobject-2.0.so.0
+#1  0x00007ffff7ecddb9 in g_object_notify_by_pspec () from /usr/lib/libgobject-2.0.so.0
+#2  0x00007ffff7eb9eee in g_cclosure_marshal_VOID__UINTv () from /usr/lib/libgobject-2.0.so.0
+#3  0x00007ffff7eed77c in ?? () from /usr/lib/libgobject-2.0.so.0
+#4  0x00007ffff7eedcc9 in g_signal_emit_valist () from /usr/lib/libgobject-2.0.so.0
+#5  0x00007ffff7eedd9c in g_signal_emit () from /usr/lib/libgobject-2.0.so.0
+#6  0x00007ffff71cb199 in ?? () from /usr/lib/libgtk-4.so.1
+#7  0x00007ffff733ed56 in ?? () from /usr/lib/libgtk-4.so.1
+#8  0x00007ffff730f905 in gtk_widget_activate_action () from /usr/lib/libgtk-4.so.1
+#9  0x00007ffff7ebc02b in g_closure_invoke () from /usr/lib/libgobject-2.0.so.0
+#10 0x00007ffff7ee98ff in ?? () from /usr/lib/libgobject-2.0.so.0
+#11 0x00007ffff7eebdb9 in g_signal_emitv () from /usr/lib/libgobject-2.0.so.0
+#12 0x00007ffff7254cc0 in ?? () from /usr/lib/libgtk-4.so.1
+#13 0x00007ffff725a607 in ?? () from /usr/lib/libgtk-4.so.1
+#14 0x00007ffff7304355 in ?? () from /usr/lib/libgtk-4.so.1
+#15 0x00007ffff71cfd8f in ?? () from /usr/lib/libgtk-4.so.1
+#16 0x00007ffff71d09eb in ?? () from /usr/lib/libgtk-4.so.1
+#17 0x00007ffff75dae07 in ?? () from /usr/lib/libgtk-4.so.1
+#18 0x00007ffff76bc01a in ?? () from /usr/lib/libgtk-4.so.1
+#19 0x00007ffff7eed77c in ?? () from /usr/lib/libgobject-2.0.so.0
+#20 0x00007ffff7eedcc9 in g_signal_emit_valist () from /usr/lib/libgobject-2.0.so.0
+#21 0x00007ffff7eedd9c in g_signal_emit () from /usr/lib/libgobject-2.0.so.0
+#22 0x00007ffff76bdeeb in ?? () from /usr/lib/libgtk-4.so.1
+#23 0x00007ffff75f259a in ?? () from /usr/lib/libgtk-4.so.1
+#24 0x00007ffff6ae4c35 in ?? () from /usr/lib/libglib-2.0.so.0
+#25 0x00007ffff6ae6068 in ?? () from /usr/lib/libglib-2.0.so.0
+#26 0x00007ffff6ae61c2 in g_main_context_iteration () from /usr/lib/libglib-2.0.so.0
+#27 0x00007ffff6cfaffe in g_application_run () from /usr/lib/libgio-2.0.so.0
+#28 0x00000000010d262d in settings.application.run (target=...) at /home/zoey/Pearl/src/settings/application.zig:306
+#29 0x0000000001078e49 in settings_main.main (init=...) at settings_main.zig:20
+#30 start.callMain () at /usr/lib/zig/std/start.zig:737
+#31 start.callMainWithArgs () at /usr/lib/zig/std/start.zig:638
+#32 start.main (c_argc=3, c_argv=0x7fffffffe5b8, c_envp=0x7fffffffe5d8) at /usr/lib/zig/std/start.zig:663

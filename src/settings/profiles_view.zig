@@ -231,6 +231,11 @@ pub const View = struct {
             if (choice.mode == .profile and id.len == 0) return error.ProfileSelectionRequired;
             try p.matugen.applications.map.put(alloc, @tagName(app), choice);
         }
+        // edit() synchronously refreshes the views. Keep the active dropdown's
+        // model alive until GTK finishes emitting its selection notification;
+        // the next editor update can refill from the acknowledged draft.
+        self.filling = true;
+        defer self.filling = false;
         try self.editor.edit(try std.json.Stringify.valueAlloc(alloc, p, .{ .whitespace = .indent_2 }));
     }
     pub fn update(self: *View) void {
@@ -270,7 +275,7 @@ pub const View = struct {
             self.requested = true;
         }
         const text = self.editor.text();
-        if (self.shown == null or !std.mem.eql(u8, self.shown.?, text)) self.fill(text) catch |err| self.status.setText(@errorName(err));
+        if (!self.filling and (self.shown == null or !std.mem.eql(u8, self.shown.?, text))) self.fill(text) catch |err| self.status.setText(@errorName(err));
         self.showStatus() catch |err| self.status.setText(@errorName(err));
         self.enabled.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable()));
         self.status.setText(if (self.editor.application_command and self.editor.theme_error.len > 0) self.editor.theme_error.z() else self.editor.application_summary.z());

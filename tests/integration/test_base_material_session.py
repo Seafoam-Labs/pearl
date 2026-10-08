@@ -36,6 +36,24 @@ def main():
         assert all(t['state'] not in ['failed','conflict','unsupported','unavailable'] for t in state['applications']['targets']),state
         capture(s,'material-defaults-dark',output['name'])
         checks.append('defaults-apply-and-visible-target-controls')
+        # Use the real dropdown popup: replacing its model synchronously from
+        # notify::selected used to free GTK's active selection and crash here.
+        for application in ['zed','kitty']:
+            click(s,ipc,f'applications.{application}.mode');keys(s,'Home','Down','Return')
+            click(s,ipc,f'applications.{application}.profile');keys(s,'Home','Down','Return')
+            ready(s,ipc)
+            choice=json.loads(peer.document())['matugen']['applications'][application]
+            assert choice==dict(mode='profile',profile_id=f'pearl.material.{application}'),choice
+        click(s,ipc,'apply');state=settled(peer);ready(s,ipc)
+        for application in ['zed','kitty']:
+            target=next(t for t in state['applications']['targets'] if t['application']==application)
+            assert target['profile']==f'pearl.material.{application}',target
+            assert target['state'] not in ['failed','conflict','unsupported','unavailable'],target
+        click(s,ipc,'applications.zed.mode');keys(s,'End','Return');ready(s,ipc)
+        assert json.loads(peer.document())['matugen']['applications']['zed']['mode']=='off'
+        click(s,ipc,'discard');ready(s,ipc)
+        assert json.loads(peer.document())['matugen']['applications']['zed']['mode']=='profile'
+        checks.append('profile-dropdown-selection-apply-and-discard')
         # Named colors are consumed by fresh real GTK3/4 processes, not inferred from files.
         for variant,rgb in [('dark',(20,18,24)),('light',(253,247,255))]:
             if variant=='light':

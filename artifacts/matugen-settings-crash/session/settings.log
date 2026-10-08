@@ -1,0 +1,17 @@
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+[New Thread 0x7ffff07ff6c0 (LWP 365719) (id 2)]
+[New Thread 0x7fffef7fe6c0 (LWP 365720) (id 3)]
+[New Thread 0x7fffee7fd6c0 (LWP 365721) (id 4)]
+[New Thread 0x7fffed7fc6c0 (LWP 365722) (id 5)]
+ts=2026-10-08T18:49:57Z pid=365716 info(settings): event=settings-launch activation_context=false
+[New Thread 0x7fffdffff6c0 (LWP 365723) (id 6)]
+ts=2026-10-08T18:49:57Z pid=365716 info(settings): event=settings-instance-ready session_hash=289678eb37233b22
+ts=2026-10-08T18:49:57Z pid=365716 info(settings): event=settings-page page=overview
+ts=2026-10-08T18:49:57Z pid=365716 info(settings): event=settings-page page=appearance
+[New Thread 0x7fffdeffe6c0 (LWP 365724) (id 7)]
+[New Thread 0x7fffddffd6c0 (LWP 365725) (id 8)]
+[New Thread 0x7fffcbfff6c0 (LWP 365726) (id 9)]
+[New Thread 0x7fffcaffe6c0 (LWP 365727) (id 10)]
+ts=2026-10-08T18:49:57Z pid=365716 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-08T18:49:57Z pid=365716 info(settings): event=settings-page page=appearance
