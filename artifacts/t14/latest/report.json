@@ -7,6 +7,9 @@
     "bounded-history-and-stale-entry-actions": true,
     "png-decode-copy-truncation-and-dimension-bomb": true,
     "aggregate-byte-budget-and-metadata-stripping": true,
+    "clipboard-toggle-opens-a-centered-launcher-style-panel": true,
+    "clipboard-filter-arrows-enter-delete-and-escape": true,
+    "clipboard-row-buttons-and-toggle-arbitration": true,
     "keyboard-capture-hides-panel-and-shows-preview": true,
     "all-eight-output-transforms-match-reference": true,
     "fractional-scale-output-local-crops-use-actual-buffer-extents": true,
@@ -18,11 +21,11 @@
     "material-light-and-native-gtk-theme": true
   },
   "binaries": {
-    "pearl": "5373fcf38274f1d8847f856b85cf8b6c97d124dcecc29f50a4e9f1a56a03fbfc",
-    "ctl": "f008331c1b2d7de626a1741d7d6971793b49aa7807e219d55b030bab2b8d2d52",
-    "locker": "b34e17a93690222d6b9b392dbedffd4d52e530209260d3b86bf1f2ad522c0e61",
-    "pam_module": "0155b279724a62798876cecedfce987ed2bae276f1628f461aebcf3dcd4ae95b",
-    "producer": "79377dba01f34305506b6879c74c420ca5285d6753347c3e4209d9ea52ad768f"
+    "pearl": "871c1522ef80f1aac482ea40b07afadcfe701e76bd7ade68f00be33b12c7cfed",
+    "ctl": "ba7bf9c23b5a9649445b906aaa6bb4dbe108a416691ea434dc7b6ffff1a5a99d",
+    "locker": "c94312504cb465ef0cb86a53adbfc2406bac68ffb95fbd6b4f8f6d4fe4702d35",
+    "pam_module": "386382b691d4ad7a31e4bcf965b643ae1c128e597a57c7c474345e64989dbc20",
+    "producer": "11c29efef2330de2060e7542979d598d301b2fc1452a19e017bf7a3416e1145b"
   },
   "orientations": {
     "normal": {

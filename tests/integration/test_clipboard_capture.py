@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT/'scripts'))
 from pearl_session import PrivateSession, wait_for
 from t00 import Session as T00Session
-from test_surfaces import IPC, ctl, status, capture, clean
+from test_surfaces import IPC, click, ctl, status, capture, clean
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -87,6 +87,66 @@ def main():
             output = status(s,args.ctl)['outputs'][0]; connector = output['connector']
             ctl(s,args.ctl,'clipboard','show','--output',output['id']); time.sleep(.3); capture(s,'text-history',connector); ctl(s,args.ctl,'popup','hide')
             ctl(s,args.ctl,'capture','show','--output',output['id']); time.sleep(.4); capture(s,'clipboard-capture-panel',connector); ctl(s,args.ctl,'popup','hide'); time.sleep(.2)
+            # A keybind-shaped panel: centered, filterable, keyboard and pointer driven.
+            oid=output['id']
+            def pane(): return status(s,args.ctl)['popup']
+            def panel(): return ctl(s,args.ctl,'aqueous','status','--text','test-clipboard-capture')['result']
+            def shown(labels): return until(panel,lambda v:[r['label'] for r in v['rows']]==labels)
+            def control(): return next(x for x in status(s,args.ctl)['outputs'] if x['id']==oid)
+            def press(*keys): s.run(['wtype','-s','120',*[arg for key in keys for arg in ('-k',key)],'-s','120'])
+            def point(rect): o=control(); click(s,o['usable']['x']+rect['x']+rect['width']/2,o['usable']['y']+rect['y']+rect['height']/2,ipc.outputs())
+            empty()
+            for text in ('alpha one','beta two','alpha three'):
+                offer('text',text); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']==text)
+            producer.stop()
+            assert pane() is None
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid)
+            pop=until(pane,lambda v:v and v['pane']=='clipboard_capture'); r=pop['rect']; o=control()
+            assert (r['width'],r['height'])==(600,560), r
+            for axis,extent in (('x','width'),('y','height')):
+                assert abs(r[axis]+o['bounds'][axis]-(o['usable'][axis]+(o['usable'][extent]-r[extent])//2))<=1,(r,o)
+            view=shown(['alpha three','beta two','alpha one'])
+            assert view['selected']==0 and not view['hint_visible'], view
+            capture(s,'launcher-style-history',connector)
+            checks['clipboard-toggle-opens-a-centered-launcher-style-panel'] = True
+            # Typing filters, arrows move, Enter publishes through the real selection.
+            s.run(['wtype','--','alpha']); view=shown(['alpha three','alpha one'])
+            assert view['query']=='alpha' and view['selected']==0, view
+            press('Down'); assert until(panel,lambda v:v['selected']==1)['rows'][1]['label']=='alpha one'
+            press('Return'); until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
+            assert s.run(['wl-paste','--no-newline']).stdout=='alpha one'
+            # Delete removes the selected entry; Escape dismisses without touching it.
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['alpha three','beta two','alpha one'])
+            press('Delete'); until(clip,lambda v:[e['preview'] for e in v['entries']]==['beta two','alpha one'])
+            assert shown(['beta two','alpha one'])['selected']==0
+            press('Escape'); until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
+            assert [e['preview'] for e in clip()['entries']]==['beta two','alpha one']
+            checks['clipboard-filter-arrows-enter-delete-and-escape'] = True
+            # A filter that matches nothing keeps the history and says so.
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two','alpha one'])
+            s.run(['wtype','--','zzz'])
+            view=until(panel,lambda v:v['query']=='zzz' and not v['rows'])
+            assert view['hint_visible'] and view['hint'], view
+            press('Escape'); until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
+            # Row buttons work under the pointer without also activating the row.
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two','alpha one'])
+            point(until(panel,lambda v:len(v['rows'])==2 and v['rows'][1]['copy'])['rows'][1]['copy'])
+            until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
+            assert s.run(['wl-paste','--no-newline']).stdout=='alpha one'
+            assert [e['preview'] for e in clip()['entries']]==['beta two','alpha one']
+            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][0]['id']))
+            assert s.run(['wl-paste','--no-newline']).stdout=='beta two'
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two','alpha one'])
+            point(until(panel,lambda v:len(v['rows'])==2 and v['rows'][1]['remove'])['rows'][1]['remove'])
+            until(clip,lambda v:[e['preview'] for e in v['entries']]==['beta two'])
+            assert pane() is not None and s.run(['wl-paste','--no-newline']).stdout=='beta two'
+            capture(s,'launcher-style-after-row-delete',connector)
+            # Toggling replaces another pane instead of stacking a second popup.
+            ctl(s,args.ctl,'launcher','show','--output',oid); until(pane,lambda v:v and v['pane']=='launcher')
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); until(pane,lambda v:v and v['pane']=='clipboard_capture')
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid)
+            until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
+            checks['clipboard-row-buttons-and-toggle-arbitration'] = True
             def target(): return next(o for o in status(s,args.ctl)['outputs'] if o['connector']==connector)
             def take(region=None):
                 old = shot()['generation']; o=target()
@@ -144,6 +204,8 @@ def main():
             until(lambda:ctl(s,args.ctl,'lifecycle','status')['result'],lambda v:v['lock']['ready'] and v['lock']['locked'])
             offer('text','copied-while-locked'); time.sleep(.2); assert not clip()['entries']
             assert ctl(s,args.ctl,'capture','output',code=4)['err']['code']=='Locked'
+            assert ctl(s,args.ctl,'clipboard','toggle',code=4)['err']['code']=='Locked'
+            assert ctl(s,args.ctl,'clipboard','show',code=4)['err']['code']=='Locked'
             s.run(['wtype','-s','200','fixture-user','-k','Return','-s','300','fixture-secret','-k','Return','-s','200'])
             until(clip,lambda v:not v['locked'] and v['available']); time.sleep(.3); assert clip()['entries']==[]
             offer('text','after-unlock'); until(clip,lambda v:len(v['entries'])==1)
@@ -155,7 +217,9 @@ def main():
             s.run(['wlr-randr','--output',connector,'--on']); time.sleep(.5); take()
             checks['output-removal-and-recovery'] = True
             # Repeated presentation/disposal must not leave signal callbacks pointing at old views.
-            for _ in range(8): ctl(s,args.ctl,'clipboard','show'); ctl(s,args.ctl,'popup','hide')
+            for _ in range(8):
+                ctl(s,args.ctl,'clipboard','show'); until(pane,lambda v:v and v['pane']=='clipboard_capture')
+                ctl(s,args.ctl,'clipboard','toggle'); until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
             checks['panel-open-close-lifetime'] = True
             # Settings apply the same theme path to this new panel.
             prefs=until(lambda:ctl(s,args.ctl,'preferences','status')['result'],lambda v:not v['busy'])

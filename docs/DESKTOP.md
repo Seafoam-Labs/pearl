@@ -215,7 +215,10 @@ it live; unavailable artwork uses the bundled fallback. See
 and per-output behavior. Type to search,
 use Up/Down to select, Enter to open and Escape to dismiss. Pointer activation
 also works. The clock opens a local calendar; the settings icon opens the
-control center. Opening another principal popup replaces the previous one.
+control center. The `clipboard` item opens the clipboard & capture panel, also
+centered and keyboard-first; its keys are in
+[clipboard navigation](CLIPBOARD_CAPTURE.md#history-navigation). Opening
+another principal popup replaces the previous one.
 Backdrop clicks dismiss without activating an application underneath.
 
 Workspaces are identified by their Aqueous runtime IDs. Number/name is only the
@@ -419,13 +422,13 @@ persistent configuration save.
 
 T05's bounded, same-UID, per-session socket and exit codes remain in force.
 New flat operations are `launcher_show`, `launcher_hide`, `launcher_toggle`,
-`control_show`, `control_toggle`, `calendar_toggle`, `bar_groups`, `layout_get`,
-`layout_set` and `overview_toggle`. Pane/overview operations accept optional
-`output`; `control_show/toggle` also accept validated optional `page`;
-`launcher_hide` accepts none. `bar_groups` requires `output`, `left`,
-`center`, `right`. `layout_get` requires `output`; `layout_set` additionally
-requires `layout`. Existing `popup_show/toggle` are launcher aliases;
-`popup_hide` dismisses whichever principal pane is open.
+`control_show`, `control_toggle`, `calendar_toggle`, `clipboard_toggle`,
+`bar_groups`, `layout_get`, `layout_set` and `overview_toggle`. Pane/overview
+operations accept optional `output`; `control_show/toggle` also accept validated
+optional `page`; `launcher_hide` accepts none. `bar_groups` requires `output`,
+`left`, `center`, `right`. `layout_get` requires `output`; `layout_set`
+additionally requires `layout`. Existing `popup_show/toggle` are launcher
+aliases; `popup_hide` dismisses whichever principal pane is open.
 
 Layout and overview commands return `result: {"queued":true}`. This reports
 admission, not compositor completion. Inspect `status.layout` for layout reply,

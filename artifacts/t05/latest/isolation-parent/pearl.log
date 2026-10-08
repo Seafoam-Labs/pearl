@@ -1,12 +1,20 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-info(pearl): event=control-ready session=244033fbfb7ba9725561a832f4c8eb16
-info: event=app-index-ready entries=158 truncated=false
-info(pearl): event=stopping reason=control-quit pending=false
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-10-08T15:01:55Z pid=134376 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-08T15:01:55Z pid=134376 info(platform): event=blur-capability available=false
+ts=2026-10-08T15:01:55Z pid=134376 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-08T15:01:55Z pid=134376 info(pearl): event=ready mode=session
+ts=2026-10-08T15:01:55Z pid=134376 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:55Z pid=134376 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:55Z pid=134376 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-08T15:01:55Z pid=134376 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:55Z pid=134376 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-08T15:01:55Z pid=134376 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-08T15:01:55Z pid=134376 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-08T15:01:55Z pid=134376 info(pearl): event=settings-backend-ready session_hash=768dfb3abafb071b
+ts=2026-10-08T15:01:55Z pid=134376 info(pearl): event=control-ready session_hash=768dfb3abafb071b
+ts=2026-10-08T15:01:55Z pid=134376 info(desktop): event=app-index-ready entries=145 truncated=false
+ts=2026-10-08T15:01:55Z pid=134376 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-10-08T15:01:55Z pid=134376 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=5547 success=true
+ts=2026-10-08T15:02:03Z pid=134376 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-10-08T15:02:03Z pid=134376 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-08T15:02:03Z pid=134376 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-08T15:02:03Z pid=134376 info(pearl): event=stopped

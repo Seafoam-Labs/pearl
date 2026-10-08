@@ -1,9 +1,15 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-error: event=surface-error error=SessionDisplayMismatch
-error(pearl): event=session-error error=SessionDisplayMismatch
-info(pearl): event=stopping reason=session-error pending=false
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-08T15:01:58Z pid=134433 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-08T15:01:58Z pid=134433 info(platform): event=blur-capability available=false
+ts=2026-10-08T15:01:58Z pid=134433 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-08T15:01:58Z pid=134433 info(pearl): event=ready mode=session
+ts=2026-10-08T15:01:58Z pid=134433 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-08T15:01:58Z pid=134433 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:58Z pid=134433 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:58Z pid=134433 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:58Z pid=134433 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:58Z pid=134433 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-08T15:01:58Z pid=134433 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:58Z pid=134433 error(pearl): event=session-error error=SessionDisplayMismatch
+ts=2026-10-08T15:01:58Z pid=134433 info(pearl): event=stopping reason=session-error pending=false
+ts=2026-10-08T15:01:58Z pid=134433 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-08T15:01:58Z pid=134433 info(pearl): event=cleanup pending=false watched_objects=0

@@ -1182,7 +1182,7 @@ pub const Manager = struct {
                         s.tray.?.setBar(if (bar) |b| b.tray else null);
                         s.tray.?.update();
                     },
-                    .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested),
+                    .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested, dismissSurface),
                     .control => {
                         s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, controlTask, settingsNavigate, self.settings_page.?, window, .{ .audio = &self.audio, .power = &self.power, .night_light = &self.night_light, .network = &self.network, .bluetooth = &self.bluetooth, .lifecycle = &self.lifecycle, .auth = &self.auth });
                     },
@@ -1459,6 +1459,7 @@ pub const Manager = struct {
         }
         if (self.popup.?.running_apps) |view| view.focus();
         if (self.popup.?.launcher_picker) |view| _ = view.search.as(gtk.Widget).grabFocus();
+        if (self.popup.?.clipboard_capture) |view| view.focus();
         if (self.popup.?.launcher) |launcher| {
             if (self.popup.?.window.as(gtk.Widget).getFrameClock()) |clock| launcher.observeFrame(clock);
             _ = launcher.search.as(gtk.Widget).grabFocus();
@@ -1472,7 +1473,8 @@ pub const Manager = struct {
         const prefs = self.preferences.prefs().popup;
         const launcher = self.pane == .launcher or self.pane == .launcher_picker;
         const settings = self.pane == .settings or self.pane == .aqueous_settings;
-        const centered = (prefs.placement == .centered and self.pane != .tray) or launcher;
+        // Keybind panes are centered regardless of the popup placement preference.
+        const centered = (prefs.placement == .centered and self.pane != .tray) or launcher or self.pane == .clipboard_capture;
         var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else if (self.pane == .wallpapers or self.pane == .resources) 640 else 440), prefs.max_width);
         var height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else if (self.pane == .resources) 280 else 560), prefs.max_height);
         if (self.pane == .tray) {
@@ -1662,6 +1664,11 @@ pub const Manager = struct {
                 const preedit: [*:0]const u8 = if (std.mem.endsWith(u8, request.text.?, ":start")) "x" else "";
                 object.signalEmitByName(text.as(object.Object), "preedit-changed", preedit);
             }
+            return view.testReport(alloc, popup.window.as(gtk.Widget));
+        }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-clipboard-capture")) {
+            const popup = self.popup orelse return error.Unavailable;
+            const view = popup.clipboard_capture orelse return error.Unavailable;
             return view.testReport(alloc, popup.window.as(gtk.Widget));
         }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-launcher-picker")) {
@@ -1862,14 +1869,18 @@ pub const Manager = struct {
                 try self.session_services.act(request);
                 return "{\"queued\":true}";
             },
-            .notifications_toggle, .media_toggle, .tray_toggle => {
+            .notifications_toggle, .media_toggle, .tray_toggle, .clipboard_toggle => {
                 const pane: Bar.Pane = switch (request.op) {
                     .notifications_toggle => .notifications,
                     .media_toggle => .media,
+                    .clipboard_toggle => .clipboard_capture,
                     else => .tray,
                 };
                 const output = try self.selected(request.output);
-                if (self.popup != null and self.popup.?.output == output and self.pane == pane) self.hidePopup() else try self.showPane(output, pane);
+                if (self.popup != null and self.popup.?.output == output and self.pane == pane) {
+                    log.debug("event=popup-close-reason reason=pane-toggle", .{});
+                    self.hidePopup();
+                } else try self.showPane(output, pane);
             },
             .connectivity_action => {
                 if (request.service.? == .network) {
@@ -2206,6 +2217,10 @@ fn dismiss(context: *anyopaque) void {
     const self: *Manager = @ptrCast(@alignCast(context));
     log.debug("event=popup-close-reason reason=dismiss", .{});
     self.hidePopup();
+}
+fn dismissSurface(context: *anyopaque) void {
+    const s: *Surface = @ptrCast(@alignCast(context));
+    dismiss(s.manager);
 }
 fn layoutAction(context: *anyopaque, value: ?[]const u8) void {
     const s: *Surface = @ptrCast(@alignCast(context));

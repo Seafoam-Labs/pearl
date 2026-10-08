@@ -1,5 +1,70 @@
 # Pearl implementation progress
 
+## Clipboard & capture as a launcher-style centered panel, October 8, 2026
+
+The clipboard & capture pane now opens the way the launcher does: screen-centered
+regardless of `popup.placement`, focus in a history filter on open, and a
+`pearlctl clipboard toggle` operation that closes it on the second press, so an
+Aqueous keybind can drive it. Pearl still installs no keybindings of its own;
+the binding lives in Aqueous configuration and spawns `pearlctl`.
+
+The pane is not a new surface. It remains a pane of the shared popup layer
+surface, so the work was per-pane placement, focus and toggle plus a view
+rewrite:
+
+- `clipboard_toggle` joins the existing pane-toggle dispatch arm and the wire
+  schema's clipboard family (optional `output`); `clipboard show` and
+  `capture show` are unchanged, and `capture show` still ends with focus in the
+  region entry because it moves focus after the pane opens.
+- `positionPopup` centers `.clipboard_capture` the way it centers the launcher,
+  keeping the 600x560 size and the `popup.max_width/max_height` clamps.
+- The history view replaces its box of button cards with the launcher's list
+  shape: `StringList` + `SingleSelection` + `ListView` with a signal factory, a
+  `setSearchDelay(0)` filter entry named `clipboard-search`, capture-phase
+  Up/Down/Delete handling on the entry, and Enter through the entry's activate.
+  Enter or a single click on a row publishes through `Clipboard.select` and
+  dismisses; Delete removes without publishing. Rows keep their preview label,
+  160x96 PNG thumbnail and Copy/Delete buttons, so the pointer path survives.
+- Recycling: a row resolves its entry from the list item's current position,
+  because ListView reuses row widgets. `GtkSignalListItemFactory::teardown`
+  fires after GTK has disposed the row's children, so it only frees the
+  bookkeeping record; the button handlers are disconnected in `View.destroy`,
+  which runs before the surface's widget tree goes. Disconnecting them in
+  teardown aborted under `G_DEBUG=fatal-warnings` with `instance with invalid
+  (NULL) class pointer`, measured with a gdb run of the suite.
+- Filtering is a case-insensitive substring match over casefolded previews,
+  folded once per entry per model change and once per query edit.
+
+Docs: `docs/CLIPBOARD_CAPTURE.md` leads with the centered panel, a key contract
+table, the recommended Aqueous keybind and the reopen routes after a capture;
+`docs/DESKTOP.md` gains `clipboard_toggle` in the Control v1 operation list and
+a pointer from the launcher paragraph.
+
+Checks actually run:
+
+- `zig build -Doptimize=ReleaseSafe` and `zig build test -Doptimize=ReleaseSafe`:
+  pass, including `clipboard toggle` parse and usage cases.
+- `zig build test-clipboard-capture -Doptimize=ReleaseSafe`, unqualified against
+  the cached composite Aqueous prefix: all 18 checks pass, recorded in
+  `artifacts/t14/latest/`. New: toggle opens centered (the rect is asserted
+  against the output usable area from `status.popup`), a second toggle closes
+  it, typing filters, Down then Enter publishes through `wl-paste`, Delete
+  decrements history, Escape dismisses, a no-match filter keeps history and
+  shows a hint, and row Copy/Delete buttons under `wlrctl` pointer clicks
+  publish-and-close and remove-without-publishing respectively. The existing
+  capture keyboard, transform, privacy, lifetime and theme checks are unchanged
+  and pass.
+- `zig build test-surfaces -Doptimize=ReleaseSafe`, unqualified: pass, recorded
+  in `artifacts/t05/latest/`; the popup clamping, Escape and arbitration
+  assertions cover the shared placement change.
+- `test-dock-islands` and `test-launcher-calculator` fail on this machine for
+  reasons unrelated to this change, reproduced identically on a clean tree: the
+  dock suite's pearl aborts on a `gdk_frame_timings_throttling_hint`
+  Gdk-WARNING at the fullscreen step under `G_DEBUG=fatal-warnings` with the
+  off-pin composite compositor, and the calculator suite reads a protocol XML
+  from the reference machine's checkout path. The dock suite's font-20
+  clipboard re-shoot therefore did not regenerate on this machine.
+
 ## Brightness OSD, October 4, 2026
 
 The themed OSD card now appears for external brightness changes, the same way

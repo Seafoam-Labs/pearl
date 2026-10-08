@@ -1,12 +1,34 @@
 # Clipboard and screenshots
 
-Pearl includes a **Clipboard & capture** panel to Pearl's Material and native GTK
-appearance paths. Open it from the `clipboard` bar item or with
-`pearlctl clipboard show` / `pearlctl capture show`. New default bar groups
+The **Clipboard & capture** panel opens screen-centered, like the launcher, and
+follows the same Material and native GTK appearance paths. Open it from the
+`clipboard` bar item, with `pearlctl clipboard toggle` or `clipboard show`, or
+with `pearlctl capture show` for the screenshot tab. New default bar groups
 include the item; existing explicitly configured groups remain authoritative.
 Use the Settings bar-group fields to add `clipboard` to an existing setup.
-Clipboard opens the history tab with bounded text previews and image thumbnails;
-Capture opens the screenshot tab. The tabs are also reachable by keyboard.
+
+The panel ignores `popup.placement` and is always centered; opening it puts
+focus in the history filter. A second `clipboard toggle`, Escape or a backdrop
+click closes it. Opening it while another pane is shown replaces that pane.
+Pearl never grabs key combinations: an Aqueous keybinding that runs
+`pearlctl clipboard toggle` is what makes this a clipboard shortcut.
+
+## History navigation
+
+| Input | Effect |
+| --- | --- |
+| Typing | Case-insensitive substring filter over previews; Enter acts on the first match |
+| Up / Down | Move the selection and scroll it into view |
+| Enter, or one click on a row | Publish the selected entry and close the panel |
+| Delete | Remove the selected entry without publishing it |
+| Escape | Dismiss the panel; it never edits the filter |
+| Row **Copy** / **Delete** | Same as Enter and Delete, for pointer use |
+
+Publishing replaces Pearl's selection; pasting stays an action in the
+destination application. Tab reaches **Clear history**, the Capture tab and the
+capture controls; the in-row buttons are pointer conveniences over the same
+Enter and Delete actions. An empty filter result keeps history intact and says
+so in place of the list.
 
 ## Clipboard contract
 
@@ -103,8 +125,9 @@ export. Bit depth alone is not interpreted as a color space.
 
 There is one capture in flight, a 200 ms preparation delay, and a five-second
 frame deadline. The panel's capture action hides the panel before requesting a
-frame and reports completion through the OSD; reopen the panel to preview, save
-or copy. A worker normalizes output rotation/reflection and the protocol's
+frame and reports completion through the OSD; `pearlctl capture show` reopens it
+on this tab to preview, save or copy, while `clipboard show` and `clipboard
+toggle` reopen it on history with focus in the filter. A worker normalizes output rotation/reflection and the protocol's
 Y-invert flag. Output removal or geometry/mode/scale change cancels the target.
 A cancelled worker cannot publish its result after a lock or target change.
 An accepted new capture clears the previous screenshot before requesting pixels;
@@ -158,6 +181,7 @@ commands; the reused `--generation` flag carries either identity.
 ```sh
 pearlctl clipboard status
 pearlctl clipboard show --output OUTPUT_ID
+pearlctl clipboard toggle --output OUTPUT_ID
 pearlctl clipboard select --generation ENTRY_ID
 pearlctl clipboard delete --generation ENTRY_ID
 pearlctl clipboard clear

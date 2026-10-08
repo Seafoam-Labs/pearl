@@ -1,10 +1,14 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1.5
-error(pearl): event=session-error error=AlreadyRunning
-info(pearl): event=stopping reason=session-error pending=false
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-08T15:01:44Z pid=134192 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-08T15:01:44Z pid=134192 info(platform): event=blur-capability available=false
+ts=2026-10-08T15:01:44Z pid=134192 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-08T15:01:44Z pid=134192 info(pearl): event=ready mode=session
+ts=2026-10-08T15:01:44Z pid=134192 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-08T15:01:44Z pid=134192 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:44Z pid=134192 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-08T15:01:44Z pid=134192 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-08T15:01:44Z pid=134192 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-08T15:01:44Z pid=134192 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1.5
+ts=2026-10-08T15:01:44Z pid=134192 error(pearl): event=session-error error=AlreadyRunning
+ts=2026-10-08T15:01:44Z pid=134192 info(pearl): event=stopping reason=session-error pending=false
+ts=2026-10-08T15:01:44Z pid=134192 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-08T15:01:44Z pid=134192 info(pearl): event=cleanup pending=false watched_objects=0
