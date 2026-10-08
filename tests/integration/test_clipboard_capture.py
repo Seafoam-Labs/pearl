@@ -64,6 +64,12 @@ def main():
             assert ctl(s,args.ctl,'clipboard','select','--generation',str(victim),code=4)['err']['code'] == 'Stale'
             checks['bounded-history-and-stale-entry-actions'] = True
             empty()
+            for text in ('keep','mid1','mid2','drop'): offer('text',text); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']==text)
+            assert [e['preview'] for e in clip()['entries']]==['drop','mid2','mid1','keep']
+            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][-1]['id']))
+            assert [e['preview'] for e in clip()['entries']]==['keep','drop','mid2','mid1'], clip()['entries']
+            checks['copying-an-entry-promotes-it-to-most-recent'] = True
+            empty()
             png = s.output/'input.png'; metadata=PngImagePlugin.PngInfo(); metadata.add_text('private-note','metadata-must-not-survive',zip=True); Image.new('RGB',(64,32),(234,71,106)).save(png,pnginfo=metadata)
             offer('png',str(png)); entry = until(clip,lambda v:len(v['entries'])==1)['entries'][0]; assert entry['kind']=='png'
             ctl(s,args.ctl,'clipboard','select','--generation',str(entry['id']))
@@ -115,28 +121,28 @@ def main():
             press('Down'); assert until(panel,lambda v:v['selected']==1)['rows'][1]['label']=='alpha one'
             press('Return'); until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
             assert s.run(['wl-paste','--no-newline']).stdout=='alpha one'
-            # Delete removes the selected entry; Escape dismisses without touching it.
-            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['alpha three','beta two','alpha one'])
-            press('Delete'); until(clip,lambda v:[e['preview'] for e in v['entries']]==['beta two','alpha one'])
-            assert shown(['beta two','alpha one'])['selected']==0
+            # The copy promoted 'alpha one' to most-recent, so reopening lists it first; Delete then removes that top row.
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['alpha one','alpha three','beta two'])
+            press('Delete'); until(clip,lambda v:[e['preview'] for e in v['entries']]==['alpha three','beta two'])
+            assert shown(['alpha three','beta two'])['selected']==0
             press('Escape'); until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
-            assert [e['preview'] for e in clip()['entries']]==['beta two','alpha one']
+            assert [e['preview'] for e in clip()['entries']]==['alpha three','beta two']
             checks['clipboard-filter-arrows-enter-delete-and-escape'] = True
             # A filter that matches nothing keeps the history and says so.
-            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two','alpha one'])
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['alpha three','beta two'])
             s.run(['wtype','--','zzz'])
             view=until(panel,lambda v:v['query']=='zzz' and not v['rows'])
             assert view['hint_visible'] and view['hint'], view
             press('Escape'); until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
-            # Row buttons work under the pointer without also activating the row.
-            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two','alpha one'])
+            # Row buttons work under the pointer; Copy on a lower row promotes that entry to the top.
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['alpha three','beta two'])
             point(until(panel,lambda v:len(v['rows'])==2 and v['rows'][1]['copy'])['rows'][1]['copy'])
             until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
-            assert s.run(['wl-paste','--no-newline']).stdout=='alpha one'
-            assert [e['preview'] for e in clip()['entries']]==['beta two','alpha one']
+            assert s.run(['wl-paste','--no-newline']).stdout=='beta two'
+            assert [e['preview'] for e in clip()['entries']]==['beta two','alpha three']
             ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][0]['id']))
             assert s.run(['wl-paste','--no-newline']).stdout=='beta two'
-            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two','alpha one'])
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two','alpha three'])
             point(until(panel,lambda v:len(v['rows'])==2 and v['rows'][1]['remove'])['rows'][1]['remove'])
             until(clip,lambda v:[e['preview'] for e in v['entries']]==['beta two'])
             assert pane() is not None and s.run(['wl-paste','--no-newline']).stdout=='beta two'

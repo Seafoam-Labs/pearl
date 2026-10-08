@@ -19,13 +19,14 @@ Pearl never grabs key combinations: an Aqueous keybinding that runs
 | --- | --- |
 | Typing | Case-insensitive substring filter over previews; Enter acts on the first match |
 | Up / Down | Move the selection and scroll it into view |
-| Enter, or one click on a row | Publish the selected entry and close the panel |
+| Enter, or one click on a row | Publish the selected entry, move it to the top of the list, and close the panel |
 | Delete | Remove the selected entry without publishing it |
 | Escape | Dismiss the panel; it never edits the filter |
 | Row **Copy** / **Delete** | Same as Enter and Delete, for pointer use |
 
 Publishing replaces Pearl's selection; pasting stays an action in the
-destination application. Tab reaches **Clear history**, the Capture tab and the
+destination application. A copied entry is promoted to most-recent so a value
+that is still in use is the last one eligible for eviction. Tab reaches **Clear history**, the Capture tab and the
 capture controls; the in-row buttons are pointer conveniences over the same
 Enter and Delete actions. An empty filter result keeps history intact and says
 so in place of the list.
@@ -42,14 +43,15 @@ and `image/png`. PNG takes precedence when both image and text are offered.
 Other formats, NUL-containing or invalid UTF-8 text, empty/truncated payloads,
 and oversized payloads are rejected. A disappeared owner can leave already
 received history intact; selecting an entry creates a fresh data-control source
-with its own retained payload. Paste remains an action in the destination app.
+with its own retained payload and promotes that entry to most-recent. Paste
+remains an action in the destination app.
 Deleting a history entry does not interrupt an already selected payload or an
 in-progress paste. Clear releases Pearl's current selection as well as history;
 it does not erase a selection owned by another application.
 
 | Resource | Bound |
 | --- | --- |
-| Retained entries | 20, oldest evicted first; duplicates retained once |
+| Retained entries | 20, least-recently used evicted first; a copy or re-copy promotes an entry to most-recent, duplicates retained once |
 | Retained payload total | 16 MiB |
 | Text per entry | 256 KiB |
 | PNG input and sanitized clipboard PNG | 8 MiB each |
@@ -76,9 +78,10 @@ own the selection.
 
 The [launcher calculator](DESKTOP.md#calculator) publishes plain text through
 this same service. Enter or clicking a result copies only the displayed number.
-The service resolves duplicate history entries by identity and retains the
-selected payload independently of the launcher, so a paste remains available
-after the popup closes. If selection publication cannot start, the old selection
+The service resolves duplicate history entries by identity, promoting an existing
+match to most-recent, and retains the selected payload independently of the
+launcher, so a paste remains available after the popup closes. If selection
+publication cannot start, the old selection
 is preserved and the launcher stays open for retry. Expressions are not retained
 as calculator history, and a pending copy is never replayed after unlock.
 

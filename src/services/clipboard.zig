@@ -168,6 +168,16 @@ pub const Clipboard = struct {
         std.crypto.secureZero(u8, bytes);
         a.free(bytes);
     }
+    /// Promote a retained entry to most-recent in place, keeping its id so pending
+    /// generation-scoped actions stay valid; eviction pops from the tail, so a copy
+    /// that is still in use is the last entry eligible to fall out.
+    fn bumpToFront(self: *Clipboard, index: usize) void {
+        if (index == 0) return;
+        const entry = self.entries.items[index];
+        var i = index;
+        while (i > 0) : (i -= 1) self.entries.items[i] = self.entries.items[i - 1];
+        self.entries.items[0] = entry;
+    }
     pub fn delete(self: *Clipboard, id: u64) !void {
         for (self.entries.items, 0..) |e, i| if (e.id == id) {
             wipe(e.bytes);
@@ -194,8 +204,13 @@ pub const Clipboard = struct {
         const bytes = if (kind == .png) try sanitize(input) else try a.dupe(u8, input);
         errdefer wipe(bytes);
         if (bytes.len > policy.image_limit) return error.InvalidPayload;
-        for (self.entries.items) |e| if (e.kind == kind and std.mem.eql(u8, e.bytes, bytes)) {
+        for (self.entries.items, 0..) |e, i| if (e.kind == kind and std.mem.eql(u8, e.bytes, bytes)) {
             wipe(bytes);
+            if (i != 0) {
+                self.bumpToFront(i);
+                self.message = "Clipboard history updated";
+                self.changed(self.context);
+            }
             return e.id;
         };
         var total: usize = bytes.len;
@@ -214,7 +229,8 @@ pub const Clipboard = struct {
     pub fn select(self: *Clipboard, id: u64) !void {
         if (self.locked) return error.Locked;
         const device = self.device orelse return error.Unavailable;
-        for (self.entries.items) |e| if (e.id == id) {
+        for (self.entries.items, 0..) |e, i| if (e.id == id) {
+            self.bumpToFront(i);
             const bytes = try a.dupe(u8, e.bytes);
             errdefer wipe(bytes);
             const source = try self.manager.?.createDataSource();
