@@ -1435,6 +1435,7 @@ pub const Manager = struct {
         if (pane == .clipboard_capture) {
             self.syncClipboardPrivacy();
             if (self.clipboard.locked) return error.Locked;
+            self.clipboard.resetMessage();
         }
         if (self.client.model.get(.session, "session").?.locked) return error.Locked;
         for (self.outputs.items) |o| if (o.dock) |dock| {

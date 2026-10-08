@@ -147,6 +147,14 @@ def main():
             ctl(s,args.ctl,'clipboard','toggle','--output',oid)
             until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
             checks['clipboard-row-buttons-and-toggle-arbitration'] = True
+            # Copy feedback is transient: a reopen must report the privacy baseline, not the past copy.
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two'])
+            point(until(panel,lambda v:v['rows'] and v['rows'][0]['copy'])['rows'][0]['copy'])
+            until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
+            assert 'Copied' in clip()['message'], clip()
+            ctl(s,args.ctl,'clipboard','toggle','--output',oid); view=shown(['beta two'])
+            assert view['message'].startswith('History stays in memory'), view
+            checks['copied-feedback-clears-when-the-panel-reopens'] = True
             def target(): return next(o for o in status(s,args.ctl)['outputs'] if o['connector']==connector)
             def take(region=None):
                 old = shot()['generation']; o=target()

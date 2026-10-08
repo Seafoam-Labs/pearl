@@ -135,12 +135,19 @@ pub const Clipboard = struct {
         if (locked) {
             self.clear();
             self.dropDevice();
-            self.message = "Clipboard history paused";
         } else {
-            self.message = "History stays in memory; sensitive selections are excluded";
             self.connect();
         }
+        self.message = self.baseline();
         self.changed(self.context);
+    }
+    fn baseline(self: *const Clipboard) [:0]const u8 {
+        return if (self.locked) "Clipboard history paused" else "History stays in memory; sensitive selections are excluded";
+    }
+    /// Copy feedback is transient, but the message is long-lived service state read by
+    /// every consumer. Clear it as the panel opens so it never shows a past action.
+    pub fn resetMessage(self: *Clipboard) void {
+        self.message = self.baseline();
     }
     pub fn clear(self: *Clipboard) void {
         if (self.read) |r| r.finish(false);
