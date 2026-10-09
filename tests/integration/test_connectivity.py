@@ -30,6 +30,9 @@ def key(s,*args): s.run(['wtype','-s','100',*args,'-s','250'])
 def answer_wifi(s,pearl,password):
     wait_for(lambda:focus(pearl)=='wifi-password'); key(s,password,'-k','Return')
 def records(s): return [json.loads(line) for line in Path(s.env['PEARL_TEST_CONNECTIVITY_LOG']).read_text().splitlines()]
+def last_created(s): return [x for x in records(s) if x['kind']=='activate-new'][-1]['profile']
+def deleted(s,path): return any(x['kind']=='deleted' and x['path']==path for x in records(s))
+def absent(v,path): return not any(i['kind']=='saved' and i['path']==path for i in v['items'])
 def main():
     parser=argparse.ArgumentParser(description=__doc__); parser.add_argument('--pearl',type=Path,required=True); parser.add_argument('--ctl',type=Path,required=True); parser.add_argument('--output',type=Path,default=ROOT/'artifacts/t08/latest'); args=parser.parse_args()
     args.pearl=args.pearl.resolve(); args.ctl=args.ctl.resolve(); args.output=args.output.resolve(); args.output.mkdir(parents=True,exist_ok=True)
@@ -86,6 +89,9 @@ def main():
             assert any(x['kind']=='secret-answer' and x['accepted'] for x in records(s))
             checks['secure-wifi-real-password-entry-rejection-and-retry']=True
             checks['unrelated-property-update-preserves-typed-password']=True
+            created=last_created(s)
+            await_state(s,args.ctl,lambda v:any(i['kind']=='saved' and i['path']==created and i['label']=='Fixture Secure' and i['security']=='psk' and i['device']==ND for i in v['items']))
+            checks['created-profile-becomes-a-saved-row']=True
             action(s,args.ctl,'network','disconnect',ND); await_state(s,args.ctl,lambda v:not v['network']['pending'])
             action(s,args.ctl,'network','connect_saved',SP); await_state(s,args.ctl,lambda v:v['network']['prompt'])
             answer_wifi(s,pearl,'fixture-wifi-password'); await_state(s,args.ctl,lambda v:not v['network']['pending'])
@@ -98,13 +104,27 @@ def main():
             action(s,args.ctl,'network','connect',AP); await_state(s,args.ctl,lambda v:v['network']['prompt'])
             ctl(s,args.ctl,'popup','hide'); await_state(s,args.ctl,lambda v:not v['network']['pending'] and not v['network']['prompt'])
             show(); checks['panel-close-cancels-wifi-and-clears-secret-entry']=True
+            abandoned=last_created(s); wait_for(lambda:deleted(s,abandoned))
+            await_state(s,args.ctl,lambda v:absent(v,abandoned))
+            checks['cancelled-prompt-deletes-the-created-profile']=True
             command(network,activation_delay=600)
             action(s,args.ctl,'network','connect',AP)
             await_state(s,args.ctl,lambda v:v['network']['activation_waiting'])
             action(s,args.ctl,'network','cancel'); await_state(s,args.ctl,lambda v:not v['network']['pending'])
             assert not state(s,args.ctl)['network']['prompt']
             checks['late-activation-after-cancel-is-deactivated']=True
+            abandoned=last_created(s); wait_for(lambda:deleted(s,abandoned))
+            await_state(s,args.ctl,lambda v:absent(v,abandoned))
+            checks['deactivated-late-activation-deletes-the-created-profile']=True
             command(network,activation_delay=0)
+            command(network,fail_device=True)
+            action(s,args.ctl,'network','connect',AP); await_state(s,args.ctl,lambda v:v['network']['prompt'])
+            answer_wifi(s,pearl,'wrong-password')
+            await_state(s,args.ctl,lambda v:not v['network']['pending'] and v['network']['err'] is not None)
+            abandoned=last_created(s); wait_for(lambda:deleted(s,abandoned))
+            await_state(s,args.ctl,lambda v:absent(v,abandoned))
+            command(network,fail_device=False)
+            checks['rejected-credentials-delete-the-created-profile']=True
             command(network,hardware=False)
             await_state(s,args.ctl,lambda v:not v['network']['hardware_enabled'])
             action(s,args.ctl,'network','enable',code=4)

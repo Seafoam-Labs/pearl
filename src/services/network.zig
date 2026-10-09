@@ -50,6 +50,8 @@ pub const Network = struct {
     device: Text(512) = .{},
     selected_ap: Text(512) = .{},
     selected_profile: Text(512) = .{},
+    created_profile: Text(512) = .{},
+    cleanup_sequence: u64 = 0,
     selected_ssid: [32]u8 = @splat(0),
     selected_len: usize = 0,
     selected_security: p.Security = .open,
@@ -243,9 +245,13 @@ pub const Network = struct {
             if (dev.state == 120) {
                 self.rejectPrompt();
                 self.finish();
+                self.deleteCreated();
                 self.err = "Connection failed. Check credentials and try again.";
             }
-            if (!self.activation_waiting and self.active.len != 0 and dev.state == 100 and std.mem.eql(u8, dev.active.slice(), self.active.slice())) self.finish();
+            if (!self.activation_waiting and self.active.len != 0 and dev.state == 100 and std.mem.eql(u8, dev.active.slice(), self.active.slice())) {
+                self.created_profile = .{};
+                self.finish();
+            }
         }
     }
     fn readAP(self: *Network, snapshot: *V, dev: *Device, path: [:0]const u8) void {
@@ -396,11 +402,13 @@ pub const Network = struct {
         self.selected_ap = ap.path;
         self.selected_ssid = ap.ssid;
         self.selected_len = ap.len;
-        const settings = d.array("{sa{sv}}", if (ap.security == .open) &.{d.section("connection", &.{d.entry("autoconnect", V.newBoolean(0))})} else &.{
-            d.section("connection", &.{d.entry("autoconnect", V.newBoolean(0))}),
-            d.section(security_setting, &.{ d.entry("key-mgmt", d.str(if (ap.security == .sae) "sae" else "wpa-psk")), d.entry("psk-flags", V.newUint32(2)) }),
+        // Absent secret flags and absent persist options mean NetworkManager owns the
+        // stored secret and writes the profile to disk once it accepts the reply.
+        const settings = d.array("{sa{sv}}", if (ap.security == .open) &.{d.section("connection", &.{d.entry("autoconnect", V.newBoolean(1))})} else &.{
+            d.section("connection", &.{d.entry("autoconnect", V.newBoolean(1))}),
+            d.section(security_setting, &.{d.entry("key-mgmt", d.str(if (ap.security == .sae) "sae" else "wpa-psk"))}),
         });
-        self.peer.call(self.sequence, root, nm, "AddAndActivateConnection2", d.tuple(&.{ settings, d.path(dev.path.z()), d.path(ap.path.z()), d.array("{sv}", &.{d.entry("persist", d.str("volatile"))}) }), "(ooa{sv})", 90000, activated) catch |err| {
+        self.peer.call(self.sequence, root, nm, "AddAndActivateConnection2", d.tuple(&.{ settings, d.path(dev.path.z()), d.path(ap.path.z()), d.array("{sv}", &.{}) }), "(ooa{sv})", 90000, activated) catch |err| {
             self.finish();
             return err;
         };
@@ -440,6 +448,7 @@ pub const Network = struct {
         self.selected_security = security;
         self.selected_ap = .{};
         self.selected_profile = .{};
+        self.created_profile = .{};
         self.selected_len = 0;
         self.active = .{};
         self.err = null;
@@ -458,7 +467,21 @@ pub const Network = struct {
         if (token != self.sequence) return;
         self.activation_waiting = false;
         if (value) |v| {
-            const active = v.getChildValue(if (d.is(v, "(o)")) 0 else 1);
+            const single = d.is(v, "(o)");
+            if (!single) {
+                const profile = v.getChildValue(0);
+                defer profile.unref();
+                const raw = std.mem.span(profile.getString(null));
+                if (raw.len == 0 or raw.len > 512) {
+                    self.rejectPrompt();
+                    self.finish();
+                    self.err = "NetworkManager returned an unusable profile.";
+                    self.emit();
+                    return;
+                }
+                self.created_profile.set(raw);
+            }
+            const active = v.getChildValue(if (single) 0 else 1);
             defer active.unref();
             self.active.set(std.mem.span(active.getString(null)));
             if (self.cancelled) {
@@ -477,6 +500,21 @@ pub const Network = struct {
         const self: *Network = @ptrCast(@alignCast(data));
         if (token != self.sequence) return;
         self.finish();
+        self.deleteCreated();
+        self.peer.refresh();
+        self.emit();
+    }
+    /// Drop a profile this service created and then abandoned, so a rejected or
+    /// cancelled attempt leaves no autoconnecting entry holding a wrong secret.
+    fn deleteCreated(self: *Network) void {
+        if (self.created_profile.len == 0) return;
+        self.cleanup_sequence += 1;
+        self.peer.call(self.cleanup_sequence, self.created_profile.z(), settingsif, "Delete", null, "()", 5000, deletedDone) catch {};
+        self.created_profile = .{};
+    }
+    fn deletedDone(data: *anyopaque, token: u64, _: ?*V, _: ?[]const u8) void {
+        const self: *Network = @ptrCast(@alignCast(data));
+        if (token != self.cleanup_sequence) return;
         self.peer.refresh();
         self.emit();
     }
@@ -520,7 +558,10 @@ pub const Network = struct {
     fn cancelledDone(data: *anyopaque, token: u64, _: ?*V, _: ?[]const u8) void {
         const self: *Network = @ptrCast(@alignCast(data));
         if (token != self.sequence) return;
-        if (!self.activation_waiting) self.finish();
+        if (!self.activation_waiting) {
+            self.finish();
+            self.deleteCreated();
+        }
         self.peer.refresh();
         self.emit();
     }

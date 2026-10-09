@@ -1,86 +1,629 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-info(pearl): event=control-ready session=be88c5a992ad3947e20b18b6f67a022a
-info: event=app-index-ready entries=158 truncated=false
-info: event=popup-opened output=1
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=net-expander
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=net-expander
-info: event=services-focus target=other
-info: event=connectivity-focus target=bt-expander
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=wifi-password
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=wifi-password
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=wifi-password
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=wifi-password
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=popup-closed
-info: event=popup-opened output=1
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=bluetooth-confirm
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=bluetooth-confirm
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=bluetooth-input
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=bluetooth-input
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=bluetooth-confirm
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=bluetooth-confirm
-info: event=services-focus target=other
-info: event=connectivity-focus target=other
-info: event=services-focus target=other
-info: event=connectivity-focus target=wifi-password
-info(pearl): event=stopping reason=control-quit pending=false
-info: event=popup-closed
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-10-09T12:05:26Z pid=151240 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-09T12:05:26Z pid=151240 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-09T12:05:26Z pid=151240 info(pearl): event=ready mode=session
+ts=2026-10-09T12:05:26Z pid=151240 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-09T12:05:26Z pid=151240 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-09T12:05:26Z pid=151240 info(pearl): event=settings-backend-ready session_hash=bb4d10a2d8236af6
+ts=2026-10-09T12:05:26Z pid=151240 info(pearl): event=control-ready session_hash=bb4d10a2d8236af6
+ts=2026-10-09T12:05:26Z pid=151240 info(desktop): event=app-index-ready entries=145 truncated=false
+ts=2026-10-09T12:05:26Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:26Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:05:26Z pid=151240 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-10-09T12:05:26Z pid=151240 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=5554 success=true
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:26Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:26Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:26Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:26Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:26Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:27Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:27Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:27Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:27Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:27Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:27Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:27Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:27Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:27Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:27Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:27Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:27Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:27Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:27Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:27Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:27Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:27Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:27Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:28Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:28Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:28Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:28Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:28Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:28Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:28Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:28Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:28Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:28Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:28Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:28Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:28Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:28Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:28Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:28Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:28Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:28Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:31Z pid=151240 info(desktop): event=settings-page page=network
+ts=2026-10-09T12:05:31Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:31Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:31Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:05:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:32Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:32Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:32Z pid=151240 info(desktop): event=connectivity-focus target=net-expander
+ts=2026-10-09T12:05:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:34Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:05:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:35Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:35Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:35Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:35Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:35Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:35Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:35Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:35Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:35Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:36Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:36Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:36Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:36Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:36Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:36Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:36Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:36Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:36Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:37Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:38Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:38Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:38Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:38Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:38Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:38Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:38Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:38Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:38Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:39Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:39Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:39Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:39Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:39Z pid=151240 info(desktop): event=settings-page page=bluetooth
+ts=2026-10-09T12:05:39Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:39Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:39Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:05:39Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:39Z pid=151240 info(desktop): event=connectivity-focus target=bt-expander
+ts=2026-10-09T12:05:39Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:41Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:41Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:41Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:05:41Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:41Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:41Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:41Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:41Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:41Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:41Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:41Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:41Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:41Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:41Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:41Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:41Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:41Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:41Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:42Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:42Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:42Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:42Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:42Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:42Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:42Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:42Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:42Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:42Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:45Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:45Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:45Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:45Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:45Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:45Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:45Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:45Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:45Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:45Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:45Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:45Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:45Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:45Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:45Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:45Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:45Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:45Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:46Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:46Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:46Z pid=151240 info(desktop): event=settings-page page=network
+ts=2026-10-09T12:05:46Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:46Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:46Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:05:46Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:46Z pid=151240 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-09T12:05:46Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:47Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:47Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:47Z pid=151240 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-09T12:05:47Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:48Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:48Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:48Z pid=151240 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-09T12:05:48Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:48Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:48Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:49Z pid=151240 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-09T12:05:49Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:49Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:49Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:49Z pid=151240 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-09T12:05:49Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:49Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:49Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:49Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:05:49Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:49Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:49Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:49Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:50Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:50Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:50Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:50Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:50Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:50Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:50Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:50Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:50Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:50Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:50Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:50Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:50Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:50Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:50Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:50Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:50Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:50Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:51Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:51Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:51Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:51Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:51Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:51Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:51Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:51Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:51Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:51Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:51Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:51Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:51Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:51Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:51Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:51Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:51Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:51Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:52Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:52Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:52Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:52Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:52Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:52Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:52Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:52Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:52Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:52Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:52Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:52Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:52Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:52Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:52Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:52Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:52Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:52Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:53Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:53Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:53Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:53Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:53Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:53Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:53Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:53Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:53Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:53Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:53Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:53Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:53Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:53Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:53Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:53Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:53Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:53Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:54Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:54Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:54Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:54Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:54Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:54Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:54Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:54Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=settings-page page=network
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:54Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:05:55Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:56Z pid=151240 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-09T12:05:56Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:56Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:56Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:57Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:57Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:57Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:57Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:05:57Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=settings-page page=bluetooth
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:05:57Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:05:57Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:29Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:06:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:29Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:29Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:30Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:30Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:31Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:31Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:32Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:32Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:32Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:32Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:32Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:32Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:32Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:32Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:32Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:32Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:33Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:33Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:33Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:33Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:33Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:33Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:33Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:33Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:33Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:33Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:33Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:33Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:33Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:33Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:33Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:33Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:33Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:33Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:34Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:34Z pid=151240 info(desktop): event=settings-page page=bluetooth
+ts=2026-10-09T12:06:34Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:34Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:34Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:06:34Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:35Z pid=151240 info(desktop): event=connectivity-focus target=bluetooth-confirm
+ts=2026-10-09T12:06:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:35Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:35Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:36Z pid=151240 info(desktop): event=connectivity-focus target=bluetooth-confirm
+ts=2026-10-09T12:06:36Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:37Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:37Z pid=151240 info(desktop): event=connectivity-focus target=bluetooth-input
+ts=2026-10-09T12:06:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:37Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:37Z pid=151240 info(desktop): event=connectivity-focus target=bluetooth-input
+ts=2026-10-09T12:06:37Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:38Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:38Z pid=151240 info(desktop): event=connectivity-focus target=bluetooth-confirm
+ts=2026-10-09T12:06:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:38Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:38Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=connectivity-focus target=bluetooth-confirm
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:39Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:39Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:39Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:39Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=settings-page page=network
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:06:39Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:39Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:43Z pid=151240 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-09T12:06:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:43Z pid=151240 info(desktop): event=connectivity-focus target=wifi-confirm
+ts=2026-10-09T12:06:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:43Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:43Z pid=151240 info(desktop): event=connectivity-focus target=net-expander
+ts=2026-10-09T12:06:43Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:43Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=settings-focus target=body
+ts=2026-10-09T12:06:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=settings-page page=bluetooth
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=connectivity-focus target=other
+ts=2026-10-09T12:06:44Z pid=151240 info(desktop): event=settings-focus target=heading
+ts=2026-10-09T12:06:44Z pid=151240 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-09T12:06:44Z pid=151240 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-10-09T12:06:44Z pid=151240 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-09T12:06:44Z pid=151240 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-09T12:06:44Z pid=151240 info(pearl): event=stopped

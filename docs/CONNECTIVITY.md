@@ -23,12 +23,21 @@ portal, limited-connectivity, unavailable, pending and error states. Expand
 by D-Bus object path; labels and SSIDs never become command arguments.
 
 Open, WPA/WPA2 personal and WPA3 SAE networks are supported. Selecting a new
-access point uses `AddAndActivateConnection2` with `persist=volatile`, automatic
-connection disabled and `psk-flags=NOT_SAVED`. NetworkManager completes device/AP
-settings; Pearl returns the password through its SecretAgent. A temporary profile
-is removed by NetworkManager after disconnection. Existing profiles use
-`ActivateConnection`, preserving their existing settings and secret-storage policy.
-Pearl never calls Settings.GetSecrets or writes credentials to its preferences.
+access point uses `AddAndActivateConnection2` with automatic connection enabled
+and no `persist` option and no secret flags, so NetworkManager creates a
+persistent system-scope profile and stores the password itself once it accepts
+Pearl's SecretAgent reply. NetworkManager completes device/AP settings; Pearl
+only returns the password. Existing profiles use `ActivateConnection`,
+preserving their existing settings and secret-storage policy. Pearl never calls
+Settings.GetSecrets or writes credentials to its preferences.
+
+A created profile is removed with Settings.Connection.Delete when the attempt is
+abandoned: the operation is cancelled, its activation is deactivated, or the
+device reports a failed activation. This keeps a wrong or mistyped password from
+surviving as an autoconnecting profile. A successful activation keeps the
+profile, which then appears as a saved row. If the create reply never arrives,
+or the daemon is lost mid-attempt, there is no profile handle to remove and the
+entry stays; it is then an ordinary saved row and the network editor removes it.
 
 Saved profiles come from Settings.Connection.GetSettings, with serial bounded
 requests. `Updated` invalidates their cached details, including an in-flight
@@ -150,8 +159,9 @@ python3 scripts/check-connectivity-hardware.py
 The integration test creates private NetworkManager/BlueZ peers and an independent
 private system bus under a private Aqueous compositor. Real GTK keyboard input
 answers password and pairing prompts. It exercises rejection/retry, cancellation,
-late replies, removed devices, hostile bus callers, owner replacement, bus restart
-and limits. It audits status/log/config output for the synthetic credentials.
+late replies, deletion of abandoned created profiles, removed devices, hostile bus
+callers, owner replacement, bus restart and limits. It audits status/log/config
+output for the synthetic credentials.
 Neither the fake peers nor the normal integration tests access host services.
 
 The hardware script explicitly connects the production Pearl binary to host

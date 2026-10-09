@@ -1,22 +1,27 @@
 {"service": "network", "kind": "agent-registered", "destination": ":1.3"}
 {"service": "bluetooth", "kind": "agent-registered", "destination": ":1.3"}
 {"service": "network", "kind": "scan"}
-{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "activate-new", "persisted": true, "autoconnect": true, "profile": "/org/freedesktop/NetworkManager/Settings/2"}
 {"service": "network", "kind": "secret-answer", "accepted": false}
 {"service": "network", "kind": "secret-answer", "accepted": true}
 {"service": "network", "kind": "disconnect"}
 {"service": "network", "kind": "activate-saved"}
 {"service": "network", "kind": "secret-answer", "accepted": true}
 {"service": "network", "kind": "disconnect"}
-{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "activate-new", "persisted": true, "autoconnect": true, "profile": "/org/freedesktop/NetworkManager/Settings/3"}
 {"service": "network", "kind": "secret-answer", "accepted": true}
 {"service": "network", "kind": "disconnect"}
-{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "activate-new", "persisted": true, "autoconnect": true, "profile": "/org/freedesktop/NetworkManager/Settings/4"}
 {"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
 {"service": "network", "kind": "disconnect"}
-{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "deleted", "path": "/org/freedesktop/NetworkManager/Settings/4"}
+{"service": "network", "kind": "activate-new", "persisted": true, "autoconnect": true, "profile": "/org/freedesktop/NetworkManager/Settings/5"}
 {"service": "network", "kind": "disconnect"}
 {"service": "network", "kind": "disconnect"}
+{"service": "network", "kind": "deleted", "path": "/org/freedesktop/NetworkManager/Settings/5"}
+{"service": "network", "kind": "activate-new", "persisted": true, "autoconnect": true, "profile": "/org/freedesktop/NetworkManager/Settings/6"}
+{"service": "network", "kind": "secret-answer", "accepted": false}
+{"service": "network", "kind": "deleted", "path": "/org/freedesktop/NetworkManager/Settings/6"}
 {"service": "bluetooth", "kind": "StartDiscovery"}
 {"service": "bluetooth", "kind": "StopDiscovery"}
 {"service": "bluetooth", "kind": "StartDiscovery"}
@@ -41,12 +46,13 @@
 {"service": "bluetooth", "kind": "removed"}
 {"service": "bluetooth", "kind": "pair-rejected"}
 {"service": "bluetooth", "kind": "pair-cancelled"}
-{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "network", "kind": "activate-new", "persisted": true, "autoconnect": true, "profile": "/org/freedesktop/NetworkManager/Settings/7"}
 {"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
 {"service": "network", "kind": "agent-registered", "destination": ":1.3"}
 {"service": "bluetooth", "kind": "agent-registered", "destination": ":1.3"}
-{"service": "bluetooth", "kind": "agent-registered", "destination": ":1.3"}
 {"service": "network", "kind": "agent-registered", "destination": ":1.3"}
-{"service": "network", "kind": "activate-new", "volatile": true, "not_saved": true}
+{"service": "bluetooth", "kind": "agent-registered", "destination": ":1.3"}
+{"service": "network", "kind": "activate-new", "persisted": true, "autoconnect": true, "profile": "/org/freedesktop/NetworkManager/Settings/2"}
 {"service": "network", "kind": "secret-cancelled", "error": "org.freedesktop.NetworkManager.SecretAgent.UserCanceled"}
 {"service": "network", "kind": "disconnect"}
+{"service": "network", "kind": "deleted", "path": "/org/freedesktop/NetworkManager/Settings/2"}

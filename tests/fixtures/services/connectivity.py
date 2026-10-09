@@ -10,8 +10,8 @@ log=Path(os.environ['PEARL_TEST_CONNECTIVITY_LOG'])
 V=GLib.Variant
 NM='org.freedesktop.NetworkManager'; NR='/org/freedesktop/NetworkManager'; ND=NR+'/Devices/1'; AP=NR+'/AccessPoint/1'; SP=NR+'/Settings/1'; ACTIVE=NR+'/ActiveConnection/1'
 BA='/org/bluez/hci0'; BD=BA+'/dev_00_11_22_33_44_55'
-agent=None; delay=150; reject=False; prompt_kind='confirm'; activation_delay=0; attempt=0; pairing=None; saved_retry=False
-objects={}; registrations={}; saved={}
+agent=None; delay=150; reject=False; prompt_kind='confirm'; activation_delay=0; attempt=0; pairing=None; saved_retry=False; fail_device=False
+objects={}; registrations={}; saved={}; available=[SP]; last_profile=None; next_profile=2
 def record(kind,**values):
     with log.open('a') as f: f.write(json.dumps(dict(service=args.service,kind=kind,**values))+'\n')
 def later(ms,fn):
@@ -32,6 +32,21 @@ def register(path,iface,props,methods=''):
     if len(registrations[path])==1:
         info=Gio.DBusNodeInfo.new_for_xml('<node><interface name="org.freedesktop.DBus.Properties">'+propsxml+'</interface></node>')
         registrations[path].append(bus.register_object(path,info.interfaces[0],method,None,None))
+def create_profile(settings,ssid):
+    """Register the persistent profile a create call implies. Pearl sends no id, so name it after the network."""
+    global last_profile,next_profile
+    path=NR+'/Settings/%d'%next_profile; next_profile+=1
+    register(path,NM+'.Settings.Connection',{},method_xml('GetSettings','','a{sa{sv}}')+method_xml('Delete'))
+    saved[path]={'connection':{'id':V('s',bytes(ssid).decode('utf-8','replace')),'type':V('s','802-11-wireless'),'autoconnect':V('b',True)},'802-11-wireless':{'ssid':V('ay',ssid)},'802-11-wireless-security':{'key-mgmt':V('s',settings.get('802-11-wireless-security',{}).get('key-mgmt','wpa-psk'))}}
+    available.append(path); last_profile=path
+    changed(ND,NM+'.Device',{'AvailableConnections':V('ao',list(available))})
+    return path
+def delete_profile(path,invocation):
+    removed=objects.pop(path,{}); saved.pop(path,None)
+    if path in available: available.remove(path)
+    changed(ND,NM+'.Device',{'AvailableConnections':V('ao',list(available))})
+    bus.emit_signal(None,'/org/freedesktop',manager,'InterfacesRemoved',V('(oas)',(path,list(removed))))
+    invocation.return_value(V('()',())); record('deleted',path=path)
 def invoke_agent(method,params,signature,callback):
     if agent is None: callback(None,'missing-agent'); return
     dest,path,iface=agent
@@ -40,20 +55,26 @@ def invoke_agent(method,params,signature,callback):
         except GLib.Error as e: callback(None,Gio.DBusError.get_remote_error(e) or 'transport')
     bus.call(dest,path,iface,method,params,GLib.VariantType.new(signature),Gio.DBusCallFlags.NONE,95000,None,done)
 def nm_auth(seq,ssid,profile,retry=False):
+    global last_profile
     if seq!=attempt: return
-    settings={'connection':{'id':V('s','Fixture Wi-Fi'),'type':V('s','802-11-wireless')},'802-11-wireless':{'ssid':V('ay',ssid)},'802-11-wireless-security':{'key-mgmt':V('s','sae' if bytes(ssid)==b'Fixture WPA3' else 'wpa-psk'),'psk-flags':V('u',2)}}
+    settings={'connection':{'id':V('s','Fixture Wi-Fi'),'type':V('s','802-11-wireless')},'802-11-wireless':{'ssid':V('ay',ssid)},'802-11-wireless-security':{'key-mgmt':V('s','sae' if bytes(ssid)==b'Fixture WPA3' else 'wpa-psk')}}
     def answered(value,error):
         if seq!=attempt: return
         if error:
-            record('secret-cancelled',error=error); changed(ND,NM+'.Device',{'State':V('u',30)}); return
+            record('secret-cancelled',error=error)
+            # Hold the failed state so Pearl can observe it; a real daemon does not reset it either.
+            if not fail_device: changed(ND,NM+'.Device',{'State':V('u',30)})
+            return
         # Compare in memory; never print reply, input, or a hash of the password.
         secret=value.unpack()[0].get('802-11-wireless-security',{}).get('psk')
         valid=secret=='fixture-wifi-password'
         record('secret-answer',accepted=valid)
         if not valid:
+            if fail_device: changed(ND,NM+'.Device',{'State':V('u',120)}); return
             later(100,lambda:nm_auth(seq,ssid,profile,True)); return
         changed(ND,NM+'.Device',{'State':V('u',100),'ActiveConnection':V('o',ACTIVE)})
         changed(NR,NM,{'Connectivity':V('u',4)})
+    last_profile=profile
     invoke_agent('GetSecrets',V('(a{sa{sv}}osasu)',(settings,profile,'802-11-wireless-security',[],3 if retry else 1)),'(a{sa{sv}})',answered)
 def method(connection,sender,path,iface,name,params,invocation):
     global agent,attempt,pairing
@@ -74,16 +95,17 @@ def method(connection,sender,path,iface,name,params,invocation):
         agent=(sender, NR+'/SecretAgent' if args.service=='network' else values[0], NM+'.SecretAgent' if args.service=='network' else 'org.bluez.Agent1')
         record('agent-registered',destination=sender); invocation.return_value(V('()',())); return
     if name=='GetSettings': invocation.return_value(V('(a{sa{sv}})',(saved[path],))); return
+    if name=='Delete': delete_profile(path,invocation); return
     if name=='RequestScan':
         record('scan'); later(delay,lambda:invocation.return_value(V('()',()))); return
     if name in ('ActivateConnection','AddAndActivateConnection2'):
         attempt+=1; seq=attempt
         if name=='AddAndActivateConnection2':
             settings,device,ap,options=values
-            assert options['persist']=='volatile' and settings['connection']['autoconnect'] is False
-            if ap!=NR+'/AccessPoint/3': assert settings['802-11-wireless-security']['psk-flags']==2
-            record('activate-new',volatile=True,not_saved=True)
-            ssid=objects[ap][NM+'.AccessPoint']['Ssid'].unpack(); profile=NR+'/Settings/temporary'
+            assert 'persist' not in options and settings['connection']['autoconnect'] is True
+            if ap!=NR+'/AccessPoint/3': assert 'psk-flags' not in settings['802-11-wireless-security']
+            ssid=objects[ap][NM+'.AccessPoint']['Ssid'].unpack(); profile=create_profile(settings,ssid)
+            record('activate-new',persisted=True,autoconnect=True,profile=profile)
         else:
             profile,device,ap=values; ssid=b'Fixture Secure'; record('activate-saved')
         changed(ND,NM+'.Device',{'State':V('u',40),'ActiveConnection':V('o',ACTIVE)})
@@ -95,7 +117,7 @@ def method(connection,sender,path,iface,name,params,invocation):
         later(activation_delay,reply); return
     if args.service=='network' and name in ('Disconnect','DeactivateConnection'):
         attempt+=1
-        invoke_agent('CancelGetSecrets',V('(os)',(NR+'/Settings/temporary','802-11-wireless-security')),'()',lambda v,e:None)
+        invoke_agent('CancelGetSecrets',V('(os)',(last_profile or SP,'802-11-wireless-security')),'()',lambda v,e:None)
         changed(ND,NM+'.Device',{'State':V('u',30),'ActiveConnection':V('o','/')}); invocation.return_value(V('()',())); record('disconnect'); return
     if name in ('StartDiscovery','StopDiscovery'):
         def apply():
@@ -136,7 +158,7 @@ register('/org/freedesktop' if args.service=='network' else '/',manager,{},metho
 if args.service=='network':
     register(NR,NM,{'WirelessEnabled':V('b',True),'WirelessHardwareEnabled':V('b',True),'Connectivity':V('u',1)},method_xml('AddAndActivateConnection2','a{sa{sv}} o o a{sv}','o o a{sv}')+method_xml('ActivateConnection','o o o','o')+method_xml('DeactivateConnection','o'))
     register(NR+'/AgentManager',NM+'.AgentManager',{},method_xml('RegisterWithCapabilities','s u'))
-    register(ND,NM+'.Device',{'DeviceType':V('u',2),'Interface':V('s','test_wlan0'),'Managed':V('b',True),'State':V('u',30),'ActiveConnection':V('o','/'),'AvailableConnections':V('ao',[SP])},method_xml('Disconnect'))
+    register(ND,NM+'.Device',{'DeviceType':V('u',2),'Interface':V('s','test_wlan0'),'Managed':V('b',True),'State':V('u',30),'ActiveConnection':V('o','/'),'AvailableConnections':V('ao',list(available))},method_xml('Disconnect'))
     ap_paths=[NR+'/AccessPoint/'+str(i) for i in range(1,5)]
     register(ND,NM+'.Device.Wireless',{'AccessPoints':V('ao',ap_paths),'ActiveAccessPoint':V('o','/')},method_xml('RequestScan','a{sv}'))
     for path,ssid,bits in zip(ap_paths,[b'Fixture Secure',b'Fixture WPA3',b'Guest Wi-Fi',b'Enterprise'],[0x100,0x400,0,0x200]):
@@ -150,7 +172,7 @@ else:
 name=NM if args.service=='network' else 'org.bluez'
 bus.call_sync('org.freedesktop.DBus','/org/freedesktop/DBus','org.freedesktop.DBus','RequestName',V('(su)',(name,0)),GLib.VariantType.new('(u)'),Gio.DBusCallFlags.NONE,2000,None)
 def command(channel,condition):
-    global delay,reject,prompt_kind,activation_delay,agent
+    global delay,reject,prompt_kind,activation_delay,agent,fail_device
     line=sys.stdin.readline()
     if not line: loop.quit(); return False
     data=json.loads(line)
@@ -158,6 +180,7 @@ def command(channel,condition):
     if 'reject' in data: reject=data['reject']
     if 'prompt' in data: prompt_kind=data['prompt']
     if 'activation_delay' in data: activation_delay=data['activation_delay']
+    if 'fail_device' in data: fail_device=data['fail_device']
     if 'paired' in data: changed(BD,'org.bluez.Device1',{'Paired':V('b',data['paired'])})
     if 'remove' in data:
         path=data['remove']; removed=objects.pop(path,{})
@@ -167,7 +190,7 @@ def command(channel,condition):
         op='RequestName' if data['owner'] else 'ReleaseName'; sig='(su)' if data['owner'] else '(s)'; val=(name,0) if data['owner'] else (name,)
         bus.call_sync('org.freedesktop.DBus','/org/freedesktop/DBus','org.freedesktop.DBus',op,V(sig,val),GLib.VariantType.new('(u)'),Gio.DBusCallFlags.NONE,2000,None)
     if 'cancel_agent' in data:
-        if args.service=='network': invoke_agent('CancelGetSecrets',V('(os)',(NR+'/Settings/temporary','802-11-wireless-security')),'()',lambda v,e:None)
+        if args.service=='network': invoke_agent('CancelGetSecrets',V('(os)',(last_profile or SP,'802-11-wireless-security')),'()',lambda v,e:None)
         else: invoke_agent('Cancel',None,'()',lambda v,e:None)
     if 'saved_label' in data:
         saved[SP]['connection']['id']=V('s',data['saved_label'])

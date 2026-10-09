@@ -1,5 +1,91 @@
 # Pearl implementation progress
 
+## Wi-Fi profiles created from the panel now persist, October 9, 2026
+
+Connecting a new access point asked NetworkManager for a volatile profile with
+autoconnect disabled and `psk-flags=NOT_SAVED`, so the password was dropped on
+disconnect: the network could not come back after a reboot and could not be
+reached from the greeter, which has no network code and no secret agent. The
+`AddAndActivateConnection2` payload in `src/services/network.zig` now enables
+autoconnect and omits both the `persist` option and the secret flags, for open
+and secured networks alike.
+
+What the omission means was measured against the pinned NetworkManager 1.58.1
+checkout in `.cache/NetworkManager`, not assumed:
+
+- `src/core/nm-manager.c:6843` initialises `persist_mode` to
+  `PERSIST_MODE_TO_DISK`; only a `"volatile"` option selects in-memory.
+- `src/core/settings/nm-settings-connection.c:782` gates storage on
+  `secret_is_system_owned()`, which is true when the agent's reply carries
+  neither `AGENT_OWNED` nor `NOT_SAVED`. Pearl's reply carries no flags, so
+  NetworkManager stores the password itself; `:1041` then keeps a disk profile on
+  disk for a system-owned secret.
+- `connection.permissions` stays unset, so the profile is system scope, the only
+  scope that can be active before login.
+- Adding and deleting a permission-less profile both authorize as
+  `settings.modify.system` (`nm-settings.c:2718` and
+  `get_modify_permission_basic`, `nm-settings-connection.c:1932`), so one polkit
+  decision covers the create and its cleanup, and `auth_admin_keep` caching means
+  no second dialog.
+
+An abandoned attempt is removed rather than left behind, because NetworkManager
+stores the secret when the agent replies, before wpa_supplicant confirms it: a
+wrong password followed by a cancel would otherwise leave an autoconnecting
+profile holding that wrong secret. `activated()` keeps the profile path from the
+create reply's first out-arg (previously discarded) and `deleteCreated()` issues
+`Settings.Connection.Delete` for it when the operation is cancelled
+(`cancelledDone`), when a cancelled activation is deactivated (`cleanupDone`), or
+when the device reports a failed activation (state 120 in `read()`). A confirmed
+activation clears the handle instead, and the profile then appears as a saved
+row. `begin()` clears a stale handle so a new operation never inherits one.
+
+Known gaps, also stated in `docs/CONNECTIVITY.md`: if the create reply never
+arrives because the 90-second deadline fired first, or the daemon's bus owner is
+replaced mid-attempt, there is no handle to delete and the entry stays. It is
+then an ordinary saved row that the network editor removes.
+
+The fake daemon stopped pretending the profile is temporary. It registers each
+created profile as a real `Settings.Connection` exposing `GetSettings` and
+`Delete`, names it after the SSID because Pearl sends no `connection.id`, lists
+it in `Device.AvailableConnections` so it maps to the adapter, and names the live
+conversation's profile in `CancelGetSecrets` instead of a fixed path. A
+`fail_device` command drives device state 120 for the rejected-credentials path.
+New checks: the created profile becomes a saved row with its label, security and
+device, and each of the three abandonment paths deletes exactly the profile that
+attempt created.
+
+Checks actually run:
+
+- `zig build -Doptimize=ReleaseSafe`: pass.
+- `zig build test -Doptimize=ReleaseSafe`: 278 of 278, but only after a separate
+  commit added `greeter-form` and `greeter-selection` to the
+  `src/core/log_events.zig` catalog. Both were emitted by `41b4a17` without
+  catalog entries, so the pure suite was already red before this change.
+- `zig build test-connectivity -Doptimize=ReleaseSafe`: all 31 checks pass,
+  recorded in `artifacts/t08/latest/`. Its action log shows seven created
+  profiles and four deletions: the retry-until-right connect and the WPA3 connect
+  keep theirs, the cancelled prompt, the deactivated late activation and the
+  rejected credentials each delete theirs, the profile created before the daemon
+  owner was replaced is not deleted, which is the documented gap, and the profile
+  created after the bus restart is deleted while shutdown drains pending calls.
+- `zig build test-settings-pages -Doptimize=ReleaseSafe`: pass; it shares the
+  fixture and cancels a connect by leaving the page. Its regenerated evidence
+  under `artifacts/settings-navigation/` was reverted, since it is not this
+  change's record.
+- `zig build test-settings-lifecycle -Doptimize=ReleaseSafe`: fails on this
+  machine at the output-removal step, `eventually_status(... popup is None)`
+  after `wlr-randr --output ... --off`, reproduced identically from stashed HEAD
+  sources, so it is not caused by this change. The committed evidence for that
+  suite was recorded on the reference machine.
+
+Not verified here, needing a real radio on an image whose polkit grants
+`settings.modify.system`: the keyfile's `0600` mode and root ownership under
+`/etc/NetworkManager/system-connections/`, `autoconnect=yes` with a non-empty
+`psk` in `nmcli --show-secrets connection show <SSID>`, re-activation after a
+NetworkManager restart and after a radio cycle, that a wrong password followed by
+a cancel leaves no keyfile, and whether repeated autoconnect failures make
+NetworkManager block that SSID.
+
 ## Clipboard & capture as a launcher-style centered panel, October 8, 2026
 
 The clipboard & capture pane now opens the way the launcher does: screen-centered
@@ -1330,9 +1416,11 @@ Bluetooth is an optional configurable group.
 NetworkManager supports open/WPA-personal/WPA3-SAE activation, saved Wi-Fi/wired
 profiles, disconnection, radio state and bounded explicit scans. A registered
 SecretAgent answers only matching user-initiated requests from the daemon's unique
-owner. Temporary new profiles disable autoconnect and mark passwords not saved.
-Pearl never persists credentials or accepts them through CLI arguments. Existing
-saved profiles retain NetworkManager's storage policy.
+owner. A newly created profile persists with autoconnect enabled and
+NetworkManager stores its secret; Pearl removes that profile when the attempt is
+abandoned. Pearl holds no credential store of its own, keeps nothing in its
+preferences and never accepts a password through a CLI argument. Existing saved
+profiles retain NetworkManager's storage policy.
 
 BlueZ has a client-local KeyboardDisplay Agent1 with PIN/passkey entry, passkey
 confirmation/display, authorization, cancellation and release. Pairing, trust and
