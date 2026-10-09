@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     parser = argparse.ArgumentParser(); parser.add_argument('--driver', type=Path, required=True); parser.add_argument('--tool', type=Path, required=True); args = parser.parse_args()
-    evidence = ROOT/'artifacts/base-material-matugen'; evidence.mkdir(parents=True, exist_ok=True)
+    evidence = Path(os.environ['PEARL_TEST_OUTPUT'])/'material-profiles' if os.environ.get('PEARL_TEST_OUTPUT') else ROOT/'artifacts/base-material-matugen'; evidence.mkdir(parents=True, exist_ok=True)
     checks = []; skipped = []
     with tempfile.TemporaryDirectory(prefix='pearl-material-') as temporary:
         root = Path(temporary)

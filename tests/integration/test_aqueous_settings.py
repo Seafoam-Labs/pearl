@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from test_surfaces import ctl, status, capture, clean
 from test_session_services import key
 from types import SimpleNamespace
@@ -31,7 +32,7 @@ def main():
             # legacy "floating" startup alias. Keep this fixture canonical.
             wm=Path(s.env['AQUEOUS_CONFIG']);wm.write_text(wm.read_text().replace('"floating"','"stacking"') + '\n[keybinds.custom]\n"Super+F12" = "spawn:touch ' + str(s.base/'shortcut-fired') + '"\n')
             s.env['GSETTINGS_BACKEND']='memory'
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(s)
             snapshot=json.loads(s.run(['aqueous-config','snapshot','--shell','none']).stdout)
             (args.output/'schema.json').write_text(json.dumps(snapshot,indent=2)+'\n')
             fault=s.base/'fault';fault.write_text('')

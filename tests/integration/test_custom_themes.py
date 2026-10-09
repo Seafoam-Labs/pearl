@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 from test_settings_app import ROOT, PrivateSession, IPC, wait_for, probe, capture, resize, clean
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, settled, click
 from settings_editor import EditorPeer
 from test_theme_packages import fixture, archive, PALETTE
@@ -30,7 +31,7 @@ def main():
     args=parser.parse_args(); args.output.mkdir(parents=True,exist_ok=True)
     report=dict(status='running',binaries={n:hashlib.sha256(getattr(args,n).read_bytes()).hexdigest() for n in ('pearl','settings')})
     (args.output/'acceptance.json').write_text(json.dumps(report,indent=2)+'\n')
-    with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+    with PrivateSession(args.output/'session',tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND']='memory'
         calls=s.base/'generator-calls'; calls.write_text('')
         mode=s.base/'generator-mode';mode.write_text('pass')

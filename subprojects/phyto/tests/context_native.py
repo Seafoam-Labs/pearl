@@ -5,7 +5,7 @@ from pathlib import Path
 PROJECT = Path(__file__).resolve().parents[1]
 PEARL = PROJECT.parents[1]
 sys.path[:0] = [str(PEARL / 'scripts'), str(PEARL / 'tests/integration')]
-from pearl_session import PrivateSession, wait_for
+from pearl_session import PrivateSession, wait_for, fixture_prefix
 from test_surfaces import IPC
 
 def main():
@@ -17,7 +17,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     report = {'status': 'running', 'checks': [], 'binary_sha256': hashlib.sha256(args.binary.read_bytes()).hexdigest()}
     try:
-        with PrivateSession(output / 'session', tool_prefix=PEARL / '.cache/aqueous-activity-production') as s:
+        with PrivateSession(output / 'session', tool_prefix=fixture_prefix()) as s:
             s.env['GSETTINGS_BACKEND'] = 'memory'
             s.env['GVFS_REMOTE_VOLUME_MONITOR_IGNORE'] = '1'
             s.child('gvfs', ['/usr/lib/gvfsd', '--no-fuse'])

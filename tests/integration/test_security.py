@@ -6,6 +6,7 @@ from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC,ctl,status,capture,clean,eventually_status
 
@@ -62,7 +63,7 @@ def main():
             pam_dir=s.base/'pam';pam_dir.mkdir();s.env['PEARL_TEST_PAM_DIR']=str(pam_dir)
             pam_stack=f'auth required {args.pam_module}\naccount required {args.pam_module}\n'
             (pam_dir/'pearl').write_text(pam_stack)
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(s)
             fixture=s.child('authority',['python3',ROOT/'tests/fixtures/session_security.py'],input_pipe=True);fixture.expect('event=ready')
             ipc=IPC(s)
             def state(): return ctl(s,args.ctl,'lifecycle','status')['result']

@@ -7,6 +7,7 @@ from PIL import Image, ImageChops, ImageStat, PngImagePlugin
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT/'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, click, ctl, status, capture, clean
 
@@ -28,7 +29,7 @@ def main():
             s.env['PEARL_TEST_LOCKER'] = str(args.locker)
             pam = s.base/'pam'; pam.mkdir(); (pam/'pearl').write_text(f'auth required {args.pam_module}\naccount required {args.pam_module}\n')
             s.env['PEARL_TEST_PAM_DIR'] = str(pam)
-            s.args = SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous'); T00Session.input_fixture(s)
+            s.args = SimpleNamespace(aqueous_source=str(fixture_source())); T00Session.input_fixture(s)
             authority = s.child('authority', ['python3',ROOT/'tests/fixtures/session_security.py'], input_pipe=True); authority.expect('event=ready')
             app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings'); app.expect('event=control-ready')
             ipc = IPC(s)

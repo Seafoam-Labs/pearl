@@ -1,5 +1,10 @@
 # Pearl development
 
+Use the [testing guide](TESTING.md) for dependency checks, private fixture
+preparation, suite selection, and shared local and CI execution. The
+[implementation plan](TEST_RUNNER_IMPLEMENTATION_PLAN.md) records the runner's
+design and qualification criteria.
+
 Community themes add libcurl and libarchive development/runtime dependencies.
 `zig build build-themes` builds the native `pearl-themes` validator, packer and
 package manager. `zig build test-theme-packages` covers contracts and interrupted
@@ -40,6 +45,21 @@ polkit, PAM locking, packaging and the isolated security suite.
 private accessibility, helper-failure and resource tests.
 
 ## Build and run
+
+The [CI workflow](../.github/workflows/ci.yml) runs on every opened, updated or
+reopened pull request, and can also be started manually in GitHub Actions. It uses
+the Zig version in `build.zig.zon` (checked against `.zigversion`) on Ubuntu and
+runs the model/Unicode suite, bar and Night Light clock tests, release tooling,
+Python protocol trace tests, and runner/registry checks:
+
+```sh
+python3 scripts/test.py doctor --group fast
+python3 scripts/test.py run --group fast
+```
+
+These checks need GLib development files, pkg-config, Python 3 and timezone data.
+GTK binding tests and desktop integration tests use the `native` and `integration`
+groups. Their prerequisites and preparation commands are in [TESTING.md](TESTING.md).
 
 Use **Zig 0.16.0** and the packages in [COMPATIBILITY.md](COMPATIBILITY.md).
 `glib-compile-resources` is also required for ordinary application builds.
@@ -257,7 +277,8 @@ a private compositor. `zig build test-release-performance` performs the 60-secon
 idle measurement and 1,000-cycle soak. Supply `-Doptimize=ReleaseSafe` to these
 commands (and `-Drelease=true` when measuring production artifacts).
 
-`python3 scripts/release-validate.py` runs the full matrix. To rerun a corrected
+`python3 scripts/release-validate.py` runs the release regression matrix through
+the shared runner; this is not every optional integration suite. To rerun a corrected
 failure while retaining other results and prior logs, use
 `python3 scripts/release-validate.py --resume --targets test-surfaces test-services`.
 Do not treat a partial `--targets` run as full release acceptance. See

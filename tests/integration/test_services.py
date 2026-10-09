@@ -6,6 +6,7 @@ from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
+from pearl_session import fixture_prefix, fixture_source
 from test_surfaces import IPC,ctl,status,eventually_status,capture,clean,click
 from t00 import Session as T00Session
 from settings_navigation import choose_page, show_page
@@ -48,7 +49,7 @@ def main():
     args.pearl=args.pearl.resolve(); args.ctl=args.ctl.resolve(); args.output=args.output.resolve(); args.output.mkdir(parents=True,exist_ok=True)
     checks={}; result=dict(status='running',checks=checks,pearl_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest(),ctl_sha256=hashlib.sha256(args.ctl.read_bytes()).hexdigest())
     try:
-        with PrivateSession(args.output/'services',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+        with PrivateSession(args.output/'services',tool_prefix=fixture_prefix()) as s:
             s.env['DBUS_SYSTEM_BUS_ADDRESS']='unix:path='+str(s.runtime/'system-bus')
             system_bus=s.child('system-bus',['dbus-daemon','--session','--nofork','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS']])
             wait_for(lambda:s.run(['busctl','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS'],'list'],check=False).returncode==0)
@@ -57,7 +58,7 @@ def main():
             s.env['PEARL_TEST_BACKLIGHT']=str(s.base/'backlight'); root=Path(s.env['PEARL_TEST_BACKLIGHT']); (root/'test_panel').mkdir(parents=True)
             (root/'test_panel/max_brightness').write_text('1000\n'); (root/'test_panel/brightness').write_text('420\n')
             s.env['PEARL_TEST_POWER_LOG']=str(s.output/'power-actions.jsonl'); Path(s.env['PEARL_TEST_POWER_LOG']).write_text('')
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous'); keyboard=T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source())); keyboard=T00Session.input_fixture(s)
             power=s.child('power',['python3',FIX/'power.py'],input_pipe=True); power.expect('event=ready')
             native=s.child('pipewire',['pipewire','-c',FIX/'pipewire.conf']); wait_for(lambda:(s.runtime/'pipewire-0').is_socket())
             pulse=s.child('pulse',['pipewire-pulse','-c',FIX/'pulse.conf']); wait_for(lambda:(s.runtime/'pulse/native').is_socket())

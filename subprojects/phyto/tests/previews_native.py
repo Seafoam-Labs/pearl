@@ -14,7 +14,7 @@ from providers_helper import check as provider_checks, pdf, video
 PROJECT = Path(__file__).resolve().parents[1]
 PEARL = PROJECT.parents[1]
 sys.path[:0] = [str(PEARL / 'scripts'), str(PEARL / 'tests/integration')]
-from pearl_session import PrivateSession, wait_for
+from pearl_session import PrivateSession, wait_for, fixture_prefix
 from test_surfaces import IPC
 
 
@@ -30,7 +30,7 @@ def main():
         helper_checks(binary)
         report['checks'].append('Isolated helper/cache checks')
         report['providers'] = provider_checks(str(binary), faults=True)
-        with PrivateSession(output / 'session', tool_prefix=PEARL / '.cache/aqueous-activity-production') as s:
+        with PrivateSession(output / 'session', tool_prefix=fixture_prefix()) as s:
             s.env['GSETTINGS_BACKEND'] = 'memory'
             ipc = IPC(s)
             display = next(iter(ipc.outputs().values()))

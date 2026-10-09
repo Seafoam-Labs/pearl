@@ -12,6 +12,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, ctl, status, capture, clean, click
 from test_desktop import desktop, keys
@@ -43,7 +44,7 @@ def main():
             pam.mkdir()
             (pam / 'pearl').write_text(f'auth required {args.pam_module}\naccount required {args.pam_module}\n')
             s.env['PEARL_TEST_PAM_DIR'] = str(pam)
-            s.args = SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
+            s.args = SimpleNamespace(aqueous_source=str(fixture_source()))
             T00Session.input_fixture(s)
             authority = s.child('authority', ['python3', ROOT / 'tests/fixtures/session_security.py'], input_pipe=True)
             authority.expect('event=ready')
@@ -272,7 +273,7 @@ def main():
             # assertion in the wlr-output-management disable path.
             power_dir = s.runtime / 'output-power'
             power_dir.mkdir()
-            protocol = Path('/home/zoey/RiderProjects/Aqueous/compositor/protocol/upstream/wlr-output-power-management-unstable-v1.xml')
+            protocol = (fixture_source() / 'compositor/protocol/upstream/wlr-output-power-management-unstable-v1.xml')
             normalized = power_dir / 'protocol.xml'
             normalized.write_text(protocol.read_text().replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
             s.run(['wayland-scanner', 'client-header', normalized, power_dir / 'output-power.h'])

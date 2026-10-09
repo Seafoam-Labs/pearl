@@ -12,7 +12,7 @@ from pathlib import Path
 PROJECT = Path(__file__).resolve().parents[1]
 PEARL = PROJECT.parents[1]
 sys.path[:0] = [str(PEARL / 'scripts'), str(PEARL / 'tests/integration')]
-from pearl_session import PrivateSession, wait_for
+from pearl_session import PrivateSession, wait_for, fixture_prefix
 from test_surfaces import IPC
 
 
@@ -21,7 +21,7 @@ def main():
     parser.add_argument('--binary', type=Path, required=True)
     parser.add_argument('--seconds', type=int, default=1800)
     parser.add_argument('--output', type=Path, default=PROJECT / 'artifacts/soak')
-    parser.add_argument('--aqueous-prefix', type=Path, default=PEARL / '.cache/aqueous-activity-production')
+    parser.add_argument('--aqueous-prefix', type=Path, default=fixture_prefix())
     args = parser.parse_args()
     binary = args.binary.resolve()
     output = args.output.resolve()

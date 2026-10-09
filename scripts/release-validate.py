@@ -1,42 +1,98 @@
 #!/usr/bin/env python3
-"""Run the release regression matrix in private sessions; retain every exit/log."""
-import argparse, datetime, json, os, subprocess, time, hashlib
+"""Compatibility adapter for release evidence; execution uses scripts/test.py."""
+import argparse
+from datetime import datetime, timezone
+import json
+import os
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
-TARGETS=('integration','test-components','test-adapter','test-surfaces','test-desktop','test-services','test-connectivity','test-session-services','test-preferences','test-aqueous-settings','test-capture-master','test-security','test-lock','test-clipboard-capture','test-dock-islands','test-settings-boundary','test-settings-app','test-settings-appearance','test-settings-services','test-settings-devices','test-settings-integration','test-settings-presentation','test-release')
-def fingerprint():
-    paths=[ROOT/'build.zig',ROOT/'build.zig.zon']
-    for folder in ('src','bindings','resources'):
-        paths.extend(p for p in (ROOT/folder).rglob('*') if p.is_file())
-    digest=hashlib.sha256()
-    for path in sorted(paths):digest.update(str(path.relative_to(ROOT)).encode()+b'\0'+path.read_bytes()+b'\0')
-    return digest.hexdigest()
+import shutil
+import signal
+import uuid
+
+from test import parser as runner_parser, run_suites
+from test_environment import Environment
+from test_process import atomic_json, checkout_lock, fingerprint
+from test_suites import ROOT, RELEASE_TARGETS, select
+
+TARGETS = RELEASE_TARGETS
+
+
+def validate_resume(prior, source, environment):
+    if prior.get('source_fingerprint') != source:
+        raise ValueError('Cannot resume release evidence from different source/tests. Use a new --output directory.')
+    if prior.get('environment_fingerprint') != environment:
+        raise ValueError('Cannot resume release evidence with different dependencies or fixtures. Use a new --output directory.')
+
+
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/functional');p.add_argument('--resume',action='store_true',help='Retain prior target results and log failed attempts when rerunning selected targets');p.add_argument('--targets',nargs='+',choices=TARGETS,default=TARGETS);a=p.parse_args()
-    a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
-    report={'status':'running','started':datetime.datetime.now(datetime.timezone.utc).isoformat(),'targets':{}}
-    if a.resume and (a.output/'metadata.json').is_file():
-        report=json.loads((a.output/'metadata.json').read_text());report['status']='running'
-    initial=fingerprint();report['source_fingerprint']=initial
-    env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(ROOT/'.cache/zig'),PEARL_TEST_AQUEOUS_PREFIX=str(ROOT/'.cache/aqueous-activity-production'))
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--output', type=Path, default=ROOT / 'artifacts/aqueous-082/functional')
+    p.add_argument('--resume', action='store_true')
+    p.add_argument('--targets', nargs='+', choices=TARGETS, default=TARGETS)
+    p.add_argument('--aqueous-prefix', type=Path)
+    p.add_argument('--jobs', type=int, default=min(os.cpu_count() or 2, 4))
+    args = p.parse_args()
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    targets = ['unit', *dict.fromkeys(args.targets)]
+    suites = select(names=['release:' + target for target in targets])
+    command = ['run', '--group', 'release-regression', '--jobs', str(args.jobs)]
+    prefix = args.aqueous_prefix or (Path(os.environ['PEARL_TEST_AQUEOUS_PREFIX']) if os.environ.get('PEARL_TEST_AQUEOUS_PREFIX') else None)
+    if prefix:
+        command += ['--aqueous-prefix', str(prefix)]
+    run_args = runner_parser().parse_args(command)
+    run_args.group = None  # A --targets run must not advertise full-group coverage.
+    run_args.output = output / 'runs' / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ-') + uuid.uuid4().hex[:8])
+    env = Environment(run_args)
+    with checkout_lock(ROOT):
+        initial = fingerprint(ROOT)
+        context = {s['id']: env.check(s) for s in select('release-regression')}
+        for variant in ('production',):
+            path = env.prefix(variant) / 'metadata.json'
+            context[variant] = json.loads(path.read_text()) if path.exists() else None
+        metadata = output / 'metadata.json'
+        prior = json.loads(metadata.read_text()) if metadata.exists() else None
+        if prior and not args.resume:
+            raise ValueError('Evidence already exists. Use --resume for identical inputs or choose a new --output.')
+        if args.resume and prior:
+            validate_resume(prior, initial, context)
+        report = prior or dict(targets={}, previous_attempts={})
+        report.update(status='running', source_fingerprint=initial, environment_fingerprint=context)
+        atomic_json(metadata, report)
+        try:
+            code = run_suites(run_args, suites, env)
+            results = json.loads((run_args.output / 'results.json').read_text())
+            for target in targets:
+                key = 'release:' + target
+                record = results['suites'][key]
+                destination = output / target
+                if destination.exists():
+                    previous = output / 'attempts' / (target + '-' + uuid.uuid4().hex[:8])
+                    previous.parent.mkdir(exist_ok=True)
+                    destination.rename(previous)
+                    report['previous_attempts'].setdefault(target, []).append(dict(
+                        result=report['targets'].get(target), artifacts=str(previous.relative_to(output))))
+                source = run_args.output / key.replace(':', '-')
+                if source.exists():
+                    shutil.copytree(source, destination)
+                report['targets'][target] = dict(exit_code=record.get('exit_code', 2),
+                    seconds=record.get('seconds', 0), command=record.get('commands', []),
+                    status=record['status'], run=str(run_args.output.relative_to(output)))
+            report['source_unchanged'] = results['source_unchanged']
+            report['status'] = 'passed' if code == 0 and all(v['exit_code'] == 0 for v in report['targets'].values()) else 'failed'
+            return code if report['status'] == 'passed' or code else 1
+        except BaseException as error:
+            report.update(status='failed', error=str(error), source_unchanged=fingerprint(ROOT) == initial)
+            raise
+        finally:
+            atomic_json(metadata, report)
+
+
+if __name__ == '__main__':
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     try:
-        for target in ('unit',*a.targets):
-            command=['zig','build',*(['test','test-adapter-unit','test-bindings','test-release-tools'] if target=='unit' else [target]),'-Doptimize=ReleaseSafe','-Drelease=true','--summary','all']
-            if target!='unit':command+=['--','--output',str(a.output/target)]
-            print('Running '+target,flush=True);start=time.monotonic()
-            previous=report['targets'].get(target)
-            if previous:
-                attempts=report.setdefault('previous_attempts',{}).setdefault(target,[]);attempts.append(previous)
-                old_log=a.output/(target+'.log')
-                if old_log.exists():old_log.rename(a.output/f'{target}.attempt-{len(attempts)}.log')
-            with (a.output/(target+'.log')).open('w') as log:
-                result=subprocess.run(command,cwd=ROOT,env=env,stdout=log,stderr=subprocess.STDOUT,timeout=900)
-            report['targets'][target]={'exit_code':result.returncode,'seconds':time.monotonic()-start,'command':command}
-            (a.output/'metadata.json').write_text(json.dumps(report,indent=2)+'\n')
-            print(f'{target}: exit {result.returncode}',flush=True)
-        report['source_unchanged']=fingerprint()==initial
-        report['status']='passed' if report['source_unchanged'] and all(v['exit_code']==0 for v in report['targets'].values()) else 'failed'
-    except Exception as error:report.update(status='failed',error=str(error));raise
-    finally:(a.output/'metadata.json').write_text(json.dumps(report,indent=2)+'\n')
-    raise SystemExit(report['status']!='passed')
-if __name__=='__main__':main()
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        raise SystemExit(130)
+    except ValueError as error:
+        raise SystemExit(str(error))

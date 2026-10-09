@@ -9,6 +9,7 @@ from pathlib import Path
 from PIL import Image
 from test_settings_app import (ROOT, PrivateSession, IPC, wait_for, ctl, capture,
                                clean, request, probe, click_widget, keys, resize)
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, click, control, type_text
 from settings_editor import EditorPeer
 
@@ -54,7 +55,7 @@ def main():
         checks[name] = True
         print('PASS', name, flush=True)
     try:
-        with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+        with PrivateSession(args.output/'session', tool_prefix=fixture_prefix()) as s:
             s.env['GSETTINGS_BACKEND'] = 'memory'
             ipc = IPC(s)
             output = next(iter(ipc.outputs().values()))

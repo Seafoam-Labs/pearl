@@ -1,0 +1,22 @@
+{
+  "zig": {
+    "url": "https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz",
+    "sha256": "70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00"
+  },
+  "wasmtime": {
+    "url": "https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.2/wasmtime-v48.0.2-x86_64-linux-c-api.tar.xz",
+    "sha256": "d9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9"
+  },
+  "wit-bindgen": {
+    "url": "https://github.com/bytecodealliance/wit-bindgen/releases/download/v0.62.0/wit-bindgen-0.62.0-x86_64-linux.tar.gz",
+    "sha256": "3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe"
+  },
+  "wasm-tools": {
+    "url": "https://github.com/bytecodealliance/wasm-tools/releases/download/v1.259.0/wasm-tools-1.259.0-x86_64-linux.tar.gz",
+    "sha256": "3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160"
+  },
+  "fprintd": {
+    "url": "https://gitlab.freedesktop.org/libfprint/fprintd/-/archive/v1.94.5/fprintd-v1.94.5.tar.gz",
+    "sha256": "a026ef34c31b25975275cc29a5e4eba2b54524769672095a5228098a08acd82c"
+  }
+}

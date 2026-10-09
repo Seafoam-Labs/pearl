@@ -6,6 +6,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, ctl, status, capture, click, clean
 from test_desktop import keys, desktop
@@ -17,7 +18,7 @@ def main():
     parser.add_argument('--pearl', type=Path, required=True)
     parser.add_argument('--ctl', type=Path, required=True)
     parser.add_argument('--require-order', action='store_true')
-    parser.add_argument('--aqueous-prefix', type=Path, default=ROOT/'.cache/aqueous-activity-production')
+    parser.add_argument('--aqueous-prefix', type=Path, default=fixture_prefix())
     parser.add_argument('--output', type=Path, default=ROOT/'artifacts/running-apps')
     args = parser.parse_args()
     args.pearl=args.pearl.resolve();args.ctl=args.ctl.resolve();args.output=args.output.resolve()

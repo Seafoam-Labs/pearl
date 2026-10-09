@@ -12,6 +12,7 @@ import uuid
 from pathlib import Path
 from types import SimpleNamespace
 from test_surfaces import ROOT, PrivateSession, IPC, ctl, status, wait_for, clean, capture
+from pearl_session import fixture_prefix, fixture_source
 from settings_editor import EditorPeer
 
 
@@ -43,9 +44,9 @@ def main():
         checks[name] = True
         print('PASS', name, flush=True)
     try:
-        with PrivateSession(args.output / 'session', tool_prefix=ROOT / '.cache/aqueous-activity-production') as s:
+        with PrivateSession(args.output / 'session', tool_prefix=fixture_prefix()) as s:
             from t00 import Session as T00Session
-            s.args = SimpleNamespace(aqueous_source=str(ROOT / '.cache/aqueous-activity-production/source'))
+            s.args = SimpleNamespace(aqueous_source=str(fixture_source()))
             T00Session.input_fixture(s)
             report['gamma_probe'] = probe_contract(s)
             assert report['gamma_probe']['protocol'], report

@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      integrations:
+        description: Run the native integration group (qualification job)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libglib2.0-dev pkg-config python3 tzdata
+
+      # Reads minimum_zig_version from build.zig.zon and caches Zig builds.
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+
+      - name: Verify pinned Zig version
+        run: test "$(zig version)" = "$(cat .zigversion)"
+
+      - name: Check suite inventory
+        run: python3 scripts/test.py check-registry
+
+      - name: Check test prerequisites
+        run: python3 scripts/test.py doctor --group fast
+
+      - name: Run fast tests
+        run: python3 scripts/test.py run --group fast --output .cache/ci-results
+
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fast-test-results
+          path: .cache/ci-results/
+          include-hidden-files: true
+          if-no-files-found: ignore
+
+  integration:
+    name: Native integration qualification
+    if: github.event_name == 'workflow_dispatch' && inputs.integrations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    container:
+      image: archlinux@sha256:4e77cf2ea5f410e6f8be5abf93ccf17ce2436e87a138c167208356711a405dbd
+    steps:
+      - name: Install native prerequisites
+        run: |
+          pacman -Syu --noconfirm --needed \
+            base-devel git zig python python-pip python-pillow python-gobject pkgconf \
+            gtk4 gtk4-layer-shell libpulse pam polkit curl libarchive libpng dbus grim \
+            wayland wayland-protocols ttf-dejavu matugen meson ninja glslang \
+            vulkan-headers vulkan-icd-loader vulkan-swrast mesa libinput libevdev \
+            libxkbcommon pixman libdrm libdisplay-info libliftoff lcms2 seatd \
+            xorg-xwayland libxcb xcb-util-errors xcb-util-wm xcb-util-renderutil hwdata \
+            wlr-randr wlrctl wtype wl-clipboard pipewire pipewire-pulse libnotify \
+            desktop-file-utils at-spi2-core
+
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Cache dependency downloads
+        uses: actions/cache@v4
+        with:
+          key: native-dependencies-${{ runner.arch }}-${{ hashFiles('scripts/test-downloads.json', 'scripts/aqueous-target.json', '**/build.zig.zon', 'tests/runner-requirements.txt') }}
+          path: |
+            .cache/test-runner/downloads/
+            .cache/test-runner/wheels/
+            zig-pkg/
+
+      - name: Prepare integration fixtures
+        run: python3 scripts/test.py prepare --group integration --output .cache/ci-preparation
+
+      - name: Check integration prerequisites
+        run: python3 scripts/test.py doctor --group integration
+
+      - name: Run integrations
+        run: python3 scripts/test.py run --group integration --output .cache/ci-integrations
+
+      - name: Upload integration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          include-hidden-files: true
+          path: |
+            .cache/ci-preparation/
+            .cache/ci-integrations/
+          if-no-files-found: ignore

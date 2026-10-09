@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from test_preferences import apply
 from test_surfaces import capture, ctl, status, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from test_custom_themes import Peer
 from test_theme_packages import fixture, archive, PALETTE
 
@@ -104,7 +105,7 @@ def verify_missing_color(args, report):
     # Replace the system theme as well: otherwise GTK can inherit its named
     # color even when the selected application theme does not define one.
     from test_surfaces import PrivateSession, ROOT, clean
-    with PrivateSession(args.output / 'missing-color', tool_prefix=ROOT / '.cache/aqueous-activity-production') as s:
+    with PrivateSession(args.output / 'missing-color', tool_prefix=fixture_prefix()) as s:
         root = Path(s.env['XDG_DATA_HOME']) / 'themes/OpacityFallback/gtk-4.0'
         root.mkdir(parents=True)
         (root / 'gtk-dark.css').write_text('.background {background:#a02080;} button {background:transparent;}')

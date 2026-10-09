@@ -6,6 +6,7 @@ from PIL import Image
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
+from pearl_session import fixture_prefix, fixture_source
 from test_surfaces import ctl,status,capture,clean
 from test_session_services import png,key,focus_target
 from types import SimpleNamespace
@@ -34,7 +35,7 @@ def main():
         with PrivateSession(args.output/'session') as s:
             # The chooser remembers its geometry without requiring a dconf service.
             s.env['GSETTINGS_BACKEND']='memory'
-            s.args=SimpleNamespace(aqueous_source=str(ROOT/'.cache/aqueous-activity-production/source'));keyboard=T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source()));keyboard=T00Session.input_fixture(s)
             app=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready')
             v=settled(s,args.ctl);assert v['appearance']==1 and v['err'] is None,v
             path=Path(v['path']);assert not path.exists();assert path.with_name('last-good.json').exists()

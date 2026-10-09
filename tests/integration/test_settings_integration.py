@@ -4,6 +4,7 @@ import argparse, hashlib, json, os, shutil, subprocess, tempfile, time
 from pathlib import Path
 from types import SimpleNamespace
 from test_settings_app import ROOT, APP_ID, PrivateSession, IPC, wait_for, ctl, status, clean, windows, probe, keys, capture
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 
 
@@ -49,8 +50,8 @@ def main():
         assert 'Exec=pearl-settings\n' in desktop.read_text()
         assert (stage/'usr/share/icons/hicolor/scalable/apps'/f'{APP_ID}.svg').is_file()
         assert (stage/'usr/share/metainfo'/f'{APP_ID}.metainfo.xml').is_file()
-        with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
-          s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
+        with PrivateSession(args.output/'session',tool_prefix=fixture_prefix()) as s:
+          s.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(s)
           s.env['PATH']=str(bindir)+os.pathsep+s.env['PATH']
           s.env['XDG_DATA_DIRS']=str(stage/'usr/share')+os.pathsep+s.env.get('XDG_DATA_DIRS','/usr/local/share:/usr/share')
           s.env['GSETTINGS_BACKEND']='memory'

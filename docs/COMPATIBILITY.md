@@ -81,8 +81,9 @@ source hashes and actual binaries/libraries. Reference source trees were not
 modified. Normal Pearl builds need the installed runtime/development packages;
 exact GIR hashes matter only when regenerating bindings. System package upgrades
 are not made reproducible merely by the Zig package lock—use the recorded matrix
-or review and revalidate a new one. No CI workflow is installed yet; development
-builds enforce `.zigversion`'s exact toolchain through `build.zig`.
+or review and revalidate a new one. The current [testing guide](TESTING.md) covers
+the self-service runner and CI; builds enforce `.zigversion`'s exact toolchain
+through `build.zig`.
 
 ## Binding inventory and implementation decisions
 

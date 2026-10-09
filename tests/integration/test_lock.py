@@ -13,6 +13,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, capture
 
@@ -55,7 +56,7 @@ def main():
     checks = report["checks"]
     try:
         with PrivateSession(args.output / "session") as session:
-            session.args = SimpleNamespace(aqueous_source="/home/zoey/RiderProjects/Aqueous")
+            session.args = SimpleNamespace(aqueous_source=str(fixture_source()))
             T00Session.input_fixture(session)
             pam_dir = session.base / "pam"
             pam_dir.mkdir()

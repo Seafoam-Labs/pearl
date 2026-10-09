@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
+from pearl_session import fixture_prefix, fixture_source
 from test_surfaces import ctl,status,capture,clean,eventually_status,click
 from t00 import Session as T00Session
 FIX=ROOT/'tests/fixtures/session/desktop.py'
@@ -57,7 +58,7 @@ def main():
         with PrivateSession(args.output/'protocols') as s:
             s.env['PEARL_TEST_SESSION_LOG']=str(s.output/'clients.jsonl');Path(s.env['PEARL_TEST_SESSION_LOG']).write_text('')
             art=s.base/'cover.png';png(art);s.env['PEARL_TEST_ART']=art.as_uri()
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');keyboard=T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source()));keyboard=T00Session.input_fixture(s)
             fixture=s.child('clients',['python3',FIX],input_pipe=True);fixture.expect('event=ready')
             pearl=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');pearl.expect('event=control-ready')
             await_state(s,args.ctl,lambda v:v['notifications']['available'] and v['tray']['watcher'] and v['media']['count']==1 and v['media']['players'][0]['ready'])

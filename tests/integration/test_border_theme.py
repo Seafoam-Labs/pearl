@@ -7,6 +7,7 @@ from pathlib import Path
 from PIL import Image
 
 from test_settings_app import ROOT, PrivateSession, IPC, wait_for, resize, probe, capture
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, click, settled
 from test_settings_services import Peer
 
@@ -33,7 +34,7 @@ def main():
         checks.append(name)
         print('PASS', name, flush=True)
 
-    with PrivateSession(args.output / 'session', tool_prefix=ROOT / '.cache/aqueous-activity-production') as s:
+    with PrivateSession(args.output / 'session', tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'
         mode = s.base / 'generator-mode'
         mode.write_text('pass')

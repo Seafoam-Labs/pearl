@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 from PIL import Image
 from test_settings_app import ROOT, PrivateSession, IPC, wait_for, ctl, capture, clean, probe
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, click, settled
 from settings_editor import EditorPeer
 
@@ -15,12 +16,12 @@ def main():
     for name in ('pearl', 'settings', 'ctl'): p.add_argument('--'+name, type=Path, required=True)
     p.add_argument('--libraries', type=Path)
     p.add_argument('--engine-prefix', type=Path)
-    p.add_argument('--aqueous-source', type=Path, default=ROOT.parent/'RiderProjects/Aqueous')
+    p.add_argument('--aqueous-source', type=Path, default=fixture_source())
     p.add_argument('--output', type=Path, default=ROOT/'artifacts/qtengine/session')
     args = p.parse_args()
     args.output = args.output.resolve(); args.output.mkdir(parents=True, exist_ok=True)
     checks = []
-    with PrivateSession(args.output/'desktop', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+    with PrivateSession(args.output/'desktop', tool_prefix=fixture_prefix()) as s:
         if args.libraries: s.env['LD_LIBRARY_PATH'] = str(args.libraries.resolve())
         if args.engine_prefix:
             prefix=args.engine_prefix.resolve()

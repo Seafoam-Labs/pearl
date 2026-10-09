@@ -6,6 +6,7 @@ from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
+from pearl_session import fixture_prefix, fixture_source
 from test_surfaces import ctl,status,capture,clean
 from test_services import command
 from t00 import Session as T00Session
@@ -43,7 +44,7 @@ def main():
             system=s.child('system-bus',['dbus-daemon','--session','--nofork','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS']])
             wait_for(lambda:s.run(['busctl','--address='+s.env['DBUS_SYSTEM_BUS_ADDRESS'],'list'],check=False).returncode==0)
             s.env['PEARL_TEST_CONNECTIVITY_LOG']=str(s.output/'actions.jsonl'); Path(s.env['PEARL_TEST_CONNECTIVITY_LOG']).write_text('')
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous'); keyboard=T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source())); keyboard=T00Session.input_fixture(s)
             network=s.child('network',['python3',FIX,'network'],input_pipe=True); network.expect('event=ready')
             bluetooth=s.child('bluetooth',['python3',FIX,'bluetooth'],input_pipe=True); bluetooth.expect('event=ready')
             pearl=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings'); pearl.expect('event=control-ready')

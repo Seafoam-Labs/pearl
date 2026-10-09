@@ -3,6 +3,7 @@
 import argparse, json, time, socket, struct
 from pathlib import Path
 from test_settings_app import ROOT, APP_ID, PrivateSession, IPC, wait_for, probe, windows, capture, click_widget, keys, request, status
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, click, control, type_text
 from test_settings_services import Peer, aq_ready, navigate
 
@@ -53,7 +54,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     checks = {}; report = dict(status='running', checks=checks)
     try:
-      with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+      with PrivateSession(args.output/'session', tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'; ipc = IPC(s)
         wm = Path(s.env['AQUEOUS_CONFIG']); wm.write_text(wm.read_text().replace('"floating"', '"stacking"'))
         output = next(iter(ipc.outputs().values())); connector = output['name']

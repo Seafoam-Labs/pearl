@@ -11,6 +11,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT/'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, ctl, status, eventually_status, capture, click
 from test_desktop import keys, entries, FIXTURE
@@ -39,7 +40,7 @@ def main():
             Path(s.env['PEARL_SECURITY_LOG']).write_text('')
             authority = s.child('authority', ['python3', ROOT/'tests/fixtures/session_security.py'], input_pipe=True)
             authority.expect('event=ready')
-            s.args = SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
+            s.args = SimpleNamespace(aqueous_source=str(fixture_source()))
             T00Session.input_fixture(s)
             system = s.base/'system-data'
             user = Path(s.env['XDG_DATA_HOME'])

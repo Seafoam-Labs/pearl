@@ -8,6 +8,7 @@ import shlex
 import time
 from PIL import Image
 from test_settings_app import ROOT, PrivateSession, IPC, wait_for, capture, probe, resize
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, click
 from settings_editor import EditorPeer
 from compact_editor import open_editor
@@ -21,7 +22,7 @@ def main():
     parser.add_argument('--output', type=Path, default=ROOT/'artifacts/greeter-sync/ui')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+    with PrivateSession(args.output/'session', tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'
         config_dir = s.base/'greeter-config'
         config_dir.mkdir()

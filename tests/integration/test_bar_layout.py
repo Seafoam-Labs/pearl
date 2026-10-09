@@ -8,6 +8,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import ctl, status, capture, clean, IPC, click
 from test_preferences import settled, apply
@@ -24,8 +25,8 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     report = dict(status='running', cases=[])
     try:
-        with PrivateSession(args.output / 'session', tool_prefix=ROOT / '.cache/aqueous-activity-production') as s:
-            s.args = SimpleNamespace(aqueous_source=str(ROOT/'.cache/aqueous-activity-production/source'))
+        with PrivateSession(args.output / 'session', tool_prefix=fixture_prefix()) as s:
+            s.args = SimpleNamespace(aqueous_source=str(fixture_source()))
             T00Session.input_fixture(s)
             app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings')
             app.expect('event=control-ready')

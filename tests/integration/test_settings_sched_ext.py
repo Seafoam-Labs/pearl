@@ -7,6 +7,7 @@ import time
 import uuid
 from pathlib import Path
 from test_settings_app import *
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import click, ready
 from test_settings_services import Peer, navigate
 
@@ -24,7 +25,7 @@ def main():
     checks = {}
     report = dict(status='running', checks=checks)
     try:
-      with PrivateSession(args.output / 'session', tool_prefix=ROOT / '.cache/aqueous-activity-production') as s:
+      with PrivateSession(args.output / 'session', tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'
         root = s.output / 'scx-fixture'
         (root / 'bin').mkdir(parents=True, exist_ok=True)

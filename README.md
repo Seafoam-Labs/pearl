@@ -59,6 +59,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Compatibility and reproduction](docs/COMPATIBILITY.md): verified dependencies, commands, capability gaps and baseline results.
 - [Logging and support diagnostics](docs/LOGGING.md): where logs go, runtime verbosity flags, failure runbooks and the `pearlctl report` bundle.
 - [Development guide](docs/DEVELOPMENT.md): run the gallery, use isolated sessions, and follow lifecycle/ownership conventions.
+- [Running tests](docs/TESTING.md): check dependencies, prepare private fixtures, select suites, and inspect local or CI results.
 - [Aqueous model](docs/AQUEOUS_MODEL.md): decoder limits, atomic updates, derived views and ownership contracts.
 - [Aqueous adapter](docs/AQUEOUS_ADAPTER.md): persistent connections, command completion, recovery and icon caching.
 - [Live desktop](docs/DESKTOP.md) and [DMS/Pearl comparison](artifacts/t06/comparison.html): bar, GIO launcher, calendar, control center and native layout controls.

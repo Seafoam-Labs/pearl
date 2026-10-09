@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """Build the pinned upstream master into a private prefix without modifying upstream."""
-import argparse,hashlib,io,json,os,shutil,subprocess,tarfile
+import argparse,hashlib,io,json,os,shutil,subprocess,tarfile,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 from aqueous_target import REV
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',type=Path,default=Path('/home/zoey/RiderProjects/Aqueous'));p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production');p.add_argument('--revision',default=REV);p.add_argument('--bootstrap-testing',action='store_true',help='Production policy with private instance name for systemd bootstrap test');p.add_argument('--activity-testing',action='store_true',help='Private pixman diagnostic build; never package');a=p.parse_args();revision=a.revision;assert not (a.activity_testing and a.bootstrap_testing);a.source=a.source.resolve();a.prefix=a.prefix.resolve()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',type=Path,default=ROOT/'.cache/test-runner/aqueous.git');p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production');p.add_argument('--revision',default=REV);p.add_argument('--jobs',type=int,default=min(os.cpu_count() or 2,4));p.add_argument('--offline',action='store_true');p.add_argument('--bootstrap-testing',action='store_true',help='Production policy with private instance name for systemd bootstrap test');p.add_argument('--activity-testing',action='store_true',help='Private pixman diagnostic build; never package');a=p.parse_args();revision=a.revision;assert not (a.activity_testing and a.bootstrap_testing);a.source=a.source.resolve();a.prefix=a.prefix.resolve()
  assert a.prefix.is_relative_to(ROOT/'.cache'),'Use a private workspace cache prefix'
  work=a.prefix/'source';a.prefix.mkdir(parents=True,exist_ok=True)
  if not work.exists():
-  work.mkdir();data=subprocess.check_output(['git','-C',str(a.source),'archive',revision]);tarfile.open(fileobj=io.BytesIO(data)).extractall(work,filter='data')
-  (work/'.pearl-revision').write_text(revision)
+  data=subprocess.check_output(['git','-C',str(a.source),'archive',revision])
+  with tempfile.TemporaryDirectory(dir=a.prefix) as temporary:
+   staging=Path(temporary)/'source';staging.mkdir()
+   tarfile.open(fileobj=io.BytesIO(data)).extractall(staging,filter='data')
+   (staging/'.pearl-revision').write_text(revision);staging.rename(work)
  assert (work/'.pearl-revision').read_text()==revision
  for part in ('compositor','settingsApplication'):
   cached=a.source/part/'zig-pkg'
@@ -27,6 +30,7 @@ def main():
   prior=json.loads((a.prefix/'metadata.json').read_text()) if (a.prefix/'metadata.json').exists() else {}
   library=dependency/'lib/libwlroots-0.20.so'
   library_matches=library.exists() and prior.get('wlroots_sha256')==hashlib.sha256(library.read_bytes()).hexdigest()
+  if a.offline and not (work/'compositor/.deps/downloads/wlroots-0.20.2.tar.gz').exists() and not library.exists():raise RuntimeError('Offline wlroots source archive is missing; prepare online first')
   if not stamp.exists() or json.loads(stamp.read_text())!=patches or not library_matches:
    download=work/'compositor/.deps/downloads';download.mkdir(parents=True,exist_ok=True)
    cached=a.source/'compositor/.deps/downloads/wlroots-0.20.2.tar.gz'
@@ -35,6 +39,8 @@ def main():
    stamp.write_text(json.dumps(patches,indent=2)+'\n')
   meta['wlroots_patch_sha256']=patches
   for part,command in commands.items():
+   command.append('-j'+str(a.jobs))
+   if a.offline:command.extend(['--system',str(ROOT/'.cache/zig/p')])
    print('Building '+part,flush=True)
    with (a.prefix/(part+'.log')).open('w') as log:subprocess.run(command,cwd=work/part,env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
   for name in ('aqueous','aqueousctl','aqueous-config'):meta['binary_sha256'][name]=hashlib.sha256((a.prefix/'bin'/name).read_bytes()).hexdigest()

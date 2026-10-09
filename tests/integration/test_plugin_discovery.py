@@ -9,6 +9,7 @@ import threading
 import uuid
 from pathlib import Path
 from test_settings_app import ROOT, PrivateSession, IPC, ctl, wait_for, probe, clean
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_services import Peer
 from test_plugin_host import digest
 
@@ -19,7 +20,7 @@ def main():
     p.add_argument('--settings', type=Path, default=ROOT/'zig-out/test/pearl-settings-test')
     p.add_argument('--ctl', type=Path, default=ROOT/'zig-out/bin/pearlctl')
     p.add_argument('--examples', type=Path, default=ROOT/'.cache/plugin-examples')
-    p.add_argument('--prefix', type=Path, default=ROOT/'.cache/aqueous-activity-production')
+    p.add_argument('--prefix', type=Path, default=fixture_prefix())
     p.add_argument('--output', type=Path, default=ROOT/'.cache/plugin-discovery')
     p.add_argument('--cycles', type=int, default=100)
     p.add_argument('--no-monitors', action='store_true')

@@ -12,6 +12,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, ctl, status, capture, clean, click
 from test_preferences import settled, apply
@@ -45,7 +46,7 @@ def main():
             def active(value):
                 authority.proc.stdin.write(json.dumps(dict(active=value)) + '\n')
                 authority.proc.stdin.flush()
-            s.args = SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
+            s.args = SimpleNamespace(aqueous_source=str(fixture_source()))
             T00Session.input_fixture(s)
             ipc = IPC(s)
             app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings')

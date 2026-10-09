@@ -3,6 +3,7 @@
 import argparse, copy, hashlib, json, time
 from pathlib import Path
 from test_settings_app import ROOT, APP_ID, PrivateSession, IPC, wait_for, ctl, status, clean, probe, windows, capture, click_widget, keys, apply_preferences
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, click, type_text
 from test_settings_services import navigate, aq_ready, Peer
 from test_connectivity import FIX as CONNECTIVITY
@@ -21,7 +22,7 @@ def main():
     report=dict(status='running',checks={},captures=[],layouts=[],binaries={n:hashlib.sha256(getattr(args,n).read_bytes()).hexdigest() for n in ('settings','pearl','ctl')})
     checks=report['checks']
     try:
-      with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+      with PrivateSession(args.output/'session',tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND']='memory';ipc=IPC(s)
         wm=Path(s.env['AQUEOUS_CONFIG']);wm.write_text(wm.read_text().replace('"floating"','"stacking"'))
         output=next(iter(ipc.outputs().values()));connector=output['name']

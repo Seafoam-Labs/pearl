@@ -252,21 +252,23 @@ class Session:
         # It is an external test executable, never linked into Pearl.
         # PEARL_TEST_AQUEOUS_SOURCE overrides the baked-in reference checkout;
         # a driver's own explicit non-default path still wins.
-        source = Path(self.args.aqueous_source) / 'compositor'
-        if str(self.args.aqueous_source) == '/home/zoey/RiderProjects/Aqueous' and os.environ.get('PEARL_TEST_AQUEOUS_SOURCE'):
-            source = Path(os.environ['PEARL_TEST_AQUEOUS_SOURCE']) / 'compositor'
+        from pearl_session import fixture_source
+        supplied = getattr(self.args, 'aqueous_source', None)
+        source = (Path(supplied) if supplied and str(supplied) != '/home/zoey/RiderProjects/Aqueous'
+                  else fixture_source()) / 'compositor'
         build = self.runtime / 'input-fixture'
         build.mkdir()
+        protocol_data = Path(self.run(['pkg-config', '--variable=pkgdatadir', 'wayland-protocols']).stdout.strip())
         protocols = {
-            'xdg-shell': '/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml',
-            'xdg-activation': '/usr/share/wayland-protocols/staging/xdg-activation/xdg-activation-v1.xml',
-            'shortcuts': '/usr/share/wayland-protocols/unstable/keyboard-shortcuts-inhibit/keyboard-shortcuts-inhibit-unstable-v1.xml',
+            'xdg-shell': protocol_data / 'stable/xdg-shell/xdg-shell.xml',
+            'xdg-activation': protocol_data / 'staging/xdg-activation/xdg-activation-v1.xml',
+            'shortcuts': protocol_data / 'unstable/keyboard-shortcuts-inhibit/keyboard-shortcuts-inhibit-unstable-v1.xml',
             'virtual-keyboard': source / 'protocol/upstream/virtual-keyboard-unstable-v1.xml',
             'layer-shell': source / 'protocol/upstream/wlr-layer-shell-unstable-v1.xml',
-            'session-lock': '/usr/share/wayland-protocols/staging/ext-session-lock/ext-session-lock-v1.xml',
+            'session-lock': protocol_data / 'staging/ext-session-lock/ext-session-lock-v1.xml',
             'aqueous-shell': source / 'protocol/aqueous-shell-v1.xml',
             'ext-workspace': source / 'protocol/upstream/ext-workspace-v1.xml',
-            'pointer-constraints': '/usr/share/wayland-protocols/unstable/pointer-constraints/pointer-constraints-unstable-v1.xml',
+            'pointer-constraints': protocol_data / 'unstable/pointer-constraints/pointer-constraints-unstable-v1.xml',
         }
         generated = []
         for name, xml in protocols.items():

@@ -3,6 +3,7 @@
 import argparse,json,time,wave,signal
 from pathlib import Path
 from test_settings_app import *
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import click,type_text,ready
 from test_settings_services import Peer,find,navigate
 from test_services import command,await_services,FIX
@@ -16,7 +17,7 @@ def main():
     for name in ('settings','pearl','ctl','spike','output'):setattr(args,name,getattr(args,name).resolve())
     args.output.mkdir(parents=True,exist_ok=True);checks={};report=dict(status='running',checks=checks)
     try:
-      with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+      with PrivateSession(args.output/'session',tool_prefix=fixture_prefix()) as s:
         ipc=IPC(s);s.env['GSETTINGS_BACKEND']='memory'
         wm=Path(s.env['AQUEOUS_CONFIG']);wm.write_text(wm.read_text().replace('"floating"','"stacking"'))
         output=next(iter(ipc.outputs().values()));s.run(['wlr-randr','--output',output['name'],'--custom-mode','1600x1100@60Hz'])

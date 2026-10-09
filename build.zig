@@ -336,6 +336,7 @@ pub fn build(b: *std.Build) void {
         const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugins.py", "--pearl", b.getInstallPath(.bin, "pearl"), "--ctl", b.getInstallPath(.bin, "pearlctl"), "--settings" });
         check.addArtifactArg(settings_test_app);
         check.addArgs(&.{ "--examples", plugin_examples });
+        if (b.args) |args| check.addArgs(args);
         check.step.dependOn(b.getInstallStep());
         b.step("test-plugins", "Verify plugins and main Settings in private Aqueous").dependOn(&check.step);
     }

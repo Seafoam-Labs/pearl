@@ -1,0 +1,15 @@
+{
+  "subprojects/dome/tests/service_fixture.py": "Shared harness helper; exercised by its importing suites.",
+  "subprojects/dome/tests/soak.py": "Manual resource measurement with duration-specific acceptance; use documented Dome soak procedure.",
+  "subprojects/phyto/tests/previews_helper.py": "Fixture subprocess used by the registered preview-provider tests.",
+  "tests/integration/background_effect_trace.py": "Shared harness helper; exercised by its importing suites.",
+  "tests/integration/bar_clocks.py": "Shared harness helper; exercised by its importing suites.",
+  "tests/integration/bar_opacity.py": "Shared harness helper; exercised by its importing suites.",
+  "tests/integration/brightness_osd.py": "Shared harness helper; exercised by its importing suites.",
+  "tests/integration/compact_editor.py": "Shared harness helper; exercised by its importing suites.",
+  "tests/integration/reproduce_desktop_overrides.py": "Historical issue reproduction; test-desktop-overrides is the maintained regression.",
+  "tests/integration/settings_editor.py": "Shared harness helper; exercised by its importing suites.",
+  "tests/integration/settings_navigation.py": "Shared harness helper; exercised by its importing suites.",
+  "tests/integration/test_aqueous_settings.py": "Historical pre-master contracts; superseded by test-aqueous-settings.",
+  "tests/integration/volume_osd.py": "Shared harness helper; exercised by its importing suites."
+}

@@ -6,6 +6,7 @@ from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import ctl,clean
 from test_preferences import settled
@@ -48,7 +49,7 @@ def main():
             assert elf.index('libgtk4-layer-shell')<elf.index('libgtk-4.so')
             checks['staged-production-files-permissions-link-order-and-session-unit']=True
             with PrivateSession(a.output/'session') as s:
-                s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
+                s.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(s)
                 assert 'valid' in run([pearl,'--check-environment'],env=s.env)
                 run([pearl,'--check-environment'],env=dict(s.env,AQUEOUS_SOCKET=str(s.base/'missing.sock')),code=2)
                 app=s.child('installed-pearl',[pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready')

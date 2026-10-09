@@ -17,6 +17,7 @@ from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC,capture
 from test_greeter_ipc import receive,send
@@ -31,7 +32,7 @@ def main():
     args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
     report={'binary_sha256':hashlib.sha256(args.greeter.read_bytes()).hexdigest(),'evidence':'private Aqueous and fake greetd only','checks':[]}
     with PrivateSession(args.output/'session') as session:
-        session.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(session)
+        session.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(session)
         ipc=IPC(session);outputs=list(ipc.outputs().values());primary=outputs[0]['name'];secondary=outputs[1]['name']
         root=session.base/'sessions';root.mkdir()
         # A tiny opaque PNG fixture exercises bounded asset loading on every output.

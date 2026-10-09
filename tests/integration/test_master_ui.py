@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import ctl,status,capture,clean
 from test_aqueous_settings import state,settled,stage
@@ -15,11 +16,11 @@ from test_settings_services import aq_ready
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--quick',action='store_true')
- p.add_argument('--settings',type=Path,required=True);p.add_argument('--keyboard-settings',type=Path,required=True);p.add_argument('--pearl',type=Path,default=ROOT/'zig-out/bin/pearl');p.add_argument('--ctl',type=Path,default=ROOT/'zig-out/bin/pearlctl');p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/ui');a=p.parse_args();a.pearl=a.pearl.resolve();a.ctl=a.ctl.resolve();a.settings=a.settings.resolve();a.keyboard_settings=a.keyboard_settings.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
+ p.add_argument('--settings',type=Path,required=True);p.add_argument('--keyboard-settings',type=Path,required=True);p.add_argument('--pearl',type=Path,default=ROOT/'zig-out/bin/pearl');p.add_argument('--ctl',type=Path,default=ROOT/'zig-out/bin/pearlctl');p.add_argument('--prefix',type=Path,default=fixture_prefix());p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/ui');a=p.parse_args();a.pearl=a.pearl.resolve();a.ctl=a.ctl.resolve();a.settings=a.settings.resolve();a.keyboard_settings=a.keyboard_settings.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
  report=dict(status='running',checks={},baseline=json.loads((a.prefix/'metadata.json').read_text()),pearl_sha256=hashlib.sha256(a.pearl.read_bytes()).hexdigest(),settings_sha256=hashlib.sha256(a.settings.read_bytes()).hexdigest(),manual_acceptance=False,quick=a.quick,keyboard_fixture_sha256=hashlib.sha256(a.keyboard_settings.read_bytes()).hexdigest(),accessibility_limitations=['Private AT-SPI names/roles and direct focus outcome recorded. Keyboard focus is measured independently using the test-only synchronous focus query; Orca acceptance remains pending.']);checks=report['checks']
  try:
   with PrivateSession(a.output/'session',tool_prefix=a.prefix) as s:
-   s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
+   s.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(s)
    s.child('accessibility-bus',['/usr/lib/at-spi-bus-launcher','--launch-immediately'])
    wait_for(lambda:'org.a11y.Bus' in s.run(['busctl','--address='+s.env['DBUS_SESSION_BUS_ADDRESS'],'list']).stdout)
    address=ast.literal_eval(s.run(['gdbus','call','--session','--dest','org.a11y.Bus','--object-path','/org/a11y/bus','--method','org.a11y.Bus.GetAddress']).stdout)[0]

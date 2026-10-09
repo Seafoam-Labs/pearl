@@ -40,7 +40,7 @@ for name in ('timer-c', 'companion-c', 'counter-zig'):
         run('rsvg-convert', source/'cat.svg', '-o', destination/'cat.png')
         shutil.copy2(source/'LICENSE.assets', destination/'LICENSE.assets')
 if not args.skip_rust:
-    env.update(CARGO_HOME=str(ROOT/'.cache/plugin-cargo'), CARGO_TARGET_DIR=str(ROOT/'.cache/plugin-rust-target'))
+    env.update(CARGO_HOME=os.environ.get('CARGO_HOME',str(ROOT/'.cache/plugin-cargo')), CARGO_TARGET_DIR=str(ROOT/'.cache/plugin-rust-target'))
     if args.rustc: env['RUSTC'] = args.rustc
     run(args.cargo, 'build', '--locked', '--offline', '--manifest-path', ROOT/'plugins/examples/counter-rust/Cargo.toml', '--release', '--target', 'wasm32-wasip2', env=env)
     destination = out/'counter-rust'; destination.mkdir(exist_ok=True)

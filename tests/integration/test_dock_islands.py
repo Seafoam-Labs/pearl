@@ -6,6 +6,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT/'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, ctl, status, eventually_status, capture, click, clean
 from test_desktop import desktop, keys, entries, FIXTURE
@@ -32,7 +33,7 @@ def main():
             authority=s.child('authority',['python3',ROOT/'tests/fixtures/session_security.py'],input_pipe=True);authority.expect('event=ready')
             def authority_command(**data):
                 authority.proc.stdin.write(json.dumps(data)+'\n');authority.proc.stdin.flush();time.sleep(.15)
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source()))
             keyboard=T00Session.input_fixture(s)
             s.env['XDG_DATA_DIRS']=str(s.base/'empty-system-data');Path(s.env['XDG_DATA_DIRS']).mkdir()
             s.env['PEARL_TEST_LAUNCH_LOG']=str(s.output/'launches.jsonl')

@@ -7,6 +7,7 @@ from PIL import Image, ImageChops
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, ctl, status, capture, click, clean
 from test_desktop import keys
@@ -25,7 +26,7 @@ def main():
     def passed(name): report['checks'].append(name); print('PASS',name,flush=True)
     try:
         with PrivateSession(args.output/'session',tool_prefix=args.prefix.resolve(),xwayland=args.xwayland,wm_extra=f'\n[input]\nmouse_follows_focus = {str(args.mouse_follows_focus).lower()}\n[keybinds]\nwindow_switcher_next = ["Super+Tab"]\nwindow_switcher_previous = ["Super+Shift+Tab"]\ncycle_focus = []\n') as s:
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(s)
             ipc=IPC(s)
             shell=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
             prefs=copy.deepcopy(settled(s,args.ctl)['preferences'])
@@ -192,7 +193,7 @@ def main():
             passed('legacy-v1-retains-single-workspace-scope')
             if args.xwayland:
                 fixture_path=s.runtime/'switcher-x11'
-                s.run(['cc','/home/zoey/RiderProjects/Aqueous/compositor/scripts/fixtures/shell-x11.c','-lX11','-o',fixture_path])
+                s.run(['cc',(fixture_source() / 'compositor/scripts/fixtures/shell-x11.c'),'-lX11','-o',fixture_path])
                 xclient=s.child('switcher-x11',[fixture_path])
                 def xwindow():return next((w for w in state() if w['kind']=='window' and w.get('class')=='aq-shell-x11'),None)
                 xwin=wait_for(xwindow)
@@ -328,7 +329,7 @@ def main():
             assert xy()[0]<0,xy()
             passed('remote-cursor-handoff-with-negative-origin-fractional-scale-and-rotation')
             cycle();wait_for(visible)
-            protocol=Path('/home/zoey/RiderProjects/Aqueous/compositor/protocol/upstream/wlr-output-power-management-unstable-v1.xml')
+            protocol=(fixture_source() / 'compositor/protocol/upstream/wlr-output-power-management-unstable-v1.xml')
             power_dir=s.runtime/'output-power';power_dir.mkdir()
             normalized=power_dir/'protocol.xml';normalized.write_text(protocol.read_text().replace('<?xml version="1.0" encoding="UTF-8"?>',''))
             s.run(['wayland-scanner','client-header',normalized,power_dir/'output-power.h'])

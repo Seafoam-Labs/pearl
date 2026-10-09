@@ -3,6 +3,7 @@
 import argparse, json
 from pathlib import Path
 from test_settings_app import ROOT, PrivateSession, IPC, wait_for, probe, capture, resize, clean, keys
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, click
 from test_custom_themes import Peer
 
@@ -14,7 +15,7 @@ def main():
     for name in ['pearl','settings']:parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--output',type=Path,default=ROOT/'artifacts/base-material-matugen/session-test')
     args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True);checks=[]
-    with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+    with PrivateSession(args.output/'session',tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND']='memory'
         ipc=IPC(s);output=next(iter(ipc.outputs().values()))
         s.run(['wlr-randr','--output',output['name'],'--custom-mode','1600x1100@60Hz'])

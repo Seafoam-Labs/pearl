@@ -15,6 +15,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, capture
 from test_greeter_ipc import receive, send
@@ -30,7 +31,7 @@ def main():
               'binary_sha256': hashlib.sha256(args.greeter.read_bytes()).hexdigest(),
               'checks': [], 'screenshots': []}
     with PrivateSession(args.output / 'session') as session:
-        session.args = SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
+        session.args = SimpleNamespace(aqueous_source=str(fixture_source()))
         T00Session.input_fixture(session)
         ipc = IPC(session)
         outputs = list(ipc.outputs().values())

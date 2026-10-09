@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 from PIL import Image
 from test_settings_app import ROOT, PrivateSession, IPC, wait_for, probe, capture, resize, clean
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, settled, click, type_text
 from test_custom_themes import Peer
 from test_theme_packages import fixture
@@ -23,7 +24,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     report = {'status': 'running', 'binaries': {name: hashlib.sha256(getattr(args,name).read_bytes()).hexdigest() for name in ('pearl','settings','themes')}}
     (args.output/'acceptance.json').write_text(json.dumps(report))
-    with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+    with PrivateSession(args.output/'session', tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'
         ipc = IPC(s)
         output = next(iter(ipc.outputs().values()))

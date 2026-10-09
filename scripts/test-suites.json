@@ -1,0 +1,2613 @@
+[
+  {
+    "id": "test-theme-github",
+    "description": "Verify direct GitHub theme discovery and installation in private storage",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-theme-github"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "tls"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_theme_github.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-theme-packages",
+    "description": "Verify native theme packages and community repository operations in private XDG roots",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-theme-packages"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_theme_packages.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-theme-repository",
+    "description": "Verify native theme packages and community repository operations in private XDG roots",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-theme-repository"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "tls"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_theme_packages.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-theme-publishing",
+    "description": "Verify native deterministic publication, schema 2 and source migration",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-theme-publishing"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_theme_publishing.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-theme-assets",
+    "description": "Validate PNG bounds and native memory resource lifetimes",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-theme-assets"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-matugen",
+    "description": "Test native application rendering, snapshots and ownership recovery",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-matugen"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "profile-formats"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_profile_formats.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-base-material-profiles",
+    "description": "Verify built-in Material palettes, target coverage and ownership",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-base-material-profiles"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "profile-formats"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_base_material_profiles.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-theme-discovery",
+    "description": "Test event-driven local theme discovery",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-theme-discovery"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": [],
+    "alias": "test-matugen"
+  },
+  {
+    "id": "test-greeter-unit",
+    "description": "Test greetd framing, authority state, desktop parsing and monitor identity",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-unit"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-ipc",
+    "description": "Private greeter ipc validation",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-ipc"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_ipc.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-ui",
+    "description": "Private greeter ui validation",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-ui"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_ui.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-login",
+    "description": "Private greeter login validation",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-login"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_login.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-catalog",
+    "description": "Private greeter catalog validation",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-catalog"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_catalog.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-services",
+    "description": "Private greeter services validation",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-services"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "bus"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_services.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-soak",
+    "description": "Private greeter soak validation",
+    "groups": [
+      "extended"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-soak"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "file",
+    "timeout": 3600,
+    "sources": [
+      "tests/integration/test_greeter_soak.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-outputs",
+    "description": "Private greeter outputs validation",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-outputs"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_outputs.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-session",
+    "description": "Verify authenticated session argv, identity and revalidation with harmless commands",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-session"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_session.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-host",
+    "description": "Verify owned process teardown with private fixtures",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-host"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_host.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-greeter-sync",
+    "description": "Verify native appearance sync with private configuration",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-sync"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_sync.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-bindings",
+    "description": "Test generated binding types and API coverage",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-bindings"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-notification-filters",
+    "description": "Verify notification Unicode matching and policy lifetime",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-notification-filters"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_notification_filters.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-bar-clock",
+    "description": "Verify time-zone clocks, DST, formatting and zone discovery",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-bar-clock"
+    ],
+    "capabilities": [
+      "zig",
+      "glib"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-night-light-clock",
+    "description": "Verify Night Light schedules across timezone and DST transitions",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-night-light-clock"
+    ],
+    "capabilities": [
+      "zig",
+      "glib"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test",
+    "description": "Run model and Unicode policy tests without GTK or a compositor",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test"
+    ],
+    "capabilities": [
+      "zig",
+      "glib"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-plugin-unit",
+    "description": "Verify plugin documents, permissions, framing and route isolation",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-plugin-unit"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": [],
+    "alias": "test"
+  },
+  {
+    "id": "test-base-material-session",
+    "description": "Verify Material defaults UI and real GTK consumers in private Aqueous",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-base-material-session"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "matugen"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_base_material_session.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-custom-themes",
+    "description": "Verify community themes and recovery in a private desktop session",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-custom-themes"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_custom_themes.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-theme-completion",
+    "description": "Verify image transfer, discovery and committed application profiles in a private session",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-theme-completion"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "matugen"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_theme_completion.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-wallpaper-profiles",
+    "description": "Verify live wallpaper colors, committed profiles and cancellation in private XDG roots",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-wallpaper-profiles"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "matugen"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_wallpaper_profiles.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-app",
+    "description": "Verify standalone window, process isolation, activation and presentation",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-app"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_app.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-appearance",
+    "description": "Verify real standalone Appearance editing, shared drafts and save lifecycle",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-appearance"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_appearance.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-border-theme",
+    "description": "Verify matugen border colors, draft deferral and generator failure",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-border-theme"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "matugen"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_border_theme.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-services",
+    "description": "Verify standalone live pages and complete Aqueous editor boundary",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-services"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_services.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-displays",
+    "description": "Verify selected displays, positioning, HDR controls and native previews",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-displays"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_displays.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-boundary",
+    "description": "Verify Settings frontend handshake and isolation in private sessions",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-boundary"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_boundary.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-release-tools",
+    "description": "Verify release gates fail closed and source archives are deterministic",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-release-tools"
+    ],
+    "capabilities": [
+      "zig"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/test_release_tools.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-release",
+    "description": "Verify staged production installation and reversible DMS migration",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-release"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_release.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-release-performance",
+    "description": "Measure production idle cost and 1,000 popup cycles in private Aqueous",
+    "groups": [
+      "extended"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-release-performance"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 3600,
+    "sources": [
+      "tests/integration/test_release_performance.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-qt-theme",
+    "description": "Verify Qt palettes, Darkly, file ownership and restoration in private configuration",
+    "groups": [
+      "qt"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-qt-theme"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "qt"
+    ],
+    "fixture": null,
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_qt_theme.py"
+    ],
+    "args": [],
+    "options": [
+      "-Dqt-themes=true"
+    ]
+  },
+  {
+    "id": "test-qt-theme-unit",
+    "description": "Verify Qt policy, palette and lossless INI unit contracts",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-qt-theme-unit"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": [],
+    "alias": "test"
+  },
+  {
+    "id": "test-adapter-unit",
+    "description": "Check endpoint and image bounds using generated GIO bindings",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-adapter-unit"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-adapter",
+    "description": "Exercise IPC recovery, policy and commands on private sockets and nested Aqueous",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-adapter"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_adapter.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-night-light",
+    "description": "Verify Night Light policy, unavailable output gating and shared controls",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-night-light"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_night_light.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-plugin-discovery",
+    "description": "Verify live plugin installation, replacement and removal in a private session",
+    "groups": [
+      "plugins"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-plugin-discovery"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "plugins",
+      "plugins"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_plugin_discovery.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}",
+      "--examples",
+      "{examples}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-greeter-sync-ui",
+    "description": "Verify native appearance sync from Settings and the flyout",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-greeter-sync-ui"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_greeter_sync_ui.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-notification-filter-settings",
+    "description": "Verify native filter drafts, matching and notification protocol in a private session",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-notification-filter-settings"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_notification_filters.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-window-rule-settings",
+    "description": "Verify native window rules, draft preservation and ordering in a private session",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-window-rule-settings"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_window_rules.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-sched-ext",
+    "description": "Verify scheduler commands, ownership and Settings against private scxctl fixtures",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-sched-ext"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_sched_ext.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-devices",
+    "description": "Verify standalone audio, power, notifications and media against private services",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-devices"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_devices.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-acceptance",
+    "description": "Run complete standalone Settings acceptance and affected private regressions (aggregate; includes core regressions)",
+    "groups": [
+      "extended"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-acceptance"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "matugen"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 3600,
+    "sources": [
+      "tests/integration/test_settings_acceptance.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-presentation",
+    "description": "Verify standalone reference pages, scales, short windows and monitor removal",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-presentation"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_presentation.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-integration",
+    "description": "Verify staged Settings desktop, CLI and flyout launch integration",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-integration"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_integration.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-fingerprint",
+    "description": "Test passive fingerprint conversations, PAM policy branches and cancellation without hardware",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-fingerprint"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "bus"
+    ],
+    "fixture": null,
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_fingerprint.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-security",
+    "description": "Verify native lock, PAM, polkit and idle/sleep sequencing on private services",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-security"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_security.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-clipboard-capture",
+    "description": "Verify native clipboard privacy, ownership and output screenshots on private Aqueous",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-clipboard-capture"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_clipboard_capture.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-launcher-calculator",
+    "description": "Verify launcher calculation, native copy and stale input handling in private Aqueous",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-launcher-calculator"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_launcher_calculator.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-lock",
+    "description": "Verify native lock accessibility, output lifecycle, PAM failures and idle cost",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-lock"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_lock.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "integration",
+    "description": "Run lifecycle tests on private Aqueous displays and buses",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "integration"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_lifecycle.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-components",
+    "description": "Exercise gallery keyboard behavior and capture private Aqueous visuals",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-components"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_components.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-surfaces",
+    "description": "Verify surfaces, CLI isolation and GTK/native blur ownership in private Aqueous",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-surfaces"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_surfaces.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-window-switcher",
+    "description": "Verify global cycling, cursor handoff, animated scene and focus lifecycle",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-window-switcher"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_window_switcher.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-running-apps",
+    "description": "Verify global taskbar grouping, activation and chooser lifecycle",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-running-apps"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_running_apps.py"
+    ],
+    "args": [
+      "--aqueous-prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-settings-bar-editor",
+    "description": "Verify native bar selections, shared drafts and persistence",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-bar-editor"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_bar_editor.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-dock-islands",
+    "description": "Verify T15 dock and island layouts in private Aqueous",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-dock-islands"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_dock_islands.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-desktop-overrides",
+    "description": "Verify custom launcher selection, pin correction and recovery",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-desktop-overrides"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_desktop_overrides.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-preferred-launchers",
+    "description": "Verify automatic launcher preferences, grouping and installed desktop IDs",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-preferred-launchers"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_preferred_launchers.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-bar-layout",
+    "description": "Verify bar thickness and stacked widgets on every edge",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-bar-layout"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_bar_layout.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-bar-autohide",
+    "description": "Verify bar reveal, reservations, popup holds and lifecycle in private Aqueous",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-bar-autohide"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_bar_autohide.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-desktop",
+    "description": "Verify T06 live desktop and GIO discovery/activation in private Aqueous",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-desktop"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_desktop.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-services",
+    "description": "Verify audio and power on private synthetic services",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-services"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_services.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-connectivity",
+    "description": "Verify NetworkManager and BlueZ on private services",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-connectivity"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_connectivity.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-pages",
+    "description": "Verify compact settings page composition and capture private service fixtures",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-pages"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_pages.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-lifecycle",
+    "description": "Verify settings popup routing, restored state and independent service owners",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-lifecycle"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_lifecycle.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-accessibility",
+    "description": "Verify service bar input, settings accessibility and compact presentation",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-accessibility"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_accessibility.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-navigation",
+    "description": "Run pure tests and complete private-session compact settings acceptance (aggregate; includes core regressions)",
+    "groups": [
+      "extended"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-navigation"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 3600,
+    "sources": [
+      "tests/integration/test_settings_navigation.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-aqueous-settings",
+    "description": "Verify matching-master settings, receipts and native display leases",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-aqueous-settings"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_aqueous_master.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-aqueous-master",
+    "description": "Verify pinned Aqueous master transactions",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-aqueous-master"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_aqueous_master.py"
+    ],
+    "args": [],
+    "options": [],
+    "alias": "test-aqueous-settings"
+  },
+  {
+    "id": "test-single-window-centering",
+    "description": "Verify centering settings with a local Aqueous prefix (-- --prefix PATH)",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-single-window-centering"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_single_window_centering.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-aqueous-preview",
+    "description": "Verify presentation, session suspension and durable preview recovery",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-aqueous-preview"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_aqueous_preview.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-master-ui",
+    "description": "Verify master settings themes, native accessibility and keyboard workflows",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-master-ui"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_master_ui.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-capture-master",
+    "description": "Verify matching-master image-copy sources and color negotiation",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-capture-master"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_capture_master.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-preferences",
+    "description": "Verify preferences, wallpaper, dynamic and native GTK themes in private Aqueous",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-preferences"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "matugen"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_preferences.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-qt-session",
+    "description": "Verify Qt Appearance UI, committed updates and repair in private Aqueous",
+    "groups": [
+      "qt"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-qt-session"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "qt"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_qt_session.py"
+    ],
+    "args": [],
+    "options": [
+      "-Dqt-themes=true"
+    ]
+  },
+  {
+    "id": "test-session-services",
+    "description": "Verify notifications, StatusNotifier/DBusMenu and MPRIS on private session buses",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-session-services"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_session_services.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-plugin-host",
+    "description": "Plugin component host contracts",
+    "groups": [
+      "plugins"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-plugin-host"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "plugins"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 1800,
+    "sources": [
+      "tests/integration/test_plugin_host.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-plugins",
+    "description": "Private plugin UI and permissions",
+    "groups": [
+      "plugins"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-plugins"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "plugins",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "tests/integration/test_plugins.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-plugin-activity",
+    "description": "Diagnostic input activity integration",
+    "groups": [
+      "plugins"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-plugin-activity"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "plugins",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "activity",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "tests/integration/test_plugin_activity.py"
+    ],
+    "args": [
+      "--prefix",
+      "{prefix}",
+      "--examples",
+      "{examples}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-fingerprint-upstream",
+    "description": "Pinned pam_fprintd with a private mock reader",
+    "groups": [
+      "upstream"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-fingerprint-upstream"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "pam-upstream"
+    ],
+    "fixture": null,
+    "output": "file",
+    "timeout": 1800,
+    "sources": [
+      "tests/integration/test_fingerprint_upstream.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "protocol-trace",
+    "description": "protocol trace Python tests",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [],
+    "capabilities": [
+      "python"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 120,
+    "command": [
+      "{python}",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-p",
+      "test_background_effect_trace.py",
+      "-v"
+    ],
+    "sources": [
+      "tests/test_background_effect_trace.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "greeter-install",
+    "description": "greeter install Python tests",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [],
+    "capabilities": [
+      "python"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 120,
+    "command": [
+      "{python}",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-p",
+      "test_greeter_install.py",
+      "-v"
+    ],
+    "sources": [
+      "tests/test_greeter_install.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "runner",
+    "description": "runner Python tests",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [],
+    "capabilities": [
+      "python"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 120,
+    "command": [
+      "{python}",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-p",
+      "test_runner.py",
+      "-v"
+    ],
+    "sources": [
+      "tests/test_runner.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "greeter-package",
+    "description": "Private greeter staging and linkage",
+    "groups": [
+      "greeter"
+    ],
+    "cwd": ".",
+    "targets": [],
+    "before": [
+      [
+        "{zig}",
+        "build",
+        "build-greeter",
+        "-Doptimize=ReleaseSafe"
+      ]
+    ],
+    "command": [
+      "{python}",
+      "tests/test_greeter_package.py"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [
+      "tests/test_greeter_package.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "aqueous-upstream",
+    "description": "Pinned upstream transaction, capture and preview regressions",
+    "groups": [
+      "upstream"
+    ],
+    "cwd": ".",
+    "targets": [],
+    "command": [
+      "{python}",
+      "scripts/aqueous-master-upstream-tests.py",
+      "--prefix",
+      "{prefix}"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "aqueous-build",
+      "session",
+      "aqueous",
+      "schema"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 3600,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "phyto:test",
+    "description": "Test navigation, capability policy and file operations",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/phyto",
+    "targets": [
+      "test"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 1800,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "phyto:test-context-menus",
+    "description": "Exercise native context menus and batch operations",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/phyto",
+    "targets": [
+      "test-context-menus"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "gvfs"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/phyto/tests/context_native.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "phyto:integration",
+    "description": "Exercise native GTK in a private Aqueous session and capture evidence",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/phyto",
+    "targets": [
+      "integration"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/phyto/tests/native.py"
+    ],
+    "args": [
+      "--aqueous-prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "phyto:test-preview-providers",
+    "description": "Test PDF/video rendering and sandbox lifecycle without a display",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/phyto",
+    "targets": [
+      "test-preview-providers"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "previews"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/phyto/tests/providers_helper.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "phyto:test-previews",
+    "description": "Test bounded decoding, cache and native file previews",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/phyto",
+    "targets": [
+      "test-previews"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "previews"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/phyto/tests/previews_native.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "dome:test",
+    "description": "Test metric contracts, parsers, identities and live collector lifecycle",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/dome",
+    "targets": [
+      "test"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 1800,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "dome:integration",
+    "description": "Run native GTK tests in a private Aqueous session",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/dome",
+    "targets": [
+      "integration"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/dome/tests/native.py"
+    ],
+    "args": [
+      "--aqueous-prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "dome:benchmark",
+    "description": "Measure Cairo graph drawing on a software image surface",
+    "groups": [
+      "extended"
+    ],
+    "cwd": "subprojects/dome",
+    "targets": [
+      "benchmark"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 1800,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "coral:test",
+    "description": "Test file format, revisions, Unicode tokenization and real GIO saves",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/coral",
+    "targets": [
+      "test"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "coral"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 1800,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "coral:integration",
+    "description": "Run native Coral workflows in an isolated Wayland session",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/coral",
+    "targets": [
+      "integration"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "coral"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/coral/tests/native.py"
+    ],
+    "args": [
+      "--aqueous-prefix",
+      "{prefix}"
+    ],
+    "options": []
+  },
+  {
+    "id": "registry",
+    "description": "Python test inventory consistency",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [],
+    "capabilities": [
+      "python"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 120,
+    "sources": [],
+    "command": [
+      "{python}",
+      "scripts/test.py",
+      "check-registry",
+      "--python-only"
+    ],
+    "args": [],
+    "options": []
+  }
+]

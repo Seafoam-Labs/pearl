@@ -13,6 +13,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from test_surfaces import IPC, ctl, status, eventually_status, click, capture, clean
 from t00 import Session as T00Session
 FIXTURE = ROOT / 'tests/fixtures/desktop/application.py'
@@ -64,7 +65,7 @@ def main():
             (s.output/'launches.jsonl').write_text('')
             # Persistent external Aqueous test client supplies an effective us,de
             # keyboard. It is never linked into Pearl and only sees private sockets.
-            s.args = SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous')
+            s.args = SimpleNamespace(aqueous_source=str(fixture_source()))
             keyboard = T00Session.input_fixture(s)
             keyboard.stop()
             keyboard = s.child('keyboard', [s.runtime/'input-fixture/input', 'input'], input_pipe=True)

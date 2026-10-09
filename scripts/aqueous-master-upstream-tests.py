@@ -30,7 +30,7 @@ def main():
   wrapper='import sys\nsys.path.insert(0,'+repr(str(preview.parent))+')\n__file__='+repr(str(preview))+'\n'+script
   harness=a.output/'preview-harness.py';harness.write_text(wrapper)
   report['preview_source_sha256']=hashlib.sha256(original.encode()).hexdigest();report['adapted_harness_sha256']=hashlib.sha256(wrapper.encode()).hexdigest()
-  with (a.output/'preview.log').open('w') as log:subprocess.run([a.prefix/"test-venv/bin/python",harness],env=dict(env,AQUEOUS_COMPOSITOR_BIN=str(instrumented/'bin/aqueous'),AQUEOUS_CONFIG_HELPER=str(a.prefix/'bin/aqueous-config')),stdout=log,stderr=subprocess.STDOUT,check=True,timeout=300)
+  with (a.output/'preview.log').open('w') as log:subprocess.run([os.environ.get('PEARL_TEST_PYTHON',sys.executable),harness],env=dict(env,AQUEOUS_COMPOSITOR_BIN=str(instrumented/'bin/aqueous'),AQUEOUS_CONFIG_HELPER=str(a.prefix/'bin/aqueous-config')),stdout=log,stderr=subprocess.STDOUT,check=True,timeout=300)
   report['checks']['native-lease-adversarial-upstream-suite']=True;report['status']='passed'
  except Exception as e:report.update(status='failed',error=str(e));raise
  finally:(a.output/'metadata.json').write_text(json.dumps(report,indent=2)+'\n')

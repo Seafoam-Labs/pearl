@@ -13,6 +13,15 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def fixture_prefix():
+    """Production fixture location shared by runners and standalone harnesses."""
+    return Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', ROOT / '.cache/aqueous-activity-production')).resolve()
+
+
+def fixture_source():
+    return Path(os.environ.get('PEARL_TEST_AQUEOUS_SOURCE', fixture_prefix() / 'source')).resolve()
+
+
 def wait_for(check, timeout=10):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:

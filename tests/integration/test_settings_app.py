@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from pearl_session import fixture_prefix, fixture_source
 from test_surfaces import IPC, ctl, status, capture, clean
 APP_ID = 'org.aqueous.Pearl.Settings'
 
@@ -121,7 +122,7 @@ def main():
     checks = {}
     report = dict(status='running', checks=checks, binaries={name: hashlib.sha256(getattr(args, name).read_bytes()).hexdigest() for name in ('settings', 'production', 'pearl', 'ctl')})
     try:
-        with PrivateSession(args.output / 'session', tool_prefix=ROOT / '.cache/aqueous-activity-production') as s:
+        with PrivateSession(args.output / 'session', tool_prefix=fixture_prefix()) as s:
             ipc = IPC(s)
             output = next(iter(ipc.outputs().values()))
             s.run(['wlr-randr', '--output', output['name'], '--custom-mode', '1600x1100@60Hz'])
@@ -348,7 +349,7 @@ def main():
             production.stop(); clean(production)
             checks['production-rejects-test-probe'] = True
             pearl.stop(); clean(pearl); ipc.close()
-        with PrivateSession(args.output / 'isolation-parent', tool_prefix=ROOT / '.cache/aqueous-activity-production') as parent:
+        with PrivateSession(args.output / 'isolation-parent', tool_prefix=fixture_prefix()) as parent:
             parent_ipc = IPC(parent)
             races = [parent.child('cold-launch-' + str(i), [args.settings, '--page', 'sound'], G_DEBUG='fatal-warnings') for i in range(4)]
             wait_for(lambda: endpoint(parent, parent_ipc).exists())
@@ -358,7 +359,7 @@ def main():
                 if c is not owner: clean(c)
             assert len(windows(parent_ipc)) == 1
             checks['cold-concurrent-launch-race'] = True
-            with PrivateSession(args.output / 'isolation-nested', backend='nested', parent_display=parent.display_path, tool_prefix=ROOT / '.cache/aqueous-activity-production') as nested:
+            with PrivateSession(args.output / 'isolation-nested', backend='nested', parent_display=parent.display_path, tool_prefix=fixture_prefix()) as nested:
                 nested_ipc = IPC(nested)
                 child = nested.child('settings', [args.settings, '--page', 'power'], G_DEBUG='fatal-warnings', DBUS_SESSION_BUS_ADDRESS=parent.env['DBUS_SESSION_BUS_ADDRESS'])
                 child.expect('event=settings-window-created')

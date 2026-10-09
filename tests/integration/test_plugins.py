@@ -3,6 +3,7 @@
 import argparse, hashlib, json, os, shutil, sys, time, uuid
 from pathlib import Path
 from test_settings_app import ROOT, PrivateSession, IPC, ctl, wait_for, probe, capture, clean
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_services import Peer
 from test_plugin_host import digest
 from test_settings_appearance import click, ready
@@ -12,7 +13,7 @@ from types import SimpleNamespace
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('pearl','settings','ctl','examples'): p.add_argument('--'+name,required=True,type=Path)
-    p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production')
+    p.add_argument('--prefix',type=Path,default=fixture_prefix())
     p.add_argument('--runtime-disabled',action='store_true')
     p.add_argument('--output',type=Path,default=ROOT/'.cache/plugin-session')
     args=p.parse_args()
@@ -40,7 +41,7 @@ def main():
         config=Path(s.env['XDG_CONFIG_HOME'])/'pearl/preferences.json';config.parent.mkdir(exist_ok=True)
         config.write_text(json.dumps(dict(plugins=dict(entries=entries),bar=dict(groups=dict(left='launcher,workspaces',center='plugin:pearl.timer-c/main',right='plugin:pearl.counter-rust/main,plugin:pearl.counter-zig/main,control')))))
         if not args.runtime_disabled:
-            s.args=SimpleNamespace(aqueous_source=str(ROOT/'.cache/aqueous-master/source'));T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(s)
         ipc=IPC(s)
         shell=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
         def listed():return ctl(s,args.ctl,'plugins','list')['result']

@@ -4,6 +4,7 @@ import argparse, hashlib, json, time, uuid
 from pathlib import Path
 from types import SimpleNamespace
 from test_settings_app import *
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_settings_appearance import click, control, type_text, ready
 from settings_editor import EditorPeer
@@ -78,9 +79,9 @@ def main():
     for name in ('settings','pearl','ctl','spike','output'):setattr(args,name,getattr(args,name).resolve())
     args.output.mkdir(parents=True,exist_ok=True);checks={};report=dict(status='running',checks=checks)
     try:
-      with PrivateSession(args.output/'session',tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+      with PrivateSession(args.output/'session',tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND']='memory';ipc=IPC(s)
-        s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
+        s.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(s)
         wm=Path(s.env['AQUEOUS_CONFIG']);wm.write_text(wm.read_text().replace('"floating"','"stacking"'))
         output=next(iter(ipc.outputs().values()))
         s.run(['wlr-randr','--output',output['name'],'--custom-mode','1600x1100@60Hz'])

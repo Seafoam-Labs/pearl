@@ -6,6 +6,7 @@ import json
 import time
 from pathlib import Path
 from test_settings_app import ROOT, PrivateSession, IPC, wait_for, capture, probe, keys, resize, clean, ctl
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, click, type_text
 from test_settings_services import Peer, aq_ready, navigate
 
@@ -70,7 +71,7 @@ def main():
         report['checks'][name] = True
         print('PASS', name, flush=True)
     try:
-      with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+      with PrivateSession(args.output/'session', tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'
         ipc = IPC(s)
         output = next(iter(ipc.outputs().values()))

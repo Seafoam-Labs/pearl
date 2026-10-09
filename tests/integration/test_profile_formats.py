@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 def main():
     p=argparse.ArgumentParser();p.add_argument('--tool',type=Path,required=True);args=p.parse_args()
-    evidence=ROOT/'artifacts/theme-completion/profile-formats.json';checks=[]
+    evidence=(Path(os.environ['PEARL_TEST_OUTPUT'])/'profile-formats.json') if os.environ.get('PEARL_TEST_OUTPUT') else ROOT/'artifacts/theme-completion/profile-formats.json';checks=[]
     with tempfile.TemporaryDirectory(prefix='pearl-profile-formats-') as temporary:
         root=Path(temporary)
         env=os.environ|{'HOME':str(root),'XDG_CONFIG_HOME':str(root/'config'),'XDG_CACHE_HOME':str(root/'cache'),'XDG_DATA_HOME':str(root/'data'),'XDG_DATA_DIRS':str(root/'system')}

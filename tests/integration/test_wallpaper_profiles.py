@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 from PIL import Image
 from test_settings_app import ROOT, PrivateSession, IPC, wait_for, clean
+from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import settled
 from test_custom_themes import Peer
 from test_surfaces import ctl
@@ -32,7 +33,7 @@ def main():
         checks.append(name)
         print('PASS', name, flush=True)
 
-    with PrivateSession(args.output/'session', tool_prefix=ROOT/'.cache/aqueous-activity-production') as s:
+    with PrivateSession(args.output/'session', tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'
         mode, calls = s.base/'mode', s.base/'calls'
         mode.write_text('pass'); calls.write_text('')

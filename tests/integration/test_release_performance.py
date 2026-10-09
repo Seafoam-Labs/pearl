@@ -6,6 +6,7 @@ from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'scripts'))
 from pearl_session import PrivateSession,wait_for
+from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import ctl,status,eventually_status,clean,IPC
 from test_aqueous_settings import state,settled,stage
@@ -31,7 +32,7 @@ def percentiles(values):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('pearl','ctl'):p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production')
+    p.add_argument('--prefix',type=Path,default=fixture_prefix())
     p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/performance');p.add_argument('--cycles',type=int,default=1000);p.add_argument('--idle-seconds',type=int,default=60);a=p.parse_args()
     a.prefix=a.prefix.resolve()
     assert a.cycles>=1000 and a.idle_seconds>=60
@@ -39,7 +40,7 @@ def main():
     report={'status':'running','baseline':json.loads((a.prefix/'metadata.json').read_text()),'pearl_sha256':hashlib.sha256(a.pearl.read_bytes()).hexdigest(),'machine':platform.uname()._asdict(),'cpu':next((l.split(':',1)[1].strip() for l in Path('/proc/cpuinfo').read_text().splitlines() if l.startswith('model name')),'unknown'),'compositor':'Aqueous headless/pixman','gtk_renderer':'cairo','shared_libraries':'PSS proportionally apportioned by /proc/smaps_rollup; Pearl and descendants only; compositor excluded','limitations':['No real GPU/display presentation timing, cold-cache start or frame-time measurement.','Popup timings measure CLI request acknowledgement, not keybinding-to-visible latency.','No physical suspend, PAM or screen-reader acceptance.']}
     try:
         with PrivateSession(a.output/'session',tool_prefix=a.prefix) as s:
-            s.args=SimpleNamespace(aqueous_source='/home/zoey/RiderProjects/Aqueous');T00Session.input_fixture(s)
+            s.args=SimpleNamespace(aqueous_source=str(fixture_source()));T00Session.input_fixture(s)
             ready=[]
             for index in range(6):
                 start=time.monotonic();app=s.child(f'pearl-{index}',[a.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready')
