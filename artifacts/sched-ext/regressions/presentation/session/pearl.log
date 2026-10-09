@@ -1,0 +1,31 @@
+ts=2026-10-09T13:37:39Z pid=213233 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-09T13:37:39Z pid=213233 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-09T13:37:39Z pid=213233 info(pearl): event=ready mode=session
+ts=2026-10-09T13:37:39Z pid=213233 info(platform): event=blur-capability available=false
+ts=2026-10-09T13:37:39Z pid=213233 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-09T13:37:39Z pid=213233 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-09T13:37:39Z pid=213233 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-09T13:37:39Z pid=213233 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-09T13:37:39Z pid=213233 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-09T13:37:39Z pid=213233 info(pearl): event=settings-backend-ready session_hash=3028093ff54876f5
+ts=2026-10-09T13:37:39Z pid=213233 info(pearl): event=control-ready session_hash=3028093ff54876f5
+ts=2026-10-09T13:37:39Z pid=213233 info(desktop): event=app-index-ready entries=166 truncated=false
+ts=2026-10-09T13:37:39Z pid=213233 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-10-09T13:37:39Z pid=213233 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=2154 success=true
+ts=2026-10-09T13:37:45Z pid=213233 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-10-09T13:37:45Z pid=213233 info(config): event=wallpaper-applications-applied generation=3 elapsed_us=2387 success=true
+ts=2026-10-09T13:37:50Z pid=213233 info(config): event=preferences-applied revision=2 mode=static cache=false
+ts=2026-10-09T13:37:50Z pid=213233 info(config): event=wallpaper-applications-applied generation=6 elapsed_us=2213 success=true
+ts=2026-10-09T13:37:55Z pid=213233 info(config): event=preferences-applied revision=3 mode=gtk cache=false
+ts=2026-10-09T13:37:55Z pid=213233 info(config): event=wallpaper-applications-applied generation=8 elapsed_us=1082 success=true
+ts=2026-10-09T13:37:59Z pid=213233 info(config): event=preferences-applied revision=4 mode=static cache=false
+ts=2026-10-09T13:37:59Z pid=213233 info(config): event=wallpaper-applications-applied generation=10 elapsed_us=2209 success=true
+ts=2026-10-09T13:38:04Z pid=213233 info(config): event=preferences-applied revision=5 mode=static cache=false
+ts=2026-10-09T13:38:04Z pid=213233 info(config): event=wallpaper-applications-applied generation=12 elapsed_us=2687 success=true
+ts=2026-10-09T13:38:09Z pid=213233 info(config): event=preferences-applied revision=6 mode=gtk cache=false
+ts=2026-10-09T13:38:09Z pid=213233 info(config): event=wallpaper-applications-applied generation=14 elapsed_us=870 success=true
+ts=2026-10-09T13:38:14Z pid=213233 info(config): event=preferences-applied revision=7 mode=static cache=false
+ts=2026-10-09T13:38:14Z pid=213233 info(config): event=wallpaper-applications-applied generation=16 elapsed_us=9311 success=true
+ts=2026-10-09T13:38:19Z pid=213233 info(config): event=preferences-applied revision=8 mode=static cache=false
+ts=2026-10-09T13:38:19Z pid=213233 info(config): event=wallpaper-applications-applied generation=18 elapsed_us=3023 success=true
+Gdk-Message: 09:38:53.578: Lost connection to Wayland compositor.

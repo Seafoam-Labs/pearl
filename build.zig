@@ -546,6 +546,16 @@ pub fn build(b: *std.Build) void {
     window_rules.addArtifactArg(ctl);
     if (b.args) |args| window_rules.addArgs(args);
     b.step("test-window-rule-settings", "Verify native window rules, draft preservation and ordering in a private session").dependOn(&window_rules.step);
+    const sched_ext = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_sched_ext.py", "--settings" });
+    sched_ext.addArtifactArg(settings_test_app);
+    sched_ext.addArg("--pearl");
+    sched_ext.addArtifactArg(integration_app);
+    sched_ext.addArg("--ctl");
+    sched_ext.addArtifactArg(ctl);
+    sched_ext.addArg("--spike");
+    sched_ext.addArtifactArg(spike);
+    if (b.args) |args| sched_ext.addArgs(args);
+    b.step("test-settings-sched-ext", "Verify scheduler commands, ownership and Settings against private scxctl fixtures").dependOn(&sched_ext.step);
     const settings_devices = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_devices.py", "--settings" });
     settings_devices.addArtifactArg(settings_test_app);
     settings_devices.addArg("--pearl");

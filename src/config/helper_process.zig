@@ -18,9 +18,19 @@ pub fn run(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[]const u8,
     return runIn(a, argv, input, cancel, timeout_ms, null);
 }
 pub fn runIn(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[]const u8, cancel: *gio.Cancellable, timeout_ms: i64, instance: ?@import("aqueous_instance.zig").Context) !Result {
+    return runConfigured(a, argv, input, cancel, timeout_ms, instance, .{});
+}
+pub const Options = struct { stdout_limit: usize = @import("aqueous_model.zig").max_response, stderr_limit: usize = 65536, plain_output: bool = false };
+pub fn runConfigured(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[]const u8, cancel: *gio.Cancellable, timeout_ms: i64, instance: ?@import("aqueous_instance.zig").Context, options: Options) !Result {
     const launcher = gio.SubprocessLauncher.new(.{ .stdout_pipe = true, .stderr_pipe = true });
     defer launcher.unref();
     if (instance) |ctx| ctx.configure(launcher);
+    if (options.plain_output) {
+        launcher.setenv("NO_COLOR", "1", 1);
+        launcher.setenv("CLICOLOR", "0", 1);
+        launcher.setenv("CLICOLOR_FORCE", "0", 1);
+        launcher.setenv("LC_ALL", "C", 1);
+    }
     launcher.setChildSetup(child, null, null);
     if (input) |bytes| {
         if (bytes.len > @import("aqueous_model.zig").max_request) return error.RequestTooLarge;
@@ -50,7 +60,7 @@ pub fn runIn(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[]const u
         .{ .fd = streamFd(process.getStderrPipe().?), .events = std.c.POLL.IN, .revents = 0 },
     };
     var buffers: [2]std.ArrayList(u8) = .{ .empty, .empty };
-    const limits = [_]usize{ @import("aqueous_model.zig").max_response, 65536 };
+    const limits = [_]usize{ options.stdout_limit, options.stderr_limit };
     const deadline = glib.getMonotonicTime() + timeout_ms * 1000;
     while (fds[0].fd >= 0 or fds[1].fd >= 0) {
         if (cancel.isCancelled() != 0) return error.Cancelled;

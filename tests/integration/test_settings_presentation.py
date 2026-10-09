@@ -8,7 +8,7 @@ from test_settings_services import navigate, aq_ready, Peer
 from test_connectivity import FIX as CONNECTIVITY
 from test_services import FIX
 
-PAGES=('overview','appearance','network','bluetooth','sound','power','bar','notifications','session','aqueous','advanced')
+PAGES=('overview','appearance','network','bluetooth','sound','power','bar','notifications','system','session','aqueous','advanced')
 REFERENCE_PAGES=('appearance','network','bluetooth','sound','power')
 
 def main():
@@ -85,7 +85,7 @@ def main():
         # The first complete pass establishes the full route/schema inventory.
         for page in PAGES:layout(page,'inventory')
         assert probe(s,ipc)['aqueous']['fields']>=221
-        checks['all-eleven-pages-and-complete-aqueous-inventory']=True
+        checks['all-settings-pages-and-complete-aqueous-inventory']=True
         for theme,variant,label,width,height,font in [
             ('static','dark','dark',1040,760,14),('static','light','light',1040,760,14),('gtk','light','native',1040,760,14),
             ('static','dark','narrow-dark',480,700,14),('static','light','narrow-light',480,700,14),('gtk','light','narrow-native',480,700,14),

@@ -7,6 +7,7 @@ const nav = @import("../desktop/settings_navigation.zig");
 const Owner = @import("../services/view_ownership.zig").Owner;
 const a = std.heap.c_allocator;
 pub const Scope = struct {
+    sched_ext: ?Owner = null,
     media: bool = false,
     network: ?Owner = null,
     bluetooth: ?Owner = null,
@@ -14,8 +15,9 @@ pub const Scope = struct {
     confirmation: ?u64 = null,
     power_confirmation: ?struct { serial: u64, reboot: bool, deadline: i64 } = null,
 };
-pub const Pending = enum { none, audio, network, scan, bluetooth, discovery, brightness, profile, power, media, lifecycle, layout };
+pub const Pending = enum { sched_ext, none, audio, network, scan, bluetooth, discovery, brightness, profile, power, media, lifecycle, layout };
 pub const Live = struct {
+    sched_ext: ?*@import("../services/sched_ext.zig").Service = null,
     night_light: ?*@import("../services/night_light.zig").NightLight = null,
     plugins: ?*@import("../plugins/manager.zig").Manager = null,
     audio: *@import("../services/audio.zig").Audio,
@@ -32,6 +34,7 @@ pub const Live = struct {
     pub fn release(self: *Live, scope: *Scope) void {
         const previous = scope.*;
         scope.* = .{};
+        if (previous.sched_ext) |owner| if (self.sched_ext) |service| service.releaseView(owner);
         if (previous.media) self.session.media.view(false);
         if (previous.network) |owner| self.network.releaseView(owner);
         if (previous.bluetooth) |owner| self.bluetooth.releaseView(owner);
@@ -48,6 +51,9 @@ pub const Live = struct {
             .network => next.network = try self.network.acquireView(),
             .bluetooth => next.bluetooth = try self.bluetooth.acquireView(),
             .power => next.power = try self.power.acquireView(),
+            .system => if (self.sched_ext) |service| {
+                next.sched_ext = try service.acquireView();
+            },
             else => {},
         }
         self.release(scope);
@@ -55,6 +61,7 @@ pub const Live = struct {
     }
     pub fn busy(self: *Live, pending: Pending) bool {
         return switch (pending) {
+            .sched_ext => if (self.sched_ext) |service| service.job != null else false,
             .none => false,
             .layout => if (self.layout) |layout| layout.manager != null else false,
             .audio => self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null,
@@ -81,11 +88,20 @@ pub const Live = struct {
             .brightness, .profile, .power => self.power.err,
             .lifecycle => self.lifecycle.err,
             .media => self.session.media.err,
+            .sched_ext => if (self.sched_ext) |service| service.err else "Unavailable",
             .none => null,
         };
     }
     pub fn perform(self: *Live, scope: *Scope, route: nav.Route, revision: u64, op: ui.Op, params: std.json.Value, alloc: std.mem.Allocator) !Pending {
         switch (op) {
+            .@"sched-ext.action" => {
+                if (route != .system) return error.WrongPage;
+                const owner = scope.sched_ext orelse return error.Unavailable;
+                const service = self.sched_ext orelse return error.Unsupported;
+                const v = try p.fields(ui.SchedExt, alloc, params);
+                try service.act(owner, try p.number(v.generation), v.action, v.scheduler, v.mode);
+                return .sched_ext;
+            },
             .@"launcher-icon.retry" => {
                 if (route != .bar) return error.WrongPage;
                 const v = try p.fields(ui.LauncherIconRetry, alloc, params);
@@ -266,6 +282,10 @@ pub const Live = struct {
         }
     }
     pub fn page(self: *Live, alloc: std.mem.Allocator, scope: *Scope, route: nav.Route, _: u64, offset: usize) !ui.Page {
+        if (route == .system) {
+            const service = self.sched_ext orelse return .{ .summary = "Scheduler service unavailable", .rows = &.{}, .offset = p.num(0) };
+            return .{ .summary = service.state.summary, .pending = service.job != null, .rows = &.{}, .offset = p.num(0), .sched_ext = try service.snapshot(alloc) };
+        }
         if (route == .bar) {
             var widgets: std.ArrayList(@import("bar_model.zig").Plugin) = .empty;
             if (self.plugins) |plugins| for (plugins.slots.items) |slot| {

@@ -228,3 +228,29 @@ Physical release checks are deliberate manual work, **not CI side effects**:
 The authoritative API references are the vendored Pulse headers, local systemd
 login1 introspection XML, [UPower Device documentation](https://upower.freedesktop.org/docs/Device.html)
 and [power-profiles-daemon interface](https://upower.pages.freedesktop.org/power-profiles-daemon/gdbus-org.freedesktop.UPower.PowerProfiles.html).
+
+## sched-ext
+
+Pearl Settings → System can select and apply installed sched-ext schedulers via
+scxctl. Requirements are a sched-ext-capable kernel, scxctl with `config --json`,
+a reachable scx_loader daemon, and scheduler executables visible in Pearl's PATH.
+The loader's existing access policy remains authoritative; Pearl does not use
+sudo/pkexec, launch scheduler binaries directly, install packages, or manage units.
+
+`scxctl config --json` supplies resolved mode arguments and configured defaults;
+`scxctl get` supplies current status. Kernel sched-ext state is checked for
+consistency. Apply uses `start` or `switch` with an explicit scheduler and mode.
+Use kernel default calls `stop` only for a loader-managed running scheduler.
+Commands use argv without a shell. Nonzero exits, timeout, invalid output, and
+unconfirmed attachment are surfaced on the page, with bounded diagnostics.
+
+Changes are runtime-only and do not alter Pearl preferences or loader boot
+configuration. An empty mode argument list is explicitly labeled as using
+scheduler defaults. No schedulers are hardcoded into the selection catalog.
+
+`zig build test-settings-sched-ext -Doptimize=ReleaseSafe` exercises the real shell
+and GTK frontend in a private desktop. Its integration-only `PEARL_TEST_SCX_ROOT`
+selects an isolated fake executable directory and synthetic kernel state;
+production builds ignore that variable. See the
+[implementation plan](SCHED_EXT_IMPLEMENTATION_PLAN.md) and
+[interactive design](mockups/sched-ext/index.html).

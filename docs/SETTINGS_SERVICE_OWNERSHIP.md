@@ -90,3 +90,20 @@ navigation hide the dialog without discarding input. Save compares snapshot
 version, shared revision and draft digest; conflicting input remains visible.
 Collection moves are isolated at retention and canonical-request validation,
 including edits arriving through other frontends or Advanced.
+
+## Scheduler ownership
+
+The shell owns the sched-ext adapter; Settings never executes scxctl itself.
+System page entry acquires a bounded service lease. Runtime reads poll every
+three seconds while at least one lease exists; full discovery runs on entry,
+explicit refresh, recovery, and periodically while observed. Before a mutation,
+full discovery and runtime status are read again. A changed catalog rejects the
+operation before dispatch so the user can review updated mode arguments.
+
+One subprocess job runs at a time, with output limits, cancellation, and command
+deadlines. Releasing a lease cancels its pending mutation; releasing the final
+lease also stops polling and cancels remaining observation. Lock/session loss
+revokes leases. An already accepted loader request cannot be rolled back by
+cancelling scxctl; the next view reconciles actual state. Page departure, Settings
+exit, and shell shutdown never stop an applied scheduler. Stale callbacks cannot
+re-enable controls after revocation or dereference a destroyed service.

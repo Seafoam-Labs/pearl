@@ -1,0 +1,2871 @@
+{
+  "status": "failed",
+  "checks": {
+    "all-eleven-pages-and-complete-aqueous-inventory": true,
+    "five-reference-pages-dark-light-native-narrow-and-large-text": true,
+    "100-125-150-200-percent-all-pages-preserve-draft": true,
+    "short-window-keeps-header-body-and-save-footer-reachable": true
+  },
+  "captures": [
+    {
+      "case": "dark",
+      "page": "appearance",
+      "path": "session/dark-appearance.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "dark",
+      "page": "network",
+      "path": "session/dark-network.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "dark",
+      "page": "bluetooth",
+      "path": "session/dark-bluetooth.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "dark",
+      "page": "sound",
+      "path": "session/dark-sound.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "dark",
+      "page": "power",
+      "path": "session/dark-power.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "dark",
+      "page": "aqueous",
+      "path": "session/dark-aqueous.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "light",
+      "page": "appearance",
+      "path": "session/light-appearance.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "light",
+      "page": "network",
+      "path": "session/light-network.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "light",
+      "page": "bluetooth",
+      "path": "session/light-bluetooth.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "light",
+      "page": "sound",
+      "path": "session/light-sound.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "light",
+      "page": "power",
+      "path": "session/light-power.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "light",
+      "page": "aqueous",
+      "path": "session/light-aqueous.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "native",
+      "page": "appearance",
+      "path": "session/native-appearance.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "native",
+      "page": "network",
+      "path": "session/native-network.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "native",
+      "page": "bluetooth",
+      "path": "session/native-bluetooth.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "native",
+      "page": "sound",
+      "path": "session/native-sound.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "native",
+      "page": "power",
+      "path": "session/native-power.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "native",
+      "page": "aqueous",
+      "path": "session/native-aqueous.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "narrow-dark",
+      "page": "appearance",
+      "path": "session/narrow-dark-appearance.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-dark",
+      "page": "network",
+      "path": "session/narrow-dark-network.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-dark",
+      "page": "bluetooth",
+      "path": "session/narrow-dark-bluetooth.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-dark",
+      "page": "sound",
+      "path": "session/narrow-dark-sound.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-dark",
+      "page": "power",
+      "path": "session/narrow-dark-power.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-dark",
+      "page": "aqueous",
+      "path": "session/narrow-dark-aqueous.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-light",
+      "page": "appearance",
+      "path": "session/narrow-light-appearance.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-light",
+      "page": "network",
+      "path": "session/narrow-light-network.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-light",
+      "page": "bluetooth",
+      "path": "session/narrow-light-bluetooth.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-light",
+      "page": "sound",
+      "path": "session/narrow-light-sound.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-light",
+      "page": "power",
+      "path": "session/narrow-light-power.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-light",
+      "page": "aqueous",
+      "path": "session/narrow-light-aqueous.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-native",
+      "page": "appearance",
+      "path": "session/narrow-native-appearance.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-native",
+      "page": "network",
+      "path": "session/narrow-native-network.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-native",
+      "page": "bluetooth",
+      "path": "session/narrow-native-bluetooth.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-native",
+      "page": "sound",
+      "path": "session/narrow-native-sound.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-native",
+      "page": "power",
+      "path": "session/narrow-native-power.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "narrow-native",
+      "page": "aqueous",
+      "path": "session/narrow-native-aqueous.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 483,
+        "height": 700
+      }
+    },
+    {
+      "case": "large-text",
+      "page": "appearance",
+      "path": "session/large-text-appearance.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 532,
+        "height": 700
+      }
+    },
+    {
+      "case": "large-text",
+      "page": "network",
+      "path": "session/large-text-network.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 532,
+        "height": 700
+      }
+    },
+    {
+      "case": "large-text",
+      "page": "bluetooth",
+      "path": "session/large-text-bluetooth.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 532,
+        "height": 700
+      }
+    },
+    {
+      "case": "large-text",
+      "page": "sound",
+      "path": "session/large-text-sound.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 532,
+        "height": 700
+      }
+    },
+    {
+      "case": "large-text",
+      "page": "power",
+      "path": "session/large-text-power.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 532,
+        "height": 700
+      }
+    },
+    {
+      "case": "large-text",
+      "page": "aqueous",
+      "path": "session/large-text-aqueous.png",
+      "window": {
+        "x": 560,
+        "y": 224,
+        "width": 532,
+        "height": 700
+      }
+    },
+    {
+      "case": "scale-1",
+      "page": "appearance",
+      "path": "session/scale-1-appearance.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "case": "scale-1.25",
+      "page": "appearance",
+      "path": "session/scale-1.25-appearance.png",
+      "window": {
+        "x": 120,
+        "y": 89,
+        "width": 1040,
+        "height": 750
+      }
+    },
+    {
+      "case": "scale-1.5",
+      "page": "appearance",
+      "path": "session/scale-1.5-appearance.png",
+      "window": {
+        "x": 40,
+        "y": 89,
+        "width": 986,
+        "height": 603
+      }
+    },
+    {
+      "case": "scale-2",
+      "page": "appearance",
+      "path": "session/scale-2-appearance.png",
+      "window": {
+        "x": 40,
+        "y": 100,
+        "width": 720,
+        "height": 420
+      }
+    },
+    {
+      "case": "short",
+      "page": "appearance",
+      "path": "session/short-appearance.png",
+      "window": {
+        "x": 557,
+        "y": 433,
+        "width": 485,
+        "height": 400
+      }
+    },
+    {
+      "case": "short",
+      "page": "network",
+      "path": "session/short-network.png",
+      "window": {
+        "x": 557,
+        "y": 433,
+        "width": 485,
+        "height": 400
+      }
+    },
+    {
+      "case": "short",
+      "page": "bluetooth",
+      "path": "session/short-bluetooth.png",
+      "window": {
+        "x": 557,
+        "y": 433,
+        "width": 485,
+        "height": 400
+      }
+    },
+    {
+      "case": "short",
+      "page": "sound",
+      "path": "session/short-sound.png",
+      "window": {
+        "x": 557,
+        "y": 433,
+        "width": 485,
+        "height": 400
+      }
+    },
+    {
+      "case": "short",
+      "page": "power",
+      "path": "session/short-power.png",
+      "window": {
+        "x": 557,
+        "y": 433,
+        "width": 485,
+        "height": 400
+      }
+    },
+    {
+      "case": "short",
+      "page": "aqueous",
+      "path": "session/short-aqueous.png",
+      "window": {
+        "x": 557,
+        "y": 433,
+        "width": 485,
+        "height": 400
+      }
+    }
+  ],
+  "layouts": [
+    {
+      "case": "inventory",
+      "page": "overview",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "appearance",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 543
+      },
+      "footer": {
+        "x": 220,
+        "y": 695,
+        "width": 820,
+        "height": 65
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "network",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "bluetooth",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "sound",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "power",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "bar",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 543
+      },
+      "footer": {
+        "x": 220,
+        "y": 695,
+        "width": 820,
+        "height": 65
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "notifications",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 520
+      },
+      "footer": {
+        "x": 220,
+        "y": 672,
+        "width": 820,
+        "height": 88
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "system",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "session",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 543
+      },
+      "footer": {
+        "x": 220,
+        "y": 695,
+        "width": 820,
+        "height": 65
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "aqueous",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 175,
+        "width": 820,
+        "height": 470
+      },
+      "footer": {
+        "x": 220,
+        "y": 645,
+        "width": 820,
+        "height": 115
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "inventory",
+      "page": "advanced",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 199,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 695,
+        "width": 820,
+        "height": 65
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "dark",
+      "page": "appearance",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 543
+      },
+      "footer": {
+        "x": 220,
+        "y": 695,
+        "width": 820,
+        "height": 65
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "dark",
+      "page": "network",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "dark",
+      "page": "bluetooth",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "dark",
+      "page": "sound",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "dark",
+      "page": "power",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "dark",
+      "page": "aqueous",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 175,
+        "width": 820,
+        "height": 508
+      },
+      "footer": {
+        "x": 220,
+        "y": 683,
+        "width": 820,
+        "height": 77
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "light",
+      "page": "appearance",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 543
+      },
+      "footer": {
+        "x": 220,
+        "y": 695,
+        "width": 820,
+        "height": 65
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "light",
+      "page": "network",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "light",
+      "page": "bluetooth",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "light",
+      "page": "sound",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "light",
+      "page": "power",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "light",
+      "page": "aqueous",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 175,
+        "width": 820,
+        "height": 508
+      },
+      "footer": {
+        "x": 220,
+        "y": 683,
+        "width": 820,
+        "height": 77
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "native",
+      "page": "appearance",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 547
+      },
+      "footer": {
+        "x": 220,
+        "y": 699,
+        "width": 820,
+        "height": 61
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "native",
+      "page": "network",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "native",
+      "page": "bluetooth",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "native",
+      "page": "sound",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "native",
+      "page": "power",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 568
+      },
+      "footer": {
+        "x": 220,
+        "y": 720,
+        "width": 820,
+        "height": 40
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "native",
+      "page": "aqueous",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 175,
+        "width": 820,
+        "height": 502
+      },
+      "footer": {
+        "x": 220,
+        "y": 677,
+        "width": 820,
+        "height": 83
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "narrow-dark",
+      "page": "appearance",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 470
+      },
+      "footer": {
+        "x": 0,
+        "y": 612,
+        "width": 483,
+        "height": 88
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-dark",
+      "page": "network",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-dark",
+      "page": "bluetooth",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-dark",
+      "page": "sound",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-dark",
+      "page": "power",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-dark",
+      "page": "aqueous",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 165,
+        "width": 483,
+        "height": 420
+      },
+      "footer": {
+        "x": 0,
+        "y": 585,
+        "width": 483,
+        "height": 115
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-light",
+      "page": "appearance",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 470
+      },
+      "footer": {
+        "x": 0,
+        "y": 612,
+        "width": 483,
+        "height": 88
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-light",
+      "page": "network",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-light",
+      "page": "bluetooth",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-light",
+      "page": "sound",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-light",
+      "page": "power",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-light",
+      "page": "aqueous",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 165,
+        "width": 483,
+        "height": 420
+      },
+      "footer": {
+        "x": 0,
+        "y": 585,
+        "width": 483,
+        "height": 115
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-native",
+      "page": "appearance",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 474
+      },
+      "footer": {
+        "x": 0,
+        "y": 616,
+        "width": 483,
+        "height": 84
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-native",
+      "page": "network",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-native",
+      "page": "bluetooth",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-native",
+      "page": "sound",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-native",
+      "page": "power",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 483,
+        "height": 518
+      },
+      "footer": {
+        "x": 0,
+        "y": 660,
+        "width": 483,
+        "height": 40
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "narrow-native",
+      "page": "aqueous",
+      "width": 483,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 165,
+        "width": 483,
+        "height": 414
+      },
+      "footer": {
+        "x": 0,
+        "y": 579,
+        "width": 483,
+        "height": 121
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "large-text",
+      "page": "appearance",
+      "width": 532,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 180,
+        "width": 532,
+        "height": 329
+      },
+      "footer": {
+        "x": 0,
+        "y": 509,
+        "width": 532,
+        "height": 191
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "large-text",
+      "page": "network",
+      "width": 532,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 207,
+        "width": 532,
+        "height": 443
+      },
+      "footer": {
+        "x": 0,
+        "y": 650,
+        "width": 532,
+        "height": 50
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "large-text",
+      "page": "bluetooth",
+      "width": 532,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 180,
+        "width": 532,
+        "height": 470
+      },
+      "footer": {
+        "x": 0,
+        "y": 650,
+        "width": 532,
+        "height": 50
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "large-text",
+      "page": "sound",
+      "width": 532,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 207,
+        "width": 532,
+        "height": 443
+      },
+      "footer": {
+        "x": 0,
+        "y": 650,
+        "width": 532,
+        "height": 50
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "large-text",
+      "page": "power",
+      "width": 532,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 180,
+        "width": 532,
+        "height": 470
+      },
+      "footer": {
+        "x": 0,
+        "y": 650,
+        "width": 532,
+        "height": 50
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "large-text",
+      "page": "aqueous",
+      "width": 532,
+      "height": 700,
+      "body": {
+        "x": 0,
+        "y": 214,
+        "width": 532,
+        "height": 341
+      },
+      "footer": {
+        "x": 0,
+        "y": 555,
+        "width": 532,
+        "height": 145
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "overview",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 506
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "appearance",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 506
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "network",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 506
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "bluetooth",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 506
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "sound",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 506
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "power",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 506
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "bar",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 506
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "notifications",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 458
+      },
+      "footer": {
+        "x": 220,
+        "y": 610,
+        "width": 820,
+        "height": 150
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "system",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 506
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "session",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 506
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "aqueous",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 175,
+        "width": 820,
+        "height": 470
+      },
+      "footer": {
+        "x": 220,
+        "y": 645,
+        "width": 820,
+        "height": 115
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1",
+      "page": "advanced",
+      "width": 1040,
+      "height": 760,
+      "body": {
+        "x": 220,
+        "y": 199,
+        "width": 820,
+        "height": 459
+      },
+      "footer": {
+        "x": 220,
+        "y": 658,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "overview",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "appearance",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "network",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "bluetooth",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "sound",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "power",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "bar",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "notifications",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 448
+      },
+      "footer": {
+        "x": 220,
+        "y": 600,
+        "width": 820,
+        "height": 150
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "system",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "session",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 820,
+        "height": 496
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "aqueous",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 175,
+        "width": 820,
+        "height": 498
+      },
+      "footer": {
+        "x": 220,
+        "y": 673,
+        "width": 820,
+        "height": 77
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.25",
+      "page": "advanced",
+      "width": 1040,
+      "height": 750,
+      "body": {
+        "x": 220,
+        "y": 199,
+        "width": 820,
+        "height": 449
+      },
+      "footer": {
+        "x": 220,
+        "y": 648,
+        "width": 820,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "overview",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 349
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "appearance",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 349
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "network",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 349
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "bluetooth",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 349
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "sound",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 349
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "power",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 349
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "bar",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 349
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "notifications",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 301
+      },
+      "footer": {
+        "x": 220,
+        "y": 453,
+        "width": 766,
+        "height": 150
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "system",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 349
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "session",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 152,
+        "width": 766,
+        "height": 349
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "aqueous",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 175,
+        "width": 766,
+        "height": 351
+      },
+      "footer": {
+        "x": 220,
+        "y": 526,
+        "width": 766,
+        "height": 77
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-1.5",
+      "page": "advanced",
+      "width": 986,
+      "height": 603,
+      "body": {
+        "x": 220,
+        "y": 199,
+        "width": 766,
+        "height": 302
+      },
+      "footer": {
+        "x": 220,
+        "y": 501,
+        "width": 766,
+        "height": 102
+      },
+      "narrow": false,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "overview",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 176
+      },
+      "footer": {
+        "x": 0,
+        "y": 318,
+        "width": 720,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "appearance",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 128
+      },
+      "footer": {
+        "x": 0,
+        "y": 270,
+        "width": 720,
+        "height": 150
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "network",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 176
+      },
+      "footer": {
+        "x": 0,
+        "y": 318,
+        "width": 720,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "bluetooth",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 176
+      },
+      "footer": {
+        "x": 0,
+        "y": 318,
+        "width": 720,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "sound",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 176
+      },
+      "footer": {
+        "x": 0,
+        "y": 318,
+        "width": 720,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "power",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 176
+      },
+      "footer": {
+        "x": 0,
+        "y": 318,
+        "width": 720,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "bar",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 128
+      },
+      "footer": {
+        "x": 0,
+        "y": 270,
+        "width": 720,
+        "height": 150
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "notifications",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 128
+      },
+      "footer": {
+        "x": 0,
+        "y": 270,
+        "width": 720,
+        "height": 150
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "system",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 176
+      },
+      "footer": {
+        "x": 0,
+        "y": 318,
+        "width": 720,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "session",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 720,
+        "height": 128
+      },
+      "footer": {
+        "x": 0,
+        "y": 270,
+        "width": 720,
+        "height": 150
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "aqueous",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 165,
+        "width": 720,
+        "height": 178
+      },
+      "footer": {
+        "x": 0,
+        "y": 343,
+        "width": 720,
+        "height": 77
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "scale-2",
+      "page": "advanced",
+      "width": 720,
+      "height": 420,
+      "body": {
+        "x": 0,
+        "y": 189,
+        "width": 720,
+        "height": 81
+      },
+      "footer": {
+        "x": 0,
+        "y": 270,
+        "width": 720,
+        "height": 150
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "overview",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 156
+      },
+      "footer": {
+        "x": 0,
+        "y": 298,
+        "width": 485,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "appearance",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 108
+      },
+      "footer": {
+        "x": 0,
+        "y": 250,
+        "width": 485,
+        "height": 150
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "network",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 156
+      },
+      "footer": {
+        "x": 0,
+        "y": 298,
+        "width": 485,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "bluetooth",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 156
+      },
+      "footer": {
+        "x": 0,
+        "y": 298,
+        "width": 485,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "sound",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 156
+      },
+      "footer": {
+        "x": 0,
+        "y": 298,
+        "width": 485,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "power",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 156
+      },
+      "footer": {
+        "x": 0,
+        "y": 298,
+        "width": 485,
+        "height": 102
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "bar",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 108
+      },
+      "footer": {
+        "x": 0,
+        "y": 250,
+        "width": 485,
+        "height": 150
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "notifications",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 93
+      },
+      "footer": {
+        "x": 0,
+        "y": 235,
+        "width": 485,
+        "height": 165
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "system",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 141
+      },
+      "footer": {
+        "x": 0,
+        "y": 283,
+        "width": 485,
+        "height": 117
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "session",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 142,
+        "width": 485,
+        "height": 108
+      },
+      "footer": {
+        "x": 0,
+        "y": 250,
+        "width": 485,
+        "height": 150
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "aqueous",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 165,
+        "width": 485,
+        "height": 152
+      },
+      "footer": {
+        "x": 0,
+        "y": 317,
+        "width": 485,
+        "height": 83
+      },
+      "narrow": true,
+      "output": "1"
+    },
+    {
+      "case": "short",
+      "page": "advanced",
+      "width": 485,
+      "height": 400,
+      "body": {
+        "x": 0,
+        "y": 189,
+        "width": 485,
+        "height": 61
+      },
+      "footer": {
+        "x": 0,
+        "y": 250,
+        "width": 485,
+        "height": 150
+      },
+      "narrow": true,
+      "output": "1"
+    }
+  ],
+  "binaries": {
+    "settings": "feb863f546e82e61a3ccec1e86e73ae5cc5c2316a2dc3bf2f04b1f7a5980843a",
+    "pearl": "a9aec9bd5cf71c1fd1de01284cc1e6ae9183138e6e1feae868f789df56e394e0",
+    "ctl": "2ecf43da0b55361b02d1c88bded169f31d4ff33d97bb8f7285f1830e1a1a1f74"
+  },
+  "error": "BrokenPipeError(32, 'Broken pipe')"
+}

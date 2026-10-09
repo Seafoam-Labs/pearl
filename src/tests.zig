@@ -1,4 +1,5 @@
 test {
+    _ = @import("services/sched_ext_model.zig");
     _ = @import("desktop/calculator.zig");
     _ = @import("services/notification_filter_policy.zig");
     _ = @import("desktop/window_switcher.zig");

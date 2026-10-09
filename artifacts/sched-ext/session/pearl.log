@@ -1,0 +1,29 @@
+ts=2026-10-09T13:39:01Z pid=229597 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-09T13:39:01Z pid=229597 info(platform): event=blur-capability available=false
+ts=2026-10-09T13:39:01Z pid=229597 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-09T13:39:01Z pid=229597 info(pearl): event=ready mode=session
+ts=2026-10-09T13:39:01Z pid=229597 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-09T13:39:01Z pid=229597 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-09T13:39:01Z pid=229597 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-09T13:39:01Z pid=229597 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-09T13:39:01Z pid=229597 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-09T13:39:01Z pid=229597 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-09T13:39:01Z pid=229597 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-09T13:39:01Z pid=229597 info(pearl): event=settings-backend-ready session_hash=a4de2a8be7da73f8
+ts=2026-10-09T13:39:01Z pid=229597 info(pearl): event=control-ready session_hash=a4de2a8be7da73f8
+ts=2026-10-09T13:39:01Z pid=229597 info(desktop): event=app-index-ready entries=166 truncated=false
+ts=2026-10-09T13:39:01Z pid=229597 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-10-09T13:39:01Z pid=229597 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=2331 success=true
+ts=2026-10-09T13:39:19Z pid=229597 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-09T13:39:19Z pid=229597 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-09T13:39:19Z pid=229597 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-09T13:39:19Z pid=229597 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-09T13:39:19Z pid=229597 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-09T13:39:19Z pid=229597 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-09T13:39:19Z pid=229597 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-09T13:39:19Z pid=229597 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-09T13:39:19Z pid=229597 info(config): event=wallpaper-applications-applied generation=3 elapsed_us=509 success=true
+ts=2026-10-09T13:39:30Z pid=229597 info(pearl): event=stopping reason=signal pending=false
+ts=2026-10-09T13:39:30Z pid=229597 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-09T13:39:30Z pid=229597 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-09T13:39:30Z pid=229597 info(pearl): event=stopped

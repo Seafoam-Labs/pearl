@@ -1,0 +1,9 @@
+{
+  "default_sched": null,
+  "default_mode": "Auto",
+  "scheds": {
+    "scx_bpfland": {"auto_mode": ["-m", "auto"], "gaming_mode": ["-m", "all"], "lowlatency_mode": ["-m", "performance", "-w"], "powersave_mode": [], "server_mode": []},
+    "scx_lavd": {"auto_mode": ["--autopilot"], "gaming_mode": ["--performance"], "powersave_mode": ["--powersave"]},
+    "scx_missing": {"auto_mode": []}
+  }
+}

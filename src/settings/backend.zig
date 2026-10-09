@@ -253,6 +253,7 @@ pub const Backend = struct {
                             .network => peer.scope.network == null,
                             .bluetooth => peer.scope.bluetooth == null,
                             .power => peer.scope.power == null,
+                            .system => peer.scope.sched_ext == null,
                             .overview => !peer.scope.media,
                             else => false,
                         };
@@ -288,7 +289,7 @@ pub const Backend = struct {
                 if (offset > 128) return error.InvalidOffset;
                 return std.json.Stringify.valueAlloc(alloc, try live.page(alloc, &peer.scope, peer.target.?.page, self.revision, @intCast(offset)), .{});
             },
-            .@"launcher-icon.retry", .@"night-light.action", .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => return self.liveMutate(peer, request, alloc),
+            .@"sched-ext.action", .@"launcher-icon.retry", .@"night-light.action", .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => return self.liveMutate(peer, request, alloc),
             .@"document.get" => {
                 const v = try p.fields(p.GetDocument, alloc, params);
                 if (peer.transfer != null) return error.TransferBusy;
@@ -386,8 +387,9 @@ pub const Backend = struct {
         try self.allowed(self.context);
         if (try p.number(view) != peer.view or peer.target == null) return error.StaleView;
         const canonical = switch (request.op) {
-            inline .@"launcher-icon.retry", .@"night-light.action", .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => |op| blk: {
+            inline .@"sched-ext.action", .@"launcher-icon.retry", .@"night-light.action", .@"plugin.refresh", .@"plugin.action", .@"audio.set", .@"brightness.set", .@"profile.set", .@"network.action", .@"network.editor", .@"bluetooth.action", .@"prompt.answer", .@"notifications.action", .@"lifecycle.action", .@"power.action", .@"media.action", .@"layout.get", .@"layout.set" => |op| blk: {
                 const T = switch (op) {
+                    .@"sched-ext.action" => ui.SchedExt,
                     .@"launcher-icon.retry" => ui.LauncherIconRetry,
                     .@"night-light.action" => ui.NightLight,
                     .@"plugin.refresh" => ui.PluginRefresh,

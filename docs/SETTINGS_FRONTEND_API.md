@@ -559,3 +559,25 @@ shell and Settings after upgrading from a five-target backend. Existing persiste
 profile snapshots retain schema 1 and remain readable. The explicit
 `application_refresh` action currently accepts only `id: "pywalfox"`, requires
 current committed output in the backend, and has a ten-second worker deadline.
+
+### System scheduler management
+
+The standalone `system` route exposes an optional `live.sched_ext` snapshot:
+`generation`, `pending`, `available`, `can_stop`, `summary`, `feedback`, `catalog`,
+`status`, and `kernel`. Catalog entries contain a scheduler basename, detected
+`installed` flag, and five nullable argument arrays ordered Auto, Gaming, Low
+latency, Power saver, Server. Null means an absent mode; an empty array means
+scheduler defaults. Runtime status distinguishes unknown, stopped, and running;
+mode may be null for custom arguments or an own-defaults report.
+
+`sched-ext.action` accepts `{ view, operation, generation, action, scheduler?,
+mode? }`. Action is `refresh`, `apply`, or `stop`. Apply requires a catalog
+scheduler and `auto | gaming | lowlatency | powersave | server`; refresh and stop
+reject scheduler/mode values. Generations are decimal strings, and operation IDs
+use the existing idempotent receipt contract. The backend requires the connection's
+current System page lease and normal session/lock authorization, serializes work
+across clients, and revalidates config, executables, and runtime state before writes.
+
+Dropdown changes are local. Apply and stop affect system-wide runtime scheduling
+without touching either shared preference draft. The page does not edit loader
+boot defaults. Missing snapshot support disables this page's controls.

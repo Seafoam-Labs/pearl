@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/tmp/pearl-gtk-regression.py", line 20, in <module>
+    importlib.import_module(name).main()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_presentation.py", line 129, in main
+    wait_for(lambda:other['id'] not in ipc.outputs())
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 19, in wait_for
+    value = check()
+  File "/home/zoey/Pearl/tests/integration/test_settings_presentation.py", line 129, in <lambda>
+    wait_for(lambda:other['id'] not in ipc.outputs())
+                                       ~~~~~~~~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 68, in outputs
+    return {e['id']: e for e in self.state() if e['kind'] == 'output' and e['enabled'] and e['powered']}
+                                ~~~~~~~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 65, in state
+    return self.call('snapshot')['batch']['upsert']
+           ~~~~~~~~~^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 59, in call
+    self.sock.sendall(json.dumps(req).encode() + b'\n')
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe

@@ -45,6 +45,7 @@ pub const Window = struct {
     aqueous_view: ?*@import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor) = null,
     aqueous_footer: *gtk.Box,
     review_button: *gtk.Button,
+    sched_ext_view: ?*@import("sched_ext_view.zig").View = null,
     plugins_view: ?*@import("plugins_view.zig").View = null,
     notification_filters: ?*@import("notification_filters_view.zig").View = null,
     preferences_view: ?*@import("preferences_view.zig").View = null,
@@ -260,6 +261,11 @@ pub const Window = struct {
             while (body.as(gtk.Widget).getFirstChild()) |child| body.remove(child);
             self.plugins_view = try @import("plugins_view.zig").View.create(body, editor, self, invalidatePageFocus);
         }
+        if (!fixture) {
+            const body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(nav.Route.system)].body).?;
+            while (body.as(gtk.Widget).getFirstChild()) |child| body.remove(child);
+            self.sched_ext_view = try @import("sched_ext_view.zig").View.create(body, editor, german);
+        }
         if (!fixture) for ([_]nav.Route{ .overview, .network, .bluetooth, .sound, .power, .notifications, .session }) |route| {
             const body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(route)].body).?;
             if (route != .overview and route != .session) while (body.as(gtk.Widget).getFirstChild()) |child| {
@@ -328,6 +334,7 @@ pub const Window = struct {
             view.destroy();
         }
         if (self.notification_filters) |view| view.destroy();
+        if (self.sched_ext_view) |view| view.destroy();
         if (self.plugins_view) |view| view.destroy();
         for (self.live_pages) |page| if (page) |view| view.destroy();
         for (self.preference_pages) |page| if (page) |view| view.destroy();
@@ -361,6 +368,7 @@ pub const Window = struct {
             .appearance => "Erscheinungsbild",
             .bar => "Leiste und Dock",
             .notifications => "Benachrichtigungen",
+            .system => "System",
             .session => "Sitzung und Sperre",
             .aqueous => "Aqueous",
             .advanced => "Erweitert",
@@ -377,6 +385,7 @@ pub const Window = struct {
             .power => self.t("Balance performance and battery life.", "Leistung und Akkulaufzeit einstellen."),
             .bar => self.t("Arrange your desktop bar and dock.", "Desktop-Leiste und Dock anordnen."),
             .notifications => self.t("Manage interruptions and notification history.", "Unterbrechungen und Benachrichtigungen verwalten."),
+            .system => self.t("Manage system performance and CPU scheduling.", "Systemleistung und CPU-Planung verwalten."),
             .session => self.t("Automatic locking and sleep for your session.", "Automatische Sperre und Ruhemodus einstellen."),
             .aqueous => self.t("Configure your compositor by section.", "Compositor nach Bereichen konfigurieren."),
             .plugins => self.t("Manage installed plugins, permissions and placement.", "Installierte Plugins, Berechtigungen und Platzierung verwalten."),
@@ -394,7 +403,7 @@ pub const Window = struct {
             .bar, .aqueous => "pearl-window-symbolic",
             .notifications => "pearl-notifications-symbolic",
             .session => "system-lock-screen-symbolic",
-            .advanced, .plugins => "pearl-emblem-system-symbolic",
+            .system, .advanced, .plugins => "pearl-emblem-system-symbolic",
         };
     }
     fn sectionTitle(self: *Window, index: usize) [:0]const u8 {
@@ -432,7 +441,7 @@ pub const Window = struct {
                 .network => self.t("CONNECTIONS", "VERBINDUNGEN"),
                 .sound => self.t("DEVICES", "GERÄTE"),
                 .appearance => self.t("DESKTOP", "DESKTOP"),
-                .session => self.t("SYSTEM", "SYSTEM"),
+                .system => self.t("SYSTEM", "SYSTEM"),
                 else => null,
             };
             if (group) |text| box.append(w.label(text, "settings-group").as(gtk.Widget));
@@ -743,6 +752,7 @@ pub const Window = struct {
         self.saved_button.as(gtk.Widget).setVisible(@intFromBool(self.target.page == .advanced));
         self.saved_button.as(gtk.Widget).setSensitive(@intFromBool(editor.ready and editor.current != null));
         if (self.notification_filters) |view| view.update();
+        if (self.sched_ext_view) |view| view.update();
         if (self.plugins_view) |view| view.update();
         if (self.preferences_view) |view| view.update();
         for (self.preference_pages) |page| if (page) |view| view.update();
@@ -758,7 +768,7 @@ pub const Window = struct {
         self.save.as(gtk.Widget).setSensitive(@intFromBool(available and dirty and (if (editor.local != null) editor.local_valid else editor.state.valid) and !editor.state.conflict and !editor.recovery));
         self.discard.as(gtk.Widget).setSensitive(@intFromBool(available and dirty));
         self.merge_button.as(gtk.Widget).setSensitive(@intFromBool(available));
-        self.footer_text.setText(if (editor.recovery) self.t("Local changes need review. Merge them or discard only the local copy.", "Lokale Änderungen müssen geprüft werden. Zusammenführen oder nur die lokale Kopie verwerfen.") else if (editor.local != null) self.t("Pearl preferences · Retaining draft…", "Pearl-Einstellungen · Entwurf wird behalten…") else if (editor.state.busy) self.t("Pearl preferences · Preparing settings…", "Pearl-Einstellungen · Einstellungen werden vorbereitet…") else if (!preference_page) (if (dirty) self.t("Service controls take effect immediately. Pearl preference draft retained.", "Dienstregler wirken sofort. Der Pearl-Einstellungsentwurf bleibt behalten.") else self.t("Changes on this page take effect immediately.", "Änderungen auf dieser Seite wirken sofort.")) else if (self.target.page == .notifications) self.t("Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.", "Anwenden speichert alle Pearl-Einstellungen. Filter gelten für neue Benachrichtigungen; Nicht stören und Verlauf wirken sofort.") else if (self.target.page == .session) self.t("Apply saves Pearl preferences. Session actions take effect immediately.", "Anwenden speichert Pearl-Einstellungen. Sitzungsaktionen wirken sofort.") else if (editor.state.dirty) self.t("Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.", "Pearl-Einstellungen · Entwurf in dieser Sitzung behalten. Anwenden speichert alle Pearl-Änderungen.") else self.t("Pearl preferences · All changes are applied explicitly.", "Pearl-Einstellungen · Änderungen werden ausdrücklich angewendet."));
+        self.footer_text.setText(if (editor.recovery) self.t("Local changes need review. Merge them or discard only the local copy.", "Lokale Änderungen müssen geprüft werden. Zusammenführen oder nur die lokale Kopie verwerfen.") else if (editor.local != null) self.t("Pearl preferences · Retaining draft…", "Pearl-Einstellungen · Entwurf wird behalten…") else if (editor.state.busy) self.t("Pearl preferences · Preparing settings…", "Pearl-Einstellungen · Einstellungen werden vorbereitet…") else if (self.target.page == .system) self.t("Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.", "Scheduler und Modus wählen, dann Scheduler anwenden. Startvorgaben bleiben unverändert.") else if (!preference_page) (if (dirty) self.t("Service controls take effect immediately. Pearl preference draft retained.", "Dienstregler wirken sofort. Der Pearl-Einstellungsentwurf bleibt behalten.") else self.t("Changes on this page take effect immediately.", "Änderungen auf dieser Seite wirken sofort.")) else if (self.target.page == .notifications) self.t("Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.", "Anwenden speichert alle Pearl-Einstellungen. Filter gelten für neue Benachrichtigungen; Nicht stören und Verlauf wirken sofort.") else if (self.target.page == .session) self.t("Apply saves Pearl preferences. Session actions take effect immediately.", "Anwenden speichert Pearl-Einstellungen. Sitzungsaktionen wirken sofort.") else if (editor.state.dirty) self.t("Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.", "Pearl-Einstellungen · Entwurf in dieser Sitzung behalten. Anwenden speichert alle Pearl-Änderungen.") else self.t("Pearl preferences · All changes are applied explicitly.", "Pearl-Einstellungen · Änderungen werden ausdrücklich angewendet."));
         if (!self.connected) return;
         const status_text: [:0]const u8 = if (!editor.ready) self.t("Loading Pearl preferences…", "Pearl-Einstellungen werden geladen…") else if (editor.uncertain_operation) self.t("The connection ended during an operation. Review the current settings before applying again.", "Die Verbindung endete während eines Vorgangs. Prüfe die Einstellungen vor erneutem Anwenden.") else if (editor.recovery or editor.state.conflict) self.t("Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict.", "Einstellungen wurden anderswo geändert. Deine Änderungen bleiben erhalten. Zusammenführen oder den Konflikt unter Erweitert prüfen.") else if (editor.error_code.len > 0) self.errorMessage(editor.error_code.slice()) else if (!editor.state.valid) self.t("The draft is invalid. Correct the fields or review the JSON in Advanced before applying.", "Der Entwurf ist ungültig. Korrigiere die Felder oder das JSON unter Erweitert vor dem Anwenden.") else if (editor.export_error.len > 0) self.t("Preferences were saved. An export needs attention; your changes remain applied.", "Einstellungen gespeichert. Ein Export benötigt Aufmerksamkeit; die Änderungen bleiben angewendet.") else "";
         self.status.setText(status_text);
@@ -827,6 +837,7 @@ pub const Window = struct {
         if (std.mem.eql(u8, code, "Busy")) return self.t("Pearl is busy. Your changes are retained; try again when the current work completes.", "Pearl ist beschäftigt. Änderungen bleiben erhalten; versuche es nach Abschluss erneut.");
         if (std.mem.eql(u8, code, "NetworkEditorMissing")) return "The NetworkManager connection editor is not installed.";
         if (std.mem.eql(u8, code, "NetworkEditorLaunchFailed")) return "The network connection editor could not be opened. You can keep using this window.";
+        if (self.target.page == .system) return self.t("The scheduler action could not be completed. Review its status and refresh before retrying.", "Die Scheduler-Aktion konnte nicht abgeschlossen werden. Status prüfen und vor einem erneuten Versuch aktualisieren.");
         if (self.target.page == .network or self.target.page == .bluetooth or self.target.page == .sound or self.target.page == .power or self.target.page == .notifications or self.target.page == .overview) return "The service action could not be completed. Check the status on this page and try again.";
 
         if (std.mem.eql(u8, code, "DocumentTooLarge")) return self.t("The draft is limited to 64 KiB. The previous text is retained.", "Der Entwurf ist auf 64 KiB begrenzt. Der bisherige Text bleibt erhalten.");
@@ -1079,6 +1090,11 @@ pub const Window = struct {
         const ControlProbe = struct { field: []const u8, focused: bool, enabled: bool = true, selected: ?bool = null, text: ?[]const u8 = null, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
         var controls: std.ArrayList(ControlProbe) = .empty;
         const focus = self.window.getFocus();
+        if (self.sched_ext_view) |view| if (self.target.page == .system) {
+            for ([_]*gtk.Widget{ view.scheduler.as(gtk.Widget), view.mode.as(gtk.Widget), view.apply.as(gtk.Widget), view.stop.as(gtk.Widget), view.refresh.as(gtk.Widget) }, [_][]const u8{ "sched-ext/scheduler", "sched-ext/mode", "sched-ext/apply", "sched-ext/stop", "sched-ext/refresh" }) |widget, name| {
+                try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            }
+        };
         if (self.preferences_view) |view| {
             const widgets = [_]*gtk.Widget{ view.mode.as(gtk.Widget), view.variant.as(gtk.Widget), view.source.as(gtk.Widget), view.entries[0].as(gtk.Widget), view.entries[1].as(gtk.Widget), view.entries[2].as(gtk.Widget), view.entries[3].as(gtk.Widget), view.entries[4].as(gtk.Widget), view.font_size.as(gtk.Widget), view.fit.as(gtk.Widget), view.density.as(gtk.Widget), view.motion.as(gtk.Widget), view.choose.as(gtk.Widget), view.greeter_sync.button.as(gtk.Widget), view.raw_view.as(gtk.Widget), self.save.as(gtk.Widget), self.discard.as(gtk.Widget), self.merge_button.as(gtk.Widget) };
             for (widgets, [_][]const u8{ "mode", "variant", "source", "gtk_name", "seed", "wallpaper", "color", "font", "font_size", "fit", "density", "motion", "choose", "greeter_sync", "raw", "apply", "discard", "merge" }) |widget, name| {
@@ -1179,6 +1195,6 @@ pub const Window = struct {
                 bar_groups[i] = std.mem.span(label.getText());
             };
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .window_rules = if (self.aqueous_view) |view| if (view.rules_view) |rules| try rules.diagnostic(alloc) else null else null, .notification_filters = if (self.notification_filters) |view| try view.diagnostic(alloc) else null, .launcher_icon_picker = if (self.preference_pages[0]) |view| if (view.bar) |bar| bar.picker != null else false else false, .bar_groups = bar_groups, .links = links, .controls = controls.items, .editor = editor_state, .theme_busy = self.editor.theme_busy, .theme_status = if (self.preferences_view) |view| std.mem.span(view.themes.status.getText()) else "", .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .sched_ext = if (self.sched_ext_view) |view| .{ .scheduler = view.selected.slice(), .mode = @tagName(view.selected_mode), .current = std.mem.span(view.current.getText()), .summary = std.mem.span(view.summary.getText()), .feedback = std.mem.span(view.feedback.getText()) } else null, .window_rules = if (self.aqueous_view) |view| if (view.rules_view) |rules| try rules.diagnostic(alloc) else null else null, .notification_filters = if (self.notification_filters) |view| try view.diagnostic(alloc) else null, .launcher_icon_picker = if (self.preference_pages[0]) |view| if (view.bar) |bar| bar.picker != null else false else false, .bar_groups = bar_groups, .links = links, .controls = controls.items, .editor = editor_state, .theme_busy = self.editor.theme_busy, .theme_status = if (self.preferences_view) |view| std.mem.span(view.themes.status.getText()) else "", .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
     }
 };

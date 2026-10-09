@@ -25,7 +25,7 @@ pub const Options = struct {
         return result;
     }
 };
-pub const usage = "Usage: pearl-settings [--page PAGE] [--section AQUEOUS_SECTION]\n\nPages: overview, network, bluetooth, sound, power, appearance, bar,\n       notifications, session, aqueous, advanced\nAqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n\nA generic launch opens Overview. Repeated launches activate the existing\nwindow in this Aqueous session. Editing requires a running Pearl session.\n";
+pub const usage = "Usage: pearl-settings [--page PAGE] [--section AQUEOUS_SECTION]\n\nPages: overview, network, bluetooth, sound, power, appearance, bar,\n       notifications, system, session, aqueous, advanced, plugins\nAqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n\nA generic launch opens Overview. Repeated launches activate the existing\nwindow in this Aqueous session. Editing requires a running Pearl session.\n";
 test "standalone arguments use shared destinations and fail before activation" {
     try std.testing.expectEqual(nav.Route.overview, (try Options.parse(&.{})).target.page);
     for (std.enums.values(nav.Route)) |page| try std.testing.expectEqual(page, (try Options.parse(&.{ "--page", page.id() })).target.page);

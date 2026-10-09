@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/tmp/pearl-gtk-regression.py", line 20, in <module>
+    importlib.import_module(name).main()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_services.py", line 144, in main
+    click(s,ipc,AP+'/connect');wait_for(lambda:probe(s,ipc)['service_prompt'])
+                               ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 23, in wait_for
+    raise TimeoutError('private session condition timed out')
+TimeoutError: private session condition timed out

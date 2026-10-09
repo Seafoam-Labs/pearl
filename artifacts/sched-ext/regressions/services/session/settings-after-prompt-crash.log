@@ -1,0 +1,6 @@
+ts=2026-10-09T13:37:44Z pid=215748 info(settings): event=settings-launch activation_context=false
+ts=2026-10-09T13:37:44Z pid=215748 info(settings): event=settings-instance-ready session_hash=8bc05607bf0cbfec
+ts=2026-10-09T13:37:44Z pid=215748 info(settings): event=settings-page page=overview
+ts=2026-10-09T13:37:44Z pid=215748 info(settings): event=settings-page page=network
+ts=2026-10-09T13:37:44Z pid=215748 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-09T13:37:44Z pid=215748 info(settings): event=settings-page page=network

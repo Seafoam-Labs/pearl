@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "checks": {
+    "catalog-and-executable-detection": true,
+    "native-staging-poll-preservation-and-apply": true,
+    "switch-and-empty-mode-defaults": true,
+    "missing-binary-mode-and-stale-generation-denied": true,
+    "configuration-revalidation-before-dispatch": true,
+    "serialized-mutations-and-route-ownership": true,
+    "external-change-before-stop-is-not-overwritten": true,
+    "failed-switch-and-success-without-attachment": true,
+    "unavailable-states-timeout-and-recovery": true,
+    "native-stop-and-narrow-layout": true,
+    "lock-revokes-authority-without-stopping-scheduler": true,
+    "page-release-stops-polling-without-stopping-scheduler": true,
+    "pending-owner-release-cancels-only-owned-work": true
+  }
+}

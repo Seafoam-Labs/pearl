@@ -10,6 +10,7 @@ pub const Route = enum {
     appearance,
     bar,
     notifications,
+    system,
     session,
     aqueous,
     advanced,
@@ -29,6 +30,7 @@ pub const Route = enum {
             .appearance => "Appearance",
             .bar => "Bar & dock",
             .notifications => "Notifications",
+            .system => "System",
             .session => "Session & lock",
             .aqueous => "Aqueous",
             .advanced => "Advanced",
@@ -39,7 +41,7 @@ pub const Route = enum {
     pub fn isCompact(self: Route) bool {
         return switch (self) {
             .overview, .network, .bluetooth, .sound, .power => true,
-            .appearance, .bar, .notifications, .session, .aqueous, .advanced, .plugins => false,
+            .appearance, .bar, .notifications, .system, .session, .aqueous, .advanced, .plugins => false,
         };
     }
 };
