@@ -33,6 +33,22 @@ test "wallpaper slideshow roundtrips and rejects a non-image fit" {
     try std.testing.expectError(error.AbsoluteImagePathRequired, parse(alloc, "{\"wallpaper\":{\"slideshow\":{\"folder\":\"pictures\"}}}"));
     try std.testing.expectError(error.UnknownField, parse(alloc, "{\"wallpaper\":{\"slideshow\":{\"shuffle\":true}}}"));
 }
+test "wallpaper crops roundtrip and reject malformed entries" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    try std.testing.expectEqual(@as(usize, 0), (try parse(alloc, "{}")).wallpaper.crops.len);
+    const document = "{\"wallpaper\":{\"mode\":\"cover\",\"path\":\"/p/a.png\",\"crops\":[{\"path\":\"/p/a.png\",\"x\":0.25,\"y\":0.125,\"width\":0.5,\"height\":0.75}]}}";
+    const saved = try parse(alloc, document);
+    try std.testing.expectEqual(@as(f32, 0.25), saved.wallpaper.crops[0].x);
+    try std.testing.expectEqual(@as(f32, 0.75), saved.wallpaper.crops[0].height);
+    const encoded = try std.json.Stringify.valueAlloc(alloc, saved, .{});
+    try std.testing.expectEqualDeep(saved.wallpaper.crops, (try parse(alloc, encoded)).wallpaper.crops);
+    try std.testing.expectError(error.InvalidCropRect, parse(alloc, "{\"wallpaper\":{\"crops\":[{\"path\":\"/p/a.png\",\"x\":0.75,\"width\":0.5}]}}"));
+    try std.testing.expectError(error.InvalidCropPath, parse(alloc, "{\"wallpaper\":{\"crops\":[{\"path\":\"a.png\"}]}}"));
+    try std.testing.expectError(error.DuplicateCrop, parse(alloc, "{\"wallpaper\":{\"crops\":[{\"path\":\"/p/a.png\"},{\"path\":\"/p/a.png\"}]}}"));
+    try std.testing.expectError(error.UnknownField, parse(alloc, "{\"wallpaper\":{\"crops\":[{\"path\":\"/p/a.png\",\"zoom\":2}]}}"));
+}
 pub const Theme = struct {
     mode: enum { static, dynamic, gtk, package } = .static,
     package_id: []const u8 = "",
@@ -51,8 +67,12 @@ pub const Wallpaper = struct {
     mode: enum { gradient, solid, cover, contain } = .gradient,
     path: []const u8 = "",
     color: []const u8 = "#141218",
+    /// Per-image crop placement, keyed by absolute path so a slideshow keeps
+    /// every image's own framing.
+    crops: []const Crop = &.{},
     slideshow: @import("slideshow_policy.zig").Config = .{},
 };
+pub const Crop = @import("crop_policy.zig").Crop;
 pub const Dock = @import("../desktop/dock_policy.zig").Config;
 pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
 pub const ResourceMode = @import("../desktop/resource_model.zig").Mode;
@@ -119,6 +139,7 @@ pub const Preferences = struct {
         try safeText(self.wallpaper.path, 1024);
         if (self.wallpaper.path.len > 0 and self.wallpaper.path[0] != '/') return error.AbsoluteImagePathRequired;
         if ((self.wallpaper.mode == .cover or self.wallpaper.mode == .contain or (self.theme.mode == .dynamic and self.theme.source == .wallpaper)) and self.wallpaper.path.len == 0) return error.ImageRequired;
+        try @import("crop_policy.zig").validate(self.wallpaper.crops);
         try self.wallpaper.slideshow.validate();
         try safeText(self.wallpaper.slideshow.folder, 1024);
         if (self.wallpaper.slideshow.folder.len > 0 and self.wallpaper.slideshow.folder[0] != '/') return error.AbsoluteImagePathRequired;

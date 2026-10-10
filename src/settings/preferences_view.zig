@@ -388,6 +388,9 @@ pub const View = struct {
             .mode = @enumFromInt(if (slideshow_on and chosen_fit != 2 and chosen_fit != 3) @as(c_uint, 2) else chosen_fit),
             .path = text(self.entries[2]),
             .color = text(self.entries[3]),
+            // The form has no crop editor, so a save must not drop placements
+            // the shell recorded for other images.
+            .crops = prefs.wallpaper.crops,
             .slideshow = .{
                 .enabled = slideshow_on,
                 .folder = text(self.slideshow_folder),
