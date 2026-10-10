@@ -90,7 +90,7 @@ overlay back to Bar mode and adds any missing references in the draft. Choosing
 permission. Turning that permission off returns the enabled plugin to the bar. Bar references have the form
 `plugin:pearl.timer-c/main`; they may also be entered in Bar & dock or per-output
 preferences. Unknown references remain harmless until a matching plugin runs.
-The native launcher remains mandatory.
+The native launcher is optional, so a bar may hold plugin references alone.
 
 Schema controls support text, bounded integer and boolean values. Enablement,
 approvals, permissions, settings, and placement share Pearl's retained draft,

@@ -372,7 +372,6 @@ pub const View = struct {
                 const title_label = w.label(title, null);
                 title_label.setMaxWidthChars(16);
                 labels.append(title_label.as(gtk.Widget));
-                if (std.mem.eql(u8, id, "launcher")) labels.append(w.label("Required", "pearl-secondary").as(gtk.Widget));
                 if (clock_policy.reference(id)) |clock_id| {
                     const definition = clock_policy.find(document.bar.clocks, clock_id).?;
                     const detail = w.label(try alloc.dupeZ(u8, definition.timezone), "pearl-secondary");
@@ -557,9 +556,7 @@ pub const View = struct {
                     try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.resource.series.{s}", .{@tagName(kind)}), .widget = choice_.as(gtk.Widget) });
                 }
             }
-            const remove = try self.button(box, "Remove from bar", "bar.action.remove", id, .{ .change = .remove }, true);
-            remove.as(gtk.Widget).setSensitive(@intFromBool(!std.mem.eql(u8, id, "launcher")));
-            if (std.mem.eql(u8, id, "launcher")) box.append(w.label("Launcher is required. It can be moved to any group.", "pearl-secondary").as(gtk.Widget));
+            _ = try self.button(box, "Remove from bar", "bar.action.remove", id, .{ .change = .remove }, true);
         }
         box.append(self.popup_error.?.as(gtk.Widget));
         if (std.mem.eql(u8, id, "launcher-icon")) try self.menu_controls.append(a, .{ .id = "bar.icon.error", .widget = self.popup_error.?.as(gtk.Widget) });
@@ -608,7 +605,6 @@ pub const View = struct {
             error.StaleBar => "The bar changed while this menu was open. Close it and try again.",
             error.PluginUnavailable => "This plugin is no longer available for the bar. Review Plugins.",
             error.InvalidGroups => "This group is full or the widget limit was reached. Remove or move a widget first.",
-            error.LauncherRequired => "Launcher is required and cannot be removed.",
             error.AlreadyPlaced => "This widget is already on the bar.",
             error.Unavailable => "Editing is unavailable. Your draft is retained.",
             else => "The change could not be completed. Your draft is retained; review Advanced.",

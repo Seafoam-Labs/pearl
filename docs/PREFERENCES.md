@@ -159,7 +159,7 @@ The validated recovery snapshot is `pearl/last-good.json` in the same directory.
 The standalone Appearance, Bar & dock, Plugins and Advanced pages edit one shared
 Pearl draft. Bar & dock uses ordered widget selections: **Add widget** opens a
 searchable picker, and each widget's actions menu supports reordering, moving
-between groups and removal. Launcher is required but movable. Used widgets
+between groups and removal. Every widget is optional, including Launcher. Used widgets
 cannot be added twice; Clock supports multiple independent instances. Left/right bar edges show Top / Center / Bottom groups;
 the saved field names remain `left / center / right`. The preview is a schematic
 of the draft; the desktop changes only after Apply & save. Dock and Flyouts

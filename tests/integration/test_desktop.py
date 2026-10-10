@@ -175,11 +175,13 @@ def main():
             ctl(s,args.ctl,'launcher','hide')
             ipc.call('command',action='window.minimized',fields=dict(id=windows[0]['id'],value=False))
             checks['switcher-exclusion-taskbar-distinction-and-minimized-state'] = True
-            # Bar groups are atomically configurable; launcher is mandatory.
+            # Bar groups are atomically configurable; the launcher is optional.
             ctl(s,args.ctl,'bar','groups','--output',tid,'--left','launcher,workspaces','--center','title','--right','clock,keyboard,control')
             configured=status(s,args.ctl)
             assert next(o for o in configured['outputs'] if o['id']==tid)['groups']['center']=='title'
-            ctl(s,args.ctl,'bar','groups','--output',tid,'--left','workspaces','--center','clock','--right','control',code=2)
+            ctl(s,args.ctl,'bar','groups','--output',tid,'--left','workspaces','--center','clock','--right','control')
+            without_launcher=status(s,args.ctl)
+            assert next(o for o in without_launcher['outputs'] if o['id']==tid)['groups']['left']=='workspaces'
             # Restore a deterministic group arrangement for click coordinates.
             ctl(s,args.ctl,'bar','groups','--output',tid,'--left','launcher,workspaces','--center','clock','--right','keyboard,overview,control')
             workspaces=[e for e in ipc.state() if e['kind']=='workspace']

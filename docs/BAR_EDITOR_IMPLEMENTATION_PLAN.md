@@ -70,9 +70,8 @@ Each row has an **Actions for [widget]** button. Its menu offers:
 | Move to Left / Center / Right | Move once, appending to the destination. Use Top/Bottom for vertical bars. |
 | Remove from bar | Remove the placement; leave plugin installation, enablement and grants alone. |
 
-Launcher is labeled **Required**. Its Remove action is disabled with an
-explanation, but it can be reordered or moved between groups. It must remain
-present exactly once across all three groups. Use accessible menu actions as
+Launcher is an ordinary widget: it can be reordered, moved between groups,
+removed and re-added from the picker. Use accessible menu actions as
 the first-release ordering method; optional drag-and-drop can follow later.
 
 There are 15 current built-ins in `desktop.policy.Item`: Clipboard, Launcher,
@@ -175,7 +174,8 @@ verify that it respects placements already moved to another group.
 
 - A user can add Bluetooth, move Clock to Right, reorder it, remove Bluetooth,
   and Apply without typing a widget identifier. Reopening shows the saved order.
-- Launcher cannot be removed; moving it across groups succeeds atomically.
+- Launcher can be removed and re-added like any other widget; moving it across
+  groups succeeds atomically.
   Used widgets cannot be added twice. Empty Center/Right groups remain valid.
 - Round-trip existing defaults, custom group order, empty groups and valid
   unavailable plugin references. Test byte/count boundaries and full groups.
