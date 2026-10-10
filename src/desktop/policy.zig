@@ -37,7 +37,6 @@ pub const Groups = struct {
                 seen.insert(item);
             }
         }
-        if (!seen.contains(.launcher)) return error.InvalidGroups;
     }
 };
 pub fn eligible(w: Window) bool {
@@ -55,11 +54,13 @@ pub fn score(query: []const u8, name: []const u8, keywords: []const u8, recent: 
     }
     return result + (if (running) @as(i32, 20) else 0) + (if (recent) @as(i32, 10) else 0);
 }
-test "bar groups reject duplicate, unknown and missing primary controls" {
+test "bar groups reject duplicate and unknown widgets while every builtin stays optional" {
     try (Groups{}).validate();
     try (Groups{ .right = "media,resources,tray" }).validate();
+    try (Groups{ .left = "workspaces" }).validate();
+    try (Groups{ .left = "", .center = "", .right = "" }).validate();
     try std.testing.expectError(error.InvalidGroups, (Groups{ .right = "clock" }).validate());
-    try std.testing.expectError(error.InvalidGroups, (Groups{ .left = "workspaces" }).validate());
+    try std.testing.expectError(error.InvalidGroups, (Groups{ .left = "workspaces", .center = "workspaces" }).validate());
     try std.testing.expectError(error.InvalidGroups, (Groups{ .center = "weather" }).validate());
 }
 test "ranking favors exact names and recent empty-query entries without conflating IDs" {
@@ -84,9 +85,9 @@ test "launcher respects switcher policy and represents minimized windows separat
     try std.testing.expect(!eligible(window));
 }
 
-test "plugin bar references remain distinct from builtins and preserve primary controls" {
+test "plugin bar references remain distinct from builtins and may fill the bar alone" {
     try (Groups{ .center = "plugin:pearl.timer-c/main" }).validate();
+    try (Groups{ .left = "plugin:demo/main", .center = "", .right = "" }).validate();
     try std.testing.expectError(error.InvalidGroups, (Groups{ .center = "plugin:../main" }).validate());
     try std.testing.expectError(error.InvalidGroups, (Groups{ .center = "plugin:demo/main", .right = "plugin:demo/main" }).validate());
-    try std.testing.expectError(error.InvalidGroups, (Groups{ .left = "plugin:demo/main" }).validate());
 }

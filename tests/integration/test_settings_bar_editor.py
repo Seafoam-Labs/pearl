@@ -358,12 +358,16 @@ def main():
             passed('native-picker-search-add-and-duplicate-prevention')
             click(s,ipc,'bar.widget.launcher')
             controls = probe(s,ipc)['controls']
-            assert not next(c for c in controls if c['field']=='bar.action.remove')['enabled']
+            assert next(c for c in controls if c['field']=='bar.action.remove')['enabled']
             # Reorder and cross-group moves are drag-and-drop only now.
             assert not any(c['field'] in ('bar.action.earlier','bar.action.later') or c['field'].startswith('bar.action.move') for c in controls)
-            capture(s,'bar-editor-required-actions',output['name'])
-            keys(s,'Escape');menu_closed(s,ipc)
-            passed('launcher-protection-and-drag-only-reorder')
+            capture(s,'bar-editor-launcher-actions',output['name'])
+            menu_click(s,ipc,'bar.action.remove');menu_closed(s,ipc)
+            wait_for(lambda:'launcher' not in json.loads(peer.document())['bar']['groups']['left'])
+            assert 'bar.widget.launcher' not in {c['field'] for c in probe(s,ipc)['controls']}
+            choose(s,ipc,'left','Launcher','launcher')
+            wait_for(lambda:'launcher' in json.loads(peer.document())['bar']['groups']['left'])
+            passed('launcher-removal-readd-and-drag-only-reorder')
             action(s,ipc,'bluetooth','remove')
             wait_for(lambda:'bluetooth' not in json.loads(peer.document())['bar']['groups']['right'])
             candidate=json.loads(peer.document())

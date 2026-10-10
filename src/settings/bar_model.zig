@@ -9,7 +9,7 @@ pub fn metadata(item: policy.Item) Metadata {
     return switch (item) {
         .window_switcher => .{ .name = "Cycle windows", .description = "Step through windows across workspaces and displays (requires updated Aqueous)", .icon = "pearl-window-switcher-symbolic" },
         .running_apps => .{ .name = "Running applications", .description = "Open windows across all workspaces and displays", .icon = "pearl-application-x-executable-symbolic" },
-        .launcher => .{ .name = "Launcher", .description = "Open your applications · Required", .icon = @import("../desktop/launcher_icon_policy.zig").default_icon },
+        .launcher => .{ .name = "Launcher", .description = "Open your applications", .icon = @import("../desktop/launcher_icon_policy.zig").default_icon },
         .workspaces => .{ .name = "Workspaces", .description = "Switch between workspaces", .icon = "pearl-view-grid-symbolic" },
         .title => .{ .name = "Window title", .description = "Name of the active window", .icon = "pearl-window-symbolic" },
         .clock => .{ .name = "Clock", .description = "Time, date and calendar", .icon = "pearl-content-loading-symbolic" },
@@ -86,10 +86,7 @@ pub const Layout = struct {
                 const pos = found orelse return error.WidgetNotFound;
                 const list = &next.items[@intFromEnum(pos.group)];
                 switch (action) {
-                    .remove => {
-                        if (std.mem.eql(u8, id, "launcher")) return error.LauncherRequired;
-                        _ = list.orderedRemove(pos.index);
-                    },
+                    .remove => _ = list.orderedRemove(pos.index),
                     .move => |to| {
                         if (to == pos.group) return error.SameGroup;
                         const item = list.orderedRemove(pos.index);
@@ -170,13 +167,15 @@ test "bar selections round trip and move Launcher atomically without altering un
     const roundtrip = try (try Layout.parse(a, defaults.bar.groups)).serialize(a);
     try std.testing.expectEqualDeep(defaults.bar.groups, roundtrip);
 }
-test "bar actions protect required controls, uniqueness, boundaries, invalid drafts and missing plugins" {
+test "bar actions protect uniqueness, boundaries, invalid drafts and missing plugins" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
     const value: policy.Groups = .{ .left = "launcher,plugin:missing/main", .center = "", .right = "" };
     const layout = try Layout.parse(a, value);
-    try std.testing.expectError(error.LauncherRequired, layout.change(a, "launcher", .remove));
+    const cleared = try layout.change(a, "launcher", .remove);
+    try std.testing.expectEqualStrings("plugin:missing/main", (try cleared.serialize(a)).left);
+    try std.testing.expectEqualStrings("plugin:missing/main,launcher", (try (try cleared.change(a, "launcher", .{ .add = .left })).serialize(a)).left);
     try std.testing.expectError(error.AlreadyPlaced, layout.change(a, "launcher", .{ .add = .right }));
     try std.testing.expectError(error.OrderBoundary, layout.change(a, "launcher", .earlier));
     try std.testing.expectError(error.WidgetNotFound, layout.change(a, "clock", .remove));
