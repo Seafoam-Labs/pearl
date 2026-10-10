@@ -341,6 +341,7 @@ Omitted fields use these defaults:
   },
   "wallpaper": {
     "mode": "gradient", "path": "", "color": "#141218",
+    "crops": [],
     "slideshow": {
       "enabled": false, "folder": "", "interval_seconds": 900,
       "order": "sequential", "transition": "fade", "transition_ms": 420
@@ -381,6 +382,21 @@ validation fails with `SlideshowNeedsImageMode` or
 apply path, so wallpaper-derived colors and matugen profiles regenerate per
 slide when the theme follows the image. `reduced_motion` suppresses the
 transition. The greeter keeps whatever image was last synced to it.
+
+`wallpaper.crops` stores one placement per image, so double-clicking the desktop
+background — or a thumbnail in the bar's **Wallpaper** pane — opens a crop editor
+whose frame is locked to the output's aspect ratio and therefore fills that
+display exactly. Drag places the frame, the scroll wheel zooms it, and Apply
+saves through the normal apply path. Coordinates are fractions of the source
+image (`x`, `y` for the top-left corner, `width` and `height` for its extent),
+so an entry survives the file being resized. An image is cropped at texture
+build time, which means every surface, rotation and restart reuses the same
+placement; wallpaper-derived palettes keep reading the whole image, so editing a
+crop does not shift dynamic colors. Crops are keyed by absolute path, at most one
+per image and at most 16 in total, otherwise validation fails with
+`InvalidCropPath`, `DuplicateCrop` or `TooManyCrops`. A frame covering the whole
+image is the default and is dropped rather than stored. `Reset` restores it
+without saving.
 
 Per-output entries use stable connector names from `pearlctl status`, never
 Aqueous's temporary output IDs. For example:

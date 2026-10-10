@@ -9,6 +9,7 @@ const pixbuf = @import("gdkpixbuf2");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const slideshow = @import("../config/slideshow.zig");
+const crop_window = @import("wallpaper_crop.zig");
 const Service = @import("../config/service.zig").Service;
 const a = std.heap.c_allocator;
 
@@ -38,6 +39,8 @@ pub const View = struct {
     page_label: *gtk.Label,
     previous: *gtk.Button,
     next: *gtk.Button,
+    /// Double-clicking a thumbnail asks this to open the crop editor for it.
+    request: crop_window.Request,
     cells: [slots]Cell = undefined,
     arena: std.heap.ArenaAllocator,
     cache: std.StringHashMapUnmanaged(*gdk.Texture) = .{},
@@ -55,7 +58,7 @@ pub const View = struct {
     generation: u64 = 0,
     active: usize = 0,
 
-    pub fn create(host: *gtk.Box, service: *Service) !*View {
+    pub fn create(host: *gtk.Box, service: *Service, request: crop_window.Request) !*View {
         const self = try a.create(View);
         const header = w.row(8);
         header.append(w.label(tr("Wallpaper", "Hintergrundbild"), "pearl-card-title").as(gtk.Widget));
@@ -95,7 +98,7 @@ pub const View = struct {
         host.append(footer.as(gtk.Widget));
         const status = w.label("", "pearl-secondary");
         host.append(status.as(gtk.Widget));
-        self.* = .{ .host = host, .service = service, .status = status, .page_label = page_label, .previous = previous, .next = next, .arena = std.heap.ArenaAllocator.init(a) };
+        self.* = .{ .host = host, .service = service, .status = status, .page_label = page_label, .previous = previous, .next = next, .request = request, .arena = std.heap.ArenaAllocator.init(a) };
         for (&self.cells) |*cell| {
             const button = gtk.Button.new();
             button.as(gtk.Widget).addCssClass("pearl-wallpaper-thumb");
@@ -116,6 +119,13 @@ pub const View = struct {
             button.as(gtk.Widget).setVisible(0);
             cell.* = .{ .view = self, .button = button, .picture = picture };
             _ = gtk.Button.signals.clicked.connect(button, *Cell, clicked, cell, .{});
+            const double = gtk.GestureClick.new();
+            double.as(gtk.GestureSingle).setButton(1);
+            // Capturing runs this ahead of the button's own activation gesture,
+            // so a second press is seen without a single click losing its apply.
+            double.as(gtk.EventController).setPropagationPhase(.capture);
+            _ = gtk.GestureClick.signals.pressed.connect(double, *Cell, doubleClicked, cell, .{});
+            button.as(gtk.Widget).addController(double.as(gtk.EventController));
             flow.insert(button.as(gtk.Widget), -1);
         }
         _ = gtk.Button.signals.clicked.connect(refresh, *View, refreshed, self, .{});
@@ -309,6 +319,14 @@ pub const View = struct {
         self.commit(path);
         take(&self.selected, path);
         self.markSelected();
+    }
+    /// A single click applies; the second press of a double click opens the crop
+    /// editor for the image that click just made current.
+    fn doubleClicked(_: *gtk.GestureClick, presses: c_int, _: f64, _: f64, cell: *Cell) callconv(.c) void {
+        if (presses != 2) return;
+        const path = cell.path orelse return;
+        const request = cell.view.request;
+        request.open(request.context, path);
     }
     fn refreshed(_: *gtk.Button, self: *View) callconv(.c) void {
         self.rebuild();

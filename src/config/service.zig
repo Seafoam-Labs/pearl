@@ -8,6 +8,7 @@ const glib = @import("glib2");
 const object = @import("gobject2");
 const pixbuf = @import("gdkpixbuf2");
 const model = @import("preferences.zig");
+const crop = @import("crop_policy.zig");
 const io = @import("io.zig");
 const theme = @import("../theme/theme.zig");
 const qt = @import("../theme/qt.zig");
@@ -1097,11 +1098,25 @@ fn cssError(_: *gtk.CssProvider, _: *gtk.CssSection, err: *glib.Error, failed: *
     // Deprecated CSS warnings in otherwise usable third party themes aren't errors.
     if (err.f_domain == gtk.cssParserErrorQuark()) failed.* = true;
 }
+/// The painted wallpaper honours a saved crop. The palette keeps reading the
+/// whole image, so editing a placement does not shift dynamic colors.
+fn wallpaperTexture(wallpaper: model.Wallpaper, image: *pixbuf.Pixbuf) *gdk.Texture {
+    if (crop.find(wallpaper.crops, wallpaper.path)) |saved| {
+        if (crop.pixels(saved, image.getWidth(), image.getHeight())) |rect| {
+            // A sub-pixbuf shares its parent's pixels and holds a reference to
+            // it, and the texture keeps its own reference to the sub-pixbuf.
+            const part = image.newSubpixbuf(rect.x, rect.y, rect.width, rect.height);
+            defer part.unref();
+            return gdk.Texture.newForPixbuf(part);
+        }
+    }
+    return gdk.Texture.newForPixbuf(image);
+}
 fn validateProviders(j: *Job) !void {
     j.asset_provider.deinit();
     if (j.service.shell_appearance) j.asset_provider = try @import("../theme/assets.zig").Provider.init(j.custom.blobs);
     if (j.service.validate) |validate| try validate(j.service.context, j.prefs);
-    if (j.image) |image| j.texture = gdk.Texture.newForPixbuf(image);
+    if (j.image) |image| j.texture = wallpaperTexture(j.prefs.wallpaper, image);
     var failed = false;
     j.provider = gtk.CssProvider.new();
     const id = gtk.CssProvider.signals.parsing_error.connect(j.provider.?, *bool, cssError, &failed, .{});

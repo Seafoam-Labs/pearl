@@ -25,6 +25,7 @@ const Owner = @import("../../services/view_ownership.zig").Owner;
 const Layout = @import("../../platform/wayland/layout.zig").Layout;
 const Groups = @import("../../desktop/policy.zig").Groups;
 const slideshow_policy = @import("../../config/slideshow_policy.zig");
+const Crop = @import("../../desktop/wallpaper_crop.zig");
 const tr = @import("../../desktop/text.zig").tr;
 const log = std.log.scoped(.ui);
 const a = std.heap.c_allocator;
@@ -135,6 +136,8 @@ pub const Manager = struct {
     outputs: std.ArrayList(*Output) = .empty,
     popup: ?*Surface = null,
     popup_rect: ?Rect = null,
+    /// At most one crop editor, modal over whichever surface opened it.
+    crop: ?*Crop.Window = null,
     pane: Bar.Pane = .launcher,
     picker_request: ?LauncherPicker.Request = null,
     settings_page: ?navigation.Route = null,
@@ -307,7 +310,44 @@ pub const Manager = struct {
     fn gtkSettingsChanged(_: *object.Object, _: *object.ParamSpec, self: *Manager) callconv(.c) void {
         self.schedule();
     }
+    /// Opens the crop editor for one image against the output it has to fill.
+    /// A second request is dropped: the editor is modal, so whatever is behind
+    /// it is already unreachable.
+    pub fn openCrop(self: *Manager, parent: *gtk.Window, output: *Output, path: []const u8) void {
+        if (self.crop != null) return;
+        self.crop = Crop.Window.open(parent, &self.preferences, &self.effects, path, output.bounds.width, output.bounds.height, .{ .context = self, .closed = cropClosed }) catch |err| {
+            log.warn("event=wallpaper-crop-open-failed path={s} error={s}", .{ path, @errorName(err) });
+            return;
+        };
+    }
+    pub fn closeCrop(self: *Manager) void {
+        if (self.crop) |window| window.destroy();
+    }
+    /// Closes the editor only when it belongs to `window`, so tearing one
+    /// surface down does not dismiss an editor another surface opened.
+    fn closeCropFor(self: *Manager, window: *gtk.Window) void {
+        if (self.crop) |editor| if (editor.parentIs(window)) self.closeCrop();
+    }
+    fn cropClosed(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.crop = null;
+    }
+    /// Double-clicking the background crops the wallpaper filling that output.
+    fn wallpaperPressed(_: *gtk.GestureClick, presses: c_int, _: f64, _: f64, s: *Surface) callconv(.c) void {
+        if (presses != 2) return;
+        const path = s.manager.preferences.prefs().wallpaper.path;
+        if (path.len == 0) return;
+        s.manager.openCrop(s.window, s.output, path);
+    }
+    /// The picker names an image; the popup's own output decides its shape.
+    fn pickerCrop(context: *anyopaque, path: []const u8) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        const s = self.popup orelse return;
+        self.openCrop(s.window, s.output, path);
+    }
     pub fn clear(self: *Manager) void {
+        // The editor is transient for a surface window, so it goes first.
+        self.closeCrop();
         self.hideSwitcher();
         self.hideIdentifiers();
         self.hidePopup();
@@ -996,6 +1036,7 @@ pub const Manager = struct {
                 if ((self.osd != null and self.osd.?.output == o) or self.osd_pending_output == o) self.hideOsd();
                 if (self.notification != null and self.notification.?.output == o) self.hideNotifications();
                 if (self.switcher != null and self.switcher.?.output == o) self.hideSwitcher();
+                if (o.wallpaper) |surface| self.closeCropFor(surface.window);
                 _ = self.outputs.orderedRemove(i);
                 o.destroy();
             } else i += 1;
@@ -1123,6 +1164,10 @@ pub const Manager = struct {
                 panel.append(stack.as(gtk.Widget));
                 s.wallpaper_stack = stack;
                 window.setChild(panel_widget);
+                const crop_click = gtk.GestureClick.new();
+                crop_click.as(gtk.GestureSingle).setButton(1);
+                _ = gtk.GestureClick.signals.pressed.connect(crop_click, *Surface, wallpaperPressed, s, .{});
+                window.as(gtk.Widget).addController(crop_click.as(gtk.EventController));
             },
             .bar => {
                 panel_widget.addCssClass("pearl-bar-panel");
@@ -1171,7 +1216,7 @@ pub const Manager = struct {
                     .running_apps => s.running_apps = try Running.Chooser.create(panel, &self.tasks.snapshot, &self.index, s, runningAction),
                     .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss, copyCalculator),
                     .calendar => s.calendar = try @import("../../desktop/calendar.zig").View.create(panel),
-                    .wallpapers => s.wallpapers = try @import("../../desktop/wallpapers.zig").View.create(panel, &self.preferences),
+                    .wallpapers => s.wallpapers = try @import("../../desktop/wallpapers.zig").View.create(panel, &self.preferences, .{ .context = self, .open = pickerCrop }),
                     .resources => s.resources = try @import("../../desktop/resource_view.zig").Detail.create(panel, self.preferences.prefs().forOutput(output.connector).resource_series),
                     .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
                     .media => {
@@ -1516,6 +1561,8 @@ pub const Manager = struct {
     }
     pub fn hidePopup(self: *Manager) void {
         if (self.popup) |s| {
+            // The editor may be transient for this window; it has to go first.
+            self.closeCropFor(s.window);
             self.popup = null;
             self.settings_page = null;
             self.popup_rect = null;

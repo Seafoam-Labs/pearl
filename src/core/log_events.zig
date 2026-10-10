@@ -129,6 +129,7 @@ pub const events: []const Event = &.{
     .{ .name = "tray-failed", .scopes = &.{.services} },
     .{ .name = "wallpaper-applications-applied", .scopes = &.{.config} },
     .{ .name = "wallpaper-changed", .scopes = &.{.config} },
+    .{ .name = "wallpaper-crop-open-failed", .scopes = &.{.ui} },
     .{ .name = "work-finished", .scopes = &.{.pearl} },
     .{ .name = "work-started", .scopes = &.{.pearl} },
 };
