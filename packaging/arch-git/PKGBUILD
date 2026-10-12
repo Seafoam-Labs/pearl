@@ -21,7 +21,9 @@ depends=('curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant' 'hunspell'
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
 makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
              'rust' 'rust-wasm' 'librsvg')
-optdepends=('gvfs: Trash, remote locations, and administrative filesystems in Phyto'
+optdepends=('gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'
+            'gvfs-smb: SMB network connections in Phyto'
+            'gvfs-dnssd: WebDAV connections and network discovery in Phyto'
             'file-roller: archive context menu actions in Phyto'
             'poppler: PDF first-page previews in Phyto (requires bubblewrap)'
             'ffmpeg: video still previews in Phyto (requires bubblewrap)'

@@ -1,0 +1,6 @@
+Server listening on 127.0.0.1 port 46467.
+Connection closed by 127.0.0.1 port 56538 [preauth]
+Accepted publickey for zoey from 127.0.0.1 port 56542 ssh2: ED25519 SHA256:ZLQyaRVK/3OwlNI3GpUNGWTFwCF7PblzkdUZMTdzdK4
+Received disconnect from 127.0.0.1 port 56542:11: disconnected by user
+Disconnected from user zoey 127.0.0.1 port 56542
+Received signal 15; terminating.

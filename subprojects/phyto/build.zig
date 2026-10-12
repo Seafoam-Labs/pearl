@@ -35,6 +35,10 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "gio2", "glib2" }) |name| engine_module.addImport(name, bindings.module(name));
     const engine_tests = b.addTest(.{ .root_module = engine_module });
     test_step.dependOn(&b.addRunArtifact(engine_tests).step);
+    const network_module = b.createModule(.{ .root_source_file = b.path("src/network_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| network_module.addImport(name, bindings.module(name));
+    const network_tests = b.addTest(.{ .root_module = network_module });
+    test_step.dependOn(&b.addRunArtifact(network_tests).step);
     const test_module = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| test_module.addImport(name, bindings.module(name));
     test_module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
@@ -53,6 +57,10 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| menus.addArgs(args);
     b.step("test-context-menus", "Exercise native context menus and batch operations").dependOn(&menus.step);
     b.step("integration", "Exercise native GTK in a private Aqueous session and capture evidence").dependOn(&integration.step);
+    const networks = b.addSystemCommand(&.{ "python3", "tests/network_native.py", "--binary" });
+    networks.addArtifactArg(test_exe);
+    if (b.args) |args| networks.addArgs(args);
+    b.step("test-network", "Test saved connections and real GVfs mounts in an isolated session").dependOn(&networks.step);
     const providers = b.addSystemCommand(&.{ "python3", "tests/providers_helper.py", "--faults", "--binary" });
     providers.addArtifactArg(test_exe);
     b.step("test-preview-providers", "Test PDF/video rendering and sandbox lifecycle without a display").dependOn(&providers.step);

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phyto · Saved network connections</title>
+  <link rel="stylesheet" href="../style.css"><link rel="stylesheet" href="network.css">
+  <script src="network.js" defer></script>
+</head>
+<body>
+  <header class="review">
+    <div><span class="eyebrow">PHYTO / ISSUE 13 / PROCESS PROPOSAL</span><h1>Connect once. Keep your places.</h1><p class="intro">Saved network devices, with reconnection on your terms.</p></div>
+    <div class="review-tools"><button id="theme">Light appearance</button><a href="../../NETWORK_SHARES_PLAN.md">Implementation plan ↗</a></div>
+  </header>
+  <section class="review-controls" aria-label="Prototype controls">
+    <span class="eyebrow">TRY THE PROCESS</span>
+    <button id="restart">↻ Reopen Phyto</button>
+    <label>Connection result <select id="outcome"><option value="success">Success</option><option value="offline">Server offline</option><option value="auth">Sign-in required</option></select></label>
+    <button id="reset">Reset demo</button>
+    <span id="storage-note">Demo metadata is saved in this browser.</span>
+  </section>
+  <main class="window" aria-label="Phyto network connections prototype">
+    <header class="titlebar"><div class="brand"><span data-icon="leaf"></span>Phyto</div><span class="window-title">Network</span><div class="window-controls" aria-hidden="true"><span>−</span><span>□</span><span>×</span></div></header>
+    <div class="workspace">
+      <aside class="sidebar" aria-label="Places">
+        <div class="side-group">PLACES</div>
+        <button class="place" id="home"><span data-icon="home"></span>Home</button>
+        <button class="place active" id="network"><span data-icon="network"></span>Network</button>
+        <div class="side-group">NETWORK DEVICES</div><div id="devices"></div>
+        <button class="place add-place" id="add-side">＋ Add connection…</button>
+        <div class="sidebar-note">Your saved devices stay here,<br>even when disconnected.</div>
+      </aside>
+      <section class="browser">
+        <nav class="toolbar" aria-label="Location"><button class="mobile-places" id="places-toggle" aria-label="Toggle Places" aria-expanded="false">☰</button><button id="back" aria-label="Back to Network">‹</button><span data-icon="network"></span><span id="location">Network</span><span class="toolbar-spacer"></span><button class="primary" id="add">＋ Add connection…</button></nav>
+        <div id="notice" role="status"></div>
+        <div class="network-content" id="content"></div>
+        <footer class="status"><span id="status-text"></span><span>Network connections</span></footer>
+      </section>
+    </div>
+  </main>
+  <section class="process" aria-label="Connection process">
+    <article><span>01</span><div><h2>Add a server</h2><p>SMB, SFTP or WebDAV. Give it a name you recognize.</p></div></article>
+    <article><span>02</span><div><h2>Choose when to reconnect</h2><p>At app startup, or when you click that device.</p></div></article>
+    <article><span>03</span><div><h2>Find it here next time</h2><p>The connection stays saved, even if the server is offline.</p></div></article>
+  </section>
+  <footer class="review-note"><span>Interactive proposal · Fictional servers and files · No network requests or real mounts</span><a href="README.md">Mockup guide ↗</a></footer>
+
+  <dialog id="editor" aria-labelledby="editor-title">
+    <form id="connection-form">
+      <div class="dialog-top"><span class="eyebrow">SAVED NETWORK DEVICE</span><button type="button" class="icon" data-close="editor" aria-label="Close connection settings">×</button></div>
+      <h2 id="editor-title">Add connection</h2><p class="muted">Save a network location to find it again in Places.</p>
+      <label class="field">Connection name<input id="name" maxlength="80" required placeholder="e.g. Studio NAS" autocomplete="off"></label>
+      <label class="field">Server address<input id="address" required placeholder="smb://nas.example/Design" spellcheck="false" autocomplete="off" aria-describedby="address-help"></label>
+      <p id="address-help" class="help">Use smb://, sftp://, davs:// or dav://. Do not include a password.</p>
+      <div class="examples" aria-label="Example addresses"><button type="button" data-example="smb">SMB</button><button type="button" data-example="sftp">SFTP</button><button type="button" data-example="davs">WebDAV</button></div>
+      <fieldset><legend>Reconnect</legend>
+        <label class="choice"><input type="radio" name="policy" value="on-open"><span><strong>When Phyto opens</strong><small>Connect in the background when the app starts.</small></span></label>
+        <label class="choice"><input type="radio" name="policy" value="on-click" checked><span><strong>When I click the network device</strong><small>Wait until I open this device in Places or Network.</small></span></label>
+      </fieldset>
+      <p class="credential-note"><span data-icon="lock"></span>Saving a connection does not save its password. You can choose to remember credentials when signing in.</p>
+      <p id="form-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button type="button" data-close="editor">Cancel</button><button type="submit" id="save-later" value="later">Save for later</button><button type="submit" class="primary" id="save-connect" value="connect">Save and connect</button></div>
+    </form>
+  </dialog>
+  <dialog id="auth" aria-labelledby="auth-title">
+    <div class="dialog-top"><span class="eyebrow">AUTHENTICATION PREVIEW</span><button class="icon" data-close="auth" aria-label="Close sign-in">×</button></div>
+    <h2 id="auth-title">Sign in to your server</h2><p id="auth-target" class="muted"></p>
+    <div class="auth-preview"><span data-icon="lock"></span><h3>Your server needs authentication</h3><p>Phyto will show the provider’s sign-in prompt here. Password remembering is a separate choice, handled by your desktop keyring.</p></div>
+    <p class="help">This demo uses fictional credentials. No password is requested or stored.</p>
+    <div class="dialog-actions"><button data-close="auth">Cancel</button><button id="demo-signin" class="primary">Continue with demo sign-in</button></div>
+  </dialog>
+  <dialog id="forget" aria-labelledby="forget-title"><h2 id="forget-title">Forget connection?</h2><p id="forget-target"></p><p class="muted forget-copy">This removes the saved device and its reconnect preference. Remote files and any current mount remain. Disconnect separately if needed.</p><div class="dialog-actions"><button data-close="forget">Cancel</button><button class="danger" id="confirm-forget">Forget connection</button></div></dialog>
+</body>
+</html>

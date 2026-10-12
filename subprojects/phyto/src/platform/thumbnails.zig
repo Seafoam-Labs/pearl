@@ -94,7 +94,7 @@ pub fn deinit() void {
     application = null;
 }
 pub fn eligible(info: *gio.FileInfo, allow_text: bool) bool {
-    if (info.getFileType() != .regular or info.getIsSymlink() != 0) return false;
+    if (info.getFileType() != .regular or info.getAttributeBoolean("standard::is-symlink") != 0) return false;
     if (info.hasAttribute("access::can-read") != 0 and info.getAttributeBoolean("access::can-read") == 0) return false;
     const file = u.file(info);
     if (file.isNative() == 0) return false;

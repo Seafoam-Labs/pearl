@@ -1,5 +1,5 @@
 const std = @import("std");
-pub const Kind = enum { selection, background, location, place, bookmark, device, tab };
+pub const Kind = enum { selection, background, location, place, bookmark, device, connection, tab };
 pub const Facts = struct {
     kind: Kind = .selection,
     count: usize = 0,

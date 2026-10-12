@@ -17,7 +17,27 @@ var initial: ?*gio.File = null;
 var options: Options = .{};
 
 pub fn newWindow(app: *gtk.Application, file: *gio.File, opts: Options) void {
+    const network = @import("platform/network_mounts.zig");
+    if (network.shared == null) {
+        _ = network.Manager.init(app);
+        network.changed = networkChanged;
+    }
     windows.append(u.a, Window.create(app, file, opts)) catch @panic("Out of memory");
+    network.shared.?.startup();
+}
+pub fn networkChanged() void {
+    for (windows.items) |window| {
+        if (window.closed) continue;
+        window.refreshPlaces();
+        for (window.panes) |pane| for (pane.tabs.items) |tab| tab.refreshNetwork();
+    }
+}
+pub fn networkWindowClosing(owner: *Window) void {
+    var last = true;
+    for (windows.items) |window| if (window != owner and !window.closed) {
+        last = false;
+    };
+    if (@import("platform/network_mounts.zig").shared) |network| network.closeWindow(owner, last);
 }
 pub fn previewPreferencesChanged() void {
     for (windows.items) |window| {
@@ -87,6 +107,7 @@ pub fn main(init: std.process.Init) void {
     @import("platform/thumbnails.zig").changed = @import("preview.zig").schedule;
     const code = app.as(gio.Application).run(1, &argv);
     for (windows.items) |window| window.destroy();
+    if (@import("platform/network_mounts.zig").shared) |network| network.deinit();
     windows.deinit(u.a);
     @import("preview.zig").shutdown();
     @import("platform/thumbnails.zig").deinit();

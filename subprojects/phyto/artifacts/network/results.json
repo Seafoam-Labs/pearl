@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "checks": [
+    "Real GVfs WebDAV startup mount; click-only target untouched; authentication deferred without stealing local folder",
+    "Click mounts a real DAV device and enumerates its two remote entries",
+    "Remote-to-local copy preserves bytes through existing GIO operations",
+    "Native editor saves on-click profile with private file permissions, without mounting",
+    "Native policy editor persists both choices; disconnect and additional windows do not trigger startup retries",
+    "File monitor reloads an external edit; stale dialog cannot overwrite it",
+    "Profiles and on-click preference survive process exit and relaunch; existing mount reused",
+    "Unavailable server preserves profile and leaves local navigation usable",
+    "Explicit device click presents native authentication; cancelling retains the profile",
+    "Native password authentication connects and lists remote files without writing credentials to the profile",
+    "DAVS with an untrusted certificate defers or rejects connection without any startup trust dialog",
+    "Forget survives relaunch; narrow native Network page and editor remain accessible"
+  ],
+  "binary_sha256": "52ea3ea69477841d65c44747631e6e22da801e5adb2504bf8782d168b04f5ee0",
+  "limits": [
+    "Loopback DAV authentication and DAVS certificate rejection exercised; SMB/SFTP results are in protocols/results.json.",
+    "No real credentials or external servers used."
+  ]
+}

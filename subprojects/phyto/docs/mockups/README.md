@@ -6,6 +6,15 @@ See the [native implementation report](../IMPLEMENTATION.md) for the working
 Zig/GTK4 app and its scope, and the [implementation plan](../IMPLEMENTATION_PLAN.md)
 for the full roadmap.
 
+## Saved network connections proposal
+
+Open [the network connections mockup](network-shares/index.html) to add and save
+SMB, SFTP and WebDAV devices, choose reconnect on startup or device click, and
+try offline and sign-in recovery. The [process guide and captures](network-shares/README.md)
+and [implementation plan](../NETWORK_SHARES_PLAN.md) describe the proposal.
+This separate prototype stores fictional device metadata in browser localStorage;
+it does not mount real shares or modify the native app.
+
 ## Context menu proposal
 
 Open [context-menus.html](context-menus.html) for the proposed Nemo-style menus.

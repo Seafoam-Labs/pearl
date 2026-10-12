@@ -257,6 +257,24 @@ pub const Menu = struct {
         }
     }
     pub fn allowed(self: *Menu, c: *const Context, cmd: Command) bool {
+        if (c.connection_id) |id| {
+            const manager = @import("platform/network_mounts.zig").shared.?;
+            const e = manager.entry(id) orelse return false;
+            return switch (cmd) {
+                .network_connect => e.state != .connecting and e.state != .queued,
+                .network_cancel => e.state == .connecting or e.state == .queued,
+                .network_disconnect => e.state == .connected,
+                .network_settings, .network_forget => true,
+                else => false,
+            };
+        }
+        if (cmd == .network_save) {
+            const uri = c.target().getUri();
+            defer glib.free(uri);
+            const normalized = @import("platform/connections.zig").normalize(std.mem.span(uri)) catch return false;
+            a.free(normalized);
+            return true;
+        }
         var f = c.facts(self.owner.clipboard.available(), self.owner.operations.busy);
         const place = c.kind == .place or c.kind == .bookmark or c.kind == .location or c.kind == .device or c.kind == .tab;
         if (place and countUnknown(c)) f.all_directories = true;
@@ -284,7 +302,7 @@ pub const Menu = struct {
             .undo => !f.busy and self.owner.operations.undo_stack.items.len > 0,
             .redo => !f.busy and self.owner.operations.redo_stack.items.len > 0,
             .open_with => count > 0 and !f.all_directories and !f.trash,
-            .follow_link => count == 1 and (if (c.items.items[0].info) |i| i.getIsSymlink() != 0 else false),
+            .follow_link => count == 1 and (if (c.items.items[0].info) |i| i.getAttributeBoolean("standard::is-symlink") != 0 else false),
             .containing => count == 1,
             .pin, .favorite => count > 0 and !f.trash,
             .bookmark_add => (count == 0 or (count == 1 and f.all_directories)) and !f.trash,
@@ -343,7 +361,13 @@ pub const Menu = struct {
         const f = c.facts(self.owner.clipboard.available(), self.owner.operations.busy);
         const menu = gio.Menu.new();
         defer menu.unref();
-        if (c.kind == .tab) {
+        if (c.kind == .connection) {
+            self.add(menu, "Connect / Open", .network_connect);
+            self.add(menu, "Cancel connection", .network_cancel);
+            self.add(menu, "Disconnect", .network_disconnect);
+            self.add(menu, "Connection settings…", .network_settings);
+            self.add(menu, "Forget connection…", .network_forget);
+        } else if (c.kind == .tab) {
             const first = gio.Menu.new();
             self.add(first, "New tab", .new_tab);
             self.add(first, "Duplicate tab", .tab_duplicate);
@@ -366,6 +390,7 @@ pub const Menu = struct {
             self.section(menu, open);
             const edit = gio.Menu.new();
             self.add(edit, "Copy location", .copy_location);
+            if (self.allowed(c, .network_save)) self.add(edit, "Save connection…", .network_save);
             if (c.kind == .bookmark) {
                 self.add(edit, "Rename bookmark…", .bookmark_rename);
                 self.add(edit, "Remove bookmark", .bookmark_remove);
@@ -504,6 +529,7 @@ pub const Menu = struct {
         if (self.allowed(&self.snapshot.?, .new_document)) apps.templates(self, menu);
     }
     fn query(self: *Menu) void {
+        if (self.snapshot.?.connection_id != null) return;
         self.query_cancel = gio.Cancellable.new();
         const c = &self.snapshot.?;
         if (c.directory_info == null) self.queryOne(c.directory, null);
@@ -538,6 +564,16 @@ pub const Menu = struct {
         const owner = self.owner;
         const tab = owner.findTab(c.tab_id) orelse return;
         switch (cmd) {
+            .network_save => {
+                const uri = c.target().getUri();
+                defer glib.free(uri);
+                owner.network_ui.edit(null, std.mem.span(uri));
+            },
+            .network_connect => @import("platform/network_mounts.zig").shared.?.connect(c.connection_id.?, owner),
+            .network_cancel => @import("platform/network_mounts.zig").shared.?.cancel(c.connection_id.?),
+            .network_disconnect => @import("platform/network_mounts.zig").shared.?.disconnect(c.connection_id.?, owner),
+            .network_settings => owner.network_ui.edit(c.connection_id.?, null),
+            .network_forget => owner.network_ui.forget(c.connection_id.?),
             .open, .open_tab, .open_window => {
                 if (c.items.items.len > 5) self.confirmOpen(c, cmd) else self.openTargets(c, cmd);
             },

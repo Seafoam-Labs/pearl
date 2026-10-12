@@ -66,6 +66,7 @@ pub const Window = struct {
     volume_monitor: *gio.VolumeMonitor = undefined,
     volume_signals: [6]c_ulong = undefined,
     operations: Operations = undefined,
+    network_ui: @import("network_ui.zig").UI = undefined,
     message_dialog: ?*gtk.Dialog = null,
     status_message: ?[:0]u8 = null,
     native_surface: ?*gdk.Surface = null,
@@ -208,6 +209,7 @@ pub const Window = struct {
         self.* = .{ .app = app, .window = win, .root = root, .sidebar = sidebar, .sidebar_content = sidebar_box, .popup_content = popup_places, .places_button = places_button, .places_popover = popover, .location_button = location, .path = path, .search = search, .search_row = search_row, .search_scope = search_scope, .navigation = navigation, .details = details, .details_body = details_body, .status = status, .pane_switch = pane_switch, .grid_button = grid_button, .list_button = list_button, .back_button = back, .forward_button = forward, .up_button = up, .home_button = home_button, .details_button = details_button, .split_button = split_button, .jobs_button = jobs_button, .paned = paned, .panes = panes, .options = opts, .home = gio.File.newForPath(glib.getHomeDir()), .width = opts.width };
         self.preferences = @import("platform/preferences.zig").Preferences.acquire();
         self.operations = Operations.init(self);
+        self.network_ui = .{ .owner = self };
         self.background_cancel = gio.Cancellable.new();
         self.clipboard = @import("platform/clipboard.zig").Clipboard.init(self);
         self.context = @import("context_menu.zig").Menu.init(self);
@@ -243,7 +245,7 @@ pub const Window = struct {
         self.connect(list_button, .list);
         self.connect(details_button, .details);
         const menu = gio.Menu.new();
-        inline for (.{ .{ "New tab", "new_tab" }, .{ "Close tab", "close_tab" }, .{ "New window", "new_window" }, .{ "Split panes", "split" }, .{ "New folder…", "new_folder" }, .{ "Rename…", "rename" }, .{ "Cut", "cut" }, .{ "Copy", "copy" }, .{ "Paste", "paste" }, .{ "Undo", "undo" }, .{ "Redo", "redo" }, .{ "File view options…", "menu_settings" }, .{ "Move to Trash…", "trash" }, .{ "File operations", "operations" }, .{ "Properties", "properties" }, .{ "Preview", "preview" }, .{ "Show / hide hidden files", "hidden" }, .{ "Refresh", "refresh" }, .{ "Light / dark appearance", "light" }, .{ "Compact density", "compact" }, .{ "Use system GTK theme", "native" } }) |entry| menu.append(entry[0], "win." ++ entry[1]);
+        inline for (.{ .{ "Add connection…", "network_add" }, .{ "Saved network connections", "network" }, .{ "New tab", "new_tab" }, .{ "Close tab", "close_tab" }, .{ "New window", "new_window" }, .{ "Split panes", "split" }, .{ "New folder…", "new_folder" }, .{ "Rename…", "rename" }, .{ "Cut", "cut" }, .{ "Copy", "copy" }, .{ "Paste", "paste" }, .{ "Undo", "undo" }, .{ "Redo", "redo" }, .{ "File view options…", "menu_settings" }, .{ "Move to Trash…", "trash" }, .{ "File operations", "operations" }, .{ "Properties", "properties" }, .{ "Preview", "preview" }, .{ "Show / hide hidden files", "hidden" }, .{ "Refresh", "refresh" }, .{ "Light / dark appearance", "light" }, .{ "Compact density", "compact" }, .{ "Use system GTK theme", "native" } }) |entry| menu.append(entry[0], "win." ++ entry[1]);
         menu_button.setMenuModel(menu.as(gio.MenuModel));
         menu.unref();
         self.fillPlaces(sidebar_box);
@@ -380,7 +382,7 @@ pub const Window = struct {
         const root = gio.File.newForPath("/");
         defer root.unref();
         self.place(container, "File System", "drive-harddisk-symbolic", root);
-        const network = gio.File.newForUri("network:///");
+        const network = gio.File.newForUri(@import("network_ui.zig").overview_uri);
         defer network.unref();
         self.place(container, "Network", "network-workgroup-symbolic", network);
         inline for (.{ .{ "bookmarks", "BOOKMARKS" }, .{ "favorites", "FAVORITES" } }) |group| {
@@ -396,12 +398,17 @@ pub const Window = struct {
                 }
             }
         }
+        self.network_ui.fillPlaces(container);
         const mounts = g_volume_monitor_get_mounts(self.volume_monitor);
         if (mounts) |head| {
             defer head.free();
             var node: ?*glib.List = head;
             while (node) |n| : (node = n.f_next) {
                 const mount_: *gio.Mount = @ptrCast(@alignCast(n.f_data.?));
+                if (@import("platform/network_mounts.zig").shared.?.represents(mount_)) {
+                    mount_.unref();
+                    continue;
+                }
                 const f = mount_.getRoot();
                 defer f.unref();
                 const name_ = mount_.getName();
@@ -627,6 +634,7 @@ pub const Window = struct {
     fn keyboardContext(self: *Window) void {
         var node = self.window.getFocus();
         while (node) |widget| : (node = widget.getParent()) {
+            if (@import("network_ui.zig").showContext(self, widget, 8, @floatFromInt(widget.getHeight()))) return;
             if (widget.as(object.Object).getData("phyto-file") != null) {
                 self.showPlaceContext(widget, 8, @floatFromInt(widget.getHeight()));
                 return;
@@ -701,7 +709,7 @@ pub const Window = struct {
         const tab = self.current();
         const set = tab.selection.as(gtk.SelectionModel).getSelection();
         defer set.unref();
-        const text = u.format("{d} items · {d} selected{s}{s}", .{ tab.selection.as(gio.ListModel).getNItems(), set.getSize(), if (tab.directory.isLoading() != 0) " · Loading…" else "", if (tab.directory.getError() != null) " · Folder could not be fully read" else "" });
+        const text = if (tab.isNetwork()) u.format("{d} saved network devices", .{@import("platform/network_mounts.zig").shared.?.store.profiles.items.len}) else u.format("{d} items · {d} selected{s}{s}", .{ tab.selection.as(gio.ListModel).getNItems(), set.getSize(), if (tab.directory.isLoading() != 0) " · Loading…" else "", if (tab.directory.getError() != null) " · Folder could not be fully read" else "" });
         defer a.free(text);
         self.status.setText(if (self.status_message) |msg| msg else text);
         self.updateDetails();
@@ -717,7 +725,7 @@ pub const Window = struct {
     fn updateDetails(self: *Window) void {
         const selection = self.current().selection.as(gtk.SelectionModel).getSelection();
         defer selection.unref();
-        const visible = self.show_details and !self.split and self.width >= 1000;
+        const visible = self.show_details and !self.split and self.width >= 1000 and !self.current().isNetwork();
         const selected_info = if (visible and selection.getSize() == 1) self.current().selected() else null;
         defer if (selected_info) |i| i.unref();
         const source_key = if (selected_info) |i| @import("platform/thumbnails.zig").identity(i, 512, self.preferences.thumbnail_limit, true) else u.format("selection:{d}:{d}", .{ selection.getSize(), @intFromBool(visible) });
@@ -799,7 +807,7 @@ pub const Window = struct {
         self.home_button.as(gtk.Widget).setVisible(@intFromBool(self.width >= 1000));
         self.back_button.as(gtk.Widget).setVisible(@intFromBool(!narrow));
         self.details_button.as(gtk.Widget).setVisible(@intFromBool(self.width >= 1000));
-        self.details.as(gtk.Widget).setVisible(@intFromBool(self.show_details and !self.split and self.width >= 1000));
+        self.details.as(gtk.Widget).setVisible(@intFromBool(self.show_details and !self.split and self.width >= 1000 and !self.current().isNetwork()));
         self.search_scope.as(gtk.Widget).setVisible(@intFromBool(!narrow));
         self.pane_switch.as(gtk.Widget).setVisible(@intFromBool(self.split));
         for (&self.panes, 0..) |*p, i| {
@@ -875,6 +883,12 @@ pub const Window = struct {
         }
         const t = self.current();
         switch (command) {
+            .network_add => self.network_ui.edit(null, null),
+            .network => {
+                const f = gio.File.newForUri(@import("network_ui.zig").overview_uri);
+                defer f.unref();
+                t.navigate(f, true);
+            },
             .back, .forward => {
                 const uri = (if (command == .back) t.history.back() else t.history.forward()) orelse return;
                 const f = gio.File.newForUri(uri);
@@ -1121,6 +1135,9 @@ pub const Window = struct {
     }
     const ProbeWidget = struct { label: []const u8, kind: []const u8, x: f64, y: f64, width: c_int, height: c_int, menu: bool, sensitive: bool, thumbnail_uri: []const u8 = "" };
     fn probeWidgets(self: *Window, widget: *gtk.Widget, result: *std.ArrayList(ProbeWidget)) void {
+        self.probeWidgetsAt(widget, self.window.as(gtk.Widget), result);
+    }
+    fn probeWidgetsAt(self: *Window, widget: *gtk.Widget, origin: *gtk.Widget, result: *std.ArrayList(ProbeWidget)) void {
         if (widget.getMapped() == 0) return;
         var label: ?[*:0]const u8 = null;
         var kind: []const u8 = "label";
@@ -1142,10 +1159,10 @@ pub const Window = struct {
         if (label) |text| if (text[0] != 0) {
             var x: f64 = 0;
             var y: f64 = 0;
-            if (widget.translateCoordinates(self.window.as(gtk.Widget), 0, 0, &x, &y) != 0) result.append(a, .{ .label = std.mem.span(text), .kind = kind, .x = x, .y = y, .width = widget.getWidth(), .height = widget.getHeight(), .menu = if (self.context.popover) |p| widget.isAncestor(p.as(gtk.Widget)) != 0 else false, .sensitive = widget.isSensitive() != 0, .thumbnail_uri = thumbnail_uri }) catch unreachable;
+            if (widget.translateCoordinates(origin, 0, 0, &x, &y) != 0) result.append(a, .{ .label = std.mem.span(text), .kind = kind, .x = x, .y = y, .width = widget.getWidth(), .height = widget.getHeight(), .menu = if (self.context.popover) |p| widget.isAncestor(p.as(gtk.Widget)) != 0 else false, .sensitive = widget.isSensitive() != 0, .thumbnail_uri = thumbnail_uri }) catch unreachable;
         };
         var child = widget.getFirstChild();
-        while (child) |w| : (child = w.getNextSibling()) self.probeWidgets(w, result);
+        while (child) |w| : (child = w.getNextSibling()) self.probeWidgetsAt(w, origin, result);
     }
     pub fn probe(self: *Window) void {
         const t = self.current();
@@ -1161,7 +1178,17 @@ pub const Window = struct {
         var widgets: std.ArrayList(ProbeWidget) = .empty;
         defer widgets.deinit(a);
         self.probeWidgets(self.window.as(gtk.Widget), &widgets);
+        var dialog_widgets: std.ArrayList(ProbeWidget) = .empty;
+        defer dialog_widgets.deinit(a);
+        if (self.network_ui.editor) |e| self.probeWidgetsAt(e.dialog.as(gtk.Widget), e.dialog.as(gtk.Widget), &dialog_widgets);
         const json = std.json.Stringify.valueAlloc(a, .{
+            .network_dialog_widgets = dialog_widgets.items,
+            .network_profiles = @import("platform/network_mounts.zig").shared.?.store.profiles.items,
+            .network_states = @import("platform/network_mounts.zig").shared.?.entries.items,
+            .network_attempts = @import("platform/network_mounts.zig").shared.?.attempts,
+            .network_requests = @import("platform/network_mounts.zig").shared.?.requests.items.len,
+            .network_editor = self.network_ui.editor != null,
+            .network_error = if (self.network_ui.editor) |e| std.mem.span(e.error_label.getText()) else "",
             .realized_grid_children = realized_rows,
             .thumbnail_slots_ready = @import("preview.zig").readyCount(),
             .preview_memory = @import("platform/thumbnails.zig").memory,
@@ -1278,6 +1305,8 @@ pub const Window = struct {
             self.operations.present();
             return 1;
         }
+        @import("main.zig").networkWindowClosing(self);
+        self.network_ui.close();
         self.context.stop();
         self.clipboard.stop();
         self.background_cancel.cancel();

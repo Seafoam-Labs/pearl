@@ -1,5 +1,13 @@
 //! Stable action names shared by keyboard, overflow and context menus.
 pub const Command = enum {
+    network_save,
+    network_connect,
+    network_cancel,
+    network_disconnect,
+    network_settings,
+    network_forget,
+    network_add,
+    network,
     back,
     forward,
     up,
@@ -81,7 +89,7 @@ pub const Command = enum {
 };
 pub fn fileAction(c: Command) bool {
     return switch (c) {
-        .new_folder, .rename, .trash, .copy, .paste, .properties, .preview, .open, .open_tab, .open_window, .open_with, .terminal, .cut, .paste_into, .copy_to, .move_to, .copy_other, .move_other, .duplicate, .link, .delete, .new_document, .restore, .restore_to, .empty_trash, .undo, .redo, .containing, .follow_link, .copy_location, .bookmark_add, .bookmark_rename, .bookmark_remove, .tab_duplicate, .tab_left, .tab_right, .tab_other, .tab_close_others, .mount, .unmount, .eject, .pin, .favorite, .menu_settings, .archive, .extract, .bulk_rename, .admin => true,
+        .network_save, .network_connect, .network_cancel, .network_disconnect, .network_settings, .network_forget, .new_folder, .rename, .trash, .copy, .paste, .properties, .preview, .open, .open_tab, .open_window, .open_with, .terminal, .cut, .paste_into, .copy_to, .move_to, .copy_other, .move_other, .duplicate, .link, .delete, .new_document, .restore, .restore_to, .empty_trash, .undo, .redo, .containing, .follow_link, .copy_location, .bookmark_add, .bookmark_rename, .bookmark_remove, .tab_duplicate, .tab_left, .tab_right, .tab_other, .tab_close_others, .mount, .unmount, .eject, .pin, .favorite, .menu_settings, .archive, .extract, .bulk_rename, .admin => true,
         else => false,
     };
 }

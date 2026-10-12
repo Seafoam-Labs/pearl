@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "checks": [
+    "Real SMB guest and SFTP public-key startup mounts, with pinned temporary SSH host key",
+    "SFTP native enumeration and GIO read preserve fixture bytes",
+    "SMB native enumeration and GIO read preserve fixture bytes"
+  ],
+  "binary_sha256": "52ea3ea69477841d65c44747631e6e22da801e5adb2504bf8782d168b04f5ee0",
+  "states": [
+    {
+      "id": "90ed41d2-6ecd-4fbb-90df-8b90511ea04d",
+      "uri": "sftp://zoey@127.0.0.1:46467/tmp/pearl-dev-gf4y9ue3/servers/share",
+      "state": "connected",
+      "detail": "",
+      "suppressed": false
+    },
+    {
+      "id": "174b1f56-3283-4386-a865-7be006de0869",
+      "uri": "smb://127.0.0.1:35835/fixture",
+      "state": "connected",
+      "detail": "",
+      "suppressed": false
+    }
+  ]
+}

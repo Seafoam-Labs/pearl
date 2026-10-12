@@ -107,3 +107,6 @@
 .phyto-root.light .preview-slot textview text { background: #f3edf7; color: #1d1b20; }
 .phyto-root.dark .preview-slot textview text selection { background: #4f378b; color: #e6e0e9; }
 .phyto-root.light .preview-slot textview text selection { background: #e8def8; color: #1d1b20; }
+
+.phyto-root .network-page { padding: 16px; }
+.phyto-root .network-card { padding: 14px; border: 1px solid alpha(currentColor, 0.15); border-radius: 12px; }

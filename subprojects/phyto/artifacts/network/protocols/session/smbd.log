@@ -1,0 +1,4 @@
+smbd version 4.24.7 started.
+Copyright Andrew Tridgell and the Samba Team 1992-2026
+[rootlesskit:child ] error: command [bwrap --die-with-parent --uid 0 --gid 0 --ro-bind /home/zoey/Pearl/.cache/phyto-container/26d8951c5f4bb73ea320cfddf003154b0cc05b388c4e428e37e7f0033d3314d5/root.x86_64 / --proc /proc --dev /dev --tmpfs /run --dir /run/samba --tmpfs /tmp --bind /tmp/pearl-dev-gf4y9ue3/servers /tmp/fixture --ro-bind /tmp/pearl-dev-gf4y9ue3/servers/shadow /etc/shadow --chdir /tmp/fixture /usr/bin/smbd --foreground --no-process-group --debug-stdout --configfile=/tmp/fixture/smb.conf] exited: signal: terminated
+[rootlesskit:parent] error: child exited: exit status 255

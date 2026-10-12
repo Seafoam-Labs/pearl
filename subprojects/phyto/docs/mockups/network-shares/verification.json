@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "browser": "154.0.8037.97",
+  "checks": [
+    "Startup connects only on-open profiles and retains Network",
+    "Save for later persists profile and on-click policy across reload without connecting",
+    "Click connects on-demand device and opens its folder",
+    "Edited startup preference survives simulated restart",
+    "Explicit disconnect keeps saved device and does not immediately reconnect",
+    "Offline startup retains profiles; Retry connects and opens",
+    "Startup defers authentication until explicit click; demo sign-in opens folder",
+    "Cancel ignores late completion; navigating away prevents stale folder navigation",
+    "Duplicate addresses and password-bearing URIs rejected without storing secrets",
+    "Forget persists removal across reload",
+    "No horizontal overflow at 390/560/1280; modal bounds, focus trap and Escape focus return",
+    "Light theme and narrow Places drawer / connection form captured",
+    "Storage failure retains editor and prevents a connection attempt"
+  ],
+  "widths": [
+    390,
+    560,
+    1280
+  ],
+  "network": "HTTP/HTTPS blocked during verification",
+  "limits": "Browser prototype with simulated results; no native GTK, GIO, credential or real server validation."
+}

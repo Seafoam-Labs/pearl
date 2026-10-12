@@ -6,6 +6,7 @@ pub const Kind = @import("core/context.zig").Kind;
 pub const Item = struct { file: *gio.File, info: ?*gio.FileInfo = null };
 pub const Context = struct {
     kind: Kind,
+    connection_id: ?[:0]u8 = null,
     directory: *gio.File,
     directory_info: ?*gio.FileInfo = null,
     items: std.ArrayList(Item) = .empty,
@@ -43,6 +44,7 @@ pub const Context = struct {
     pub fn clone(self: *const Context) Context {
         self.directory.ref();
         var c: Context = .{ .kind = self.kind, .directory = self.directory, .tab_id = self.tab_id, .generation = self.generation, .pane = self.pane };
+        if (self.connection_id) |id| c.connection_id = a.dupeZ(u8, id) catch unreachable;
         for (self.items.items) |i| c.add(i.file, i.info);
         if (self.directory_info) |i| {
             i.ref();
@@ -59,6 +61,7 @@ pub const Context = struct {
         return c;
     }
     pub fn deinit(self: *Context) void {
+        if (self.connection_id) |id| a.free(id);
         self.directory.unref();
         if (self.directory_info) |i| i.unref();
         for (self.items.items) |i| {

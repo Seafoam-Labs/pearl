@@ -19,6 +19,7 @@ pub const Tab = struct {
     pane: usize,
     root: *gtk.Stack,
     views: *gtk.Stack,
+    network_body: *gtk.Box,
     grid: *gtk.GridView,
     list: *gtk.ColumnView,
     directory: *gtk.DirectoryList,
@@ -103,8 +104,10 @@ pub const Tab = struct {
         retry.as(gtk.Widget).setHalign(.center);
         empty.append(retry.as(gtk.Widget));
         _ = root.addNamed(empty.as(gtk.Widget), "empty");
+        const network_body = u.box(.vertical, 12, "network-page");
+        _ = root.addNamed(u.scroll(network_body.as(gtk.Widget)).as(gtk.Widget), "network");
         owner.next_tab_id += 1;
-        self.* = .{ .id = owner.next_tab_id, .sorter = sorter, .owner = owner, .pane = pane, .root = root, .views = views, .grid = grid, .list = list, .directory = directory, .filter = filter, .selection = selection, .error_label = error_label, .error_title = error_title, .uri = a.dupeZ(u8, "") catch unreachable, .title = a.dupeZ(u8, "") catch unreachable, .query = a.dupeZ(u8, "") catch unreachable };
+        self.* = .{ .id = owner.next_tab_id, .sorter = sorter, .owner = owner, .pane = pane, .root = root, .views = views, .network_body = network_body, .grid = grid, .list = list, .directory = directory, .filter = filter, .selection = selection, .error_label = error_label, .error_title = error_title, .uri = a.dupeZ(u8, "") catch unreachable, .title = a.dupeZ(u8, "") catch unreachable, .query = a.dupeZ(u8, "") catch unreachable };
         // Restore before enumeration, without syncing a tab not yet in its pane.
         self.list_mode = owner.preferences.view_mode == .list;
         self.hidden = owner.preferences.show_hidden;
@@ -151,7 +154,34 @@ pub const Tab = struct {
         a.free(self.query);
         a.destroy(self);
     }
+    pub fn isNetwork(self: *Tab) bool {
+        return std.mem.eql(u8, self.uri, @import("network_ui.zig").overview_uri);
+    }
+    pub fn refreshNetwork(self: *Tab) void {
+        if (self.isNetwork()) self.owner.network_ui.fillNetwork(self.network_body, self.id);
+    }
     pub fn navigate(self: *Tab, file: *gio.File, add_history: bool) void {
+        if (file.hasUriScheme("phyto-network") != 0) {
+            self.invalidate();
+            self.generation += 1;
+            if (self.metadata_cancel) |cancel| cancel.cancel();
+            if (self.directory_info) |info| info.unref();
+            self.directory_info = null;
+            self.directory.setFile(null);
+            a.free(self.uri);
+            a.free(self.title);
+            self.uri = a.dupeZ(u8, @import("network_ui.zig").overview_uri) catch unreachable;
+            self.title = a.dupeZ(u8, "Network") catch unreachable;
+            if (add_history) self.history.visit(self.uri) catch {};
+            self.refreshNetwork();
+            self.root.setVisibleChildName("network");
+            if (self.ready) {
+                self.owner.rebuildTabs(self.pane);
+                self.owner.sync();
+            }
+            self.owner.queueUpdate();
+            return;
+        }
         self.invalidate();
         self.generation += 1;
         if (self.directory_info) |i| i.unref();
@@ -183,6 +213,10 @@ pub const Tab = struct {
         }
     }
     pub fn refresh(self: *Tab) void {
+        if (self.isNetwork()) {
+            self.refreshNetwork();
+            return;
+        }
         self.invalidate();
         self.generation += 1;
         const f = gio.File.newForUri(self.uri);
@@ -210,6 +244,11 @@ pub const Tab = struct {
         return @ptrCast(self.selection.as(gio.ListModel).getItem(set.getMinimum()) orelse return null);
     }
     pub fn update(self: *Tab) void {
+        if (self.isNetwork()) {
+            self.root.setVisibleChildName("network");
+            self.focus_pending = false;
+            return;
+        }
         const count = self.selection.as(gio.ListModel).getNItems();
         if (self.directory.getError()) |err| {
             self.error_title.setText("Cannot open this folder");
@@ -237,7 +276,7 @@ pub const Tab = struct {
     fn matches(item: *object.Object, data: ?*anyopaque) callconv(.c) c_int {
         const self: *Tab = @ptrCast(@alignCast(data.?));
         const info = object.ext.cast(gio.FileInfo, item).?;
-        if (!self.hidden and info.getIsHidden() != 0) return 0;
+        if (!self.hidden and info.getAttributeBoolean("standard::is-hidden") != 0) return 0;
         if (self.query.len == 0) return 1;
         const folded = glib.utf8Casefold(info.getDisplayName(), -1);
         defer glib.free(folded);

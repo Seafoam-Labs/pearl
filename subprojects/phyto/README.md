@@ -42,6 +42,8 @@ application identity so release and Git installs can coexist.
   larger image and UTF-8 text previews in
   details, and a Space-key preview window. Preview generation is bounded and
   asynchronous, with shared memory and freedesktop disk caches.
+- Saved SMB, SFTP and WebDAV connections, with per-device reconnect on startup
+  or device click, native authentication and persistent disconnected Places rows.
 - XDG Places, Home, local paths, supported GIO URIs, editable location, back,
   forward, parent and refresh. Missing/empty locations retain navigation.
 - Multiple tabs in each pane, split view, active-pane targeting and independent
@@ -106,6 +108,8 @@ launched by double-click.
 - [Nemo-style context menu plan](docs/CONTEXT_MENUS_PLAN.md) and [menu review mockup](docs/mockups/context-menus.html).
 - [Longer-term implementation plan](docs/IMPLEMENTATION_PLAN.md).
 - [View and hidden-file persistence plan](docs/VIEW_PREFERENCES_PLAN.md).
+- [Network connections implementation and qualification](docs/NETWORK_SHARES_IMPLEMENTATION.md).
+- [Saved network connections plan](docs/NETWORK_SHARES_PLAN.md) and [interactive process mockup](docs/mockups/network-shares/index.html).
 - [Thumbnails and file previews plan](docs/THUMBNAILS_PREVIEWS_PLAN.md).
 - [PDF and video providers](docs/PDF_VIDEO_PROVIDERS_IMPLEMENTATION.md) and [implementation plan](docs/PDF_VIDEO_PROVIDERS_PLAN.md).
 - [Browser design reference](docs/mockups/index.html) and [mockup guide](docs/mockups/README.md).
@@ -114,6 +118,7 @@ launched by double-click.
 zig build test
 zig build integration -Doptimize=ReleaseSafe
 zig build test-context-menus -Doptimize=ReleaseSafe
+zig build test-network -Doptimize=ReleaseSafe
 zig build test-previews -Doptimize=ReleaseSafe
 zig build test-preview-providers -Doptimize=ReleaseSafe
 ```
@@ -172,3 +177,40 @@ Pillow is not an application dependency. Like the existing native suites, they
 require local sockets for the private compositor/D-Bus and installed image loaders.
 The provider tests also require Poppler, FFmpeg and working bubblewrap namespaces;
 `test-preview-providers` runs those checks without a graphical session.
+
+## Saved network connections
+
+Choose **Network → Add connection…** (also in More options), enter a name and an
+`smb://`, `sftp://`, `davs://` or `dav://` server URI, and select **When Phyto opens**
+or **When I click the network device**. Connection on click is the default.
+**Save for later** saves without connecting; **Save and connect** saves first and
+then opens the remote folder after authentication. A failed connection stays saved.
+
+Each device stays in Places when disconnected. Use its settings button or context
+menu to edit the connection, cancel, disconnect or forget it. Disconnect retains
+the profile. Forget removes the saved entry without deleting files or unmounting
+a connection another application may be using. The Network page also provides
+these actions and **Browse discovered servers**. Use **Save connection…** in a
+remote location or mount's context menu to save an existing connection.
+
+Startup connects eligible profiles in the background without changing the current
+folder. New windows in the same process do not repeat startup attempts. Password
+or trust prompts wait for an explicit device click. Failed attempts offer Retry;
+there is no automatic retry loop. Reconnect preference changes apply on the next
+process launch. Existing session mounts can already be available regardless of
+the preference.
+
+Profiles live in `$XDG_CONFIG_HOME/phyto/connections.ini`, separately from browsing
+preferences. Only names, server URIs, identifiers and reconnect policies are
+saved. Passwords are excluded from addresses and this file; the native provider
+prompt controls credential remembering through the desktop keyring. Concurrent
+edits are detected, and saving errors keep the editor open instead of claiming
+success. Keep an address's path case intact; custom ports and IPv6 are supported.
+
+The appropriate GVfs backend must be installed. On the verified Arch packaging,
+`gvfs` supplies SFTP, `gvfs-smb` supplies SMB, and `gvfs-dnssd` supplies WebDAV and
+network discovery. A working session D-Bus and, for remembered passwords, a Secret
+Service provider are needed. Backend packaging can differ by distribution.
+Phyto does not install packages or configure system-wide mounts automatically.
+See [network qualification](docs/NETWORK_SHARES_IMPLEMENTATION.md) for the tested
+protocols and remaining environment-specific release checks.
