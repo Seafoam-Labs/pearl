@@ -198,7 +198,44 @@ def basic(args, checks):
             click(s, x, y, ipc.outputs())
             wait_for(lambda: sum('event=underlying-click' in x for x in plain.lines) > count)
             checks['outside-click-dismissal-does-not-leak-and-frame-interior-passes-input'] = True
+            # Every flyout uses the same nonexclusive focus policy.
+            other_output = next(o for o in ipc.outputs().values() if o['id'] != tid)
+            for command in [('popup', 'show'), ('calendar', 'toggle'), ('tray', 'toggle'), ('control-center', 'show')]:
+                ctl(s, args.ctl, *command, '--output', other_output['id'])
+                wait_for(lambda: any(e['kind'] == 'seat' and e['focus_kind'] == 'layer_surface' for e in ipc.state()))
+                time.sleep(.15)
+                count = sum('event=underlying-click' in line for line in plain.lines)
+                click(s, x, y, ipc.outputs())
+                eventually_status(s, args.ctl, lambda v: v['popup'] is None)
+                wait_for(lambda: sum('event=underlying-click' in line for line in plain.lines) > count)
+            checks['cross-monitor-click-dismisses-flyouts-and-reaches-application'] = True
+
+            ctl(s, args.ctl, 'popup', 'show', '--output', tid)
+            wait_for(lambda: any(e['kind'] == 'seat' and e['focus_kind'] == 'layer_surface' for e in ipc.state()))
+            direction = 'period' if other_output['bounds']['x'] > output['bounds']['x'] else 'comma'
+            s.run(['wtype', '-M', 'logo', '-M', 'ctrl', '-k', direction, '-m', 'ctrl', '-m', 'logo'])
+            eventually_status(s, args.ctl, lambda v: v['popup'] is None)
+            wait_for(lambda: any(e['kind'] == 'seat' and e['output'] == other_output['id'] for e in ipc.state()))
+            checks['monitor-keybinding-dismisses-popup'] = True
+
+            ctl(s, args.ctl, 'popup', 'show', '--output', tid)
+            wait_for(lambda: any(e['kind'] == 'seat' and e['focus_kind'] == 'layer_surface' for e in ipc.state()))
+            ipc.call('command', action='window.activate', fields=dict(id=window['id']))
+            eventually_status(s, args.ctl, lambda v: v['popup'] is None)
+            checks['application-activation-dismisses-popup'] = True
+
+            ctl(s, args.ctl, 'popup', 'show', '--output', tid)
+            wait_for(lambda: any(e['kind'] == 'seat' and e['focus_kind'] == 'layer_surface' for e in ipc.state()))
+            empty = other_output['usable_bounds']
+            click(s, empty['x'] + empty['width']//2, empty['y'] + empty['height']//2, ipc.outputs())
+            eventually_status(s, args.ctl, lambda v: v['popup'] is None)
+            checks['other-monitor-wallpaper-click-dismisses-popup'] = True
+
             plain.proc.stdin.write('quit\n'); plain.proc.stdin.flush(); clean(plain)
+            if args.focus_only:
+                ctl(s, args.ctl, 'quit')
+                clean(app)
+                return
 
             from test_preferences import apply, settled
             ctl(s, args.ctl, 'frame', 'set', '--output', target['id'], '--edge', 'top', '--size', '0')
@@ -571,7 +608,9 @@ def main():
     parser.add_argument('--effects-aqueous', type=Path, default=Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', ROOT / '.cache/aqueous-effects')) / 'bin/aqueous')
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/t05/latest')
     parser.add_argument('--gtk-library-path', type=Path, help='client-only staged GTK runtime libraries')
-    parser.add_argument('--blur-only', action='store_true', help='run the real-compositor blur gate only')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument('--blur-only', action='store_true', help='run the real-compositor blur gate only')
+    modes.add_argument('--focus-only', action='store_true', help='run popup input and cross-monitor focus regressions only')
     args = parser.parse_args()
     for name in ('pearl','ctl','spike','effects_aqueous','output'):
         setattr(args, name, getattr(args, name).resolve())
@@ -581,6 +620,11 @@ def main():
     checks = {}
     result = dict(status='running', checks=checks, pearl_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest(), ctl_sha256=hashlib.sha256(args.ctl.read_bytes()).hexdigest(), effects_aqueous_sha256=hashlib.sha256(args.effects_aqueous.read_bytes()).hexdigest())
     try:
+        if args.focus_only:
+            basic(args, checks)
+            print('PASS popup input and cross-monitor focus', flush=True)
+            result['status'] = 'passed'
+            return
         if not args.blur_only:
             basic(args, checks)
             print('PASS surfaces, reservations, input and hotplug', flush=True)

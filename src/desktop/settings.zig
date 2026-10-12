@@ -151,12 +151,23 @@ pub const View = struct {
     }
     pub fn destroy(self: *View) void {
         self.filling = true;
+        // GTK may retain focused widgets until their window is finalized.
+        // Disconnect our callbacks before freeing the view they reference.
+        disconnectWidgets(self.host.as(gtk.Widget), self);
+        _ = object.signalHandlersDisconnectMatched(self.raw.as(object.Object), .{ .data = true }, 0, 0, null, null, self);
         self.greeter_sync.destroy();
-        self.closeWallpaperPicker();
-        // Disconnect through parent destruction before freeing callback data.
+        self.closeWallpaperPicker(false);
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         self.arena.deinit();
         a.destroy(self);
+    }
+    fn disconnectWidgets(widget: *gtk.Widget, self: *View) void {
+        _ = object.signalHandlersDisconnectMatched(widget.as(object.Object), .{ .data = true }, 0, 0, null, null, self);
+        var child = widget.getFirstChild();
+        while (child) |value| {
+            disconnectWidgets(value, self);
+            child = value.getNextSibling();
+        }
     }
     fn syncPreferences(context: *anyopaque, alloc: std.mem.Allocator) !model.Preferences {
         const self: *View = @ptrCast(@alignCast(context));
@@ -164,13 +175,20 @@ pub const View = struct {
         const bytes = self.service.draft.text orelse try std.json.Stringify.valueAlloc(alloc, self.service.prefs(), .{});
         return model.parse(alloc, bytes);
     }
-    fn closeWallpaperPicker(self: *View) void {
+    fn closeWallpaperPicker(self: *View, restore_parent: bool) void {
         const picker = self.wallpaper_picker orelse return;
         self.wallpaper_picker = null;
         const window = picker.as(gtk.Window);
-        if (window.getTransientFor()) |parent| layer.setKeyboardMode(parent, .exclusive);
+        const parent = window.getTransientFor();
+        if (restore_parent) if (parent) |value| value.as(gtk.Widget).setVisible(0);
         window.destroy();
         window.unref();
+        if (restore_parent) if (parent) |value| {
+            // Mapping an on-demand layer restores focus without retaining a
+            // permanent exclusive keyboard grab after the chooser closes.
+            layer.setKeyboardMode(value, .on_demand);
+            value.present();
+        };
     }
     fn chooseWallpaper(_: *gtk.Button, self: *View) callconv(.c) void {
         if (self.wallpaper_picker) |picker| {
@@ -214,7 +232,7 @@ pub const View = struct {
         window.present();
     }
     fn wallpaperChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
-        defer self.closeWallpaperPicker();
+        defer self.closeWallpaperPicker(true);
         if (response != @intFromEnum(gtk.ResponseType.accept)) return;
         const chooser = object.ext.cast(gtk.FileChooser, dialog).?;
         const file = chooser.getFile() orelse return;
