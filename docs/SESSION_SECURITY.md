@@ -179,6 +179,25 @@ an unseen prompt. PAM authentication of a selected identity uses the real
 `PolkitAgentSession` and its trusted system helper; Pearl never forwards passwords
 to an arbitrary executable or grants privileges itself.
 
+For one offered identity, Pearl starts authentication as soon as the input
+privacy gate is ready and the dialog is presented. For multiple identities,
+choose an identity and select Authenticate. Changing identity cancels the old
+conversation and requires confirmation before starting the new one.
+
+The dialog follows the backend conversation: informational cues such as touching
+a security key appear without pressing Enter. An answer field appears only when
+the backend asks a question, with the backend's prompt and echo setting. Status
+messages remain separate from an unanswered question. Failed authentication
+offers Try again, which restarts the configured conversation without assuming
+that a password is needed. Retries and identity changes retain the original
+120-second request deadline.
+
+Polkit authentication uses the system helper's `polkit-1` PAM service, normally
+configured in `/etc/pam.d/polkit-1`. The native locker has a separate `pearl`
+service (`pearl-git` in the Arch git package). Authentication order and required
+factors come from the administrator's PAM policy; Pearl does not select a method
+or change either stack.
+
 Cancel, Escape, close, authority loss, session inactivity, lock acquisition and
 the 120-second request deadline complete the outstanding D-Bus request and clean
 up conversation/UI state. The authority receives authorization proof through its
