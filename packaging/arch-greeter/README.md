@@ -3,11 +3,17 @@
 Build and install on Arch with:
 
 ```sh
-cd packaging/arch-greeter
-makepkg -si
+cd packaging/arch-git
+makepkg -s
+sudo pacman -U ./pearl-greeter-git-*.pkg.tar.zst
 ```
 
-This builds `pearl-greeter-git` from upstream Git. The package is independent of
+The [consolidated split recipe](../arch-git/PKGBUILD) builds the shell and greeter
+from one upstream Git checkout; the commands above install only `pearl-greeter-git`.
+Use the newly built archive path from `makepkg --packagelist` if you configured
+`PKGDEST` or have older archives in the build directory.
+The old recipe in this directory has moved to `packaging/arch-git`.
+The greeter package is independent of
 `pearl` and `pearl-git`; it does not install the desktop shell or replace Aqueous's
 session entry. To test uncommitted source changes, build against that working
 source tree instead of the upstream Git source.

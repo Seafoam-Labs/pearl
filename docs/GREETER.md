@@ -56,9 +56,10 @@ it is compiled out of production.
 
 ## Arch package installation
 
-The separate [greeter PKGBUILD](../packaging/arch-greeter/PKGBUILD) builds
-`pearl-greeter-git` independently of the desktop shell. From
-`packaging/arch-greeter`, run `makepkg -si`. Installation creates the default
+The [consolidated Git PKGBUILD](../packaging/arch-git/PKGBUILD) builds
+`pearl-git` and `pearl-greeter-git` from one checkout. The greeter is independently
+installable. From `packaging/arch-git`, run `makepkg -s`, then install only the
+newly built `pearl-greeter-git` archive with `pacman -U`. Installation creates the default
 `/etc/pearl/greeter.json` (UWSM allowed) and replaces `/etc/greetd/config.toml`, provisions
 the greeter account/directories, and selects `pearl-greeter.service` for the next
 boot without restarting the current desktop. Appearance configuration edits survive

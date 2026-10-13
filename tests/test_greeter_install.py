@@ -42,12 +42,12 @@ class GreeterInstall(unittest.TestCase):
 
     def backup_configs(self, check=True):
         return subprocess.run(['bash', '-c', 'source "$1"; _backup_greetd_configs "$2"',
-                               'backup-test', str(ROOT/'packaging/arch-greeter/pearl-greeter.install'),
+                               'backup-test', str(ROOT/'packaging/arch-git/pearl-greeter.install'),
                                str(self.root)], check=check, capture_output=True, text=True)
 
     def replace_config(self):
         subprocess.run(['bash', '-c', 'source "$1"; _install_greetd_config "$2"',
-                        'install-config-test', str(ROOT/'packaging/arch-greeter/pearl-greeter.install'),
+                        'install-config-test', str(ROOT/'packaging/arch-git/pearl-greeter.install'),
                         str(self.root)], check=True, capture_output=True, text=True)
 
     def test_replace_standard_config_and_restore_original(self):
@@ -305,7 +305,7 @@ class GreeterInstall(unittest.TestCase):
         self.assertFalse((payload/'usr/lib/pearl/pearl-aqueous-init').exists())
         self.assertTrue(os.access(payload/'usr/lib/pearl/pearl-greeter-setup', os.X_OK))
         # The package uses greetd's distro PAM policy, not the Pearl locker's policy.
-        pkgbuild = (ROOT/'packaging/arch-greeter/PKGBUILD').read_text()
+        pkgbuild = (ROOT/'packaging/arch-git/PKGBUILD').read_text()
         self.assertIn("backup=('etc/pearl/greeter.json')", pkgbuild)
 
 

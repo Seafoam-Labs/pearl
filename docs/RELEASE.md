@@ -112,9 +112,9 @@ optimizations remain enabled. `pearl-intel-git` provides and conflicts with
 `pearl-git`, retaining its `pearl-git` commands, service and integration paths.
 It can coexist with the release `pearl` package. `pearl-darkly-style-intel-git`
 provides and conflicts with `pearl-darkly-style` and the other Darkly providers.
-The existing Git shell and greeter recipes already use `-Dcpu=baseline`.
+The consolidated Git shell and greeter build also uses `-Dcpu=baseline`.
 
-For the latest upstream Git revision, use the standalone
+For the latest upstream Git revision, use the consolidated split
 [`pearl-git` recipe](../packaging/arch-git/PKGBUILD):
 
 ```sh
@@ -127,8 +127,26 @@ from its release metadata, commit count and abbreviated commit hash (for example
 `1:0.2.2.r175.g82fbfcf-1`). It uses the same dependencies, ReleaseSafe build and
 checks as the release recipe, with `-Dcpu=baseline` for baseline x86-64 CPU
 compatibility. The moving Git source uses `SKIP` for its checksum;
-the release archive recipe remains checksum-locked. Install the resulting package
-with `pacman -U`; `makepkg` alone only builds it.
+the release archive recipe remains checksum-locked. One checkout and build produce:
+
+- `pearl-git`: shell, settings, bundled Phyto/Dome/Coral apps, portal backend,
+  thumbnail helper and capture picker.
+- `pearl-greeter-git`: optional greetd login screen, appearance helper, defaults
+  and service setup/recovery hooks.
+
+Both outputs share the same epoch, Git version and package release. They remain
+independently installable, with their own dependencies, backups and install hooks;
+installing the shell does not pull in the greeter. `packaging/arch-greeter` retains
+its setup/recovery documentation; its former recipe and install hook have moved
+into `packaging/arch-git`. Copy both `.install` files alongside the PKGBUILD when
+preparing a build job. Replace the old separate greeter job with the second output
+of this job. Darkly keeps its own source/version and separate build recipe.
+
+`makepkg` only builds the packages. Install the desired output with `pacman -U`;
+`makepkg -si` installs both outputs and therefore runs the greeter's existing
+next-boot setup hook. Use `makepkg --packagelist` to find the output paths and
+pass only the desired archive to `pacman -U`. The shared build and checks cover
+both components.
 
 `pearl-git` can be installed alongside `pearl`. Its commands are `pearl-git`,
 `pearlctl-git`, `pearl-lock-git` and `pearl-settings-git`; its user unit is `pearl-git.service` and its

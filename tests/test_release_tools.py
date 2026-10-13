@@ -83,7 +83,7 @@ class ReleaseTools(unittest.TestCase):
         # Run real package() functions with inert build outputs in a private root.
         with tempfile.TemporaryDirectory() as t:
             work=Path(t);root=work/'pearl';root.mkdir()
-            for directory in ('packaging','bindings/licenses'):
+            for directory in ('packaging','bindings/licenses','docs'):
                 shutil.copytree(ROOT/directory,root/directory)
             for name in ('README.md','docs/RELEASE.md','plugins/wit/plugin.wit',
                          'subprojects/phyto/packaging/org.aqueous.Phyto.desktop',
@@ -93,6 +93,9 @@ class ReleaseTools(unittest.TestCase):
             binary=root/'zig-out/bin';binary.mkdir(parents=True)
             for name in ('pearl','pearlctl','pearl-lock','pearl-settings','pearl-themes','pearl-preview-helper','pearl-plugin-host'):
                 (binary/name).write_bytes(b'package fixture\n')
+            greeter_bin=root/'zig-out/greeter/bin';greeter_bin.mkdir(parents=True)
+            for name in ('pearl-greeter','pearl-greeter-host','pearl-greeter-session','pearl-greeter-sync'):
+                (greeter_bin/name).write_bytes(b'\x7fELF inert production-shaped package fixture\n')
             license_file=root/'zig-out/share/licenses/pearl/Wasmtime-LICENSE'
             license_file.parent.mkdir(parents=True);license_file.write_text('fixture')
             phyto=root/'subprojects/phyto/zig-out/bin/phyto'
@@ -145,10 +148,28 @@ class ReleaseTools(unittest.TestCase):
                     picker.chmod(0o755)
                     stage=work/variant
                     subprocess.run(['bash','-euc',
-                        'source "$1"; srcdir="$2"; pkgdir="$3"; package',
-                        'stage',str(ROOT/'packaging'/variant/'PKGBUILD'),str(work),str(stage)],
+                        'source "$1"; srcdir="$2"; pkgdir="$3"; "$4"',
+                        'stage',str(ROOT/'packaging'/variant/'PKGBUILD'),str(work),str(stage),
+                        'package_pearl-git' if variant=='arch-git' else 'package'],
                         env={k:v for k,v in os.environ.items() if k not in ('PEARL_BINARY_DIR','PEARL_PLUGIN_EXAMPLES_DIR')},
                         check=True,capture_output=True)
+                    if variant=='arch-git':
+                        greeter_stage=work/'greeter';greeter_stage.mkdir()
+                        subprocess.run(['bash','-euc',
+                            'source "$1"; srcdir="$2"; pkgdir="$3"; package_pearl-greeter-git',
+                            'stage',str(ROOT/'packaging/arch-git/PKGBUILD'),str(work),str(greeter_stage)],
+                            check=True,capture_output=True)
+                        shell_paths={p.relative_to(stage) for p in stage.rglob('*') if p.is_file() or p.is_symlink()}
+                        greeter_paths={p.relative_to(greeter_stage) for p in greeter_stage.rglob('*') if p.is_file() or p.is_symlink()}
+                        self.assertFalse(shell_paths & greeter_paths, 'split packages must not own the same files')
+                        for member in ('usr/bin/pearl-greeter','usr/lib/pearl/pearl-greeter-sync',
+                                       'usr/lib/systemd/system/pearl-greeter.service',
+                                       'usr/lib/pearl/pearl-greeter-setup','etc/pearl/greeter.json'):
+                            self.assertIn(Path(member),greeter_paths)
+                        self.assertNotIn(Path('etc/greetd/config.toml'),greeter_paths)
+                        self.assertFalse(any('xdg-desktop-portal' in str(p) for p in greeter_paths))
+                        self.assertFalse(any(p.name.startswith('pearl-greeter') for p in shell_paths))
+                        self.assertEqual((greeter_stage/'usr/bin/pearl-greeter').stat().st_mode&0o7777,0o755)
                     for member in (
                         f'usr/lib/{component}/xdg-desktop-portal-pearl',
                         f'usr/lib/{component}/pearl-preview-helper',
@@ -207,4 +228,36 @@ class ReleaseTools(unittest.TestCase):
                             self.assertFalse((stage/f'usr/share/{other_command}').exists())
                         if shutil.which('desktop-file-validate'):
                             subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True)
+    @unittest.skipUnless(shutil.which('makepkg'), 'makepkg is required for split metadata checks')
+    def test_git_split_metadata_and_dependencies(self):
+        recipe=ROOT/'packaging/arch-git'
+        metadata=subprocess.check_output(['makepkg','--printsrcinfo'],cwd=recipe,text=True)
+        self.assertEqual(metadata,(recipe/'.SRCINFO').read_text())
+        sections={};section=None
+        for line in metadata.splitlines():
+            if not line.strip():continue
+            key,value=line.strip().split(' = ',1)
+            if key in ('pkgbase','pkgname'):
+                section=key+':'+value;sections[section]={}
+            else:sections[section].setdefault(key,[]).append(value)
+        self.assertEqual(set(sections),{'pkgbase:pearl-git','pkgname:pearl-git','pkgname:pearl-greeter-git'})
+        base=sections['pkgbase:pearl-git'];shell=sections['pkgname:pearl-git'];greeter=sections['pkgname:pearl-greeter-git']
+        self.assertNotIn('depends',base)
+        for pkg in (shell,greeter):
+            self.assertTrue(set(pkg['depends']) <= set(base['makedepends']) | {'polkit'})
+            self.assertFalse(any(dep.split('=')[0] in ('pearl-git','pearl-greeter-git') for dep in pkg['depends']))
+            self.assertTrue((recipe/pkg['install'][0]).is_file())
+        self.assertEqual(shell['install'],['pearl-git.install'])
+        self.assertEqual(greeter['install'],['pearl-greeter.install'])
+        self.assertEqual(shell['backup'],['etc/pam.d/pearl-git','etc/pearl-git/portal-policy.conf'])
+        self.assertEqual(greeter['backup'],['etc/pearl/greeter.json'])
+        self.assertEqual(shell['provides'],['pearl-capture-picker-git=1'])
+        self.assertEqual(greeter['provides'],['pearl-greeter'])
+        self.assertEqual(greeter['conflicts'],['pearl-greeter'])
+        self.assertIn('xdg-desktop-portal',shell['depends'])
+        self.assertNotIn('xdg-desktop-portal',greeter['depends'])
+        self.assertFalse(any(dep.startswith('greetd') for dep in shell['depends']))
+        self.assertFalse(any(dep.startswith('xorg-') for dep in greeter['optdepends']))
+        self.assertEqual(len(base['source']),len(base['sha256sums']))
+
 if __name__=='__main__':unittest.main()

@@ -1,46 +1,34 @@
-# Build the latest upstream Git revision. Nothing is enabled or started during
-# installation.
-pkgname=pearl-git
+# Build the shell and optional greeter from one upstream Git checkout.
+# Building never activates services; only the greeter install hook selects it
+# for the next boot, without restarting the running display manager.
+pkgbase=pearl-git
+pkgname=(pearl-git pearl-greeter-git)
 pkgver=0.2.2.r177.gcdf7436
-pkgrel=1
+pkgrel=2
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
 pkgdesc='GTK desktop shell exclusively for Aqueous (Git version)'
 arch=('x86_64')
 url='https://github.com/Seafoam-Labs/pearl'
 license=('LicenseRef-Pearl-Unlicensed')
-# Capability required by the session dispatcher; bundled, not a separate package.
-provides=('pearl-capture-picker-git=1')
-depends=('xdg-desktop-portal' 'libcups' 'xdg-utils' 'glycin' 'curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant' 'hunspell'
+_shell_depends=('xdg-desktop-portal' 'libcups' 'xdg-utils' 'glycin' 'curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant' 'hunspell'
          'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
          'libpulse>=17.0' 'pam>=1.7.2' 'polkit>=127' 'glibc>=2.44'
          'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
          'cairo>=1.18.4' 'systemd>=261.3' 'aqueous>0.7' 'uwsm>=0.26.7')
+_greeter_depends=('greetd>=0.10.3' 'aqueous>0.7' 'uwsm>=0.26.7' 'dbus' 'polkit'
+         'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0' 'wayland>=1.26.0'
+         'glibc>=2.44' 'systemd>=261.3' 'python>=3.14')
 # Alternative packages must provide aqueous with a version newer than 0.7.
 # aqueous-config >=0.8.2 with protected collections and display declaration capabilities is required.
 # Live plugin input requires the matching Aqueous Pearl integration service.
 # See docs/AQUEOUS_PLUGIN_ACTIVITY.md; the general version floor is unchanged.
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
+# makepkg resolves build dependencies before entering the split package functions.
+# The shell runtime covers the shared libraries; add the greeter-only runtime here.
 makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
-             'rust' 'rust-wasm' 'librsvg')
-optdepends=('gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'
-            'gvfs-smb: SMB network connections in Phyto'
-            'gvfs-dnssd: WebDAV connections and network discovery in Phyto'
-            'file-roller: archive context menu actions in Phyto'
-            'poppler: PDF first-page previews in Phyto (requires bubblewrap)'
-            'ffmpeg: video still previews in Phyto (requires bubblewrap)'
-            'bubblewrap: sandbox required for PDF and video previews in Phyto'
-            'hunspell-en_us: English spelling dictionary for Coral (other Enchant dictionaries supported)'
-            'nvidia-utils: optional NVIDIA GPU metrics in Dome'
-            'qtengine: shared Qt 5/6 application appearance management'
-            'pearl-darkly-style: Darkly Qt application styles without KWin decorations'
-            'matugen>=4.2.0: dynamic Material colors'
-            'networkmanager>=1.58.1: network controls'
-            'bluez>=5.87: Bluetooth controls'
-            'upower>=1.91.4: battery status'
-            'power-profiles-daemon>=0.30: power profiles')
-backup=('etc/pam.d/pearl-git' 'etc/pearl-git/portal-policy.conf')
-install=pearl-git.install
+             'rust' 'rust-wasm' 'librsvg'
+             "${_shell_depends[@]}" 'greetd>=0.10.3' 'dbus')
 options=('!strip' '!debug')
 # Keep the runtime and SDK tools in sync with plugins/build-examples.py.
 _wasmtime=48.0.2
@@ -85,7 +73,7 @@ build() {
     python3 plugins/build-examples.py --fixtures \
         --wit-bindgen "$srcdir/wit-bindgen-$_wit_bindgen-x86_64-linux/wit-bindgen" \
         --wasm-tools "$srcdir/wasm-tools-$_wasm_tools-x86_64-linux/wasm-tools"
-    zig build -Dportal-variant=git -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline \
+    zig build install build-greeter -Dportal-variant=git -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline \
         -Dwasm-plugins=true -Dwasmtime-prefix="$srcdir/wasmtime-v$_wasmtime-x86_64-linux-c-api"
     cd subprojects/phyto
     zig build -Dgit-variant=true -Doptimize=ReleaseSafe -Dcpu=baseline
@@ -99,8 +87,11 @@ check() {
     cd "$srcdir/pearl"
     export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
     zig build test test-adapter-unit test-bindings test-release-tools test-plugin-host \
+        test-capture-picker test-greeter-unit test-greeter-sync -Dportal-variant=git \
         -Doptimize=ReleaseSafe -Dcpu=baseline \
         -Dwasm-plugins=true -Dwasmtime-prefix="$srcdir/wasmtime-v$_wasmtime-x86_64-linux-c-api"
+    python3 tests/test_greeter_package.py
+    python3 tests/test_greeter_install.py
     cd subprojects/phyto
     zig build test -Doptimize=ReleaseSafe -Dcpu=baseline
     cd ../dome
@@ -109,7 +100,29 @@ check() {
     zig build test -Doptimize=ReleaseSafe -Dcpu=baseline -Dgit-variant=true
 }
 
-package() {
+package_pearl-git() {
+    depends=("${_shell_depends[@]}")
+    # Required by the Aqueous session dispatcher.
+    provides=('pearl-capture-picker-git=1')
+    optdepends=('gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'
+                'gvfs-smb: SMB network connections in Phyto'
+                'gvfs-dnssd: WebDAV connections and network discovery in Phyto'
+                'file-roller: archive context menu actions in Phyto'
+                'poppler: PDF first-page previews in Phyto (requires bubblewrap)'
+                'ffmpeg: video still previews in Phyto (requires bubblewrap)'
+                'bubblewrap: sandbox required for PDF and video previews in Phyto'
+                'hunspell-en_us: English spelling dictionary for Coral (other Enchant dictionaries supported)'
+                'nvidia-utils: optional NVIDIA GPU metrics in Dome'
+                'qtengine: shared Qt 5/6 application appearance management'
+                'pearl-darkly-style: Darkly Qt application styles without KWin decorations'
+                'matugen>=4.2.0: dynamic Material colors'
+                'networkmanager>=1.58.1: network controls'
+                'bluez>=5.87: Bluetooth controls'
+                'upower>=1.91.4: battery status'
+                'power-profiles-daemon>=0.30: power profiles')
+    backup=('etc/pam.d/pearl-git' 'etc/pearl-git/portal-policy.conf')
+    install=pearl-git.install
+
     cd "$srcdir/pearl"
     PEARL_PLUGIN_EXAMPLES_DIR="$PWD/.cache/plugin-examples" \
         PEARL_VARIANT=git DESTDIR="$pkgdir" bash packaging/install.sh
@@ -180,4 +193,23 @@ package() {
        "$pkgdir/usr/share/doc/pearl-git/examples/aqueous-init-pearl-git"
     sed -i 's|/usr/bin/pearl$|/usr/bin/pearl-git|' \
         "$pkgdir/usr/share/doc/pearl-git/examples/aqueous-init-pearl-git"
+}
+
+package_pearl-greeter-git() {
+    pkgdesc='GTK greetd login screen hosted by ordinary Aqueous (Git version)'
+    depends=("${_greeter_depends[@]}")
+    provides=('pearl-greeter')
+    conflicts=('pearl-greeter')
+    optdepends=('accountsservice: account names and avatars'
+                'orca: optional screen reader')
+    backup=('etc/pearl/greeter.json')
+    install=pearl-greeter.install
+
+    cd "$srcdir/pearl"
+    # stage.py requires a new directory; makepkg already creates pkgdir.
+    local payload
+    payload=$(mktemp -d "$srcdir/pearl-greeter-package.XXXXXX")
+    python3 packaging/greeter/stage.py --system-package --dest "$payload/root"
+    cp -R --preserve=mode,timestamps "$payload/root/." "$pkgdir/"
+    rm -r "$payload"
 }
