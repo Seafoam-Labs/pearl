@@ -175,6 +175,9 @@ fn failureCache(path: [:0]const u8, uri: [*:0]const u8, mtime: []const u8, size:
 
 // args: URI, edge, encoded limit, text allowed, cache allowed, expected seconds,
 // expected microseconds, expected size. Values are passed as argv, never a shell.
+// glibc otherwise reserves a large arena per GIO worker thread. Bound arena
+// count before the address-space cap so thread startup cannot exhaust it.
+extern "c" fn mallopt(parameter: c_int, value: c_int) c_int;
 pub fn run(args: []const [:0]const u8) void {
     if (args.len != 8 and args.len != 10) std.process.exit(2);
     const began = glib.getMonotonicTime();
@@ -182,6 +185,8 @@ pub fn run(args: []const [:0]const u8) void {
     if (args.len == 10) selected_provider = std.meta.stringToEnum(policy.Provider, args[8]) orelse return;
     // This helper accepts native files only; avoid session GVfs activation.
     _ = glib.setenv("GIO_USE_VFS", "local", 1);
+    _ = mallopt(-8, 2); // M_ARENA_MAX, glibc's Linux allocator.
+    _ = glib.setenv("MALLOC_ARENA_MAX", "2", 1);
     if (std.c.setrlimit(.AS, &.{ .cur = 512 * 1024 * 1024, .max = 512 * 1024 * 1024 }) != 0) std.process.exit(2);
     _ = std.c.setrlimit(.CORE, &.{ .cur = 0, .max = 0 });
     _ = alarm(10);

@@ -161,7 +161,9 @@ pub fn logFn(
     comptime format: []const u8,
     args: anytype,
 ) void {
-    if (!passes(level, scope)) return;
+    // Standard-library and dependency scopes are not part of Pearl's CLI filter.
+    const managed_scope = comptime std.meta.stringToEnum(Scope, @tagName(scope)) orelse .default;
+    if (!passes(level, managed_scope)) return;
     const io = std.Options.debug_io;
     const previous = io.swapCancelProtection(.blocked);
     defer _ = io.swapCancelProtection(previous);

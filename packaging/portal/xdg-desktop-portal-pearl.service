@@ -1,0 +1,12 @@
+[Unit]
+Description=Pearl desktop portal backend
+PartOf=graphical-session.target
+After=graphical-session-pre.target
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.impl.portal.desktop.pearl
+ExecStart=/usr/lib/pearl/xdg-desktop-portal-pearl
+Restart=on-failure
+Slice=session.slice
+TimeoutStopSec=5

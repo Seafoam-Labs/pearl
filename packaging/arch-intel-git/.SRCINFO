@@ -1,7 +1,8 @@
 pkgbase = pearl-intel-git
 	pkgdesc = GTK desktop shell exclusively for Aqueous (Intel baseline, Git version)
-	pkgver = 1.0.0rc2.r22.ga002d24
-	pkgrel = 7
+	pkgver = 0.2.2.r175.g82fbfcf
+	pkgrel = 1
+	epoch = 1
 	url = https://github.com/Seafoam-Labs/pearl
 	install = pearl-intel-git.install
 	arch = x86_64
@@ -16,6 +17,7 @@ pkgbase = pearl-intel-git
 	makedepends = rust
 	makedepends = rust-wasm
 	makedepends = librsvg
+	depends = glycin
 	depends = curl
 	depends = libarchive
 	depends = libpng
@@ -36,8 +38,13 @@ pkgbase = pearl-intel-git
 	depends = systemd>=261.3
 	depends = aqueous>0.7
 	depends = uwsm>=0.26.7
-	optdepends = gvfs: Trash, remote locations, and administrative filesystems in Phyto
+	optdepends = gvfs: Trash, SFTP connections, and administrative filesystems in Phyto
+	optdepends = gvfs-smb: SMB network connections in Phyto
+	optdepends = gvfs-dnssd: WebDAV connections and network discovery in Phyto
 	optdepends = file-roller: archive context menu actions in Phyto
+	optdepends = poppler: PDF first-page previews in Phyto (requires bubblewrap)
+	optdepends = ffmpeg: video still previews in Phyto (requires bubblewrap)
+	optdepends = bubblewrap: sandbox required for PDF and video previews in Phyto
 	optdepends = hunspell-en_us: English spelling dictionary for Coral (other Enchant dictionaries supported)
 	optdepends = nvidia-utils: optional NVIDIA GPU metrics in Dome
 	optdepends = qtengine: shared Qt 5/6 application appearance management
@@ -47,7 +54,7 @@ pkgbase = pearl-intel-git
 	optdepends = bluez>=5.87: Bluetooth controls
 	optdepends = upower>=1.91.4: battery status
 	optdepends = power-profiles-daemon>=0.30: power profiles
-	provides = pearl-git=1.0.0rc2.r22.ga002d24
+	provides = pearl-git=1:0.2.2.r175.g82fbfcf
 	conflicts = pearl-git
 	options = !strip
 	options = !debug

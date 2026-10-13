@@ -1,3 +1,7 @@
+comptime {
+    _ = @import("previews").api;
+    _ = @import("file_chooser");
+}
 const std = @import("std");
 const u = @import("ui.zig");
 const gtk = u.gtk;
@@ -56,11 +60,11 @@ fn activate(app: *gio.Application, _: ?*anyopaque) callconv(.c) void {
 pub fn main(init: std.process.Init) void {
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch return;
     if (args.len > 1 and std.mem.eql(u8, args[1], "--preview-helper")) {
-        @import("preview_helper.zig").run(args[2..]);
+        @import("previews").helper.run(args[2..]);
         return;
     }
     if (args.len == 2 and std.mem.eql(u8, args[1], "--preview-capabilities")) {
-        @import("platform/preview_providers.zig").emit();
+        @import("previews").providers.emit();
         return;
     }
     var location: ?[:0]const u8 = null;
@@ -103,14 +107,14 @@ pub fn main(init: std.process.Init) void {
     _ = gio.Application.signals.activate.connect(app.as(gio.Application), ?*anyopaque, activate, null, .{});
     _ = gio.Application.signals.startup.connect(app.as(gio.Application), ?*anyopaque, startup, null, .{});
     var argv = [_][*:0]u8{@constCast("phyto")};
-    @import("platform/thumbnails.zig").init(app.as(gio.Application));
-    @import("platform/thumbnails.zig").changed = @import("preview.zig").schedule;
+    @import("previews").scheduler.init(app.as(gio.Application));
+    @import("previews").scheduler.changed = @import("preview.zig").schedule;
     const code = app.as(gio.Application).run(1, &argv);
     for (windows.items) |window| window.destroy();
     if (@import("platform/network_mounts.zig").shared) |network| network.deinit();
     windows.deinit(u.a);
     @import("preview.zig").shutdown();
-    @import("platform/thumbnails.zig").deinit();
+    @import("previews").scheduler.deinit();
     if (provider) |css| {
         if (gdk.Display.getDefault()) |display| gtk.StyleContext.removeProviderForDisplay(display, css.as(gtk.StyleProvider));
         css.unref();

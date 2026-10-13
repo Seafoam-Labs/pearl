@@ -39,6 +39,8 @@ class ReleaseTools(unittest.TestCase):
                 'pkgver=0.1.0\nsource=("pearl-$pkgver.tar.gz::https://example.invalid/v$pkgver.tar.gz"\n'
                 '        "dependency.tar.gz")\nsha256sums=(\'published-hash\'\n        \'dependency-hash\')\n')
             (root/'README.md').write_text('fixture')
+            (root/'packaging/portal/arch').mkdir(parents=True)
+            (root/'packaging/portal/arch/PKGBUILD').write_text((ROOT/'packaging/portal/arch/PKGBUILD').read_text())
             write(root,'plugins/wit/plugin.wit',{'included':True})
             write(root,'plugins/examples/rust/target/generated.wasm',{'excluded':True})
             write(root,'subprojects/phyto/src/main.zig',{'included':True})
@@ -70,6 +72,11 @@ class ReleaseTools(unittest.TestCase):
                     'pearl-1/subprojects/dome/packaging/org.aqueous.Dome.desktop',
                 })
             self.assertEqual(first,second);self.assertIn(first['sha256'],(Path(t)/'one/PKGBUILD').read_text())
+            portal=(Path(t)/'one/PKGBUILD.portal').read_text()
+            self.assertIn(first['sha256'],portal)
+            self.assertIn('cd "$srcdir/pearl-$pkgver"',portal)
+            self.assertIn('pkgver=1\n',portal)
+            self.assertNotIn('git+$url',portal)
             recipe=(Path(t)/'one/PKGBUILD').read_text()
             self.assertIn('pkgver=1\n',recipe)
             self.assertIn('source=("pearl-$pkgver.tar.gz"\n',recipe)
@@ -90,7 +97,7 @@ class ReleaseTools(unittest.TestCase):
                 target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
                 shutil.copy2(ROOT/name,target)
             binary=root/'zig-out/bin';binary.mkdir(parents=True)
-            for name in ('pearl','pearlctl','pearl-lock','pearl-settings','pearl-themes','pearl-plugin-host'):
+            for name in ('pearl','pearlctl','pearl-lock','pearl-settings','pearl-themes','pearl-preview-helper','pearl-plugin-host'):
                 (binary/name).write_bytes(b'package fixture\n')
             license_file=root/'zig-out/share/licenses/pearl/Wasmtime-LICENSE'
             license_file.parent.mkdir(parents=True);license_file.write_text('fixture')

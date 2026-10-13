@@ -50,6 +50,9 @@ pub const Entry = struct {
 };
 var entries: std.ArrayList(*Entry) = .empty;
 var application: ?*gio.Application = null;
+// Phyto still supports its embedded helper. Other hosts select the standalone
+// helper before subscribing, without requiring a GTK/GApplication instance.
+pub var helper_executable: [*:0]const u8 = "/proc/self/exe";
 var next_stamp: u64 = 0;
 pub var memory: usize = 0;
 pub var running: usize = 0;
@@ -205,11 +208,11 @@ fn pump(_: ?*anyopaque) callconv(.c) c_int {
     pump_id = 0;
     if (capabilities == null and !discovering) {
         for (entries.items) |e| if (e.provider != .builtin and e.state == .queued) {
-            const argv = [_:null]?[*:0]const u8{ "/proc/self/exe", "--preview-capabilities" };
+            const argv = [_:null]?[*:0]const u8{ helper_executable, "--preview-capabilities" };
             discovery_read = Read.start(&argv, @sizeOf(Providers.Snapshot), 6000, discovered, null);
             if (discovery_read != null) {
                 discovering = true;
-                application.?.hold();
+                if (application) |app| app.hold();
             } else capabilities = .{};
             break;
         };
@@ -242,14 +245,14 @@ fn pump(_: ?*anyopaque) callconv(.c) c_int {
         defer a.free(size);
         // Resolve the parent's executable: /proc/self/exe in the child remains
         // the same binary, including when packaged as phyto-git.
-        const argv = [_:null]?[*:0]const u8{ "/proc/self/exe", "--preview-helper", e.uri, edge, limit, if (e.text) "1" else "0", if (e.edge <= 1024) "1" else "0", seconds, usec, size, @tagName(e.provider), if (e.priority == 0) "10000" else "5000" };
+        const argv = [_:null]?[*:0]const u8{ helper_executable, "--preview-helper", e.uri, edge, limit, if (e.text) "1" else "0", if (e.edge <= 1024) "1" else "0", seconds, usec, size, @tagName(e.provider), if (e.priority == 0) "10000" else "5000" };
         e.process = Read.start(&argv, 16 + policy.max_edge * policy.max_edge * 4, if (e.priority == 0) 10000 else 5000, completed, e);
         if (e.process != null) {
             e.state = .running;
             running += 1;
             if (e.provider != .builtin) heavy_running += 1;
             started += 1;
-            application.?.hold();
+            if (application) |app| app.hold();
         } else {
             fail(e, "Could not start the preview decoder.");
             reportFailure(.failed);
@@ -259,7 +262,7 @@ fn pump(_: ?*anyopaque) callconv(.c) c_int {
     return 0;
 }
 fn discovered(read: *Read, success: bool, _: ?*anyopaque) void {
-    defer application.?.release();
+    defer if (application) |app| app.release();
     discovering = false;
     discovery_read = null;
     capabilities = .{};
@@ -291,7 +294,7 @@ fn deliver(e: *Entry) void {
 }
 fn completed(read: *Read, success: bool, data: ?*anyopaque) void {
     const e: *Entry = @ptrCast(@alignCast(data.?));
-    defer application.?.release();
+    defer if (application) |app| app.release();
     running -= 1;
     if (e.provider != .builtin) heavy_running -= 1;
     e.process = null;

@@ -1,3 +1,8 @@
+pub const safe = @import("diagnostics/safe_text.zig").safe;
+comptime {
+    _ = @import("previews").api;
+    _ = @import("file_chooser");
+}
 const std = @import("std");
 const gtk = @import("gtk4");
 const gdk = @import("gdk4");

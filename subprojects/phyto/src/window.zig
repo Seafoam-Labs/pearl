@@ -728,7 +728,7 @@ pub const Window = struct {
         const visible = self.show_details and !self.split and self.width >= 1000 and !self.current().isNetwork();
         const selected_info = if (visible and selection.getSize() == 1) self.current().selected() else null;
         defer if (selected_info) |i| i.unref();
-        const source_key = if (selected_info) |i| @import("platform/thumbnails.zig").identity(i, 512, self.preferences.thumbnail_limit, true) else u.format("selection:{d}:{d}", .{ selection.getSize(), @intFromBool(visible) });
+        const source_key = if (selected_info) |i| @import("previews").scheduler.identity(i, 512, self.preferences.thumbnail_limit, true) else u.format("selection:{d}:{d}", .{ selection.getSize(), @intFromBool(visible) });
         defer a.free(source_key);
         const key = u.format("{d}:{d}:{s}", .{ self.current().id, self.current().generation, source_key });
         if (self.details_key) |old| {
@@ -1191,12 +1191,12 @@ pub const Window = struct {
             .network_error = if (self.network_ui.editor) |e| std.mem.span(e.error_label.getText()) else "",
             .realized_grid_children = realized_rows,
             .thumbnail_slots_ready = @import("preview.zig").readyCount(),
-            .preview_memory = @import("platform/thumbnails.zig").memory,
-            .preview_heavy_jobs = @import("platform/thumbnails.zig").heavy_running,
-            .preview_jobs = @import("platform/thumbnails.zig").running,
-            .preview_started = @import("platform/thumbnails.zig").started,
-            .preview_max_main_loop_gap_us = @import("platform/thumbnails.zig").max_main_loop_gap_us,
-            .preview_cache_hits = @import("platform/thumbnails.zig").hits,
+            .preview_memory = @import("previews").scheduler.memory,
+            .preview_heavy_jobs = @import("previews").scheduler.heavy_running,
+            .preview_jobs = @import("previews").scheduler.running,
+            .preview_started = @import("previews").scheduler.started,
+            .preview_max_main_loop_gap_us = @import("previews").scheduler.max_main_loop_gap_us,
+            .preview_cache_hits = @import("previews").scheduler.hits,
             .quick_preview = self.quick_preview != null,
             .quick_surface = if (self.quick_preview) |q| std.mem.span(q.slot.root.getVisibleChildName() orelse "none") else "closed",
             .quick_paintable = if (self.quick_preview) |q| q.slot.picture.getPaintable() != null else false,

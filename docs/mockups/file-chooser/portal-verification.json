@@ -1,0 +1,159 @@
+{
+  "status": "passed",
+  "scope": "Offline mockups only; no native portal conformance or service operations",
+  "checks": [
+    "All eleven baseline interfaces have a local mockup or service-integration specimen",
+    "60 ready layouts: ten interfaces in dark/light at 390, 680 and 1440 pixels without horizontal overflow",
+    "33 supported narrow states; policy and service errors cannot submit a positive action",
+    "AppChooser search, explicit selection and no-match disabled confirmation",
+    "Access defaults to Deny; Escape denies; explicit approval and policy blocking are distinct",
+    "Profile approval and launcher name/icon editing return illustrative explicit results",
+    "Print setup, copies/range validation, print-to-file chooser link and no-printer output-file path",
+    "Appearance specimen, notification actions, attributed session holds, email handoff and policy explanation",
+    "No JavaScript runtime errors or external page requests"
+  ],
+  "captures": [
+    {
+      "file": "portal-app.png",
+      "scene": "app",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-access.png",
+      "scene": "access",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-account.png",
+      "scene": "account",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-launcher.png",
+      "scene": "launcher",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-print.png",
+      "scene": "print",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-settings.png",
+      "scene": "settings",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-notification.png",
+      "scene": "notification",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-inhibit.png",
+      "scene": "inhibit",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-email.png",
+      "scene": "email",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-lockdown.png",
+      "scene": "lockdown",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-app-empty.png",
+      "scene": "app",
+      "theme": "dark",
+      "width": 1440,
+      "state": "empty"
+    },
+    {
+      "file": "portal-access-policy.png",
+      "scene": "access",
+      "theme": "dark",
+      "width": 1440,
+      "state": "policy"
+    },
+    {
+      "file": "portal-print-file.png",
+      "scene": "print",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-print-empty.png",
+      "scene": "print",
+      "theme": "dark",
+      "width": 1440,
+      "state": "empty"
+    },
+    {
+      "file": "portal-print-error.png",
+      "scene": "print",
+      "theme": "dark",
+      "width": 1440,
+      "state": "failed"
+    },
+    {
+      "file": "portal-print-light.png",
+      "scene": "print",
+      "theme": "light",
+      "width": 1440,
+      "state": "ready"
+    },
+    {
+      "file": "portal-access-narrow.png",
+      "scene": "access",
+      "theme": "dark",
+      "width": 390,
+      "state": "ready"
+    },
+    {
+      "file": "portal-print-narrow.png",
+      "scene": "print",
+      "theme": "light",
+      "width": 390,
+      "state": "ready"
+    },
+    {
+      "file": "portal-launcher-narrow.png",
+      "scene": "launcher",
+      "theme": "dark",
+      "width": 390,
+      "state": "ready"
+    },
+    {
+      "file": "portal-account-light.png",
+      "scene": "account",
+      "theme": "light",
+      "width": 1440,
+      "state": "ready"
+    }
+  ],
+  "errors": [],
+  "network_requests": []
+}

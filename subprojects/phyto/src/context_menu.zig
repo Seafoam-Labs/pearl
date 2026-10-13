@@ -676,24 +676,22 @@ pub const Menu = struct {
         if (response == 1 and !r.menu.owner.closed) r.menu.openTargets(&r.context, r.command);
         d.as(gtk.Window).destroy();
     }
-    const Choose = struct { owner: *Window, context: Context, command: Command, dialog: *gtk.FileDialog };
+    const Choose = struct { owner: *Window, context: Context, command: Command };
     fn choose(self: *Menu, c: *const Context, cmd: Command) void {
         const r = a.create(Choose) catch unreachable;
-        r.* = .{ .owner = self.owner, .context = c.clone(), .command = cmd, .dialog = gtk.FileDialog.new() };
-        r.dialog.setTitle("Choose destination folder");
+        r.* = .{ .owner = self.owner, .context = c.clone(), .command = cmd };
         self.owner.app.as(gio.Application).hold();
-        r.dialog.selectFolder(self.owner.window, self.owner.background_cancel, chosen, r);
+        @import("file_chooser").folderAsync(self.owner.window, chosen, r);
     }
     fn chosen(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
         const r: *Choose = @ptrCast(@alignCast(data.?));
         defer {
             r.context.deinit();
-            r.dialog.unref();
             r.owner.app.as(gio.Application).release();
             a.destroy(r);
         }
         var err: ?*glib.Error = null;
-        const folder = r.dialog.selectFolderFinish(result, &err);
+        const folder = @import("file_chooser").saveFinish(result, &err);
         if (err) |e| e.free();
         if (folder) |dir| {
             defer dir.unref();

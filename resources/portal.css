@@ -1,0 +1,13 @@
+.pearl-root.$scope {background:$container$;color:$text$;}
+.pearl-root.$scope headerbar, .pearl-root.$scope .titlebar {background:$container$;color:$text$;}
+.pearl-root.$scope button {background:$high$;color:$text$;border:1px solid transparent;border-radius:12px;padding:8px 12px;box-shadow:none;}
+.pearl-root.$scope button:hover {background:mix($high$,$primary$,0.12);}
+.pearl-root.$scope button.suggested-action {background:$primary$;color:$on_primary$;}
+.pearl-root.$scope button:disabled {background:$low$;color:$secondary$;opacity:0.55;}
+.pearl-root.$scope entry,.pearl-root.$scope searchentry {background:$low$;color:$text$;border:1px solid $outline$;border-radius:10px;min-width:0;padding:8px;}
+.pearl-root.$scope gridview {background:$low$;color:$text$;border-radius:12px;}
+.pearl-root.$scope gridview child {border-radius:12px;padding:8px;border:2px solid transparent;}
+.pearl-root.$scope gridview child:selected {background:$primary_container$;border-color:$primary$;color:$on_container$;}
+.pearl-root.$scope .dim-label {color:$secondary$;}
+.pearl-root.$scope :focus-visible {outline:2px solid $primary$;outline-offset:1px;}
+.pearl-root.$scope .pearl-file-tile {padding:6px;}

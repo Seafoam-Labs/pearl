@@ -11,6 +11,9 @@ prefix=/usr # Matches the packaged unit; distribution packages may patch both.
 for binary in pearl pearlctl pearl-lock pearl-settings pearl-themes; do
     install -Dm755 "$binaries/$binary" "$destination$prefix/bin/$binary"
 done
+preview_lib=pearl
+[[ "${PEARL_VARIANT:-stable}" != git ]] || preview_lib=pearl-git
+install -Dm755 "$binaries/pearl-preview-helper" "$destination$prefix/lib/$preview_lib/pearl-preview-helper"
 if [[ -f "$binaries/pearl-plugin-host" ]]; then
     install -Dm755 "$binaries/pearl-plugin-host" "$destination$prefix/bin/pearl-plugin-host"
     install -Dm644 "$binaries/../share/licenses/pearl/Wasmtime-LICENSE" "$destination$prefix/share/licenses/pearl/Wasmtime-LICENSE"

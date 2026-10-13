@@ -1,0 +1,19 @@
+{
+  "scope": "Design coverage of the installed GTK backend baseline; not native implementation or protocol conformance",
+  "baseline": "/usr/share/xdg-desktop-portal/portals/gtk.portal inspected 2026-10-12",
+  "default_provider": "pearl",
+  "retained_routes": {"ScreenCast": "aqueous", "Screenshot": "aqueous"},
+  "interfaces": [
+    {"name": "FileChooser", "module": "file_chooser.zig", "mockup": "index.html", "surface": "Shared chooser"},
+    {"name": "AppChooser", "module": "app_chooser.zig", "mockup": "portals.html?scene=app", "surface": "Application selection"},
+    {"name": "Access", "module": "access.zig", "mockup": "portals.html?scene=access", "surface": "Permission prompt"},
+    {"name": "Account", "module": "account.zig", "mockup": "portals.html?scene=account", "surface": "Profile consent"},
+    {"name": "DynamicLauncher", "module": "dynamic_launcher.zig", "mockup": "portals.html?scene=launcher", "surface": "Launcher approval"},
+    {"name": "Print", "module": "print.zig", "mockup": "portals.html?scene=print", "surface": "Print and page setup"},
+    {"name": "Notification", "module": "notification.zig", "mockup": "portals.html?scene=notification", "surface": "Existing Pearl notification renderer"},
+    {"name": "Inhibit", "module": "inhibit.zig", "mockup": "portals.html?scene=inhibit", "surface": "Existing power and session view"},
+    {"name": "Email", "module": "email.zig", "mockup": "portals.html?scene=email", "surface": "Mail app handoff when no default exists"},
+    {"name": "Lockdown", "module": "lockdown.zig", "mockup": "portals.html?scene=lockdown", "surface": "Blocked operation explanation"},
+    {"name": "Settings", "module": "settings.zig", "mockup": "portals.html?scene=settings", "surface": "Illustrative application appearance"}
+  ]
+}

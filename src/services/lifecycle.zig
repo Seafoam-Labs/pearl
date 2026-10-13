@@ -57,6 +57,7 @@ pub const Lifecycle = struct {
     running: bool = false,
     lock_supported: bool = false,
     err: ?[]const u8 = null,
+    portal_error_text: db.Text(4096) = .{},
     pub fn start(self: *Lifecycle) !void {
         self.running = true;
         self.lock_supported = @import("gtk4sessionlock1").isSupported() != 0;
@@ -65,9 +66,11 @@ pub const Lifecycle = struct {
         self.idle = .{ .display = self.display, .context = self, .event = idleEvent };
         try self.idle.start();
         self.peer.start();
+        pearl_session_portal_start(portalChanged, self);
     }
     pub fn stop(self: *Lifecycle) void {
         self.running = false;
+        pearl_session_portal_stop();
         self.activity_token.cancel();
         self.cancelConfirmation();
         self.idle.stop();
@@ -94,7 +97,7 @@ pub const Lifecycle = struct {
         self.rearm();
     }
     fn rearm(self: *Lifecycle) void {
-        self.idle.configure(if (self.idle_held or !self.gate.available or !self.gate.active or self.gate.preparing) .{} else if (self.on_battery) self.config.battery else self.config.ac);
+        self.idle.configure(if (self.idle_held or (pearl_session_portal_holds() & 8) != 0 or !self.gate.available or !self.gate.active or self.gate.preparing) .{} else if (self.on_battery) self.config.battery else self.config.ac);
     }
     pub fn sync(self: *Lifecycle) void {
         const ready = self.client.availability == .ready;
@@ -106,6 +109,7 @@ pub const Lifecycle = struct {
         const changed = self.gate.available != ready or self.gate.locked != locked;
         self.gate.available = ready;
         self.gate.locked = locked;
+        pearl_session_portal_update(@intFromBool(locked));
         if (!ready) {
             self.gate.sleep_pending = false;
             self.cancelConfirmation();
@@ -356,7 +360,7 @@ pub const Lifecycle = struct {
                 }
                 self.gate.inhibited = sleep_block;
                 if (action) |op| {
-                    if (self.idle_held or (idle_block and op != .manual_sleep) or (sleep_block and op != .lock) or !self.gate.active or !self.gate.available) {
+                    if (self.idle_held or ((pearl_session_portal_holds() & 8) != 0 and op != .manual_sleep) or ((pearl_session_portal_holds() & 4) != 0 and op != .lock) or (idle_block and op != .manual_sleep) or (sleep_block and op != .lock) or !self.gate.active or !self.gate.available) {
                         self.gate.sleep_pending = false;
                         self.err = "Idle or sleep is inhibited.";
                         return;
@@ -642,7 +646,7 @@ pub const Lifecycle = struct {
             self.cancelConfirmation();
             if (action == .logout) {
                 try @import("../aqueous/commands.zig").validate(.session_exit, &self.client.model, self.client.capabilities);
-                self.request_logout(self.context);
+                pearl_session_portal_begin_end(portalEnd);
             } else {
                 if (self.delay_fd < 0) return error.InhibitorUnavailable;
                 self.sleep_action = action;
@@ -659,6 +663,26 @@ pub const Lifecycle = struct {
             self.confirmation_timer = glib.timeoutAddSeconds(20, confirmationExpired, self);
         }
         self.changed(self.context);
+    }
+    fn portalChanged(data: ?*anyopaque) callconv(.c) void {
+        const self: *Lifecycle = @ptrCast(@alignCast(data.?));
+        if (!self.running) return;
+        self.rearm();
+        self.changed(self.context);
+    }
+    fn portalEnd(data: ?*anyopaque, allowed: c_int) callconv(.c) void {
+        const self: *Lifecycle = @ptrCast(@alignCast(data.?));
+        if (!self.running) return;
+        if (allowed != 0 and self.gate.available and self.gate.active and !self.gate.locked) self.request_logout(self.context) else {
+            pearl_session_portal_abort_end();
+            if (allowed == 0) {
+                const reason = pearl_session_portal_reason();
+                defer glib.free(reason);
+                self.portal_error_text.set(std.mem.span(reason));
+                self.err = self.portal_error_text.slice();
+            } else self.err = "The session changed; logout was cancelled.";
+            self.changed(self.context);
+        }
     }
     fn cancelConfirmation(self: *Lifecycle) void {
         self.pending = null;
@@ -681,3 +705,12 @@ fn narrow(value: db.Text(512)) db.Text(128) {
     if (value.len <= 128) out.set(value.slice());
     return out;
 }
+
+extern fn pearl_session_portal_start(*const fn (?*anyopaque) callconv(.c) void, ?*anyopaque) void;
+extern fn pearl_session_portal_stop() void;
+extern fn pearl_session_portal_holds() c_uint;
+extern fn pearl_session_portal_update(c_int) void;
+extern fn pearl_session_portal_begin_end(*const fn (?*anyopaque, c_int) callconv(.c) void) void;
+
+extern fn pearl_session_portal_reason() [*:0]u8;
+extern fn pearl_session_portal_abort_end() void;

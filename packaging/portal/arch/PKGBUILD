@@ -1,0 +1,30 @@
+# Independent backend package. Installation never changes a live session.
+pkgname=xdg-desktop-portal-pearl
+pkgver=0.2.2
+pkgrel=1
+epoch=1
+pkgdesc='Pearl desktop portal backend'
+arch=('x86_64')
+url='https://github.com/Seafoam-Labs/pearl'
+license=('LicenseRef-Pearl-Unlicensed')
+depends=("pearl=$epoch:$pkgver" 'xdg-desktop-portal' 'libcups' 'xdg-utils')
+makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'python>=3.14')
+backup=('etc/pearl/portal-policy.conf')
+options=('!strip' '!debug')
+source=("pearl::git+$url.git#tag=v$pkgver")
+sha256sums=('SKIP')
+
+build() {
+    cd "$srcdir/pearl"
+    export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
+    zig build build-portal -Dportal-variant=stable -Doptimize=ReleaseSafe -Dcpu=baseline
+}
+check() {
+    cd "$srcdir/pearl"
+    test "$(zig-out/bin/xdg-desktop-portal-pearl --identity)" = 'org.freedesktop.impl.portal.desktop.pearl'
+    python3 tests/portal/generate_contracts.py --check
+}
+package() {
+    cd "$srcdir/pearl"
+    DESTDIR="$pkgdir" PEARL_VARIANT=stable PEARL_PORTAL_INCLUDE_HELPER=0 bash packaging/portal/install.sh
+}

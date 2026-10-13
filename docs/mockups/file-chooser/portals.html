@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pearl desktop portal design study</title>
+  <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="portals.css">
+</head>
+<body class="portal-page">
+  <header class="study">
+    <div><a href="../../FILE_CHOOSER_IMPLEMENTATION_PLAN.md">PEARL / DESIGN STUDY</a><h1>Pearl desktop portals</h1><p>Dialogs and service integration for a complete GTK portal replacement.</p><div class="study-links"><a href="index.html">File chooser study ↗</a><a href="README.md">All captures ↗</a></div></div>
+    <div class="study-controls">
+      <label>Interface<select id="scenario"><option value="app">AppChooser</option><option value="access">Access</option><option value="account">Account</option><option value="launcher">DynamicLauncher</option><option value="print">Print</option><option value="settings">Settings</option><option value="notification">Notification</option><option value="inhibit">Inhibit</option><option value="email">Email</option><option value="lockdown">Lockdown</option></select></label>
+      <label>Example state<select id="state"><option value="ready">Ready</option><option value="empty">Empty or unavailable</option><option value="failed">Service error</option><option value="policy">Restricted by policy</option></select></label>
+      <button id="theme">Light appearance</button>
+    </div>
+  </header>
+  <div class="portal-stage"><main id="portal" class="window portal-window" aria-labelledby="portal-title"></main></div>
+  <section class="annotation"><span class="annotation-number">02</span><div><strong id="annotation-title"></strong><p id="annotation-body"></p></div></section>
+  <p class="disclaimer">Interactive mockup · Sample identities and data · No permissions, printing, messages, settings or session state are changed</p>
+  <div id="toast" role="status" hidden></div>
+  <script src="portals.js"></script>
+</body>
+</html>

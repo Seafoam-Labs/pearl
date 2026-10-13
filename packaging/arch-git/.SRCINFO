@@ -17,6 +17,7 @@ pkgbase = pearl-git
 	makedepends = rust
 	makedepends = rust-wasm
 	makedepends = librsvg
+	depends = glycin
 	depends = curl
 	depends = libarchive
 	depends = libpng
@@ -37,7 +38,9 @@ pkgbase = pearl-git
 	depends = systemd>=261.3
 	depends = aqueous>0.7
 	depends = uwsm>=0.26.7
-	optdepends = gvfs: Trash, remote locations, and administrative filesystems in Phyto
+	optdepends = gvfs: Trash, SFTP connections, and administrative filesystems in Phyto
+	optdepends = gvfs-smb: SMB network connections in Phyto
+	optdepends = gvfs-dnssd: WebDAV connections and network discovery in Phyto
 	optdepends = file-roller: archive context menu actions in Phyto
 	optdepends = poppler: PDF first-page previews in Phyto (requires bubblewrap)
 	optdepends = ffmpeg: video still previews in Phyto (requires bubblewrap)

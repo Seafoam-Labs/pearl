@@ -10,9 +10,9 @@ pkgdesc='GTK desktop shell exclusively for Aqueous (Intel baseline, Git version)
 arch=('x86_64')
 url='https://github.com/Seafoam-Labs/pearl'
 license=('LicenseRef-Pearl-Unlicensed')
-provides=("pearl-git=$pkgver")
+provides=("pearl-git=$epoch:$pkgver")
 conflicts=('pearl-git')
-depends=('curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant' 'hunspell'
+depends=('glycin' 'curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant' 'hunspell'
          'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
          'libpulse>=17.0' 'pam>=1.7.2' 'polkit>=127' 'glibc>=2.44'
          'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
@@ -86,10 +86,10 @@ build() {
     python3 plugins/build-examples.py --fixtures \
         --wit-bindgen "$srcdir/wit-bindgen-$_wit_bindgen-x86_64-linux/wit-bindgen" \
         --wasm-tools "$srcdir/wasm-tools-$_wasm_tools-x86_64-linux/wasm-tools"
-    zig build -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline \
+    zig build -Dportal-variant=git -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline \
         -Dwasm-plugins=true -Dwasmtime-prefix="$srcdir/wasmtime-v$_wasmtime-x86_64-linux-c-api"
     cd subprojects/phyto
-    zig build -Doptimize=ReleaseSafe -Dcpu=baseline
+    zig build -Dgit-variant=true -Doptimize=ReleaseSafe -Dcpu=baseline
     cd ../dome
     zig build -Doptimize=ReleaseSafe -Dcpu=baseline -Dgit-variant=true
     cd ../coral
@@ -113,7 +113,7 @@ check() {
 package() {
     cd "$srcdir/pearl"
     PEARL_PLUGIN_EXAMPLES_DIR="$PWD/.cache/plugin-examples" \
-        DESTDIR="$pkgdir" bash packaging/install.sh
+        PEARL_VARIANT=git DESTDIR="$pkgdir" bash packaging/install.sh
     install -Dm755 subprojects/coral/zig-out/bin/coral-git "$pkgdir/usr/bin/coral-git"
     install -Dm644 subprojects/coral/zig-out/share/applications/org.aqueous.Coral.Git.desktop \
         "$pkgdir/usr/share/applications/org.aqueous.Coral.Git.desktop"

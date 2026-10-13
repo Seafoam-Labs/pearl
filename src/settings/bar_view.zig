@@ -1,4 +1,5 @@
 //! Selection-based bar editor. All changes go through the shared Pearl draft.
+const files = @import("file_chooser");
 const std = @import("std");
 const gtk = @import("gtk4");
 const gdk = @import("gdk4");
@@ -39,7 +40,7 @@ pub const View = struct {
     clock_zones: []const [:0]const u8 = &.{},
     clock_id: []const u8 = "",
     clock_group: ?Group = null,
-    picker: ?*gtk.FileChooserDialog = null,
+    picker: ?*gtk.Dialog = null,
     picker_hash: [64]u8 = undefined,
     editor: *Editor,
     host: *gtk.Box,
@@ -1006,21 +1007,21 @@ pub const View = struct {
         const doc = try prefs.parse(temp.allocator(), self.editor.text());
         if (!std.mem.eql(u8, &self.popup_hash, &try barHash(temp.allocator(), doc.bar))) return error.StaleBar;
         self.picker_hash = protocol.digest(self.editor.text());
-        const picker = object.ext.newInstance(gtk.FileChooserDialog, .{ .title = "Choose launcher PNG", .action = gtk.FileChooserAction.open, .use_header_bar = @as(c_int, 1) });
+        const picker = files.create("Choose launcher PNG", .open);
+        files.setStateKey(picker, "first-party/launcher-icon");
         self.picker = picker;
         _ = picker.ref();
         const window = picker.as(gtk.Window);
         if (self.host.as(gtk.Widget).getRoot()) |root| window.setTransientFor(object.ext.cast(gtk.Window, root));
         window.setModal(1);
-        window.setDefaultSize(680, 520);
+        window.setDefaultSize(1040, 680);
+        files.setLocalOnly(picker, 1);
         const dialog = picker.as(gtk.Dialog);
-        _ = dialog.addButton("_Cancel", @intFromEnum(gtk.ResponseType.cancel));
-        _ = dialog.addButton("_Select", @intFromEnum(gtk.ResponseType.accept));
-        dialog.setDefaultResponse(@intFromEnum(gtk.ResponseType.accept));
         const filter = gtk.FileFilter.new();
         filter.setName("Static PNG images (up to 2 MiB, 2048 × 2048)");
         filter.addMimeType("image/png");
-        picker.as(gtk.FileChooser).addFilter(filter);
+        files.addFilter(picker, filter);
+        filter.unref();
         _ = gtk.Dialog.signals.response.connect(dialog, *View, iconChosen, self, .{});
         self.popup.?.popdown();
         window.present();
@@ -1037,7 +1038,7 @@ pub const View = struct {
             self.report(error.StaleBar);
             return;
         }
-        const file = object.ext.cast(gtk.FileChooser, dialog).?.getFile() orelse return;
+        const file = files.getFile(dialog) orelse return;
         defer file.unref();
         const path = file.getPath() orelse return;
         defer glib.free(path);

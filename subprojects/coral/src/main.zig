@@ -1,3 +1,7 @@
+comptime {
+    _ = @import("previews").api;
+    _ = @import("file_chooser");
+}
 const std = @import("std");
 const u = @import("c.zig");
 const c = u.c;

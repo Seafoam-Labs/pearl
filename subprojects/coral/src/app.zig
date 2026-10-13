@@ -1,3 +1,4 @@
+const chooser = @import("file_chooser");
 const std = @import("std");
 const u = @import("c.zig");
 const c = u.c;
@@ -449,20 +450,15 @@ pub const App = struct {
         self.update();
     }
     fn chooseOpen(self: *App) void {
-        const chooser = c.gtk_file_dialog_new().?;
-        c.gtk_file_dialog_set_title(chooser, "Open text files");
         c.g_application_hold(u.cast(c.GApplication, self.application));
-        c.gtk_file_dialog_open_multiple(chooser, u.cast(c.GtkWindow, self.window), null, &chosenOpen, self);
-        c.g_object_unref(chooser);
+        chooser.openAsync(@ptrCast(self.window), 1, @ptrCast(&chosenOpen), self);
     }
     fn chooseSave(self: *App, d: *Document) void {
-        const chooser = c.gtk_file_dialog_new().?;
-        c.gtk_file_dialog_set_title(chooser, "Save document");
-        c.gtk_file_dialog_set_initial_name(chooser, if (d.path) |p| std.fs.path.basename(p).ptr else "Untitled.txt");
         d.busy = true;
         c.g_application_hold(u.cast(c.GApplication, self.application));
-        c.gtk_file_dialog_save(chooser, u.cast(c.GtkWindow, self.window), null, &chosenSave, d);
-        c.g_object_unref(chooser);
+        const name = u.z(if (d.path) |p| std.fs.path.basename(p) else "Untitled.txt");
+        defer a.free(name);
+        chooser.saveAsync(@ptrCast(self.window), name, @ptrCast(&chosenSave), d);
     }
     fn ask(self: *App, kind: DialogKind, d: ?*Document, title: [*:0]const u8, detail: [*:0]const u8, buttons: []const Button) void {
         if (self.dialog != null) return;
@@ -925,11 +921,11 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
         self.update();
     }
 }
-fn chosenOpen(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
+fn chosenOpen(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     defer c.g_application_release(u.cast(c.GApplication, self.application));
     var err: ?*c.GError = null;
-    const files = c.gtk_file_dialog_open_multiple_finish(u.cast(c.GtkFileDialog, source.?), result, &err);
+    const files: ?*c.GListModel = @ptrCast(chooser.openFinish(@ptrCast(result.?), @ptrCast(&err)));
     if (files) |list| {
         defer c.g_object_unref(list);
         const n = c.g_list_model_get_n_items(list);
@@ -946,13 +942,13 @@ fn chosenOpen(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) 
     logFileFailure("event=file-chooser-failed domain={f} code={d}", err);
     if (err) |e| c.g_error_free(e);
 }
-fn chosenSave(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
+fn chosenSave(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const self = instance;
     const d = u.cast(Document, data.?);
     d.busy = false;
     defer c.g_application_release(u.cast(c.GApplication, self.application));
     var err: ?*c.GError = null;
-    const file = c.gtk_file_dialog_save_finish(u.cast(c.GtkFileDialog, source.?), result, &err);
+    const file: ?*c.GFile = @ptrCast(chooser.saveFinish(@ptrCast(result.?), @ptrCast(&err)));
     if (file) |f| {
         defer c.g_object_unref(f);
         const path = c.g_file_get_path(f);

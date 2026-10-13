@@ -1,5 +1,6 @@
 const std = @import("std");
 pub fn build(b: *std.Build) void {
+    const bindings = b.dependency("gobject", .{});
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const git_variant = b.option(bool, "git-variant", "Use the Git application identity") orelse false;
@@ -19,6 +20,8 @@ pub fn build(b: *std.Build) void {
     const diagnostics = b.createModule(.{ .root_source_file = b.path("../../src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize });
     m.addImport("logging", logging);
     m.addImport("diagnostics", diagnostics);
+    m.addImport("previews", previewModule(b, bindings, target, optimize, b.path("../../src/files/preview/root.zig"), m.import_table.get("build_options").?, diagnostics));
+    m.addImport("file_chooser", chooserModule(b, b.path("../../src/files/chooser.zig"), m, bindings, m.import_table.get("previews").?, git_variant));
     const exe = b.addExecutable(.{ .name = command, .root_module = m });
     b.installArtifact(exe);
     b.installFile("resources/coral-dark.xml", b.fmt("share/{s}/styles/coral-dark.xml", .{command}));
@@ -55,9 +58,31 @@ pub fn build(b: *std.Build) void {
     im.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     im.addImport("logging", logging);
     im.addImport("diagnostics", diagnostics);
+    im.addImport("previews", previewModule(b, bindings, target, optimize, b.path("../../src/files/preview/root.zig"), im.import_table.get("build_options").?, diagnostics));
+    im.addImport("file_chooser", chooserModule(b, b.path("../../src/files/chooser.zig"), im, bindings, im.import_table.get("previews").?, git_variant));
     const ie = b.addExecutable(.{ .name = "coral-test", .root_module = im });
     const integration = b.addSystemCommand(&.{ "python3", "tests/native.py", "--binary" });
     integration.addArtifactArg(ie);
     if (b.args) |args| integration.addArgs(args);
     b.step("integration", "Run native Coral workflows in an isolated Wayland session").dependOn(&integration.step);
+}
+
+fn previewModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, root: std.Build.LazyPath, options: *std.Build.Module, diagnostics: *std.Build.Module) *std.Build.Module {
+    const m = b.createModule(.{ .root_source_file = root, .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gdk4", "gio2", "glib2", "gobject2", "gdkpixbuf2" }) |name| m.addImport(name, bindings.module(name));
+    m.addImport("build_options", options);
+    m.addImport("diagnostics", diagnostics);
+    m.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    return m;
+}
+
+fn chooserModule(b: *std.Build, root: std.Build.LazyPath, host: *std.Build.Module, bindings: *std.Build.Dependency, previews: *std.Build.Module, git_variant: bool) *std.Build.Module {
+    const m = b.createModule(.{ .root_source_file = root, .target = host.resolved_target, .optimize = host.optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| m.addImport(name, bindings.module(name));
+    m.addImport("previews", previews);
+    const options = b.addOptions();
+    options.addOption([:0]const u8, "helper_path", if (git_variant) "/usr/lib/pearl-git/pearl-preview-helper" else "/usr/lib/pearl/pearl-preview-helper");
+    m.addOptions("chooser_options", options);
+    m.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    return m;
 }

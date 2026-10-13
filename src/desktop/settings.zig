@@ -1,5 +1,6 @@
 //! Drafts belong to the service, so closing a popup or receiving an external edit
 //! never discards them. Apply uses the revision captured when editing began.
+const files = @import("file_chooser");
 const std = @import("std");
 const gtk = @import("gtk4");
 const object = @import("gobject2");
@@ -31,7 +32,7 @@ pub const View = struct {
     placement: *gtk.DropDown,
     entries: [5]*gtk.Entry,
     wallpaper_button: *gtk.Button = undefined,
-    wallpaper_picker: ?*gtk.FileChooserDialog = null,
+    wallpaper_picker: ?*gtk.Dialog = null,
     font_size: *gtk.SpinButton,
     bar_size: *gtk.SpinButton,
     islands: *gtk.CheckButton = undefined,
@@ -199,13 +200,15 @@ pub const View = struct {
         const parent = object.ext.cast(gtk.Window, root) orelse return;
         // A regular native dialog would sit below Pearl's overlay and lose
         // keyboard input to it. Own the chooser window so it can use layer-shell.
-        const picker = object.ext.newInstance(gtk.FileChooserDialog, .{ .title = "Choose wallpaper image", .action = gtk.FileChooserAction.open, .use_header_bar = @as(c_int, 0) });
+        const picker = files.create("Choose wallpaper image", .open);
+        files.setStateKey(picker, "first-party/wallpaper-image");
         self.wallpaper_picker = picker;
         const window = picker.as(gtk.Window);
         _ = window.ref();
         window.setTransientFor(parent);
         window.setModal(1);
-        window.setDefaultSize(680, 520);
+        window.setDefaultSize(1040, 680);
+        files.setLocalOnly(picker, 1);
         layer.initForWindow(window);
         layer.setNamespace(window, "pearl:wallpaper-picker");
         layer.setMonitor(window, layer.getMonitor(parent));
@@ -213,20 +216,18 @@ pub const View = struct {
         layer.setKeyboardMode(parent, .none);
         layer.setKeyboardMode(window, .exclusive);
         const dialog = picker.as(gtk.Dialog);
-        _ = dialog.addButton("_Cancel", @intFromEnum(gtk.ResponseType.cancel));
-        _ = dialog.addButton("_Select", @intFromEnum(gtk.ResponseType.accept));
-        dialog.setDefaultResponse(@intFromEnum(gtk.ResponseType.accept));
-        const chooser = picker.as(gtk.FileChooser);
+        const chooser = picker;
         const filter = gtk.FileFilter.new();
         filter.setName("PNG and JPEG images");
         filter.addMimeType("image/png");
         filter.addMimeType("image/jpeg");
-        chooser.addFilter(filter);
+        files.addFilter(chooser, filter);
+        filter.unref();
         const current = self.entries[2].as(gtk.Editable).getText();
         if (current[0] == '/') {
             const file = gio.File.newForPath(current);
             defer file.unref();
-            _ = chooser.setFile(file, null);
+            files.setFile(chooser, file);
         }
         _ = gtk.Dialog.signals.response.connect(dialog, *View, wallpaperChosen, self, .{});
         window.present();
@@ -234,8 +235,8 @@ pub const View = struct {
     fn wallpaperChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
         defer self.closeWallpaperPicker(true);
         if (response != @intFromEnum(gtk.ResponseType.accept)) return;
-        const chooser = object.ext.cast(gtk.FileChooser, dialog).?;
-        const file = chooser.getFile() orelse return;
+        const chooser = dialog;
+        const file = files.getFile(chooser) orelse return;
         defer file.unref();
         const path = file.getPath() orelse {
             self.message.setText("Choose an image stored on this computer.");

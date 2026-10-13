@@ -1,0 +1,3 @@
+PASS staged stable shell identities, matching backend, and next-login selection semantics
+PASS staged git shell identities, matching backend, and next-login selection semantics
+PASS GTK-free Pearl preset dependencies and retained DMS/Noctalia/shell-free providers

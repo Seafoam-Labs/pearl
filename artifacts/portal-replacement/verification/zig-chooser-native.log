@@ -1,0 +1,8 @@
+PASS JPEG orientation, WebP and GIF decoding
+PASS image scaling, alpha, standard cache, warm hits and invalidation
+PASS bounded UTF-8 text, binary rejection, symlink and FIFO rejection
+PASS disk budget pruning preserves entries replaced by other applications
+PASS cache write failures preserve generated images
+PASS native chooser launch and cancellation
+PASS filters, boolean/dropdown choices, ordered batch destinations and overwrite cancellation
+PASS native open/save/folder results, caller-owned writes and parent-close cancellation

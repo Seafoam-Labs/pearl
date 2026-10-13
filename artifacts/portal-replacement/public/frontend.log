@@ -1,0 +1,80 @@
+XDP: load portals from /tmp/pearl-dev-to6xmrfl/portals
+XDP: loading /tmp/pearl-dev-to6xmrfl/portals/pearl.portal
+XDP: portal implementation supports org.freedesktop.impl.portal.FileChooser
+XDP: portal implementation supports org.freedesktop.impl.portal.AppChooser
+XDP: portal implementation supports org.freedesktop.impl.portal.Print
+XDP: portal implementation supports org.freedesktop.impl.portal.Notification
+XDP: portal implementation supports org.freedesktop.impl.portal.Inhibit
+XDP: portal implementation supports org.freedesktop.impl.portal.Access
+XDP: portal implementation supports org.freedesktop.impl.portal.Account
+XDP: portal implementation supports org.freedesktop.impl.portal.Email
+XDP: portal implementation supports org.freedesktop.impl.portal.DynamicLauncher
+XDP: portal implementation supports org.freedesktop.impl.portal.Lockdown
+XDP: portal implementation supports org.freedesktop.impl.portal.Settings
+XDP: Looking for portals configuration in '/tmp/pearl-dev-to6xmrfl/portals/pearl-portals.conf'
+XDP: Looking for portals configuration in '/tmp/pearl-dev-to6xmrfl/portals/aqueous-portals.conf'
+XDP: Looking for portals configuration in '/tmp/pearl-dev-to6xmrfl/portals/portals.conf'
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.350: Document portal fuse mount point unknown: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.portal.Documents was not provided by any .service files
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.350: Choosing pearl.portal for org.freedesktop.impl.portal.Lockdown via the deprecated UseIn key
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.350: The preferred method to match portal implementations to desktop environments is to use the portals.conf(5) configuration file
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Lockdown in pearl (fallback)
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.350: Choosing pearl.portal for org.freedesktop.impl.portal.Access via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Access in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.MemoryMonitor
+XDP: Providing portal org.freedesktop.portal.PowerProfileMonitor
+XDP: Providing portal org.freedesktop.portal.NetworkMonitor
+XDP: Providing portal org.freedesktop.portal.ProxyResolver
+XDP: Providing portal org.freedesktop.portal.Trash
+XDP: Providing portal org.freedesktop.portal.GameMode
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.359: Failed to create RealtimeKit proxy: Could not connect: No such file or directory
+XDP: Providing portal org.freedesktop.portal.Realtime
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.359: Choosing pearl.portal for org.freedesktop.impl.portal.Settings via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Settings in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.Settings
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.359: Choosing pearl.portal for org.freedesktop.impl.portal.FileChooser via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.FileChooser in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.FileChooser
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.359: Choosing pearl.portal for org.freedesktop.impl.portal.AppChooser via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.AppChooser in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.OpenURI
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.359: Choosing pearl.portal for org.freedesktop.impl.portal.Print via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Print in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.Print
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.360: Choosing pearl.portal for org.freedesktop.impl.portal.Notification via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Notification in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.Notification
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.360: Choosing pearl.portal for org.freedesktop.impl.portal.Inhibit via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Inhibit in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.Inhibit
+XDP: Providing portal org.freedesktop.portal.Location
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.363: Failed to connect to PipeWire: Couldn't connect to PipeWire
+XDP: Providing portal org.freedesktop.portal.Camera
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.363: Choosing pearl.portal for org.freedesktop.impl.portal.Account via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Account in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.Account
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.364: Choosing pearl.portal for org.freedesktop.impl.portal.Email via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Email in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.Email
+
+(/usr/lib/xdg-desktop-portal:1537241): xdg-desktop-portal-WARNING **: 16:58:44.364: Choosing pearl.portal for org.freedesktop.impl.portal.DynamicLauncher via the deprecated UseIn key
+XDP: Using pearl.portal for org.freedesktop.impl.portal.DynamicLauncher in pearl (fallback)
+XDP: Providing portal org.freedesktop.portal.DynamicLauncher
+XDP: Providing portal org.freedesktop.host.portal.Registry
+XDP: org.freedesktop.portal.Desktop acquired
+XDP: Adding XdpAppInfo: XdpAppInfoHost app '' for :1.4
+XDP: Read org.freedesktop.appearance color-scheme
+XDP: Deleting XdpAppInfo: XdpAppInfoHost app '' for :1.4

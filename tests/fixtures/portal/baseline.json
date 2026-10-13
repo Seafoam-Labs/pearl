@@ -1,0 +1,891 @@
+{
+  "packages": [
+    "xdg-desktop-portal 1.22.1-2.1",
+    "xdg-desktop-portal-gtk 1.15.3-1.1"
+  ],
+  "interfaces": [
+    {
+      "name": "org.freedesktop.impl.portal.FileChooser",
+      "xml": "org.freedesktop.impl.portal.FileChooser.xml",
+      "sha256": "e5b5bad37cf8461d40f9546b2f609c2369dc04bfbb67dc8ea406dfe2457bf12e",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "OpenFile",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "parent_window",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "title",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "SaveFile",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "parent_window",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "title",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "SaveFiles",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "parent_window",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "title",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.AppChooser",
+      "xml": "org.freedesktop.impl.portal.AppChooser.xml",
+      "sha256": "35ae11524e42c3cd3d1999b1436ca420c57d7ba3b92e0507a718906cb9a2a66f",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "ChooseApplication",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "parent_window",
+              "direction": "in"
+            },
+            {
+              "type": "as",
+              "name": "choices",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "UpdateChoices",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "as",
+              "name": "choices",
+              "direction": "in"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Print",
+      "xml": "org.freedesktop.impl.portal.Print.xml",
+      "sha256": "cd36f4b956c364d17f0d4bfd0d1d5229c8307d5123aa568ef391c0053ed1b2c1",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "PreparePrint",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "parent_window",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "title",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "settings",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "page_setup",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "Print",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "parent_window",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "title",
+              "direction": "in"
+            },
+            {
+              "type": "h",
+              "name": "fd",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Notification",
+      "xml": "org.freedesktop.impl.portal.Notification.xml",
+      "sha256": "6d0626c6f9c31bab82042b88d6d4ab633ac98aa3381f843f6c3d6af172173a1a",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "AddNotification",
+          "args": [
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "id",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "notification",
+              "direction": "in"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "RemoveNotification",
+          "args": [
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "id",
+              "direction": "in"
+            }
+          ]
+        },
+        {
+          "kind": "property",
+          "name": "SupportedOptions",
+          "type": "a{sv}",
+          "access": "read",
+          "args": []
+        },
+        {
+          "kind": "signal",
+          "name": "ActionInvoked",
+          "args": [
+            {
+              "type": "s",
+              "name": "app_id"
+            },
+            {
+              "type": "s",
+              "name": "id"
+            },
+            {
+              "type": "s",
+              "name": "action"
+            },
+            {
+              "type": "av",
+              "name": "parameter"
+            }
+          ]
+        },
+        {
+          "kind": "property",
+          "name": "version",
+          "type": "u",
+          "access": "read",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Inhibit",
+      "xml": "org.freedesktop.impl.portal.Inhibit.xml",
+      "sha256": "441080b607613fa25ba2ecacc8e4530cc08b07acba8a944664465a123fbe39c9",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "Inhibit",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "window",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "flags",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "CreateMonitor",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "o",
+              "name": "session_handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "window",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "signal",
+          "name": "StateChanged",
+          "args": [
+            {
+              "type": "o",
+              "name": "session_handle",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "state",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "QueryEndResponse",
+          "args": [
+            {
+              "type": "o",
+              "name": "session_handle",
+              "direction": "in"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Access",
+      "xml": "org.freedesktop.impl.portal.Access.xml",
+      "sha256": "7f39bddff5cee26256f0ca39c2ed21f4547b31f02cae2912e9b2c4e1bf956c55",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "AccessDialog",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "parent_window",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "title",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "subtitle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "body",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Account",
+      "xml": "org.freedesktop.impl.portal.Account.xml",
+      "sha256": "324316fd1d7e9fdfaf72b518710158da0480b33345f2297cbad2d579762d1d0d",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "GetUserInformation",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "window",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Email",
+      "xml": "org.freedesktop.impl.portal.Email.xml",
+      "sha256": "eae292b1980f3311f864015aaf8622adfb0c34b990f55bcf05b6734c4fcb167f",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "ComposeEmail",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "parent_window",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.DynamicLauncher",
+      "xml": "org.freedesktop.impl.portal.DynamicLauncher.xml",
+      "sha256": "79ffb7e6105f0f4090b32b0c1cf2417b47c84c2e7b227a4eb16bf6eb1fa0d712",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "PrepareInstall",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "parent_window",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "name",
+              "direction": "in"
+            },
+            {
+              "type": "v",
+              "name": "icon_v",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "RequestInstallToken",
+          "args": [
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "a{sv}",
+              "name": "options",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "property",
+          "name": "SupportedLauncherTypes",
+          "type": "u",
+          "access": "read",
+          "args": []
+        },
+        {
+          "kind": "property",
+          "name": "version",
+          "type": "u",
+          "access": "read",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Lockdown",
+      "xml": "org.freedesktop.impl.portal.Lockdown.xml",
+      "sha256": "120f93cceed4f81f3e71e6fdbf2e33a3271a58aa5df8c26b44ca364bdd64897f",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "property",
+          "name": "disable-printing",
+          "type": "b",
+          "access": "readwrite",
+          "args": []
+        },
+        {
+          "kind": "property",
+          "name": "disable-save-to-disk",
+          "type": "b",
+          "access": "readwrite",
+          "args": []
+        },
+        {
+          "kind": "property",
+          "name": "disable-application-handlers",
+          "type": "b",
+          "access": "readwrite",
+          "args": []
+        },
+        {
+          "kind": "property",
+          "name": "disable-location",
+          "type": "b",
+          "access": "readwrite",
+          "args": []
+        },
+        {
+          "kind": "property",
+          "name": "disable-camera",
+          "type": "b",
+          "access": "readwrite",
+          "args": []
+        },
+        {
+          "kind": "property",
+          "name": "disable-microphone",
+          "type": "b",
+          "access": "readwrite",
+          "args": []
+        },
+        {
+          "kind": "property",
+          "name": "disable-sound-output",
+          "type": "b",
+          "access": "readwrite",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Settings",
+      "xml": "org.freedesktop.impl.portal.Settings.xml",
+      "sha256": "7163153f0fbd6b33cfa8fc5fa7f854701e1d646006e4bed4bfe7347f5a9c56af",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "ReadAll",
+          "args": [
+            {
+              "type": "as",
+              "name": "namespaces",
+              "direction": "in"
+            },
+            {
+              "type": "a{sa{sv}}",
+              "name": "value",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "Read",
+          "args": [
+            {
+              "type": "s",
+              "name": "namespace",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "key",
+              "direction": "in"
+            },
+            {
+              "type": "v",
+              "name": "value",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "signal",
+          "name": "SettingChanged",
+          "args": [
+            {
+              "type": "s",
+              "name": "namespace",
+              "direction": "out"
+            },
+            {
+              "type": "s",
+              "name": "key",
+              "direction": "out"
+            },
+            {
+              "type": "v",
+              "name": "value",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "property",
+          "name": "version",
+          "type": "u",
+          "access": "read",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Request",
+      "xml": "org.freedesktop.impl.portal.Request.xml",
+      "sha256": "2b14d9374835d10ea0add907cff7115dfc3850302fbd7a0128347615015d28da",
+      "baseline": false,
+      "members": [
+        {
+          "kind": "method",
+          "name": "Close",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "org.freedesktop.impl.portal.Session",
+      "xml": "org.freedesktop.impl.portal.Session.xml",
+      "sha256": "121183b55dfc4c4615831daf86081cce8289a49698d1ff3c89afd1c6b34ac5e2",
+      "baseline": false,
+      "members": [
+        {
+          "kind": "method",
+          "name": "Close",
+          "args": []
+        },
+        {
+          "kind": "signal",
+          "name": "Closed",
+          "args": []
+        },
+        {
+          "kind": "property",
+          "name": "version",
+          "type": "u",
+          "access": "read",
+          "args": []
+        }
+      ]
+    }
+  ]
+}

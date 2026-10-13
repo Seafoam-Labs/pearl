@@ -1,0 +1,19 @@
+PASS Native startup, local file argument, dictionary discovery and suggestions
+PASS Real Enchant correction, single-step undo/redo and asynchronous save
+PASS Unicode text, search counts, replace-all and one-step undo
+PASS Dirty-tab close prompts, cancellation and discard
+PASS External write detected by etag; explicit overwrite preserves current edits
+PASS Ignore is document-local; Enchant personal dictionary addition removes the underline
+PASS Missing dictionaries clear spelling marks while keeping editing available
+PASS Edits during save remain dirty; cancelled and failed saves preserve original content
+PASS Deleted files require an explicit overwrite decision before recreation
+PASS Native BOM/CRLF/final-newline round trip and explicit mixed-line normalization
+PASS Binary and invalid UTF-8 inputs are rejected without changing their files
+PASS Clean shutdown with no GTK criticals
+PASS Preferences and personal dictionary survive restart
+PASS Light/dark/native themes, narrow window and 200% interface text
+PASS Native Save As picker cancellation and writing a chosen filename
+PASS Multi-document quit stops on cancellation and resolves every dirty tab
+PASS Files above 10 MiB require consent and disable automatic spelling/highlighting
+PASS 1 MiB document remains editable during checking; stale batches are rejected and main-thread ticks stay below 50 ms
+Passed 18 native check groups.

@@ -1,0 +1,132 @@
+{
+  "status": "passed",
+  "scope": "Offline browser mockup only; not native GTK or portal implementation",
+  "checks": [
+    "48 mode/theme/width layouts: no horizontal page/window overflow; footer actions stay inside the viewport",
+    "All six browser states fit the narrow layout",
+    "Portrait art retains aspect ratio; filtering clears invisible selection; confirmation returns the selected mock file",
+    "Multiple selection, file-type filtering, hidden-file toggle and view switch work",
+    "Current-folder choice, folder navigation, Back and in-memory folder creation work",
+    "Save validates names, prompts before replacement, defaults focus to Cancel, and restores focus after Escape",
+    "Portal example identifies the caller, exposes a choice, and preserves selection through a theme switch",
+    "Compact Places drawer and Ctrl+L location navigation are usable by keyboard",
+    "Loading and location failures prevent acceptance; an unavailable thumbnail does not prevent file selection",
+    "No JavaScript runtime errors or external network requests"
+  ],
+  "captures": [
+    {
+      "file": "wallpaper-dark.png",
+      "mode": "wallpaper",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready",
+      "dialog": ""
+    },
+    {
+      "file": "wallpaper-light.png",
+      "mode": "wallpaper",
+      "theme": "light",
+      "width": 1440,
+      "state": "ready",
+      "dialog": ""
+    },
+    {
+      "file": "open-multiple.png",
+      "mode": "open",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready",
+      "dialog": ""
+    },
+    {
+      "file": "folder.png",
+      "mode": "folder",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready",
+      "dialog": ""
+    },
+    {
+      "file": "save-light.png",
+      "mode": "save",
+      "theme": "light",
+      "width": 1440,
+      "state": "ready",
+      "dialog": ""
+    },
+    {
+      "file": "replace.png",
+      "mode": "save",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready",
+      "dialog": "replace"
+    },
+    {
+      "file": "portal.png",
+      "mode": "portal",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready",
+      "dialog": ""
+    },
+    {
+      "file": "batch.png",
+      "mode": "batch",
+      "theme": "dark",
+      "width": 1440,
+      "state": "ready",
+      "dialog": ""
+    },
+    {
+      "file": "narrow.png",
+      "mode": "wallpaper",
+      "theme": "dark",
+      "width": 390,
+      "state": "ready",
+      "dialog": ""
+    },
+    {
+      "file": "loading.png",
+      "mode": "wallpaper",
+      "theme": "dark",
+      "width": 1440,
+      "state": "loading",
+      "dialog": ""
+    },
+    {
+      "file": "empty.png",
+      "mode": "wallpaper",
+      "theme": "light",
+      "width": 1440,
+      "state": "empty",
+      "dialog": ""
+    },
+    {
+      "file": "denied.png",
+      "mode": "wallpaper",
+      "theme": "dark",
+      "width": 1440,
+      "state": "denied",
+      "dialog": ""
+    },
+    {
+      "file": "offline.png",
+      "mode": "folder",
+      "theme": "dark",
+      "width": 1440,
+      "state": "offline",
+      "dialog": ""
+    },
+    {
+      "file": "thumbnail-failed.png",
+      "mode": "wallpaper",
+      "theme": "dark",
+      "width": 1440,
+      "state": "failed",
+      "dialog": ""
+    }
+  ],
+  "errors": [],
+  "network_requests": []
+}

@@ -1,0 +1,84 @@
+{
+  "recorded_at": "2026-10-13T00:58:25.625519+00:00",
+  "scope": "Replace the shared chooser C implementation with native Zig using pinned GTK/GIO/GLib bindings; Wayland only.",
+  "implementation": [
+    "src/files/chooser.zig",
+    "src/files/chooser/state.zig",
+    "src/files/chooser/style.zig",
+    "src/files/chooser/util.zig",
+    "src/files/chooser/harness.zig"
+  ],
+  "removed": [
+    "src/files/chooser.c",
+    "src/files/chooser_state.h",
+    "src/files/harness.c",
+    "tests/portal/test_chooser_state.c",
+    "tests/portal/test_state.py"
+  ],
+  "interop": "Declaration-only chooser.h remains for existing C portal handlers; Zig applications import file_chooser directly.",
+  "checks": [
+    {
+      "name": "zig-chooser-build",
+      "status": "passed",
+      "log": "verification/zig-chooser-build.log"
+    },
+    {
+      "name": "zig-portal-settings-build",
+      "status": "passed",
+      "log": "verification/zig-portal-settings-build.log"
+    },
+    {
+      "name": "zig-git-backend-build",
+      "status": "passed",
+      "log": "verification/zig-git-backend-build.log"
+    },
+    {
+      "name": "zig-settings-shell-locker-build",
+      "status": "passed",
+      "log": "verification/zig-settings-shell-locker-build.log"
+    },
+    {
+      "name": "zig-portal-preview-release-tests",
+      "status": "passed",
+      "log": "verification/zig-portal-preview-release-tests.log"
+    },
+    {
+      "name": "zig-chooser-native",
+      "status": "passed",
+      "log": "verification/zig-chooser-native.log"
+    },
+    {
+      "name": "zig-coral-unit",
+      "status": "passed",
+      "log": "verification/zig-coral-unit.log"
+    },
+    {
+      "name": "zig-phyto-unit",
+      "status": "passed",
+      "log": "verification/zig-phyto-unit.log"
+    },
+    {
+      "name": "zig-coral-native",
+      "status": "passed",
+      "log": "verification/zig-coral-native.log"
+    },
+    {
+      "name": "zig-phyto-native",
+      "status": "passed",
+      "log": "verification/zig-phyto-native.log"
+    }
+  ],
+  "native_coverage": [
+    "GTK and Qt public portal round trips",
+    "Open/save/folder selections and parent-close cancellation",
+    "Filter inclusion/exclusion",
+    "Boolean and dropdown choices",
+    "Ordered batch destinations without writing documents",
+    "Overwrite cancellation keeps the chooser open and original bytes intact",
+    "State isolation, cancellation, eviction, corrupt/symlink recovery",
+    "Coral: 18 native groups, including Save As",
+    "Phyto: context-menu workflows and clean teardown"
+  ],
+  "live_session_modified": false,
+  "release_acceptance": "Existing full portal replacement release gates remain in docs/FILE_CHOOSER_IMPLEMENTATION_PLAN.md."
+}

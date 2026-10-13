@@ -1,0 +1,366 @@
+--- a/packaging/components/session-runtime.sh
++++ b/packaging/components/session-runtime.sh
+@@ -124,7 +124,24 @@
+         *) fail "Unknown action: $1";;
+     esac
+ }
++# Read-only identity selection, before portal/service environment import.
++portal_identity() {
++    local selected
++    case ${1:-active} in
++        selection) selected=$(selection);;
++        active) selected=$(active_selection);;
++        *) return 2;;
++    esac
++    if [[ $selected == pearl ]]; then printf 'Pearl:Aqueous\n'; else printf 'Aqueous\n'; fi
++}
++portal_backend() {
++    local selected
++    selected=$(active_selection)
++    if [[ $selected == pearl ]]; then printf 'xdg-desktop-portal-pearl.service\n'; else printf 'xdg-desktop-portal-gtk.service\n'; fi
++}
+ case ${1:-} in
++    portal-identity) portal_identity "${2:-active}";;
++    portal-backend) portal_backend;;
+     selection) selection;;
+     active-selection) active_selection;;
+     prepare-session) prepare_session;;
+@@ -132,5 +149,5 @@
+     condition) in_aqueous && [[ ${AQUEOUS_NESTED:-0} != 1 ]] && valid_shell "${2:-}" && [[ $(active_selection) == "$2" ]];;
+     action) action "${2:-}";;
+     recover) recover 'Your desktop shell failed to start. Review its journal or run aqueous-welcome.';;
+-    *) fail 'Usage: session-runtime.sh selection|active-selection|prepare-session|condition SHELL|external-condition|action NAME|recover';;
++    *) fail 'Usage: session-runtime.sh portal-identity|portal-backend|selection|active-selection|prepare-session|condition SHELL|external-condition|action NAME|recover';;
+ esac
+--- a/packaging/aqueous-init
++++ b/packaging/aqueous-init
+@@ -47,6 +47,15 @@
+ # Nested sessions inherit their endpoint directly and must not replace the
+ # real desktop's service environment.
+ [ "${AQUEOUS_NESTED:-0}" = 1 ] && exit 0
++
++# Welcome has frozen the active shell for this login. Export the matching
++# portal identity before UWSM finalization or any user-service activation.
++session_runtime=${AQUEOUS_SESSION_RUNTIME:-/usr/lib/aqueous/session-runtime.sh}
++portal_backend=xdg-desktop-portal-gtk.service
++if [ -x "$session_runtime" ]; then
++    selected_desktop=$("$session_runtime" portal-identity) && export XDG_CURRENT_DESKTOP="$selected_desktop"
++    selected_backend=$("$session_runtime" portal-backend) && portal_backend=$selected_backend
++fi
+ 
+ # Propagate an empty value after optional IPC failure to clear stale service
+ # manager endpoints from a previous compositor instance.
+@@ -106,7 +115,7 @@
+             WAYLAND_DISPLAY \
+             AQUEOUS_SOCKET \
+             $display_var \
+-            XDG_CURRENT_DESKTOP=Aqueous \
++            XDG_CURRENT_DESKTOP \
+             XDG_SESSION_TYPE=wayland \
+             XDG_RUNTIME_DIR \
+             XCURSOR_THEME \
+@@ -136,7 +145,7 @@
+ 
+ # Kick the portal in case it already failed earlier in the boot.
+ # reset-failed clears the start-limit so the restart actually runs.
+-systemctl --user reset-failed xdg-desktop-portal-gtk.service xdg-desktop-portal-aqueous.service 2>/dev/null || true
+-systemctl --user restart xdg-desktop-portal.service xdg-desktop-portal-gtk.service xdg-desktop-portal-aqueous.service 2>/dev/null || true
++systemctl --user reset-failed "$portal_backend" xdg-desktop-portal-aqueous.service 2>/dev/null || true
++systemctl --user restart xdg-desktop-portal.service "$portal_backend" xdg-desktop-portal-aqueous.service 2>/dev/null || true
+ 
+ exit 0
+--- a/packaging/aqueous-wm.sh
++++ b/packaging/aqueous-wm.sh
+@@ -8,6 +8,10 @@
+ # abort the whole session.
+ 
+ export XDG_CURRENT_DESKTOP=Aqueous
++session_runtime=${AQUEOUS_SESSION_RUNTIME:-/usr/lib/aqueous/session-runtime.sh}
++if [ -x "$session_runtime" ]; then
++    selected_desktop=$("$session_runtime" portal-identity selection) && export XDG_CURRENT_DESKTOP="$selected_desktop"
++fi
+ export XDG_SESSION_TYPE=wayland
+ export XDG_SESSION_DESKTOP=Aqueous
+ 
+--- a/packaging/git/desktop-stage.sh
++++ b/packaging/git/desktop-stage.sh
+@@ -50,6 +50,10 @@
+     # Git Pearl ships suffixed binaries; retain "pearl" as the selection ID.
+     sed -i -e 's/^pearl_binary=pearl$/pearl_binary=pearl-git/' \
+         -e 's/^pearl_control=pearlctl$/pearl_control=pearlctl-git/' "$destination$private/session-runtime.sh"
++    # Preserve a separate Pearl Git portal identity after the Aqueous transform.
++    sed -i -e 's/Pearl:/Pearl-Git:/g' \
++        -e 's/xdg-desktop-portal-pearl\.service/xdg-desktop-portal-pearl-git.service/g' \
++        "$destination$private/session-runtime.sh"
+     # Applications activated through the user manager need the same toolchain
+     # and instance marker as direct compositor children.
+     sed -i '/^export AQUEOUS_SOCKET=/! s/AQUEOUS_SOCKET /AQUEOUS_SOCKET AQUEOUS_INSTANCE PATH LD_LIBRARY_PATH /g' "$destination$prefix/bin/aqueous-init-$channel"
+--- a/packaging/arch/aqueous-desktop/PKGBUILD
++++ b/packaging/arch/aqueous-desktop/PKGBUILD
+@@ -1,6 +1,6 @@
+ # Maintainer: Zoey Bauer <zoey.erin.bauer@gmail.com>
+ # Maintainer: Caroline Snyder <hirpeng@gmail.com>
+-pkgname=(aqueous-core aqueous-session aqueous-welcome xdg-desktop-portal-aqueous
++pkgname=(aqueous-shell-none aqueous-core aqueous-session aqueous-welcome xdg-desktop-portal-aqueous
+          aqueous-integration-dms aqueous-integration-noctalia aqueous-integration-pearl
+          aqueous-shell-dms aqueous-shell-noctalia aqueous-shell-pearl aqueous-desktop)
+ pkgbase=aqueous-desktop
+@@ -187,7 +187,7 @@
+ 
+ package_aqueous-session() {
+     pkgdesc="Aqueous session"
+-    depends=("aqueous-core=$pkgver-$pkgrel" "bash" "jq" "coreutils" "uwsm" "dbus" "systemd" "ghostty" "grim" "slurp" "wl-clipboard" "libnotify" "xdg-desktop-portal" "xdg-desktop-portal-gtk")
++    depends=("aqueous-core=$pkgver-$pkgrel" "bash" "jq" "coreutils" "uwsm" "dbus" "systemd" "ghostty" "grim" "slurp" "wl-clipboard" "libnotify" "xdg-desktop-portal")
+     conflicts=('aqueous-git' 'aqueous-git-intel' 'aqueous-git-dms' 'aqueous-session-bin' 'aqueous<0.7.0-2' 'aqueous-bin<0.7.0-2')
+     backup=('etc/xdg/aqueous/wm.toml' 'etc/xdg/aqueous/outputs.toml' 'etc/xdg/uwsm/env-aqueous' 'etc/xdg/menus/aqueous-applications.menu' 'etc/xdg/xdg-desktop-portal-aqueous/config')
+     _stage_component session
+@@ -230,29 +230,35 @@
+ 
+ package_aqueous-shell-dms() {
+     pkgdesc="Aqueous aqueous-shell-dms"
+-    depends=("aqueous-integration-dms=$pkgver-$pkgrel" "dms-shell")
++    depends=("xdg-desktop-portal-gtk" "aqueous-integration-dms=$pkgver-$pkgrel" "dms-shell")
+     conflicts=('aqueous-git' 'aqueous-git-intel' 'aqueous-git-dms' 'aqueous-shell-dms-bin')
+     : # Dependency-only preset.
+ }
+ 
+ package_aqueous-shell-noctalia() {
+     pkgdesc="Aqueous aqueous-shell-noctalia"
+-    depends=("aqueous-integration-noctalia=$pkgver-$pkgrel" "noctalia")
++    depends=("xdg-desktop-portal-gtk" "aqueous-integration-noctalia=$pkgver-$pkgrel" "noctalia")
+     conflicts=('aqueous-git' 'aqueous-git-intel' 'aqueous-git-dms' 'aqueous-shell-noctalia-bin')
+     : # Dependency-only preset.
+ }
+ 
+ package_aqueous-shell-pearl() {
+     pkgdesc="Aqueous aqueous-shell-pearl"
+-    depends=("aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
++    depends=("xdg-desktop-portal-pearl" "xdg-desktop-portal-aqueous=$pkgver-$pkgrel" "aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
+     conflicts=('aqueous-git' 'aqueous-git-intel' 'aqueous-git-dms' 'aqueous-shell-pearl-bin')
+     : # Dependency-only preset.
+ }
+ 
+ package_aqueous-desktop() {
+     pkgdesc="Complete stable Aqueous desktop (shell selected through welcome)"
+-    depends=("aqueous-core=$pkgver-$pkgrel" "aqueous-session=$pkgver-$pkgrel" "aqueous-welcome=$pkgver-$pkgrel" "xdg-desktop-portal-aqueous=$pkgver-$pkgrel" "aqueous-integration-dms=$pkgver-$pkgrel" "aqueous-integration-noctalia=$pkgver-$pkgrel" "aqueous-integration-pearl=$pkgver-$pkgrel")
++    depends=("aqueous-shell-none=$pkgver-$pkgrel" "aqueous-core=$pkgver-$pkgrel" "aqueous-session=$pkgver-$pkgrel" "aqueous-welcome=$pkgver-$pkgrel" "xdg-desktop-portal-aqueous=$pkgver-$pkgrel" "aqueous-integration-dms=$pkgver-$pkgrel" "aqueous-integration-noctalia=$pkgver-$pkgrel" "aqueous-integration-pearl=$pkgver-$pkgrel")
+     conflicts=('aqueous-git' 'aqueous-git-intel' 'aqueous-git-dms' 'aqueous-bin')
+     install=aqueous-desktop.install
+     : # Dependency-only preset.
+ }
++
++package_aqueous-shell-none() {
++    pkgdesc='Shell-free Aqueous portal provider preset'
++    depends=("aqueous-session=$pkgver-$pkgrel" 'xdg-desktop-portal-gtk')
++    : # Dependency-only preset; does not start a desktop shell.
++}
+--- a/packaging/arch/aqueous-desktop-git/PKGBUILD
++++ b/packaging/arch/aqueous-desktop-git/PKGBUILD
+@@ -1,6 +1,6 @@
+ # Maintainer: Zoey Bauer <zoey.erin.bauer@gmail.com>
+ pkgbase=aqueous-desktop-git
+-pkgname=(aqueous-session-git aqueous-welcome-git xdg-desktop-portal-aqueous-git
++pkgname=(aqueous-shell-none-git aqueous-session-git aqueous-welcome-git xdg-desktop-portal-aqueous-git
+          aqueous-integration-dms-git aqueous-integration-noctalia-git aqueous-integration-pearl-git
+          aqueous-shell-dms-git aqueous-shell-noctalia-git aqueous-shell-pearl-git aqueous-desktop-git)
+ _channel=git
+@@ -39,7 +39,7 @@
+     pkgdesc='Aqueous Git login session and runtime'
+     # Core is built by a separate VCS recipe. Review occurs before pkgver().
+     depends=("aqueous-core-$_channel>=0.7.0" 'bash' 'jq' 'coreutils' 'uwsm' 'dbus' 'systemd'
+-             'ghostty' 'grim' 'slurp' 'wl-clipboard' 'libnotify' 'xdg-desktop-portal' 'xdg-desktop-portal-gtk')
++             'ghostty' 'grim' 'slurp' 'wl-clipboard' 'libnotify' 'xdg-desktop-portal')
+     backup=('etc/xdg/aqueous-git/wm.toml' 'etc/xdg/aqueous-git/outputs.toml'
+             'etc/xdg/uwsm/env-aqueous-git' 'etc/xdg/menus/aqueous-git-applications.menu'
+             'etc/xdg/xdg-desktop-portal-aqueous-git/config')
+@@ -78,23 +78,29 @@
+ package_aqueous-shell-dms-git() {
+     replaces=('aqueous-shell-dms-intel-git')
+     pkgdesc='Optional DMS shell preset for Aqueous Git'
+-    depends=("aqueous-integration-dms-$_channel=$pkgver-$pkgrel" 'dms-shell')
++    depends=("xdg-desktop-portal-gtk" "aqueous-integration-dms-$_channel=$pkgver-$pkgrel" 'dms-shell')
+ }
+ package_aqueous-shell-noctalia-git() {
+     replaces=('aqueous-shell-noctalia-intel-git')
+     pkgdesc='Optional Noctalia shell preset for Aqueous Git'
+-    depends=("aqueous-integration-noctalia-$_channel=$pkgver-$pkgrel" 'noctalia')
++    depends=("xdg-desktop-portal-gtk" "aqueous-integration-noctalia-$_channel=$pkgver-$pkgrel" 'noctalia')
+ }
+ package_aqueous-shell-pearl-git() {
+     replaces=('aqueous-shell-pearl-intel-git')
+     pkgdesc='Optional Pearl shell preset for Aqueous Git'
+-    depends=("aqueous-integration-pearl-$_channel=$pkgver-$pkgrel" 'pearl-git')
++    depends=("xdg-desktop-portal-pearl-git" "xdg-desktop-portal-aqueous-git=$pkgver-$pkgrel" "aqueous-integration-pearl-$_channel=$pkgver-$pkgrel" 'pearl-git')
+ }
+ package_aqueous-desktop-git() {
+     replaces=('aqueous-desktop-intel-git')
+     pkgdesc='Complete Aqueous Git desktop (shell selected through welcome)'
+-    depends=("aqueous-core-$_channel>=0.7.0" "aqueous-session-$_channel=$pkgver-$pkgrel"
++    depends=("aqueous-shell-none-git=$pkgver-$pkgrel" "aqueous-core-$_channel>=0.7.0" "aqueous-session-$_channel=$pkgver-$pkgrel"
+              "aqueous-welcome-$_channel=$pkgver-$pkgrel" "xdg-desktop-portal-aqueous-$_channel=$pkgver-$pkgrel"
+              "aqueous-integration-dms-$_channel=$pkgver-$pkgrel" "aqueous-integration-noctalia-$_channel=$pkgver-$pkgrel"
+              "aqueous-integration-pearl-$_channel=$pkgver-$pkgrel")
+ }
++
++package_aqueous-shell-none-git() {
++    pkgdesc='Shell-free Aqueous portal provider preset'
++    depends=("aqueous-session-git=$pkgver-$pkgrel" 'xdg-desktop-portal-gtk')
++    : # Dependency-only preset; does not start a desktop shell.
++}
+--- a/packaging/devario/aqueous-devario/PKGBUILD
++++ b/packaging/devario/aqueous-devario/PKGBUILD
+@@ -153,7 +153,7 @@
+ package_aqueous-session() {
+     pkgdesc='Aqueous login session and shell-neutral desktop configuration'
+     arch=('any')
+-    depends=("aqueous-core=$pkgver-$pkgrel" "bash" "jq" "coreutils" "uwsm" "dbus" "systemd" "ghostty" "grim" "slurp" "wl-clipboard" "libnotify" "xdg-desktop-portal" "xdg-desktop-portal-gtk")
++    depends=("aqueous-core=$pkgver-$pkgrel" "bash" "jq" "coreutils" "uwsm" "dbus" "systemd" "ghostty" "grim" "slurp" "wl-clipboard" "libnotify" "xdg-desktop-portal")
+     conflicts=('aqueous-git' 'aqueous-git-intel' 'aqueous-git-dms' 'aqueous-session-bin' 'aqueous<0.7.0-2' 'aqueous-bin<0.7.0-2')
+     backup=('etc/xdg/aqueous/wm.toml' 'etc/xdg/aqueous/outputs.toml' 'etc/xdg/uwsm/env-aqueous' 'etc/xdg/menus/aqueous-applications.menu' 'etc/xdg/xdg-desktop-portal-aqueous/config')
+     DESTDIR="$pkgdir" PREFIX=/usr bash "$srcdir/aqueous/packaging/stage-component.sh" session
+@@ -170,7 +170,7 @@
+ package_aqueous-shell-pearl() {
+     pkgdesc='Pearl shell dependency preset for Aqueous'
+     arch=('any')
+-    depends=("aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
++    depends=("xdg-desktop-portal-pearl" "xdg-desktop-portal-aqueous=$pkgver-$pkgrel" "aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
+     conflicts=('aqueous-git' 'aqueous-git-intel' 'aqueous-git-dms' 'aqueous-shell-pearl-bin')
+     : # Dependency-only preset; devario-desktop owns the session selection.
+ }
+--- a/packaging/arch/aqueous-desktop/.SRCINFO
++++ b/packaging/arch/aqueous-desktop/.SRCINFO
+@@ -67,6 +67,11 @@
+ 	sha256sums = 972c7ac44b17828f4702bfae7cd8347346a3fb5b2c1076cfa2c3fcedac5ec343
+ 	sha256sums = 3122966d46ab108f505525bcb2498f9121b446ee8438fbfceb73a7a1fa1ad400
+ 
++pkgname = aqueous-shell-none
++	pkgdesc = Shell-free Aqueous portal provider preset
++	depends = aqueous-session=1.0.2-1
++	depends = xdg-desktop-portal-gtk
++
+ pkgname = aqueous-core
+ 	pkgdesc = Aqueous core
+ 	license = GPL-3.0-only
+@@ -122,7 +127,6 @@
+ 	depends = wl-clipboard
+ 	depends = libnotify
+ 	depends = xdg-desktop-portal
+-	depends = xdg-desktop-portal-gtk
+ 	conflicts = aqueous-git
+ 	conflicts = aqueous-git-intel
+ 	conflicts = aqueous-git-dms
+@@ -196,6 +200,7 @@
+ 
+ pkgname = aqueous-shell-dms
+ 	pkgdesc = Aqueous aqueous-shell-dms
++	depends = xdg-desktop-portal-gtk
+ 	depends = aqueous-integration-dms=1.0.2-1
+ 	depends = dms-shell
+ 	conflicts = aqueous-git
+@@ -205,6 +210,7 @@
+ 
+ pkgname = aqueous-shell-noctalia
+ 	pkgdesc = Aqueous aqueous-shell-noctalia
++	depends = xdg-desktop-portal-gtk
+ 	depends = aqueous-integration-noctalia=1.0.2-1
+ 	depends = noctalia
+ 	conflicts = aqueous-git
+@@ -214,6 +220,8 @@
+ 
+ pkgname = aqueous-shell-pearl
+ 	pkgdesc = Aqueous aqueous-shell-pearl
++	depends = xdg-desktop-portal-pearl
++	depends = xdg-desktop-portal-aqueous=1.0.2-1
+ 	depends = aqueous-integration-pearl=1.0.2-1
+ 	depends = pearl
+ 	conflicts = aqueous-git
+@@ -224,6 +232,7 @@
+ pkgname = aqueous-desktop
+ 	pkgdesc = Complete stable Aqueous desktop (shell selected through welcome)
+ 	install = aqueous-desktop.install
++	depends = aqueous-shell-none=1.0.2-1
+ 	depends = aqueous-core=1.0.2-1
+ 	depends = aqueous-session=1.0.2-1
+ 	depends = aqueous-welcome=1.0.2-1
+--- a/packaging/arch/aqueous-desktop-git/.SRCINFO
++++ b/packaging/arch/aqueous-desktop-git/.SRCINFO
+@@ -31,6 +31,11 @@
+ 	sha256sums = SKIP
+ 	sha256sums = 3122966d46ab108f505525bcb2498f9121b446ee8438fbfceb73a7a1fa1ad400
+ 
++pkgname = aqueous-shell-none-git
++	pkgdesc = Shell-free Aqueous portal provider preset
++	depends = aqueous-session-git=0.7.0.r0.g0000000-2
++	depends = xdg-desktop-portal-gtk
++
+ pkgname = aqueous-session-git
+ 	pkgdesc = Aqueous Git login session and runtime
+ 	depends = aqueous-core-git>=0.7.0
+@@ -46,7 +51,6 @@
+ 	depends = wl-clipboard
+ 	depends = libnotify
+ 	depends = xdg-desktop-portal
+-	depends = xdg-desktop-portal-gtk
+ 	replaces = aqueous-session-intel-git
+ 	backup = etc/xdg/aqueous-git/wm.toml
+ 	backup = etc/xdg/aqueous-git/outputs.toml
+@@ -92,24 +96,29 @@
+ 
+ pkgname = aqueous-shell-dms-git
+ 	pkgdesc = Optional DMS shell preset for Aqueous Git
++	depends = xdg-desktop-portal-gtk
+ 	depends = aqueous-integration-dms-git=0.7.0.r0.g0000000-2
+ 	depends = dms-shell
+ 	replaces = aqueous-shell-dms-intel-git
+ 
+ pkgname = aqueous-shell-noctalia-git
+ 	pkgdesc = Optional Noctalia shell preset for Aqueous Git
++	depends = xdg-desktop-portal-gtk
+ 	depends = aqueous-integration-noctalia-git=0.7.0.r0.g0000000-2
+ 	depends = noctalia
+ 	replaces = aqueous-shell-noctalia-intel-git
+ 
+ pkgname = aqueous-shell-pearl-git
+ 	pkgdesc = Optional Pearl shell preset for Aqueous Git
++	depends = xdg-desktop-portal-pearl-git
++	depends = xdg-desktop-portal-aqueous-git=0.7.0.r0.g0000000-2
+ 	depends = aqueous-integration-pearl-git=0.7.0.r0.g0000000-2
+ 	depends = pearl-git
+ 	replaces = aqueous-shell-pearl-intel-git
+ 
+ pkgname = aqueous-desktop-git
+ 	pkgdesc = Complete Aqueous Git desktop (shell selected through welcome)
++	depends = aqueous-shell-none-git=0.7.0.r0.g0000000-2
+ 	depends = aqueous-core-git>=0.7.0
+ 	depends = aqueous-session-git=0.7.0.r0.g0000000-2
+ 	depends = aqueous-welcome-git=0.7.0.r0.g0000000-2
+--- a/packaging/devario/aqueous-devario/.SRCINFO
++++ b/packaging/devario/aqueous-devario/.SRCINFO
+@@ -121,7 +121,6 @@
+ 	depends = wl-clipboard
+ 	depends = libnotify
+ 	depends = xdg-desktop-portal
+-	depends = xdg-desktop-portal-gtk
+ 	conflicts = aqueous-git
+ 	conflicts = aqueous-git-intel
+ 	conflicts = aqueous-git-dms
+@@ -148,6 +147,8 @@
+ pkgname = aqueous-shell-pearl
+ 	pkgdesc = Pearl shell dependency preset for Aqueous
+ 	arch = any
++	depends = xdg-desktop-portal-pearl
++	depends = xdg-desktop-portal-aqueous=1.0.2-2
+ 	depends = aqueous-integration-pearl=1.0.2-2
+ 	depends = pearl
+ 	conflicts = aqueous-git
+--- a/packaging/tests/test-devario-packages.py
++++ b/packaging/tests/test-devario-packages.py
+@@ -58,7 +58,7 @@
+                        for dep in package.get("depends", []))
+     assert f"aqueous-core={version}" in packages["aqueous-session"]["depends"]
+     assert packages["aqueous-integration-pearl"]["depends"] == [f"aqueous-session={version}"]
+-    assert packages["aqueous-shell-pearl"]["depends"] == [f"aqueous-integration-pearl={version}", "pearl"]
++    assert packages["aqueous-shell-pearl"]["depends"] == ["xdg-desktop-portal-pearl", f"xdg-desktop-portal-aqueous={version}", f"aqueous-integration-pearl={version}", "pearl"]
+     _, desktop = metadata(DEVARIO)
+     assert set(desktop) == {"devario-desktop"}
+     assert set(desktop["devario-desktop"]["depends"]) == {f"{name}={version}" for name in NAMES} | {"pearl", "pearl-greeter"}

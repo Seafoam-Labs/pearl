@@ -8,11 +8,60 @@ pub fn build(b: *std.Build) void {
     const plugin_examples = b.option([]const u8, "plugin-examples", "Prebuilt plugin examples and failure fixtures") orelse ".cache/plugin-examples";
     const wasm_plugins = b.option(bool, "wasm-plugins", "Build the experimental WebAssembly plugin helper") orelse false;
     const community_theme_repository = b.option(bool, "community-theme-repository", "Include the Seafoam GitHub community repository by default") orelse true;
+    const portal_variant = b.option(enum { stable, git }, "portal-variant", "Desktop portal and shell backend identity") orelse .stable;
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const release = b.option(bool, "release", "Strip production artifacts for reproducible ReleaseSafe packages") orelse false;
     if (release and optimize != .ReleaseSafe) @panic("-Drelease requires -Doptimize=ReleaseSafe");
     const bindings = b.dependency("gobject", .{ .target = target, .optimize = optimize });
+    const preview_options = b.addOptions();
+    preview_options.addOption(bool, "test_hooks", false);
+    const preview_module = @import("src/files/preview/build.zig").module(b, bindings, target, optimize, b.path("src/files/preview/root.zig"), preview_options.createModule(), b.createModule(.{ .root_source_file = b.path("src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize }));
+    const preview_main = b.createModule(.{ .root_source_file = b.path("src/preview_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    preview_main.addImport("previews", preview_module);
+    const preview_helper = b.addExecutable(.{ .name = "pearl-preview-helper", .root_module = preview_main });
+    const preview_install = b.addInstallArtifact(preview_helper, .{});
+    b.getInstallStep().dependOn(&preview_install.step);
+    const chooser_main = b.createModule(.{ .root_source_file = b.path("src/chooser_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    chooser_main.addImport("previews", preview_module);
+    chooser_main.addImport("file_chooser", @import("src/files/build.zig").module(b, b.path("src/files/chooser.zig"), chooser_main, bindings, preview_module, portal_variant == .git));
+    chooser_main.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    const chooser = b.addExecutable(.{ .name = "pearl-chooser", .root_module = chooser_main });
+    const chooser_build = b.step("build-chooser", "Build the shared native file chooser and isolated preview helper");
+    chooser_build.dependOn(&b.addInstallArtifact(chooser, .{}).step);
+    chooser_build.dependOn(&preview_install.step);
+    const portal_main = b.createModule(.{ .root_source_file = b.path("src/portal_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    if (portal_variant == .git) portal_main.addCMacro("PEARL_PORTAL_GIT", "1");
+    portal_main.addImport("previews", @import("src/files/preview/build.zig").module(b, bindings, target, optimize, b.path("src/files/preview/root.zig"), preview_module.import_table.get("build_options").?, portal_main));
+    portal_main.addImport("file_chooser", @import("src/files/build.zig").module(b, b.path("src/files/chooser.zig"), portal_main, bindings, portal_main.import_table.get("previews").?, portal_variant == .git));
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| portal_main.addImport(name, bindings.module(name));
+    portal_main.addImport("build_options", preview_module.import_table.get("build_options").?);
+    portal_main.addAnonymousImport("portal_style", .{ .root_source_file = b.path("resources/portal.css") });
+    for ([_][]const u8{ "libcurl", "libarchive", "libpng" }) |name| portal_main.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+    for ([_][]const u8{ "gtk4", "gio-unix-2.0" }) |name| portal_main.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+    portal_main.addCSourceFiles(.{ .files = &.{ "src/portal/backend.c", "src/portal/file_chooser.c", "src/portal/dialogs.c", "src/portal/settings.c", "src/portal/email.c", "src/portal/notification.c", "src/portal/print.c", "src/portal/print_worker.c", "src/portal/inhibit.c" }, .flags = &.{ "-std=c11", "-D_GNU_SOURCE", "-Wall", "-Wextra", "-Werror", "-Wno-deprecated-declarations", "-Wno-misleading-indentation" } });
+    portal_main.linkSystemLibrary("cups", .{ .use_pkg_config = .no });
+    const portal = b.addExecutable(.{ .name = "xdg-desktop-portal-pearl", .root_module = portal_main });
+    const portal_build = b.step("build-portal", "Build Pearl's desktop portal backend without changing session routing");
+    portal_build.dependOn(&b.addInstallArtifact(portal, .{}).step);
+    portal_build.dependOn(&preview_install.step);
+    const portal_tests = b.step("test-portals", "Run the portal contracts, shared chooser, print worker and staging checks in isolated sessions");
+    for ([_][]const u8{ "tests/portal/test_contracts.py", "tests/portal/test_native.py", "tests/portal/test_print_worker.py", "tests/portal/test_package.py", "tests/portal/test_frontend.py", "tests/portal/test_ipp.py" }) |script| {
+        const check = b.addSystemCommand(&.{ "python3", script });
+        check.step.dependOn(portal_build);
+        check.step.dependOn(chooser_build);
+        portal_tests.dependOn(&check.step);
+    }
+
+    const state_module = b.createModule(.{ .root_source_file = b.path("src/files/chooser/state.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    state_module.addImport("glib2", bindings.module("glib2"));
+    state_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .force });
+    const state_tests = b.addTest(.{ .root_module = state_module });
+    const state_run = b.addRunArtifact(state_tests);
+    b.step("test-file-chooser-state", "Test private chooser preference persistence").dependOn(&state_run.step);
+    portal_tests.dependOn(&state_run.step);
+    const preview_tests = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/files/preview/core/preview.zig"), .target = target, .optimize = optimize }) });
+    b.step("test-file-previews", "Test the shared thumbnail policy and helper protocol").dependOn(&b.addRunArtifact(preview_tests).step);
     if (b.option(bool, "codegen", "Build the pinned Ghostty GIR generator") orelse false) {
         if (b.lazyDependency("gobject_codegen", .{ .target = b.graph.host, .optimize = .ReleaseSafe })) |generator| {
             b.installArtifact(generator.artifact("translate-gir"));
@@ -134,6 +183,8 @@ pub fn build(b: *std.Build) void {
     scanner.generate("wl_output", 4);
     scanner.generate("ext_background_effect_manager_v1", 1);
     const native = b.createModule(.{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
+    portal_main.addImport("wayland", native);
+    portal_main.linkSystemLibrary("wayland-client", .{});
     const native_export = b.addInstallFile(scanner.result, "share/pearl/bindings/wayland.zig");
     b.step("generate-wayland", "Export generated native protocol bindings for review and reproducibility checks").dependOn(&native_export.step);
 
@@ -208,7 +259,8 @@ pub fn build(b: *std.Build) void {
     }
 
     const module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
-    configureApp(b, module, resources, false, wasm_plugins, community_theme_repository);
+    if (portal_variant == .git) module.addCMacro("PEARL_PORTAL_GIT", "1");
+    configureApp(b, module, resources, false, wasm_plugins, community_theme_repository, true, portal_variant == .git);
     module.addImport("wayland", native);
     module.strip = release;
     const app = b.addExecutable(.{ .name = "pearl", .root_module = module });
@@ -230,7 +282,8 @@ pub fn build(b: *std.Build) void {
 
         sm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
         sm.linkSystemLibrary("wayland-client", .{});
-        configureApp(b, sm, resources, instrumented, wasm_plugins, community_theme_repository);
+        if (portal_variant == .git) sm.addCMacro("PEARL_PORTAL_GIT", "1");
+        configureApp(b, sm, resources, instrumented, wasm_plugins, community_theme_repository, true, portal_variant == .git);
         sm.strip = release and !instrumented;
         const exe = b.addExecutable(.{ .name = if (instrumented) "pearl-settings-test" else "pearl-settings", .root_module = sm });
         const install = b.addInstallArtifact(exe, .{ .dest_dir = .{ .override = .{ .custom = if (instrumented) "test" else "bin" } } });
@@ -251,7 +304,7 @@ pub fn build(b: *std.Build) void {
     var production_locker: *std.Build.Step.Compile = undefined;
     for ([_]bool{ false, true }) |instrumented| {
         const lock_module = gtkModule(b, bindings, target, optimize, "src/lock_main.zig", pulse_module);
-        configureApp(b, lock_module, resources, instrumented, false, community_theme_repository);
+        configureApp(b, lock_module, resources, instrumented, false, community_theme_repository, false, portal_variant == .git);
         lock_module.addImport("pam", pam_module);
         lock_module.linkSystemLibrary("pam", .{});
         lock_module.strip = release and !instrumented;
@@ -483,7 +536,8 @@ pub fn build(b: *std.Build) void {
     b.step("test-adapter", "Exercise IPC recovery, policy and commands on private sockets and nested Aqueous").dependOn(&adapter_test.step);
 
     const test_module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
-    configureApp(b, test_module, resources, true, wasm_plugins, community_theme_repository);
+    if (portal_variant == .git) test_module.addCMacro("PEARL_PORTAL_GIT", "1");
+    configureApp(b, test_module, resources, true, wasm_plugins, community_theme_repository, true, portal_variant == .git);
     test_module.addImport("wayland", native);
     const integration_app = b.addExecutable(.{ .name = "pearl-integration", .root_module = test_module });
     const night_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_night_light.py", "--pearl" });
@@ -884,7 +938,7 @@ pub fn build(b: *std.Build) void {
     }
 }
 
-fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.LazyPath, test_hooks: bool, wasm_plugins: bool, community_theme_repository: bool) void {
+fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.LazyPath, test_hooks: bool, wasm_plugins: bool, community_theme_repository: bool, file_chooser: bool, git_variant: bool) void {
     module.linkSystemLibrary("libcurl", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("libarchive", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("libpng", .{ .use_pkg_config = .force });
@@ -894,6 +948,20 @@ fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.L
     options.addOption(bool, "wasm_plugins", wasm_plugins);
     options.addOption(bool, "community_theme_repository", community_theme_repository);
     module.addOptions("build_options", options);
+    if (!file_chooser) return;
+    const previews = b.createModule(.{ .root_source_file = b.path("src/files/preview/root.zig"), .target = module.resolved_target, .optimize = module.optimize, .link_libc = true });
+    for ([_][]const u8{ "gdk4", "gio2", "glib2", "gobject2", "gdkpixbuf2" }) |name| previews.addImport(name, module.import_table.get(name).?);
+    previews.addImport("build_options", module.import_table.get("build_options").?);
+    previews.addImport("diagnostics", module);
+    module.addImport("previews", previews);
+    module.addCSourceFile(.{ .file = b.path("src/services/portal_session.c"), .flags = &.{"-std=c11"} });
+    const chooser = b.createModule(.{ .root_source_file = b.path("src/files/chooser.zig"), .target = module.resolved_target, .optimize = module.optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| chooser.addImport(name, module.import_table.get(name).?);
+    chooser.addImport("previews", previews);
+    const chooser_options = b.addOptions();
+    chooser_options.addOption([:0]const u8, "helper_path", if (git_variant) "/usr/lib/pearl-git/pearl-preview-helper" else "/usr/lib/pearl/pearl-preview-helper");
+    chooser.addOptions("chooser_options", chooser_options);
+    module.addImport("file_chooser", chooser);
 }
 
 fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, source: []const u8, pulse: *std.Build.Module) *std.Build.Module {

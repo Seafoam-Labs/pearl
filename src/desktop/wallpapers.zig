@@ -5,7 +5,6 @@ const gdk = @import("gdk4");
 const gio = @import("gio2");
 const glib = @import("glib2");
 const object = @import("gobject2");
-const pixbuf = @import("gdkpixbuf2");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const slideshow = @import("../config/slideshow.zig");
@@ -19,8 +18,6 @@ const rows = 2;
 const slots = columns * rows;
 const thumb_width = 192;
 const thumb_height = 102;
-/// Decoded previews kept between pages and pane reopens.
-const cache_limit = 64;
 const selected_class = "pearl-wallpaper-selected";
 
 const Cell = struct {
@@ -43,8 +40,6 @@ pub const View = struct {
     request: crop_window.Request,
     cells: [slots]Cell = undefined,
     arena: std.heap.ArenaAllocator,
-    cache: std.StringHashMapUnmanaged(*gdk.Texture) = .{},
-    cache_dir_ready: bool = false,
     /// Display scale the current page was decoded for; previews are sharp at it.
     scale: c_int = 1,
     mapped: bool = false,
@@ -59,6 +54,7 @@ pub const View = struct {
     active: usize = 0,
 
     pub fn create(host: *gtk.Box, service: *Service, request: crop_window.Request) !*View {
+        @import("file_chooser").initPreviews();
         const self = try a.create(View);
         const header = w.row(8);
         header.append(w.label(tr("Wallpaper", "Hintergrundbild"), "pearl-card-title").as(gtk.Widget));
@@ -140,7 +136,6 @@ pub const View = struct {
     pub fn destroy(self: *View) void {
         self.generation += 1;
         self.cancelAll();
-        self.dropCache();
         self.arena.deinit();
         if (self.folder) |folder| a.free(folder);
         if (self.selected) |selected| a.free(selected);
@@ -215,15 +210,6 @@ pub const View = struct {
             cell.path = path;
             const label = alloc.dupeZ(u8, name) catch break;
             w.name(cell.button.as(gtk.Widget), label.ptr);
-            if (self.cache.get(path)) |texture| {
-                cell.picture.setPaintable(texture.as(gdk.Paintable));
-                cell.decoded = true;
-            } else if (self.diskThumb(path)) |texture| {
-                cell.picture.setPaintable(texture.as(gdk.Paintable));
-                self.cachePut(path, texture);
-                texture.unref();
-                cell.decoded = true;
-            }
             cell.button.as(gtk.Widget).setVisible(1);
         }
         var buffer: [32:0]u8 = undefined;
@@ -251,36 +237,8 @@ pub const View = struct {
             const thumb = a.create(Thumb) catch return;
             thumb.* = .{ .owner = self, .generation = self.generation, .cell = cell, .file = gio.File.newForPath(cell.path.?.ptr), .cancel = gio.Cancellable.new() };
             cell.thumb = thumb;
-            self.active += 1;
-            thumb.file.readAsync(0, thumb.cancel, Thumb.opened, thumb);
+            thumb.file.queryInfoAsync("standard::*,access::can-read,time::modified,time::modified-usec", .{ .nofollow_symlinks = true }, 0, thumb.cancel, Thumb.queried, thumb);
         }
-    }
-    fn cachePut(self: *View, path: []const u8, texture: *gdk.Texture) void {
-        if (self.cache.get(path) != null) return;
-        if (self.cache.count() >= cache_limit) self.dropCache();
-        const key = a.dupe(u8, path) catch return;
-        _ = texture.ref();
-        self.cache.put(a, key, texture) catch {
-            a.free(key);
-            texture.unref();
-        };
-    }
-    fn dropCache(self: *View) void {
-        var it = self.cache.iterator();
-        while (it.next()) |entry| {
-            a.free(@constCast(entry.key_ptr.*));
-            entry.value_ptr.*.unref();
-        }
-        self.cache.clearAndFree(a);
-    }
-    /// Previews live on disk keyed by path, size and mtime, so a page the user
-    /// has seen before paints without touching the source image again.
-    fn diskThumb(self: *View, path: []const u8) ?*gdk.Texture {
-        var arena = std.heap.ArenaAllocator.init(a);
-        defer arena.deinit();
-        const target = thumbPath(arena.allocator(), path, self.scale) orelse return null;
-        if (glib.fileTest(target.ptr, .{ .is_regular = true }) == 0) return null;
-        return gdk.Texture.newFromFilename(target.ptr, null);
     }
     /// Orphans in-flight decodes; they free themselves when their callback lands.
     fn cancelAll(self: *View) void {
@@ -289,8 +247,8 @@ pub const View = struct {
             cell.thumb = null;
             thumb.owner = null;
             thumb.cancel.cancel();
+            if (!thumb.query_pending) thumb.destroy();
         }
-        self.active = 0;
     }
 
     /// Committing through the preferences service keeps the wallpaper watch,
@@ -354,93 +312,36 @@ const Thumb = struct {
     cell: *Cell,
     file: *gio.File,
     cancel: *gio.Cancellable,
-    stream: ?*gio.InputStream = null,
+    query_pending: bool = true,
+    watch: ?*anyopaque = null,
     fn destroy(self: *Thumb) void {
-        if (self.stream) |stream| {
-            _ = stream.close(null, null);
-            stream.unref();
-        }
+        pearl_preview_unwatch(self.watch);
         self.file.unref();
         self.cancel.unref();
         a.destroy(self);
     }
-    /// Hands the texture to the cell only if the grid still shows this page.
-    fn settle(self: *Thumb, texture: ?*gdk.Texture) void {
+    fn ready(texture: ?*gdk.Texture, _: ?[*:0]const u8, data: ?*anyopaque) callconv(.c) void {
+        const self: *Thumb = @ptrCast(@alignCast(data.?));
+        const owner = self.owner orelse return;
+        if (owner.generation != self.generation) return;
+        self.cell.decoded = true;
+        if (texture) |image| self.cell.picture.setPaintable(image.as(gdk.Paintable));
+    }
+    fn queried(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Thumb = @ptrCast(@alignCast(data.?));
+        self.query_pending = false;
+        const info = self.file.queryInfoFinish(result, null);
+        defer if (info) |value| value.unref();
         const owner = self.owner orelse {
-            if (texture) |image| image.unref();
             self.destroy();
             return;
         };
-        self.owner = null;
-        owner.active -= 1;
-        if (owner.generation == self.generation) {
-            self.cell.thumb = null;
-            self.cell.decoded = true;
-            if (texture) |image| {
-                self.cell.picture.setPaintable(image.as(gdk.Paintable));
-                owner.cachePut(self.cell.path.?, image);
-            }
+        if (info) |value| {
+            value.setAttributeObject("standard::file", self.file.as(object.Object));
+            self.watch = pearl_preview_watch(value, @intCast(thumb_width * owner.scale), ready, self);
         }
-        if (texture) |image| image.unref();
-        owner.pump();
-        self.destroy();
-    }
-    fn storeThumb(self: *Thumb, image: *pixbuf.Pixbuf) void {
-        const owner = self.owner orelse return;
-        var arena = std.heap.ArenaAllocator.init(a);
-        defer arena.deinit();
-        const alloc = arena.allocator();
-        const target = thumbPath(alloc, self.cell.path.?, owner.scale) orelse return;
-        if (!owner.cache_dir_ready) {
-            owner.cache_dir_ready = true;
-            if (std.fs.path.dirname(target)) |dir| {
-                const dir_z = alloc.dupeZ(u8, dir) catch return;
-                _ = glib.mkdirWithParents(dir_z, 0o755);
-            }
-        }
-        _ = image.savev(target.ptr, "png", null, null, null);
-    }
-    fn opened(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
-        const self: *Thumb = @ptrCast(@alignCast(data.?));
-        const stream = self.file.readFinish(result, null) orelse {
-            self.settle(null);
-            return;
-        };
-        self.stream = stream.as(gio.InputStream);
-        if (self.owner == null) {
-            self.settle(null);
-            return;
-        }
-        // The loader fits inside the box, so a square box still covers the tile
-        // for square and portrait sources instead of decoding them too small.
-        const side = thumb_width * self.owner.?.scale;
-        pixbuf.Pixbuf.newFromStreamAtScaleAsync(self.stream.?, side, side, 1, self.cancel, Thumb.decoded, self);
-    }
-    fn decoded(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
-        const self: *Thumb = @ptrCast(@alignCast(data.?));
-        const image = pixbuf.Pixbuf.newFromStreamFinish(result, null) orelse {
-            self.settle(null);
-            return;
-        };
-        defer image.unref();
-        self.storeThumb(image);
-        self.settle(gdk.Texture.newForPixbuf(image));
+        if (self.watch == null) self.cell.decoded = true;
     }
 };
-
-fn thumbPath(alloc: std.mem.Allocator, path: []const u8, scale: c_int) ?[:0]u8 {
-    const z = alloc.dupeZ(u8, path) catch return null;
-    const file = gio.File.newForPath(z);
-    defer file.unref();
-    const info = file.queryInfo("standard::size,time::modified", .{ .nofollow_symlinks = true }, null, null) orelse return null;
-    defer info.unref();
-    var hasher = std.crypto.hash.sha2.Sha256.init(.{});
-    hasher.update(path);
-    var meta: [48]u8 = undefined;
-    const stamp = std.fmt.bufPrint(&meta, ":{d}:{d}:{d}", .{ info.getSize(), info.getAttributeUint64("time::modified"), scale }) catch return null;
-    hasher.update(stamp);
-    var digest: [32]u8 = undefined;
-    hasher.final(&digest);
-    const root = std.mem.span(glib.getUserCacheDir());
-    return std.fmt.allocPrintSentinel(alloc, "{s}/pearl/wallpaper-thumbs/{s}.png", .{ root, std.fmt.bytesToHex(digest, .lower) }, 0) catch null;
-}
+extern fn pearl_preview_watch(*gio.FileInfo, c_uint, *const fn (?*gdk.Texture, ?[*:0]const u8, ?*anyopaque) callconv(.c) void, ?*anyopaque) ?*anyopaque;
+extern fn pearl_preview_unwatch(?*anyopaque) void;

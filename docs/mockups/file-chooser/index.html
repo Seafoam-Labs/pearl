@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pearl file chooser design study</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="study">
+    <div><a href="../../FILE_CHOOSER_IMPLEMENTATION_PLAN.md">PEARL / DESIGN STUDY</a><h1>Pearl file chooser</h1><p>One chooser for Pearl, Coral, Phyto, and portal requests.</p><p><a href="portals.html">Explore the complete portal replacement ↗</a></p></div>
+    <div class="study-controls">
+      <label>Scenario<select id="scenario"><option value="wallpaper">Wallpaper images</option><option value="open">Open multiple files</option><option value="folder">Choose a folder</option><option value="save">Save a document</option><option value="portal">Portal attachment</option><option value="batch">Save multiple files</option></select></label>
+      <label>State<select id="state"><option value="ready">Ready</option><option value="loading">Loading</option><option value="empty">Empty folder</option><option value="denied">Permission denied</option><option value="offline">Disconnected location</option><option value="failed">Unavailable thumbnail</option></select></label>
+      <button id="theme">Light appearance</button>
+    </div>
+  </header>
+  <main class="window" aria-labelledby="chooser-title">
+    <header class="titlebar"><div class="brand" aria-hidden="true">◈</div><div><h2 id="chooser-title"></h2><span id="caller"></span></div><button id="close" class="icon-button" aria-label="Cancel selection">×</button></header>
+    <div class="toolbar">
+      <button id="places" class="icon-button places-toggle" aria-label="Toggle places" aria-expanded="false"></button>
+      <button id="back" class="icon-button" aria-label="Go back"></button><button id="up" class="icon-button" aria-label="Parent folder"></button>
+      <button id="location-toggle" class="breadcrumbs" title="Edit location (Ctrl+L)"></button><input id="location" aria-label="Location" hidden>
+      <button id="new-folder" class="icon-button" aria-label="New folder"></button>
+    </div>
+    <div class="workspace">
+      <aside id="sidebar" aria-label="Places"><span class="eyebrow">PLACES</span><nav id="place-list"></nav><div class="sidebar-note">Ctrl + L · Edit location<br>Ctrl + H · Hidden files</div></aside>
+      <section class="browser" aria-label="Folder contents">
+        <div class="browser-tools"><label class="search"><span id="search-icon" aria-hidden="true"></span><input id="search" placeholder="Filter this folder" aria-label="Filter this folder"></label><button id="sort" title="Reverse name sort">Name ↑</button><button id="view" class="icon-button" aria-label="Switch to list view"></button><button id="hidden" class="icon-button" aria-label="Show hidden files" aria-pressed="false"></button></div>
+        <div id="notice" role="status" hidden></div>
+        <div id="files" class="files" role="group" aria-label="Files"></div>
+        <div id="empty" class="empty" hidden></div>
+      </section>
+      <aside id="preview" class="preview" aria-label="Selection preview"></aside>
+    </div>
+    <div id="save-fields" class="save-fields" hidden><label>File name<input id="filename" value="Field notes.txt" autocomplete="off"></label><span id="save-hint">The document will be saved in the folder above.</span></div>
+    <div id="batch-files" class="batch-files" hidden><strong>3 files to save</strong><span>Field notes.txt · Coast.jpg · Sketch.png</span><small>Existing names receive a numbered suffix. No files are replaced.</small></div>
+    <div id="portal-options" class="portal-options" hidden><label><input id="original" type="checkbox" checked> Attach original files</label></div>
+    <footer><div class="footer-info"><span id="selection-status" role="status"></span><label class="filter-label"><span class="sr-only">File types</span><select id="filter"></select></label></div><div class="actions"><button id="cancel">Cancel</button><button id="accept" class="primary">Select</button></div></footer>
+  </main>
+  <section class="annotation"><span class="annotation-number">01</span><div><strong id="annotation-title"></strong><p id="annotation-body"></p></div></section>
+  <p class="disclaimer">Interactive mockup · Illustrative files and vector thumbnails · No access to your filesystem or settings</p>
+  <dialog id="confirm"><form method="dialog"><div id="confirm-icon" class="dialog-icon"></div><h2 id="confirm-title"></h2><p id="confirm-copy"></p><label id="folder-field" hidden>Folder name<input id="folder-name" value="New folder"></label><div class="actions"><button id="confirm-cancel" value="cancel">Cancel</button><button id="confirm-ok" class="primary" value="accept">Replace</button></div></form></dialog>
+  <div id="toast" role="status" hidden></div>
+  <script src="mockup.js"></script>
+</body>
+</html>

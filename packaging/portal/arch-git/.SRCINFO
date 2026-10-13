@@ -1,0 +1,24 @@
+pkgbase = xdg-desktop-portal-pearl-git
+	pkgdesc = Pearl desktop portal backend (Git version)
+	pkgver = 0.2.2.r177.gcdf7436
+	pkgrel = 1
+	epoch = 1
+	url = https://github.com/Seafoam-Labs/pearl
+	arch = x86_64
+	license = LicenseRef-Pearl-Unlicensed
+	makedepends = git
+	makedepends = zig=0.16.0
+	makedepends = pkgconf
+	makedepends = gcc
+	makedepends = python>=3.14
+	depends = pearl-git=1:0.2.2.r177.gcdf7436
+	depends = xdg-desktop-portal
+	depends = libcups
+	depends = xdg-utils
+	options = !strip
+	options = !debug
+	backup = etc/pearl-git/portal-policy.conf
+	source = pearl::git+https://github.com/Seafoam-Labs/pearl.git
+	sha256sums = SKIP
+
+pkgname = xdg-desktop-portal-pearl-git

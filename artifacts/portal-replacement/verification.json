@@ -1,0 +1,59 @@
+{
+  "scope": "Wayland-only Pearl portal replacement candidate; installed-image acceptance pending",
+  "recorded_at": "2026-10-12T21:35:29.982184+00:00",
+  "checks": [
+    {
+      "name": "wayland-build",
+      "status": "passed",
+      "log": "verification/wayland-build.log"
+    },
+    {
+      "name": "git-backend-build",
+      "status": "passed",
+      "log": "verification/git-backend-build.log"
+    },
+    {
+      "name": "coral-build",
+      "status": "passed",
+      "log": "verification/coral-build.log"
+    },
+    {
+      "name": "phyto-build",
+      "status": "passed",
+      "log": "verification/phyto-build.log"
+    },
+    {
+      "name": "portal-preview-release-tests",
+      "status": "passed",
+      "log": "verification/portal-preview-release-tests.log"
+    },
+    {
+      "name": "aqueous-staged-integration",
+      "status": "passed",
+      "log": "verification/aqueous-staged-integration.log"
+    },
+    {
+      "name": "coral-native",
+      "status": "passed",
+      "log": "verification/coral-native.log"
+    },
+    {
+      "name": "phyto-context-native",
+      "status": "passed",
+      "log": "verification/phyto-context-native.log"
+    }
+  ],
+  "baseline_failure": "Broad root unit suite: 284/285 pass; missing existing Polkit activity-auth-conversation-started log event.",
+  "remaining_acceptance": [
+    "Sandboxed GTK/Qt applications (host GTK/Qt and real document mount pass)",
+    "Physical printer/driver and real mail attachment clients",
+    "Full accessibility, scale, RTL and parent/policy race matrix",
+    "GTK-free Devario install/upgrade/removal/recovery/capture/performance checks"
+  ],
+  "limitations": [
+    "No Pearl user-switch action exists; owned switch holds cannot enforce switches outside Pearl."
+  ],
+  "live_session_modified": false,
+  "aqueous_source": "/home/zoey/RiderProjects/Aqueous",
+  "companion_patch": "packaging/portal/aqueous-integration.patch"
+}

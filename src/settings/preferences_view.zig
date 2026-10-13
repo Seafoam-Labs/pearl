@@ -1,6 +1,7 @@
 //! Appearance and Advanced presentation for the normal application host.
 //! Form extraction preserves every other Pearl preference; only Editor retains
 //! drafts. Wallpaper preview/chooser never changes committed appearance.
+const files = @import("file_chooser");
 const std = @import("std");
 const gtk = @import("gtk4");
 const gdk = @import("gdk4");
@@ -43,7 +44,7 @@ pub const View = struct {
     preview: ?*Preview = null,
     preview_ready: bool = false,
     choose: *gtk.Button,
-    picker: ?*gtk.FileChooserDialog = null,
+    picker: ?*gtk.Dialog = null,
     slideshow_enabled: *gtk.Switch = undefined,
     slideshow_folder: *gtk.Entry = undefined,
     slideshow_choose: *gtk.Button = undefined,
@@ -51,7 +52,7 @@ pub const View = struct {
     slideshow_order: *gtk.DropDown = undefined,
     slideshow_transition: *gtk.DropDown = undefined,
     slideshow_duration: *gtk.SpinButton = undefined,
-    folder_picker: ?*gtk.FileChooserDialog = null,
+    folder_picker: ?*gtk.Dialog = null,
     message: *gtk.Label,
     mode_hint: *gtk.Label,
     qt_enabled: *gtk.Switch,
@@ -519,27 +520,27 @@ pub const View = struct {
             picker.as(gtk.Window).present();
             return;
         }
-        const picker = object.ext.newInstance(gtk.FileChooserDialog, .{ .title = self.t("Choose wallpaper image", "Hintergrundbild auswählen"), .action = gtk.FileChooserAction.open, .use_header_bar = @as(c_int, 1) });
+        const picker = files.create(self.t("Choose wallpaper image", "Hintergrundbild auswählen"), .open);
+        files.setStateKey(picker, "first-party/wallpaper-image");
         self.picker = picker;
         _ = picker.ref();
         const window = picker.as(gtk.Window);
         window.setTransientFor(self.window);
         window.setModal(1);
-        window.setDefaultSize(680, 520);
+        window.setDefaultSize(1040, 680);
+        files.setLocalOnly(picker, 1);
         const dialog = picker.as(gtk.Dialog);
-        _ = dialog.addButton(self.t("_Cancel", "_Abbrechen"), @intFromEnum(gtk.ResponseType.cancel));
-        _ = dialog.addButton(self.t("_Select", "_Auswählen"), @intFromEnum(gtk.ResponseType.accept));
-        dialog.setDefaultResponse(@intFromEnum(gtk.ResponseType.accept));
         const filter = gtk.FileFilter.new();
         filter.setName("PNG and JPEG images");
         filter.addMimeType("image/png");
         filter.addMimeType("image/jpeg");
-        picker.as(gtk.FileChooser).addFilter(filter);
+        files.addFilter(picker, filter);
+        filter.unref();
         const current = self.entries[2].as(gtk.Editable).getText();
         if (current[0] == '/') {
             const file = gio.File.newForPath(current);
             defer file.unref();
-            _ = picker.as(gtk.FileChooser).setFile(file, null);
+            files.setFile(picker, file);
         }
         _ = gtk.Dialog.signals.response.connect(dialog, *View, wallpaperChosen, self, .{});
         window.present();
@@ -547,7 +548,7 @@ pub const View = struct {
     fn wallpaperChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
         defer self.closePicker();
         if (response != @intFromEnum(gtk.ResponseType.accept) or !self.editor.editable()) return;
-        const file = object.ext.cast(gtk.FileChooser, dialog).?.getFile() orelse return;
+        const file = files.getFile(dialog) orelse return;
         defer file.unref();
         const path = file.getPath() orelse {
             self.message.setText(self.t("Choose an image stored on this computer.", "Wähle ein lokal gespeichertes Bild."));
@@ -577,22 +578,21 @@ pub const View = struct {
             picker.as(gtk.Window).present();
             return;
         }
-        const picker = object.ext.newInstance(gtk.FileChooserDialog, .{ .title = self.t("Choose wallpaper folder", "Hintergrundbild-Ordner auswählen"), .action = gtk.FileChooserAction.select_folder, .use_header_bar = @as(c_int, 1) });
+        const picker = files.create(self.t("Choose wallpaper folder", "Hintergrundbild-Ordner auswählen"), .select_folder);
+        files.setStateKey(picker, "first-party/wallpaper-folder");
         self.folder_picker = picker;
         _ = picker.ref();
         const window = picker.as(gtk.Window);
         window.setTransientFor(self.window);
         window.setModal(1);
-        window.setDefaultSize(680, 520);
+        window.setDefaultSize(1040, 680);
+        files.setLocalOnly(picker, 1);
         const dialog = picker.as(gtk.Dialog);
-        _ = dialog.addButton(self.t("_Cancel", "_Abbrechen"), @intFromEnum(gtk.ResponseType.cancel));
-        _ = dialog.addButton(self.t("_Select", "_Auswählen"), @intFromEnum(gtk.ResponseType.accept));
-        dialog.setDefaultResponse(@intFromEnum(gtk.ResponseType.accept));
         const current = self.slideshow_folder.as(gtk.Editable).getText();
         if (current[0] == '/') {
             const file = gio.File.newForPath(current);
             defer file.unref();
-            _ = picker.as(gtk.FileChooser).setFile(file, null);
+            files.setFile(picker, file);
         }
         _ = gtk.Dialog.signals.response.connect(dialog, *View, folderChosen, self, .{});
         window.present();
@@ -600,7 +600,7 @@ pub const View = struct {
     fn folderChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
         defer self.closeFolderPicker();
         if (response != @intFromEnum(gtk.ResponseType.accept) or !self.editor.editable()) return;
-        const file = object.ext.cast(gtk.FileChooser, dialog).?.getFile() orelse return;
+        const file = files.getFile(dialog) orelse return;
         defer file.unref();
         const path = file.getPath() orelse {
             self.message.setText(self.t("Choose a folder stored on this computer.", "Wähle einen lokal gespeicherten Ordner."));
