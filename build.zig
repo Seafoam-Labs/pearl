@@ -47,7 +47,6 @@ pub fn build(b: *std.Build) void {
     const capture_tests = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/capture/sources.zig"), .target = target, .optimize = optimize }) });
     b.step("test-capture-picker", "Test capture source parsing and byte preservation").dependOn(&b.addRunArtifact(capture_tests).step);
     const portal_main = b.createModule(.{ .root_source_file = b.path("src/portal_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    if (portal_variant == .git) portal_main.addCMacro("PEARL_PORTAL_GIT", "1");
     portal_main.addImport("previews", @import("src/files/preview/build.zig").module(b, bindings, target, optimize, b.path("src/files/preview/root.zig"), preview_module.import_table.get("build_options").?, portal_main));
     portal_main.addImport("file_chooser", @import("src/files/build.zig").module(b, b.path("src/files/chooser.zig"), portal_main, bindings, portal_main.import_table.get("previews").?, portal_variant == .git));
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| portal_main.addImport(name, bindings.module(name));
@@ -55,7 +54,9 @@ pub fn build(b: *std.Build) void {
     portal_main.addAnonymousImport("portal_style", .{ .root_source_file = b.path("resources/portal.css") });
     for ([_][]const u8{ "libcurl", "libarchive", "libpng" }) |name| portal_main.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     for ([_][]const u8{ "gtk4", "gio-unix-2.0" }) |name| portal_main.linkSystemLibrary(name, .{ .use_pkg_config = .force });
-    portal_main.addCSourceFiles(.{ .files = &.{ "src/portal/backend.c", "src/portal/file_chooser.c", "src/portal/dialogs.c", "src/portal/settings.c", "src/portal/email.c", "src/portal/notification.c", "src/portal/print.c", "src/portal/print_worker.c", "src/portal/inhibit.c" }, .flags = &.{ "-std=c11", "-D_GNU_SOURCE", "-Wall", "-Wextra", "-Werror", "-Wno-deprecated-declarations", "-Wno-misleading-indentation" } });
+    const portal_identity = b.addOptions();
+    portal_identity.addOption(bool, "git_variant", portal_variant == .git);
+    portal_main.addOptions("portal_identity", portal_identity);
     portal_main.linkSystemLibrary("cups", .{ .use_pkg_config = .no });
     const portal = b.addExecutable(.{ .name = "xdg-desktop-portal-pearl", .root_module = portal_main });
     const portal_build = b.step("build-portal", "Build Pearl's desktop portal backend without changing session routing");
@@ -64,10 +65,20 @@ pub fn build(b: *std.Build) void {
     portal_build.dependOn(&portal_install.step);
     portal_build.dependOn(&preview_install.step);
     portal_build.dependOn(&capture_install.step);
+    const session_fixture_module = b.createModule(.{ .root_source_file = b.path("src/portal/session_test_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    session_fixture_module.addOptions("portal_identity", portal_identity);
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| session_fixture_module.addImport(name, bindings.module(name));
+    session_fixture_module.linkSystemLibrary("gio-2.0", .{ .use_pkg_config = .force });
+    session_fixture_module.addCSourceFile(.{ .file = b.path("tests/portal/session_harness.c"), .flags = &.{"-Dmain=pearl_session_harness_main"} });
+    const session_fixture = b.addExecutable(.{ .name = "portal-session-harness", .root_module = session_fixture_module });
+    const session_fixture_install = b.addInstallArtifact(session_fixture, .{});
+    const session_fixture_build = b.step("build-portal-session-test", "Build the private portal session fixture using the Zig session adapter");
+    session_fixture_build.dependOn(&session_fixture_install.step);
     const portal_tests = b.step("test-portals", "Run the portal contracts, shared chooser, print worker and staging checks in isolated sessions");
-    for ([_][]const u8{ "tests/portal/test_contracts.py", "tests/portal/test_native.py", "tests/portal/test_print_worker.py", "tests/portal/test_package.py", "tests/portal/test_frontend.py", "tests/portal/test_ipp.py" }) |script| {
+    for ([_][]const u8{ "tests/portal/test_startup.py", "tests/portal/test_contracts.py", "tests/portal/test_native.py", "tests/portal/test_print_worker.py", "tests/portal/test_package.py", "tests/portal/test_frontend.py", "tests/portal/test_ipp.py" }) |script| {
         const check = b.addSystemCommand(&.{ "python3", script });
         check.step.dependOn(portal_build);
+        check.step.dependOn(&session_fixture_install.step);
         check.step.dependOn(chooser_build);
         portal_tests.dependOn(&check.step);
     }
@@ -280,7 +291,6 @@ pub fn build(b: *std.Build) void {
     }
 
     const module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
-    if (portal_variant == .git) module.addCMacro("PEARL_PORTAL_GIT", "1");
     configureApp(b, module, resources, false, wasm_plugins, community_theme_repository, true, portal_variant == .git);
     module.addImport("wayland", native);
     module.strip = release;
@@ -303,7 +313,6 @@ pub fn build(b: *std.Build) void {
 
         sm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
         sm.linkSystemLibrary("wayland-client", .{});
-        if (portal_variant == .git) sm.addCMacro("PEARL_PORTAL_GIT", "1");
         configureApp(b, sm, resources, instrumented, wasm_plugins, community_theme_repository, true, portal_variant == .git);
         sm.strip = release and !instrumented;
         const exe = b.addExecutable(.{ .name = if (instrumented) "pearl-settings-test" else "pearl-settings", .root_module = sm });
@@ -557,7 +566,6 @@ pub fn build(b: *std.Build) void {
     b.step("test-adapter", "Exercise IPC recovery, policy and commands on private sockets and nested Aqueous").dependOn(&adapter_test.step);
 
     const test_module = gtkModule(b, bindings, target, optimize, "src/main.zig", pulse_module);
-    if (portal_variant == .git) test_module.addCMacro("PEARL_PORTAL_GIT", "1");
     configureApp(b, test_module, resources, true, wasm_plugins, community_theme_repository, true, portal_variant == .git);
     test_module.addImport("wayland", native);
     const integration_app = b.addExecutable(.{ .name = "pearl-integration", .root_module = test_module });
@@ -975,7 +983,9 @@ fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.L
     previews.addImport("build_options", module.import_table.get("build_options").?);
     previews.addImport("diagnostics", module);
     module.addImport("previews", previews);
-    module.addCSourceFile(.{ .file = b.path("src/services/portal_session.c"), .flags = &.{"-std=c11"} });
+    const portal_identity = b.addOptions();
+    portal_identity.addOption(bool, "git_variant", git_variant);
+    module.addOptions("portal_identity", portal_identity);
     const chooser = b.createModule(.{ .root_source_file = b.path("src/files/chooser.zig"), .target = module.resolved_target, .optimize = module.optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| chooser.addImport(name, module.import_table.get(name).?);
     chooser.addImport("previews", previews);

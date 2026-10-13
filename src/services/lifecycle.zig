@@ -706,11 +706,11 @@ fn narrow(value: db.Text(512)) db.Text(128) {
     return out;
 }
 
-extern fn pearl_session_portal_start(*const fn (?*anyopaque) callconv(.c) void, ?*anyopaque) void;
-extern fn pearl_session_portal_stop() void;
-extern fn pearl_session_portal_holds() c_uint;
-extern fn pearl_session_portal_update(c_int) void;
-extern fn pearl_session_portal_begin_end(*const fn (?*anyopaque, c_int) callconv(.c) void) void;
+const pearl_session_portal_start = @import("../portal/portal_session.zig").pearl_session_portal_start;
+const pearl_session_portal_stop = @import("../portal/portal_session.zig").pearl_session_portal_stop;
+const pearl_session_portal_holds = @import("../portal/portal_session.zig").pearl_session_portal_holds;
+const pearl_session_portal_update = @import("../portal/portal_session.zig").pearl_session_portal_update;
+const pearl_session_portal_begin_end = @import("../portal/portal_session.zig").pearl_session_portal_begin_end;
 
-extern fn pearl_session_portal_reason() [*:0]u8;
-extern fn pearl_session_portal_abort_end() void;
+const pearl_session_portal_reason = @import("../portal/portal_session.zig").pearl_session_portal_reason;
+const pearl_session_portal_abort_end = @import("../portal/portal_session.zig").pearl_session_portal_abort_end;

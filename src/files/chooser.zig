@@ -1364,33 +1364,6 @@ pub fn saveFinish(result: *gio.AsyncResult, err: ?*?*glib.Error) callconv(.c) ?*
     defer u.unref(files);
     return u.modelItem(gio.File, files, 0);
 }
-// The existing C portal backend uses these ABI names. Zig callers
-// import the native functions above; there is no C implementation or translation.
-comptime {
-    @export(&create, .{ .name = "pearl_file_chooser_new" });
-    @export(&setStateKey, .{ .name = "pearl_file_chooser_set_state_key" });
-    @export(&setFile, .{ .name = "pearl_file_chooser_set_file" });
-    @export(&setFolder, .{ .name = "pearl_file_chooser_set_folder" });
-    @export(&setName, .{ .name = "pearl_file_chooser_set_name" });
-    @export(&setMultiple, .{ .name = "pearl_file_chooser_set_multiple" });
-    @export(&setLocalOnly, .{ .name = "pearl_file_chooser_set_local_only" });
-    @export(&addFilter, .{ .name = "pearl_file_chooser_add_filter" });
-    @export(&setFilter, .{ .name = "pearl_file_chooser_set_filter" });
-    @export(&getFilter, .{ .name = "pearl_file_chooser_get_filter" });
-    @export(&getFile, .{ .name = "pearl_file_chooser_get_file" });
-    @export(&getFiles, .{ .name = "pearl_file_chooser_get_files" });
-    @export(&setAcceptLabel, .{ .name = "pearl_file_chooser_set_accept_label" });
-    @export(&setCaller, .{ .name = "pearl_file_chooser_set_caller" });
-    @export(&setBatch, .{ .name = "pearl_file_chooser_set_batch" });
-    @export(&setChoices, .{ .name = "pearl_file_chooser_set_choices" });
-    @export(&getChoices, .{ .name = "pearl_file_chooser_get_choices" });
-    @export(&initPreviews, .{ .name = "pearl_file_previews_init" });
-    @export(&openAsync, .{ .name = "pearl_file_chooser_open_async" });
-    @export(&saveAsync, .{ .name = "pearl_file_chooser_save_async" });
-    @export(&folderAsync, .{ .name = "pearl_file_chooser_folder_async" });
-    @export(&openFinish, .{ .name = "pearl_file_chooser_open_finish" });
-    @export(&saveFinish, .{ .name = "pearl_file_chooser_save_finish" });
-}
 pub export fn pearl_file_appearance(native: c_int) void {
     style.appearance(native != 0);
 }

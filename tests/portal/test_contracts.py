@@ -23,7 +23,7 @@ def client(binary):
     bus=Gio.DBusConnection.new_for_address_sync(address,flags,None,None)
     attacker=Gio.DBusConnection.new_for_address_sync(address,flags,None,None)
     bus.call_sync('org.freedesktop.DBus','/org/freedesktop/DBus','org.freedesktop.DBus','RequestName',GLib.Variant('(su)',('org.freedesktop.portal.Desktop',4)),GLib.VariantType.new('(u)'),0,3000,None)
-    shell=subprocess.Popen([str(ROOT/'artifacts/portal-replacement/session-harness')],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    shell=subprocess.Popen([str(ROOT/'zig-out/bin/portal-session-harness')],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     assert shell.stdout.readline().strip()=='Ready'
     process=subprocess.Popen([str(binary)],env={**os.environ,'DBUS_SYSTEM_BUS_ADDRESS':address},stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     destination='org.freedesktop.impl.portal.desktop.pearl';path='/org/freedesktop/portal/desktop'
@@ -137,7 +137,7 @@ def client(binary):
         assert shell_call('Notices').unpack()==(1,2)
         shell.terminate();shell.communicate(timeout=5)
         time.sleep(.1)
-        shell=subprocess.Popen([str(ROOT/'artifacts/portal-replacement/session-harness')],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        shell=subprocess.Popen([str(ROOT/'zig-out/bin/portal-session-harness')],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         assert shell.stdout.readline().strip()=='Ready'
         time.sleep(.2)
         call('org.freedesktop.impl.portal.Notification','AddNotification',other)
@@ -219,10 +219,7 @@ def client(binary):
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--client',action='store_true');parser.add_argument('--binary',type=Path,default=ROOT/'zig-out/bin/xdg-desktop-portal-pearl');args=parser.parse_args()
     if args.client:return client(args.binary.resolve())
-    output=ROOT/'artifacts/portal-replacement/session-harness'
-    output.parent.mkdir(parents=True,exist_ok=True)
-    flags=subprocess.check_output(['pkg-config','--cflags','--libs','gio-2.0'],text=True).split()
-    subprocess.run(['cc',str(ROOT/'tests/portal/session_harness.c'),str(ROOT/'src/services/portal_session.c'),'-o',str(output),*flags],check=True)
+    assert (ROOT/'zig-out/bin/portal-session-harness').is_file(), 'Run zig build build-portal-session-test first'
     with PrivateSession(ROOT/'artifacts/portal-replacement/contracts',tool_prefix=fixture_prefix()) as session:
         result=subprocess.run([sys.executable,Path(__file__).resolve(),'--client','--binary',args.binary.resolve()],env={**session.env,'G_DEBUG':'fatal-warnings','GIO_USE_VFS':'local','GSETTINGS_BACKEND':'memory'},cwd=session.base,capture_output=True,text=True,timeout=40)
         print(result.stdout);print(result.stderr,file=sys.stderr)

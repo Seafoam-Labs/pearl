@@ -46,12 +46,12 @@ The working tree now contains:
   this fixes nondeterministic GIO thread-start failures without raising the cap.
 - Settings, the shell wallpaper selector, Phyto destination selection and Coral
   open/save now use the shared chooser. No production `GtkFileDialog` or
-  `GtkFileChooserDialog` call remains in those source trees. Thin exported symbols
-  serve the remaining C portal handlers; Zig hosts import the chooser module directly.
+  `GtkFileChooserDialog` call remains in those source trees. All hosts, including
+  the portal backend, import the native Zig chooser module directly.
 - `src/portal/`: a native backend with all eleven pinned interface contracts,
   trusted-frontend checks, owned/cancellable requests, committed appearance,
   managed policy, consent dialogs and mail/notification/session adapters.
-  `src/services/portal_session.c` connects application holds and query-end state
+  `src/portal/portal_session.zig` connects application holds and query-end state
   to Pearl's lifecycle; sleep/idle additionally acquire owned logind FDs.
   Notifications preserve action routing across backend restarts using private,
   bus/service-owner-bound runtime state, and discard stale server IDs.
@@ -74,6 +74,31 @@ The working tree now contains:
   Staged stable/Git tests cover selection, frozen active-session identity and
   package metadata. The installed desktop and packages have not been changed.
 
+### Zig portal runtime and startup correction (2026-10-13)
+
+The nine portal implementation files and the shell session adapter are now Zig.
+`src/portal_main.zig` calls `src/portal/backend.zig` directly; chooser, preview and
+appearance integration use Zig imports. The C implementations, private headers
+and chooser C export bridge have been removed. `ffi.zig` declares external
+GTK/GLib/libc/CUPS calls using the existing generated GTK/GIO object types and
+target-provided libc layouts. Stable/Git identities are Zig build options.
+The pinned XML generator now produces `src/portal/contracts.zig`.
+
+Before initializing GTK, the backend calls `gtk.disablePortals()`. Otherwise GTK
+can synchronously request public portal settings while the public frontend waits
+for this backend to register its name. The October 13 login journal showed both
+services timing out and Pearl taking 15.25 seconds to become ready, versus 0.44
+seconds on October 12.
+
+`tests/portal/test_startup.py` now runs in the portal suite. It holds a public
+Settings reply pending and requires backend readiness within five seconds, both
+with the default environment and with `GTK_USE_PORTAL=1`. It also activates the
+real frontend and backend on demand on a private bus. The old installed backend
+fails the blocked-reply test; the Zig backend passed at about 25 ms, with cold
+activation at about 47 ms in the initial run. These measure the isolated backend,
+not full desktop startup. The session contract fixture links the Zig adapter;
+its independent C D-Bus client remains test-only.
+
 Validation commands, from the repository root:
 
 ```sh
@@ -81,6 +106,7 @@ zig build build-portal build-chooser build-settings build-integration build-lock
 zig build build-portal -Dportal-variant=git --prefix zig-out/portal-git -Doptimize=ReleaseSafe
 zig build test-file-previews test-release-tools -Doptimize=ReleaseSafe
 zig build test-portals -Doptimize=ReleaseSafe
+python3 tests/portal/test_startup.py --binary zig-out/portal-git/bin/xdg-desktop-portal-pearl --output artifacts/portal-startup-git
 python3 tests/portal/test_aqueous.py --source /home/zoey/RiderProjects/Aqueous
 ```
 
