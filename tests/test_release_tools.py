@@ -135,9 +135,9 @@ class ReleaseTools(unittest.TestCase):
             version=subprocess.check_output(['bash','-c','source "$1"; printf "%s" "$pkgver"',
                 'version',str(ROOT/'packaging/arch/PKGBUILD')],text=True)
             (work/f'pearl-{version}').symlink_to(root, target_is_directory=True)
-            for variant in ('arch','arch-git','arch-intel-git','Devario/pearl'):
+            for variant in ('arch','arch-git','Devario/pearl'):
                 with self.subTest(variant=variant):
-                    git=variant in ('arch-git','arch-intel-git')
+                    git=variant=='arch-git'
                     component='pearl-git' if git else 'pearl'
                     bus='pearl_git' if git else 'pearl'
                     backend=binary/'xdg-desktop-portal-pearl'

@@ -12,6 +12,7 @@ pub const Event = struct {
 };
 
 pub const events: []const Event = &.{
+    .{ .name = "activity-auth-conversation-started", .scopes = &.{.services} },
     .{ .name = "activity-auth-presented", .scopes = &.{.services} },
     .{ .name = "app-index-ready", .scopes = &.{.desktop} },
     .{ .name = "appearance", .scopes = &.{.gallery} },
