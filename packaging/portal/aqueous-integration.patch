@@ -135,7 +135,7 @@
  package_aqueous-shell-pearl() {
      pkgdesc="Aqueous aqueous-shell-pearl"
 -    depends=("aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
-+    depends=("xdg-desktop-portal-pearl" "xdg-desktop-portal-aqueous=$pkgver-$pkgrel" "aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
++    depends=("xdg-desktop-portal-aqueous=$pkgver-$pkgrel" "aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
      conflicts=('aqueous-git' 'aqueous-git-intel' 'aqueous-git-dms' 'aqueous-shell-pearl-bin')
      : # Dependency-only preset.
  }
@@ -190,7 +190,7 @@
      replaces=('aqueous-shell-pearl-intel-git')
      pkgdesc='Optional Pearl shell preset for Aqueous Git'
 -    depends=("aqueous-integration-pearl-$_channel=$pkgver-$pkgrel" 'pearl-git')
-+    depends=("xdg-desktop-portal-pearl-git" "xdg-desktop-portal-aqueous-git=$pkgver-$pkgrel" "aqueous-integration-pearl-$_channel=$pkgver-$pkgrel" 'pearl-git')
++    depends=("xdg-desktop-portal-aqueous-git=$pkgver-$pkgrel" "aqueous-integration-pearl-$_channel=$pkgver-$pkgrel" 'pearl-git')
  }
  package_aqueous-desktop-git() {
      replaces=('aqueous-desktop-intel-git')
@@ -223,7 +223,7 @@
      pkgdesc='Pearl shell dependency preset for Aqueous'
      arch=('any')
 -    depends=("aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
-+    depends=("xdg-desktop-portal-pearl" "xdg-desktop-portal-aqueous=$pkgver-$pkgrel" "aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
++    depends=("xdg-desktop-portal-aqueous=$pkgver-$pkgrel" "aqueous-integration-pearl=$pkgver-$pkgrel" "pearl")
      conflicts=('aqueous-git' 'aqueous-git-intel' 'aqueous-git-dms' 'aqueous-shell-pearl-bin')
      : # Dependency-only preset; devario-desktop owns the session selection.
  }
@@ -265,16 +265,15 @@
  	depends = aqueous-integration-noctalia=1.0.2-1
  	depends = noctalia
  	conflicts = aqueous-git
-@@ -214,6 +220,8 @@
+@@ -214,6 +220,7 @@
  
  pkgname = aqueous-shell-pearl
  	pkgdesc = Aqueous aqueous-shell-pearl
-+	depends = xdg-desktop-portal-pearl
 +	depends = xdg-desktop-portal-aqueous=1.0.2-1
  	depends = aqueous-integration-pearl=1.0.2-1
  	depends = pearl
  	conflicts = aqueous-git
-@@ -224,6 +232,7 @@
+@@ -224,6 +231,7 @@
  pkgname = aqueous-desktop
  	pkgdesc = Complete stable Aqueous desktop (shell selected through welcome)
  	install = aqueous-desktop.install
@@ -304,7 +303,7 @@
  	replaces = aqueous-session-intel-git
  	backup = etc/xdg/aqueous-git/wm.toml
  	backup = etc/xdg/aqueous-git/outputs.toml
-@@ -92,24 +96,29 @@
+@@ -92,24 +96,28 @@
  
  pkgname = aqueous-shell-dms-git
  	pkgdesc = Optional DMS shell preset for Aqueous Git
@@ -322,7 +321,6 @@
  
  pkgname = aqueous-shell-pearl-git
  	pkgdesc = Optional Pearl shell preset for Aqueous Git
-+	depends = xdg-desktop-portal-pearl-git
 +	depends = xdg-desktop-portal-aqueous-git=0.7.0.r0.g0000000-2
  	depends = aqueous-integration-pearl-git=0.7.0.r0.g0000000-2
  	depends = pearl-git
@@ -344,11 +342,10 @@
  	conflicts = aqueous-git
  	conflicts = aqueous-git-intel
  	conflicts = aqueous-git-dms
-@@ -148,6 +147,8 @@
+@@ -148,6 +147,7 @@
  pkgname = aqueous-shell-pearl
  	pkgdesc = Pearl shell dependency preset for Aqueous
  	arch = any
-+	depends = xdg-desktop-portal-pearl
 +	depends = xdg-desktop-portal-aqueous=1.0.2-2
  	depends = aqueous-integration-pearl=1.0.2-2
  	depends = pearl
@@ -360,7 +357,7 @@
      assert f"aqueous-core={version}" in packages["aqueous-session"]["depends"]
      assert packages["aqueous-integration-pearl"]["depends"] == [f"aqueous-session={version}"]
 -    assert packages["aqueous-shell-pearl"]["depends"] == [f"aqueous-integration-pearl={version}", "pearl"]
-+    assert packages["aqueous-shell-pearl"]["depends"] == ["xdg-desktop-portal-pearl", f"xdg-desktop-portal-aqueous={version}", f"aqueous-integration-pearl={version}", "pearl"]
++    assert packages["aqueous-shell-pearl"]["depends"] == [f"xdg-desktop-portal-aqueous={version}", f"aqueous-integration-pearl={version}", "pearl"]
      _, desktop = metadata(DEVARIO)
      assert set(desktop) == {"devario-desktop"}
      assert set(desktop["devario-desktop"]["depends"]) == {f"{name}={version}" for name in NAMES} | {"pearl", "pearl-greeter"}

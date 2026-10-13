@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stage an independent backend package; never activate or restart services.
+# Stage Pearl's bundled backend; never activate or restart services.
 set -euo pipefail
 source_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 destination=${DESTDIR:?Set DESTDIR to an isolated image staging directory}
@@ -16,11 +16,7 @@ esac
     echo "Backend identity does not match PEARL_VARIANT=$variant" >&2; exit 2;
 }
 install -Dm755 "$binaries/xdg-desktop-portal-pearl" "$destination/usr/lib/$component/xdg-desktop-portal-pearl"
-# A standalone acceptance image may include the helper. Split packages depend on
-# Pearl's runtime package, which already owns this file.
-if [[ ${PEARL_PORTAL_INCLUDE_HELPER:-1} == 1 ]]; then
-    install -Dm755 "$binaries/pearl-preview-helper" "$destination/usr/lib/$component/pearl-preview-helper"
-fi
+install -Dm755 "$binaries/pearl-preview-helper" "$destination/usr/lib/$component/pearl-preview-helper"
 stage_template() {
     local input=$1 output=$2
     install -Dm644 "$source_root/packaging/portal/$input" "$destination/$output"

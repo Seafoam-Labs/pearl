@@ -32,18 +32,8 @@ def archive(root, output):
         recipe,count=re.subn(pattern,lambda match: replacement,recipe,count=1,flags=re.MULTILINE)
         if count!=1:raise ValueError(f'Missing release recipe field: {pattern}')
     (output/'PKGBUILD').write_text(recipe)
-    portal_recipe=root/'packaging/portal/arch/PKGBUILD'
-    if portal_recipe.exists():
-        portal=portal_recipe.read_text()
-        for pattern,replacement in (
-            (r'^pkgver=.*$',f'pkgver={version}'),
-            (r'^source=\("[^"\n]+"','source=("pearl-$pkgver.tar.gz"'),
-            (r"^sha256sums=\('[^'\n]+'",f"sha256sums=('{digest}'"),
-        ):
-            portal,count=re.subn(pattern,lambda match: replacement,portal,count=1,flags=re.MULTILINE)
-            if count!=1:raise ValueError(f'Missing portal recipe field: {pattern}')
-        portal=portal.replace('cd "$srcdir/pearl"','cd "$srcdir/pearl-$pkgver"')
-        (output/'PKGBUILD.portal').write_text(portal)
+    # Retire output left by the former standalone backend recipe.
+    (output/'PKGBUILD.portal').unlink(missing_ok=True)
     result={'archive':target.name,'sha256':digest,'source_date_epoch':epoch,'version':meta['version'],'files':len(paths)}
     (output/'source.json').write_text(json.dumps(result,indent=2)+'\n');return result
 if __name__=='__main__':

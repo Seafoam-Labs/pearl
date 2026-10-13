@@ -874,11 +874,12 @@ portal backend. Continue supporting the root release build and standalone Phyto
 and Coral builds. Check source-archive manifests so extracted files and the C
 header are included in release archives.
 
-Package the helper and CSS/resources with Pearl. Propose a separate
-`xdg-desktop-portal-pearl` package for the backend, depending on the matching
-Pearl runtime and `xdg-desktop-portal`. Its files include the backend executable,
-`pearl.portal`, D-Bus activation service, user unit, and vendor portal profile.
-The Devario desktop metapackage requires it once all interface milestones pass.
+Package the backend, helper and CSS/resources in the Pearl runtime package.
+The normal root build and `packaging/install.sh` include the backend executable,
+`pearl.portal`, D-Bus activation service, user unit, vendor portal profile and
+backed-up policy configuration. Pearl depends on `xdg-desktop-portal`, `libcups`
+and `xdg-utils`; there is no separate Pearl backend package or build job.
+Stable and Git packages each own their matching backend identity.
 `xdg-desktop-portal-gtk` must be absent from a fresh Pearl-only install and from
 its transitive dependency closure. Keep `xdg-desktop-portal` and the existing
 document/permission services required by it.
@@ -888,8 +889,9 @@ There is a concrete transitive dependency to remove: Aqueous's
 `packaging/arch/aqueous-desktop/PKGBUILD`, and
 `packaging/arch/aqueous-desktop-git/PKGBUILD` currently pull in the GTK backend
 through session/desktop packages. Move backend requirements into the respective
-shell presets: Pearl requires `xdg-desktop-portal-pearl`; other shells retain
-their appropriate provider. Audit generated metadata, installer and ISO package
+shell presets: the Pearl preset requires `pearl` (or `pearl-git`), which includes
+its backend; other shells retain their appropriate provider. Audit generated
+metadata, installer and ISO package
 lists as well as direct Pearl recipes.
 
 Do not declare a global package conflict or fake `provides=xdg-desktop-portal-gtk`.

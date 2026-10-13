@@ -39,8 +39,6 @@ class ReleaseTools(unittest.TestCase):
                 'pkgver=0.1.0\nsource=("pearl-$pkgver.tar.gz::https://example.invalid/v$pkgver.tar.gz"\n'
                 '        "dependency.tar.gz")\nsha256sums=(\'published-hash\'\n        \'dependency-hash\')\n')
             (root/'README.md').write_text('fixture')
-            (root/'packaging/portal/arch').mkdir(parents=True)
-            (root/'packaging/portal/arch/PKGBUILD').write_text((ROOT/'packaging/portal/arch/PKGBUILD').read_text())
             write(root,'plugins/wit/plugin.wit',{'included':True})
             write(root,'plugins/examples/rust/target/generated.wasm',{'excluded':True})
             write(root,'subprojects/phyto/src/main.zig',{'included':True})
@@ -72,11 +70,7 @@ class ReleaseTools(unittest.TestCase):
                     'pearl-1/subprojects/dome/packaging/org.aqueous.Dome.desktop',
                 })
             self.assertEqual(first,second);self.assertIn(first['sha256'],(Path(t)/'one/PKGBUILD').read_text())
-            portal=(Path(t)/'one/PKGBUILD.portal').read_text()
-            self.assertIn(first['sha256'],portal)
-            self.assertIn('cd "$srcdir/pearl-$pkgver"',portal)
-            self.assertIn('pkgver=1\n',portal)
-            self.assertNotIn('git+$url',portal)
+            self.assertFalse((Path(t)/'one/PKGBUILD.portal').exists())
             recipe=(Path(t)/'one/PKGBUILD').read_text()
             self.assertIn('pkgver=1\n',recipe)
             self.assertIn('source=("pearl-$pkgver.tar.gz"\n',recipe)
@@ -138,15 +132,34 @@ class ReleaseTools(unittest.TestCase):
             version=subprocess.check_output(['bash','-c','source "$1"; printf "%s" "$pkgver"',
                 'version',str(ROOT/'packaging/arch/PKGBUILD')],text=True)
             (work/f'pearl-{version}').symlink_to(root, target_is_directory=True)
-            for variant in ('arch','arch-git','arch-intel-git'):
+            for variant in ('arch','arch-git','arch-intel-git','Devario/pearl'):
                 with self.subTest(variant=variant):
+                    git=variant in ('arch-git','arch-intel-git')
+                    component='pearl-git' if git else 'pearl'
+                    bus='pearl_git' if git else 'pearl'
+                    backend=binary/'xdg-desktop-portal-pearl'
+                    backend.write_text(f'#!/bin/sh\nprintf "%s\\n" "org.freedesktop.impl.portal.desktop.{bus}"\n')
+                    backend.chmod(0o755)
                     stage=work/variant
                     subprocess.run(['bash','-euc',
                         'source "$1"; srcdir="$2"; pkgdir="$3"; package',
                         'stage',str(ROOT/'packaging'/variant/'PKGBUILD'),str(work),str(stage)],
                         env={k:v for k,v in os.environ.items() if k not in ('PEARL_BINARY_DIR','PEARL_PLUGIN_EXAMPLES_DIR')},
                         check=True,capture_output=True)
-                    git=variant!='arch';command='phyto-git' if git else 'phyto'
+                    for member in (
+                        f'usr/lib/{component}/xdg-desktop-portal-pearl',
+                        f'usr/lib/{component}/pearl-preview-helper',
+                        f'usr/share/xdg-desktop-portal/portals/{component}.portal',
+                        f'usr/share/xdg-desktop-portal/{component}-portals.conf',
+                        f'usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.{bus}.service',
+                        f'usr/lib/systemd/user/xdg-desktop-portal-{component}.service',
+                        f'etc/{component}/portal-policy.conf',
+                    ):
+                        self.assertTrue((stage/member).is_file(),member)
+                    descriptor=(stage/f'usr/share/xdg-desktop-portal/portals/{component}.portal').read_text()
+                    self.assertIn(f'DBusName=org.freedesktop.impl.portal.desktop.{bus}',descriptor)
+                    self.assertFalse((stage/'usr/lib/systemd/user/graphical-session.target.wants').exists())
+                    command='phyto-git' if git else 'phyto'
                     identity='org.aqueous.Phyto.Git' if git else 'org.aqueous.Phyto'
                     installed=stage/'usr/bin'/command
                     self.assertEqual(installed.read_bytes(),phyto.read_bytes())

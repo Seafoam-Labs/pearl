@@ -22,6 +22,14 @@ that evidence does not grant public release acceptance.
 
 ## Build and package
 
+Pearl's portal backend is bundled in `pearl`, `pearl-git` and `pearl-intel-git`.
+The normal build and installer include its executable, thumbnail helper, portal
+descriptor, routing profile, D-Bus activation, user unit and policy file. There
+is no separate `xdg-desktop-portal-pearl` package job. The frontend
+`xdg-desktop-portal` and Aqueous capture backend remain separate dependencies.
+Publish these changes from an updated source revision/tag; rebuilding an older
+tag will not include the bundled backend.
+
 The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.2`.
 Its Arch version is `1:0.2.2-1`; the epoch allows upgrades from the earlier
 `1.0.0rc2` packages. The source and runtime version are also `0.2.2`.

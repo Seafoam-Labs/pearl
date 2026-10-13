@@ -43,7 +43,9 @@ pub fn build(b: *std.Build) void {
     portal_main.linkSystemLibrary("cups", .{ .use_pkg_config = .no });
     const portal = b.addExecutable(.{ .name = "xdg-desktop-portal-pearl", .root_module = portal_main });
     const portal_build = b.step("build-portal", "Build Pearl's desktop portal backend without changing session routing");
-    portal_build.dependOn(&b.addInstallArtifact(portal, .{}).step);
+    const portal_install = b.addInstallArtifact(portal, .{});
+    b.getInstallStep().dependOn(&portal_install.step);
+    portal_build.dependOn(&portal_install.step);
     portal_build.dependOn(&preview_install.step);
     const portal_tests = b.step("test-portals", "Run the portal contracts, shared chooser, print worker and staging checks in isolated sessions");
     for ([_][]const u8{ "tests/portal/test_contracts.py", "tests/portal/test_native.py", "tests/portal/test_print_worker.py", "tests/portal/test_package.py", "tests/portal/test_frontend.py", "tests/portal/test_ipp.py" }) |script| {

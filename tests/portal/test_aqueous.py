@@ -32,7 +32,8 @@ def main():
         session = packages['aqueous-session' + suffix]['depends']
         assert 'xdg-desktop-portal-gtk' not in session, session
         pearl = packages['aqueous-shell-pearl' + suffix]['depends']
-        assert 'xdg-desktop-portal-pearl' + suffix in pearl, pearl
+        assert 'pearl' + suffix in pearl, pearl
+        assert 'xdg-desktop-portal-pearl' + suffix not in pearl, pearl
         assert any(p.startswith('xdg-desktop-portal-aqueous' + suffix + '=') for p in pearl)
         assert 'xdg-desktop-portal-gtk' not in pearl
         if recipe.startswith('arch/'):

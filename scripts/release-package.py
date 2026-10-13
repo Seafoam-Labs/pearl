@@ -26,6 +26,17 @@ def main():
                 assert {'usr/share/pearl/plugins-sdk/plugin.wit','usr/share/licenses/pearl/Wasmtime-LICENSE'} <= names
                 report['plugin_payload_sha256']={n:hashlib.sha256(tar.extractfile(n).read()).hexdigest() for n in sorted(plugin_files | {'usr/bin/pearl-plugin-host'})}
                 assert 'etc/pam.d/pearl' in names and 'usr/lib/systemd/user/pearl.service' in names
+                portal_files={
+                    'usr/lib/pearl/xdg-desktop-portal-pearl',
+                    'usr/lib/pearl/pearl-preview-helper',
+                    'usr/share/xdg-desktop-portal/portals/pearl.portal',
+                    'usr/share/xdg-desktop-portal/pearl-portals.conf',
+                    'usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.pearl.service',
+                    'usr/lib/systemd/user/xdg-desktop-portal-pearl.service',
+                    'etc/pearl/portal-policy.conf',
+                }
+                assert portal_files <= names, portal_files - names
+                report['portal_payload_sha256']={n:hashlib.sha256(tar.extractfile(n).read()).hexdigest() for n in sorted(portal_files)}
                 for resource in ('applications/org.aqueous.Pearl.Settings.desktop','icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg','metainfo/org.aqueous.Pearl.Settings.metainfo.xml','applications/org.aqueous.Phyto.desktop','icons/hicolor/scalable/apps/org.aqueous.Phyto.svg','applications/org.aqueous.Dome.desktop','icons/hicolor/scalable/apps/org.aqueous.Dome.svg','metainfo/org.aqueous.Dome.metainfo.xml','applications/org.aqueous.Coral.desktop','icons/hicolor/scalable/apps/org.aqueous.Coral.svg','metainfo/org.aqueous.Coral.metainfo.xml','coral/styles/coral-dark.xml','coral/styles/coral-light.xml'):
                     assert 'usr/share/'+resource in names
                 assert b'Exec=pearl-settings\n' in tar.extractfile('usr/share/applications/org.aqueous.Pearl.Settings.desktop').read()

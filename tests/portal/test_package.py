@@ -32,11 +32,12 @@ if (git_binaries/'xdg-desktop-portal-pearl').exists():
     with tempfile.TemporaryDirectory(prefix='pearl-portal-coinstall-') as tmp:
         base=Path(tmp)
         for variant,binaries in [('stable',ROOT/'zig-out/bin'),('git',git_binaries)]:
-            subprocess.run(['bash',ROOT/'packaging/portal/install.sh'],env={**os.environ,'DESTDIR':str(base/variant),'PEARL_VARIANT':variant,'PEARL_BINARY_DIR':str(binaries),'PEARL_PORTAL_INCLUDE_HELPER':'0'},check=True)
+            subprocess.run(['bash',ROOT/'packaging/portal/install.sh'],env={**os.environ,'DESTDIR':str(base/variant),'PEARL_VARIANT':variant,'PEARL_BINARY_DIR':str(binaries)},check=True)
         stable={p.relative_to(base/'stable') for p in (base/'stable').rglob('*') if p.is_file()}
         git={p.relative_to(base/'git') for p in (base/'git').rglob('*') if p.is_file()}
         assert not stable.intersection(git),stable.intersection(git)
-        assert not any(p.name=='pearl-preview-helper' for p in stable|git),'helper belongs to the runtime package'
+        for variant,component in [('stable','pearl'),('git','pearl-git')]:
+            assert (base/variant/f'usr/lib/{component}/pearl-preview-helper').is_file()
         cfg=configparser.ConfigParser();cfg.optionxform=str
         cfg.read(base/'git/usr/share/xdg-desktop-portal/pearl-git-portals.conf')
         assert cfg['preferred']['default']=='pearl-git'
@@ -47,6 +48,6 @@ if (git_binaries/'xdg-desktop-portal-pearl').exists():
         assert 'UseIn=Pearl-Git;' in descriptor
         failure=subprocess.run(['bash',ROOT/'packaging/portal/install.sh'],env={**os.environ,'DESTDIR':str(base/'wrong'),'PEARL_VARIANT':'git','PEARL_BINARY_DIR':str(ROOT/'zig-out/bin')},capture_output=True)
         assert failure.returncode==2
-    print('PASS stable/Git package coinstallation, split helper ownership and mismatched-binary rejection')
+    print('PASS stable/Git package coinstallation, bundled helper ownership and mismatched-binary rejection')
 else:
     print('SKIP Git coinstallation: build-portal -Dportal-variant=git --prefix zig-out/portal-git first')
