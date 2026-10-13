@@ -1,0 +1,219 @@
+# Build the shell and optional greeter from one upstream Git checkout.
+# Building never activates services; only the greeter install hook selects it
+# for the next boot, without restarting the running display manager.
+pkgbase=pearl-git
+pkgname=(pearl-git pearl-greeter-git)
+pkgver=0.2.3.r208.g516e0e1
+pkgrel=1
+# Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
+epoch=1
+pkgdesc='GTK desktop shell exclusively for Aqueous (Git version)'
+arch=('x86_64')
+url='https://github.com/Seafoam-Labs/pearl'
+license=('LicenseRef-Pearl-Unlicensed')
+# Libraries linked by the shell, portal, greeter and bundled applications.
+_build_libraries=('libcups' 'curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant'
+                  'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
+                  'libpulse>=17.0' 'pam>=1.7.2' 'polkit>=127' 'glibc>=2.44'
+                  'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
+                  'cairo>=1.18.4')
+_shell_depends=("${_build_libraries[@]}" 'xdg-desktop-portal' 'xdg-utils' 'glycin'
+                'hunspell' 'systemd>=261.3' 'aqueous>0.7' 'uwsm>=0.26.7')
+_greeter_depends=('greetd>=0.10.3' 'aqueous>0.7' 'uwsm>=0.26.7' 'dbus' 'polkit'
+         'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0' 'wayland>=1.26.0'
+         'glibc>=2.44' 'systemd>=261.3' 'python>=3.14')
+# Alternative packages must provide aqueous with a version newer than 0.7.
+# aqueous-config >=0.8.2 with protected collections and display declaration capabilities is required.
+# Live plugin input requires the matching Aqueous Pearl integration service.
+# See docs/AQUEOUS_PLUGIN_ACTIVITY.md; the general version floor is unchanged.
+# Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
+# Keep desktop/session runtime requirements inside the split package functions.
+# Requiring Aqueous here creates a build-order cycle with its Pearl preset.
+# Compilation uses the vendored protocols; check() uses private fixtures.
+makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
+             'rust' 'rust-wasm' 'librsvg'
+             "${_build_libraries[@]}")
+options=('!strip' '!debug')
+# Keep the runtime and SDK tools in sync with plugins/build-examples.py.
+_wasmtime=48.0.2
+_wit_bindgen=0.62.0
+_wasm_tools=1.259.0
+source=("pearl::git+$url.git"
+        "https://github.com/bytecodealliance/wasmtime/releases/download/v$_wasmtime/wasmtime-v$_wasmtime-x86_64-linux-c-api.tar.xz"
+        "https://github.com/bytecodealliance/wit-bindgen/releases/download/v$_wit_bindgen/wit-bindgen-$_wit_bindgen-x86_64-linux.tar.gz"
+        "https://github.com/bytecodealliance/wasm-tools/releases/download/v$_wasm_tools/wasm-tools-$_wasm_tools-x86_64-linux.tar.gz")
+# The release archive hash is filled by release-source.py; only Git uses SKIP.
+sha256sums=('SKIP'
+            'd9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9'
+            '3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe'
+            '3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160')
+
+pkgver() {
+    cd "$srcdir/pearl"
+    # Use release metadata as the base, including before upstream has any tags.
+    local version
+    version=$(python3 -c 'import json; print(json.load(open("packaging/release.json"))["arch_pkgver"])')
+    printf '%s.r%s.g%s' "$version" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+    cd "$srcdir/pearl"
+    # Keep the Git shell's locker and production PAM policy independent of pearl.
+    # The instrumented locker continues to use its private test PAM fixture.
+    sed -i 's/pearl-lock"/pearl-lock-git"/g' src/services/lifecycle.zig
+    sed -i 's/pam_start("pearl",/pam_start("pearl-git",/' src/lock/pam.zig
+    # Match Phyto's Wayland application ID and window icon to its Git launcher.
+    sed -i 's/"org.aqueous.Phyto"/"org.aqueous.Phyto.Git"/g' \
+        subprojects/phyto/src/main.zig subprojects/phyto/src/window.zig
+    # Fetch the complete lockfile: target-filtered fetches can omit crates
+    # (such as libc) that the subsequent offline build still needs to resolve.
+    CARGO_HOME="$PWD/.cache/plugin-cargo" cargo fetch --locked \
+        --manifest-path plugins/examples/counter-rust/Cargo.toml
+}
+
+build() {
+    cd "$srcdir/pearl"
+    export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
+    python3 plugins/build-examples.py --fixtures \
+        --wit-bindgen "$srcdir/wit-bindgen-$_wit_bindgen-x86_64-linux/wit-bindgen" \
+        --wasm-tools "$srcdir/wasm-tools-$_wasm_tools-x86_64-linux/wasm-tools"
+    zig build install build-greeter -Dportal-variant=git -Dqt-themes=true -Doptimize=ReleaseSafe -Drelease=true -Dcpu=baseline \
+        -Dwasm-plugins=true -Dwasmtime-prefix="$srcdir/wasmtime-v$_wasmtime-x86_64-linux-c-api"
+    cd subprojects/phyto
+    zig build -Dgit-variant=true -Doptimize=ReleaseSafe -Dcpu=baseline
+    cd ../dome
+    zig build -Doptimize=ReleaseSafe -Dcpu=baseline -Dgit-variant=true
+    cd ../coral
+    zig build -Doptimize=ReleaseSafe -Dcpu=baseline -Dgit-variant=true
+}
+
+check() {
+    cd "$srcdir/pearl"
+    export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$srcdir/zig-cache}"
+    zig build test test-adapter-unit test-bindings test-release-tools test-plugin-host \
+        test-capture-picker test-greeter-unit test-greeter-sync -Dportal-variant=git \
+        -Doptimize=ReleaseSafe -Dcpu=baseline \
+        -Dwasm-plugins=true -Dwasmtime-prefix="$srcdir/wasmtime-v$_wasmtime-x86_64-linux-c-api"
+    python3 tests/test_greeter_package.py
+    python3 tests/test_greeter_install.py
+    cd subprojects/phyto
+    zig build test -Doptimize=ReleaseSafe -Dcpu=baseline
+    cd ../dome
+    zig build test -Doptimize=ReleaseSafe -Dcpu=baseline
+    cd ../coral
+    zig build test -Doptimize=ReleaseSafe -Dcpu=baseline -Dgit-variant=true
+}
+
+package_pearl-git() {
+    depends=("${_shell_depends[@]}")
+    # Required by the Aqueous session dispatcher.
+    provides=('pearl-capture-picker-git=1')
+    optdepends=('gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'
+                'gvfs-smb: SMB network connections in Phyto'
+                'gvfs-dnssd: WebDAV connections and network discovery in Phyto'
+                'file-roller: archive context menu actions in Phyto'
+                'poppler: PDF first-page previews in Phyto (requires bubblewrap)'
+                'ffmpeg: video still previews in Phyto (requires bubblewrap)'
+                'bubblewrap: sandbox required for PDF and video previews in Phyto'
+                'hunspell-en_us: English spelling dictionary for Coral (other Enchant dictionaries supported)'
+                'nvidia-utils: optional NVIDIA GPU metrics in Dome'
+                'qtengine: shared Qt 5/6 application appearance management'
+                'pearl-darkly-style: Darkly Qt application styles without KWin decorations'
+                'matugen>=4.2.0: dynamic Material colors'
+                'networkmanager>=1.58.1: network controls'
+                'bluez>=5.87: Bluetooth controls'
+                'upower>=1.91.4: battery status'
+                'power-profiles-daemon>=0.30: power profiles')
+    backup=('etc/pam.d/pearl-git' 'etc/pearl-git/portal-policy.conf')
+    install=pearl-git.install
+
+    cd "$srcdir/pearl"
+    PEARL_PLUGIN_EXAMPLES_DIR="$PWD/.cache/plugin-examples" \
+        PEARL_VARIANT=git DESTDIR="$pkgdir" bash packaging/install.sh
+    install -Dm755 subprojects/coral/zig-out/bin/coral-git "$pkgdir/usr/bin/coral-git"
+    install -Dm644 subprojects/coral/zig-out/share/applications/org.aqueous.Coral.Git.desktop \
+        "$pkgdir/usr/share/applications/org.aqueous.Coral.Git.desktop"
+    install -Dm644 subprojects/coral/zig-out/share/metainfo/org.aqueous.Coral.Git.metainfo.xml \
+        "$pkgdir/usr/share/metainfo/org.aqueous.Coral.Git.metainfo.xml"
+    install -Dm644 subprojects/coral/zig-out/share/icons/hicolor/scalable/apps/org.aqueous.Coral.Git.svg \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.aqueous.Coral.Git.svg"
+    install -Dm644 subprojects/coral/zig-out/share/coral-git/styles/coral-dark.xml \
+        "$pkgdir/usr/share/coral-git/styles/coral-dark.xml"
+    install -Dm644 subprojects/coral/zig-out/share/coral-git/styles/coral-light.xml \
+        "$pkgdir/usr/share/coral-git/styles/coral-light.xml"
+    install -Dm755 subprojects/dome/zig-out/bin/dome-git "$pkgdir/usr/bin/dome-git"
+    install -Dm644 subprojects/dome/zig-out/share/applications/org.aqueous.Dome.Git.desktop \
+        "$pkgdir/usr/share/applications/org.aqueous.Dome.Git.desktop"
+    install -Dm644 subprojects/dome/zig-out/share/metainfo/org.aqueous.Dome.Git.metainfo.xml \
+        "$pkgdir/usr/share/metainfo/org.aqueous.Dome.Git.metainfo.xml"
+    install -Dm644 subprojects/dome/zig-out/share/icons/hicolor/scalable/apps/org.aqueous.Dome.Git.svg \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.aqueous.Dome.Git.svg"
+    install -Dm755 subprojects/phyto/zig-out/bin/phyto "$pkgdir/usr/bin/phyto-git"
+    install -Dm644 subprojects/phyto/packaging/org.aqueous.Phyto.desktop \
+        "$pkgdir/usr/share/applications/org.aqueous.Phyto.Git.desktop"
+    install -Dm644 subprojects/phyto/resources/org.aqueous.Phyto.svg \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.aqueous.Phyto.Git.svg"
+    sed -i -e 's/^Name=Phyto$/Name=Phyto Git/' \
+           -e 's/^Exec=phyto /Exec=phyto-git /' \
+           -e 's/org.aqueous.Phyto/org.aqueous.Phyto.Git/g' \
+        "$pkgdir/usr/share/applications/org.aqueous.Phyto.Git.desktop"
+
+    local binary directory
+    for binary in pearl pearlctl pearl-lock pearl-settings pearl-themes; do
+        mv "$pkgdir/usr/bin/$binary" "$pkgdir/usr/bin/$binary-git"
+    done
+    if [[ -f "$pkgdir/usr/bin/pearl-plugin-host" ]]; then
+        mv "$pkgdir/usr/bin/pearl-plugin-host" "$pkgdir/usr/bin/pearl-plugin-host-git"
+    fi
+    mv "$pkgdir/etc/pam.d/pearl" "$pkgdir/etc/pam.d/pearl-git"
+    for directory in share/pearl share/doc/pearl share/licenses/pearl; do
+        mv "$pkgdir/usr/$directory" "$pkgdir/usr/$directory-git"
+    done
+
+    mv "$pkgdir/usr/lib/systemd/user/pearl.service" \
+       "$pkgdir/usr/lib/systemd/user/pearl-git.service"
+    sed -i -e 's|/usr/bin/pearl|/usr/bin/pearl-git|g' \
+           -e 's/^Description=Pearl /Description=Pearl Git /' \
+           -e 's/pearl-lock /pearl-lock-git /g' \
+        "$pkgdir/usr/lib/systemd/user/pearl-git.service"
+
+    mv "$pkgdir/usr/share/applications/org.aqueous.Pearl.Settings.desktop" \
+       "$pkgdir/usr/share/applications/org.aqueous.Pearl.Git.Settings.desktop"
+    sed -i -e 's/^Name=Pearl Settings$/Name=Pearl Git Settings/' \
+           -e 's/^Exec=pearl-settings$/Exec=pearl-settings-git/' \
+           -e 's/org.aqueous.Pearl.Settings/org.aqueous.Pearl.Git.Settings/g' \
+        "$pkgdir/usr/share/applications/org.aqueous.Pearl.Git.Settings.desktop"
+
+    mv "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg" \
+       "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Git.Settings.svg"
+    mv "$pkgdir/usr/share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml" \
+       "$pkgdir/usr/share/metainfo/org.aqueous.Pearl.Git.Settings.metainfo.xml"
+    sed -i -e 's/org.aqueous.Pearl.Settings/org.aqueous.Pearl.Git.Settings/g' \
+           -e 's|<name>Pearl Settings</|<name>Pearl Git Settings</|' \
+           -e 's|<binary>pearl-settings</|<binary>pearl-settings-git</|' \
+        "$pkgdir/usr/share/metainfo/org.aqueous.Pearl.Git.Settings.metainfo.xml"
+
+    mv "$pkgdir/usr/share/doc/pearl-git/examples/aqueous-init-pearl" \
+       "$pkgdir/usr/share/doc/pearl-git/examples/aqueous-init-pearl-git"
+    sed -i 's|/usr/bin/pearl$|/usr/bin/pearl-git|' \
+        "$pkgdir/usr/share/doc/pearl-git/examples/aqueous-init-pearl-git"
+}
+
+package_pearl-greeter-git() {
+    pkgdesc='GTK greetd login screen hosted by ordinary Aqueous (Git version)'
+    depends=("${_greeter_depends[@]}")
+    provides=('pearl-greeter')
+    conflicts=('pearl-greeter')
+    optdepends=('accountsservice: account names and avatars'
+                'orca: optional screen reader')
+    backup=('etc/pearl/greeter.json')
+    install=pearl-greeter.install
+
+    cd "$srcdir/pearl"
+    # stage.py requires a new directory; makepkg already creates pkgdir.
+    local payload
+    payload=$(mktemp -d "$srcdir/pearl-greeter-package.XXXXXX")
+    python3 packaging/greeter/stage.py --system-package --dest "$payload/root"
+    cp -R --preserve=mode,timestamps "$payload/root/." "$pkgdir/"
+    rm -r "$payload"
+}

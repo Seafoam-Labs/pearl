@@ -135,9 +135,10 @@ class ReleaseTools(unittest.TestCase):
             version=subprocess.check_output(['bash','-c','source "$1"; printf "%s" "$pkgver"',
                 'version',str(ROOT/'packaging/arch/PKGBUILD')],text=True)
             (work/f'pearl-{version}').symlink_to(root, target_is_directory=True)
-            for variant in ('arch','arch-git','Devario/pearl'):
+            for variant in ('arch','arch-git','Devario/pearl','Devario/pearl-git'):
                 with self.subTest(variant=variant):
-                    git=variant=='arch-git'
+                    git=variant.endswith('-git')
+                    split=variant!='arch'
                     component='pearl-git' if git else 'pearl'
                     bus='pearl_git' if git else 'pearl'
                     backend=binary/'xdg-desktop-portal-pearl'
@@ -150,14 +151,15 @@ class ReleaseTools(unittest.TestCase):
                     subprocess.run(['bash','-euc',
                         'source "$1"; srcdir="$2"; pkgdir="$3"; "$4"',
                         'stage',str(ROOT/'packaging'/variant/'PKGBUILD'),str(work),str(stage),
-                        'package_pearl-git' if variant=='arch-git' else 'package'],
+                        f'package_{component}' if split else 'package'],
                         env={k:v for k,v in os.environ.items() if k not in ('PEARL_BINARY_DIR','PEARL_PLUGIN_EXAMPLES_DIR')},
                         check=True,capture_output=True)
-                    if variant=='arch-git':
-                        greeter_stage=work/'greeter';greeter_stage.mkdir()
+                    if split:
+                        greeter_stage=work/f'{variant}-greeter';greeter_stage.mkdir()
                         subprocess.run(['bash','-euc',
-                            'source "$1"; srcdir="$2"; pkgdir="$3"; package_pearl-greeter-git',
-                            'stage',str(ROOT/'packaging/arch-git/PKGBUILD'),str(work),str(greeter_stage)],
+                            'source "$1"; srcdir="$2"; pkgdir="$3"; "$4"',
+                            'stage',str(ROOT/'packaging'/variant/'PKGBUILD'),str(work),str(greeter_stage),
+                            'package_pearl-greeter-git' if git else 'package_pearl-greeter'],
                             check=True,capture_output=True)
                         shell_paths={p.relative_to(stage) for p in stage.rglob('*') if p.is_file() or p.is_symlink()}
                         greeter_paths={p.relative_to(greeter_stage) for p in greeter_stage.rglob('*') if p.is_file() or p.is_symlink()}
@@ -229,8 +231,16 @@ class ReleaseTools(unittest.TestCase):
                         if shutil.which('desktop-file-validate'):
                             subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True)
     @unittest.skipUnless(shutil.which('makepkg'), 'makepkg is required for split metadata checks')
-    def test_git_split_metadata_and_dependencies(self):
-        recipe=ROOT/'packaging/arch-git'
+    def test_split_metadata_and_dependencies(self):
+        for variant in ('arch-git','Devario/pearl','Devario/pearl-git'):
+            with self.subTest(variant=variant):
+                self.check_split_metadata(variant)
+
+    def check_split_metadata(self,variant):
+        recipe=ROOT/'packaging'/variant
+        git=variant.endswith('-git')
+        component='pearl-git' if git else 'pearl'
+        greeter_name='pearl-greeter-git' if git else 'pearl-greeter'
         metadata=subprocess.check_output(['makepkg','--printsrcinfo'],cwd=recipe,text=True)
         self.assertEqual(metadata,(recipe/'.SRCINFO').read_text())
         sections={};section=None
@@ -240,8 +250,8 @@ class ReleaseTools(unittest.TestCase):
             if key in ('pkgbase','pkgname'):
                 section=key+':'+value;sections[section]={}
             else:sections[section].setdefault(key,[]).append(value)
-        self.assertEqual(set(sections),{'pkgbase:pearl-git','pkgname:pearl-git','pkgname:pearl-greeter-git'})
-        base=sections['pkgbase:pearl-git'];shell=sections['pkgname:pearl-git'];greeter=sections['pkgname:pearl-greeter-git']
+        self.assertEqual(set(sections),{f'pkgbase:{component}',f'pkgname:{component}',f'pkgname:{greeter_name}'})
+        base=sections[f'pkgbase:{component}'];shell=sections[f'pkgname:{component}'];greeter=sections[f'pkgname:{greeter_name}']
         self.assertNotIn('depends',base)
         # Aqueous's optional Pearl preset depends on pearl-git. Pulling session
         # runtime dependencies into the build requirements prevents bootstrapping.
@@ -255,19 +265,39 @@ class ReleaseTools(unittest.TestCase):
         for pkg in (shell,greeter):
             self.assertIn('aqueous>0.7',pkg['depends'])
             self.assertIn('uwsm>=0.26.7',pkg['depends'])
-            self.assertFalse(any(dep.split('=')[0] in ('pearl-git','pearl-greeter-git') for dep in pkg['depends']))
-            self.assertTrue((recipe/pkg['install'][0]).is_file())
-        self.assertEqual(shell['install'],['pearl-git.install'])
+            self.assertFalse(any(dep.split('=')[0] in (component,greeter_name) for dep in pkg['depends']))
+            for hook in pkg.get('install',[]):
+                self.assertTrue((recipe/hook).is_file())
+        if git:self.assertEqual(shell['install'],['pearl-git.install'])
+        else:self.assertNotIn('install',shell)
         self.assertEqual(greeter['install'],['pearl-greeter.install'])
-        self.assertEqual(shell['backup'],['etc/pam.d/pearl-git','etc/pearl-git/portal-policy.conf'])
+        self.assertEqual(shell['backup'],[f'etc/pam.d/{component}',f'etc/{component}/portal-policy.conf'])
         self.assertEqual(greeter['backup'],['etc/pearl/greeter.json'])
-        self.assertEqual(shell['provides'],['pearl-capture-picker-git=1'])
-        self.assertEqual(greeter['provides'],['pearl-greeter'])
-        self.assertEqual(greeter['conflicts'],['pearl-greeter'])
+        self.assertEqual(shell['provides'],['pearl-capture-picker-git=1' if git else 'pearl-capture-picker=1'])
+        if git:self.assertEqual(greeter['provides'],['pearl-greeter'])
+        else:self.assertNotIn('provides',greeter)
+        self.assertEqual(greeter['conflicts'],['pearl-greeter' if git else 'pearl-greeter-git'])
         self.assertIn('xdg-desktop-portal',shell['depends'])
         self.assertNotIn('xdg-desktop-portal',greeter['depends'])
         self.assertFalse(any(dep.startswith('greetd') for dep in shell['depends']))
-        self.assertFalse(any(dep.startswith('xorg-') for dep in greeter['optdepends']))
+        if git:self.assertFalse(any(dep.startswith('xorg-') for dep in greeter['optdepends']))
         self.assertEqual(len(base['source']),len(base['sha256sums']))
+        if git:
+            self.assertEqual(base['source'][0],'pearl::git+https://github.com/Seafoam-Labs/pearl.git')
+        else:
+            version=json.loads((ROOT/'packaging/release.json').read_text())['arch_pkgver']
+            self.assertEqual(base['pkgver'],[version])
+            self.assertEqual(base['source'][0],f'pearl-{version}::git+https://github.com/Seafoam-Labs/pearl.git#tag=v{version}')
+        self.assertEqual(base['epoch'],['1'])
+        for filename,checksum in zip(base['source'],base['sha256sums']):
+            if filename.endswith('.install'):
+                self.assertEqual(hashlib.sha256((recipe/filename).read_bytes()).hexdigest(),checksum)
+
+    def test_devario_git_recipe_matches_arch(self):
+        for filename in ('PKGBUILD','.SRCINFO','pearl-git.install','pearl-greeter.install'):
+            self.assertEqual((ROOT/'packaging/Devario/pearl-git'/filename).read_bytes(),
+                             (ROOT/'packaging/arch-git'/filename).read_bytes(),filename)
+        self.assertEqual((ROOT/'packaging/Devario/pearl/pearl-greeter.install').read_bytes(),
+                         (ROOT/'packaging/arch-git/pearl-greeter.install').read_bytes())
 
 if __name__=='__main__':unittest.main()

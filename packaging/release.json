@@ -1,6 +1,6 @@
 {
-  "version": "0.2.2",
-  "arch_pkgver": "0.2.2",
+  "version": "0.2.3",
+  "arch_pkgver": "0.2.3",
   "license": "LicenseRef-Pearl-Unlicensed",
   "zig": "0.16.0",
   "source_date_epoch": 1789344000,

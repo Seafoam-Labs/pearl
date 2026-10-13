@@ -1,7 +1,7 @@
 pkgbase = pearl-git
 	pkgdesc = GTK desktop shell exclusively for Aqueous (Git version)
-	pkgver = 0.2.2.r177.gcdf7436
-	pkgrel = 3
+	pkgver = 0.2.3.r208.g516e0e1
+	pkgrel = 1
 	epoch = 1
 	url = https://github.com/Seafoam-Labs/pearl
 	arch = x86_64
