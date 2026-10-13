@@ -142,6 +142,14 @@ into `packaging/arch-git`. Copy both `.install` files alongside the PKGBUILD whe
 preparing a build job. Replace the old separate greeter job with the second output
 of this job. Darkly keeps its own source/version and separate build recipe.
 
+The split build does not require an installed Aqueous compositor, integration
+package, greetd or UWSM. Its build dependencies contain the compiler tools and
+linked libraries; the checks use private fixtures and vendored Aqueous protocols.
+Aqueous and the session tools remain runtime dependencies of the resulting
+packages. Keep them out of `makedepends` and `checkdepends` so Aqueous's Pearl
+preset can depend on `pearl-git` without a build-order cycle. Build the archives
+without `-i`, publish the required Aqueous/Pearl outputs, then install the preset.
+
 `makepkg` only builds the packages. Install the desired output with `pacman -U`;
 `makepkg -si` installs both outputs and therefore runs the greeter's existing
 next-boot setup hook. Use `makepkg --packagelist` to find the output paths and

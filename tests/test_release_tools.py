@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Release tooling must fail closed and archives must exclude local state."""
-import hashlib, importlib.util, json, os, shutil, subprocess, tempfile, unittest, tarfile
+import hashlib, importlib.util, json, os, re, shutil, subprocess, tempfile, unittest, tarfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
@@ -243,8 +243,18 @@ class ReleaseTools(unittest.TestCase):
         self.assertEqual(set(sections),{'pkgbase:pearl-git','pkgname:pearl-git','pkgname:pearl-greeter-git'})
         base=sections['pkgbase:pearl-git'];shell=sections['pkgname:pearl-git'];greeter=sections['pkgname:pearl-greeter-git']
         self.assertNotIn('depends',base)
+        # Aqueous's optional Pearl preset depends on pearl-git. Pulling session
+        # runtime dependencies into the build requirements prevents bootstrapping.
+        build_deps={re.split(r'[<>=]',dep,maxsplit=1)[0]
+                    for key in ('depends','makedepends','checkdepends') for dep in base.get(key,[])}
+        self.assertFalse(any(dep.startswith(('aqueous','pearl')) for dep in build_deps))
+        self.assertTrue(build_deps.isdisjoint({'greetd','uwsm','xdg-desktop-portal','xdg-utils','hunspell'}))
+        self.assertTrue({'gtk4','gtk4-layer-shell','glib2','libcups','libpulse','pam','polkit',
+                         'wayland','curl','libarchive','libpng','gtksourceview5','enchant',
+                         'qt5-base','qt6-base','zig','rust','rust-wasm'} <= build_deps)
         for pkg in (shell,greeter):
-            self.assertTrue(set(pkg['depends']) <= set(base['makedepends']) | {'polkit'})
+            self.assertIn('aqueous>0.7',pkg['depends'])
+            self.assertIn('uwsm>=0.26.7',pkg['depends'])
             self.assertFalse(any(dep.split('=')[0] in ('pearl-git','pearl-greeter-git') for dep in pkg['depends']))
             self.assertTrue((recipe/pkg['install'][0]).is_file())
         self.assertEqual(shell['install'],['pearl-git.install'])
