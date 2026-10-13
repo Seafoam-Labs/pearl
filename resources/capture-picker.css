@@ -1,0 +1,5 @@
+.pearl-capture-picker .capture-title {font-size:1.3em;font-weight:bold;}
+.pearl-capture-picker .capture-sources {border-radius:12px;}
+.pearl-capture-picker .capture-source {padding:12px;}
+.pearl-root.$scope .capture-sources {background:$low$;color:$text$;}
+.pearl-root.$scope .capture-source:selected {background:$primary_container$;color:$on_container$;}

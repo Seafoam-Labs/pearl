@@ -1,0 +1,5 @@
+PASS real public frontend Settings, OpenFile, SaveFile, cancellation and document mount
+
+PASS real GTK application file-dialog portal round trip
+PASS real QT application file-dialog portal round trip
+PASS explicit Pearl routing with GTK descriptor and activation absent from the private session

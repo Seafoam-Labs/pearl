@@ -29,6 +29,7 @@ def main():
                 portal_files={
                     'usr/lib/pearl/xdg-desktop-portal-pearl',
                     'usr/lib/pearl/pearl-preview-helper',
+                    'usr/lib/pearl/pearl-capture-picker',
                     'usr/share/xdg-desktop-portal/portals/pearl.portal',
                     'usr/share/xdg-desktop-portal/pearl-portals.conf',
                     'usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.pearl.service',

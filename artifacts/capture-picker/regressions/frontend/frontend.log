@@ -1,0 +1,114 @@
+XDP: load portals from /tmp/pearl-dev-bgozb6yc/portals
+XDP: loading /tmp/pearl-dev-bgozb6yc/portals/pearl.portal
+XDP: portal implementation supports org.freedesktop.impl.portal.FileChooser
+XDP: portal implementation supports org.freedesktop.impl.portal.AppChooser
+XDP: portal implementation supports org.freedesktop.impl.portal.Print
+XDP: portal implementation supports org.freedesktop.impl.portal.Notification
+XDP: portal implementation supports org.freedesktop.impl.portal.Inhibit
+XDP: portal implementation supports org.freedesktop.impl.portal.Access
+XDP: portal implementation supports org.freedesktop.impl.portal.Account
+XDP: portal implementation supports org.freedesktop.impl.portal.Email
+XDP: portal implementation supports org.freedesktop.impl.portal.DynamicLauncher
+XDP: portal implementation supports org.freedesktop.impl.portal.Lockdown
+XDP: portal implementation supports org.freedesktop.impl.portal.Settings
+XDP: Looking for portals configuration in '/tmp/pearl-dev-bgozb6yc/portals/pearl-portals.conf'
+XDP: Preferred portals for interface 'default': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.FileChooser': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.AppChooser': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.Print': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.Notification': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.Inhibit': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.Access': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.Account': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.Email': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.DynamicLauncher': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.Lockdown': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.Settings': pearl
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.ScreenCast': aqueous
+XDP: Preferred portals for interface 'org.freedesktop.impl.portal.Screenshot': aqueous
+XDP: Using portal configuration file '/tmp/pearl-dev-bgozb6yc/portals/pearl-portals.conf' for desktop 'pearl'
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Lockdown
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Lockdown (interface specific config)
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Access
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Access (interface specific config)
+XDP: Providing portal org.freedesktop.portal.MemoryMonitor
+XDP: Providing portal org.freedesktop.portal.PowerProfileMonitor
+XDP: Providing portal org.freedesktop.portal.NetworkMonitor
+XDP: Providing portal org.freedesktop.portal.ProxyResolver
+XDP: Providing portal org.freedesktop.portal.Trash
+XDP: Providing portal org.freedesktop.portal.GameMode
+
+(/usr/lib/xdg-desktop-portal:2091886): xdg-desktop-portal-WARNING **: 22:21:07.331: Failed to create RealtimeKit proxy: Could not connect: No such file or directory
+XDP: Providing portal org.freedesktop.portal.Realtime
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Settings
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Settings (config)
+XDP: Providing portal org.freedesktop.portal.Settings
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.FileChooser
+XDP: Using pearl.portal for org.freedesktop.impl.portal.FileChooser (interface specific config)
+XDP: Providing portal org.freedesktop.portal.FileChooser
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.AppChooser
+XDP: Using pearl.portal for org.freedesktop.impl.portal.AppChooser (interface specific config)
+XDP: Providing portal org.freedesktop.portal.OpenURI
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Print
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Print (interface specific config)
+XDP: Providing portal org.freedesktop.portal.Print
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Notification
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Notification (interface specific config)
+XDP: Providing portal org.freedesktop.portal.Notification
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Inhibit
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Inhibit (interface specific config)
+XDP: Providing portal org.freedesktop.portal.Inhibit
+XDP: Providing portal org.freedesktop.portal.Location
+
+(/usr/lib/xdg-desktop-portal:2091886): xdg-desktop-portal-WARNING **: 22:21:07.333: Failed to connect to PipeWire: Couldn't connect to PipeWire
+XDP: Providing portal org.freedesktop.portal.Camera
+XDP: Found 'aqueous' in configuration for org.freedesktop.impl.portal.Screenshot
+XDP: Requested aqueous.portal is unrecognized
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Screenshot
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Background
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Wallpaper
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Account
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Account (interface specific config)
+XDP: Providing portal org.freedesktop.portal.Account
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Email
+XDP: Using pearl.portal for org.freedesktop.impl.portal.Email (interface specific config)
+XDP: Providing portal org.freedesktop.portal.Email
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Secret
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.GlobalShortcuts
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.DynamicLauncher
+XDP: Using pearl.portal for org.freedesktop.impl.portal.DynamicLauncher (interface specific config)
+XDP: Providing portal org.freedesktop.portal.DynamicLauncher
+XDP: Found 'aqueous' in configuration for org.freedesktop.impl.portal.ScreenCast
+XDP: Requested aqueous.portal is unrecognized
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.ScreenCast
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.RemoteDesktop
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Clipboard
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.InputCapture
+XDP: Found 'pearl' in configuration for org.freedesktop.impl.portal.Usb
+XDP: Providing portal org.freedesktop.host.portal.Registry
+XDP: org.freedesktop.portal.Desktop acquired
+XDP: Adding XdpAppInfo: XdpAppInfoHost app '' for :1.10
+XDP: Read org.freedesktop.appearance color-scheme
+XDP: Found XdpAppInfo in cache: XdpAppInfoHost app '' for :1.10
+XDP: Handling OpenFile
+XDP: convert uri file:///tmp/pearl-dev-bgozb6yc/home/portal%20%E2%9C%93%20document.txt -> file:///tmp/pearl-dev-bgozb6yc/home/portal%20%E2%9C%93%20document.txt
+
+XDP: Found XdpAppInfo in cache: XdpAppInfoHost app '' for :1.10
+XDP: Handling SaveFile
+XDP: convert uri file:///tmp/pearl-dev-bgozb6yc/home/new%20document.txt -> file:///tmp/pearl-dev-bgozb6yc/home/new%20document.txt
+
+XDP: Found XdpAppInfo in cache: XdpAppInfoHost app '' for :1.10
+XDP: Handling OpenFile
+XDP: Deleting XdpAppInfo: XdpAppInfoHost app '' for :1.10
+XDP: Adding XdpAppInfo: XdpAppInfoHost app '' for :1.11
+XDP: Found XdpAppInfo in cache: XdpAppInfoHost app '' for :1.11
+XDP: Handling OpenFile
+XDP: convert uri file:///tmp/pearl-dev-bgozb6yc/home/Toolkit%20gtk.txt -> file:///tmp/pearl-dev-bgozb6yc/home/Toolkit%20gtk.txt
+
+XDP: Deleting XdpAppInfo: XdpAppInfoHost app '' for :1.11
+XDP: Adding XdpAppInfo: XdpAppInfoHost app '' for :1.12
+XDP: Found XdpAppInfo in cache: XdpAppInfoHost app '' for :1.12
+XDP: Handling OpenFile
+XDP: convert uri file:///tmp/pearl-dev-bgozb6yc/home/Toolkit%20qt.txt -> file:///tmp/pearl-dev-bgozb6yc/home/Toolkit%20qt.txt
+
+XDP: Deleting XdpAppInfo: XdpAppInfoHost app '' for :1.12

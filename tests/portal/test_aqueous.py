@@ -33,6 +33,7 @@ def main():
         assert 'xdg-desktop-portal-gtk' not in session, session
         pearl = packages['aqueous-shell-pearl' + suffix]['depends']
         assert 'pearl' + suffix in pearl, pearl
+        assert 'pearl-capture-picker' + suffix + '>=1' in pearl, pearl
         assert 'xdg-desktop-portal-pearl' + suffix not in pearl, pearl
         assert any(p.startswith('xdg-desktop-portal-aqueous' + suffix + '=') for p in pearl)
         assert 'xdg-desktop-portal-gtk' not in pearl
@@ -49,6 +50,11 @@ def main():
             desktop = 'Aqueous' if variant == 'stable' else 'Aqueous-Git'
             pearl = 'Pearl' if variant == 'stable' else 'Pearl-Git'
             runtime = stage / 'usr/lib' / instance / 'session-runtime.sh'
+            component = 'pearl' if variant == 'stable' else 'pearl-git'
+            assert f'pearl_capture_picker=/usr/lib/{component}/pearl-capture-picker' in runtime.read_text()
+            picker = base / ('picker-' + variant)
+            picker.write_text('#!/bin/sh\ncat\n'); picker.chmod(0o755)
+            runtime.write_text(runtime.read_text().replace(f'pearl_capture_picker=/usr/lib/{component}/pearl-capture-picker', f'pearl_capture_picker={picker}'))
             config = base / ('config-' + variant)
             (config / instance).mkdir(parents=True)
             run = base / ('run-' + variant)
@@ -61,6 +67,10 @@ def main():
                 backend = subprocess.check_output([runtime, 'portal-backend'], env=env, text=True).strip()
                 assert identity == (pearl + ':' + desktop if shell == 'pearl' else desktop), identity
                 assert backend == ('xdg-desktop-portal-' + (pearl.lower() if shell == 'pearl' else 'gtk') + '.service'), backend
+                if shell == 'pearl':
+                    result=subprocess.run([runtime,'action','chooser'],input=b'Monitor: original  \n',env=env,capture_output=True,check=True)
+                    assert result.stdout==b'Monitor: original  \n'
+
             (run / instance / 'welcome-session.json').write_text(json.dumps({'shell': 'pearl', 'display': 'private-test'}))
             assert subprocess.check_output([runtime, 'portal-identity'], env=env, text=True).strip() == pearl + ':' + desktop
             assert subprocess.check_output([runtime, 'portal-identity', 'selection'], env=env, text=True).strip() == desktop

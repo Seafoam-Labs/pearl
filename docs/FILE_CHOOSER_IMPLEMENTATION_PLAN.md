@@ -1053,3 +1053,281 @@ interface/package evidence. Link issue 42 to the cold-cache and aspect-ratio
 checks. Completion requires a fresh Devario Pearl session with all eleven
 interfaces working, the GTK backend physically absent, no transitive requirement
 for it, consistent first-party selections, and working Aqueous capture routes.
+
+## Follow-on plan: Pearl capture source picker
+
+Status: implemented in the Pearl and Aqueous worktrees. Automated validation
+passes in private Wayland/D-Bus/PipeWire sessions; nothing was installed or
+activated in the running desktop. See the implementation record below.
+
+Move the capture source picker used by Pearl sessions into the Pearl runtime
+package. Implement it in Zig with the existing GTK/GIO/GLib bindings and Pearl's
+committed appearance settings. Aqueous continues to provide ScreenCast,
+Screenshot and PipeWire streaming. This work changes the source-selection UI
+and its dispatch, without adding a separate package.
+
+### Existing integration and scope
+
+The integration points verified in the current checkouts are:
+
+- Aqueous `welcome/src/portal_picker.zig`: standalone picker, newline-separated
+  sources on stdin, one selected original source line on stdout, no output on
+  cancellation. It currently bounds input to 1 MiB and rejects embedded NUL.
+- Aqueous `packaging/components/session-runtime.sh`, `action chooser`: dispatches
+  using `active_selection`; Pearl currently reaches the generic picker branch.
+- Aqueous `packaging/git/desktop-stage.sh`: transforms session paths and currently
+  retains the Aqueous picker for Git Pearl sessions too.
+- Pearl `src/portal/appearance.zig`: observes committed appearance and generates
+  portal styling, with a C callback into the existing backend.
+- Pearl `packaging/install.sh` and `packaging/portal/install.sh`: already bundle
+  the Pearl portal backend and preview helper in the Pearl runtime package.
+
+The dmenu chooser protocol supplies labels, not trusted application identity,
+parent handles, preview frames or structured source types. The first version
+will display the supplied choices without inventing application attribution,
+monitor/window categories, thumbnails, region selection or additional capture
+permissions. Check the pinned backend before promising any richer interaction.
+The `aqueous-shell-action screenshot` hotkey path using slurp/grim is a separate
+interaction and is outside this picker migration.
+
+Retain `aqueous-portal-picker` for shell-free sessions and any other existing
+consumers, including the current Git DMS fallback. Stable DMS and Noctalia keep
+their current chooser dispatch. ScreenCast/Screenshot portal routing continues
+to select `aqueous` or `aqueous-git`.
+
+### Implementation
+
+The Pearl implementation uses these files:
+
+| File | Responsibility |
+| --- | --- |
+| `src/capture_picker_main.zig` | Wayland-only executable entry point and exit status |
+| `src/capture/picker.zig` | Window, single selection, keyboard controls and completion |
+| `src/capture/sources.zig` | Bounded source input and exact selection output |
+| `src/ui/appearance_observer.zig` | Shared committed appearance observer and CSS generation |
+| `resources/capture-picker.css` | Layout rules using shared Pearl appearance tokens |
+| `tests/capture_picker/` | Protocol, lifecycle and private Wayland tests |
+
+Build `pearl-capture-picker` as a short-lived process for each request. It must
+work while the Pearl shell process is unavailable, using committed appearance
+and a deterministic fallback. Do not introduce a new D-Bus service or route this
+through the public FileChooser portal.
+
+Extract the reusable appearance observer/CSS generation from
+`src/portal/appearance.zig` into a typed Zig module. Keep the existing C-facing
+portal adapter thin and preserve its behavior. Both the portal and the picker
+consume the same theme data, fonts, style tokens, reduced-motion preference,
+GTK appearance mode and committed-change notifications. Do not duplicate theme
+parsing or hard-code a second Pearl palette.
+
+Keep source bytes separate from display text. Preserve order and use selection
+indices; presentation changes must never alter the value returned to Aqueous.
+Render labels as plain text, disable markup, and safely display long or unusual
+labels. Retain the 1 MiB total limit and NUL rejection, with at most 4,096 sources; reject invalid UTF-8
+without opening the dialog. Handle a final line without a newline, blank lines,
+duplicate labels and allocation/read errors explicitly. Never evaluate input as
+a command or write source labels to diagnostic logs.
+
+The completion contract is:
+
+- Explicit Share writes exactly the selected original line plus one newline,
+  once. A single available source still requires confirmation.
+- Cancel, Escape and window close produce empty stdout and exit successfully.
+- Empty input produces no dialog and no selection. Malformed input, inability to
+  open a Wayland display, and I/O/startup failures produce empty stdout and a
+  nonzero status; diagnostics go to stderr.
+- Broken stdout, signals, display loss and parent/backend termination must not
+  leave a chooser behind or emit a fallback selection.
+- Concurrent invocations have independent input and state. No global selection
+  or application singleton may mix requests or reuse an earlier approval.
+
+Inspect the pinned backend's process creation, stdin closure, exit-status
+handling and Request.Close behavior first. Parent-process death alone does not
+prove that an individual portal request was cancelled. Add an isolated test
+for cancellation while the picker is open. If the existing adapter cannot
+propagate that cancellation, document and implement the smallest required
+Aqueous backend lifecycle change as a prerequisite; do not claim that the picker
+can infer a request handle it never receives.
+
+### UI and review mockup
+
+Use a compact Pearl window with a scrollable single-selection list, clear focus
+and a stable footer. Proposed initial layout:
+
+```text
++--------------------------------------------------+
+| Share a source                                   |
+| Choose the source you want to share.              |
+|                                                  |
+|  ( ) DP-1                                        |
+|  ( ) HDMI-A-1                                    |
+|                                                  |
+|                       [ Cancel ] [ Share source ] |
++--------------------------------------------------+
+```
+
+Labels in this wireframe are illustrative backend input. Use neutral source
+icons unless the protocol explicitly identifies a source type. Start with no
+selection and Share disabled. Selecting a row enables Share; selecting or
+double-clicking a row must not immediately start sharing. Support arrow-key
+navigation, visible focus, Tab/Shift-Tab, explicit button activation and Escape.
+Keep cancellation easy to reach. There is no approval timeout or remembered
+source that silently starts capture.
+
+The window must reflow at narrow widths, scroll long lists, expose full labels
+accessibly and remain usable with large fonts and RTL layout. Review light and
+dark appearance, custom accent, GTK appearance mode, reduced motion and live
+committed theme changes. Capture native screenshots for default, selected,
+long-list and narrow states. These UI captures supplement protocol tests.
+
+### Aqueous dispatch and packaging
+
+1. Add a dedicated `pearl)` branch to `action chooser` using a configured private
+   executable path. Stable uses `/usr/lib/pearl/pearl-capture-picker`; Git uses
+   `/usr/lib/pearl-git/pearl-capture-picker`. Extend the existing Git staging
+   transformation explicitly and retain custom install-prefix handling.
+2. Resolve the shell from the active-session snapshot, so changing the Welcome
+   selection affects the next login rather than an already-running session.
+   A missing Pearl picker fails the request with empty stdout and a diagnostic;
+   it must not silently select a source or use another shell's picker.
+3. Preserve custom user portal configuration. Update recognized generated
+   defaults only where needed; keep `chooser_type=dmenu` and the existing
+   `aqueous-shell-action chooser` dispatch entry. Installation does not restart
+   services or interrupt a running stream.
+4. Add a focused `build-capture-picker` target and include the executable in the
+   normal Pearl build. Install it through the existing Pearl packaging helper;
+   stable/Git paths and application IDs must be distinct. Intel Git shares the
+   Git identity, consistent with the rest of Pearl packaging.
+5. Update all four Pearl recipes, metadata as needed, release archive/payload
+   checks and package fixtures. No additional package or D-Bus service is
+   introduced. Any newly required dependency must be declared in the Pearl
+   recipe rather than supplied accidentally by Aqueous Welcome.
+6. Update Aqueous session/component and Git staging tests, portal documentation,
+   and the retained integration patch in Pearl. Keep the generic picker owned
+   by the Aqueous portal package for its remaining consumers.
+
+### Implementation sequence and acceptance
+
+| Step | Deliverable | Exit criterion |
+| --- | --- | --- |
+| P0: backend contract | Trace the pinned chooser subprocess and request lifecycle; record input/output, cancellation and capability limits | Real backend selection and cancellation behavior is understood; any required adapter fix is identified |
+| P1: Zig protocol and window | Bounded parser, exact output, independent invocation and accessible picker | Selection/cancel/error tests pass with no unintended stdout or auto-sharing |
+| P2: shared appearance | Typed appearance module and Pearl-styled capture picker | Native light/dark/custom/GTK-mode views pass; existing portal appearance behavior remains intact |
+| P3: build and session integration | Bundled stable/Git executable and Pearl-only Aqueous dispatch | Package ownership, variant paths and active-session dispatch tests pass; other shells retain their choosers |
+| P4: end-to-end acceptance | Private portal/frontend/compositor tests and staged upgrade | Intended source streams successfully; cancellation never streams; cleanup, overrides and upgrade cases pass |
+
+Required verification:
+
+- Parser and output cases: empty input, one/many sources, duplicate labels,
+  Unicode, whitespace, missing trailing newline, NUL/invalid UTF-8, oversized
+  input and broken output. Compare exact bytes, not just displayed labels.
+- Lifecycle: Cancel, Escape, window close, explicit Share, double activation,
+  concurrent requests, backend death, caller cancellation and Wayland loss.
+  Confirm one terminal result and no surviving picker process.
+- Native UI: keyboard-only use, accessible names/selection state, large text,
+  RTL, narrow windows, multiple scales, appearance changes and shell absent.
+- Dispatch: stable Pearl, Git Pearl, Intel Git package identity, shell-free,
+  stable/Git DMS and Noctalia, next-login selection changes, custom prefixes,
+  missing executable and administrator/user chooser overrides.
+- Packaging: run the real package functions with fixtures and stage real built
+  binaries; verify private executable paths, stable/Git coexistence and source
+  archive inclusion. No separate picker package, routing changes or service
+  enablement should appear in the payload.
+- Capture integration: use isolated XDG directories, private D-Bus and a private
+  Wayland compositor with distinguishable outputs. Request ScreenCast through
+  the public frontend, verify the Pearl picker actually ran, choose each source
+  and verify the corresponding PipeWire frames. Cancellation must produce no
+  usable stream. Check Screenshot routing as a regression without claiming it
+  uses this chooser unless P0 establishes that behavior.
+- Upgrade/recovery: upgrade Pearl before or together with the Aqueous dispatcher
+  update; set the Aqueous Pearl preset's minimum dependency to the actual first
+  release containing the picker. Preserve existing overrides and streams. If a
+  rollback is needed, restore a matched Pearl/session package pair; do not use
+  automatic fallback to mask a broken installation.
+
+For Seafoam-Labs, publish updated Pearl variants first, then the Aqueous package
+base containing the session dispatcher (`aqueous-devario`, `aqueous-desktop` or
+`aqueous-desktop-git` for the relevant channel). Publish coherent split outputs
+and update `devario-desktop` if its exact component pins change. The capture
+engine needs no functional rewrite; any backend lifecycle fix discovered in P0
+must be shipped and verified with the matching Aqueous portal package.
+
+
+### Capture picker implementation record
+
+Implemented and checked on 2026-10-12:
+
+- The production picker uses Zig and the existing GTK bindings. Its private
+  stable/Git paths are owned by Pearl; the ordinary build installs it. Explicit
+  confirmation returns an unchanged source label, with cancellation producing
+  no selection. Test controls exist only in instrumented builds, which fail the
+  installer's identity check.
+- The portal and picker share `src/ui/appearance_observer.zig`; the existing C
+  portal entry points are thin adapters. Native captures cover dark, light,
+  GTK mode, large text/RTL, long lists and a small-output narrow layout.
+- Aqueous dispatches only Pearl sessions to the new picker. Active-session
+  identity, stable/Git paths, custom user chooser configuration and the other
+  shells' providers are retained.
+- Inspection of pinned xdg-desktop-portal-wlr 0.8.4 found a synchronous chooser
+  wait and a leaked completed CreateSession request object. The existing Aqueous
+  upstream patch now handles dmenu selection asynchronously, drains bounded
+  pipes, authorizes request closure, terminates chooser process groups on
+  cancellation, and observes frontend owner loss. Session closure invalidates
+  pending selection safely. Existing opt-in persistence and custom choosers
+  returning a line without its final newline remain supported.
+- To avoid inventing a future release number, Pearl provides the versioned
+  `pearl-capture-picker=1` capability (Git: `pearl-capture-picker-git=1`). Aqueous's
+  Pearl preset requires that capability alongside Pearl. These are virtual
+  package capabilities, not separate package jobs.
+
+The companion changes are applied to `/home/zoey/RiderProjects/Aqueous` and saved
+in [aqueous-capture-picker.patch](../packaging/portal/aqueous-capture-picker.patch).
+That patch applies after the earlier portal integration/bundling changes. Both
+it and the embedded upstream patch were checked against their source baselines
+with zero fuzz and byte-for-byte comparison to the tested trees.
+
+Validation evidence is in
+[verification.json](../artifacts/capture-picker/verification.json). The default
+Pearl build passed all 44 build steps; parser tests, all four Pearl package
+fixtures, stable/Git portal staging, Aqueous component and Git desktop checks,
+and Devario metadata checks passed. Existing portal contract and real GTK/Qt
+file-dialog frontend regressions also passed after the shared appearance
+refactor.
+
+The capture test uses the actual public portal frontend, the patched Aqueous
+backend and private PipeWire. Two independently colored animated headless
+outputs were selected through Pearl and their received frame pixels checked.
+It also verifies cancellation, unauthorized backend Close rejection, session
+closure, frontend death, custom chooser compatibility and failed chooser
+rejection. Screenshot remains advertised through the existing Aqueous route.
+
+Native screenshots:
+[dark](../artifacts/capture-picker/native/dark.png),
+[light](../artifacts/capture-picker/native/light.png),
+[narrow](../artifacts/capture-picker/native/narrow.png),
+[large text and RTL](../artifacts/capture-picker/native/rtl.png),
+[GTK appearance](../artifacts/capture-picker/native/gtk.png).
+
+Reproduction, using Zig 0.16.0 and the existing private compositor fixture:
+
+```sh
+zig build build-portal test-capture-picker test-release-tools -Doptimize=ReleaseSafe
+zig build build-portal -Dportal-variant=git -Doptimize=ReleaseSafe --prefix zig-out/portal-git
+zig build build-capture-picker -Dcapture-picker-test-hooks=true -Doptimize=ReleaseSafe --prefix zig-out/capture-test
+python3 tests/capture_picker/test_native.py
+python3 tests/capture_picker/test_portal.py --backend /path/to/rebuilt/xdg-desktop-portal-aqueous
+python3 tests/portal/test_package.py
+python3 tests/portal/test_aqueous.py --source /path/to/Aqueous
+```
+
+The public capture test additionally requires PyGObject, Pillow, PipeWire's
+`pw-link` and GStreamer's PipeWire/video conversion/PNG elements. Native UI checks
+use `grim`, `wtype`, `wlrctl` and `wlr-randr`. Tests use private runtime directories
+and do not start a second backend on the user's session bus.
+
+Rebuild Pearl and the matching Aqueous package base from revisions containing
+these changes, publishing coherent split outputs; update `devario-desktop` if
+its exact component pins change. Existing tag-pinned recipes must target the
+new source revision before release. No picker package or new portal service
+needs to be added. Physical-output/browser/Flatpak deployment and screen-reader
+speech remain release acceptance checks; the automated evidence is headless.

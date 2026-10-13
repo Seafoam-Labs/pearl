@@ -30,6 +30,13 @@ is no separate `xdg-desktop-portal-pearl` package job. The frontend
 Publish these changes from an updated source revision/tag; rebuilding an older
 tag will not include the bundled backend.
 
+The capture source picker is also bundled in Pearl. The Aqueous Pearl preset
+requires the versioned `pearl-capture-picker>=1` capability (Git uses
+`pearl-capture-picker-git>=1`), provided by Pearl itself. Ship the matching Aqueous
+session dispatcher and asynchronous capture-backend patch together. See the
+[capture picker implementation record](FILE_CHOOSER_IMPLEMENTATION_PLAN.md#capture-picker-implementation-record)
+for verification and rebuild details.
+
 The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.2`.
 Its Arch version is `1:0.2.2-1`; the epoch allows upgrades from the earlier
 `1.0.0rc2` packages. The source and runtime version are also `0.2.2`.

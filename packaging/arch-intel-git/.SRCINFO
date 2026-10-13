@@ -58,6 +58,7 @@ pkgbase = pearl-intel-git
 	optdepends = upower>=1.91.4: battery status
 	optdepends = power-profiles-daemon>=0.30: power profiles
 	provides = pearl-git=1:0.2.2.r175.g82fbfcf
+	provides = pearl-capture-picker-git=1
 	conflicts = pearl-git
 	options = !strip
 	options = !debug

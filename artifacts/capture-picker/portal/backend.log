@@ -1,0 +1,295 @@
+2026/10/12 22:28:11 [DEBUG] - config: outputname:  (null)
+2026/10/12 22:28:11 [DEBUG] - config: max_fps:  0.000000
+2026/10/12 22:28:11 [DEBUG] - config: exec_before:  (null)
+2026/10/12 22:28:11 [DEBUG] - config: exec_after:  (null)
+2026/10/12 22:28:11 [DEBUG] - config: chooser_cmd: /tmp/pearl-dev-7w4e7ucm/chooser
+2026/10/12 22:28:11 [DEBUG] - config: chooser_type: dmenu
+2026/10/12 22:28:11 [DEBUG] - config: force_mod_linear: 0
+2026/10/12 22:28:11 [DEBUG] - dbus: connected
+2026/10/12 22:28:11 [DEBUG] - wlroots: wl_display connected
+2026/10/12 22:28:11 [DEBUG] - pipewire: pw_loop created
+2026/10/12 22:28:11 [DEBUG] - pipewire: establishing connection to core
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wl_compositor  (Version: 6)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wl_fixes  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_security_context_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wl_shm  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface wl_shm (Version 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_single_pixel_buffer_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_alpha_modifier_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_color_representation_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_content_type_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_fifo_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_commit_timing_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register xdg_wm_dialog_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register xdg_toplevel_drag_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register xdg_toplevel_icon_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register xdg_toplevel_tag_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_viewporter  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_fractional_scale_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wl_subcompositor  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_cursor_shape_manager_v1  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register xdg_wm_base  (Version: 7)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zxdg_decoration_manager_v1  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register org_kde_kwin_server_decoration_manager  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register xdg_activation_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zxdg_exporter_v2  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zxdg_importer_v2  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wl_data_device_manager  (Version: 3)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_primary_selection_device_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register ext_data_control_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwlr_data_control_manager_v1  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwlr_export_dmabuf_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwlr_screencopy_manager_v1  (Version: 3)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface zwlr_screencopy_manager_v1 (Version 3)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register ext_image_copy_capture_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface ext_image_copy_capture_manager_v1 (Version 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_capture_color_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register ext_output_image_capture_source_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface ext_output_image_capture_source_manager_v1 (Version 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwlr_foreign_toplevel_manager_v1  (Version: 3)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register ext_foreign_toplevel_list_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface ext_foreign_toplevel_list_v1 (Version 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register ext_foreign_toplevel_image_capture_source_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface ext_foreign_toplevel_image_capture_source_manager_v1 (Version 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_tearing_control_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_linux_dmabuf_v1  (Version: 6)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface zwp_linux_dmabuf_v1 (Version 4)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_linux_drm_syncobj_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_color_manager_v1  (Version: 3)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_window_manager_v1  (Version: 10)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register ext_workspace_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_window_info_manager_v1  (Version: 8)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_xkb_bindings_v1  (Version: 3)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_layer_shell_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwlr_layer_shell_v1  (Version: 4)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwlr_gamma_control_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_presentation  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zxdg_output_manager_v1  (Version: 3)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface zxdg_output_manager_v1 (Version 3)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwlr_output_manager_v1  (Version: 4)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwlr_output_power_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_input_manager_v1  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register ext_idle_notifier_v1  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_relative_pointer_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_pointer_gestures_v1  (Version: 3)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwlr_virtual_pointer_manager_v1  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_virtual_keyboard_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_pointer_constraints_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_input_method_manager_v2  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_text_input_manager_v3  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_tablet_manager_v2  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wp_pointer_warp_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wl_seat  (Version: 9)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_libinput_config_v1  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_xkb_config_v1  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_idle_inhibit_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register ext_session_lock_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_shell_manager_v1  (Version: 2)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register aqueous_input_activity_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register zwp_keyboard_shortcuts_inhibit_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register ext_background_effect_manager_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register xdg_system_bell_v1  (Version: 1)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wl_output  (Version: 4)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface wl_output (Version 4)
+2026/10/12 22:28:11 [DEBUG] - wlroots: interface to register wl_output  (Version: 4)
+2026/10/12 22:28:11 [DEBUG] - wlroots: |-- registered to interface wl_output (Version 4)
+2026/10/12 22:28:11 [DEBUG] - wayland: registry listeners run
+2026/10/12 22:28:11 [DEBUG] - wayland: using ext_image_copy_capture
+2026/10/12 22:28:11 [DEBUG] - wayland: xdg_output listeners run
+2026/10/12 22:28:11 [INFO] - dbus: create session method invoked
+2026/10/12 22:28:11 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_0720d82cb3054edf8de72c52009a402f
+2026/10/12 22:28:11 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_64ff27300bde41c9971a370588c6551b
+2026/10/12 22:28:11 [INFO] - dbus: app_id: 
+2026/10/12 22:28:11 [INFO] - dbus: select sources method invoked
+2026/10/12 22:28:11 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_5a82b4dd3a75492a9b61eff3214d2cc2
+2026/10/12 22:28:11 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_64ff27300bde41c9971a370588c6551b
+2026/10/12 22:28:11 [INFO] - dbus: app_id: 
+2026/10/12 22:28:11 [DEBUG] - dbus: select sources: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_64ff27300bde41c9971a370588c6551b
+2026/10/12 22:28:11 [INFO] - dbus: option types: 1
+2026/10/12 22:28:11 [INFO] - dbus: option cursor_mode:1
+2026/10/12 22:28:11 [INFO] - wlroots: capturable output: 74 HEADLESS-1
+2026/10/12 22:28:11 [INFO] - wlroots: capturable output: 73 HEADLESS-2
+2026/10/12 22:28:11 [INFO] - xdpw: screencast instance 0x557995364e70 has 1 references
+2026/10/12 22:28:11 [INFO] - xdpw: 1 active screencast instances
+2026/10/12 22:28:11 [INFO] - wlroots: output: HEADLESS-1
+2026/10/12 22:28:11 [INFO] - dbus: start method invoked
+2026/10/12 22:28:11 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/t
+2026/10/12 22:28:11 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_64ff27300bde41c9971a370588c6551b
+2026/10/12 22:28:11 [INFO] - dbus: app_id: 
+2026/10/12 22:28:11 [INFO] - dbus: parent_window: 
+2026/10/12 22:28:11 [DEBUG] - dbus: start: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_64ff27300bde41c9971a370588c6551b
+2026/10/12 22:28:11 [DEBUG] - ext: buffer constraints changed
+2026/10/12 22:28:11 [INFO] - xdpw: Using render node /dev/dri/renderD128
+2026/10/12 22:28:11 [INFO] - wlroots: num_modififiers 6
+2026/10/12 22:28:11 [INFO] - wlroots: num_modififiers 6
+2026/10/12 22:28:11 [INFO] - pipewire: stream state changed to "connecting"
+2026/10/12 22:28:11 [INFO] - pipewire: node id is -1
+2026/10/12 22:28:11 [INFO] - pipewire: stream state changed to "paused"
+2026/10/12 22:28:11 [INFO] - pipewire: node id is 13
+2026/10/12 22:28:11 [DEBUG] - dbus: start: returning node 13
+2026/10/12 22:28:13 [DEBUG] - pipewire: Format negotiated:
+2026/10/12 22:28:13 [DEBUG] - pipewire: buffer_type: 0 (4)
+2026/10/12 22:28:13 [DEBUG] - pipewire: format: 8
+2026/10/12 22:28:13 [DEBUG] - pipewire: modifier: 0
+2026/10/12 22:28:13 [DEBUG] - pipewire: size: (1280, 720)
+2026/10/12 22:28:13 [DEBUG] - pipewire: max_framerate: (0 / 0)
+2026/10/12 22:28:13 [DEBUG] - pipewire: add buffer event handle
+2026/10/12 22:28:13 [DEBUG] - pipewire: add buffer event handle
+2026/10/12 22:28:13 [INFO] - pipewire: stream state changed to "streaming"
+2026/10/12 22:28:13 [INFO] - pipewire: node id is 13
+2026/10/12 22:28:13 [INFO] - pipewire: stream state changed to "paused"
+2026/10/12 22:28:13 [INFO] - pipewire: node id is 13
+2026/10/12 22:28:13 [DEBUG] - pipewire: remove buffer event handle
+2026/10/12 22:28:13 [DEBUG] - pipewire: remove buffer event handle
+2026/10/12 22:28:13 [WARN] - pipewire: no buffer to queue
+2026/10/12 22:28:13 [INFO] - dbus: session closed
+2026/10/12 22:28:13 [DEBUG] - dbus: destroying session 0x557995363920
+2026/10/12 22:28:13 [DEBUG] - xdpw: screencast instance 0x557995364e70 now has 0 references
+2026/10/12 22:28:13 [DEBUG] - xdpw: destroying cast instance
+2026/10/12 22:28:13 [DEBUG] - pipewire: destroying stream
+2026/10/12 22:28:13 [INFO] - pipewire: stream state changed to "unconnected"
+2026/10/12 22:28:13 [INFO] - pipewire: node id is -1
+2026/10/12 22:28:13 [INFO] - dbus: create session method invoked
+2026/10/12 22:28:13 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_b0150b1eedae4501bfa3aad9bc4403e9
+2026/10/12 22:28:13 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_23c151ddda2442c5932563dfee2ffa6e
+2026/10/12 22:28:13 [INFO] - dbus: app_id: 
+2026/10/12 22:28:13 [INFO] - dbus: select sources method invoked
+2026/10/12 22:28:13 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_3099237871914c97a66eae5d51b750d9
+2026/10/12 22:28:13 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_23c151ddda2442c5932563dfee2ffa6e
+2026/10/12 22:28:13 [INFO] - dbus: app_id: 
+2026/10/12 22:28:13 [DEBUG] - dbus: select sources: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_23c151ddda2442c5932563dfee2ffa6e
+2026/10/12 22:28:13 [INFO] - dbus: option types: 1
+2026/10/12 22:28:13 [INFO] - dbus: option cursor_mode:1
+2026/10/12 22:28:13 [INFO] - wlroots: capturable output: 74 HEADLESS-1
+2026/10/12 22:28:13 [INFO] - wlroots: capturable output: 73 HEADLESS-2
+2026/10/12 22:28:13 [INFO] - xdpw: screencast instance 0x557995364e70 has 1 references
+2026/10/12 22:28:13 [INFO] - xdpw: 1 active screencast instances
+2026/10/12 22:28:13 [INFO] - wlroots: output: HEADLESS-2
+2026/10/12 22:28:13 [INFO] - dbus: start method invoked
+2026/10/12 22:28:13 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/t
+2026/10/12 22:28:13 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_23c151ddda2442c5932563dfee2ffa6e
+2026/10/12 22:28:13 [INFO] - dbus: app_id: 
+2026/10/12 22:28:13 [INFO] - dbus: parent_window: 
+2026/10/12 22:28:13 [DEBUG] - dbus: start: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_23c151ddda2442c5932563dfee2ffa6e
+2026/10/12 22:28:13 [DEBUG] - ext: buffer constraints changed
+2026/10/12 22:28:13 [INFO] - wlroots: num_modififiers 6
+2026/10/12 22:28:13 [INFO] - wlroots: num_modififiers 6
+2026/10/12 22:28:13 [INFO] - pipewire: stream state changed to "connecting"
+2026/10/12 22:28:13 [INFO] - pipewire: node id is -1
+2026/10/12 22:28:13 [INFO] - pipewire: stream state changed to "paused"
+2026/10/12 22:28:13 [INFO] - pipewire: node id is 13
+2026/10/12 22:28:13 [DEBUG] - dbus: start: returning node 13
+2026/10/12 22:28:13 [DEBUG] - pipewire: Format negotiated:
+2026/10/12 22:28:13 [DEBUG] - pipewire: buffer_type: 0 (4)
+2026/10/12 22:28:13 [DEBUG] - pipewire: format: 8
+2026/10/12 22:28:13 [DEBUG] - pipewire: modifier: 0
+2026/10/12 22:28:13 [DEBUG] - pipewire: size: (1280, 720)
+2026/10/12 22:28:13 [DEBUG] - pipewire: max_framerate: (0 / 0)
+2026/10/12 22:28:13 [DEBUG] - pipewire: add buffer event handle
+2026/10/12 22:28:13 [DEBUG] - pipewire: add buffer event handle
+2026/10/12 22:28:13 [INFO] - pipewire: stream state changed to "streaming"
+2026/10/12 22:28:13 [INFO] - pipewire: node id is 13
+2026/10/12 22:28:13 [INFO] - pipewire: stream state changed to "paused"
+2026/10/12 22:28:13 [INFO] - pipewire: node id is 13
+2026/10/12 22:28:13 [DEBUG] - pipewire: remove buffer event handle
+2026/10/12 22:28:13 [DEBUG] - pipewire: remove buffer event handle
+2026/10/12 22:28:13 [INFO] - dbus: session closed
+2026/10/12 22:28:13 [DEBUG] - dbus: destroying session 0x5579953715c0
+2026/10/12 22:28:13 [DEBUG] - xdpw: screencast instance 0x557995364e70 now has 0 references
+2026/10/12 22:28:13 [DEBUG] - xdpw: destroying cast instance
+2026/10/12 22:28:13 [DEBUG] - pipewire: destroying stream
+2026/10/12 22:28:13 [INFO] - pipewire: stream state changed to "unconnected"
+2026/10/12 22:28:13 [INFO] - pipewire: node id is -1
+2026/10/12 22:28:13 [INFO] - dbus: create session method invoked
+2026/10/12 22:28:13 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_2d2cb7d885374dc9abc4c30990239bf8
+2026/10/12 22:28:13 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_bd1dfad90841406a8a7d473fdfbbdada
+2026/10/12 22:28:13 [INFO] - dbus: app_id: 
+2026/10/12 22:28:13 [INFO] - dbus: select sources method invoked
+2026/10/12 22:28:13 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_7cfebecd9ea248e0b7e00e2138b8911a
+2026/10/12 22:28:13 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_bd1dfad90841406a8a7d473fdfbbdada
+2026/10/12 22:28:13 [INFO] - dbus: app_id: 
+2026/10/12 22:28:13 [DEBUG] - dbus: select sources: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_bd1dfad90841406a8a7d473fdfbbdada
+2026/10/12 22:28:13 [INFO] - dbus: option types: 1
+2026/10/12 22:28:13 [INFO] - dbus: option cursor_mode:1
+2026/10/12 22:28:13 [INFO] - wlroots: capturable output: 74 HEADLESS-1
+2026/10/12 22:28:13 [INFO] - wlroots: capturable output: 73 HEADLESS-2
+2026/10/12 22:28:13 [INFO] - xdpw: screencast instance 0x557995364e70 has 1 references
+2026/10/12 22:28:13 [INFO] - xdpw: 1 active screencast instances
+2026/10/12 22:28:13 [INFO] - wlroots: output: HEADLESS-1
+2026/10/12 22:28:13 [INFO] - dbus: session closed
+2026/10/12 22:28:13 [DEBUG] - dbus: destroying session 0x55799535e090
+2026/10/12 22:28:13 [DEBUG] - xdpw: screencast instance 0x557995364e70 now has 0 references
+2026/10/12 22:28:13 [DEBUG] - xdpw: destroying cast instance
+2026/10/12 22:28:13 [INFO] - dbus: create session method invoked
+2026/10/12 22:28:13 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_7ddf9e9b083943819c7a64f0c31ef683
+2026/10/12 22:28:13 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_e5e6ed44e9164822becf73a7ff0f0f00
+2026/10/12 22:28:13 [INFO] - dbus: app_id: 
+2026/10/12 22:28:13 [INFO] - dbus: select sources method invoked
+2026/10/12 22:28:13 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_be5d75b2cc6b43b2b5e73a485c14495a
+2026/10/12 22:28:13 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_e5e6ed44e9164822becf73a7ff0f0f00
+2026/10/12 22:28:13 [INFO] - dbus: app_id: 
+2026/10/12 22:28:13 [DEBUG] - dbus: select sources: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_e5e6ed44e9164822becf73a7ff0f0f00
+2026/10/12 22:28:13 [INFO] - dbus: option types: 1
+2026/10/12 22:28:13 [INFO] - dbus: option cursor_mode:1
+2026/10/12 22:28:13 [INFO] - wlroots: capturable output: 74 HEADLESS-1
+2026/10/12 22:28:13 [INFO] - wlroots: capturable output: 73 HEADLESS-2
+2026/10/12 22:28:13 [INFO] - dbus: session closed
+2026/10/12 22:28:13 [DEBUG] - dbus: destroying session 0x55799537bb20
+2026/10/12 22:28:13 [INFO] - dbus: create session method invoked
+2026/10/12 22:28:13 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_4ecf201ffceb4a18b64686f28e4f1b3e
+2026/10/12 22:28:13 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_03c3bf9ac7774db0bdf67bde92ab2735
+2026/10/12 22:28:13 [INFO] - dbus: app_id: 
+2026/10/12 22:28:13 [INFO] - dbus: select sources method invoked
+2026/10/12 22:28:13 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_18e19971bf8a4566ab8beec44df9befa
+2026/10/12 22:28:13 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_03c3bf9ac7774db0bdf67bde92ab2735
+2026/10/12 22:28:13 [INFO] - dbus: app_id: 
+2026/10/12 22:28:13 [DEBUG] - dbus: select sources: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_03c3bf9ac7774db0bdf67bde92ab2735
+2026/10/12 22:28:13 [INFO] - dbus: option types: 1
+2026/10/12 22:28:13 [INFO] - dbus: option cursor_mode:1
+2026/10/12 22:28:13 [INFO] - wlroots: capturable output: 74 HEADLESS-1
+2026/10/12 22:28:13 [INFO] - wlroots: capturable output: 73 HEADLESS-2
+2026/10/12 22:28:13 [INFO] - dbus: session closed
+2026/10/12 22:28:13 [DEBUG] - dbus: destroying session 0x55799537bb20
+2026/10/12 22:28:14 [INFO] - dbus: create session method invoked
+2026/10/12 22:28:14 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_9e75aaab92604f3496283fa4f9ed7222
+2026/10/12 22:28:14 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_abf942289d3448ab910a3b8f6f77cc21
+2026/10/12 22:28:14 [INFO] - dbus: app_id: 
+2026/10/12 22:28:14 [INFO] - dbus: select sources method invoked
+2026/10/12 22:28:14 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_ff823104297d433daf03459362266e4b
+2026/10/12 22:28:14 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_abf942289d3448ab910a3b8f6f77cc21
+2026/10/12 22:28:14 [INFO] - dbus: app_id: 
+2026/10/12 22:28:14 [DEBUG] - dbus: select sources: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_abf942289d3448ab910a3b8f6f77cc21
+2026/10/12 22:28:14 [INFO] - dbus: option types: 1
+2026/10/12 22:28:14 [INFO] - dbus: option cursor_mode:1
+2026/10/12 22:28:14 [INFO] - wlroots: capturable output: 74 HEADLESS-1
+2026/10/12 22:28:14 [INFO] - wlroots: capturable output: 73 HEADLESS-2
+2026/10/12 22:28:14 [INFO] - dbus: session closed
+2026/10/12 22:28:14 [DEBUG] - dbus: destroying session 0x55799537bb20
+2026/10/12 22:28:14 [INFO] - dbus: create session method invoked
+2026/10/12 22:28:14 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_19b2dd88daee49e4a2831f43e1c78d72
+2026/10/12 22:28:14 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_07476b397a934138ad278dae64069f94
+2026/10/12 22:28:14 [INFO] - dbus: app_id: 
+2026/10/12 22:28:14 [INFO] - dbus: select sources method invoked
+2026/10/12 22:28:14 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_bd6e62d34047439cb8c0fcec97fa7451
+2026/10/12 22:28:14 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_07476b397a934138ad278dae64069f94
+2026/10/12 22:28:14 [INFO] - dbus: app_id: 
+2026/10/12 22:28:14 [DEBUG] - dbus: select sources: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_07476b397a934138ad278dae64069f94
+2026/10/12 22:28:14 [INFO] - dbus: option types: 1
+2026/10/12 22:28:14 [INFO] - dbus: option cursor_mode:1
+2026/10/12 22:28:14 [INFO] - wlroots: capturable output: 74 HEADLESS-1
+2026/10/12 22:28:14 [INFO] - wlroots: capturable output: 73 HEADLESS-2
+2026/10/12 22:28:14 [INFO] - dbus: session closed
+2026/10/12 22:28:14 [DEBUG] - dbus: destroying session 0x55799536d300
+2026/10/12 22:28:14 [INFO] - dbus: create session method invoked
+2026/10/12 22:28:14 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_43e3af8394924fd3abbe7cb274f3a76d
+2026/10/12 22:28:14 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_c97ab5cdf477456fb5f6fa22150ae78b
+2026/10/12 22:28:14 [INFO] - dbus: app_id: 
+2026/10/12 22:28:14 [INFO] - dbus: select sources method invoked
+2026/10/12 22:28:14 [INFO] - dbus: request_handle: /org/freedesktop/portal/desktop/request/1_11/request_458605410cf246539c9e5f6e5d1ba35d
+2026/10/12 22:28:14 [INFO] - dbus: session_handle: /org/freedesktop/portal/desktop/session/1_11/capture_c97ab5cdf477456fb5f6fa22150ae78b
+2026/10/12 22:28:14 [INFO] - dbus: app_id: 
+2026/10/12 22:28:14 [DEBUG] - dbus: select sources: found matching session /org/freedesktop/portal/desktop/session/1_11/capture_c97ab5cdf477456fb5f6fa22150ae78b
+2026/10/12 22:28:14 [INFO] - dbus: option types: 1
+2026/10/12 22:28:14 [INFO] - dbus: option cursor_mode:1
+2026/10/12 22:28:14 [INFO] - wlroots: capturable output: 74 HEADLESS-1
+2026/10/12 22:28:14 [INFO] - wlroots: capturable output: 73 HEADLESS-2

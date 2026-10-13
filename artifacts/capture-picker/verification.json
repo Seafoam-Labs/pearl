@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-12",
+  "status": "implemented_automated_validation_passed",
+  "live_session_modified": false,
+  "worktrees": [
+    "/home/zoey/Pearl",
+    "/home/zoey/RiderProjects/Aqueous"
+  ],
+  "language": "Zig picker and shared appearance; lifecycle changes patch the existing upstream C capture backend",
+  "source_sha256": {
+    "build.zig": "d7dde6113315daf917bea946e6fabf6483515ebebef0f8fe0df050adf78746e8",
+    "src/capture_picker_main.zig": "67ecefe0abfe4723caf8e1ce3b3ac725af3b1cfabfea6f12975b933b31455235",
+    "src/capture/picker.zig": "12efd7c0a2d390929727ac80e30da3aa9852e51507fcc0ecdc0a0f018b36c36b",
+    "src/capture/sources.zig": "ff09ab7016a531a192ab527528e9e9687b0bd54c78c2fb20073946e70f9a7904",
+    "src/ui/appearance_observer.zig": "d7a5500718dfb420ffd5f1861d00574d7c38b56181f1c1fa48087276522d3fdb",
+    "src/portal/appearance.zig": "2b54dec42224b59d1ce1ab53d1ebd9e6de4e18367a8e763b48af3959625abf22",
+    "resources/capture-picker.css": "425581ae2297b289b7146effc707f54b8e5f4493a61a3024a3cea5204bff430a",
+    "packaging/portal/install.sh": "c7773d581d483e76125396dfc2626bf47d0435a24913fce218f7e4cb710878e7",
+    "packaging/portal/aqueous-capture-picker.patch": "be5288be3516b3b2e25dff74be3d950e84d4ea8292e40d80e18101959f37e04a"
+  },
+  "binaries": {
+    "zig-out/bin/pearl-capture-picker": "6b8c2e18aaf1e4fd49f6945024a34bd260864eef64a09d92afafceb27c7fef09",
+    "zig-out/portal-git/bin/pearl-capture-picker": "571da7ca62cf3c8d895b3afee11fbe4df246a3368b2819f4f51a6b46526c15ea",
+    "zig-out/capture-test/bin/pearl-capture-picker": "b0d54dc66a3626bd68f2f51d01474553a0d2e69f53a243e5a9689f7b92228286",
+    "/tmp/pearl-capture-backend-build/xdg-desktop-portal-aqueous": "d3a569468feb90d3b7e75069a867913626e5b2be98705a612a5a71f31de4e59d"
+  },
+  "capture_backend": {
+    "upstream": "xdg-desktop-portal-wlr",
+    "version": "0.8.4",
+    "archive_sha256": "3122966d46ab108f505525bcb2498f9121b446ee8438fbfceb73a7a1fa1ad400",
+    "patch_sha256": "7a1dd57a597a311c5dd3ab958dd5946d45c2633d15fa85e62ab7f6317d6d4666",
+    "patch_reconstruction": "passed: zero fuzz and exact source-byte comparison"
+  },
+  "checks": {
+    "normal_build": "44/44 steps passed",
+    "parser": "3 tests passed; opaque source labels, empty/invalid/oversized input and source count limit",
+    "native": "passed: byte-exact output, cancel/Escape, no default approval, independent invocations, signals, dead reader, production test-hook guard, dark/light/GTK appearance, narrow output, large text/RTL",
+    "public_portal": "passed: actual frontend, Aqueous backend and PipeWire; distinct red/blue output pixels verified; cancellation, unauthorized Close rejection, session close, frontend death, custom unterminated output and nonzero chooser exit",
+    "packaging": "passed: four Pearl package functions, matching SRCINFO, stable/Git staging and identity rejection, Aqueous session/component/Git desktop checks, Devario metadata",
+    "regression": "passed: existing portal contracts and actual GTK/Qt file-dialog round trips",
+    "companion_patch": "passed: reconstructs the modified Aqueous files byte for byte"
+  },
+  "package_capabilities": {
+    "stable": "pearl-capture-picker=1",
+    "git": "pearl-capture-picker-git=1",
+    "separate_package": false
+  },
+  "logs": [
+    "verification/backend-rebuild.log",
+    "verification/components.log",
+    "verification/contracts.log",
+    "verification/default-build.log",
+    "verification/devario.log",
+    "verification/file-frontend.log",
+    "verification/final-build.log",
+    "verification/git-build.log",
+    "verification/git-desktop.log",
+    "verification/git-picker-final.log",
+    "verification/native.log",
+    "verification/packaging.log",
+    "verification/portal.log",
+    "verification/release-tools.log",
+    "verification/session.log",
+    "verification/test-build.log"
+  ],
+  "native_captures": [
+    "native/dark.png",
+    "native/gtk.png",
+    "native/initial.png",
+    "native/light.png",
+    "native/narrow.png",
+    "native/rtl.png"
+  ],
+  "remaining_release_acceptance": [
+    "Physical output and browser/Flatpak deployment checks",
+    "Screen-reader speech signoff",
+    "Publish updated source revisions/tags and rebuild matching Pearl/Aqueous packages"
+  ]
+}

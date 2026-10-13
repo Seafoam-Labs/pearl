@@ -1,0 +1,55 @@
+Build Summary: 44/44 steps succeeded
+install success
++- install pearl-preview-helper cached
+|  +- compile exe pearl-preview-helper ReleaseSafe native cached 17ms MaxRSS:59M
+|     +- options cached
++- install pearl-capture-picker success
+|  +- compile exe pearl-capture-picker ReleaseSafe native success 10s MaxRSS:403M
+|     +- options cached
+|     +- WriteFile capture-picker.css cached
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|        +- compile exe zig-wayland-scanner Debug native cached 9ms MaxRSS:57M
++- install xdg-desktop-portal-pearl cached
+|  +- compile exe xdg-desktop-portal-pearl ReleaseSafe native cached 16ms MaxRSS:59M
+|     +- options (reused)
+|     +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+|     +- options cached
++- install src/theme/material/ cached
++- install themes/profiles/seafoam.zed/ cached
++- install themes/profiles/seafoam.equibop/ cached
++- install themes/profiles/seafoam.fluxer/ cached
++- install themes/profiles/seafoam.starship/ cached
++- install themes/profiles/seafoam.steam/ cached
++- install pearl-themes cached
+|  +- compile exe pearl-themes ReleaseSafe native cached 18ms MaxRSS:59M
+|     +- options cached
++- install pearl cached
+|  +- compile exe pearl ReleaseSafe native cached 18ms MaxRSS:59M
+|     +- run pkg-config success 1ms
+|     +- translate-c cached 14ms MaxRSS:55M
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
+|     +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+|     +- options cached
++- install pearl-settings cached
+|  +- compile exe pearl-settings ReleaseSafe native cached 16ms MaxRSS:59M
+|     +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+|     +- run glib-compile-resources (pearl.gresource) (reused)
+|     +- options cached
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Settings.desktop to share/applications/org.aqueous.Pearl.Settings.desktop cached
++- install packaging/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg to share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg cached
++- install packaging/metainfo/org.aqueous.Pearl.Settings.metainfo.xml to share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml cached
++- install pearl-lock cached
+|  +- compile exe pearl-lock ReleaseSafe native cached 17ms MaxRSS:58M
+|     +- translate-c (reused)
+|     +- run glib-compile-resources (pearl.gresource) (reused)
+|     +- options cached
+|     +- translate-c cached 13ms MaxRSS:53M
++- install pearl-t00 cached
+|  +- compile exe pearl-t00 ReleaseSafe native cached 16ms MaxRSS:59M
+|     +- run pkg-config (reused)
+|     +- translate-c (reused)
++- install pearlctl cached
+   +- compile exe pearlctl ReleaseSafe native cached 26ms MaxRSS:58M
+

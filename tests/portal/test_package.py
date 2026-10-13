@@ -20,7 +20,7 @@ assert 'gtk' not in set(routing.values())
 with tempfile.TemporaryDirectory(prefix='pearl-portal-package-') as tmp:
     stage=Path(tmp)
     subprocess.run(['bash',ROOT/'packaging/portal/install.sh'],env={**os.environ,'DESTDIR':tmp},check=True)
-    for path in ['usr/lib/pearl/xdg-desktop-portal-pearl','usr/lib/pearl/pearl-preview-helper','usr/share/xdg-desktop-portal/portals/pearl.portal','usr/share/xdg-desktop-portal/pearl-portals.conf','usr/lib/systemd/user/xdg-desktop-portal-pearl.service','usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.pearl.service']:
+    for path in ['usr/lib/pearl/xdg-desktop-portal-pearl','usr/lib/pearl/pearl-preview-helper','usr/lib/pearl/pearl-capture-picker','usr/share/xdg-desktop-portal/portals/pearl.portal','usr/share/xdg-desktop-portal/pearl-portals.conf','usr/lib/systemd/user/xdg-desktop-portal-pearl.service','usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.pearl.service']:
         assert (stage/path).is_file(),path
     assert not (stage/'usr/lib/systemd/user/graphical-session.target.wants').exists()
 subprocess.run(['python3',ROOT/'tests/portal/generate_contracts.py','--check'],check=True)

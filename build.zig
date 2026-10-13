@@ -30,6 +30,22 @@ pub fn build(b: *std.Build) void {
     const chooser_build = b.step("build-chooser", "Build the shared native file chooser and isolated preview helper");
     chooser_build.dependOn(&b.addInstallArtifact(chooser, .{}).step);
     chooser_build.dependOn(&preview_install.step);
+    const capture_main = b.createModule(.{ .root_source_file = b.path("src/capture_picker_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| capture_main.addImport(name, bindings.module(name));
+    const capture_options = b.addOptions();
+    capture_options.addOption(bool, "test_hooks", b.option(bool, "capture-picker-test-hooks", "Enable isolated capture picker test controls") orelse false);
+    capture_options.addOption(bool, "git_variant", portal_variant == .git);
+    capture_main.addOptions("build_options", capture_options);
+    const capture_style = b.addWriteFiles();
+    const capture_css = capture_style.add("capture-picker.css", @embedFile("resources/portal.css") ++ "\n" ++ @embedFile("resources/capture-picker.css"));
+    capture_main.addAnonymousImport("portal_style", .{ .root_source_file = capture_css });
+    for ([_][]const u8{ "gtk4", "libcurl", "libarchive", "libpng" }) |name| capture_main.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+    const capture = b.addExecutable(.{ .name = "pearl-capture-picker", .root_module = capture_main });
+    const capture_install = b.addInstallArtifact(capture, .{});
+    b.getInstallStep().dependOn(&capture_install.step);
+    b.step("build-capture-picker", "Build Pearl's capture source picker").dependOn(&capture_install.step);
+    const capture_tests = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/capture/sources.zig"), .target = target, .optimize = optimize }) });
+    b.step("test-capture-picker", "Test capture source parsing and byte preservation").dependOn(&b.addRunArtifact(capture_tests).step);
     const portal_main = b.createModule(.{ .root_source_file = b.path("src/portal_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     if (portal_variant == .git) portal_main.addCMacro("PEARL_PORTAL_GIT", "1");
     portal_main.addImport("previews", @import("src/files/preview/build.zig").module(b, bindings, target, optimize, b.path("src/files/preview/root.zig"), preview_module.import_table.get("build_options").?, portal_main));
@@ -47,6 +63,7 @@ pub fn build(b: *std.Build) void {
     b.getInstallStep().dependOn(&portal_install.step);
     portal_build.dependOn(&portal_install.step);
     portal_build.dependOn(&preview_install.step);
+    portal_build.dependOn(&capture_install.step);
     const portal_tests = b.step("test-portals", "Run the portal contracts, shared chooser, print worker and staging checks in isolated sessions");
     for ([_][]const u8{ "tests/portal/test_contracts.py", "tests/portal/test_native.py", "tests/portal/test_print_worker.py", "tests/portal/test_package.py", "tests/portal/test_frontend.py", "tests/portal/test_ipp.py" }) |script| {
         const check = b.addSystemCommand(&.{ "python3", script });
@@ -185,6 +202,8 @@ pub fn build(b: *std.Build) void {
     scanner.generate("wl_output", 4);
     scanner.generate("ext_background_effect_manager_v1", 1);
     const native = b.createModule(.{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
+    capture_main.addImport("wayland", native);
+    capture_main.linkSystemLibrary("wayland-client", .{});
     portal_main.addImport("wayland", native);
     portal_main.linkSystemLibrary("wayland-client", .{});
     const native_export = b.addInstallFile(scanner.result, "share/pearl/bindings/wayland.zig");

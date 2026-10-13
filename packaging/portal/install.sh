@@ -16,6 +16,12 @@ esac
     echo "Backend identity does not match PEARL_VARIANT=$variant" >&2; exit 2;
 }
 install -Dm755 "$binaries/xdg-desktop-portal-pearl" "$destination/usr/lib/$component/xdg-desktop-portal-pearl"
+picker_identity=org.aqueous.Pearl.CapturePicker
+[[ "$variant" != git ]] || picker_identity=org.aqueous.Pearl.Git.CapturePicker
+[[ $("$binaries/pearl-capture-picker" --identity) == "$picker_identity" ]] || {
+    echo "Capture picker identity does not match PEARL_VARIANT=$variant" >&2; exit 2;
+}
+install -Dm755 "$binaries/pearl-capture-picker" "$destination/usr/lib/$component/pearl-capture-picker"
 install -Dm755 "$binaries/pearl-preview-helper" "$destination/usr/lib/$component/pearl-preview-helper"
 stage_template() {
     local input=$1 output=$2

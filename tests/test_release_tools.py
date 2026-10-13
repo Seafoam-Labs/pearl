@@ -140,6 +140,9 @@ class ReleaseTools(unittest.TestCase):
                     backend=binary/'xdg-desktop-portal-pearl'
                     backend.write_text(f'#!/bin/sh\nprintf "%s\\n" "org.freedesktop.impl.portal.desktop.{bus}"\n')
                     backend.chmod(0o755)
+                    picker=binary/'pearl-capture-picker'
+                    picker.write_text('#!/bin/sh\nprintf "%s\\n" "org.aqueous.Pearl.' + ('Git.' if git else '') + 'CapturePicker"\n')
+                    picker.chmod(0o755)
                     stage=work/variant
                     subprocess.run(['bash','-euc',
                         'source "$1"; srcdir="$2"; pkgdir="$3"; package',
@@ -149,6 +152,7 @@ class ReleaseTools(unittest.TestCase):
                     for member in (
                         f'usr/lib/{component}/xdg-desktop-portal-pearl',
                         f'usr/lib/{component}/pearl-preview-helper',
+                        f'usr/lib/{component}/pearl-capture-picker',
                         f'usr/share/xdg-desktop-portal/portals/{component}.portal',
                         f'usr/share/xdg-desktop-portal/{component}-portals.conf',
                         f'usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.{bus}.service',

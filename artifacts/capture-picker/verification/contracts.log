@@ -1,0 +1,11 @@
+
+PASS pinned interface signatures and installed implementations
+PASS trusted frontend boundary, typed appearance, namespace filtering and policy ownership
+PASS default mail composer handoff and literal Unicode/URI argument encoding
+PASS notification replacement, backend/service restart recovery, app isolation, persisted actions and withdrawal
+PASS native explicit consent and application-choice round trip
+PASS native print preparation, app-scoped single-use token, FD transfer and print-to-file
+PASS shell-owned holds, logind FD release, owner isolation, monitor state and query-end acknowledgement
+PASS request cancellation, owner isolation, removal and noninteractive installation denial
+PASS frontend owner loss cancels pending consent and revokes authority
+

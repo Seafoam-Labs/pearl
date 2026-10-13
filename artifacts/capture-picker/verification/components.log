@@ -1,0 +1,4 @@
+Aqueous session: The selected shell or its Aqueous integration is missing. Install its aqueous-shell preset or review setup.
+Aqueous session: Invalid session selection in /tmp/aqueous-shell-components.PIdBUJLu/config/aqueous/session.toml; review it in aqueous-welcome.
+Aqueous session: Invalid or ambiguous shell selection; review session.toml or run aqueous-welcome.
+PASS: shell component ownership, manifests, relocation, session recovery, archive safety and installer preservation

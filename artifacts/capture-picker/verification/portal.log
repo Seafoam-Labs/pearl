@@ -1,0 +1,7 @@
+PASS public ScreenCast source 0 PipeWire frame {'position': (1280, 0), 'size': (1280, 720), 'source_type': 1}
+PASS public ScreenCast source 1 PipeWire frame {'position': (0, 0), 'size': (1280, 720), 'source_type': 1}
+PASS custom chooser without trailing newline and failed chooser rejection
+PASS public Request.Close terminates open Pearl picker without creating a stream
+PASS session closure terminates pending picker
+PASS frontend owner loss terminates pending picker
+
