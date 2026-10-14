@@ -8,6 +8,7 @@ import argparse
 import http.server
 import json
 import os
+import shutil
 from pathlib import Path
 import sys
 import threading
@@ -20,7 +21,7 @@ from pearl_session import PrivateSession, wait_for, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, ctl, status, capture
 from test_desktop import desktop, keys
-from test_settings_app import apply_preferences, probe as settings_probe, click_widget
+from test_settings_app import apply_preferences, probe as settings_probe, click_widget, windows as settings_windows
 from test_agent_ui import Search
 
 
@@ -49,6 +50,7 @@ def main():
             Path(s.env["PEARL_SECURITY_LOG"]).write_text("")
             s.env["PEARL_TEST_LOCKER"] = str(args.locker.resolve())
             s.env["PEARL_TEST_AGENT"] = str(args.agent.resolve())
+            s.env["PEARL_TEST_CTL"] = str(args.ctl.resolve())
             pam = s.base / "pam"
             pam.mkdir()
             (pam / "pearl").write_text(f"auth required {args.pam_module.resolve()}\naccount required {args.pam_module.resolve()}\n")
@@ -91,7 +93,8 @@ def main():
             assert not Search.requests
             checks["disabled_by_default_no_agent_or_search"] = True
             ctl(s, args.ctl, "launcher", "hide")
-            apply_preferences(s, args.ctl, assistant=dict(enabled=True, read_pages=False,
+            runtime_path = args.agent.parent.parent / "libexec/pearl/assistant/llama-server"
+            apply_preferences(s, args.ctl, assistant=dict(enabled=True, read_pages=False, runtime=dict(source="custom", executable=str(runtime_path)),
                 providers=[dict(id="google", kind="google", name="Google", endpoint=f"http://127.0.0.1:{server.server_port}")]))
             show()
             assert query("12*(3+4)")["rows"][0]["kind"] == "calculator"
@@ -131,6 +134,73 @@ def main():
             settings.expect("event=settings-window-created")
             v = wait_for(lambda: (v if (v := settings_probe(s, ipc))["connected"] else False))
             assert v["page"] == "assistant", v
+            def reach(field):
+                for _ in range(60):
+                    view = settings_probe(s, ipc)
+                    control = next(c for c in view["controls"] if c["field"] == "assistant." + field)
+                    rect, viewport = control["bounds"], view["body_bounds"]
+                    if rect["y"] >= viewport["y"] and rect["y"] + rect["height"] <= viewport["y"] + viewport["height"]:
+                        return control
+                    win = settings_windows(ipc)[0]["geometry"]
+                    s.run(["wlrctl", "pointer", "move", "-100000", "-100000"])
+                    s.run(["wlrctl", "pointer", "move", str(round(win["x"] + viewport["x"] + viewport["width"] / 2)), str(round(win["y"] + viewport["y"] + viewport["height"] / 2))])
+                    below = rect["y"] > viewport["y"]
+                    s.run(["wlrctl", "pointer", "scroll", "140" if below else "-140", "0"])
+                    time.sleep(.1)
+                raise AssertionError(("assistant control unreachable", field, rect, viewport))
+            expected = {"runtime_source", "runtime_path", "compute_mode", "device", "backend", "fallback", "discover", "runtime_check", "setup_runtime"}
+            assert expected <= {c["field"].removeprefix("assistant.") for c in v["controls"]}
+            before_check = len(Search.requests)
+            click_widget(s, ipc, reach("setup_runtime")["bounds"])
+            wait_for(lambda: "Using compatible installed runtime" in settings_probe(s, ipc)["assistant_state"]["runtime"], 15)
+            assert len(Search.requests) == before_check
+            assert not settings_probe(s, ipc)["editor"]["state"]["dirty"]
+            checks["native_setup_reuses_compatible_runtime_without_installation"] = True
+            click_widget(s, ipc, reach("discover")["bounds"])
+            try:
+                wait_for(lambda: "Runtime found" in settings_probe(s, ipc)["assistant_state"]["runtime"], 15)
+            except TimeoutError:
+                (args.output / "discovery-failure.json").write_text(json.dumps(settings_probe(s, ipc), indent=2))
+                capture(s, "discovery-failure")
+                raise
+            click_widget(s, ipc, reach("runtime_check")["bounds"])
+            wait_for(lambda: "Compatible" in settings_probe(s, ipc)["assistant_state"]["runtime"], 90)
+            assert len(Search.requests) == before_check
+            checks["native_runtime_discovery_and_local_check_without_search"] = True
+            mode_control = reach("compute_mode")
+            click_widget(s, ipc, mode_control["bounds"])
+            keys(s, "Home", "Down", "Return")
+            view = wait_for(lambda: (p if (p := settings_probe(s, ipc))["editor"]["can_apply"] else False))
+            assert agent()["compute_mode"] == "cpu", agent()
+            capture(s, "runtime-acceleration-settings")
+            click_widget(s, ipc, next(c for c in view["controls"] if c["field"] == "apply")["bounds"])
+            wait_for(lambda: agent()["compute_mode"] == "auto")
+            checks["compute_draft_isolated_until_apply"] = True
+            # An intentionally slow protocol fixture makes the active-answer
+            # Apply confirmation deterministic; it is not an inference benchmark.
+            slow_runtime = s.base / "slow_answer"
+            shutil.copyfile(Path(__file__).with_name("fake_llama_server.py"), slow_runtime)
+            slow_runtime.chmod(0o755)
+            apply_preferences(s, args.ctl, assistant=dict(runtime=dict(source="custom", executable=str(slow_runtime)), compute=dict(mode="cpu")))
+            wait_for(lambda: agent()["compute_mode"] == "cpu")
+            click_widget(s, ipc, reach("compute_mode")["bounds"])
+            keys(s, "Home", "Down", "Return")
+            wait_for(lambda: settings_probe(s, ipc)["editor"]["can_apply"])
+            show()
+            assert query("What is fixture GPU failure?")["rows"][0]["kind"] == "ask"
+            keys(s, "Return")
+            wait_for(lambda: agent()["compute"]["busy"])
+            view = settings_probe(s, ipc)
+            click_widget(s, ipc, next(c for c in view["controls"] if c["field"] == "apply")["bounds"])
+            wait_for(lambda: settings_probe(s, ipc)["assistant_state"]["apply_prompt"])
+            assert agent()["compute_mode"] == "cpu" and agent()["compute"]["busy"]
+            capture(s, "stop-and-apply")
+            # Dialog defaults to Keep editing. Move to Stop & apply explicitly.
+            keys(s, "Tab", "Return")
+            wait_for(lambda: not settings_probe(s, ipc)["assistant_state"]["apply_prompt"])
+            wait_for(lambda: agent()["compute_mode"] == "auto" and not agent()["compute"]["busy"])
+            checks["active_answer_requires_stop_and_apply"] = True
+            reach("enabled")
             control = wait_for(lambda: next((c for c in settings_probe(s, ipc)["controls"] if c["field"] == "assistant.enabled" and c["enabled"]), False))
             capture(s, "assistant-settings")
             time.sleep(.3)

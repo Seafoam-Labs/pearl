@@ -29,6 +29,7 @@ pub const Options = struct {
     progress: ?*std.atomic.Value(u64) = null,
     resume_from: usize = 0,
     receiver: ?struct { context: *anyopaque, feed: *const fn (*anyopaque, []const u8) anyerror!void } = null,
+    monitor: ?struct { context: *anyopaque, check: *const fn (*anyopaque) anyerror!void } = null,
 };
 pub const Response = struct { bytes: []const u8, status: c_long, content_type: []const u8 };
 const Transfer = struct {
@@ -70,6 +71,10 @@ fn write(ptr: [*]u8, size: usize, n: usize, state: *Transfer) callconv(.c) usize
     return len;
 }
 fn progress(state: *Transfer, _: c.curl_off_t, _: c.curl_off_t, _: c.curl_off_t, _: c.curl_off_t) callconv(.c) c_int {
+    if (state.opts.monitor) |monitor| monitor.check(monitor.context) catch |err| {
+        state.failure = err;
+        return 1;
+    };
     return state.cancel.isCancelled();
 }
 pub fn publicV4(ip: [4]u8) bool {

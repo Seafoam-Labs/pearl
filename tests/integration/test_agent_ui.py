@@ -61,9 +61,11 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--agent", type=Path, default=ROOT / "zig-out/test/pearl-agent-test")
     p.add_argument("--model", type=Path, required=True)
+    p.add_argument("--runtime", type=Path, help="Use this local llama-server instead of the Pearl package")
     p.add_argument("--aqueous", type=Path)
     p.add_argument("--output", type=Path, default=ROOT / "artifacts/assistant/latest")
     args = p.parse_args()
+    args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=True)
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Search)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -91,6 +93,8 @@ def main():
                 seq += 1
                 parent.sendall(json.dumps(dict(agent=1, id=seq, op=op, **kwargs)).encode() + b"\n")
                 value = json.loads(reader.readline())
+                while value["id"] == 0:
+                    value = json.loads(reader.readline())
                 assert value["id"] == seq and value["ok"], value
                 return value.get("state")
 
@@ -104,6 +108,7 @@ def main():
                 assert not initial["visible"] and not initial["runtime"] and not Search.requests, initial
                 checks["no_inference_or_network_before_ask"] = True
                 config = dict(enabled=True, read_pages=False, idle_unload_seconds=15,
+                    runtime=dict(source="custom", executable=str(args.runtime.resolve())) if args.runtime else dict(source="packaged"),
                     providers=[dict(id="google", kind="google", name="Google", endpoint=f"http://127.0.0.1:{server.server_port}")])
                 started = time.monotonic()
                 request("ask", question="What is the difference between RAM and storage?", config=config)

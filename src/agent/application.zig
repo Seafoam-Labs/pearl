@@ -9,7 +9,8 @@ const wire = @import("../aqueous/transport.zig");
 const protocol = @import("protocol.zig");
 const controller = @import("controller.zig");
 const Config = @import("config.zig").Config;
-const Runtime = @import("runtime.zig").Runtime;
+const RuntimeModule = @import("runtime.zig");
+const Runtime = RuntimeModule.Runtime;
 const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Conversation = struct {
@@ -63,6 +64,8 @@ const App = struct {
     composer: *gtk.TextView = undefined,
     status: *gtk.Label = undefined,
     model_label: *gtk.Label = undefined,
+    compute_label: *gtk.Label = undefined,
+    compute_details: *gtk.Label = undefined,
     send: *gtk.Button = undefined,
     stop_button: *gtk.Button = undefined,
     previous: *gtk.Button = undefined,
@@ -86,9 +89,13 @@ const App = struct {
     composing: bool = false,
     erase_cancelled: bool = false,
     last_error: []const u8 = "",
+    compute_dirty: bool = false,
+    cpu_once: bool = false,
+    cpu_button: *gtk.Button = undefined,
     fn cancelWork(self: *App) void {
         self.generation += 1;
         if (self.cancel) |cancel| cancel.cancel() else self.runtime.stop();
+        self.compute_dirty = true;
         if (self.unload != 0) _ = glib.Source.remove(self.unload);
         self.unload = 0;
     }
@@ -135,7 +142,12 @@ const App = struct {
         }
     }
     fn reply(self: *App, value: protocol.Reply) void {
-        const bytes = std.json.Stringify.valueAlloc(a, value, .{}) catch return;
+        var response = value;
+        if (response.id != 0) {
+            response.compute = self.computeStatus();
+            self.compute_dirty = false;
+        }
+        const bytes = std.json.Stringify.valueAlloc(a, response, .{}) catch return;
         defer a.free(bytes);
         const frame = std.fmt.allocPrint(a, "{s}\n", .{bytes}) catch return;
         defer a.free(frame);
@@ -160,6 +172,10 @@ const App = struct {
             }
         }
         switch (req.op) {
+            .release_runtime => {
+                if (self.job != null) return error.AssistantBusy;
+                self.runtime.stop();
+            },
             .test_state, .test_submit, .test_hide => {
                 if (!@import("build_options").test_hooks) return error.Unsupported;
                 if (self.window == null) return error.Unavailable;
@@ -241,6 +257,23 @@ const App = struct {
         self.status = w.label("Ask a question to search your configured engine.", "dim-label");
         self.status.setWrap(1);
         root.append(self.status.as(gtk.Widget));
+        self.compute_label = w.label("Model unloaded", "dim-label");
+        self.compute_label.setWrap(1);
+        const compute_button = gtk.MenuButton.new();
+        compute_button.setChild(self.compute_label.as(gtk.Widget));
+        const popover = gtk.Popover.new();
+        self.compute_details = w.label("Model unloaded", "dim-label");
+        self.compute_details.setWrap(1);
+        self.compute_details.setWrapMode(.word_char);
+        self.compute_details.setMaxWidthChars(42);
+        self.compute_details.setSelectable(1);
+        popover.setChild(self.compute_details.as(gtk.Widget));
+        compute_button.setPopover(popover);
+        root.append(compute_button.as(gtk.Widget));
+        self.cpu_button = gtk.Button.newWithLabel("Use CPU once");
+        self.cpu_button.as(gtk.Widget).setVisible(0);
+        root.append(self.cpu_button.as(gtk.Widget));
+        _ = gtk.Button.signals.clicked.connect(self.cpu_button, *App, cpuClicked, self, .{});
         self.composer = gtk.TextView.new();
         self.composer.setWrapMode(.word_char);
         self.composer.setAcceptsTab(0);
@@ -312,6 +345,10 @@ const App = struct {
         self.cancelWork();
         self.status.setText("Stopped. Your question is preserved; Send retries it.");
     }
+    fn cpuClicked(_: *gtk.Button, self: *App) callconv(.c) void {
+        self.cpu_once = true;
+        self.submit();
+    }
     fn settingsClicked(_: *gtk.Button, self: *App) callconv(.c) void {
         self.reply(.{ .id = 0, .settings = true });
     }
@@ -361,6 +398,11 @@ const App = struct {
         }
         const alloc = job.arena.allocator();
         job.config = try std.json.parseFromSliceLeaky(Config, alloc, try std.json.Stringify.valueAlloc(alloc, self.config, .{}), .{});
+        if (self.cpu_once) {
+            job.config.compute.mode = .cpu;
+            self.cpu_once = false;
+        }
+        self.cpu_button.as(gtk.Widget).setVisible(0);
         job.question = try alloc.dupe(u8, question);
         const conv = &self.conversations[self.current];
         job.history = try std.json.parseFromSliceLeaky([]controller.Turn, alloc, try std.json.Stringify.valueAlloc(alloc, conv.turns.items, .{}), .{});
@@ -432,7 +474,12 @@ const App = struct {
         self.last_error = @errorName(err);
         const message: [:0]const u8 = switch (err) {
             error.ModelNotInstalled => "Download the selected model in Settings, then Send to retry.",
-            error.AssistantRuntimeNotInstalled => "Install Pearl's optional assistant runtime package, then retry.",
+            error.AssistantRuntimeNotInstalled => "Install the runtime with Settings → Runtime & acceleration → Set up runtime (install if needed), then Apply and retry.",
+            error.RuntimeCapabilityMissing, error.RuntimeAuthenticationMissing, error.ModelToolsIncompatible => "This runtime/model did not pass compatibility checks. Choose another runtime or model in Settings.",
+            error.AssistantRuntimeBusy => "Another local model test or answer is using the runtime. Stop it or wait, then retry.",
+            error.GpuUnavailableOrMemoryInsufficient, error.GpuOffloadUnverified, error.GpuRuntimeCapabilityMissing, error.AmbiguousGpuDevice => "The selected GPU could not be used. Choose a device or enable CPU fallback in Settings, then retry.",
+            error.RuntimeMemoryBudgetExceeded, error.SystemMemoryPressure => "Available memory is too low. Close other applications or select CPU in Settings, then retry.",
+            error.RuntimeCheckTimedOut, error.HelperTimedOut => "The local runtime check timed out. Retry or select another runtime in Settings.",
             error.SearchUnavailable, error.SearchEndpointRequired, error.SearchProviderRequired => "Configure and test a search engine in Settings, then retry.",
             error.Cancelled => "Stopped. Your question is preserved; Send retries it.",
             error.QuestionTooLong, error.QuestionExceedsContext => "This question is too long. Shorten it and retry.",
@@ -441,6 +488,7 @@ const App = struct {
         };
         if (self.window == null) return;
         self.status.setText(message);
+        self.cpu_button.as(gtk.Widget).setVisible(@intFromBool(self.config.compute.mode == .gpu and !self.config.compute.fallback() and (RuntimeModule.recoverable(err) or err == error.AmbiguousGpuDevice)));
         // Do not replace a follow-up the user has already started typing.
         if (self.composer.getBuffer().getCharCount() == 0) {
             const text = a.dupeZ(u8, question) catch return;
@@ -502,16 +550,47 @@ const App = struct {
         return 0;
     }
     fn updateControls(self: *App) void {
+        self.publishCompute();
         self.send.as(gtk.Widget).setSensitive(@intFromBool(self.job == null and !self.suspended));
         self.stop_button.as(gtk.Widget).setSensitive(@intFromBool(self.job != null));
         self.previous.as(gtk.Widget).setSensitive(@intFromBool(self.job == null and self.count > 1));
         const model = @import("model_registry.zig").find(self.config.model_id);
         self.model_label.setText(if (model) |m| m.name else "Custom model · On device");
+        if (self.job != null) {
+            self.compute_label.setText("Local inference…");
+            self.compute_details.setText("Runtime and device details update when the current operation completes.");
+            return;
+        }
+        var buffer: [2048]u8 = undefined;
+        const text = if (self.runtime.process == null) "Model unloaded" else if (self.runtime.device) |d| std.fmt.bufPrintZ(&buffer, "GPU · {s} · {s} · {d} layers", .{ @tagName(d.backend), d.description, self.runtime.offload_layers }) catch "GPU" else if (self.runtime.fallback_reason.len > 0) "CPU · fallback" else "CPU · local inference";
+        self.compute_label.setText(text);
+        if (self.runtime.process != null) {
+            const detail = std.fmt.allocPrintSentinel(a, "{s}\n{s}\n{s}\n{s}", .{ self.runtime.executable, self.runtime.version, self.runtime.fallback_reason, if (self.runtime.enforced_memory) "Host memory: cgroup limit" else "Host memory: monitored (GPU allocations are best effort)" }, 0) catch return;
+            defer a.free(detail);
+            self.compute_label.as(gtk.Widget).setTooltipText(detail);
+            self.compute_details.setText(detail);
+        } else {
+            self.compute_label.as(gtk.Widget).setTooltipText(null);
+            self.compute_details.setText("Model unloaded; the conversation remains available.");
+        }
+    }
+    fn publishCompute(self: *App) void {
+        self.compute_dirty = true;
+    }
+    fn computeStatus(self: *App) protocol.ComputeStatus {
+        const busy = self.job != null;
+        return if (busy) .{ .busy = true } else .{ .loaded = self.runtime.process != null, .gpu = self.runtime.gpu, .backend = if (self.runtime.device) |d| d.backend else .auto, .layers = self.runtime.offload_layers, .fallback = self.runtime.fallback_reason.len > 0, .enforced_memory = self.runtime.enforced_memory };
     }
     fn tick(data: ?*anyopaque) callconv(.c) c_int {
         const self: *App = @ptrCast(@alignCast(data.?));
+        if (self.compute_dirty and self.transport.output == null) {
+            self.compute_dirty = false;
+            self.reply(.{ .id = 0, .compute = self.computeStatus() });
+        }
         if (self.job != null and self.window != null) self.status.setText(switch (self.phase.load(.monotonic)) {
             .preparing => "Preparing local model…",
+            .checking => "Checking runtime and preparing local model…",
+            .fallback => "GPU unavailable. Continuing on CPU with your search results…",
             .deciding => "Working on your question…",
             .searching => "Searching configured engines…",
             .reading => "Reading a source page…",
@@ -538,6 +617,7 @@ const App = struct {
         const self: *App = @ptrCast(@alignCast(data.?));
         self.unload = 0;
         self.runtime.stop();
+        if (self.window != null) self.updateControls() else self.publishCompute();
         return 0;
     }
 };

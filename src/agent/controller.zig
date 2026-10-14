@@ -6,7 +6,7 @@ const cfg = @import("config.zig");
 const llama = @import("llama.zig");
 const providers = @import("providers.zig");
 pub const Source = providers.Source;
-pub const Phase = enum(u8) { preparing, deciding, searching, reading, answering };
+pub const Phase = enum(u8) { preparing, checking, fallback, deciding, searching, reading, answering };
 pub const Turn = struct { question: []const u8, answer: []const u8 };
 pub const Answer = struct { text: []const u8, sources: []Source, summarized: bool, warning: []const u8 = "" };
 const search_prompt = "Use search_web to find evidence before answering. Cite returned source IDs. Never invent sources.";
@@ -86,7 +86,7 @@ pub fn run(a: std.mem.Allocator, runtime: *@import("runtime.zig").Runtime, confi
     if (!config.enabled) return error.AssistantDisabled;
     if (question.len == 0 or question.len > @import("intent.zig").max_query) return error.InvalidQuestion;
     try config.validate();
-    phase.store(.preparing, .monotonic);
+    phase.store(.checking, .monotonic);
     try runtime.ensure(config, cancel);
     errdefer runtime.stop();
     var messages: std.ArrayList(llama.Message) = .empty;
@@ -106,14 +106,31 @@ pub fn run(a: std.mem.Allocator, runtime: *@import("runtime.zig").Runtime, confi
     var corrected_search = false;
     var corrected_citation = false;
     var warning: []const u8 = "";
+    var retried_cpu = false;
+    var completed_tools: std.ArrayList(struct { name: []const u8, arguments: []const u8, output: []const u8 }) = .empty;
     const deadline = glib.getMonotonicTime() + 90 * std.time.us_per_s;
     for (0..9) |_| {
         if (cancel.isCancelled() != 0) return error.Cancelled;
         if (glib.getMonotonicTime() > deadline) return error.TurnTimedOut;
         phase.store(.deciding, .monotonic);
-        try fit(a, runtime, &messages, &history_pairs, config, cancel);
         if (live) |value| value.put("");
-        const result = try llama.streamed(a, runtime, messages.items, config.answer_tokens, !corrected_citation, cancel, if (sources.items.len > 0) live else null);
+        const result = inference(a, runtime, &messages, &history_pairs, config, !corrected_citation, cancel, if (sources.items.len > 0) live else null) catch |err| retry: {
+            if (cancel.isCancelled() != 0 or retried_cpu or !runtime.gpu or !config.compute.fallback() or !@import("runtime.zig").recoverable(err)) return err;
+            retried_cpu = true;
+            phase.store(.fallback, .monotonic);
+            if (live) |value| value.put("");
+            runtime.retryCpu(config, cancel) catch |cpu_error| {
+                if (cancel.isCancelled() != 0 or sources.items.len == 0) return cpu_error;
+                return .{ .text = "Local inference failed on GPU and CPU. Your search results are preserved below; change the runtime in Settings and continue here.", .sources = sources.items, .summarized = false };
+            };
+            // messages already contain completed tool results. Retry inference
+            // at this boundary without replaying any provider/page requests.
+            break :retry inference(a, runtime, &messages, &history_pairs, config, !corrected_citation, cancel, if (sources.items.len > 0) live else null) catch |cpu_error| {
+                if (cancel.isCancelled() != 0 or sources.items.len == 0) return cpu_error;
+                runtime.stop();
+                return .{ .text = "Local inference could not finish. Your search results are preserved below; change the runtime in Settings and continue here.", .sources = sources.items, .summarized = false };
+            };
+        };
         if (result.calls.len == 0) {
             if (history.len == 0 and searches == 0) {
                 if (!corrected_search) {
@@ -140,6 +157,14 @@ pub fn run(a: std.mem.Allocator, runtime: *@import("runtime.zig").Runtime, confi
         try messages.append(a, .{ .role = "assistant", .content = result.content, .tool_calls = result.calls });
         for (result.calls) |call| {
             calls += 1;
+            const cache_key = try toolKey(a, call);
+            const cached: ?[]const u8 = for (completed_tools.items) |tool| {
+                if (std.mem.eql(u8, tool.name, call.function.name) and std.mem.eql(u8, tool.arguments, cache_key)) break tool.output;
+            } else null;
+            if (cached) |output| {
+                try messages.append(a, .{ .role = "tool", .tool_call_id = call.id, .content = output });
+                continue;
+            }
             var output: []const u8 = "Tool call rejected: use search_web(query) or read_page(result_id).";
             if (std.mem.eql(u8, call.function.name, "search_web")) {
                 if (searches >= 2) return error.ToolBudgetExceeded;
@@ -170,9 +195,33 @@ pub fn run(a: std.mem.Allocator, runtime: *@import("runtime.zig").Runtime, confi
                 }
             }
             try messages.append(a, .{ .role = "tool", .tool_call_id = call.id, .content = output });
+            try completed_tools.append(a, .{ .name = call.function.name, .arguments = cache_key, .output = output });
         }
     }
     return error.ToolBudgetExceeded;
+}
+fn inference(a: std.mem.Allocator, runtime: *@import("runtime.zig").Runtime, messages: *std.ArrayList(llama.Message), pairs: *usize, config: cfg.Config, tools: bool, cancel: *gio.Cancellable, live: ?*@import("sse.zig").Live) !llama.Result {
+    try fit(a, runtime, messages, pairs, config, cancel);
+    return llama.streamed(a, runtime, messages.items, config.answer_tokens, tools, cancel, live);
+}
+fn toolKey(a: std.mem.Allocator, call: llama.Call) ![]const u8 {
+    if (std.mem.eql(u8, call.function.name, "search_web")) {
+        const args = std.json.parseFromSliceLeaky(struct { query: []const u8 }, a, call.function.arguments, .{}) catch return error.InvalidToolCall;
+        return std.mem.trim(u8, args.query, " \t\r\n");
+    }
+    if (std.mem.eql(u8, call.function.name, "read_page")) {
+        const args = std.json.parseFromSliceLeaky(struct { result_id: u32 }, a, call.function.arguments, .{}) catch return error.InvalidToolCall;
+        return std.fmt.allocPrint(a, "{d}", .{args.result_id});
+    }
+    return call.function.arguments;
+}
+test "tool cache deduplicates equivalent search arguments" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const one = try toolKey(a, .{ .id = "1", .function = .{ .name = "search_web", .arguments = "{\"query\":\"RAM storage\"}" } });
+    const two = try toolKey(a, .{ .id = "2", .function = .{ .name = "search_web", .arguments = "{ \"query\" : \" RAM storage \" }" } });
+    try std.testing.expectEqualStrings(one, two);
 }
 test "citations must refer to host-owned evidence" {
     const sources = [_]Source{.{ .id = 1, .title = "source", .url = "https://example.org", .snippet = "", .provider = "fixture" }};

@@ -7,4 +7,8 @@ test {
     _ = @import("agent/controller.zig");
     _ = @import("agent/protocol.zig");
     _ = @import("agent/sse.zig");
+    _ = @import("agent/runtime_probe.zig");
+    _ = @import("agent/runtime_install.zig");
+    _ = @import("agent/compute.zig");
+    _ = @import("agent/memory.zig");
 }

@@ -1,5 +1,12 @@
 # Experimental assistant acceptance — 2026-10-14
 
+For distribution-aware runtime installation, see the
+[setup validation report](runtime-install/README.md).
+
+For the subsequent selectable-runtime/GPU update, see the
+[new validation report](gpu-runtime/README.md). The measurements below describe
+the original CPU implementation.
+
 All sessions used a private HOME/XDG, D-Bus, headless Aqueous and local search
 fixture. No real Google query or paid search credentials were used. The Google
 adapter was checked for `engines=google`. Runtime/model downloads were explicit

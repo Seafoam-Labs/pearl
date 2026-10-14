@@ -1,0 +1,10 @@
+build-assistant-runtime
++- fail failure
+error: Provide exactly one -Dassistant-runtime-source directory or -Dassistant-runtime-archive plus -Dassistant-runtime-sha256. No source is downloaded automatically.
+
+Build Summary: 0/2 steps succeeded (1 failed)
+build-assistant-runtime transitive failure
++- fail failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/a43fa0bf52354bda3eee2482db75c5ec/build /usr/bin/zig /usr/lib/zig /home/zoey/Pearl .zig-cache /tmp/pearl-gpu-zig-cache --seed 0x5da2f40 -Zfc70a1c36a9e970a build-assistant-runtime

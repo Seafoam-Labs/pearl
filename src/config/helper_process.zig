@@ -3,6 +3,11 @@
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
+const c = @cImport({
+    @cInclude("sys/prctl.h");
+    @cInclude("unistd.h");
+    @cInclude("signal.h");
+});
 extern fn memfd_create([*:0]const u8, c_uint) c_int;
 extern fn waitid(c_int, c_uint, *std.c.siginfo_t, c_int) c_int;
 extern fn setpgid(c_int, c_int) c_int;
@@ -10,7 +15,10 @@ fn streamFd(stream: *gio.InputStream) c_int {
     return @as(*@import("giounix2").InputStream, @ptrCast(stream)).getFd();
 }
 pub const Result = struct { stdout: []const u8, stderr: []const u8, success: bool };
-fn child(_: ?*anyopaque) callconv(.c) void {
+fn child(data: ?*anyopaque) callconv(.c) void {
+    const parent = @as(*const c_int, @ptrCast(@alignCast(data.?))).*;
+    _ = c.prctl(c.PR_SET_PDEATHSIG, @as(c_int, c.SIGKILL), @as(c_ulong, 0), @as(c_ulong, 0), @as(c_ulong, 0));
+    if (c.getppid() != parent) c._exit(1);
     _ = setpgid(0, 0);
 }
 pub const Choice = std.atomic.Value(u8); // 0 pending, 1 Keep, 2 Revert
@@ -20,10 +28,15 @@ pub fn run(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[]const u8,
 pub fn runIn(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[]const u8, cancel: *gio.Cancellable, timeout_ms: i64, instance: ?@import("aqueous_instance.zig").Context) !Result {
     return runConfigured(a, argv, input, cancel, timeout_ms, instance, .{});
 }
-pub const Options = struct { stdout_limit: usize = @import("aqueous_model.zig").max_response, stderr_limit: usize = 65536, plain_output: bool = false };
+pub const Options = struct { stdout_limit: usize = @import("aqueous_model.zig").max_response, stderr_limit: usize = 65536, plain_output: bool = false, environment: ?[]const [:0]const u8 = null };
 pub fn runConfigured(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[]const u8, cancel: *gio.Cancellable, timeout_ms: i64, instance: ?@import("aqueous_instance.zig").Context, options: Options) !Result {
     const launcher = gio.SubprocessLauncher.new(.{ .stdout_pipe = true, .stderr_pipe = true });
     defer launcher.unref();
+    if (options.environment) |environment| {
+        const env = try a.allocSentinel(?[*:0]const u8, environment.len, null);
+        for (environment, 0..) |value, i| env[i] = value.ptr;
+        launcher.setEnviron(@ptrCast(env.ptr));
+    }
     if (instance) |ctx| ctx.configure(launcher);
     if (options.plain_output) {
         launcher.setenv("NO_COLOR", "1", 1);
@@ -31,7 +44,8 @@ pub fn runConfigured(a: std.mem.Allocator, argv: []const [:0]const u8, input: ?[
         launcher.setenv("CLICOLOR_FORCE", "0", 1);
         launcher.setenv("LC_ALL", "C", 1);
     }
-    launcher.setChildSetup(child, null, null);
+    var parent_pid: c_int = c.getpid();
+    launcher.setChildSetup(child, &parent_pid, null);
     if (input) |bytes| {
         if (bytes.len > @import("aqueous_model.zig").max_request) return error.RequestTooLarge;
         const fd = memfd_create("pearl-aqueous-request", 1);

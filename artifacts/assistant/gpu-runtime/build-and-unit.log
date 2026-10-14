@@ -1,0 +1,52 @@
+Build Summary: 46/46 steps succeeded; 388/388 tests passed
+test success
++- run test 283 pass (283 total) 632ms MaxRSS:17M
+|  +- compile test Debug native success 1s MaxRSS:244M
++- run test 15 pass (15 total) 7ms MaxRSS:17M
+   +- compile test Debug native cached 18ms MaxRSS:58M
+test-agent success
++- run test 90 pass (90 total) 21ms MaxRSS:17M
+   +- compile test Debug native success 834ms MaxRSS:217M
+build-agent success
++- install pearl-agent success
+|  +- compile exe pearl-agent Debug native success 576ms MaxRSS:201M
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Agent.desktop to share/applications/org.aqueous.Pearl.Agent.desktop cached
+build-agent-test success
++- install pearl-agent-test success
+   +- compile exe pearl-agent-test Debug native success 569ms MaxRSS:204M
+      +- options cached
+build-settings success
++- install pearl-settings success
+|  +- compile exe pearl-settings Debug native success 1s MaxRSS:283M
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|     |  +- compile exe zig-wayland-scanner Debug native cached 12ms MaxRSS:56M
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
+|     +- options cached
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Settings.desktop to share/applications/org.aqueous.Pearl.Settings.desktop cached
++- install packaging/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg to share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg cached
++- install packaging/metainfo/org.aqueous.Pearl.Settings.metainfo.xml to share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml cached
+build-settings-test success
++- install pearl-settings-test success
+   +- compile exe pearl-settings-test Debug native success 1s MaxRSS:290M
+      +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+      +- run glib-compile-resources (pearl.gresource) (reused)
+      +- options cached
+      +- options cached
+      +- options cached
+build-shell success
++- install pearl success
+   +- compile exe pearl Debug native success 1s MaxRSS:377M
+      +- run pkg-config success 2ms
+      +- translate-c cached 14ms MaxRSS:55M
+      +- run glib-compile-resources (pearl.gresource) (reused)
+      +- options cached
+      +- options cached
+      +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+      +- options cached
+build-ctl success
++- install pearlctl success
+   +- compile exe pearlctl Debug native success 664ms MaxRSS:198M
+

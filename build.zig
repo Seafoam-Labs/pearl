@@ -302,13 +302,13 @@ pub fn build(b: *std.Build) void {
     b.step("build-shell", "Stage the production shell without launching it or building bundled applications").dependOn(&shell_install.step);
 
     const agent_tests = b.createModule(.{ .root_source_file = b.path("src/agent_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| agent_tests.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gio2", "giounix2", "glib2", "gobject2" }) |name| agent_tests.addImport(name, bindings.module(name));
     for ([_][]const u8{ "gio-2.0", "libcurl", "libxml-2.0", "libsecret-1" }) |name| agent_tests.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     b.step("test-agent", "Test assistant policy, tools, providers and native extraction").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = agent_tests })).step);
     var agent_build: *std.Build.Step = undefined;
     for ([_]bool{ false, true }) |instrumented| {
         const agent_module = b.createModule(.{ .root_source_file = b.path("src/agent_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-        for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| agent_module.addImport(name, bindings.module(name));
+        for ([_][]const u8{ "gtk4", "gdk4", "gio2", "giounix2", "glib2", "gobject2" }) |name| agent_module.addImport(name, bindings.module(name));
         for ([_][]const u8{ "gtk4", "libcurl", "libxml-2.0", "libsecret-1" }) |name| agent_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
         const agent_options = b.addOptions();
         agent_options.addOption(bool, "git_variant", portal_variant == .git);
@@ -445,6 +445,7 @@ pub fn build(b: *std.Build) void {
     ctl_module.strip = release;
     const ctl = b.addExecutable(.{ .name = "pearlctl", .root_module = ctl_module });
     b.installArtifact(ctl);
+    b.step("build-ctl", "Stage the Pearl command-line client").dependOn(&b.addInstallArtifact(ctl, .{}).step);
 
     if (wasm_plugins) {
         const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugins.py", "--pearl", b.getInstallPath(.bin, "pearl"), "--ctl", b.getInstallPath(.bin, "pearlctl"), "--settings" });

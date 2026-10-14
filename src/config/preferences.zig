@@ -225,13 +225,27 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Preferences {
     if (dom != .object) return error.InvalidConfig;
     const version: std.json.Value = dom.object.get("version") orelse .{ .integer = 1 };
     if (version != .integer) return error.UnsupportedVersion;
-    const p: Preferences = if (version.integer == 0) blk: {
+    var p: Preferences = if (version.integer == 0) blk: {
         const Legacy = struct { version: u32, dark: bool = true, wallpaper: []const u8 = "" };
         const old = try std.json.parseFromSliceLeaky(Legacy, a, bytes, .{ .allocate = .alloc_always });
         break :blk .{ .theme = .{ .variant = if (old.dark) .dark else .light }, .wallpaper = .{ .path = old.wallpaper, .mode = if (old.wallpaper.len == 0) .gradient else .cover } };
     } else if (version.integer == 1) try std.json.parseFromSliceLeaky(Preferences, a, bytes, .{ .allocate = .alloc_always }) else return error.UnsupportedVersion;
+    if (dom.object.get("assistant")) |assistant| {
+        if (assistant == .object and !assistant.object.contains("runtime")) p.assistant.runtime.source = .packaged;
+    }
     try p.validate();
     return p;
+}
+test "assistant runtime migration preserves existing CPU installations" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try std.testing.expectEqual(.system, (try parse(a, "{}")).assistant.runtime.source);
+    const old = try parse(a, "{\"assistant\":{\"enabled\":true}}");
+    try std.testing.expectEqual(.packaged, old.assistant.runtime.source);
+    try std.testing.expectEqual(.cpu, old.assistant.compute.mode);
+    try std.testing.expect(old.assistant.enabled);
+    try std.testing.expectEqual(.system, (try parse(a, "{\"assistant\":{\"runtime\":{\"source\":\"system\"}}}")).assistant.runtime.source);
 }
 pub fn boundedJson(bytes: []const u8, max: usize, max_depth: usize) !void {
     if (bytes.len > max or !std.unicode.utf8ValidateSlice(bytes)) return error.InvalidConfig;

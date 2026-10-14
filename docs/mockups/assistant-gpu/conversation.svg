@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1040" viewBox="0 0 1440 1040">
+<title>Pearl launcher question and floating GPU conversation</title>
+<desc>Sequential interaction: typing a question locally in Super+Space, opening a floating chat, checking the runtime, searching configured Google, then continuing a cited conversation. GPU badge and detail popover show verified active execution.</desc>
+<defs><style>text{font-family:DejaVu Sans,sans-serif;fill:#f4edf8}.muted{fill:#c4b4d0}.small{font-size:13px}.body{font-size:15px}.accent{fill:#d8bcef}.good{fill:#b9dcbc}</style></defs>
+<rect width="1440" height="1040" fill="#17131d"/>
+<text x="64" y="43" class="accent small" letter-spacing="2">PEARL / ASSISTANT UPDATE</text><text x="1376" y="43" text-anchor="end" class="muted small">03 / Ask and continue</text>
+<text x="64" y="87" font-size="30">Ask in the launcher. Continue in a floating chat.</text>
+<text x="64" y="145" class="accent small" letter-spacing="1">1  SUPER + SPACE</text>
+<rect x="64" y="167" width="646" height="216" rx="18" fill="#27212e" stroke="#77608d"/>
+<text x="90" y="211" font-size="21">How can I keep herbs alive indoors?</text><path d="M64 235H710" stroke="#55465f"/>
+<rect x="80" y="251" width="614" height="75" rx="11" fill="#543b70"/><text x="102" y="280" class="body">✦  Ask Pearl</text><text x="102" y="306" class="small">Search Google and summarize with your local model</text><text x="667" y="285" text-anchor="end" class="body">↵</text>
+<text x="90" y="356" class="muted small">Type to search · Enter to ask · Esc to close</text>
+<text x="64" y="418" class="muted body">Typing starts no model, GPU scan or web request.</text>
+<path d="M680 437H748V250H783" fill="none" stroke="#c9aceb" stroke-width="2"/><path d="M776 244L785 250L776 256" fill="none" stroke="#c9aceb" stroke-width="2"/>
+<text x="64" y="484" class="accent small" letter-spacing="1">2  HANDOFF AND PREPARATION</text>
+<rect x="64" y="505" width="646" height="133" rx="14" fill="#27212e" stroke="#55465f"/>
+<text x="88" y="539" class="body">The chat opens; the launcher dismisses.</text><text x="88" y="571" class="muted small">First use or changed runtime:</text><text x="88" y="600" class="body">Checking runtime → Preparing local model</text><text x="672" y="600" text-anchor="end" class="accent small">Stop</text>
+<rect x="64" y="660" width="646" height="150" rx="14" fill="#27212e" stroke="#55465f"/>
+<text x="88" y="694" class="body">Searching Google → Writing answer</text><text x="88" y="727" class="muted small">Uses your configured SearXNG connection.</text><text x="88" y="752" class="muted small">Follow-ups keep the conversation and source context.</text><text x="88" y="784" class="accent small">GPU stays local. Search queries go to your provider.</text>
+<text x="790" y="145" class="accent small" letter-spacing="1">3  FLOATING CONVERSATION</text>
+<rect x="790" y="167" width="586" height="643" rx="18" fill="#27212e" stroke="#77608d"/>
+<text x="815" y="204" font-size="18">✦ Pearl</text><text x="1348" y="204" text-anchor="end" class="muted body">⋯    −    ×</text><path d="M790 224H1376" stroke="#55465f"/>
+<rect x="815" y="242" width="143" height="28" rx="14" fill="#304637"/><text x="886" y="261" text-anchor="middle" class="good" font-size="12">GPU · Vulkan ⌄</text><text x="977" y="261" class="muted small">LFM2.5-350M</text>
+<rect x="854" y="294" width="496" height="69" rx="12" fill="#493553"/><text x="873" y="322" class="body">How can I keep herbs alive indoors?</text><text x="873" y="346" class="muted" font-size="12">You</text>
+<text x="815" y="402" class="small good">✓ Searched Google · 2 sources</text>
+<text x="815" y="442" class="body">Give them bright light and a pot that drains.</text><text x="815" y="471" class="body">Check the soil before watering; herbs vary</text><text x="815" y="500" class="body">in how much moisture they need. [1] [2]</text>
+<text x="815" y="540" class="muted small">Illustrative answer and sources</text>
+<rect x="815" y="556" width="535" height="74" rx="10" fill="#33293c" stroke="#4b3d55"/><text x="832" y="582" class="accent small">[1] Indoor herb care · example.org</text><text x="832" y="608" class="accent small">[2] Light and watering guide · example.org</text>
+<text x="815" y="666" class="muted small">Ready for your next question</text>
+<rect x="815" y="689" width="535" height="89" rx="12" fill="#211b27" stroke="#8d6eaa"/><text x="833" y="719" class="body">What about basil on a north-facing window?</text><text x="833" y="756" class="muted" font-size="12">Enter to send · Shift+Enter for a new line</text><rect x="1296" y="736" width="36" height="28" rx="7" fill="#c9aceb"/><text x="1314" y="756" text-anchor="middle" style="fill:#30203d">↑</text>
+<rect x="64" y="840" width="646" height="115" rx="14" fill="#2d2634" stroke="#55465f"/><text x="88" y="874" class="body">After 60 seconds idle</text><text x="88" y="902" class="muted small">The model unloads and GPU memory is released.</text><text x="88" y="929" class="muted small">The conversation stays available; the badge says “Model unloaded”.</text>
+<rect x="790" y="840" width="586" height="115" rx="14" fill="#382b43" stroke="#8d6eaa"/><text x="814" y="872" class="body">Compute details · badge popover</text><text x="814" y="900" class="muted small">AMD Radeon · Vulkan · GPU offload verified</text><text x="814" y="928" class="muted small">Automatic mode · CPU fallback available</text>
+<text x="64" y="1007" class="muted small">Proposed sequential states, enlarged for readability · Native chat remains 440 × 560 logical pixels and resizable.</text>
+</svg>

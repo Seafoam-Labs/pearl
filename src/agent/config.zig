@@ -25,8 +25,24 @@ pub const Provider = struct {
     }
 };
 pub const default_providers = [_]Provider{.{}};
+pub const RuntimeSource = enum { system, packaged, custom };
+pub const Backend = enum { auto, vulkan, cuda };
+pub const RuntimeConfig = struct { source: RuntimeSource = .system, executable: []const u8 = "" };
+pub const Compute = struct {
+    mode: enum { cpu, auto, gpu } = .cpu,
+    backend: Backend = .auto,
+    device_id: []const u8 = "",
+    offload_layers: ?u16 = null,
+    gpu_memory_target_mib: ?u32 = null,
+    allow_cpu_fallback: bool = true,
+    pub fn fallback(self: Compute) bool {
+        return self.mode == .auto or (self.mode == .gpu and self.allow_cpu_fallback);
+    }
+};
 pub const Config = struct {
     enabled: bool = false,
+    runtime: RuntimeConfig = .{},
+    compute: Compute = .{},
     model_id: []const u8 = "liquid-lfm25-350m-q4km",
     custom_model: []const u8 = "",
     providers: []const Provider = &default_providers,
@@ -38,6 +54,12 @@ pub const Config = struct {
     cpu_threads: u8 = 2,
     idle_unload_seconds: u16 = 60,
     pub fn validate(self: Config) !void {
+        try text(self.runtime.executable, 4096);
+        if (self.runtime.source == .custom and !std.fs.path.isAbsolute(self.runtime.executable)) return error.AbsoluteRuntimePathRequired;
+        try text(self.compute.device_id, 512);
+        if (self.compute.mode == .gpu and self.compute.device_id.len == 0) return error.SelectGpuDevice;
+        if (self.compute.offload_layers) |n| if (n == 0 or n > 1024) return error.InvalidOffloadLayers;
+        if (self.compute.gpu_memory_target_mib) |n| if (n < 128 or n > 1048576) return error.InvalidGpuMemoryTarget;
         try identifier(self.model_id);
         if (!std.mem.eql(u8, self.model_id, "custom") and @import("model_registry.zig").find(self.model_id) == null) return error.UnknownAssistantModel;
         try text(self.custom_model, 4096);
@@ -62,6 +84,13 @@ pub const Config = struct {
         return p.enabled and (self.search_mode == .all or std.mem.eql(u8, p.id, self.default_provider_id));
     }
 };
+test "runtime selection and compute budgets are explicit" {
+    try std.testing.expectError(error.AbsoluteRuntimePathRequired, (Config{ .runtime = .{ .source = .custom, .executable = "llama-server --flag" } }).validate());
+    try (Config{ .runtime = .{ .source = .custom, .executable = "/opt/local build/llama-server" } }).validate();
+    try std.testing.expectError(error.SelectGpuDevice, (Config{ .compute = .{ .mode = .gpu } }).validate());
+    try std.testing.expect((Compute{ .mode = .auto, .allow_cpu_fallback = false }).fallback());
+    try std.testing.expect(!(Compute{ .mode = .gpu, .allow_cpu_fallback = false }).fallback());
+}
 pub fn identifier(value: []const u8) !void {
     if (value.len == 0 or value.len > 64) return error.InvalidAssistantId;
     for (value) |ch| if (!std.ascii.isAlphanumeric(ch) and ch != '-' and ch != '_') return error.InvalidAssistantId;

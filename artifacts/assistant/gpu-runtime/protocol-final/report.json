@@ -1,0 +1,84 @@
+{
+  "status": "passed",
+  "scope": "Simulated runtime/device contract, not physical GPU qualification",
+  "checks": {
+    "disabled_no_runtime_or_search": true,
+    "unlisted_one": {
+      "compute": {
+        "busy": false,
+        "loaded": true,
+        "gpu": true,
+        "backend": "vulkan",
+        "layers": 16,
+        "fallback": false,
+        "enforced_memory": false
+      },
+      "search_requests": 1
+    },
+    "unlisted_two": {
+      "compute": {
+        "busy": false,
+        "loaded": true,
+        "gpu": true,
+        "backend": "vulkan",
+        "layers": 16,
+        "fallback": false,
+        "enforced_memory": false
+      },
+      "search_requests": 1
+    },
+    "startup_fail": {
+      "compute": {
+        "busy": false,
+        "loaded": true,
+        "gpu": false,
+        "backend": "auto",
+        "layers": 0,
+        "fallback": true,
+        "enforced_memory": false
+      },
+      "search_requests": 1
+    },
+    "mid_fail": {
+      "compute": {
+        "busy": false,
+        "loaded": true,
+        "gpu": false,
+        "backend": "auto",
+        "layers": 0,
+        "fallback": true,
+        "enforced_memory": false
+      },
+      "search_requests": 1
+    },
+    "mid_repeat": {
+      "compute": {
+        "busy": false,
+        "loaded": true,
+        "gpu": false,
+        "backend": "auto",
+        "layers": 0,
+        "fallback": true,
+        "enforced_memory": false
+      },
+      "search_requests": 1
+    },
+    "unverified": {
+      "compute": {
+        "busy": false,
+        "loaded": true,
+        "gpu": false,
+        "backend": "auto",
+        "layers": 0,
+        "fallback": true,
+        "enforced_memory": false
+      },
+      "search_requests": 1
+    },
+    "runtime_replacement_invalidates_compatibility": true,
+    "missing_blocked": "RuntimeCapabilityMissing",
+    "noauth_blocked": "RuntimeAuthenticationMissing",
+    "startup_fail_blocked": "RuntimeStartupFailed",
+    "cancel_probe_reaps_runtime": true
+  }
+}

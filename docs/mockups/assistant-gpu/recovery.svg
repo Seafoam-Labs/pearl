@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1040" viewBox="0 0 1440 1040">
+<title>Pearl GPU recovery and memory settings</title>
+<desc>Four separate proposed states: CPU fallback after GPU memory failure, explicit GPU mode requiring action, integrated GPU shared-memory controls, and stopping an active response before applying runtime changes.</desc>
+<defs><style>text{font-family:DejaVu Sans,sans-serif;fill:#f4edf8}.muted{fill:#c4b4d0}.small{font-size:13px}.body{font-size:15px}.accent{fill:#d8bcef}.good{fill:#b9dcbc}.warning{fill:#efd1a0}</style></defs>
+<rect width="1440" height="1040" fill="#17131d"/>
+<text x="64" y="43" class="accent small" letter-spacing="2">PEARL / ASSISTANT UPDATE</text><text x="1376" y="43" text-anchor="end" class="muted small">04 / Recovery and resources</text>
+<text x="64" y="87" font-size="30">Keep the conversation when the device changes.</text>
+<rect x="64" y="123" width="644" height="383" rx="18" fill="#27212e" stroke="#55465f"/>
+<text x="88" y="160" class="accent small">A / AUTOMATIC OR CPU FALLBACK ENABLED</text><text x="88" y="202" font-size="23">Continuing on CPU</text>
+<rect x="88" y="223" width="128" height="28" rx="14" fill="#443c31"/><text x="152" y="242" text-anchor="middle" class="warning" font-size="12">CPU · fallback</text><text x="232" y="242" class="muted small">LFM2.5-350M</text>
+<rect x="88" y="274" width="596" height="95" rx="11" fill="#372d2a" stroke="#78604b"/><text x="108" y="305" class="warning body">The GPU ran out of available memory.</text><text x="108" y="333" class="muted small">Your question and search results are preserved.</text><text x="108" y="354" class="muted small">Restarting this answer on CPU…</text>
+<text x="88" y="401" class="muted small">No repeat search. The incomplete draft is replaced.</text><text x="88" y="426" class="muted small">One automatic retry; Stop cancels it too.</text>
+<rect x="88" y="447" width="88" height="34" rx="8" fill="#58416b"/><text x="132" y="470" text-anchor="middle" class="small">Stop</text><text x="202" y="470" class="accent small">Acceleration settings</text>
+<rect x="732" y="123" width="644" height="383" rx="18" fill="#27212e" stroke="#55465f"/>
+<text x="756" y="160" class="accent small">B / GPU SELECTED, CPU FALLBACK OFF</text><text x="756" y="202" font-size="23">Your selected GPU is unavailable</text>
+<text x="756" y="245" class="muted body">Pearl could not start the selected device.</text><text x="756" y="273" class="muted small">The device or its driver may have changed.</text>
+<rect x="756" y="298" width="596" height="71" rx="11" fill="#33293c"/><text x="776" y="328" class="body">The conversation is ready to resume.</text><text x="776" y="352" class="muted small">No switch to another runtime or search engine.</text>
+<rect x="756" y="396" width="147" height="36" rx="8" fill="#c9aceb"/><text x="829" y="420" text-anchor="middle" class="small" style="fill:#30203d">Use CPU once</text><rect x="915" y="396" width="147" height="36" rx="8" fill="#58416b"/><text x="988" y="420" text-anchor="middle" class="small">Choose device</text><text x="1086" y="420" class="accent small">Retry GPU</text>
+<text x="756" y="470" class="muted small">“Use CPU once” leaves your saved GPU preference unchanged.</text>
+<rect x="64" y="530" width="644" height="425" rx="18" fill="#27212e" stroke="#55465f"/>
+<text x="88" y="567" class="accent small">C / SETTINGS · INTEGRATED GPU</text><text x="88" y="609" font-size="23">Memory and offload</text>
+<text x="88" y="648" class="body">Intel integrated graphics · Vulkan</text><rect x="88" y="667" width="596" height="64" rx="10" fill="#33293c"/><text x="108" y="694" class="body">Shared system memory</text><text x="108" y="717" class="muted small">GPU allocations also use the RAM needed by your desktop.</text>
+<text x="88" y="767" class="body">Layer offload</text><rect x="417" y="742" width="267" height="36" rx="8" fill="#42324f" stroke="#77608d"/><text x="433" y="766" class="small">Automatic                        ⌄</text>
+<text x="88" y="812" class="body">GPU memory target</text><rect x="417" y="787" width="267" height="36" rx="8" fill="#42324f" stroke="#77608d"/><text x="433" y="811" class="small">Automatic                        ⌄</text>
+<text x="88" y="851" class="muted small">Targets guide allocation; they are not a hard memory cap.</text><text x="88" y="877" class="muted small">Pearl keeps room for the desktop and stops under pressure.</text><text x="88" y="921" class="accent small">▸ Memory policy details</text>
+<rect x="732" y="530" width="644" height="425" rx="18" fill="#27212e" stroke="#55465f"/>
+<text x="756" y="567" class="accent small">D / SETTINGS · APPLY DURING AN ANSWER</text><text x="756" y="609" font-size="23">Stop the current answer?</text>
+<text x="756" y="652" class="body">Changing runtime or device unloads the current model.</text><text x="756" y="681" class="muted small">Your conversation and completed search results stay here.</text>
+<rect x="756" y="710" width="596" height="93" rx="11" fill="#33293c"/><text x="776" y="740" class="muted small">Pending changes</text><text x="776" y="766" class="body">System installation → Custom executable</text><text x="776" y="790" class="body">CPU → GPU · Vulkan</text>
+<rect x="756" y="831" width="150" height="37" rx="9" fill="#58416b"/><text x="831" y="855" text-anchor="middle" class="small">Keep editing</text><rect x="918" y="831" width="164" height="37" rx="9" fill="#c9aceb"/><text x="1000" y="855" text-anchor="middle" class="small" style="fill:#30203d">Stop &amp; apply</text>
+<text x="756" y="921" class="muted small">The next request loads the selected runtime and device.</text>
+<text x="64" y="1007" class="muted small">Proposed independent states · Device names and results are illustrative; GPU and shared-memory behavior needs hardware testing.</text>
+</svg>

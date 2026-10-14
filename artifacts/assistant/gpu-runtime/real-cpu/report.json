@@ -1,0 +1,73 @@
+{
+  "status": "passed",
+  "checks": {
+    "no_inference_or_network_before_ask": true,
+    "real_model_google_tool_round_trip": {
+      "visible": true,
+      "busy": false,
+      "suspended": false,
+      "runtime": true,
+      "conversations": 1,
+      "turns": [
+        {
+          "question": "What is the difference between RAM and storage?",
+          "answer": "[1] \"RAM holds working data temporarily and loses contents when power is removed; storage retains saved files between sessions.\""
+        }
+      ],
+      "sources": 1,
+      "status": "Answer complete. Check the sources for important details.",
+      "error_code": "",
+      "draft_chars": 0
+    },
+    "floating_native_window": {
+      "x": 420,
+      "y": 80,
+      "width": 440,
+      "height": 560
+    },
+    "followup_preserves_session_history": {
+      "visible": true,
+      "busy": false,
+      "suspended": false,
+      "runtime": true,
+      "conversations": 1,
+      "turns": [
+        {
+          "question": "What is the difference between RAM and storage?",
+          "answer": "[1] \"RAM holds working data temporarily and loses contents when power is removed; storage retains saved files between sessions.\""
+        },
+        {
+          "question": "Will adding RAM give me more space for saved files?",
+          "answer": "[1] \"RAM (Random Access Memory) is a type of volatile memory used for temporary data storage, while storage refers to permanent, non-volatile memory used for data retention. RAM is designed for fast access, whereas storage retains data between system sessions.\"]"
+        }
+      ],
+      "sources": 1,
+      "status": "Answer complete. Check the sources for important details.",
+      "error_code": "",
+      "draft_chars": 0
+    },
+    "hide_and_resume_preserves_history": true,
+    "lock_cancels_and_unloads": true,
+    "clear_erases_history": true,
+    "clear_during_work_does_not_restore_erased_prompt": true,
+    "parent_disconnect_exits": true
+  },
+  "fixture_measurements": {
+    "cold_answer_seconds": 2.442,
+    "processes_after_answer": [
+      {
+        "role": "agent",
+        "rss_kib": 67736,
+        "high_water_kib": 67736,
+        "threads": 7
+      },
+      {
+        "role": "runtime",
+        "rss_kib": 463560,
+        "high_water_kib": 463560,
+        "threads": 8
+      }
+    ],
+    "scope": "Local search fixture on this test host; not low-end hardware qualification."
+  }
+}

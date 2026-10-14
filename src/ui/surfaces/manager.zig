@@ -1884,6 +1884,9 @@ pub const Manager = struct {
             .running = self.agent.process != null,
             .locked = self.agent.locked,
             .handoff_pending = self.agent.pending != 0,
+            .compute = self.agent.compute,
+            .runtime_source = self.preferences.prefs().assistant.runtime.source,
+            .compute_mode = self.preferences.prefs().assistant.compute.mode,
         }, .{});
         if (request.op == .clipboard_status) return self.clipboard.status(alloc);
         if (request.op == .capture_status) return self.capture.status(alloc);
@@ -2017,6 +2020,8 @@ pub const Manager = struct {
             .desktop_focus, .assistant_status => unreachable,
             .assistant_show => try askAssistant(self, ""),
             .assistant_stop => self.agent.stop(),
+            .assistant_release => try self.agent.releaseRuntime(),
+            .assistant_cancel => try self.agent.cancelAnswer(),
             .assistant_clear => try self.agent.clear(),
             .night_light_action => {
                 self.syncClipboardPrivacy();

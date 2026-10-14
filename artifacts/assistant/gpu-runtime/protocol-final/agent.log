@@ -1,0 +1,5 @@
+warning(ui): event=assistant-answer-failed code=RuntimeCapabilityMissing
+warning(ui): event=assistant-answer-failed code=RuntimeCapabilityMissing
+warning(ui): event=assistant-answer-failed code=RuntimeAuthenticationMissing
+warning(ui): event=assistant-answer-failed code=RuntimeExited
+warning(ui): event=assistant-answer-failed code=Cancelled

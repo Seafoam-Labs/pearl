@@ -14,7 +14,7 @@ pub fn streamed(a: std.mem.Allocator, runtime: *Runtime, messages: []const Messa
     const tools = if (use_tools) try std.json.parseFromSliceLeaky(std.json.Value, a, tools_json, .{}) else null;
     const body = try std.json.Stringify.valueAlloc(a, .{ .model = "pearl-local", .messages = messages, .tools = tools, .temperature = @as(f32, 0), .max_tokens = tokens, .stream = true }, .{ .emit_null_optional_fields = false });
     var stream: @import("sse.zig").Stream = .{ .a = a, .live = live };
-    const response = try @import("fetch.zig").request(a, .{ .url = try std.fmt.allocPrint(a, "{s}/v1/chat/completions", .{runtime.base}), .headers = &.{ runtime.authorization, "Content-Type: application/json" }, .body = body, .private_endpoint = true, .timeout_seconds = 60, .receiver = .{ .context = &stream, .feed = feed } }, cancel);
+    const response = try @import("fetch.zig").request(a, .{ .url = try std.fmt.allocPrint(a, "{s}/v1/chat/completions", .{runtime.base}), .headers = &.{ runtime.authorization, "Content-Type: application/json" }, .body = body, .private_endpoint = true, .timeout_seconds = 60, .receiver = .{ .context = &stream, .feed = feed }, .monitor = .{ .context = runtime, .check = Runtime.monitorCallback } }, cancel);
     if (response.status != 200 or !stream.done) return error.InferenceFailed;
     const calls = try a.alloc(Call, stream.count);
     for (calls, stream.calls[0..stream.count]) |*call, item| {

@@ -1,0 +1,27 @@
+Build Summary: 25/25 steps succeeded; 391/391 tests passed
+test success
++- run test 283 pass (283 total) 700ms MaxRSS:13M
+|  +- compile test Debug native cached 9ms MaxRSS:54M
++- run test 15 pass (15 total) 6ms MaxRSS:13M
+   +- compile test Debug native cached 15ms MaxRSS:58M
+test-agent success
++- run test 93 pass (93 total) 18ms MaxRSS:18M
+   +- compile test Debug native success 516ms MaxRSS:218M
+build-settings success
++- install pearl-settings success
+|  +- compile exe pearl-settings Debug native success 810ms MaxRSS:284M
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|     |  +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:54M
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
+|     +- options cached
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Settings.desktop to share/applications/org.aqueous.Pearl.Settings.desktop cached
++- install packaging/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg to share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg cached
++- install packaging/metainfo/org.aqueous.Pearl.Settings.metainfo.xml to share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml cached
+build-agent cached
++- install pearl-agent cached
+|  +- compile exe pearl-agent Debug native cached 15ms MaxRSS:58M
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Agent.desktop to share/applications/org.aqueous.Pearl.Agent.desktop cached
+

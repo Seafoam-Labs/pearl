@@ -1,7 +1,5 @@
 //! Immutable publisher revisions and LFS SHA256 values, verified 2026-10-14.
 const std = @import("std");
-pub const llama_version = "v0.6.0";
-pub const llama_commit = "d81235049384534c167caea52b85a694f6103d14";
 pub const revision = "657e078c94084481950a2d555a941481f715536b";
 pub const base_url = "https://huggingface.co/LiquidAI/LFM2.5-350M-GGUF/resolve/" ++ revision ++ "/";
 pub const license_url = "https://huggingface.co/LiquidAI/LFM2.5-350M-GGUF/blob/" ++ revision ++ "/LICENSE";

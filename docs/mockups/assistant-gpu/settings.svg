@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1040" viewBox="0 0 1440 1040">
+<title>Pearl assistant runtime and GPU settings</title>
+<desc>Proposed native settings with opt-in assistant, selectable local model and runtime, Automatic GPU mode, detected Vulkan device, and Apply controls. All device and compatibility states are illustrative.</desc>
+<defs><style>text{font-family:DejaVu Sans,sans-serif;fill:#f4edf8}.muted{fill:#c4b4d0}.small{font-size:13px}.body{font-size:15px}.label{font-size:17px}.good{fill:#b9dcbc}.accent{fill:#d8bcef}.panel{fill:#2d2634;stroke:#4b3d55}.field{fill:#42324f;stroke:#77608d}</style></defs>
+<rect width="1440" height="1040" fill="#17131d"/>
+<text x="64" y="43" class="accent small" letter-spacing="2">PEARL / ASSISTANT UPDATE</text><text x="1376" y="43" text-anchor="end" class="muted small">01 / Runtime &amp; acceleration</text>
+<text x="64" y="87" font-size="30">Choose where your local model runs.</text>
+<rect x="64" y="118" width="1312" height="846" rx="20" fill="#27212e" stroke="#55465f"/>
+<path d="M84 118H1356Q1376 118 1376 138V168H64V138Q64 118 84 118Z" fill="#211b27"/>
+<circle cx="92" cy="143" r="8" fill="#dac5ee"/><text x="112" y="148" class="body">Pearl Settings</text><text x="1258" y="149" font-size="18">−    □    ×</text>
+<path d="M64 168H1376M292 168V964" stroke="#4c3e55"/>
+<g class="body"><text x="92" y="215" class="muted small">GENERAL</text><text x="108" y="255">Overview</text><text x="92" y="310" class="muted small">DESKTOP</text><text x="108" y="350">Appearance</text><text x="108" y="392">Bar &amp; dock</text><text x="108" y="434">Notifications</text><rect x="80" y="458" width="196" height="42" rx="10" fill="#543b70"/><text x="108" y="485">Assistant</text><text x="108" y="535">Plugins</text><text x="92" y="598" class="muted small">SYSTEM</text><text x="108" y="638">Session &amp; lock</text><text x="108" y="680">Aqueous</text></g>
+<text x="332" y="217" font-size="28">Assistant</text><text x="332" y="246" class="muted body">Local answers. Search engines you configure.</text>
+<rect x="332" y="267" width="1004" height="76" rx="13" fill="#33293c" stroke="#5b476b"/>
+<text x="354" y="297" class="label">Enable assistant</text><text x="354" y="323" class="muted small">Questions go online only when you ask. Answers are generated on this device.</text>
+<rect x="1257" y="288" width="54" height="30" rx="15" fill="#c9aceb"/><circle cx="1296" cy="303" r="11" fill="#352442"/>
+<text x="342" y="381" class="muted small">General</text><text x="432" y="381" class="muted small">Models</text><text x="516" y="381" class="muted small">Search engines</text><rect x="651" y="358" width="222" height="36" rx="9" fill="#543b70"/><text x="669" y="381" class="small">Runtime &amp; acceleration</text>
+<rect x="332" y="413" width="1004" height="91" rx="13" class="panel"/>
+<text x="354" y="444" class="label">Local model</text><text x="354" y="478" class="muted small">LFM2.5-350M · Q4_K_M · Installed</text><text x="1134" y="463" class="accent small">Change model →</text>
+<rect x="332" y="519" width="1004" height="133" rx="13" class="panel"/>
+<text x="354" y="552" class="label">Runtime</text><text x="354" y="579" class="muted small">Use your installed llama.cpp.</text><text x="354" y="625" class="good small">✓ Compatible with this model</text>
+<rect x="852" y="536" width="461" height="36" rx="8" class="field"/><text x="869" y="560" class="body">System installation</text><text x="1284" y="560" class="muted body">⌄</text>
+<text x="868" y="597" class="muted small">/usr/bin/llama-server</text><text x="868" y="626" class="accent small">Runtime details</text><rect x="1196" y="610" width="117" height="28" rx="7" fill="#43344f"/><text x="1254" y="629" text-anchor="middle" class="small">Check now</text>
+<rect x="332" y="667" width="1004" height="182" rx="13" class="panel"/>
+<text x="354" y="699" class="label">Run model on</text>
+<rect x="852" y="683" width="461" height="38" rx="9" fill="#211b27" stroke="#655273"/><rect x="986" y="685" width="182" height="34" rx="7" fill="#c9aceb"/>
+<text x="918" y="708" text-anchor="middle" class="body">CPU</text><text x="1077" y="708" text-anchor="middle" style="fill:#30203d" class="body">Automatic</text><text x="1240" y="708" text-anchor="middle" class="body">GPU</text>
+<text x="354" y="735" class="muted small">Use a compatible GPU when available; otherwise use CPU.</text>
+<rect x="354" y="752" width="959" height="52" rx="9" fill="#352b3e"/>
+<circle cx="374" cy="778" r="5" fill="#b9dcbc"/><text x="390" y="775" class="body">AMD Radeon · Vulkan</text><text x="390" y="794" class="muted" font-size="11">Detected and checked · one device</text><text x="1292" y="783" text-anchor="end" class="accent small">Choose device…</text>
+<text x="354" y="832" class="accent small">▸ Advanced: memory and layer offload</text>
+<text x="354" y="878" class="muted small">Google via your SearXNG connection · Model unloads after 60 seconds idle</text>
+<path d="M292 899H1376" stroke="#4c3e55"/>
+<text x="332" y="937" fill="#e4c895" class="small" style="fill:#e4c895">Unsaved changes · CPU → Automatic</text>
+<rect x="1084" y="913" width="94" height="35" rx="9" fill="#43344f"/><text x="1131" y="936" text-anchor="middle" class="small">Discard</text><rect x="1190" y="913" width="146" height="35" rx="9" fill="#c9aceb"/><text x="1263" y="936" text-anchor="middle" class="small" style="fill:#30203d;font-weight:bold">Apply &amp; save</text>
+<text x="64" y="1007" class="muted small">Proposed UI · CPU remains the initial default. This board shows a tested Automatic selection awaiting Apply.</text>
+</svg>

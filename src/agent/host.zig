@@ -19,6 +19,7 @@ pub const Host = struct {
     acknowledge: ?*const fn (*anyopaque, bool) void = null,
     open_settings: ?*const fn (*anyopaque) void = null,
     queued: ?[]u8 = null,
+    compute: protocol.ComputeStatus = .{},
     pub fn stop(self: *Host) void {
         if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
         self.deadline = 0;
@@ -33,6 +34,7 @@ pub const Host = struct {
         if (self.queued) |q| a.free(q);
         self.queued = null;
         self.pending = 0;
+        self.compute = .{};
     }
     pub fn configure(self: *Host, cfg: config.Config) void {
         if (!cfg.enabled) {
@@ -53,6 +55,15 @@ pub const Host = struct {
     pub fn clear(self: *Host) !void {
         if (self.locked) return error.AssistantUnavailable;
         if (self.process != null) try self.send(.{ .id = self.next(), .op = .clear });
+    }
+    pub fn releaseRuntime(self: *Host) !void {
+        if (self.locked) return error.AssistantUnavailable;
+        if (self.compute.busy or self.pending != 0) return error.AssistantBusy;
+        if (self.process != null) try self.send(.{ .id = self.next(), .op = .release_runtime });
+    }
+    pub fn cancelAnswer(self: *Host) !void {
+        if (self.locked) return error.AssistantUnavailable;
+        if (self.process != null) try self.send(.{ .id = self.next(), .op = .stop });
     }
     pub fn ask(self: *Host, cfg: config.Config, question: []const u8, activation: []const u8) !void {
         if (!cfg.enabled or self.locked) return error.AssistantUnavailable;
@@ -131,6 +142,7 @@ pub const Host = struct {
                     return;
                 }
                 if (reply.value.settings) if (self.open_settings) |open| open(self.context.?);
+                if (reply.value.compute) |compute_status| self.compute = compute_status;
                 if (reply.value.id == self.pending) {
                     self.pending = 0;
                     if (self.deadline != 0) _ = glib.Source.remove(self.deadline);

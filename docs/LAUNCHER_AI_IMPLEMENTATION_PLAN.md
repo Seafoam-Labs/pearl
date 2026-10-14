@@ -1,5 +1,9 @@
 # Launcher AI implementation plan
 
+Follow-up update: [GPU acceleration and runtime selection](ASSISTANT_GPU_RUNTIME_PLAN.md)
+replaces this plan's CPU-only and exact-runtime requirements. See
+[current setup](ASSISTANT.md) for implemented behavior and qualification limits.
+
 Status: experimental implementation added, October 14, 2026. See
 [Assistant implementation and setup](ASSISTANT.md) for the implemented behavior,
 build instructions and remaining qualification gates. The model-quality and

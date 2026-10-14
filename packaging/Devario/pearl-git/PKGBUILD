@@ -108,7 +108,10 @@ package_pearl-git() {
     depends=("${_shell_depends[@]}")
     # Required by the Aqueous session dispatcher.
     provides=('pearl-capture-picker-git=1')
-    optdepends=('pearl-assistant-runtime: optional CPU-only launcher answers'
+    optdepends=('pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported'
+                'llama-cpp: system runtime for launcher assistant setup'
+                'shelly: assistant runtime installation on Devario'
+                'foot: terminal for interactive assistant runtime installation'
                 'gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'
                 'gvfs-smb: SMB network connections in Phyto'
                 'gvfs-dnssd: WebDAV connections and network discovery in Phyto'

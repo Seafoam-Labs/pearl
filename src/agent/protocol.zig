@@ -4,14 +4,15 @@ const std = @import("std");
 pub const Request = struct {
     agent: u8 = 1,
     id: u64,
-    op: enum { configure, ask, @"resume", @"suspend", clear, stop, test_state, test_submit, test_hide },
+    op: enum { configure, ask, @"resume", @"suspend", clear, stop, release_runtime, test_state, test_submit, test_hide },
     config: ?@import("config.zig").Config = null,
     question: []const u8 = "",
     activation: []const u8 = "",
     palette: ?@import("../theme/theme.zig").Palette = null,
 };
 pub const State = struct { visible: bool, busy: bool, suspended: bool, runtime: bool, conversations: usize, turns: []const @import("controller.zig").Turn, sources: usize, status: []const u8, error_code: []const u8 = "", draft_chars: usize = 0 };
-pub const Reply = struct { agent: u8 = 1, id: u64, ok: bool = true, err: ?[]const u8 = null, settings: bool = false, state: ?State = null };
+pub const ComputeStatus = struct { busy: bool = false, loaded: bool = false, gpu: bool = false, backend: @import("config.zig").Backend = .auto, layers: u16 = 0, fallback: bool = false, enforced_memory: bool = false };
+pub const Reply = struct { agent: u8 = 1, id: u64, ok: bool = true, err: ?[]const u8 = null, settings: bool = false, compute: ?ComputeStatus = null, state: ?State = null };
 pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     try @import("../config/preferences.zig").boundedJson(bytes, 32768, 8);
     const request = try std.json.parseFromSliceLeaky(Request, a, bytes, .{});

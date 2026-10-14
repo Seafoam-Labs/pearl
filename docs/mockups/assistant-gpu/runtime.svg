@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1040" viewBox="0 0 1440 1040">
+<title>Pearl runtime choice and compatibility states</title>
+<desc>Two sequential settings states: choosing a system, optional Pearl or custom llama-server, then checking model compatibility. Release information is descriptive; a missing streaming capability has an actionable error.</desc>
+<defs><style>text{font-family:DejaVu Sans,sans-serif;fill:#f4edf8}.muted{fill:#c4b4d0}.small{font-size:13px}.body{font-size:15px}.accent{fill:#d8bcef}.good{fill:#b9dcbc}.panel{fill:#2d2634;stroke:#4b3d55}</style></defs>
+<rect width="1440" height="1040" fill="#17131d"/>
+<text x="64" y="43" class="accent small" letter-spacing="2">PEARL / ASSISTANT UPDATE</text><text x="1376" y="43" text-anchor="end" class="muted small">02 / Runtime selection</text>
+<text x="64" y="87" font-size="30">Use a compatible runtime you choose.</text>
+<rect x="64" y="122" width="636" height="630" rx="18" fill="#27212e" stroke="#55465f"/>
+<text x="88" y="157" class="body">Runtime &amp; acceleration</text><text x="668" y="157" text-anchor="end" class="muted body">×</text><path d="M64 177H700" stroke="#4c3e55"/>
+<text x="92" y="216" font-size="23">Choose runtime</text><text x="92" y="244" class="muted small">Pearl runs a local llama-server for your selected model.</text>
+<rect x="92" y="268" width="580" height="76" rx="11" class="panel"/><circle cx="116" cy="295" r="8" fill="none" stroke="#a894ba"/>
+<text x="139" y="299" class="body">System installation</text><text x="139" y="324" class="muted small">Use the llama-server installed by your distribution.</text>
+<rect x="92" y="356" width="580" height="76" rx="11" class="panel"/><circle cx="116" cy="383" r="8" fill="none" stroke="#a894ba"/>
+<text x="139" y="387" class="body">Pearl runtime package</text><text x="139" y="412" class="muted small">Optional package · available when installed</text>
+<rect x="92" y="444" width="580" height="132" rx="11" fill="#3c2d49" stroke="#c9aceb"/><circle cx="116" cy="471" r="8" fill="none" stroke="#d8bcef"/><circle cx="116" cy="471" r="4" fill="#d8bcef"/>
+<text x="139" y="475" class="body">Custom executable</text><text x="139" y="500" class="muted small">Choose a local llama-server file.</text>
+<rect x="111" y="518" width="432" height="37" rx="8" fill="#211b27" stroke="#655273"/><text x="124" y="543" class="small">/opt/llama-vulkan/bin/llama-server</text><rect x="552" y="518" width="101" height="37" rx="8" fill="#58416b"/><text x="602" y="543" text-anchor="middle" class="small">Browse…</text>
+<text x="92" y="612" class="muted small">Check runs this executable and a local model test.</text><text x="92" y="635" class="muted small">No web searches. The current idle model unloads first.</text>
+<rect x="92" y="665" width="580" height="60" rx="10" fill="#33293c"/><text x="110" y="701" class="small">LFM2.5-350M · Q4_K_M</text><rect x="483" y="678" width="170" height="34" rx="8" fill="#c9aceb"/><text x="568" y="701" text-anchor="middle" class="small" style="fill:#30203d;font-weight:bold">Check now</text>
+<rect x="724" y="122" width="652" height="630" rx="18" fill="#27212e" stroke="#55465f"/>
+<text x="748" y="157" class="body">Compatibility result</text><text x="1344" y="157" text-anchor="end" class="muted body">×</text><path d="M724 177H1376" stroke="#4c3e55"/>
+<circle cx="771" cy="217" r="18" fill="#304b38"/><text x="771" y="224" text-anchor="middle" class="good" font-size="20">✓</text><text x="802" y="225" font-size="23">Compatible with this model</text>
+<text x="752" y="268" class="muted small">Custom installation · Vulkan backend</text><text x="752" y="294" class="small">Reported build: local build • example identifier</text><text x="752" y="320" class="muted small">Compatibility is checked against the selected model.</text>
+<rect x="752" y="345" width="596" height="232" rx="11" class="panel"/>
+<g class="body"><text x="774" y="381" class="good">✓</text><text x="803" y="381">Local server and authentication</text><text x="774" y="421" class="good">✓</text><text x="803" y="421">Model loads and streams an answer</text><text x="774" y="461" class="good">✓</text><text x="803" y="461">Search tool call and result continuation</text><text x="774" y="501" class="good">✓</text><text x="803" y="501">Token counting and context budget</text><text x="774" y="541" class="good">✓</text><text x="803" y="541">Selected GPU performs inference</text></g>
+<text x="752" y="612" class="muted small">If the runtime changes, Pearl checks it again before use.</text><text x="752" y="635" class="muted small">Updates stay under your package manager or your control.</text>
+<rect x="752" y="665" width="596" height="60" rx="10" fill="#33293c"/><text x="770" y="701" class="small">Test passed · settings still unsaved</text><text x="1324" y="701" text-anchor="end" class="accent small">Back to settings →</text>
+<rect x="64" y="781" width="1312" height="174" rx="16" fill="#322a2b" stroke="#78604b"/>
+<text x="88" y="815" font-size="18" style="fill:#f0d1a2">Separate failure state: this runtime cannot stream tool calls</text>
+<text x="88" y="846" class="body">The model loaded, but the assistant compatibility check did not complete.</text><text x="88" y="872" class="muted small">Select another installed runtime or update this installation, then check again.</text>
+<rect x="88" y="894" width="162" height="35" rx="8" fill="#c9aceb"/><text x="169" y="917" text-anchor="middle" class="small" style="fill:#30203d">Choose runtime</text><rect x="262" y="894" width="115" height="35" rx="8" fill="#4c3b48"/><text x="319" y="917" text-anchor="middle" class="small">Check again</text><text x="402" y="917" class="accent small">Show details</text>
+<text x="64" y="1007" class="muted small">Proposed UI · Build text and check results are illustrative. A passing runtime needs no exact release or Pearl manifest.</text>
+</svg>
