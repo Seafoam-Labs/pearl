@@ -141,6 +141,18 @@ def main():
             fields = {c['field'] for c in probe(s, ipc)['controls']}
             assert {'mode','variant','source','gtk_name','seed','wallpaper','color','font','font_size','fit','density','motion','choose','raw'} <= fields
             capture(s, 'appearance-real-dark')
+            assert not original['desktop_icons']['enabled']
+            click(s, ipc, 'desktop_enabled')
+            wait_for(lambda: json.loads(peer.document())['desktop_icons']['enabled'])
+            assert not json.loads(peer.document('committed'))['desktop_icons']['enabled']
+            click(s, ipc, 'desktop_hidden')
+            wait_for(lambda: json.loads(peer.document())['desktop_icons']['show_hidden'])
+            click(s, ipc, 'desktop_output'); type_text(s, 'disconnected-display')
+            wait_for(lambda: json.loads(peer.document())['desktop_icons']['output'] == 'disconnected-display')
+            capture(s, 'desktop-icons-settings-draft')
+            click(s, ipc, 'discard'); ready(s, ipc)
+            assert json.loads(peer.document()) == original
+            passed('desktop-icon-controls-draft-discard-and-upgrade-default')
             # Actual form input preserves unrelated fields from the full JSON.
             p = copy.deepcopy(original); p['font_size'] = 16
             p['theme'].update(mode='dynamic', source='seed', seed='#7654ab')

@@ -1102,6 +1102,9 @@ pub const Window = struct {
             }
         }
         if (self.preferences_view) |view| {
+            for ([_]*gtk.Widget{ view.desktop_enabled.as(gtk.Widget), view.desktop_hidden.as(gtk.Widget), view.desktop_output.as(gtk.Widget), view.desktop_size.as(gtk.Widget), view.desktop_arrangement.as(gtk.Widget) }, [_][]const u8{ "desktop_enabled", "desktop_hidden", "desktop_output", "desktop_size", "desktop_arrangement" }) |widget, name| {
+                try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .bounds = self.bounds(widget), .enabled = widget.isSensitive() != 0 });
+            }
             for ([_]*gtk.Widget{ view.night_enabled.as(gtk.Widget), view.night_temperature.as(gtk.Widget), view.night_schedule.as(gtk.Widget), view.night_times[0].as(gtk.Widget), view.night_times[1].as(gtk.Widget), view.night_times[2].as(gtk.Widget), view.night_times[3].as(gtk.Widget) }, [_][]const u8{ "night_enabled", "night_temperature", "night_schedule", "night_start_hour", "night_start_minute", "night_end_hour", "night_end_minute" }) |widget, name| {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
             }

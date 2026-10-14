@@ -71,6 +71,11 @@ pub const View = struct {
     qt_reapply: *gtk.Button,
     qt_comparison: *gtk.Label,
     night_enabled: *gtk.Switch = undefined,
+    desktop_enabled: *gtk.Switch = undefined,
+    desktop_hidden: *gtk.Switch = undefined,
+    desktop_output: *gtk.Entry = undefined,
+    desktop_size: *gtk.DropDown = undefined,
+    desktop_arrangement: *gtk.DropDown = undefined,
     night_temperature: *gtk.SpinButton = undefined,
     night_schedule: *gtk.DropDown = undefined,
     night_times: [4]*gtk.SpinButton = undefined,
@@ -185,6 +190,18 @@ pub const View = struct {
         w.name(raw_view.as(gtk.Widget), if (german) "Vollständige Pearl-Einstellungen als JSON" else "Full Pearl preferences JSON");
         // The caller installs raw_view directly in Advanced's sole viewport.
         self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
+        const desktop = card(host);
+        desktop.append(w.label(self.t("Desktop icons", "Desktopsymbole"), "settings-row-title").as(gtk.Widget));
+        desktop.append(w.label(self.t("Files and application shortcuts from your Desktop folder. Enabled automatically for new installations.", "Dateien und Programmstarter aus deinem Desktopordner. Bei neuen Installationen automatisch aktiviert."), "pearl-secondary").as(gtk.Widget));
+        self.desktop_enabled = toggle(desktop, self.t("Show desktop icons", "Desktopsymbole anzeigen"));
+        self.desktop_output = entry(desktop, self.t("Display connector", "Bildschirmanschluss"), 128);
+        self.desktop_output.setPlaceholderText(self.t("Automatic (first connected display)", "Automatisch (erster verbundener Bildschirm)"));
+        self.desktop_size = dropdown(desktop, self.t("Icon size", "Symbolgröße"), &.{ "32", "48", "64", "96" });
+        self.desktop_arrangement = dropdown(desktop, self.t("Arrangement", "Anordnung"), if (german) &.{ "Automatisch · Name", "Manuell" } else &.{ "Automatic · Name", "Manual" });
+        self.desktop_hidden = toggle(desktop, self.t("Show hidden files", "Versteckte Dateien anzeigen"));
+        for ([_]*gtk.Switch{ self.desktop_enabled, self.desktop_hidden }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "active" });
+        for ([_]*gtk.DropDown{ self.desktop_size, self.desktop_arrangement }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        _ = gtk.Editable.signals.changed.connect(self.desktop_output.as(gtk.Editable), *View, edited, self, .{});
         const night = card(host);
         night.append(w.label(self.t("Night Light", "Nachtlicht"), "settings-row-title").as(gtk.Widget));
         night.append(w.label(self.t("Warmer screen colors on supported displays. The status below shows which displays can apply your saved schedule.", "Wärmere Farben auf unterstützten Bildschirmen. Der Status unten zeigt, welche Bildschirme den gespeicherten Zeitplan anwenden können."), "pearl-secondary").as(gtk.Widget));
@@ -324,6 +341,11 @@ pub const View = struct {
         self.message.setText(if (self.raw_invalid) self.t("Advanced JSON is invalid. Correct it there to use these controls.", "Das JSON ist ungültig. Korrigiere es unter Erweitert, um diese Regler zu nutzen.") else "");
     }
     fn fill(self: *View, prefs: model.Preferences) void {
+        self.desktop_enabled.setActive(@intFromBool(prefs.desktop_icons.enabled));
+        self.desktop_hidden.setActive(@intFromBool(prefs.desktop_icons.show_hidden));
+        self.desktop_output.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, prefs.desktop_icons.output) catch "");
+        self.desktop_size.setSelected(@intCast(std.mem.indexOfScalar(u16, &@import("../desktop/icons/model.zig").sizes, prefs.desktop_icons.icon_size) orelse 1));
+        self.desktop_arrangement.setSelected(@intFromEnum(prefs.desktop_icons.arrangement));
         self.night_enabled.setActive(@intFromBool(prefs.night_light.enabled));
         self.night_temperature.setValue(@floatFromInt(prefs.night_light.temperature_kelvin));
         self.night_schedule.setSelected(@intFromEnum(prefs.night_light.schedule));
@@ -363,6 +385,7 @@ pub const View = struct {
     fn saveForm(self: *View) void {
         if (self.filling or !self.editor.editable()) return;
         var prefs = self.prefs;
+        prefs.desktop_icons = .{ .enabled = self.desktop_enabled.getActive() != 0, .show_hidden = self.desktop_hidden.getActive() != 0, .output = text(self.desktop_output), .icon_size = @import("../desktop/icons/model.zig").sizes[@min(3, self.desktop_size.getSelected())], .arrangement = @enumFromInt(self.desktop_arrangement.getSelected()) };
         prefs.night_light = .{
             .enabled = self.night_enabled.getActive() != 0,
             .temperature_kelvin = @intCast(self.night_temperature.getValueAsInt()),

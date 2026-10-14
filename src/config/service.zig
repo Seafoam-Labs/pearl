@@ -613,6 +613,11 @@ pub const Service = struct {
                 if (good.missing) {
                     j.prefs = try model.firstInstall(alloc);
                     j.first_install = true;
+                } else {
+                    // A missing main file in an established installation is
+                    // recovery, not a new installation or a reset to defaults.
+                    j.prefs = try model.parse(alloc, good.bytes);
+                    j.recovered = true;
                 }
             };
         }

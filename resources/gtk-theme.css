@@ -78,3 +78,9 @@
 .pearl-root.pearl-gtk.pearl-shell .pearl-bar-panel button.pearl-tray-icon, .pearl-root.pearl-gtk .pearl-menu-panel button.pearl-tray-icon { padding: 3px; min-width: 20px; min-height: 20px; }
 .pearl-root.pearl-gtk .pearl-menu-panel .pearl-tray-chooser button.pearl-tray-icon { margin: 0; border-width: 0; padding: 3px; }
 .pearl-root.pearl-gtk .pearl-tray-chooser image { margin: 0; padding: 0; }
+.pearl-root.pearl-gtk .pearl-desktop-icon { background: transparent; border: 1px solid transparent; border-radius: 12px; padding: 4px; box-shadow: none; color: white; text-shadow: 0 1px 3px black; }
+.pearl-root.pearl-gtk .pearl-desktop-icon image { -gtk-icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.65); }
+.pearl-root.pearl-gtk .pearl-desktop-selected { background: alpha(@theme_selected_bg_color, 0.85); border-color: @theme_selected_bg_color; }
+.pearl-root.pearl-gtk .pearl-desktop-band { background: alpha(@theme_selected_bg_color, 0.2); border: 1px solid @theme_selected_bg_color; }
+.pearl-root.pearl-gtk .pearl-desktop-status { background: @theme_bg_color; color: @theme_fg_color; padding: 12px; border-radius: 12px; }
+.pearl-root.pearl-gtk .pearl-desktop-grid:focus .pearl-desktop-cursor { outline: 2px solid @theme_selected_bg_color; outline-offset: -2px; }

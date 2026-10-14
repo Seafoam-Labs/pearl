@@ -1,5 +1,49 @@
 # Preferences, wallpaper and themes
 
+## Desktop icons
+
+**Appearance → Desktop icons** edits the enabled state, display connector, icon
+size (32, 48, 64 or 96 logical pixels), automatic/manual arrangement and hidden
+files. All controls use the shared draft and **Apply & save / Discard** workflow.
+
+Fresh installations receive:
+
+```json
+"desktop_icons": {
+  "enabled": true,
+  "output": "",
+  "icon_size": 48,
+  "show_hidden": false,
+  "arrangement": "automatic"
+}
+```
+
+An existing document that omits this block uses `enabled: false`. First-install
+seeding occurs only when both preferences and last-known-good storage are absent;
+recovery, upgrades and explicit disabled choices do not enable icons. An empty
+output selects the first connected connector in lexical order; a disconnected
+saved connector falls back until it returns. This setting is independent of
+per-output bar replacement rules.
+
+Desktop files come from `XDG_DESKTOP_DIR` in the user's `user-dirs.dirs`. Missing
+configuration and a home-valued directory are treated as disabled directory
+support. The grid provides Retry and, for a configured missing path, explicit
+folder creation. Changing the enable setting never creates sample content.
+
+Manual positions are stored separately in
+`$XDG_STATE_HOME/pearl/desktop-icons.json`, or
+`~/.local/state/pearl/desktop-icons.json`. Launcher approvals use the adjacent
+`desktop-launchers.json`. Positions use file URIs and preserve preferred grid
+coordinates across temporary output changes. State writes are atomic; malformed
+state is retained with a `.corrupt-<timestamp>` suffix when replacement is needed.
+Deleting placement state does not grant launcher approval. See
+[desktop behavior](DESKTOP.md#desktop-icons).
+
+This is an additive version-1 preference. Older strict parsers reject the new
+block; remove it from saved preferences before downgrading.
+
+## Appearance services
+
 **Appearance → Night Light** adds a disabled-by-default `night_light` block to the
 shared draft. Temperature and custom local-time schedules save through Apply & save.
 Screen warming remains unavailable until Aqueous supplies validated output color

@@ -82,6 +82,7 @@ pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock =
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
+    desktop_icons: @import("../desktop/icons/model.zig").Config = .{},
     notifications: @import("../services/notification_filter_policy.zig").Config = .{},
     night_light: @import("../services/night_light_policy.zig").Config = .{},
     plugins: @import("../plugins/model.zig").Preferences = .{},
@@ -111,6 +112,7 @@ pub const Preferences = struct {
         return self.dock;
     }
     pub fn validate(self: Preferences) !void {
+        try self.desktop_icons.validate();
         try self.notifications.validate();
         try @import("../desktop/app_identity.zig").validate(self.application_launchers);
         try self.night_light.validate();
@@ -184,6 +186,7 @@ pub fn hex(s: []const u8) bool {
 /// existing document (including older documents with no application settings).
 pub fn firstInstall(a: std.mem.Allocator) !Preferences {
     var p: Preferences = .{};
+    p.desktop_icons.enabled = true;
     p.matugen.enabled = true;
     try p.matugen.applications.map.put(a, "gtk", .{ .mode = .profile, .profile_id = "pearl.material.gtk" });
     return p;
@@ -195,6 +198,10 @@ test "first installation manages GTK and preserves existing application preferen
     const a = arena.allocator();
     const fresh = try firstInstall(a);
     try fresh.validate();
+    try std.testing.expect(fresh.desktop_icons.enabled);
+    try std.testing.expect(!(try parse(a, "{}")).desktop_icons.enabled);
+    try std.testing.expect(!(try parse(a, "{\"desktop_icons\":{\"enabled\":false}}")).desktop_icons.enabled);
+    try std.testing.expectError(error.InvalidDesktopIconSize, parse(a, "{\"desktop_icons\":{\"icon_size\":47}}"));
     try std.testing.expect(fresh.matugen.enabled);
     try std.testing.expectEqual(.follow_pearl, fresh.matugen.colors.source);
     try std.testing.expectEqual(@as(u32, 0), fresh.matugen.defaults_revision);

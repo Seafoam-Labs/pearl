@@ -1,0 +1,32 @@
+PASS T06 live desktop, discovery, launch, controls and latency
+Build Summary: 24/24 steps succeeded; 292/292 tests passed
+build-desktop-icons-test success
++- install pearl-integration success
+|  +- compile exe pearl-integration ReleaseSafe native success 59s MaxRSS:1G
+|     +- run pkg-config success 1ms
+|     +- translate-c cached 12ms MaxRSS:55M
+|     +- run glib-compile-resources (pearl.gresource) success 1ms
+|     +- options cached
+|     +- options cached
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|     |  +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:56M
+|     +- options cached
++- install pearlctl cached
+   +- compile exe pearlctl ReleaseSafe native cached 12ms MaxRSS:58M
+test success
++- run test 277 pass (277 total) 123ms MaxRSS:12M
+|  +- compile test ReleaseSafe native cached 9ms MaxRSS:58M
++- run test 15 pass (15 total) 2ms MaxRSS:13M
+   +- compile test ReleaseSafe native cached 12ms MaxRSS:59M
+test-desktop success
++- run python3 success 18s
+   +- compile exe pearl ReleaseSafe native success 58s MaxRSS:1G
+   |  +- run pkg-config (reused)
+   |  +- translate-c (reused)
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+   |  +- options cached
+   +- compile exe pearlctl ReleaseSafe native (reused)
+

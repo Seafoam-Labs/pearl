@@ -1658,6 +1658,20 @@
     "options": []
   },
   {
+    "id": "test-desktop-icons",
+    "description": "Verify desktop files, input, placement and installation defaults in private Aqueous",
+    "groups": ["integration"],
+    "cwd": ".",
+    "targets": ["test-desktop-icons"],
+    "capabilities": ["zig", "native", "session", "aqueous"],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": ["tests/integration/test_desktop_icons.py"],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test-desktop",
     "description": "Verify T06 live desktop and GIO discovery/activation in private Aqueous",
     "groups": [

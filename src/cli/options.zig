@@ -76,6 +76,7 @@ pub fn parse(args: []const []const u8) !Options {
         if (std.mem.eql(u8, args[0], "quit")) break :blk .quit;
         if (args.len < 2) return error.Usage;
         index = 2;
+        if (std.mem.eql(u8, args[0], "desktop") and std.mem.eql(u8, args[1], "focus")) break :blk .desktop_focus;
         if (std.mem.eql(u8, args[0], "night-light")) {
             if (args.len != 2) return error.Usage;
             if (std.mem.eql(u8, args[1], "status")) break :blk .night_light_status;
@@ -215,6 +216,7 @@ pub const usage =
     \\       pearlctl window-switcher next|previous|dismiss [--output ID]
     \\         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.
     \\       pearlctl running-apps show [--output ID]
+    \\       pearlctl desktop focus [--output ID]
     \\       pearlctl calendar toggle [--output ID]
     \\       pearlctl overview toggle [--output ID]
     \\       pearlctl layout get|set --output ID [--layout NAME]
@@ -387,4 +389,10 @@ test "running applications keyboard entry accepts only output selection" {
     try t.expectEqual(protocol.Op.running_apps_show, request.request.op);
     try t.expectEqualStrings("opaque-output", request.request.output.?);
     try t.expectError(error.Usage, parse(&.{ "running-apps", "show", "--page", "sound" }));
+}
+
+test "desktop focus accepts only an optional output" {
+    const request = try parse(&.{ "desktop", "focus", "--output", "opaque-output" });
+    try std.testing.expectEqual(protocol.Op.desktop_focus, request.request.op);
+    try std.testing.expectError(error.Usage, parse(&.{ "desktop", "focus", "--page", "sound" }));
 }

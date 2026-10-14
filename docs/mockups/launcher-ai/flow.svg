@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960">
+<title>Pearl assistant interaction flow</title>
+<desc>Opt in, install a model and configure search, type a launcher question, press Enter to open a floating conversation, search and read sources, then continue with follow-ups. Stop and disable paths are shown.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6" fill="none" stroke="#c9aceb" stroke-width="1.5"/></marker></defs>
+<rect width="1440" height="960" fill="#17131d"/>
+<g font-family="DejaVu Sans, sans-serif">
+<text x="64" y="47" fill="#c9aceb" font-size="12" letter-spacing="2">PEARL / ASSISTANT</text>
+<text x="64" y="94" fill="#f4edf8" font-size="32">From a question to a conversation</text>
+<text x="64" y="127" fill="#bfb0cd" font-size="15">Local answers. Your search engines. An optional part of the desktop.</text>
+<text x="1376" y="48" fill="#bfb0cd" font-size="12" text-anchor="end">01 / Interaction flow</text>
+
+<g fill="#2b2531" stroke="#55465f"><rect x="64" y="180" width="400" height="225" rx="18"/><rect x="520" y="180" width="400" height="225" rx="18"/><rect x="976" y="180" width="400" height="225" rx="18"/><rect x="64" y="495" width="400" height="225" rx="18"/><rect x="520" y="495" width="400" height="225" rx="18"/><rect x="976" y="495" width="400" height="225" rx="18"/></g>
+<g fill="#c9aceb" font-size="12" letter-spacing="1.4"><text x="90" y="215">01  ENABLE</text><text x="546" y="215">02  PREPARE</text><text x="1002" y="215">03  ASK</text><text x="1002" y="530">04  OPEN CHAT</text><text x="546" y="530">05  FIND EVIDENCE</text><text x="90" y="530">06  CONTINUE</text></g>
+<g fill="#f4edf8" font-size="21"><text x="90" y="251">Choose to turn it on</text><text x="546" y="251">Choose model and search</text><text x="1002" y="251">Simply type a question</text><text x="1002" y="566">A small floating window</text><text x="546" y="566">Search → read → summarize</text><text x="90" y="566">Ask a follow-up</text></g>
+<g fill="#c7b9d5" font-size="14">
+<text x="90" y="285">Settings → Assistant</text><text x="90" y="311">Off by default. No background model.</text>
+<text x="546" y="285">LFM2.5-350M · 229 MB download</text><text x="546" y="311">Add Brave or your SearXNG instance.</text>
+<text x="1002" y="285">Super + Space → “What is RAM?”</text><text x="1002" y="311">Select Ask Pearl, then press Enter.</text>
+<text x="1002" y="600">Your question is already in the chat.</text><text x="1002" y="626">The launcher closes after handoff.</text>
+<text x="546" y="600">Model chooses tools; Pearl runs them.</text><text x="546" y="626">Read the answer and inspect sources.</text>
+<text x="90" y="600">Keep the conversation on your desktop.</text><text x="90" y="626">Clicking elsewhere leaves it open.</text>
+</g>
+<g><rect x="90" y="340" width="347" height="40" rx="10" fill="#201b25"/><text x="105" y="366" fill="#f4edf8" font-size="13">Enable assistant</text><rect x="377" y="349" width="43" height="23" rx="12" fill="#65556f"/><circle cx="389" cy="360" r="8" fill="#d9cce3"/>
+<rect x="546" y="340" width="348" height="40" rx="10" fill="#344037"/><text x="562" y="366" fill="#bee3c6" font-size="13">✓ Model ready     ✓ Search connected</text>
+<rect x="1002" y="340" width="348" height="40" rx="10" fill="#543b70"/><text x="1018" y="366" fill="#f1e3ff" font-size="13">Ask Pearl                           Enter ↵</text>
+<rect x="1002" y="655" width="348" height="40" rx="10" fill="#201b25"/><text x="1018" y="681" fill="#cab9d8" font-size="13">Preparing local model…             Stop</text>
+<rect x="546" y="655" width="348" height="40" rx="10" fill="#201b25"/><text x="562" y="681" fill="#cab9d8" font-size="13">Sources  [1]  [2]     •     Retrieved now</text>
+<rect x="90" y="655" width="348" height="40" rx="10" fill="#201b25"/><text x="106" y="681" fill="#cab9d8" font-size="13">Ask a follow-up…                         ↑</text></g>
+<g fill="none" stroke="#c9aceb" stroke-width="2" marker-end="url(#arrow)"><path d="M472 292H509"/><path d="M928 292H965"/><path d="M1176 415V481"/><path d="M968 607H932"/><path d="M512 607H476"/></g>
+<g fill="#bfb0cd" font-size="12"><text x="1192" y="454">Only after submission</text><text x="64" y="453">Typing stays local. Applications and calculator remain available.</text></g>
+<rect x="64" y="771" width="1312" height="120" rx="16" fill="#211c28" stroke="#46394f"/>
+<g fill="#f0e5f7" font-size="15"><text x="89" y="805">Stop</text><text x="414" y="805">Close and resume</text><text x="739" y="805">Setup or search failure</text><text x="1064" y="805">Disable</text></g>
+<g fill="#bdadc9" font-size="12"><text x="89" y="833">Cancel work; keep partial text.</text><text x="89" y="855">Retry starts a fresh attempt.</text><text x="414" y="833">Cancel, hide, retain this session.</text><text x="414" y="855">Resume from Super + Space.</text><text x="739" y="833">Keep the question and result links.</text><text x="739" y="855">Show a specific recovery action.</text><text x="1064" y="833">Stop all work and unload.</text><text x="1064" y="855">Clear session conversations.</text></g>
+<text x="64" y="930" fill="#9f90ac" font-size="12">Design proposal · Native GTK4 implementation in Zig · No automatic requests while typing</text>
+</g></svg>

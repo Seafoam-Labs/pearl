@@ -1,0 +1,28 @@
+PASS bounded-full-document-invalid-and-empty-retention
+PASS partial-transfer-and-digest-failure-never-mutate-draft
+PASS shared-cas-and-canonical-operation-deduplication
+PASS desktop-icon-controls-draft-discard-and-upgrade-default
+PASS real-appearance-form-preserves-full-preference-document
+PASS invalid-advanced-navigation-close-reopen-without-save
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_settings_appearance.py", line 379, in <module>
+    main()
+    ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_appearance.py", line 188, in main
+    ready(s, ipc)
+    ~~~~~^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_appearance.py", line 22, in ready
+    return wait_for(lambda: (v if (v := probe(s, ipc))['editor']['ready'] and
+                            v['editor']['download'] == 'none' and not v['editor']['local'] and
+                            v['editor']['upload'] == 'none' and v['editor']['can_edit'] and not v['editor']['state']['busy'] else False), 15)
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 28, in wait_for
+    value = check()
+  File "/home/zoey/Pearl/tests/integration/test_settings_appearance.py", line 22, in <lambda>
+    return wait_for(lambda: (v if (v := probe(s, ipc))['editor']['ready'] and
+                                        ~~~~~^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_app.py", line 30, in probe
+    result = request(s, ipc, op='probe')
+  File "/home/zoey/Pearl/tests/integration/test_settings_app.py", line 23, in request
+    sock.settimeout(5); sock.connect(str(endpoint(s, ipc)))
+                        ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [Errno 111] Connection refused

@@ -840,6 +840,16 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| desktop.addArgs(args);
     b.step("test-desktop", "Verify T06 live desktop and GIO discovery/activation in private Aqueous").dependOn(&desktop.step);
 
+    const desktop_icons = b.addSystemCommand(&.{ "python3", "tests/integration/test_desktop_icons.py", "--pearl" });
+    const desktop_icons_build = b.step("build-desktop-icons-test", "Stage the instrumented desktop icon session binary and control client");
+    desktop_icons_build.dependOn(&b.addInstallArtifact(integration_app, .{}).step);
+    desktop_icons_build.dependOn(&b.addInstallArtifact(ctl, .{}).step);
+    desktop_icons.addArtifactArg(integration_app);
+    desktop_icons.addArg("--ctl");
+    desktop_icons.addArtifactArg(ctl);
+    if (b.args) |args| desktop_icons.addArgs(args);
+    b.step("test-desktop-icons", "Verify desktop files, input, placement and installation defaults in private Aqueous").dependOn(&desktop_icons.step);
+
     const services = b.addSystemCommand(&.{ "python3", "tests/integration/test_services.py", "--pearl" });
     services.addArtifactArg(integration_app);
     services.addArg("--ctl");
@@ -999,6 +1009,7 @@ fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.R
     const module = b.createModule(.{ .root_source_file = b.path(source), .target = target, .optimize = optimize, .link_libc = true });
     module.addImport("pulse", pulse);
     module.addImport("giounix2", bindings.module("giounix2"));
+    module.addImport("graphene1", bindings.module("graphene1"));
     module.linkSystemLibrary("libpulse", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("libpulse-mainloop-glib", .{ .use_pkg_config = .force });
     // Interposition requires layer-shell to load before GTK's Wayland dependency.

@@ -185,6 +185,10 @@ def main():
             assert v['recovered'] and v['preferences']==p and v['err']=='InvalidGtkTheme' and json.loads(path.read_text())==invalid,v
             ctl(s,args.ctl,'quit');clean(app)
         with PrivateSession(args.output/'generator') as s:
+            # This suite measures palette-generation calls, independently of
+            # first-install GTK application integration and desktop defaults.
+            legacy=Path(s.env['XDG_CONFIG_HOME'])/'pearl/last-good.json'
+            legacy.parent.mkdir(parents=True,exist_ok=True);legacy.write_text('{}')
             mode=s.base/'mode';mode.write_text('pass');calls=s.base/'calls.jsonl';calls.write_text('')
             s.env.update(PATH=str(ROOT/'tests/fixtures/theme')+':'+s.env['PATH'],PEARL_TEST_GENERATOR_MODE=str(mode),PEARL_TEST_GENERATOR_LOG=str(calls))
             app=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready');v=settled(s,args.ctl)

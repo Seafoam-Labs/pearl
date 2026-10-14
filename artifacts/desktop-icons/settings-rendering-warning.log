@@ -1,0 +1,10 @@
+ts=2026-10-14T16:53:25Z pid=1275456 info(settings): event=settings-launch activation_context=false
+ts=2026-10-14T16:53:25Z pid=1275456 info(settings): event=settings-instance-ready session_hash=fcdd31da9f9cfeab
+ts=2026-10-14T16:53:25Z pid=1275456 info(settings): event=settings-page page=overview
+ts=2026-10-14T16:53:25Z pid=1275456 info(settings): event=settings-page page=advanced
+ts=2026-10-14T16:53:25Z pid=1275456 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-14T16:53:25Z pid=1275456 info(settings): event=settings-page page=advanced
+ts=2026-10-14T16:53:26Z pid=1275456 info(settings): event=settings-activation activation_context=false
+ts=2026-10-14T16:53:26Z pid=1275456 info(settings): event=settings-page page=advanced
+
+(pearl-settings-test:1275456): Gtk-WARNING **: 12:53:34.861: Trying to snapshot GtkGizmo 0xe159b30 without a current allocation

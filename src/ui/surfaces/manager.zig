@@ -16,6 +16,8 @@ const BarVisibility = @import("../../desktop/bar_visibility.zig");
 const BarAutohide = @import("../../desktop/bar_autohide.zig").Controller;
 const Osd = @import("osd.zig");
 const Apps = @import("../../desktop/apps.zig");
+const DesktopDirectory = @import("../../desktop/icons/directory.zig");
+const DesktopIcons = @import("../../desktop/icons/view.zig");
 const Running = @import("../../desktop/running_apps.zig");
 const LauncherPicker = @import("../../desktop/launcher_picker.zig");
 const Launcher = @import("../../desktop/launcher.zig").Launcher;
@@ -64,6 +66,8 @@ const Surface = struct {
     clipboard_capture: ?*@import("../../desktop/clipboard_capture.zig").View = null,
     settings: ?*@import("../../desktop/settings.zig").View = null,
     wallpaper_stack: ?*gtk.Stack = null,
+    wallpaper_overlay: ?*gtk.Overlay = null,
+    desktop_icons: ?*DesktopIcons.View = null,
     wallpaper_pictures: [2]?*gtk.Picture = .{ null, null },
     wallpaper_index: u8 = 0,
     wallpaper_texture: ?*gdk.Texture = null,
@@ -71,6 +75,7 @@ const Surface = struct {
     measure_signal: c_ulong = 0,
     measure_clock: ?*gdk.FrameClock = null,
     fn destroy(self: *Surface) void {
+        if (self.desktop_icons) |view| view.destroy();
         if (self.switcher_spoken) |spoken| a.free(spoken);
         if (self.autohide) |controller| controller.destroy();
         self.autohide = null;
@@ -175,6 +180,7 @@ pub const Manager = struct {
     osd_pending_output: ?*Output = null,
     osd_flush: c_uint = 0,
     index: Apps.Index = undefined,
+    desktop_directory: ?*DesktopDirectory.Store = null,
     tasks: @import("../../desktop/task_apps.zig").Store = .{},
     layout: ?Layout = null,
     layout_stamp: u64 = 0,
@@ -218,6 +224,9 @@ pub const Manager = struct {
         self.layout = try Layout.init(self.display, self, layoutChanged);
         self.layout.?.start();
         self.index.start();
+        self.desktop_directory = try DesktopDirectory.Store.create(self.app.as(gio.Application));
+        self.desktop_directory.?.context = self;
+        self.desktop_directory.?.changed = desktopChanged;
         self.audio = .{ .context = self, .changed = audioChanged };
         self.night_light = .{ .display = self.display, .context = self, .changed = nightLightChanged };
         self.sched_ext = .{ .app = self.app.as(gio.Application), .context = self, .changed = schedExtChanged };
@@ -264,6 +273,10 @@ pub const Manager = struct {
     pub fn deinit(self: *Manager) void {
         if (!self.running) return;
         self.running = false;
+        if (self.desktop_directory) |store| {
+            store.context = null;
+            store.changed = null;
+        }
         if (self.clock_source != 0) _ = glib.Source.remove(self.clock_source);
         self.clock_source = 0;
         if (self.clock_monitor != 0) _ = glib.Source.remove(self.clock_monitor);
@@ -277,6 +290,8 @@ pub const Manager = struct {
         self.unwatchMonitors();
         self.monitor_watches.deinit(a);
         self.clear();
+        if (self.desktop_directory) |store| store.destroy();
+        self.desktop_directory = null;
         self.tasks.deinit();
         self.tasks = .{};
         if (self.plugins) |plugins| plugins.stop();
@@ -336,6 +351,7 @@ pub const Manager = struct {
     }
     /// Double-clicking the background crops the wallpaper filling that output.
     fn wallpaperPressed(_: *gtk.GestureClick, presses: c_int, _: f64, _: f64, s: *Surface) callconv(.c) void {
+        if (s.desktop_icons != null) return;
         if (presses != 2) return;
         const path = s.manager.preferences.prefs().wallpaper.path;
         if (path.len == 0) return;
@@ -541,6 +557,77 @@ pub const Manager = struct {
         self.authChangedSelf();
         self.positionPopup();
         self.schedule();
+    }
+    fn desktopChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (!self.running) return;
+        for (self.outputs.items) |output| if (output.wallpaper) |surface| if (surface.desktop_icons) |view| view.update();
+        if (self.changed) |notify| notify(self.context.?);
+    }
+    fn desktopSettings(context: *anyopaque) void {
+        const surface: *Surface = @ptrCast(@alignCast(context));
+        surface.manager.openSettings(.{ .page = .appearance }, null) catch {};
+    }
+    fn desktopCrop(context: *anyopaque) void {
+        const surface: *Surface = @ptrCast(@alignCast(context));
+        const path = surface.manager.preferences.prefs().wallpaper.path;
+        if (path.len != 0) surface.manager.openCrop(surface.window, surface.output, path);
+    }
+    fn syncDesktop(self: *Manager) !void {
+        const store = self.desktop_directory orelse return;
+        const prefs = self.preferences.prefs();
+        store.enable(prefs.desktop_icons.enabled);
+        var desktop_output: ?*Output = null;
+        for (self.outputs.items) |o| {
+            if (std.mem.eql(u8, o.connector, prefs.desktop_icons.output)) {
+                desktop_output = o;
+                break;
+            }
+            if (desktop_output == null or std.mem.order(u8, o.connector, desktop_output.?.connector) == .lt) desktop_output = o;
+        }
+        for (self.outputs.items) |o| if (o.wallpaper) |surface| {
+            const enabled = prefs.desktop_icons.enabled and desktop_output == o;
+            if (!enabled) {
+                if (surface.desktop_icons) |view| {
+                    surface.wallpaper_overlay.?.removeOverlay(view.root.as(gtk.Widget));
+                    view.destroy();
+                    surface.desktop_icons = null;
+                }
+                layer.setKeyboardMode(surface.window, .none);
+                continue;
+            }
+            if (surface.desktop_icons == null) {
+                surface.desktop_icons = try DesktopIcons.View.create(surface.window, store, &self.index, surface, desktopSettings, desktopCrop);
+                surface.wallpaper_overlay.?.addOverlay(surface.desktop_icons.?.root.as(gtk.Widget));
+            }
+            const view = surface.desktop_icons.?;
+            // Usable coordinates already contain compositor reservations. Keep
+            // a stable additional dock/reveal clearance on the configured edge.
+            var left = @max(12, o.usable.x - o.bounds.x + 12);
+            var top = @max(12, o.usable.y - o.bounds.y + 12);
+            var right = @max(12, o.bounds.width - (o.usable.x - o.bounds.x + o.usable.width) + 12);
+            var bottom = @max(12, o.bounds.height - (o.usable.y - o.bounds.y + o.usable.height) + 12);
+            const dock = prefs.dockForOutput(o.connector);
+            if (dock.enabled) switch (dock.edge) {
+                .top => top += 80,
+                .bottom => bottom += 80,
+                .left => left += 80,
+                .right => right += 80,
+            };
+            if (prefs.forOutput(o.connector).mode == .autohide) switch (o.reservations.bar_edge) {
+                .top => top = @max(top, 12 + o.reservations.bar_size),
+                .bottom => bottom = @max(bottom, 12 + o.reservations.bar_size),
+                .left => left = @max(left, 12 + o.reservations.bar_size),
+                .right => right = @max(right, 12 + o.reservations.bar_size),
+            };
+            const widget = view.root.as(gtk.Widget);
+            widget.setMarginStart(left);
+            widget.setMarginEnd(right);
+            widget.setMarginTop(top);
+            widget.setMarginBottom(bottom);
+            view.configure(prefs.desktop_icons, prefs.font_size, o.bounds.width - left - right, o.bounds.height - top - bottom, !self.barInhibited() and self.popup == null);
+            layer.setKeyboardMode(surface.window, if (view.allowed) .on_demand else .none);
+        };
     }
     fn authChangedSelf(self: *Manager) void {
         authChanged(self);
@@ -1056,6 +1143,7 @@ pub const Manager = struct {
                 o.destroy();
             } else i += 1;
         }
+        try self.syncDesktop();
         self.syncPopupDismissRegions();
         try self.syncSwitcher();
         if (self.popup) |popup| if (popup.launcher_picker) |view| {
@@ -1185,7 +1273,12 @@ pub const Manager = struct {
                     s.wallpaper_pictures[i] = picture;
                 }
                 stack.setVisibleChildName("a");
-                panel.append(stack.as(gtk.Widget));
+                const overlay = gtk.Overlay.new();
+                overlay.setChild(stack.as(gtk.Widget));
+                overlay.as(gtk.Widget).setVexpand(1);
+                overlay.as(gtk.Widget).setHexpand(1);
+                panel.append(overlay.as(gtk.Widget));
+                s.wallpaper_overlay = overlay;
                 s.wallpaper_stack = stack;
                 window.setChild(panel_widget);
                 const crop_click = gtk.GestureClick.new();
@@ -1591,7 +1684,12 @@ pub const Manager = struct {
         // Wallpapers normally pass all input through to the compositor. While
         // a flyout is open, let them dismiss it on otherwise empty monitors.
         for (self.outputs.items) |output| if (output.wallpaper) |wallpaper| {
-            const input: @FieldType(native.Surface, "input") = if (self.popup != null and self.preferences.prefs().popup.dismiss_outside) .full else .empty;
+            if (wallpaper.desktop_icons) |view| {
+                const allowed = !self.barInhibited() and self.popup == null;
+                view.configure(view.config, view.font, view.width, view.height, allowed);
+                layer.setKeyboardMode(wallpaper.window, if (allowed) .on_demand else .none);
+            }
+            const input: @FieldType(native.Surface, "input") = if (!self.barInhibited() and (wallpaper.desktop_icons != null or (self.popup != null and self.preferences.prefs().popup.dismiss_outside))) .full else .empty;
             if (wallpaper.effects.input == input) continue;
             wallpaper.effects.input = input;
             wallpaper.effects.last = null;
@@ -1735,6 +1833,21 @@ pub const Manager = struct {
     pub fn control(self: *Manager, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
         self.syncSettingsAccess();
         self.syncClipboardPrivacy();
+        if (request.op == .desktop_focus) {
+            if (self.barInhibited()) return error.Locked;
+            for (self.outputs.items) |output| if (output.wallpaper) |surface| if (surface.desktop_icons) |view| {
+                if (request.output) |id| if (!std.mem.eql(u8, output.id, id)) return error.InvalidOutput;
+                self.hidePopup();
+                // Aqueous grants nonexclusive focus when an on-demand layer
+                // maps. Remap only for an explicit user focus request.
+                surface.window.as(gtk.Widget).setVisible(0);
+                layer.setKeyboardMode(surface.window, .on_demand);
+                surface.window.present();
+                _ = view.fixed.as(gtk.Widget).grabFocus();
+                return "{\"focused\":true}";
+            };
+            return error.Unavailable;
+        }
         if (request.op == .clipboard_status) return self.clipboard.status(alloc);
         if (request.op == .capture_status) return self.capture.status(alloc);
         if (request.op == .capture_windows) return self.capture.native.status(alloc, request.offset orelse 0);
@@ -1811,6 +1924,10 @@ pub const Manager = struct {
             const viewport = if (popup.viewport) |v| v.as(gtk.Widget) else popup.panel;
             return std.json.Stringify.valueAlloc(alloc, .{ .focus = @import("../../desktop/aqueous_settings.zig").View.focusName(popup.window), .width = viewport.getWidth(), .height = viewport.getHeight(), .content_width = popup.panel.getWidth(), .limit = self.popup_rect }, .{});
         }
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-desktop-icons")) {
+            for (self.outputs.items) |output| if (output.wallpaper) |surface| if (surface.desktop_icons) |view| return view.report(alloc, output.id, @tagName(layer.getKeyboardMode(surface.window)));
+            return alloc.dupe(u8, "{\"enabled\":false}");
+        }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.startsWith(u8, request.text orelse "", "test-bar-autohide:")) {
             const output = try self.selected(request.text.?["test-bar-autohide:".len..]);
             const c = output.bar.?.autohide orelse return error.Unavailable;
@@ -1860,6 +1977,7 @@ pub const Manager = struct {
         if (@import("build_options").test_hooks and request.op == .aqueous_draft and std.mem.startsWith(u8, request.text orelse "", "{\"test_owner\":"))
             return self.owner_probe.command(alloc, request.text.?, &self.network, &self.bluetooth, &self.power);
         switch (request.op) {
+            .desktop_focus => unreachable,
             .night_light_action => {
                 self.syncClipboardPrivacy();
                 try self.night_light.act(std.meta.stringToEnum(@import("../../services/night_light_policy.zig").Action, request.text.?).?);
@@ -2360,13 +2478,14 @@ fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.Modifie
     self.hidePopup();
     return 1;
 }
-fn otherOutputPressed(_: *gtk.GestureClick, _: c_int, _: f64, _: f64, surface: *Surface) callconv(.c) void {
+fn otherOutputPressed(click: *gtk.GestureClick, _: c_int, _: f64, _: f64, surface: *Surface) callconv(.c) void {
     const self = surface.manager;
     const popup = self.popup orelse return;
     if (!self.preferences.prefs().popup.dismiss_outside) return;
     if (surface.kind == .bar and popup.output == surface.output) return;
     log.debug("event=popup-close-reason reason=other-output-click", .{});
     self.hidePopup();
+    _ = click.as(gtk.Gesture).setState(.claimed);
 }
 fn popupMapped(widget: *gtk.Widget, self: *Manager) callconv(.c) void {
     const popup = self.popup orelse return;

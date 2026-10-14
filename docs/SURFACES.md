@@ -1,5 +1,30 @@
 # Output surfaces and control (T05)
 
+## Desktop icon surface
+
+The selected output's wallpaper hosts a GTK overlay: wallpaper transitions stay
+in the image stack, while icon widgets, selection and menus live above it. The
+wallpaper remains on the background layer and reserves no additional work area.
+Icon placement uses compositor usable bounds plus stable dock/autohide clearance.
+Only visible icon rows allocate widgets; overflow scrolls inside that area.
+
+The host uses on-demand keyboard input while interactive. Initial wallpaper
+creation uses keyboard mode `none`, and ordinary updates do not remap it. The
+explicit `pearlctl desktop focus` command briefly remaps the host with on-demand
+mode to use Aqueous's nonexclusive layer focus behavior. This is a visible
+background surface, not an invisible exclusive overlay.
+
+Desktop presence and popup dismissal share one input-region decision. A principal
+popup suspends icon actions; its outside-dismissal press is claimed before the
+icon gesture can act. Lock, authentication, inactive session and backend loss
+revoke interaction and cancel owned work. Disabling icons restores wallpaper
+pass-through. Output removal destroys its view, and a single shared directory
+service supplies the selected fallback output without duplicating watchers.
+
+Desktop menus use GTK popovers owned by the background view. Opening a shell
+popup, disabling the feature or removing its output closes them. See
+[desktop icons](DESKTOP.md#desktop-icons) for user-facing behavior.
+
 [T15 dock and island layouts](DOCK_ISLANDS.md) add persistent app pins, per-output
 dock behavior, split bar sections and matching native input/blur regions.
 

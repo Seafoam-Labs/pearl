@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "checks": {
+    "fresh-install-enabled-localized-desktop": true,
+    "pointer-select-background-focus": true,
+    "keyboard-navigation": true,
+    "folders-and-documents-use-default-handler": true,
+    "unapproved-launcher-does-not-execute": true,
+    "context-menu-open-retains-approval-prompt": true,
+    "explicit-desktop-keyboard-focus": true,
+    "explicit-approval-content-bound-and-launch": true,
+    "rename-and-trash-through-native-input": true,
+    "unicode-literal-filename-and-rename-collision": true,
+    "new-folder-and-approved-catalog-shortcut": true,
+    "manual-drag-and-restart-persistence": true,
+    "popup-dismissal-consumes-click": true,
+    "live-create-rename-delete": true,
+    "hidden-files-live-preference": true,
+    "chosen-output-and-stable-fallback": true,
+    "dark-light-native-and-large-text": true,
+    "inactive-session-revokes-input": true,
+    "home-valued-desktop-never-lists-home": true,
+    "desktop-removal-and-recreation": true,
+    "ten-thousand-files-bounded-widgets": true,
+    "explicit-disable-survives-restart": true,
+    "existing-empty-document-retains-disabled-default": true,
+    "missing-and-corrupt-main-preserve-known-good-choice": true
+  },
+  "large_directory": {
+    "files": 10005,
+    "widgets": 66,
+    "create_and_scan_seconds": 0.22,
+    "rss": "VmRSS:\t  166508 kB"
+  }
+}

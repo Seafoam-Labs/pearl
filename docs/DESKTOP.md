@@ -1,5 +1,50 @@
 # First desktop slice (T06)
 
+## Desktop icons
+
+New Pearl installations enable desktop icons automatically. Existing preference
+documents keep icons disabled until enabled in **Settings → Appearance → Desktop
+icons**. Explicit choices survive upgrades. The grid uses the Desktop directory
+configured in `user-dirs.dirs`, including localized paths. An unset or home-valued
+directory does not expose the home folder; an unavailable directory shows a
+message, with Retry and Create Desktop folder in the background menu where
+appropriate. Pearl does not install sample files.
+
+Click to select, double-click or press Enter to open, use Ctrl/Shift for multiple
+selection and arrows to navigate. Ctrl+A selects all, Escape clears selection,
+F2 renames and Delete moves selected files to Trash. Drag empty space for a
+selection rectangle. In **Manual** arrangement, drag an icon to a grid position;
+positions survive restarts, and temporary display changes preserve their
+preferred coordinates. Large directories scroll and create widgets only for
+visible rows. Labels wrap and retain their full names in tooltips.
+
+Secondary-click an item for Open, Rename and Move to Trash. The background menu
+offers New folder, Add application shortcut, Arrange by name, Open Desktop folder,
+Retry and Desktop settings. File operations report failures; Trash never falls
+back to permanent deletion. Advanced transfers and clipboard operations remain
+in the file manager.
+
+Application shortcuts require **Allow launching** with a preview of the command.
+Approval covers the exact file contents and location; changing or replacing the
+entry requires approval again. Approving does not launch it. Shortcuts created
+through the installed application picker are approved as part of creation.
+Launcher symlinks and malformed entries cannot execute through the grid.
+
+The grid appears on one display and across all workspaces. Choose a connector
+in Appearance; an empty choice or disconnected display uses the first connected
+connector in lexical order. Icons stay behind application windows and leave
+clearance for bars and docks. Focus them from a compositor keyboard binding with
+`pearlctl desktop focus [--output ID]`; a supplied output must host the grid.
+The command requests nonexclusive keyboard focus and does not minimize windows.
+Lock, inactive sessions and shell popups inhibit desktop actions. A popup's
+dismissal click is consumed before reaching an icon.
+
+See the [implementation plan](DESKTOP_ICONS_IMPLEMENTATION_PLAN.md) for the model,
+storage and validation contract, and the [mockups](mockups/desktop-icons/README.md)
+for the visual concept.
+
+## Bar and desktop services
+
 The bar supports optional **Autohide** in **Settings → Bar & dock → Bar
 visibility**. Move the pointer to its screen edge to reveal it; the bar hides
 450 ms after leaving unless a Pearl popup or bar gesture keeps it open. Autohide

@@ -5,6 +5,14 @@ private dependencies, and run tests. The runner uses the same Zig targets and
 Python harnesses as direct development commands. `zig build integration` is only
 the lifecycle suite; it does not run all integrations.
 
+Desktop icon acceptance is registered as `test-desktop-icons` in the integration
+group. Run `python3 scripts/test.py run --suite test-desktop-icons` or
+`zig build test-desktop-icons`. It creates a private HOME and XDG Desktop folder,
+drives real pointer and keyboard input, checks launcher approval and first-install
+recovery, and records screenshots plus 10,000-file rendering measurements. Use
+`zig build build-desktop-icons-test` to stage the instrumented shell and CLI for
+direct harness runs; these test probes are absent from the production shell.
+
 The runner supports x86_64 Linux and Python 3.12 or newer. The full native stack
 is developed on Arch-based Linux. The fast group also runs on Ubuntu 24.04 in CI.
 Other distributions can use `doctor` to identify required libraries and versions,
