@@ -34,7 +34,7 @@ def main():
             bad = [v for v in result['status']['targets'] if v['state'] in ['failed','conflict','unavailable','unsupported']]
             assert not bad, bad
         successful(result)
-        assert gtk.read_bytes().endswith(original) and b'@import' in gtk.read_bytes()
+        assert gtk.read_bytes() == original + b'@import url("pearl-material.css");\n'
         checks.append('all-23-targets-and-gtk-preservation')
         rendered = root/'config/pearl/matugen/outputs'
         def validate(variant):
@@ -103,6 +103,19 @@ def main():
         assert next(v for v in result['captured']['profiles'] if v['application']=='zed')['id']=='pearl.material.zed'
         checks.append('manual-and-off-precedence')
         successful(run({}))
+        # A theme manager's gtk.css symlink must be reported without modifying
+        # its target or partially updating GTK 3; other applications still apply.
+        gtk4_css=root/'config/gtk-4.0/gtk.css'; linked_css=root/'linked-theme.css'
+        linked_css.write_text('@define-color window_bg_color #010203;\n')
+        gtk4_css.symlink_to(linked_css)
+        p={'matugen':{'enabled':True,'applications':{'gtk':{'mode':'profile','profile_id':'pearl.material.gtk'},'ghostty':{'mode':'profile','profile_id':'pearl.material.ghostty'}}}}
+        result=run(p)
+        conflict=next(v for v in result['status']['targets'] if v['application']=='gtk')
+        assert conflict['state']=='conflict' and conflict['error_code']=='ProfileOwnershipConflict',conflict
+        assert gtk4_css.is_symlink() and linked_css.read_text()=='@define-color window_bg_color #010203;\n'
+        assert gtk.read_bytes()==original and ghostty.exists()
+        gtk4_css.unlink(); successful(run({}))
+        checks.append('symlinked-gtk-css-conflict-preserves-theme-and-other-targets')
         # A redirected GTK destination is isolated from another target's valid publication.
         gtk4=root/'config/gtk-4.0';gtk4.rmdir();outside=root/'outside';outside.mkdir();gtk4.symlink_to(outside,target_is_directory=True)
         p={'matugen':{'enabled':True,'applications':{'gtk':{'mode':'profile','profile_id':'pearl.material.gtk'},'ghostty':{'mode':'profile','profile_id':'pearl.material.ghostty'}}}}

@@ -39,7 +39,8 @@ files before an application is installed. Generation/installation is distinct
 from activation in a running application.
 
 - GTK gets a scoped import in each `gtk-3.0/gtk.css` and `gtk-4.0/gtk.css`,
-  retaining prior contents. GTK 3 needs compatible theme styling such as
+  retaining prior contents and loading Pearl's colors last so earlier theme
+  imports cannot override them. GTK 3 needs compatible theme styling such as
   adw-gtk3. Applications that cache CSS may need restarting; hard-coded app
   colors are outside the palette's control.
 - Terminals use Pearl-named theme/include files. Follow the row's configuration
@@ -78,8 +79,11 @@ fixed color input are retained in committed snapshots; **Use current profile
 versions on Apply** explicitly adopts updated assets.
 
 Off restores only unchanged Pearl-owned files, including original GTK CSS.
-User edits cause a per-target conflict and are retained. Shared wal files owned
-by another tool are not overwritten. A destination-root change is reported
+User edits cause a per-target conflict and are retained. Symlinked GTK `gtk.css`
+files also report a conflict: Pearl does not follow them or overwrite the linked
+theme. Resolve the external change before retrying; keep any existing theme
+imports ahead of Pearl's import in a regular `gtk.css` file. Shared wal files
+owned by another tool are not overwritten. A destination-root change is reported
 instead of applying an old journal to a different directory. Generated previews
 remain under `$XDG_CONFIG_HOME/pearl/matugen/outputs`; files installed in native
 application directories are tracked by ownership journals.

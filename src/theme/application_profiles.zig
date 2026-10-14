@@ -348,6 +348,22 @@ pub fn reconcile(a: std.mem.Allocator, config: []const u8, enabled: bool, snapsh
     var context: @import("generator.zig").Context = .{};
     return reconcileGuarded(a, config, enabled, snapshot, cancel, &context, .{});
 }
+const gtk_import_line = "@import url(\"pearl-material.css\");\n";
+fn gtkImport(a: std.mem.Allocator, current: []const u8) ![]const u8 {
+    // Older versions prepended this import, letting existing theme imports
+    // override Pearl's colors. Move our exact generated line to the end;
+    // the ownership journal still protects edits and retains the original CSS.
+    var css: std.ArrayList(u8) = .empty;
+    var lines = std.mem.splitScalar(u8, current, '\n');
+    while (lines.next()) |line| {
+        if (std.mem.eql(u8, line, std.mem.trimEnd(u8, gtk_import_line, "\n"))) continue;
+        try css.appendSlice(a, line);
+        if (lines.peek() != null) try css.append(a, '\n');
+    }
+    if (css.items.len > 0 and css.items[css.items.len - 1] != '\n') try css.append(a, '\n');
+    try css.appendSlice(a, gtk_import_line);
+    return css.items;
+}
 fn applyProfile(a: std.mem.Allocator, config: []const u8, state: [:0]const u8, scratch: [:0]const u8, application: profiles.Application, profile: provider.Captured, snapshot: provider.Snapshot, cancel: *gio.Cancellable, context: *@import("generator.zig").Context, guard: @import("publication.zig").Guard) !profiles.Target {
     var result: profiles.Target = .{};
     const builtin = std.mem.startsWith(u8, profile.id, "pearl.material.");
@@ -384,9 +400,9 @@ fn applyProfile(a: std.mem.Allocator, config: []const u8, state: [:0]const u8, s
             defer _ = c.close(root_fd);
             const owned = try ownedFile(a, root_fd, name);
             defer _ = c.close(owned.fd);
+            if (glib.fileTest(owned.path, .{ .is_symlink = true }) != 0) return error.ProfileOwnershipConflict;
             const current = try io.read(a, owned.path, 131072, cancel);
-            const line = "@import url(\"pearl-material.css\");\n";
-            const desired = if (std.mem.indexOf(u8, current.bytes, line) != null) current.bytes else try std.fmt.allocPrint(a, "{s}{s}", .{ line, current.bytes });
+            const desired = try gtkImport(a, current.bytes);
             try installed.append(a, .{ .name = name, .bytes = desired, .expected = current.hash });
         }
     }
@@ -468,6 +484,43 @@ pub fn reconcileGuarded(a: std.mem.Allocator, config: []const u8, enabled: bool,
     }
     return status;
 }
+test "GTK import follows existing CSS and migrates owned imports without losing originals" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try std.testing.expectEqualStrings(gtk_import_line, try gtkImport(a, ""));
+    try std.testing.expectEqualStrings("button { padding: 3px; }\n" ++ gtk_import_line, try gtkImport(a, "button { padding: 3px; }"));
+    const original = "@import 'colors.css';\n@define-color window_bg_color #000000;\n";
+    const desired = original ++ gtk_import_line;
+    try std.testing.expectEqualStrings(desired, try gtkImport(a, original));
+    try std.testing.expectEqualStrings(desired, try gtkImport(a, desired));
+    try std.testing.expectEqualStrings(desired, try gtkImport(a, gtk_import_line ++ original));
+
+    const root = try a.dupeZ(u8, "/tmp/pearl-gtk-import-XXXXXX");
+    try std.testing.expect(mkdtemp(root) != null);
+    defer @import("install.zig").removeTree(a, root) catch {};
+    const state = try std.fmt.allocPrintSentinel(a, "{s}/state", .{root}, 0);
+    try io.mkdir(state);
+    try io.mkdir(try std.fmt.allocPrintSentinel(a, "{s}/gtk-3.0", .{root}, 0));
+    const path = try std.fmt.allocPrintSentinel(a, "{s}/gtk-3.0/gtk.css", .{root}, 0);
+    try io.atomic(path, original, true);
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    const legacy = gtk_import_line ++ original;
+    try install(a, root, state, .gtk, &.{.{ .name = "gtk-3.0/gtk.css", .bytes = legacy, .expected = model.hash(original) }}, cancel, false);
+    const migrated = try gtkImport(a, (try io.read(a, path, 131072, cancel)).bytes);
+    const outputs = [_]Output{.{ .name = "gtk-3.0/gtk.css", .bytes = migrated, .expected = model.hash(legacy) }};
+    try install(a, root, state, .gtk, &outputs, cancel, false);
+    try std.testing.expectEqualStrings(desired, (try io.read(a, path, 131072, cancel)).bytes);
+    try install(a, root, state, .gtk, &outputs, cancel, false);
+    try io.atomic(path, "/* external edit */\n", false);
+    try std.testing.expectError(error.ProfileOwnershipConflict, install(a, root, state, .gtk, &outputs, cancel, false));
+    try std.testing.expectEqualStrings("/* external edit */\n", (try io.read(a, path, 131072, cancel)).bytes);
+    try io.atomic(path, desired, false);
+    try install(a, root, state, .gtk, &.{}, cancel, false);
+    try std.testing.expectEqualStrings(original, (try io.read(a, path, 131072, cancel)).bytes);
+}
+
 test "application ownership preserves edits, restores absence and recovers pending writes" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();

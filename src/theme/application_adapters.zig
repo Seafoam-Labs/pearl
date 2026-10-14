@@ -142,7 +142,7 @@ pub fn allowed(app: Application, path: []const u8) bool {
 }
 pub fn instructions(app: Application) []const u8 {
     return switch (app) {
-        .gtk => "GTK 3/4 imports use Pearl-owned colors. GTK 3 needs a compatible theme such as adw-gtk3. Restart applications that cache CSS. Application-specific hard-coded colors may remain unchanged.",
+        .gtk => "GTK 3/4 imports use Pearl-owned colors after existing CSS. GTK 3 needs a compatible theme such as adw-gtk3. Conflicts require resolving externally changed or symlinked gtk.css files before retrying. Restart applications that cache CSS. Application-specific hard-coded colors may remain unchanged.",
         .qt5ct, .qt6ct => "Choose pearl-material in the qtct Appearance color scheme list. This exports colors only; Pearl's managed Qt applications use QtEngine + Darkly. Do not enable competing platform plugins.",
         .kcolorscheme => "Choose the Pearl Material .colors scheme in a compatible KDE application. For Qt session activation, use Appearance → Qt applications · QtEngine + Darkly; its Follow Pearl palette follows the shell, independently of application colors.",
         .ghostty => "Set theme = pearl-material in the Ghostty configuration, then reload the configuration.",
