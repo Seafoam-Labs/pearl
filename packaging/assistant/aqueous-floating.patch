@@ -1,0 +1,20 @@
+--- a/compositor/aqueous/wm/rules/engine.zig
++++ b/compositor/aqueous/wm/rules/engine.zig
+@@ -279,6 +279,17 @@
+         visual.skip_taskbar = false;
+         return visual;
+     }
++    // Pearl's separate conversation window is a small resizable utility.
++    // Explicit user rules above retain precedence; no user file is edited.
++    if (identity.app_id) |app_id| {
++        if (std.mem.eql(u8, app_id, "org.aqueous.Pearl.Agent") or
++            std.mem.eql(u8, app_id, "org.aqueous.Pearl.Git.Agent"))
++        {
++            return .{ .app_id = app_id,
++                .placement = .{ .floating = true, .width = 440, .height = 560 },
++                .placement_policy = .center };
++        }
++    }
+     return null;
+ }
+ 

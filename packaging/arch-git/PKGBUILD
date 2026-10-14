@@ -12,7 +12,7 @@ arch=('x86_64')
 url='https://github.com/Seafoam-Labs/pearl'
 license=('LicenseRef-Pearl-Unlicensed')
 # Libraries linked by the shell, portal, greeter and bundled applications.
-_build_libraries=('libcups' 'curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant'
+_build_libraries=('libcups' 'curl' 'libarchive' 'libpng' 'libxml2' 'libsecret' 'gtksourceview5' 'enchant'
                   'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
                   'libpulse>=17.0' 'pam>=1.7.2' 'polkit>=127' 'glibc>=2.44'
                   'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
@@ -108,7 +108,8 @@ package_pearl-git() {
     depends=("${_shell_depends[@]}")
     # Required by the Aqueous session dispatcher.
     provides=('pearl-capture-picker-git=1')
-    optdepends=('gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'
+    optdepends=('pearl-assistant-runtime: optional CPU-only launcher answers'
+            'gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'
                 'gvfs-smb: SMB network connections in Phyto'
                 'gvfs-dnssd: WebDAV connections and network discovery in Phyto'
                 'file-roller: archive context menu actions in Phyto'
@@ -158,7 +159,7 @@ package_pearl-git() {
         "$pkgdir/usr/share/applications/org.aqueous.Phyto.Git.desktop"
 
     local binary directory
-    for binary in pearl pearlctl pearl-lock pearl-settings pearl-themes; do
+    for binary in pearl pearlctl pearl-lock pearl-settings pearl-themes pearl-agent; do
         mv "$pkgdir/usr/bin/$binary" "$pkgdir/usr/bin/$binary-git"
     done
     if [[ -f "$pkgdir/usr/bin/pearl-plugin-host" ]]; then
@@ -176,6 +177,12 @@ package_pearl-git() {
            -e 's/pearl-lock /pearl-lock-git /g' \
         "$pkgdir/usr/lib/systemd/user/pearl-git.service"
 
+    mv "$pkgdir/usr/share/applications/org.aqueous.Pearl.Agent.desktop" \
+       "$pkgdir/usr/share/applications/org.aqueous.Pearl.Git.Agent.desktop"
+    sed -i -e 's/^Exec=pearlctl /Exec=pearlctl-git /' \
+           -e 's/org.aqueous.Pearl.Settings/org.aqueous.Pearl.Git.Settings/g' \
+           -e 's/org.aqueous.Pearl.Agent/org.aqueous.Pearl.Git.Agent/g' \
+           "$pkgdir/usr/share/applications/org.aqueous.Pearl.Git.Agent.desktop"
     mv "$pkgdir/usr/share/applications/org.aqueous.Pearl.Settings.desktop" \
        "$pkgdir/usr/share/applications/org.aqueous.Pearl.Git.Settings.desktop"
     sed -i -e 's/^Name=Pearl Settings$/Name=Pearl Git Settings/' \

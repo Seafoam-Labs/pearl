@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "checks": {
+    "native-accessible-result-label-and-copy-description": true,
+    "arithmetic-first-result-and-real-paste-after-dismissal": true,
+    "copy-deduplicated-history-entry-not-most-recent-entry": true,
+    "unavailable-copy-preserves-selection-and-popup-for-retry": true,
+    "advanced-math-search-classification-and-nonactionable-errors": true,
+    "trailing-equals-continues-without-copying-and-retains-explicit-mode": true,
+    "enter-waits-for-current-query-and-edits-cancel-pending-copy": true,
+    "caret-movement-and-edits-cancel-pending-continuation": true,
+    "gtk-preedit-suppresses-copy-and-continuation": true,
+    "pointer-activation-copies-result": true,
+    "pasted-trailing-equals-uses-same-continuation-path": true,
+    "pending-job-disposal-and-two-output-admission-bound": true,
+    "authentication-inhibition-cancels-copy-without-unlock-replay": true,
+    "lock-clears-selection-and-cancels-pending-copy": true,
+    "catalog-refresh-preserves-calculation": true,
+    "output-removal-cancels-pending-copy": true,
+    "material-light-native-gtk-and-larger-text": true,
+    "calculator-paint-latency-under-50ms-with-2000-apps": true,
+    "german-calculator-labels": true,
+    "calculator-with-empty-application-catalog": true,
+    "compositor-loss-during-pending-copy-exits-without-crashing": true
+  },
+  "binaries": {
+    "pearl": "76ea9e0ca7fb7bceaa5a93f4530b76a5c489826d6378a5752a61eb2ba60c77aa",
+    "ctl": "2eddc27df42ee09c44e908e39fc8a6b39eafde5c97e7e429903ed25f2305b922",
+    "locker": "b52b8f3c19fd85457dac6775f9cac8f30b41000dbafc407ec18243844718db6c",
+    "pam_module": "0ff0d777c21e5a37ad4250328ca2d0e94dfdbed30a0d8e90fdccbf553d53545d",
+    "producer": "4816d36177e9849b828a8074cd13cd6ae16500757c724bd4a677c0beb259b501"
+  },
+  "calculator_latency_us": {
+    "samples": 12,
+    "median": 7996.0,
+    "p95": 17687,
+    "maximum": 17687
+  }
+}

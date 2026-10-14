@@ -8,7 +8,7 @@ case "$destination" in /|"") echo 'DESTDIR must be a staging directory, not /' >
 [[ $(realpath -m -- "$destination") != / ]] || { echo 'DESTDIR resolves to /' >&2; exit 2; }
 binaries=${PEARL_BINARY_DIR:-$source_root/zig-out/bin}
 prefix=/usr # Matches the packaged unit; distribution packages may patch both.
-for binary in pearl pearlctl pearl-lock pearl-settings pearl-themes; do
+for binary in pearl pearlctl pearl-lock pearl-settings pearl-themes pearl-agent; do
     install -Dm755 "$binaries/$binary" "$destination$prefix/bin/$binary"
 done
 # The desktop backend and chooser helper are part of the Pearl runtime.
@@ -47,6 +47,7 @@ for notice in "$source_root"/bindings/licenses/*; do
 done
 
 install -Dm644 "$source_root/packaging/applications/org.aqueous.Pearl.Settings.desktop" "$destination$prefix/share/applications/org.aqueous.Pearl.Settings.desktop"
+install -Dm644 "$source_root/packaging/applications/org.aqueous.Pearl.Agent.desktop" "$destination$prefix/share/applications/org.aqueous.Pearl.Agent.desktop"
 install -Dm644 "$source_root/packaging/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg" "$destination$prefix/share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg"
 install -Dm644 "$source_root/packaging/metainfo/org.aqueous.Pearl.Settings.metainfo.xml" "$destination$prefix/share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml"
 install -Dm644 "$source_root/packaging/release.json" "$destination$prefix/share/pearl/release.json"

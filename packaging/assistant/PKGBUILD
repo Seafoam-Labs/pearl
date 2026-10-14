@@ -1,0 +1,36 @@
+# Optional inference dependency. CMake/PKGBUILD are the required upstream and
+# distribution integration boundaries; Pearl's application code remains Zig.
+pkgname=pearl-assistant-runtime
+pkgver=0.6.0
+pkgrel=1
+pkgdesc='Pinned CPU-only llama.cpp runtime for the opt-in Pearl assistant'
+arch=('x86_64' 'aarch64')
+url='https://github.com/ggml-org/llama.cpp'
+license=('MIT')
+depends=('glibc' 'gcc-libs' 'openssl')
+makedepends=('cmake' 'gcc')
+_commit=d81235049384534c167caea52b85a694f6103d14
+source=("llama-$_commit.tar.gz::$url/archive/$_commit.tar.gz")
+sha256sums=('6b58785f0a82898f4c3442417ff962e2d4b231b1bee5d033902ad90b27901e14')
+
+build() {
+    cmake -S "llama.cpp-$_commit" -B build \
+        -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON \
+        -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON \
+        -DGGML_CUDA=OFF -DGGML_VULKAN=OFF -DGGML_METAL=OFF \
+        -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_TESTS=OFF \
+        -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF \
+        '-DCMAKE_BUILD_RPATH=$ORIGIN' '-DCMAKE_INSTALL_RPATH=$ORIGIN' \
+        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
+    cmake --build build --target llama-server --parallel 2
+}
+
+package() {
+    local target="$pkgdir/usr/libexec/pearl/assistant"
+    install -d "$target"
+    install -m755 build/bin/llama-server "$target/llama-server"
+    cp -a build/bin/*.so* "$target/"
+    printf '{"version":"v0.6.0","commit":"%s","source_sha256":"%s","cpu_only":true}\n' \
+        "$_commit" "${sha256sums[0]}" > "$target/runtime.json"
+    install -Dm644 "llama.cpp-$_commit/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

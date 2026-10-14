@@ -82,6 +82,7 @@ pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock =
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
+    assistant: @import("../agent/config.zig").Config = .{},
     desktop_icons: @import("../desktop/icons/model.zig").Config = .{},
     notifications: @import("../services/notification_filter_policy.zig").Config = .{},
     night_light: @import("../services/night_light_policy.zig").Config = .{},
@@ -112,6 +113,7 @@ pub const Preferences = struct {
         return self.dock;
     }
     pub fn validate(self: Preferences) !void {
+        try self.assistant.validate();
         try self.desktop_icons.validate();
         try self.notifications.validate();
         try @import("../desktop/app_identity.zig").validate(self.application_launchers);

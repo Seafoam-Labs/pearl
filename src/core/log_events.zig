@@ -19,6 +19,7 @@ pub const events: []const Event = &.{
     .{ .name = "application-launch", .scopes = &.{.desktop} },
     .{ .name = "aqueous-availability", .scopes = &.{.pearl} },
     .{ .name = "aqueous-disconnected", .scopes = &.{.pearl} },
+    .{ .name = "assistant-answer-failed", .scopes = &.{.ui} },
     .{ .name = "background-effect-owner", .scopes = &.{.platform} },
     .{ .name = "bar-autohide-unavailable", .scopes = &.{.ui} },
     .{ .name = "bluetooth-failed", .scopes = &.{.services} },
@@ -155,10 +156,16 @@ fn fileScopes(text: []const u8) std.EnumSet(logging.Scope) {
     var pos: usize = 0;
     while (std.mem.indexOfPos(u8, text, pos, scope_marker)) |start| {
         pos = start + scope_marker.len;
-        const end = pos + (std.mem.indexOfScalarPos(u8, text, pos, ')') orelse text.len - pos);
+        const end = std.mem.indexOfScalarPos(u8, text, pos, ')') orelse text.len;
         if (std.meta.stringToEnum(logging.Scope, text[pos..end])) |scope| set.insert(scope);
     }
     return set;
+}
+
+test "scope scanner handles declarations near the end of a file" {
+    const scopes = fileScopes("padding before the declaration\nstd.log.scoped(.ui)");
+    try std.testing.expect(scopes.contains(.ui));
+    try std.testing.expectEqual(@as(usize, 1), scopes.count());
 }
 
 fn declaresScope(event: Event, scopes: std.EnumSet(logging.Scope)) bool {

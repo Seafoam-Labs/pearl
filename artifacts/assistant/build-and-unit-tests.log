@@ -1,0 +1,41 @@
+Build Summary: 37/37 steps succeeded; 380/380 tests passed
+test-agent success
++- run test 84 pass (84 total) 18ms MaxRSS:14M
+   +- compile test Debug native success 516ms MaxRSS:216M
+test success
++- run test 281 pass (281 total) 640ms MaxRSS:11M
+|  +- compile test Debug native cached 10ms MaxRSS:54M
++- run test 15 pass (15 total) 6ms MaxRSS:9M
+   +- compile test Debug native cached 15ms MaxRSS:58M
+build-agent success
++- install pearl-agent cached
+|  +- compile exe pearl-agent Debug native cached 17ms MaxRSS:59M
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Agent.desktop to share/applications/org.aqueous.Pearl.Agent.desktop success
+build-agent-test cached
++- install pearl-agent-test cached
+   +- compile exe pearl-agent-test Debug native cached 16ms MaxRSS:58M
+      +- options cached
+build-settings cached
++- install pearl-settings cached
+|  +- compile exe pearl-settings Debug native cached 17ms MaxRSS:58M
+|     +- run exe zig-wayland-scanner (wayland.zig) cached
+|     |  +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:55M
+|     +- run glib-compile-resources (pearl.gresource) cached
+|     +- options cached
+|     +- options cached
+|     +- options cached
++- install packaging/applications/org.aqueous.Pearl.Settings.desktop to share/applications/org.aqueous.Pearl.Settings.desktop cached
++- install packaging/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg to share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg cached
++- install packaging/metainfo/org.aqueous.Pearl.Settings.metainfo.xml to share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml cached
+build-integration success
++- install pearl-integration success
+   +- compile exe pearl-integration Debug native success 1s MaxRSS:378M
+      +- run pkg-config success 1ms
+      +- translate-c cached 13ms MaxRSS:56M
+      +- run glib-compile-resources (pearl.gresource) (reused)
+      +- options cached
+      +- options cached
+      +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+      +- options cached
+

@@ -1,0 +1,15 @@
+.pearl-root.$scope { background: $surface$; color: $text$; font-size: 14px; }
+.pearl-root.$scope headerbar { background: $container$; color: $text$; padding: 6px; box-shadow: none; }
+.pearl-root.$scope .dim-label { color: $secondary$; font-size: 0.85em; }
+.pearl-root.$scope .pearl-agent-question { background: $primary_container$; color: $on_container$; border-radius: 14px; padding: 14px; margin-top: 12px; margin-left: 20px; }
+.pearl-root.$scope .pearl-agent-answer { padding: 8px 2px; }
+.pearl-root.$scope textview, .pearl-root.$scope textview text { background: $low$; color: $text$; }
+.pearl-root.$scope textview { border: 1px solid $outline$; border-radius: 12px; padding: 10px; }
+.pearl-root.$scope textview:focus-within { outline: 2px solid $primary$; outline-offset: -2px; }
+.pearl-root.$scope button { background: $high$; background-image: none; color: $text$; border: 0; border-radius: 12px; padding: 8px 12px; box-shadow: none; text-shadow: none; }
+.pearl-root.$scope button:hover { background: mix($high$, $primary$, 0.12); }
+.pearl-root.$scope button:disabled { opacity: 0.5; }
+.pearl-root.$scope button.suggested-action { background: $primary$; color: $on_primary$; }
+.pearl-root.$scope button.link { color: $primary$; background: transparent; }
+.pearl-root.$scope button:focus-visible { outline: 2px solid $primary$; outline-offset: 1px; }
+.pearl-root.$scope expander { background: $container$; border: 1px solid alpha($outline$, 0.3); border-radius: 12px; padding: 10px; }

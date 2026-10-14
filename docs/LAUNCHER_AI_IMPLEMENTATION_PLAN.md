@@ -1,8 +1,9 @@
 # Launcher AI implementation plan
 
-Status: proposed, October 14, 2026. This change adds documentation and design
-mockups only. The runtime, model quality and memory targets below are release
-gates, not completed measurements.
+Status: experimental implementation added, October 14, 2026. See
+[Assistant implementation and setup](ASSISTANT.md) for the implemented behavior,
+build instructions and remaining qualification gates. The model-quality and
+hardware targets below remain release gates, not completed measurements.
 
 Add an optional local assistant to Super+Space. A user types a question, presses
 Enter on **Ask Pearl**, and a small floating conversation window opens. Pearl
@@ -37,7 +38,7 @@ provider statuses are illustrative, not live search results.
 | Opt-in | Disabled on fresh installs and when older preferences omit the field. |
 | Disabled footprint | No agent process, model load, model download, classification inference or search request. |
 | Initial model | LFM2.5-350M Q4_K_M; approximately 229 MB of weights. Q8_0 is approximately 379 MB. |
-| Providers | Brave Search API and user-configured SearXNG instances. Nothing configured or contacted automatically. |
+| Providers | Google is selected by default through a user-configured SearXNG instance. Also support general SearXNG, Brave Search API and existing-account Google JSON API connections. No endpoint is configured or contacted automatically. |
 | Network trigger | Enter or a deliberate Ask/Send activation; typing never sends text to a provider. |
 | Conversation | One floating window per verified Pearl session; in-memory conversations by default. |
 | Scope of tools | Web search and reading search results. No shell, desktop actions, file writes or arbitrary MCP servers. |
@@ -182,8 +183,8 @@ Proposed preference shape (illustrative, not an implemented schema):
     "enabled": false,
     "model_id": "liquid-lfm25-350m-q4km",
     "search_mode": "default",
-    "default_provider_id": null,
-    "providers": [],
+    "default_provider_id": "google",
+    "providers": [{"id":"google","name":"Google","kind":"google","enabled":true,"endpoint":""}],
     "read_pages": true,
     "context_tokens": 4096,
     "answer_tokens": 384,
@@ -351,6 +352,18 @@ model. Recalculate all allowances when a custom model has a smaller context.
 
 ## Search engines and page extraction
 
+Google is the initial provider selection. Its supported default connection is
+the Google engine on a SearXNG instance chosen by the user (`engines=google`).
+Do not silently select a public SearXNG instance. The instance must enable
+Google and permit JSON responses. No request is sent until an explicit Ask or
+connection test. This is Google through SearXNG, not a direct Google API.
+
+Keep a distinct legacy Google API adapter for existing credentials (`key` and
+`cx`), with secrets in Secret Service. Google's Custom Search JSON API is
+closed to new customers and scheduled to end January 1, 2027; it cannot be the
+general onboarding path. Display that restriction beside this connection type.
+[Google API lifecycle](https://developers.google.com/custom-search/v1/overview).
+
 Implement a provider interface returning normalized result ID, provider, title,
 URL, snippet and optional publication date. Retrieval time is not publication
 time. Initial adapters:
@@ -495,12 +508,15 @@ well as low-memory injection and a single-core/older x86-64 CPU. Do not use an
 arbitrary fast workstation to certify “any CPU”. Require responsive launcher
 input and no desktop OOM; publish measured summary latencies per test CPU.
 
-## Open implementation gates
+## Qualification gates after implementation
 
-1. Verify LFM's complete tool-call loop on the exact llama.cpp pin and record
-   immutable model revision/checksum before adding a production download entry.
-2. Confirm the compositor mechanism for first-map floating placement and
-   user-initiated activation; add a narrow Aqueous change if required.
+1. The Q4 native tool-call loop and immutable model hashes are implemented and
+   exercised with a local search fixture on the exact runtime pin. Expand this
+   to the versioned 100-question, human-reviewed quality evaluation above.
+2. A narrow Aqueous patch implements first-map floating placement and was built
+   and tested in a private checkout. Distributions must apply that patch or use
+   an upstream version with equivalent behavior; it is not installed on the
+   running desktop by this implementation.
 3. Establish whether Q4_K_M meets summary/citation accuracy. Compare Q8_0 within
    the same resource envelope before considering a larger model.
 4. Verify the runtime packaging recipe on both supported CPU architectures,

@@ -16,11 +16,12 @@ const Client = @import("../aqueous/client.zig").Client;
 const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const Window = struct { id: [:0]const u8, name: [:0]const u8, detail: [:0]const u8, keywords: [:0]const u8, visible: bool };
-const Hit = struct { kind: enum { app, window, calculator }, index: usize, score: i32, id: []const u8, name: [:0]const u8, detail: [:0]const u8 };
+const Hit = struct { kind: enum { app, window, calculator, ask, conversation }, index: usize, score: i32, id: []const u8, name: [:0]const u8, detail: [:0]const u8 };
 const Job = struct {
     arena: std.heap.ArenaAllocator,
     catalog: ?*apps.Catalog,
     query: []const u8,
+    assistant_enabled: bool = false,
     calculation: calculator.Evaluation = .{},
     caret_epoch: u64,
     delay_us: u64 = 0,
@@ -44,6 +45,9 @@ pub const Launcher = struct {
     context: *anyopaque,
     dismiss: *const fn (*anyopaque) void,
     copy_text: *const fn (*anyopaque, []const u8) anyerror!void,
+    ask: ?*const fn (*anyopaque, []const u8) anyerror!void = null,
+    assistant_enabled: bool = false,
+    assistant_pending: ?u64 = null,
     search: *gtk.SearchEntry,
     strings: *gtk.StringList,
     selection: *gtk.SingleSelection,
@@ -84,6 +88,18 @@ pub const Launcher = struct {
             self.latency_us = glib.getMonotonicTime() - start;
             log.debug("event=launcher-painted latency_us={d}", .{self.latency_us});
         }
+    }
+    pub fn configureAssistant(self: *Launcher, enabled: bool, ask: @FieldType(Launcher, "ask")) void {
+        self.assistant_enabled = enabled;
+        self.ask = ask;
+        self.search.setPlaceholderText(if (enabled) tr("Search apps, calculate, or ask a question", "Apps suchen, rechnen oder eine Frage stellen") else tr("Search applications, windows or calculate", "Programme und Fenster suchen oder rechnen"));
+        self.refresh();
+    }
+    pub fn assistantAcknowledged(self: *Launcher, ok: bool) bool {
+        const revision = self.assistant_pending orelse return false;
+        self.assistant_pending = null;
+        if (!ok) self.message.setText(tr("Could not open Assistant. Your question is preserved; retry or check Settings.", "Assistent konnte nicht geöffnet werden. Frage bleibt erhalten; erneut versuchen oder Einstellungen prüfen."));
+        return ok and revision == self.edit_revision;
     }
     fn connect(self: *Launcher, instance: *object.Object, id: c_ulong) void {
         self.connections[self.connection_count] = .{ .instance = instance, .id = id };
@@ -176,8 +192,9 @@ pub const Launcher = struct {
         errdefer job.destroy();
         const alloc = job.arena.allocator();
         const query = std.mem.span(self.search.as(gtk.Editable).getText());
-        if (query.len > 512) return error.QueryTooLong;
+        if (query.len > (if (self.assistant_enabled) @as(usize, 2048) else 512)) return error.QueryTooLong;
         job.query = try alloc.dupe(u8, query);
+        job.assistant_enabled = self.assistant_enabled;
         const recent = try alloc.alloc([]const u8, self.index.recent.items.len);
         for (self.index.recent.items, 0..) |id, i| recent[i] = try alloc.dupe(u8, id);
         job.recent = recent;
@@ -241,6 +258,15 @@ pub const Launcher = struct {
             const score = policy.score(query, try apps.fold(alloc, w.name), try apps.fold(alloc, w.keywords), false, true, w.visible) orelse continue;
             try job.hits.append(alloc, .{ .kind = .window, .index = i, .score = score, .id = w.id, .name = w.name, .detail = w.detail });
         }
+        var exact = false;
+        for (job.hits.items) |hit| if (hit.kind != .calculator and std.ascii.eqlIgnoreCase(job.query, hit.name)) {
+            exact = true;
+            break;
+        };
+        if (@import("../agent/intent.zig").score(job.query, job.assistant_enabled, job.calculation.outcome == .value, exact)) |score| {
+            try job.hits.append(alloc, .{ .kind = .ask, .index = 0, .score = score, .id = "pearl:ask", .name = tr("Ask Pearl", "Pearl fragen"), .detail = tr("Web answer · Enter to ask", "Web-Antwort · Eingabe zum Fragen") });
+        }
+        if (job.assistant_enabled and job.query.len == 0) try job.hits.append(alloc, .{ .kind = .conversation, .index = 0, .score = -1000, .id = "pearl:conversation", .name = tr("Resume conversation", "Gespräch fortsetzen"), .detail = tr("Pearl Assistant · This session", "Pearl-Assistent · Diese Sitzung") });
         std.mem.sort(Hit, job.hits.items, {}, less);
     }
     fn less(_: void, x: Hit, y: Hit) bool {
@@ -405,12 +431,20 @@ pub const Launcher = struct {
             self.message.setText(self.action_message.?);
             return;
         };
-        self.dismiss(self.context);
+        if (self.assistant_pending == null) self.dismiss(self.context);
     }
     fn open(self: *Launcher, position: c_uint) !void {
         const job = self.shown orelse return error.Unavailable;
         if (!self.fresh(job) or position >= self.count) return error.StaleResult;
         const hit = job.hits.items[position];
+        if (hit.kind == .ask or hit.kind == .conversation) {
+            if (!self.assistant_enabled or self.assistant_pending != null) return error.AssistantUnavailable;
+            const ask = self.ask orelse return error.AssistantUnavailable;
+            try ask(self.context, if (hit.kind == .ask) @import("../agent/intent.zig").question(job.query) else "");
+            self.assistant_pending = self.edit_revision;
+            self.message.setText(tr("Opening Assistant…", "Assistent wird geöffnet…"));
+            return;
+        }
         if (hit.kind == .calculator) {
             try self.copy_text(self.context, hit.name);
             return;
@@ -526,6 +560,7 @@ pub const Launcher = struct {
             .window => "pearl-window-symbolic",
             .app => "pearl-application-x-executable-symbolic",
             .calculator => "pearl-calculator-symbolic",
+            .ask, .conversation => "user-available-symbolic",
         });
         if (hit.kind == .app) if (job.catalog.?.entries.items[hit.index].info.getIcon()) |gicon| {
             if (object.ext.cast(gio.ThemedIcon, gicon)) |themed| {

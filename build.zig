@@ -3,6 +3,7 @@ const Scanner = @import("wayland").Scanner;
 const builtin = @import("builtin");
 
 pub fn build(b: *std.Build) void {
+    @import("packaging/assistant/build.zig").add(b);
     if (!std.mem.eql(u8, builtin.zig_version_string, "0.16.0"))
         @panic("Pearl requires Zig 0.16.0; see .zigversion");
     const plugin_examples = b.option([]const u8, "plugin-examples", "Prebuilt plugin examples and failure fixtures") orelse ".cache/plugin-examples";
@@ -296,7 +297,36 @@ pub fn build(b: *std.Build) void {
     module.strip = release;
     const app = b.addExecutable(.{ .name = "pearl", .root_module = module });
     app.step.dependOn(&system_versions.step);
-    b.installArtifact(app);
+    const shell_install = b.addInstallArtifact(app, .{});
+    b.getInstallStep().dependOn(&shell_install.step);
+    b.step("build-shell", "Stage the production shell without launching it or building bundled applications").dependOn(&shell_install.step);
+
+    const agent_tests = b.createModule(.{ .root_source_file = b.path("src/agent_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| agent_tests.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gio-2.0", "libcurl", "libxml-2.0", "libsecret-1" }) |name| agent_tests.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+    b.step("test-agent", "Test assistant policy, tools, providers and native extraction").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = agent_tests })).step);
+    var agent_build: *std.Build.Step = undefined;
+    for ([_]bool{ false, true }) |instrumented| {
+        const agent_module = b.createModule(.{ .root_source_file = b.path("src/agent_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+        for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| agent_module.addImport(name, bindings.module(name));
+        for ([_][]const u8{ "gtk4", "libcurl", "libxml-2.0", "libsecret-1" }) |name| agent_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+        const agent_options = b.addOptions();
+        agent_options.addOption(bool, "git_variant", portal_variant == .git);
+        agent_options.addOption(bool, "test_hooks", instrumented);
+        agent_module.addOptions("build_options", agent_options);
+        agent_module.addAnonymousImport("agent_style", .{ .root_source_file = b.path("resources/agent.css") });
+        const agent_exe = b.addExecutable(.{ .name = if (instrumented) "pearl-agent-test" else "pearl-agent", .root_module = agent_module });
+        const agent_install = b.addInstallArtifact(agent_exe, .{ .dest_dir = .{ .override = .{ .custom = if (instrumented) "test" else "bin" } } });
+        const agent_step = b.step(if (instrumented) "build-agent-test" else "build-agent", "Build the opt-in native launcher assistant");
+        agent_step.dependOn(&agent_install.step);
+        if (!instrumented) {
+            agent_build = agent_step;
+            const desktop = b.addInstallFile(b.path("packaging/applications/org.aqueous.Pearl.Agent.desktop"), "share/applications/org.aqueous.Pearl.Agent.desktop");
+            agent_step.dependOn(&desktop.step);
+            b.getInstallStep().dependOn(&desktop.step);
+        }
+        if (!instrumented) b.getInstallStep().dependOn(&agent_install.step);
+    }
 
     var settings_app: *std.Build.Step.Compile = undefined;
     var settings_test_app: *std.Build.Step.Compile = undefined;
@@ -312,6 +342,7 @@ pub fn build(b: *std.Build) void {
         sm.addAnonymousImport("settings_native", .{ .root_source_file = b.path("resources/gtk-theme.css") });
 
         sm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+        for ([_][]const u8{ "libxml-2.0", "libsecret-1" }) |name| sm.linkSystemLibrary(name, .{ .use_pkg_config = .force });
         sm.linkSystemLibrary("wayland-client", .{});
         configureApp(b, sm, resources, instrumented, wasm_plugins, community_theme_repository, true, portal_variant == .git);
         sm.strip = release and !instrumented;
@@ -525,6 +556,7 @@ pub fn build(b: *std.Build) void {
     b.step("test-release-tools", "Verify release gates fail closed and source archives are deterministic").dependOn(&release_tools.step);
 
     const release_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_release.py", "--pearl" });
+    release_test.step.dependOn(agent_build);
     release_test.addArtifactArg(app);
     release_test.addArg("--themes");
     release_test.addArtifactArg(themes_tool);
@@ -671,6 +703,7 @@ pub fn build(b: *std.Build) void {
     b.step("test-settings-presentation", "Verify standalone reference pages, scales, short windows and monitor removal").dependOn(&settings_presentation.step);
 
     const settings_integration = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_integration.py", "--pearl" });
+    settings_integration.step.dependOn(agent_build);
     settings_integration.addArtifactArg(integration_app);
     settings_integration.addArg("--production-pearl");
     settings_integration.addArtifactArg(app);
@@ -751,6 +784,15 @@ pub fn build(b: *std.Build) void {
     }
     if (b.args) |args| calculator_tests.addArgs(args);
     b.step("test-launcher-calculator", "Verify launcher calculation, native copy and stale input handling in private Aqueous").dependOn(&calculator_tests.step);
+    const assistant_launcher = b.addSystemCommand(&.{ "python3", "tests/integration/test_agent_launcher.py" });
+    for ([_][]const u8{ "--pearl", "--ctl", "--locker", "--pam-module", "--settings" }, [_]*std.Build.Step.Compile{ integration_app, ctl, test_locker, pam_fixture, settings_test_app }) |flag, binary| {
+        assistant_launcher.addArg(flag);
+        assistant_launcher.addArtifactArg(binary);
+    }
+    assistant_launcher.addArgs(&.{ "--agent", b.getInstallPath(.bin, "pearl-agent") });
+    assistant_launcher.step.dependOn(agent_build);
+    if (b.args) |args| assistant_launcher.addArgs(args);
+    b.step("test-agent-launcher", "Verify real launcher handoff and Settings controls with private search fixtures").dependOn(&assistant_launcher.step);
     const lock_tests = b.addSystemCommand(&.{ "python3", "tests/integration/test_lock.py", "--locker" });
     lock_tests.addArtifactArg(test_locker);
     lock_tests.addArg("--pam-module");

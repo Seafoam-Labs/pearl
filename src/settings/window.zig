@@ -49,6 +49,7 @@ pub const Window = struct {
     plugins_view: ?*@import("plugins_view.zig").View = null,
     notification_filters: ?*@import("notification_filters_view.zig").View = null,
     preferences_view: ?*@import("preferences_view.zig").View = null,
+    assistant_view: ?*@import("assistant_view.zig").View = null,
     preference_pages: [2]?*@import("preference_pages.zig").View = .{ null, null },
     live_pages: [count]?*@import("live_view.zig").View = @splat(null),
     close_dialog: ?*gtk.Dialog = null,
@@ -247,6 +248,9 @@ pub const Window = struct {
             const appearance_body = object.ext.cast(gtk.Box, appearance_page.body).?;
             while (appearance_body.as(gtk.Widget).getFirstChild()) |child| appearance_body.remove(child);
             self.preferences_view = try @import("preferences_view.zig").View.create(win, appearance_body, editor, german);
+            const assistant_body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(nav.Route.assistant)].body).?;
+            while (assistant_body.as(gtk.Widget).getFirstChild()) |child| assistant_body.remove(child);
+            self.assistant_view = try @import("assistant_view.zig").View.create(assistant_body, editor);
             const advanced_page = &self.pages[@intFromEnum(nav.Route.advanced)];
             advanced_page.body = self.preferences_view.?.raw_view.as(gtk.Widget);
             advanced_page.scroll.setChild(advanced_page.body);
@@ -339,6 +343,7 @@ pub const Window = struct {
         for (self.live_pages) |page| if (page) |view| view.destroy();
         for (self.preference_pages) |page| if (page) |view| view.destroy();
         if (self.preferences_view) |view| view.destroy();
+        if (self.assistant_view) |view| view.destroy();
         if (self.restore_id != 0) _ = glib.Source.remove(self.restore_id);
         if (self.resize_id != 0) _ = glib.Source.remove(self.resize_id);
         if (self.native) |surface| if (self.layout_id != 0) {
@@ -366,6 +371,7 @@ pub const Window = struct {
             .sound => "Klang",
             .power => "Energie und Akku",
             .appearance => "Erscheinungsbild",
+            .assistant => "Assistent",
             .bar => "Leiste und Dock",
             .notifications => "Benachrichtigungen",
             .system => "System",
@@ -379,6 +385,7 @@ pub const Window = struct {
         return switch (route) {
             .overview => self.t("Your desktop settings, together.", "Alle Desktop-Einstellungen an einem Ort."),
             .appearance => self.t("Make Pearl feel at home on your desktop.", "Gestalte Pearl für deinen Desktop."),
+            .assistant => self.t("Optional local answers with your chosen search engines.", "Optionale lokale Antworten mit deinen Suchmaschinen."),
             .network => self.t("Manage your connections and nearby networks.", "Verbindungen und Netzwerke verwalten."),
             .bluetooth => self.t("Connect and manage your wireless devices.", "Drahtlose Geräte verbinden und verwalten."),
             .sound => self.t("Choose where sound plays and how you are heard.", "Wiedergabe und Mikrofon einstellen."),
@@ -400,6 +407,7 @@ pub const Window = struct {
             .sound => "pearl-audio-volume-high-symbolic",
             .power => "pearl-battery-symbolic",
             .appearance => "applications-graphics-symbolic",
+            .assistant => "user-available-symbolic",
             .bar, .aqueous => "pearl-window-symbolic",
             .notifications => "pearl-notifications-symbolic",
             .session => "system-lock-screen-symbolic",
@@ -677,7 +685,7 @@ pub const Window = struct {
         }
         self.restore_id = glib.idleAdd(restore, self);
         const preference = switch (target.page) {
-            .appearance, .bar, .notifications, .session, .advanced, .plugins => true,
+            .appearance, .assistant, .bar, .notifications, .session, .advanced, .plugins => true,
             else => false,
         };
         self.save.as(gtk.Widget).getParent().?.setVisible(@intFromBool(preference));
@@ -755,13 +763,14 @@ pub const Window = struct {
         if (self.sched_ext_view) |view| view.update();
         if (self.plugins_view) |view| view.update();
         if (self.preferences_view) |view| view.update();
+        if (self.assistant_view) |view| view.update();
         for (self.preference_pages) |page| if (page) |view| view.update();
         for (self.live_pages) |page| if (page) |view| view.update();
         self.aqueousChanged();
         const dirty = editor.local != null or editor.state.dirty;
         self.draft_badge.as(gtk.Widget).setVisible(@intFromBool((dirty or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
         self.review_button.as(gtk.Widget).setVisible(@intFromBool((dirty or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
-        const preference_page = self.target.page == .notifications or self.target.page == .appearance or self.target.page == .bar or self.target.page == .session or self.target.page == .advanced or self.target.page == .plugins;
+        const preference_page = self.target.page == .notifications or self.target.page == .appearance or self.target.page == .assistant or self.target.page == .bar or self.target.page == .session or self.target.page == .advanced or self.target.page == .plugins;
         self.actions.as(gtk.Widget).setVisible(@intFromBool((editor.ready or dirty) and preference_page));
         self.merge_button.as(gtk.Widget).setVisible(@intFromBool(editor.state.conflict or editor.recovery));
         const available = editor.online and editor.ready and !editor.state.locked and !editor.state.busy and editor.download == .none and editor.operation == null;
@@ -1090,6 +1099,12 @@ pub const Window = struct {
         const ControlProbe = struct { field: []const u8, focused: bool, enabled: bool = true, selected: ?bool = null, text: ?[]const u8 = null, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
         var controls: std.ArrayList(ControlProbe) = .empty;
         const focus = self.window.getFocus();
+        if (self.assistant_view) |view| if (self.target.page == .assistant) {
+            inline for (.{ "enabled", "model", "custom", "endpoint", "provider", "read_pages" }) |name| {
+                const widget = @field(view, name).as(gtk.Widget);
+                try controls.append(alloc, .{ .field = "assistant." ++ name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            }
+        };
         if (self.sched_ext_view) |view| if (self.target.page == .system) {
             for ([_]*gtk.Widget{ view.scheduler.as(gtk.Widget), view.mode.as(gtk.Widget), view.apply.as(gtk.Widget), view.stop.as(gtk.Widget), view.refresh.as(gtk.Widget) }, [_][]const u8{ "sched-ext/scheduler", "sched-ext/mode", "sched-ext/apply", "sched-ext/stop", "sched-ext/refresh" }) |widget, name| {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });

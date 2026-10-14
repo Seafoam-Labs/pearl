@@ -169,6 +169,7 @@ pub const Manager = struct {
     settings_observer: ?*const fn (*anyopaque) void = null,
     aqueous_settings: @import("../../config/aqueous_client.zig").Client = undefined,
     preferences: @import("../../config/service.zig").Service = undefined,
+    agent: @import("../../agent/host.zig").Host = .{},
     slideshow: @import("../../config/slideshow.zig").Engine = undefined,
     border_theme: @import("../../config/border_theme.zig").Sync = .{},
     identifiers: std.ArrayList(*Surface) = .empty,
@@ -271,6 +272,7 @@ pub const Manager = struct {
         self.schedule();
     }
     pub fn deinit(self: *Manager) void {
+        self.agent.stop();
         if (!self.running) return;
         self.running = false;
         if (self.desktop_directory) |store| {
@@ -471,6 +473,28 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (self.logout) |callback| callback(self.context.?);
     }
+    fn askAssistant(context: *anyopaque, question: []const u8) anyerror!void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.agent.context = self;
+        self.agent.palette = if (self.preferences.live) |live| live.palette else @import("../../theme/theme.zig").dark;
+        self.agent.acknowledge = assistantAcknowledged;
+        self.agent.open_settings = assistantSettings;
+        const launch = self.display.getAppLaunchContext();
+        defer launch.unref();
+        const info = @import("../../settings/launch.zig").activationInfo("/proc/self/exe", "Pearl Assistant") catch null;
+        defer if (info) |i| i.unref();
+        const token = if (info) |i| launch.as(gio.AppLaunchContext).getStartupNotifyId(i.as(gio.AppInfo), null) else null;
+        defer if (token) |t| glib.free(t);
+        try self.agent.ask(self.preferences.prefs().assistant, question, if (token) |t| std.mem.span(t) else "");
+    }
+    fn assistantAcknowledged(context: *anyopaque, ok: bool) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (self.popup) |surface| if (surface.launcher) |view| if (view.assistantAcknowledged(ok)) dismiss(self);
+    }
+    fn assistantSettings(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.openSettings(.{ .page = .assistant }, null) catch {};
+    }
     fn copyCalculator(context: *anyopaque, text: []const u8) anyerror!void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.syncClipboardPrivacy();
@@ -492,6 +516,7 @@ pub const Manager = struct {
         if (self.barInhibited() and self.popup != null) self.schedule();
         self.night_light.interactive = !locked;
         self.clipboard.setLocked(locked);
+        self.agent.setLocked(locked);
         self.capture.setLocked(locked);
         if (self.plugins) |plugins| plugins.setLocked(locked);
         if (locked) for (self.outputs.items) |output| {
@@ -538,6 +563,9 @@ pub const Manager = struct {
     fn preferencesChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
+        self.agent.palette = if (self.preferences.live) |live| live.palette else @import("../../theme/theme.zig").dark;
+        self.agent.configure(self.preferences.prefs().assistant);
+        if (self.popup) |surface| if (surface.launcher) |view| view.configureAssistant(self.preferences.prefs().assistant.enabled, askAssistant);
         if (self.session_services.started and self.preferences.live != null) {
             self.session_services.notifications.configure(self.preferences.prefs().notifications) catch |err| {
                 log.err("event=notification-filter-config error={s}", .{@errorName(err)});
@@ -1333,7 +1361,10 @@ pub const Manager = struct {
                     .settings => s.settings = try @import("../../desktop/settings.zig").View.create(panel, &self.preferences),
                     .launcher_picker => s.launcher_picker = try LauncherPicker.View.create(panel, &self.index, &self.preferences, self.client, self.picker_request orelse return error.InvalidRequest),
                     .running_apps => s.running_apps = try Running.Chooser.create(panel, &self.tasks.snapshot, &self.index, s, runningAction),
-                    .launcher => s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss, copyCalculator),
+                    .launcher => {
+                        s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss, copyCalculator);
+                        s.launcher.?.configureAssistant(self.preferences.prefs().assistant.enabled, askAssistant);
+                    },
                     .calendar => s.calendar = try @import("../../desktop/calendar.zig").View.create(panel),
                     .wallpapers => s.wallpapers = try @import("../../desktop/wallpapers.zig").View.create(panel, &self.preferences, .{ .context = self, .open = pickerCrop }),
                     .resources => s.resources = try @import("../../desktop/resource_view.zig").Detail.create(panel, self.preferences.prefs().forOutput(output.connector).resource_series),
@@ -1848,6 +1879,12 @@ pub const Manager = struct {
             };
             return error.Unavailable;
         }
+        if (request.op == .assistant_status) return std.json.Stringify.valueAlloc(alloc, .{
+            .enabled = self.preferences.prefs().assistant.enabled,
+            .running = self.agent.process != null,
+            .locked = self.agent.locked,
+            .handoff_pending = self.agent.pending != 0,
+        }, .{});
         if (request.op == .clipboard_status) return self.clipboard.status(alloc);
         if (request.op == .capture_status) return self.capture.status(alloc);
         if (request.op == .capture_windows) return self.capture.native.status(alloc, request.offset orelse 0);
@@ -1977,7 +2014,10 @@ pub const Manager = struct {
         if (@import("build_options").test_hooks and request.op == .aqueous_draft and std.mem.startsWith(u8, request.text orelse "", "{\"test_owner\":"))
             return self.owner_probe.command(alloc, request.text.?, &self.network, &self.bluetooth, &self.power);
         switch (request.op) {
-            .desktop_focus => unreachable,
+            .desktop_focus, .assistant_status => unreachable,
+            .assistant_show => try askAssistant(self, ""),
+            .assistant_stop => self.agent.stop(),
+            .assistant_clear => try self.agent.clear(),
             .night_light_action => {
                 self.syncClipboardPrivacy();
                 try self.night_light.act(std.meta.stringToEnum(@import("../../services/night_light_policy.zig").Action, request.text.?).?);

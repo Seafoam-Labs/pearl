@@ -11,7 +11,7 @@ url='https://github.com/Seafoam-Labs/pearl'
 license=('LicenseRef-Pearl-Unlicensed')
 # Capability required by the session dispatcher; bundled, not a separate package.
 provides=('pearl-capture-picker=1')
-depends=('xdg-desktop-portal' 'libcups' 'xdg-utils' 'glycin' 'matugen>=4.2.0' 'curl' 'libarchive' 'libpng' 'gtksourceview5' 'enchant' 'hunspell'
+depends=('xdg-desktop-portal' 'libcups' 'xdg-utils' 'glycin' 'matugen>=4.2.0' 'curl' 'libarchive' 'libpng' 'libxml2' 'libsecret' 'gtksourceview5' 'enchant' 'hunspell'
          'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0'
          'libpulse>=17.0' 'pam>=1.7.2' 'polkit>=127' 'glibc>=2.44'
          'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
@@ -23,7 +23,8 @@ depends=('xdg-desktop-portal' 'libcups' 'xdg-utils' 'glycin' 'matugen>=4.2.0' 'c
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
 makedepends=('git' 'zig=0.16.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
              'rust' 'rust-wasm' 'librsvg')
-optdepends=('gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'
+optdepends=('pearl-assistant-runtime: optional CPU-only launcher answers'
+            'gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'
             'gvfs-smb: SMB network connections in Phyto'
             'gvfs-dnssd: WebDAV connections and network discovery in Phyto'
             'file-roller: archive context menu actions in Phyto'

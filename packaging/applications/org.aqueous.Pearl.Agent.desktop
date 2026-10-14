@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Pearl Assistant
+Comment=On-device answers with your configured search engines
+Exec=pearlctl assistant show
+Icon=org.aqueous.Pearl.Settings
+StartupWMClass=org.aqueous.Pearl.Agent
+Terminal=false
+NoDisplay=true
+StartupNotify=true

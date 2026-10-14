@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "checks": {
+    "disabled_by_default_no_agent_or_search": true,
+    "question_rank_exact_app_calculator_and_no_typing_inference": true,
+    "keyboard_enter_acknowledged_handoff_and_google_search": {
+      "x": 420,
+      "y": 104,
+      "width": 440,
+      "height": 560
+    },
+    "focus_change_keeps_chat": true,
+    "cli_clear_stop_and_resume": true,
+    "native_settings_apply_disables_and_terminates_agent": true
+  }
+}

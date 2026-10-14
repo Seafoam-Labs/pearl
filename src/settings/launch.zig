@@ -9,6 +9,19 @@ const c = @cImport({
 const nav = @import("../desktop/settings_navigation.zig");
 const distribution = @import("distribution.zig");
 const a = std.heap.c_allocator;
+pub fn activationInfo(program: [:0]const u8, name: [:0]const u8) !*@import("giounix2").DesktopAppInfo {
+    // GDK's Wayland activation path reads desktop-entry keys. A synthetic
+    // command-line AppInfo has no KeyFile in GLib and emits a critical warning.
+    const key = glib.KeyFile.new();
+    defer key.unref();
+    key.setString("Desktop Entry", "Type", "Application");
+    key.setString("Desktop Entry", "Name", name);
+    const quoted = glib.shellQuote(program);
+    defer glib.free(quoted);
+    key.setString("Desktop Entry", "Exec", quoted);
+    key.setBoolean("Desktop Entry", "StartupNotify", 1);
+    return @import("giounix2").DesktopAppInfo.newFromKeyfile(key) orelse error.SettingsLaunchFailed;
+}
 pub fn path() ![:0]u8 {
     var buffer: [4096]u8 = undefined;
     const result = try distribution.sibling(a, try distribution.executable(&buffer));
@@ -26,15 +39,9 @@ pub fn open(target: nav.Target, context: *gio.AppLaunchContext, activation: ?[]c
     const program = try path();
     defer a.free(program);
     // AppInfo is used only to obtain native activation context, never to spawn.
-    const quoted = glib.shellQuote(program);
-    defer glib.free(quoted);
-    var err: ?*glib.Error = null;
-    const info = gio.AppInfo.createFromCommandline(quoted, "Pearl Settings", .{ .supports_startup_notification = true }, &err) orelse {
-        if (err) |e| e.free();
-        return error.SettingsLaunchFailed;
-    };
+    const info = try activationInfo(program, "Pearl Settings");
     defer info.unref();
-    const generated = if (activation == null) context.getStartupNotifyId(info, null) else null;
+    const generated = if (activation == null) context.getStartupNotifyId(info.as(gio.AppInfo), null) else null;
     defer if (generated) |token| glib.free(token);
     const token = activation orelse if (generated) |value| std.mem.span(value) else null;
     const startup: ?[:0]u8 = if (token) |value| blk: {
