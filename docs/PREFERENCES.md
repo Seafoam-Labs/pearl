@@ -154,6 +154,10 @@ activation, conflict review and recovery procedure.
 
 The file is `$XDG_CONFIG_HOME/pearl/preferences.json`, falling back to
 `~/.config/pearl/preferences.json`. Opening settings does not create this file.
+The first shell session creates it when neither preferences nor a recovery
+snapshot exists, enabling the managed GTK 3/4 profile to follow Pearl's colors.
+Existing configurations and saved opt-outs retain their selections; see
+[application themes](BASE_MATERIAL_PROFILES.md).
 The validated recovery snapshot is `pearl/last-good.json` in the same directory.
 
 The standalone Appearance, Bar & dock, Plugins and Advanced pages edit one shared

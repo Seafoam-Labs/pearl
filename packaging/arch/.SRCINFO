@@ -20,6 +20,7 @@ pkgbase = pearl
 	depends = libcups
 	depends = xdg-utils
 	depends = glycin
+	depends = matugen>=4.2.0
 	depends = curl
 	depends = libarchive
 	depends = libpng
@@ -51,7 +52,6 @@ pkgbase = pearl
 	optdepends = nvidia-utils: optional NVIDIA GPU metrics in Dome
 	optdepends = qtengine: shared Qt 5/6 application appearance management
 	optdepends = pearl-darkly-style: Darkly Qt application styles without KWin decorations
-	optdepends = matugen>=4.2.0: dynamic Material colors
 	optdepends = networkmanager>=1.58.1: network controls
 	optdepends = bluez>=5.87: Bluetooth controls
 	optdepends = upower>=1.91.4: battery status

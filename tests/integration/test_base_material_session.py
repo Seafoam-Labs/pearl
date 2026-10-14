@@ -10,6 +10,19 @@ from test_custom_themes import Peer
 def settled(peer):
     return wait_for(lambda: (v if not (v:=peer.state())['busy'] and not v['applications']['busy'] else False),30)
 
+def gtk_colors(s, rgb):
+    for version in ['3.0','4.0']:
+        code=f'''import gi,json
+gi.require_version('Gtk','{version}')
+from gi.repository import Gtk
+Gtk.init()
+w=Gtk.Window()
+found,color=w.get_style_context().lookup_color('window_bg_color')
+assert found
+print(json.dumps([round(color.red*255),round(color.green*255),round(color.blue*255)]))
+'''
+        result=s.run(['python3','-c',code]);assert tuple(json.loads(result.stdout))==rgb,(version,rgb,result.stdout)
+
 def main():
     parser=argparse.ArgumentParser()
     for name in ['pearl','settings']:parser.add_argument('--'+name,type=Path,required=True)
@@ -21,16 +34,31 @@ def main():
         s.run(['wlr-randr','--output',output['name'],'--custom-mode','1600x1100@60Hz'])
         resize(s,Path(s.env['XDG_CONFIG_HOME'])/'aqueous/rules.toml',1040,850)
         shell=s.child('pearl',[args.pearl.resolve()],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
+        peer=Peer(s,ipc);state=settled(peer)
+        config=Path(s.env['XDG_CONFIG_HOME']);gtk=config/'gtk-4.0/gtk.css'
+        initial=json.loads(peer.document('committed'))
+        assert initial['matugen']['enabled'] and initial['matugen']['defaults_revision']==0
+        assert initial['matugen']['applications']=={'gtk':{'mode':'profile','profile_id':'pearl.material.gtk'}}
+        assert json.loads((config/'pearl/preferences.json').read_text())==initial
+        assert next(t for t in state['applications']['targets'] if t['application']=='gtk')['state']=='activation_required',state
+        imports={config/f'gtk-{version}/gtk.css':(config/f'gtk-{version}/gtk.css').read_bytes() for version in ['3.0','4.0']}
+        assert all(b'@import url("pearl-material.css");' in content for content in imports.values())
+        gtk_colors(s,(20,18,24))
+        peer.close();shell.stop();clean(shell)
+        shell=s.child('pearl-initial-restart',[args.pearl.resolve()],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
         peer=Peer(s,ipc);settled(peer)
+        assert json.loads(peer.document('committed'))==initial
+        assert all(path.read_bytes()==content for path,content in imports.items())
+        checks.append('first-install-gtk3-gtk4-management-and-restart-persistence')
         app=s.child('settings',[args.settings.resolve(),'--page','appearance'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');ready(s,ipc)
         wait_for(lambda:not probe(s,ipc)['theme_busy'],15)
-        config=Path(s.env['XDG_CONFIG_HOME']);gtk=config/'gtk-4.0/gtk.css'
-        assert not gtk.exists()
+        assert gtk.exists()
         click(s,ipc,'applications.defaults');ready(s,ipc)
         draft=json.loads(peer.document());assert draft['matugen']['defaults_revision']==1 and draft['matugen']['enabled']
-        assert not gtk.exists()
+        assert all(path.read_bytes()==content for path,content in imports.items())
         click(s,ipc,'discard');ready(s,ipc)
-        assert json.loads(peer.document())['matugen']['defaults_revision']==0 and not gtk.exists()
+        assert json.loads(peer.document())['matugen']['defaults_revision']==0
+        assert all(path.read_bytes()==content for path,content in imports.items())
         checks.append('defaults-shared-draft-discard-no-external-writes')
         click(s,ipc,'applications.defaults');ready(s,ipc);click(s,ipc,'apply');state=settled(peer);ready(s,ipc)
         assert gtk.exists(),state
@@ -59,18 +87,7 @@ def main():
         for variant,rgb in [('dark',(20,18,24)),('light',(253,247,255))]:
             if variant=='light':
                 p=json.loads(peer.document('committed'));p['theme']['variant']='light';peer.keep(json.dumps(p));assert peer.action('apply')['state']=='succeeded';settled(peer);ready(s,ipc)
-            for version in ['3.0','4.0']:
-                code=f'''import gi,json
- gi.require_version('Gtk','{version}')
- from gi.repository import Gtk
- Gtk.init()
- w=Gtk.Window()
- context=w.get_style_context()
- found,color=context.lookup_color('window_bg_color')
- assert found
- print(json.dumps([round(color.red*255),round(color.green*255),round(color.blue*255)]))
-'''.replace('\n ','\n')
-                result=s.run(['python3','-c',code]);assert tuple(json.loads(result.stdout))==rgb,(version,variant,result.stdout)
+            gtk_colors(s,rgb)
             capture(s,'material-defaults-'+variant,output['name'])
         checks.append('real-gtk3-gtk4-dark-light-color-consumers')
         committed=json.loads(peer.document('committed'));assert committed['matugen']['defaults_revision']==1
@@ -79,7 +96,26 @@ def main():
         peer=Peer(s,ipc);state=settled(peer);assert json.loads(peer.document('committed'))['matugen']['defaults_revision']==1
         p=json.loads(peer.document('committed'));p['matugen']['enabled']=False;peer.keep(json.dumps(p));assert peer.action('apply')['state']=='succeeded';settled(peer)
         assert not gtk.exists()
+        peer.close();shell.stop();clean(shell)
+        shell=s.child('pearl-disabled-restart',[args.pearl.resolve()],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
+        peer=Peer(s,ipc);settled(peer)
+        assert not json.loads(peer.document('committed'))['matugen']['enabled'] and not gtk.exists()
         peer.close();shell.stop();clean(shell);checks.append('restart-persistence-and-off-restoration')
+        # Existing minimal preferences, and installations with only a last-good
+        # document, must not be mistaken for a new installation.
+        preferences=config/'pearl/preferences.json';good=config/'pearl/last-good.json'
+        for name in ['existing-preferences','existing-last-good']:
+            if name=='existing-preferences':
+                preferences.write_text('{}');good.unlink()
+            else:
+                preferences.unlink()
+            shell=s.child(name,[args.pearl.resolve()],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
+            peer=Peer(s,ipc);settled(peer)
+            assert not json.loads(peer.document('committed'))['matugen']['enabled'] and not gtk.exists()
+            if name=='existing-preferences':assert preferences.read_text()=='{}'
+            else:assert not preferences.exists()
+            peer.close();shell.stop();clean(shell)
+        checks.append('existing-preferences-and-last-good-do-not-enable-management')
     (args.output/'results.json').write_text(json.dumps({'status':'passed','checks':checks},indent=2)+'\n')
     print('PASS base Material session: '+', '.join(checks))
 if __name__=='__main__':main()

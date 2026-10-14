@@ -14,15 +14,23 @@ def main():
         env = {**os.environ, 'HOME':str(root), 'XDG_CONFIG_HOME':str(root/'config'), 'XDG_DATA_HOME':str(root/'data'), 'XDG_CACHE_HOME':str(root/'cache'), 'XDG_STATE_HOME':str(root/'state'), 'NVIM_LOG_FILE':str(root/'nvim.log'), 'XDG_DATA_DIRS':str(root/'system')}
         for name in ['config', 'data', 'cache']: (root/name).mkdir()
         def run(p, **overrides):
-            result = subprocess.run([str(args.driver.resolve()), json.dumps(p)], env=env|overrides, capture_output=True, text=True, timeout=60)
+            result = subprocess.run([str(args.driver.resolve()), p if isinstance(p,str) else json.dumps(p)], env=env|overrides, capture_output=True, text=True, timeout=60)
             assert result.returncode == 0, (result.stdout, result.stderr)
             return json.loads(result.stdout)
         legacy = run({'matugen':{'enabled':True}})
         assert legacy['captured']['profiles'] == []
         assert not (root/'config/gtk-3.0').exists()
         checks.append('legacy-enabled-does-not-adopt')
+        fresh = run('--first-install')
+        assert [(v['application'],v['id']) for v in fresh['captured']['profiles']] == [('gtk','pearl.material.gtk')]
+        assert next(v for v in fresh['status']['targets'] if v['application']=='gtk')['state']=='activation_required',fresh['status']
+        for version in ['3.0','4.0']:
+            assert (root/f'config/gtk-{version}/gtk.css').read_text()=='@import url("pearl-material.css");\n'
+            assert '@define-color window_bg_color #141218;' in (root/f'config/gtk-{version}/pearl-material.css').read_text()
+        run({})
+        checks.append('first-install-selects-and-applies-gtk3-gtk4-only')
         p = {'matugen': {'enabled':True, 'defaults_revision':1, 'applications': {name:{'mode':'profile','profile_id':'pearl.material.'+name} for name in ['qt5ct','qt6ct']}}}
-        gtk = root/'config/gtk-3.0/gtk.css'; gtk.parent.mkdir(); gtk.write_text('/* preserve existing CSS */\nbutton { padding: 3px; }\n')
+        gtk = root/'config/gtk-3.0/gtk.css'; gtk.parent.mkdir(exist_ok=True); gtk.write_text('/* preserve existing CSS */\nbutton { padding: 3px; }\n')
         original = gtk.read_bytes()
         flatpak=root/'.var/app/dev.vencord.Vesktop/config';flatpak.mkdir(parents=True)
         result = run(p)

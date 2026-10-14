@@ -40,6 +40,7 @@ pub const Job = struct {
     previous_applied_generation: u64 = 0,
     previous_target_generations: [@import("../theme/matugen_profiles.zig").count]u64 = @splat(0),
     requested: ?[]const u8 = null,
+    first_install: bool = false,
     draft_revision: ?u64 = null,
     expected: [64]u8,
     disk: ?io.Read = null,
@@ -336,7 +337,9 @@ pub const Service = struct {
         if (self.job) |j| {
             if (j.stage == .applications or j.stage == .integrate) {
                 if (force) j.cancel.cancel();
-            } else if (j.requested == null) {
+            } else if (j.requested == null and !(j.stage == .persist and j.first_install)) {
+                // First installation writes preferences too. Its own file
+                // monitor event must not cancel that commit.
                 self.force_reload = self.force_reload or !j.skip_unchanged;
                 self.pending_image = self.pending_image or j.image_event;
                 self.pending_palette = self.pending_palette or j.palette_event;
@@ -604,6 +607,15 @@ pub const Service = struct {
                 break :blk try model.parse(alloc, if (good.missing) "{}" else good.bytes);
             };
         }
+        if (j.requested == null and !j.recovered and self.shell_appearance and self.appearance == 0) {
+            if (j.disk) |disk| if (disk.missing) {
+                const good = try io.read(alloc, self.good_path, model.max_bytes, j.cancel);
+                if (good.missing) {
+                    j.prefs = try model.firstInstall(alloc);
+                    j.first_install = true;
+                }
+            };
+        }
         j.disk_application_digest = j.prefs.matugen.snapshot_digest;
         j.watch_path = if (usesWallpaper(j.prefs, j.service.shell_appearance)) try alloc.dupe(u8, j.prefs.wallpaper.path) else "";
         try prepareAppearance(j);
@@ -807,7 +819,7 @@ pub const Service = struct {
             try @import("../theme/asset_store.zig").save(alloc, try std.fmt.allocPrintSentinel(alloc, "{s}/theme-assets", .{self.dir}, 0), j.custom.blobs);
             try @import("../theme/snapshots.zig").write(alloc, directory, j.prefs.theme.snapshot_digest, try std.json.Stringify.valueAlloc(alloc, j.custom, .{}));
         }
-        if (j.requested != null) try io.replace(self.path, j.json, j.disk.?, j.cancel);
+        if (j.requested != null or (j.first_install and !j.recovered)) try io.replace(self.path, j.json, j.disk.?, j.cancel);
         if (j.requested == null and j.cancel.isCancelled() != 0) return error.Cancelled;
         if (j.local_palette) |local| {
             const guard: @import("../theme/publication.zig").Guard = .{ .gate = &self.publication, .generation = j.generation };
@@ -998,7 +1010,7 @@ pub const Service = struct {
                 if (self.wallpaper_watch.monitor != null or j.watch_path.len == 0) self.watcher_error = null;
                 self.application_status.watcher_error = self.watcher_error;
                 self.appearance += 1;
-                if (j.requested != null) {
+                if (j.requested != null or (j.first_install and !j.recovered)) {
                     self.observed = io.digest(j.json);
                     self.revision += 1;
                 }

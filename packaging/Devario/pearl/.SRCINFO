@@ -67,6 +67,7 @@ pkgname = pearl
 	depends = xdg-desktop-portal
 	depends = xdg-utils
 	depends = glycin
+	depends = matugen>=4.2.0
 	depends = hunspell
 	depends = systemd>=261.3
 	depends = aqueous>0.7
@@ -82,7 +83,6 @@ pkgname = pearl
 	optdepends = nvidia-utils: optional NVIDIA GPU metrics in Dome
 	optdepends = qtengine: shared Qt 5/6 application appearance management
 	optdepends = pearl-darkly-style: Darkly Qt application styles without KWin decorations
-	optdepends = matugen>=4.2.0: dynamic Material colors
 	optdepends = networkmanager>=1.58.1: network controls
 	optdepends = bluez>=5.87: Bluetooth controls
 	optdepends = upower>=1.91.4: battery status

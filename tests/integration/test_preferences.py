@@ -35,6 +35,10 @@ def main():
         with PrivateSession(args.output/'session') as s:
             # The chooser remembers its geometry without requiring a dconf service.
             s.env['GSETTINGS_BACKEND']='memory'
+            # Exercise legacy preferences; fresh GTK setup is covered by the
+            # base Material session suite.
+            legacy=Path(s.env['XDG_CONFIG_HOME'])/'pearl/last-good.json'
+            legacy.parent.mkdir(parents=True,exist_ok=True);legacy.write_text('{}')
             s.args=SimpleNamespace(aqueous_source=str(fixture_source()));keyboard=T00Session.input_fixture(s)
             app=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready')
             v=settled(s,args.ctl);assert v['appearance']==1 and v['err'] is None,v

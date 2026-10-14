@@ -180,6 +180,36 @@ pub fn hex(s: []const u8) bool {
     for (s[1..]) |ch| if (!std.ascii.isHex(ch)) return false;
     return true;
 }
+/// Seed a new user installation without changing defaults when reading an
+/// existing document (including older documents with no application settings).
+pub fn firstInstall(a: std.mem.Allocator) !Preferences {
+    var p: Preferences = .{};
+    p.matugen.enabled = true;
+    try p.matugen.applications.map.put(a, "gtk", .{ .mode = .profile, .profile_id = "pearl.material.gtk" });
+    return p;
+}
+
+test "first installation manages GTK and preserves existing application preferences" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const fresh = try firstInstall(a);
+    try fresh.validate();
+    try std.testing.expect(fresh.matugen.enabled);
+    try std.testing.expectEqual(.follow_pearl, fresh.matugen.colors.source);
+    try std.testing.expectEqual(@as(u32, 0), fresh.matugen.defaults_revision);
+    try std.testing.expectEqual(@as(usize, 1), fresh.matugen.applications.map.count());
+    const encoded = try std.json.Stringify.valueAlloc(a, fresh, .{});
+    const saved = try parse(a, encoded);
+    try std.testing.expect(saved.matugen.enabled);
+    try std.testing.expectEqualDeep(@import("../theme/matugen_profiles.zig").Selection{ .mode = .profile, .profile_id = "pearl.material.gtk" }, saved.matugen.applications.map.get("gtk").?);
+    for ([_][]const u8{ "{}", "{\"version\":0}", "{\"matugen\":{\"enabled\":false}}" }) |document| {
+        try std.testing.expect(!(try parse(a, document)).matugen.enabled);
+    }
+    const off = try parse(a, "{\"matugen\":{\"enabled\":true,\"applications\":{\"gtk\":{\"mode\":\"off\"}}}}");
+    try std.testing.expectEqual(.off, off.matugen.applications.map.get("gtk").?.mode);
+}
+
 pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Preferences {
     try boundedJson(bytes, max_bytes, 8);
     const dom = try std.json.parseFromSliceLeaky(std.json.Value, a, bytes, .{});

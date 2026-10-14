@@ -8,7 +8,8 @@ pub fn main(init: std.process.Init) !void {
     const a = arena.allocator();
     const args = try init.minimal.args.toSlice(a);
     if (args.len != 2) return error.PreferencesRequired;
-    const p = try @import("config/preferences.zig").parse(a, args[1]);
+    const preferences = @import("config/preferences.zig");
+    const p = if (std.mem.eql(u8, args[1], "--first-install")) try preferences.firstInstall(a) else try preferences.parse(a, args[1]);
     const config = std.mem.span(glib.getUserConfigDir());
     const root = try std.fmt.allocPrint(a, "{s}/pearl", .{config});
     const scratch = try std.fmt.allocPrintSentinel(a, "{s}/pearl/matugen", .{std.mem.span(glib.getUserCacheDir())}, 0);

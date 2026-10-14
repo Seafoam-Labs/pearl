@@ -17,7 +17,7 @@ _build_libraries=('libcups' 'curl' 'libarchive' 'libpng' 'gtksourceview5' 'encha
                   'libpulse>=17.0' 'pam>=1.7.2' 'polkit>=127' 'glibc>=2.44'
                   'wayland>=1.26.0' 'pango>=1:1.58.2' 'gdk-pixbuf2>=2.44.7'
                   'cairo>=1.18.4')
-_shell_depends=("${_build_libraries[@]}" 'xdg-desktop-portal' 'xdg-utils' 'glycin'
+_shell_depends=("${_build_libraries[@]}" 'xdg-desktop-portal' 'xdg-utils' 'glycin' 'matugen>=4.2.0'
                 'hunspell' 'systemd>=261.3' 'aqueous>0.7' 'uwsm>=0.26.7')
 _greeter_depends=('greetd>=0.10.3' 'aqueous>0.7' 'uwsm>=0.26.7' 'dbus' 'polkit'
          'gtk4>=1:4.22.5' 'glib2>=2.88.3' 'gtk4-layer-shell>=1.3.0' 'wayland>=1.26.0'
@@ -119,7 +119,6 @@ package_pearl-git() {
                 'nvidia-utils: optional NVIDIA GPU metrics in Dome'
                 'qtengine: shared Qt 5/6 application appearance management'
                 'pearl-darkly-style: Darkly Qt application styles without KWin decorations'
-                'matugen>=4.2.0: dynamic Material colors'
                 'networkmanager>=1.58.1: network controls'
                 'bluez>=5.87: Bluetooth controls'
                 'upower>=1.91.4: battery status'

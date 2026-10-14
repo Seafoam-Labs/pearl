@@ -88,6 +88,10 @@ def main():
             s.run(['wlr-randr', '--output', output['name'], '--custom-mode', '1600x1100@60Hz'])
             rules = Path(s.env['XDG_CONFIG_HOME'])/'aqueous/rules.toml'
             resize(s, rules, 1040, 760)
+            # Keep this legacy draft/generator fixture independent of new-user
+            # GTK setup, which has its own real-Matugen session coverage.
+            legacy = Path(s.env['XDG_CONFIG_HOME'])/'pearl/last-good.json'
+            legacy.parent.mkdir(parents=True, exist_ok=True); legacy.write_text('{}')
             shell = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings'); shell.expect('event=control-ready')
             peer = EditorPeer(s, ipc); other = EditorPeer(s, ipc)
             initial = settled(peer)

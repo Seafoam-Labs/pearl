@@ -9,7 +9,12 @@ color-only packages reuse these templates with their compiled colors.
 Matugen 4.x renders application templates; the static Pearl shell
 continues working without it.
 
-Management remains disabled by default. Existing enabled configurations retain
+On the first Pearl session for a new user configuration, GTK 3 and GTK 4
+automatically use the managed Material profile and follow Pearl's colors. Pearl
+saves this selection once; existing preferences and subsequent Off choices are
+preserved. Other application targets remain opt-in. Packaged installations include
+Matugen; source installations need Matugen 4.2 or newer for GTK generation.
+Existing enabled configurations retain
 legacy assignments until **Use Material defaults** is applied. Explicit profile
 choices and Off always take precedence. A community theme supplies its own
 assignments; GTK shell mode has none. Choosing widget styling alone does not
