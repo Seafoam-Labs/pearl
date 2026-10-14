@@ -10,7 +10,7 @@ no Flatpak-wide support is claimed. Before downgrade/removal, disable Qt managem
 and complete conditional restoration using the [recovery procedure](QT_THEMING.md#shared-files-conflicts-and-recovery).
 Preserve user ownership records; package scripts must not remove them.
 
-Pearl `0.2.3` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
+Pearl `0.2.4` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
 This candidate adds current-master transactions, collection forms and native capture.
 This is a release candidate: physical, actual login-session, screen-reader and
 visual/presentation signoffs remain required. The project also needs its owner's
@@ -37,9 +37,9 @@ session dispatcher and asynchronous capture-backend patch together. See the
 [capture picker implementation record](FILE_CHOOSER_IMPLEMENTATION_PLAN.md#capture-picker-implementation-record)
 for verification and rebuild details.
 
-The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.3`.
-Its Arch version is `1:0.2.3-1`; the epoch allows upgrades from the earlier
-`1.0.0rc2` packages. The source and runtime version are also `0.2.3`.
+The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.4`.
+Its Arch version is `1:0.2.4-1`; the epoch allows upgrades from the earlier
+`1.0.0rc2` packages. The source and runtime version are also `0.2.4`.
 The Devario [standard split recipe](../packaging/Devario/pearl/PKGBUILD) uses the
 same tag and produces `pearl` and `pearl-greeter` from one checkout and build.
 The [Devario Git split recipe](../packaging/Devario/pearl-git/PKGBUILD) tracks the
@@ -135,7 +135,7 @@ makepkg
 
 This fetches the upstream repository's default branch and generates a version
 from its release metadata, commit count and abbreviated commit hash (for example,
-`1:0.2.3.r208.g516e0e1-1`). It uses the same dependencies, ReleaseSafe build and
+`1:0.2.4.r211.g2f3d4c2-1`). It uses the same dependencies, ReleaseSafe build and
 checks as the release recipe, with `-Dcpu=baseline` for baseline x86-64 CPU
 compatibility. The moving Git source uses `SKIP` for its checksum;
 the release archive recipe remains checksum-locked. One checkout and build produce:
