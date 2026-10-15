@@ -1,6 +1,6 @@
 pkgbase = pearl-git
 	pkgdesc = GTK desktop shell exclusively for Aqueous (Git version)
-	pkgver = 0.2.4.r211.g2f3d4c2
+	pkgver = 0.2.5.r219.g023b094
 	pkgrel = 1
 	epoch = 1
 	url = https://github.com/Seafoam-Labs/pearl
@@ -20,6 +20,8 @@ pkgbase = pearl-git
 	makedepends = curl
 	makedepends = libarchive
 	makedepends = libpng
+	makedepends = libxml2
+	makedepends = libsecret
 	makedepends = gtksourceview5
 	makedepends = enchant
 	makedepends = gtk4>=1:4.22.5
@@ -50,6 +52,8 @@ pkgname = pearl-git
 	depends = curl
 	depends = libarchive
 	depends = libpng
+	depends = libxml2
+	depends = libsecret
 	depends = gtksourceview5
 	depends = enchant
 	depends = gtk4>=1:4.22.5
@@ -71,6 +75,10 @@ pkgname = pearl-git
 	depends = systemd>=261.3
 	depends = aqueous>0.7
 	depends = uwsm>=0.26.7
+	optdepends = pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported
+	optdepends = llama-cpp: system runtime for launcher assistant setup
+	optdepends = sudo: authentication for assistant runtime installation with pacman
+	optdepends = foot: terminal for interactive assistant runtime installation
 	optdepends = gvfs: Trash, SFTP connections, and administrative filesystems in Phyto
 	optdepends = gvfs-smb: SMB network connections in Phyto
 	optdepends = gvfs-dnssd: WebDAV connections and network discovery in Phyto

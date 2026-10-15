@@ -3,7 +3,7 @@
 # for the next boot, without restarting the running display manager.
 pkgbase=pearl-git
 pkgname=(pearl-git pearl-greeter-git)
-pkgver=0.2.4.r211.g2f3d4c2
+pkgver=0.2.5.r219.g023b094
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
