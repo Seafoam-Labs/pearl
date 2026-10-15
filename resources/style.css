@@ -155,6 +155,10 @@
 .pearl-root.$scope.pearl-compact button.pearl-quick-tile { padding: 9px 10px; }
 .pearl-root.$scope.pearl-compact .pearl-tab-strip button.pearl-tab { padding: 5px 8px; }
 /* Sub-page rows: devices, networks and devices sit on quiet inset cards. */
+.pearl-root.$scope .network-card { background: $low$; border-radius: 14px; padding: 12px; }
+.pearl-root.$scope .network-card .network-card { padding: 0; }
+.pearl-root.$scope .network-view button { min-height: 32px; border-radius: 10px; }
+.pearl-root.$scope .network-view switch { min-height: 24px; }
 .pearl-root.$scope .pearl-row-card { background: $low$; border-radius: 14px; padding: 10px 12px; }
 .pearl-root.$scope .pearl-section-title { font-size: 1.02em; font-weight: 600; }
 .pearl-root.$scope button.pearl-destructive { background: $error_container$; color: $error_color$; }

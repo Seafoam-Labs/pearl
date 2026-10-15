@@ -196,6 +196,32 @@ def command(channel,condition):
         saved[SP]['connection']['id']=V('s',data['saved_label'])
         bus.emit_signal(None,SP,NM+'.Settings.Connection','Updated',None)
     if 'hardware' in data: changed(NR,NM,{'WirelessHardwareEnabled':V('b',data['hardware'])})
+    if 'extra_adapter' in data:
+        dev=NR+'/Devices/2'; ap=NR+'/AccessPoint/extra'
+        register(dev,NM+'.Device',{'DeviceType':V('u',2),'Interface':V('s','usb_wifi'),'Managed':V('b',True),'State':V('u',30),'ActiveConnection':V('o','/'),'AvailableConnections':V('ao',[])},method_xml('Disconnect'))
+        register(dev,NM+'.Device.Wireless',{'AccessPoints':V('ao',[ap]),'ActiveAccessPoint':V('o','/')},method_xml('RequestScan','a{sv}'))
+        register(ap,NM+'.AccessPoint',{'Ssid':V('ay',b'Fixture Secure'),'Flags':V('u',1),'WpaFlags':V('u',0),'RsnFlags':V('u',0x100),'Strength':V('y',90)})
+        changed(NR,NM,{'Connectivity':V('u',1)})
+    if 'extra_aps' in data:
+        paths=list(objects[ND][NM+'.Device.Wireless']['AccessPoints'].unpack())
+        for i in range(data['extra_aps']):
+            ap=NR+'/AccessPoint/more'+str(i);paths.append(ap)
+            register(ap,NM+'.AccessPoint',{'Ssid':V('ay',('Nearby network %02d'%i).encode()),'Flags':V('u',1),'WpaFlags':V('u',0),'RsnFlags':V('u',0x100),'Strength':V('y',45+i%45)})
+        changed(ND,NM+'.Device.Wireless',{'AccessPoints':V('ao',paths)})
+    if 'duplicate_ap' in data:
+        ap=NR+'/AccessPoint/duplicate'
+        register(ap,NM+'.AccessPoint',{'Ssid':V('ay',b'Fixture Secure'),'Flags':V('u',1),'WpaFlags':V('u',0),'RsnFlags':V('u',0x100),'Strength':V('y',98)})
+        paths=list(objects[ND][NM+'.Device.Wireless']['AccessPoints'].unpack());paths.append(ap)
+        changed(ND,NM+'.Device.Wireless',{'AccessPoints':V('ao',paths)})
+    if 'ethernet' in data:
+        dev=NR+'/Devices/wired'
+        register(dev,NM+'.Device',{'DeviceType':V('u',1),'Interface':V('s','enp3s0'),'Managed':V('b',True),'State':V('u',100),'ActiveConnection':V('o',NR+'/ActiveConnection/wired'),'AvailableConnections':V('ao',[])},method_xml('Disconnect'))
+        changed(NR,NM,{'Connectivity':V('u',4)})
+    if 'active_ap' in data:
+        changed(ND,NM+'.Device.Wireless',{'ActiveAccessPoint':V('o',data['active_ap'])})
+        changed(ND,NM+'.Device',{'State':V('u',100),'ActiveConnection':V('o',ACTIVE)})
+        register(ACTIVE,NM+'.Connection.Active',{'Connection':V('o',SP)})
+        changed(NR,NM,{'Connectivity':V('u',4)})
     if 'overflow' in data:
         for i in range(data['overflow']): objects[f'/fixture/extra_{i}']={'org.fixture.Empty':{}}
         changed(NR,NM,{'Connectivity':V('u',1)})

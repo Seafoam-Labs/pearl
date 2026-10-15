@@ -1,0 +1,24 @@
+/home/zoey/Pearl/packaging/portal/install.sh: line 15: /tmp/pearl-settings-stage-60ukjpwl/binaries/xdg-desktop-portal-pearl: No such file or directory
+Backend identity does not match PEARL_VARIANT=stable
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_settings_integration.py", line 179, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_integration.py", line 41, in main
+    subprocess.run(['bash',ROOT/'packaging/install.sh'],env=dict(os.environ,DESTDIR=str(stage),PEARL_BINARY_DIR=str(source)),check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['bash', PosixPath('/home/zoey/Pearl/packaging/install.sh')]' returned non-zero exit status 2.
+test-settings-integration
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_integration.py --pearl ./.zig-cache/o/b102ff805b8920617e8ca120d943f5bf/pearl-integration --production-pearl ./.zig-cache/o/a5eac4acd2c398f5511dfbae4723c0f9/pearl --ctl ./.zig-cache/o/087c7c9dcd28e475a6e094900a0ea644/pearlctl --settings ./.zig-cache/o/20fbbdd093780908cc3b6cfd2121effb/pearl-settings-test --production-settings ./.zig-cache/o/f30286d949c0bcb67218383fc0538896/pearl-settings --spike ./.zig-cache/o/32ac8483d6f322da26c0932b4896c812/pearl-t00 --locker ./.zig-cache/o/5337499f5124034c93c9284924f6be8c/pearl-lock --themes ./.zig-cache/o/22128f82a7abdcb588cccee5be0705a6/pearl-themes --output artifacts/network-ui/integration
+
+Build Summary: 33/35 steps succeeded (1 failed)
+test-settings-integration transitive failure
++- run python3 failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/9f35b452bf2447531220f0522b6e7596/build /usr/bin/zig /usr/lib/zig /home/zoey/Pearl .zig-cache /tmp/pearl-network-zig-cache --seed 0x9aeaa685 -Zfc1e3e9fd7dea7f1 test-settings-integration -j2 -- --output artifacts/network-ui/integration

@@ -1680,10 +1680,15 @@ pub const Manager = struct {
         const prefs = self.preferences.prefs().popup;
         const launcher = self.pane == .launcher or self.pane == .launcher_picker;
         const settings = self.pane == .settings or self.pane == .aqueous_settings;
+        const network_controls = self.pane == .control and (if (s.control) |panel| panel.page == .network else false);
         // Keybind panes are centered regardless of the popup placement preference.
         const centered = (prefs.placement == .centered and self.pane != .tray) or launcher or self.pane == .clipboard_capture;
         var width = @min(@as(i32, if (launcher) 620 else if (settings) 700 else if (self.pane == .control or self.pane == .clipboard_capture) 600 else if (self.pane == .wallpapers or self.pane == .resources) 640 else 440), prefs.max_width);
         var height = @min(@as(i32, if (launcher) 600 else if (settings) 720 else if (self.pane == .calendar) 480 else if (self.pane == .resources) 280 else 560), prefs.max_height);
+        if (network_controls) {
+            width = @min(@as(i32, 408), prefs.max_width);
+            height = @min(@as(i32, 800), prefs.max_height);
+        }
         if (self.pane == .tray) {
             // Tray menus hug their entries instead of reserving a full pane.
             if (s.tray) |view| {
@@ -2516,6 +2521,13 @@ fn controlTask(context: *anyopaque, task: Panels.Control.Task) void {
 }
 fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.ModifierType, self: *Manager) callconv(.c) c_int {
     if (key != 0xff1b) return 0;
+    if (self.popup) |popup| if (popup.control) |control| if (control.connection) |connection| {
+        if (connection.page == .network and connection.network.ownsPrompt(connection.owner) and connection.network.pending) {
+            connection.network.cancelOwned(connection.owner);
+            connection.update();
+            return 1;
+        }
+    };
     if (self.popup) |popup| if (popup.aqueous_settings) |view| {
         if (view.recording != null) return 0; // The recorder owns Escape and restores entry focus.
     };

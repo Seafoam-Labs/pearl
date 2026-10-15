@@ -32,6 +32,9 @@ pub const Control = struct {
     night_updating: bool = false,
     handoff_message: *gtk.Label,
     settings_button: *gtk.Button,
+    network_settings_button: *gtk.Button,
+    network_close: *gtk.Button,
+    network_handoff: *gtk.Label,
     models: Models,
     window: *gtk.Window,
     navigate: *const fn (*anyopaque, navigation.Route) anyerror!void,
@@ -123,6 +126,10 @@ pub const Control = struct {
         heading_box.as(gtk.Widget).addCssClass("pearl-settings-heading");
         w.name(heading_box.as(gtk.Widget), title(initial));
         heading_box.append(heading.as(gtk.Widget));
+        const network_close = w.wrappingButton("×");
+        w.name(network_close.as(gtk.Widget), tr("Close Network controls", "Netzwerksteuerung schließen"));
+        network_close.as(gtk.Widget).setVisible(@intFromBool(initial == .network));
+        heading_box.append(network_close.as(gtk.Widget));
         host.append(heading_box.as(gtk.Widget));
         const stack = gtk.Stack.new();
         stack.setVhomogeneous(0);
@@ -130,7 +137,12 @@ pub const Control = struct {
         stack.setTransitionType(.none);
         stack.as(gtk.Widget).setVexpand(1);
         host.append(stack.as(gtk.Widget));
-        self.* = .{ .handoff_message = handoff_message, .settings_button = settings_button, .models = models, .window = window, .navigate = navigate, .page = initial, .stack = stack, .heading = heading, .header = header.as(gtk.Widget), .heading_focus = heading_box.as(gtk.Widget), .logout_button = logout, .reboot_button = reboot, .off_button = off, .layout = layout, .context = context, .action = action, .task = task };
+        const network_settings_button = w.wrappingButton(tr("Network settings", "Netzwerkeinstellungen"));
+        const network_handoff = w.label("", "pearl-secondary");
+        host.append(network_handoff.as(gtk.Widget));
+        focus_state.tag(network_settings_button.as(gtk.Widget), "network-settings", .{});
+        host.append(network_settings_button.as(gtk.Widget));
+        self.* = .{ .network_close = network_close, .network_handoff = network_handoff, .network_settings_button = network_settings_button, .handoff_message = handoff_message, .settings_button = settings_button, .models = models, .window = window, .navigate = navigate, .page = initial, .stack = stack, .heading = heading, .header = header.as(gtk.Widget), .heading_focus = heading_box.as(gtk.Widget), .logout_button = logout, .reboot_button = reboot, .off_button = off, .layout = layout, .context = context, .action = action, .task = task };
         errdefer self.destroy();
         for (pages, 0..) |page, i| {
             const scroll = gtk.ScrolledWindow.new();
@@ -143,18 +155,23 @@ pub const Control = struct {
             self.viewports[i] = scroll;
             self.bodies[i] = body;
         }
-        const tabs = w.row(4);
+        const tabs = w.flow(5);
+        tabs.setColumnSpacing(4);
+        tabs.setRowSpacing(4);
         tabs.as(gtk.Widget).addCssClass("pearl-tab-strip");
         host.append(tabs.as(gtk.Widget));
         for (pages, 0..) |page, i| {
             const tab = gtk.ToggleButton.newWithLabel(title(page).ptr);
+            const caption = object.ext.cast(gtk.Label, tab.as(gtk.Button).getChild().?).?;
+            caption.setWrap(1);
+            caption.setWrapMode(.word);
             tab.as(gtk.Widget).setHexpand(1);
             tab.as(gtk.Widget).addCssClass("pearl-tab");
             focus_state.tag(tab.as(gtk.Widget), "tab:{s}", .{page.id()});
             self.tabs[i] = tab;
             self.tab_rows[i] = .{ .owner = self, .page = page };
             _ = gtk.Button.signals.clicked.connect(tab, *TabRow, tabClicked, &self.tab_rows[i], .{});
-            tabs.append(tab.as(gtk.Widget));
+            tabs.insert(tab.as(gtk.Widget), -1);
         }
         try self.enterPage();
         stack.setVisibleChildName(self.page.id());
@@ -164,6 +181,9 @@ pub const Control = struct {
         _ = gtk.Button.signals.clicked.connect(reboot, *Control, powerClicked, self, .{});
         _ = gtk.Button.signals.clicked.connect(off, *Control, powerClicked, self, .{});
         _ = gtk.Button.signals.clicked.connect(settings_button, *Control, fullSettingsClicked, self, .{});
+        _ = gtk.Button.signals.clicked.connect(network_settings_button, *Control, fullSettingsClicked, self, .{});
+        _ = gtk.Button.signals.clicked.connect(network_close, *Control, closeNetwork, self, .{});
+        network_settings_button.as(gtk.Widget).setVisible(@intFromBool(initial == .network));
         return self;
     }
     fn logoutClicked(_: *gtk.Button, self: *Control) callconv(.c) void {
@@ -187,12 +207,21 @@ pub const Control = struct {
         row.owner.navigate(row.owner.context, row.page) catch {};
     }
     fn fullSettingsClicked(_: *gtk.Button, self: *Control) callconv(.c) void {
+        if (self.page == .network) if (self.connection) |view| if (self.models.network.pending and self.models.network.ownsPrompt(view.owner)) return;
         self.task(self.context, .full_settings);
+    }
+    fn networkSettings(context: *anyopaque) void {
+        const self: *Control = @ptrCast(@alignCast(context));
+        fullSettingsClicked(self.settings_button, self);
+    }
+    fn closeNetwork(_: *gtk.Button, self: *Control) callconv(.c) void {
+        self.task(self.context, .close);
     }
     pub fn launchFailed(self: *Control, err: anyerror) void {
         self.handoff_message.setText(if (err == error.SettingsNotInstalled) tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert.") else tr("Full settings could not be started. Try again after checking the installation.", "Die Einstellungen konnten nicht gestartet werden. Bitte die Installation prüfen."));
         self.handoff_message.as(gtk.Widget).setVisible(1);
         self.settings_button.as(gtk.Widget).setTooltipText(self.handoff_message.getText());
+        self.update();
     }
     pub fn title(page: navigation.Route) [:0]const u8 {
         return tr(page.title(), switch (page) {
@@ -213,7 +242,11 @@ pub const Control = struct {
             .overview => try self.composeOverview(body),
             .sound => self.sound = try services.Sound.create(body, self.models.audio),
             .power => self.power = try services.PowerView.create(body, self.models.power),
-            .network => self.connection = try connectivity.View.createNetwork(body, self.models.network, self.models.bluetooth),
+            .network => {
+                self.connection = try connectivity.View.createNetwork(body, self.models.network, self.models.bluetooth);
+                self.connection.?.open_settings = networkSettings;
+                self.connection.?.settings_context = self;
+            },
             .bluetooth => self.connection = try connectivity.View.createBluetooth(body, self.models.network, self.models.bluetooth),
             else => return error.InvalidRoute,
         }
@@ -428,6 +461,16 @@ pub const Control = struct {
     }
     pub fn update(self: *Control) void {
         if (self.changing) return;
+        self.header.setVisible(@intFromBool(self.page != .network));
+        self.network_close.as(gtk.Widget).setVisible(@intFromBool(self.page == .network));
+        const blocked = if (self.page == .network) if (self.connection) |view| self.models.network.pending and self.models.network.ownsPrompt(view.owner) else false else false;
+        const installed = @import("../settings/launch.zig").available();
+        self.settings_button.as(gtk.Widget).setSensitive(@intFromBool(installed and !blocked));
+        self.network_settings_button.as(gtk.Widget).setVisible(@intFromBool(self.page == .network));
+        self.network_settings_button.as(gtk.Widget).setSensitive(@intFromBool(installed and !blocked));
+        self.network_handoff.setText(if (blocked) tr("Finish or cancel this connection first.", "Diese Verbindung zuerst abschließen oder abbrechen.") else if (!installed) tr("Settings is not installed.", "Einstellungen ist nicht installiert.") else self.handoff_message.getText());
+        self.network_handoff.as(gtk.Widget).setVisible(@intFromBool(self.page == .network and (blocked or !installed or self.handoff_message.as(gtk.Widget).getVisible() != 0)));
+        self.network_settings_button.as(gtk.Widget).setTooltipText(if (blocked) tr("Finish or cancel this connection first.", "Diese Verbindung zuerst abschließen oder abbrechen.") else if (!installed) tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert.") else null);
         if (self.night_label) |label| {
             const night = self.models.night_light.?;
             label.setText(switch (night.state()) {

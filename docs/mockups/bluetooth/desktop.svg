@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1140" viewBox="0 0 1560 1140">
+<title>Pearl Bluetooth settings and flyout proposal</title>
+<desc>Dark theme mockup with adapter power, connected and paired devices, explicit discovery, and a compact Bluetooth flyout. All device data is illustrative.</desc>
+<defs><style>
+text {font-family:'DejaVu Sans',sans-serif;font-size:14px;fill:#eee9f3}
+.muted {fill:#bdb5c9;font-size:13px}.small {font-size:12px}.title {font-size:16px;font-weight:600}.heading {font-size:28px;font-weight:600}.label {font-size:11px;letter-spacing:1.4px;fill:#bdb5c9}.accent {fill:#d4c1ff}.ink {fill:#291e40;font-weight:600}.line {stroke:#45404e}.good {fill:#a4dfbf}
+.icon {fill:none;stroke:#d4c1ff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+</style><g id="bt" class="icon"><path d="M10 1v22l9-7L3 5m0 14L19 8 10 1"/></g></defs>
+<rect width="1560" height="1140" fill="#121018"/>
+<text x="40" y="42" class="label">PEARL / BLUETOOTH / DESIGN PROPOSAL</text>
+<text x="40" y="83" class="heading">Your devices, clearly connected.</text>
+<text x="40" y="111" class="muted">The Network interface’s visual language, with explicit pairing and discovery controls.</text>
+<text x="40" y="154" class="label">01 / BLUETOOTH SETTINGS</text>
+<rect x="40" y="174" width="1036" height="892" rx="18" fill="#211e28" stroke="#534b60"/>
+<path d="M58 175h1000q17 0 17 17v36H41v-36q0-17 17-17" fill="#19161f"/>
+<circle cx="65" cy="201" r="7" fill="#d4c1ff"/><text x="84" y="207" class="small">Pearl Settings</text>
+<text x="965" y="207">−</text><text x="1002" y="207">□</text><text x="1040" y="207">×</text>
+<path d="M41 228h211v837H58q-17 0-17-17Z" fill="#1c1922"/><line x1="252" y1="228" x2="252" y2="1065" class="line"/>
+<text x="64" y="268" class="label">GENERAL</text><text x="80" y="306">Overview</text>
+<text x="64" y="356" class="label">CONNECTIONS</text><text x="80" y="394">Network</text>
+<rect x="54" y="414" width="184" height="46" rx="12" fill="#493568"/><use href="#bt" x="72" y="425"/><text x="105" y="443" class="accent">Bluetooth</text>
+<text x="64" y="508" class="label">DEVICES</text><text x="80" y="546">Sound</text><text x="80" y="594">Power &amp; battery</text>
+<text x="64" y="644" class="label">DESKTOP</text><text x="80" y="682">Appearance</text><text x="80" y="730">Bar &amp; dock</text><text x="80" y="778">Notifications</text>
+<text x="64" y="828" class="label">SYSTEM</text><text x="80" y="866">Session &amp; lock</text><text x="80" y="914">Aqueous</text><text x="80" y="962">Advanced</text>
+<text x="284" y="278" class="heading">Bluetooth</text><text x="284" y="305" class="muted">Connect and manage your wireless devices.</text>
+<rect x="284" y="329" width="760" height="88" rx="14" fill="#2d2835"/><use href="#bt" x="305" y="351"/>
+<text x="344" y="359" class="title">Bluetooth is on</text><text x="344" y="386" class="muted">2 devices connected · Built-in adapter</text>
+<text x="936" y="367" class="muted">On</text><rect x="976" y="347" width="48" height="28" rx="14" fill="#d4c1ff"/><circle cx="1010" cy="361" r="10" fill="#291e40"/>
+<text x="284" y="454" class="title">Connected devices</text>
+<rect x="284" y="472" width="760" height="144" rx="14" fill="#2d2835"/>
+<use href="#bt" x="305" y="494"/><text x="344" y="501" class="title">Studio headphones</text><text x="344" y="524" class="muted">Connected</text>
+<rect x="852" y="486" width="124" height="44" rx="10" fill="#393240"/><text x="914" y="514" text-anchor="middle">Disconnect</text><rect x="988" y="486" width="40" height="44" rx="10" fill="#393240"/><text x="1008" y="513" text-anchor="middle">ⓘ</text>
+<line x1="304" y1="544" x2="1024" y2="544" class="line"/>
+<use href="#bt" x="305" y="566"/><text x="344" y="573" class="title">Desk keyboard</text><text x="344" y="596" class="muted">Connected</text>
+<rect x="852" y="558" width="124" height="44" rx="10" fill="#393240"/><text x="914" y="586" text-anchor="middle">Disconnect</text><rect x="988" y="558" width="40" height="44" rx="10" fill="#393240"/><text x="1008" y="585" text-anchor="middle">ⓘ</text>
+<text x="284" y="652" class="title">Paired devices</text><text x="1044" y="652" text-anchor="end" class="muted">Previously paired</text>
+<rect x="284" y="670" width="760" height="72" rx="14" fill="#2d2835"/>
+<use href="#bt" x="305" y="691"/><text x="344" y="699" class="title">Travel speaker</text><text x="344" y="722" class="muted">Paired · Not connected</text>
+<rect x="852" y="684" width="124" height="44" rx="10" fill="#393240"/><text x="914" y="712" text-anchor="middle">Connect</text><rect x="988" y="684" width="40" height="44" rx="10" fill="#393240"/><text x="1008" y="711" text-anchor="middle">ⓘ</text>
+<text x="284" y="789" class="title">Add a device</text><rect x="864" y="764" width="180" height="44" rx="10" fill="#493568"/><text x="954" y="792" text-anchor="middle" class="accent">Find devices</text>
+<text x="284" y="820" class="muted">Put your device in pairing mode, then select Find devices.</text>
+<rect x="284" y="840" width="760" height="144" rx="14" fill="#2d2835"/>
+<use href="#bt" x="305" y="862"/><text x="344" y="869" class="title">Wireless controller</text><text x="344" y="892" class="muted">Not paired · Previously discovered</text>
+<rect x="912" y="854" width="112" height="44" rx="10" fill="#393240"/><text x="968" y="882" text-anchor="middle">Pair</text>
+<line x1="304" y1="912" x2="1024" y2="912" class="line"/>
+<use href="#bt" x="305" y="934"/><text x="344" y="941" class="title">Pocket speaker</text><text x="344" y="964" class="muted">Not paired · Previously discovered</text>
+<rect x="912" y="926" width="112" height="44" rx="10" fill="#393240"/><text x="968" y="954" text-anchor="middle">Pair</text>
+<line x1="253" y1="1009" x2="1075" y2="1009" class="line"/><text x="284" y="1041" class="muted">Changes on this page take effect immediately.</text>
+<text x="1112" y="154" class="label">02 / QUICK ACCESS FLYOUT</text>
+<rect x="1112" y="174" width="408" height="800" rx="22" fill="#211e28" stroke="#534b60"/>
+<text x="1136" y="215" class="title">Bluetooth</text><rect x="1454" y="188" width="44" height="44" rx="22" fill="#2d2835"/><text x="1476" y="216" text-anchor="middle">×</text>
+<rect x="1132" y="251" width="368" height="84" rx="14" fill="#2d2835"/>
+<text x="1150" y="282" class="title">Bluetooth is on</text><text x="1150" y="307" class="muted">2 devices connected</text><rect x="1440" y="271" width="44" height="28" rx="14" fill="#d4c1ff"/><circle cx="1470" cy="285" r="10" fill="#291e40"/>
+<text x="1136" y="371" class="title">Connected</text>
+<rect x="1132" y="388" width="368" height="102" rx="14" fill="#2d2835"/><text x="1150" y="418" class="title">Studio headphones</text><text x="1150" y="441" class="muted">Connected</text><rect x="1362" y="432" width="120" height="44" rx="10" fill="#393240"/><text x="1422" y="460" text-anchor="middle">Disconnect</text>
+<rect x="1132" y="502" width="368" height="102" rx="14" fill="#2d2835"/><text x="1150" y="532" class="title">Desk keyboard</text><text x="1150" y="555" class="muted">Connected</text><rect x="1362" y="546" width="120" height="44" rx="10" fill="#393240"/><text x="1422" y="574" text-anchor="middle">Disconnect</text>
+<text x="1136" y="642" class="title">Paired devices</text><text x="1136" y="677">Travel speaker</text><text x="1136" y="700" class="muted">Not connected</text><rect x="1390" y="661" width="110" height="44" rx="10" fill="#393240"/><text x="1445" y="689" text-anchor="middle">Connect</text>
+<rect x="1132" y="729" width="368" height="44" rx="10" fill="#393240"/><text x="1316" y="757" text-anchor="middle">Find devices</text>
+<line x1="1113" y1="795" x2="1519" y2="795" class="line"/>
+<rect x="1132" y="813" width="368" height="48" rx="12" fill="#493568"/><text x="1316" y="843" text-anchor="middle" class="accent">Bluetooth settings</text>
+<text x="1185" y="899" text-anchor="middle" class="small">Overview</text><text x="1316" y="899" text-anchor="middle" class="small">Network</text><rect x="1382" y="875" width="116" height="36" rx="18" fill="#d4c1ff"/><text x="1440" y="899" text-anchor="middle" class="small ink">Bluetooth</text>
+<text x="1233" y="944" text-anchor="middle" class="small">Sound</text><text x="1400" y="944" text-anchor="middle" class="small">Power &amp; battery</text>
+<text x="1112" y="1016" class="muted">Connected devices stay at the top.</text><text x="1112" y="1040" class="muted">Discovery starts only when requested.</text>
+<text x="40" y="1109" class="muted">ILLUSTRATIVE STATE · One adapter · Generic device icons · No battery, range or audio-routing claims</text>
+</svg>

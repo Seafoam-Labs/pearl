@@ -1,0 +1,1859 @@
+ts=2026-10-15T00:46:23Z pid=2095871 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-15T00:46:23Z pid=2095871 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-15T00:46:23Z pid=2095871 info(pearl): event=ready mode=session
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=hello
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=hello
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=hello
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=hello
+ts=2026-10-15T00:46:23Z pid=2095871 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-15T00:46:23Z pid=2095871 info(pearl): event=settings-backend-ready session_hash=75602e24669a20d5
+ts=2026-10-15T00:46:23Z pid=2095871 info(pearl): event=control-ready session_hash=75602e24669a20d5
+ts=2026-10-15T00:46:23Z pid=2095871 info(desktop): event=app-index-ready entries=168 truncated=false
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T00:46:23Z pid=2095871 debug(ui): event=popup-opened output=1
+ts=2026-10-15T00:46:23Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-10-15T00:46:23Z pid=2095871 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=36055 success=true
+ts=2026-10-15T00:46:23Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(desktop): event=app-index-ready entries=168 truncated=false
+ts=2026-10-15T00:46:23Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:23Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:24Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:25Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(desktop): event=settings-page page=network
+ts=2026-10-15T00:46:28Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:28Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:28Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:29Z pid=2095871 info(desktop): event=connectivity-focus target=net-refresh
+ts=2026-10-15T00:46:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(ui): event=popup-close-reason reason=popup-hide
+ts=2026-10-15T00:46:30Z pid=2095871 debug(ui): event=popup-closed
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T00:46:30Z pid=2095871 debug(ui): event=popup-opened output=1
+ts=2026-10-15T00:46:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:46:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:34Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:36Z pid=2095871 info(desktop): event=settings-page page=bluetooth
+ts=2026-10-15T00:46:36Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:36Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:36Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:46:36Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:36Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:36Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:36Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:36Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:36Z pid=2095871 info(desktop): event=connectivity-focus target=bt-expander
+ts=2026-10-15T00:46:36Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:36Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:36Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:36Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:36Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(ui): event=popup-close-reason reason=popup-hide
+ts=2026-10-15T00:46:37Z pid=2095871 debug(ui): event=popup-closed
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T00:46:37Z pid=2095871 debug(ui): event=popup-opened output=1
+ts=2026-10-15T00:46:37Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:46:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:38Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:39Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:40Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:43Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:43Z pid=2095871 info(desktop): event=settings-page page=network
+ts=2026-10-15T00:46:43Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:43Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:43Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:46:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:43Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:43Z pid=2095871 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-15T00:46:43Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:44Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:44Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:44Z pid=2095871 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-15T00:46:44Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:44Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:44Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:44Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:44Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:44Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:44Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:44Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:44Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:45Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:45Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:45Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:45Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:45Z pid=2095871 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-15T00:46:45Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:45Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:45Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:45Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:45Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-15T00:46:46Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:46Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-15T00:46:46Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:46Z pid=2095871 debug(ui): event=popup-close-reason reason=popup-hide
+ts=2026-10-15T00:46:46Z pid=2095871 debug(ui): event=popup-closed
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T00:46:46Z pid=2095871 debug(ui): event=popup-opened output=1
+ts=2026-10-15T00:46:46Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:46Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:46:46Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:46Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:46Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:46Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:47Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:48Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:49Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:50Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:51Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:52Z pid=2095871 info(desktop): event=settings-page page=network
+ts=2026-10-15T00:46:52Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:52Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:52Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:46:52Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:52Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:52Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:53Z pid=2095871 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-15T00:46:53Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:53Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:53Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:53Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:53Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:53Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:53Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:54Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:54Z pid=2095871 info(desktop): event=settings-page page=bluetooth
+ts=2026-10-15T00:46:55Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:55Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:46:55Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:46:55Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:46:55Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:46:55Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:25Z pid=2095871 debug(ui): event=popup-close-reason reason=popup-hide
+ts=2026-10-15T00:47:25Z pid=2095871 debug(ui): event=popup-closed
+ts=2026-10-15T00:47:25Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:25Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:26Z pid=2095871 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T00:47:26Z pid=2095871 debug(ui): event=popup-opened output=1
+ts=2026-10-15T00:47:26Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:26Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:26Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:26Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:26Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:27Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:28Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:28Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:29Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:30Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:31Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 info(desktop): event=settings-page page=bluetooth
+ts=2026-10-15T00:47:32Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:32Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:32Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:32Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:33Z pid=2095871 info(desktop): event=connectivity-focus target=bluetooth-confirm
+ts=2026-10-15T00:47:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:33Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:33Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:33Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:33Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:34Z pid=2095871 info(desktop): event=connectivity-focus target=bluetooth-confirm
+ts=2026-10-15T00:47:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:34Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:34Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:35Z pid=2095871 info(desktop): event=connectivity-focus target=bluetooth-input
+ts=2026-10-15T00:47:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:35Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:35Z pid=2095871 info(desktop): event=connectivity-focus target=bluetooth-input
+ts=2026-10-15T00:47:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:35Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:35Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:35Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:35Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:36Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:36Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:36Z pid=2095871 info(desktop): event=connectivity-focus target=bluetooth-confirm
+ts=2026-10-15T00:47:36Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:36Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:36Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:36Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:36Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:36Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:36Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=connectivity-focus target=bluetooth-confirm
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=settings-page page=network
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:37Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:37Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:38Z pid=2095871 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-15T00:47:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:38Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:38Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:41Z pid=2095871 info(desktop): event=connectivity-focus target=wifi-password
+ts=2026-10-15T00:47:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:41Z pid=2095871 info(desktop): event=connectivity-focus target=wifi-confirm
+ts=2026-10-15T00:47:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:41Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:41Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:41Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:41Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:41Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:42Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:43Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:43Z pid=2095871 info(desktop): event=settings-focus target=body
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 info(desktop): event=settings-page page=bluetooth
+ts=2026-10-15T00:47:43Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:43Z pid=2095871 info(desktop): event=connectivity-focus target=other
+ts=2026-10-15T00:47:43Z pid=2095871 info(desktop): event=settings-focus target=heading
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T00:47:43Z pid=2095871 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T00:47:43Z pid=2095871 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-10-15T00:47:43Z pid=2095871 debug(ui): event=popup-closed
+ts=2026-10-15T00:47:43Z pid=2095871 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-15T00:47:43Z pid=2095871 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-15T00:47:43Z pid=2095871 info(pearl): event=stopped

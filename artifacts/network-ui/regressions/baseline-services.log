@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/tmp/pearl-network-baseline-services.py", line 331, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/tmp/pearl-network-baseline-services.py", line 145, in main
+    click(s,ipc,AP+'/connect');wait_for(lambda:probe(s,ipc)['service_prompt'])
+                               ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 32, in wait_for
+    raise TimeoutError('private session condition timed out')
+TimeoutError: private session condition timed out

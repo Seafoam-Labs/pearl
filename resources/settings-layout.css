@@ -99,3 +99,5 @@
 .settings-window .bar-island { border-radius: 12px; background: alpha(currentColor, 0.06); }
 .settings-window .bar-menu { padding: 10px; }
 .settings-window .bar-menu button { padding: 8px 10px; }
+.settings-window .network-card { border-radius: 14px; padding: 16px; }
+.settings-window .network-view button { min-height: 32px; }

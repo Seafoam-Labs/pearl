@@ -16,11 +16,32 @@ wired adapters. Compact captions wrap on narrow outputs with enlarged text.
 
 ## NetworkManager
 
-The Network card exposes the Wi-Fi radio, adapter state/disconnection, explicit
-scanning, nearby access points and saved profiles. It shows connectivity, captive
-portal, limited-connectivity, unavailable, pending and error states. Expand
-“Adapters, nearby and saved networks” to select a target. Adapters are identified
-by D-Bus object path; labels and SSIDs never become command arguments.
+The Network flyout and Settings page share a native Zig/GTK view and a pure
+presentation model. Internet status is separate from Wi-Fi power, so an active
+Ethernet connection remains visible when Wi-Fi is off or hardware-blocked.
+The Wi-Fi switch, current connection, nearby networks and explicit Refresh are
+visible without expanding an adapter list. A selector appears for multiple
+wireless adapters. The flyout shows up to three nearby groups and links to the
+full Settings list; Settings also has Ethernet, collapsed saved profiles and an
+advanced editor action. Opening either view never starts a scan.
+
+Nearby entries group access points by adapter, raw SSID bytes and security;
+hidden SSIDs retain separate object identities. Non-secret saved SSID/security
+metadata identifies an unambiguous compatible profile, regardless of its display
+name. Multiple matches open the saved-profile chooser. An absent scan result is
+not proof that a saved network is out of range. Adapters and action targets use
+D-Bus object paths; labels and SSIDs never become command arguments.
+
+Both views retain row widgets across service updates, expose friendly signal
+descriptions and show portal, limited, unknown, unavailable and pending states.
+Actions wrap below labels at narrow widths or large fonts. Password entry stays
+inline in the flyout and in an owned modal dialog in Settings. Escape cancels an
+owned flyout activation before closing the flyout. The persistent Network settings
+action uses the existing acknowledged launch path and is disabled until the
+flyout's own connection attempt is finished or cancelled.
+
+See the [implementation notes](NETWORK_UI_IMPLEMENTATION_PLAN.md) and
+[private-fixture captures and validation](../artifacts/network-ui/README.md).
 
 Open, WPA/WPA2 personal and WPA3 SAE networks are supported. Selecting a new
 access point uses `AddAndActivateConnection2` with automatic connection enabled

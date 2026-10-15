@@ -1,0 +1,10 @@
+{
+  "status": "failed",
+  "checks": {},
+  "binary_sha256": {
+    "production_pearl": "c97338c6a398e6dbb9c21c1be3d1c191cd9a786bc3b7ec46bdcceb60f935d105",
+    "production_settings": "13fbf81f6db5da0d75b79a14bd104ce6586f91670ca3c85768d442563f4f4b4d",
+    "ctl": "04957bea448bc6fd50da01091e66c9df8548909a126b68fccd9f1927fd98c776"
+  },
+  "error": "CalledProcessError(2, ['bash', PosixPath('/home/zoey/Pearl/packaging/install.sh')])"
+}

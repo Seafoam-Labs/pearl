@@ -526,6 +526,37 @@ changes refresh metadata while preserving the shared draft and search. Content
 revision checks at Apply remain authoritative. Discovery never triggers network
 fetching or template generation.
 
+### Typed Network presentation
+
+Network live pages additionally carry optional `network` data from
+`services/network_presentation.zig`. It includes a decimal-string generation,
+internet status and radio enums, radio/action availability, pending ownership,
+scan/cooldown information, truncation/error state, up to eight device identities
+and up to 104 rows in `connected`, `nearby`, `ethernet` and `saved` sections.
+Rows carry stable identity keys, display names, concrete action paths, device
+indices, state/security/signal data and action/enabled fields. They never carry
+passwords; the existing owner-scoped `prompt` remains separate.
+
+The typed projection is one bounded snapshot, independent of the legacy row
+offset. A maximum-size unit fixture checks it stays below 160 KiB, leaving
+96 KiB of the existing 256 KiB frame for generic rows and the envelope. Display
+names are bounded to 128 UTF-8 bytes, with control characters rejected. Native
+clients replace the projection atomically and retain widgets by stable keys;
+they do not concatenate snapshots from different service revisions. Service
+truncation remains explicit even though all retained rows are transported.
+
+The legacy generic rows and their pagination remain unchanged. Older frontends
+ignore the additive field; newer frontends fall back to those rows when it is
+absent. No new network mutation or protocol-version bump is introduced. The
+native view sends the existing generation-validated `network.action` and
+`network.editor` operations through the authenticated Settings client.
+
+If the client's single command slot is occupied by startup/theme work, the view
+may defer one non-secret network action for at most five seconds. It disables
+its controls while waiting and discards that action on navigation, suspension,
+lock, disconnect or destruction. Normal backend generation and ownership checks
+still apply when it is sent. Credentials never enter this queue.
+
 ### Launcher icon reload
 
 The `launcher_icon` capability advertises `launcher-icon.retry`, a Bar & dock

@@ -59,10 +59,12 @@ def main():
             def show(page='network'): show_page(s,args.ctl,page,output['id']); time.sleep(.3)
             show(); capture(s,'control-center-connectivity',output['connector'])
             for _ in range(12):
-                if focus(pearl)=='net-expander': break
+                if focus(pearl)=='net-refresh': break
                 key(s,'-k','Tab')
-            assert focus(pearl)=='net-expander'
-            key(s,'-k','space'); key(s,'-k','space'); time.sleep(.3); capture(s,'nearby-and-saved-networks',output['connector'])
+            assert focus(pearl)=='net-refresh'
+            # Nearby networks are immediately visible; merely focusing Refresh must not scan.
+            assert not any(x['kind']=='scan' for x in records(s))
+            time.sleep(.3); capture(s,'nearby-networks',output['connector'])
             ctl(s,args.ctl,'popup','hide'); show('bluetooth')
             for _ in range(12):
                 if focus(pearl)=='bt-expander': break

@@ -17,9 +17,9 @@ const apif = nm ++ ".AccessPoint";
 const settingsif = nm ++ ".Settings.Connection";
 const agentpath = root ++ "/SecretAgent";
 const security_setting = "802-11-wireless-security";
-pub const Device = struct { path: Text(512), name: Text(512), kind: u32, state: u32, active: Text(512), ap: Text(512), available: ?*V = null };
+pub const Device = struct { path: Text(512), name: Text(512), kind: u32, state: u32, active: Text(512), ap: Text(512), profile: Text(512) = .{}, available: ?*V = null };
 pub const AccessPoint = struct { path: Text(512), device: Text(512), label: Text(128), ssid: [32]u8 = @splat(0), len: usize = 0, strength: u8, security: p.Security };
-pub const Saved = struct { path: Text(512), label: Text(512) = .{}, device: Text(512) = .{}, security: p.Security = .advanced, loaded: bool = false };
+pub const Saved = struct { path: Text(512), label: Text(512) = .{}, device: Text(512) = .{}, uuid: Text(512) = .{}, wireless: bool = false, ssid: [32]u8 = @splat(0), ssid_len: usize = 0, security: p.Security = .advanced, loaded: bool = false };
 pub const Network = struct {
     app: *gio.Application,
     context: *anyopaque,
@@ -176,6 +176,13 @@ pub const Network = struct {
             const dev = &self.devices[self.device_count];
             self.device_count += 1;
             dev.* = .{ .path = .{}, .name = d.string(props, "Interface", "s"), .kind = kind, .state = d.number(props, "State"), .active = d.string(props, "ActiveConnection", "o"), .ap = .{}, .available = d.lookup(props, "AvailableConnections", "ao") };
+            if (d.lookup(snapshot, dev.active.z(), "a{sa{sv}}")) |active_interfaces| {
+                defer active_interfaces.unref();
+                if (d.lookup(active_interfaces, nm ++ ".Connection.Active", "a{sv}")) |active_props| {
+                    defer active_props.unref();
+                    dev.profile = d.string(active_props, "Connection", "o");
+                }
+            }
             dev.path.set(raw);
             if (d.lookup(interfaces, wifiif, "a{sv}")) |wifi| {
                 defer wifi.unref();
@@ -317,6 +324,10 @@ pub const Network = struct {
         }
         for (self.saved[0..self.saved_count]) |*saved| if (std.mem.eql(u8, saved.path.slice(), self.settings_path.slice())) {
             saved.loaded = true;
+            saved.security = .advanced;
+            saved.ssid_len = 0;
+            saved.wireless = false;
+            saved.uuid = .{};
             if (result) |v| {
                 if (v.getSize() > 65536) {
                     saved.label.set("Saved profile exceeds the supported size");
@@ -327,8 +338,24 @@ pub const Network = struct {
                 if (d.lookup(settings, "connection", "a{sv}")) |props| {
                     defer props.unref();
                     saved.label = d.string(props, "id", "s");
+                    saved.uuid = d.string(props, "uuid", "s");
                     const kind = d.string(props, "type", "s");
+                    saved.wireless = std.mem.eql(u8, kind.slice(), "802-11-wireless");
                     if (std.mem.eql(u8, kind.slice(), "802-3-ethernet") or std.mem.eql(u8, kind.slice(), "802-11-wireless")) saved.security = .open;
+                }
+                if (d.lookup(settings, "802-11-wireless", "a{sv}")) |props| {
+                    defer props.unref();
+                    if (d.lookup(props, "ssid", "ay")) |ssid| {
+                        defer ssid.unref();
+                        if (ssid.nChildren() <= 32) {
+                            saved.ssid_len = ssid.nChildren();
+                            for (0..saved.ssid_len) |i| {
+                                const byte = ssid.getChildValue(i);
+                                defer byte.unref();
+                                saved.ssid[i] = byte.getByte();
+                            }
+                        }
+                    }
                 }
                 if (d.lookup(settings, security_setting, "a{sv}")) |props| {
                     defer props.unref();

@@ -908,6 +908,14 @@ pub fn build(b: *std.Build) void {
     connectivity.addArtifactArg(ctl);
     if (b.args) |args| connectivity.addArgs(args);
     b.step("test-connectivity", "Verify NetworkManager and BlueZ on private services").dependOn(&connectivity.step);
+    const network_ui = b.addSystemCommand(&.{ "python3", "tests/integration/test_network_ui.py", "--settings" });
+    network_ui.addArtifactArg(settings_test_app);
+    network_ui.addArg("--pearl");
+    network_ui.addArtifactArg(integration_app);
+    network_ui.addArg("--ctl");
+    network_ui.addArtifactArg(ctl);
+    if (b.args) |args| network_ui.addArgs(args);
+    b.step("test-network-ui", "Verify native Network views, grouping, radio state and responsive layouts on private services").dependOn(&network_ui.step);
 
     const settings_pages = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_pages.py", "--pearl" });
     settings_pages.addArtifactArg(integration_app);

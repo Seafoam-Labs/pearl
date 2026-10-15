@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/tmp/pearl-network-baseline-lifecycle.py", line 202, in <module>
+    if __name__ == '__main__': main()
+                               ~~~~^^
+  File "/tmp/pearl-network-baseline-lifecycle.py", line 88, in main
+    if report(s, args.ctl)['button'] == 'Connect saved': break
+       ~~~~~~^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/settings_navigation.py", line 10, in report
+    return ctl(session, binary, 'aqueous', 'status', '--text', 'test-settings-page')['result']
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 77, in ctl
+    assert result.returncode == code, (args, result.returncode, result.stdout, result.stderr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('aqueous', 'status', '--text', 'test-settings-page'), 4, '{"pearl":1,"id":"1","ok":false,"err":{"code":"Unavailable"}}\n', '')

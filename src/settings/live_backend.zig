@@ -474,7 +474,11 @@ pub const Live = struct {
         }
         const first = @min(offset, rows.items.len);
         const end = @min(first + 16, rows.items.len);
-        return .{ .notification_header = if (route == .notifications and rows.items.len > 0) rows.items[0] else null, .summary = summary, .pending = pending, .truncated = truncated, .rows = rows.items[first..end], .offset = p.num(first), .next_offset = if (end < rows.items.len) p.num(end) else null, .prompt = prompt };
+        var network: ?@import("../services/network_presentation.zig").Snapshot = null;
+        if (route == .network) {
+            network = try @import("../services/network_presentation.zig").build(alloc, self.network, scope.network, glib.getMonotonicTime());
+        }
+        return .{ .network = network, .notification_header = if (route == .notifications and rows.items.len > 0) rows.items[0] else null, .summary = summary, .pending = pending, .truncated = truncated, .rows = rows.items[first..end], .offset = p.num(first), .next_offset = if (end < rows.items.len) p.num(end) else null, .prompt = prompt };
     }
 };
 fn json(alloc: std.mem.Allocator, value: anytype) !std.json.Value {

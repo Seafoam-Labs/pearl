@@ -1,0 +1,9 @@
+{
+  "status": "running",
+  "checks": {
+    "cli-direct-pages-same-host-switch-and-same-page-toggle": true,
+    "invalid-target-preserves-state-output-replacement-and-removal": true
+  },
+  "pearl_sha256": "b75316a8b9ba4599dd44390d74d4af99eb8601457efead8231b57eff87c37ae8",
+  "ctl_sha256": "04957bea448bc6fd50da01091e66c9df8548909a126b68fccd9f1927fd98c776"
+}

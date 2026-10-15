@@ -1,0 +1,67 @@
+{
+  "status": "passed",
+  "checks": {
+    "object-manager-enumeration-and-agent-registration": true,
+    "agent-calls-reject-unrelated-bus-senders": true,
+    "keyboard-traversal-collapsed-and-expanded-connectivity-lists": true,
+    "bounded-explicit-wifi-scan": true,
+    "saved-profile-updated-signal-refreshes-settings": true,
+    "secure-wifi-real-password-entry-rejection-and-retry": true,
+    "unrelated-property-update-preserves-typed-password": true,
+    "created-profile-becomes-a-saved-row": true,
+    "saved-network-secret-agent-and-activation": true,
+    "wpa3-sae-secret-agent": true,
+    "panel-close-cancels-wifi-and-clears-secret-entry": true,
+    "cancelled-prompt-deletes-the-created-profile": true,
+    "late-activation-after-cancel-is-deactivated": true,
+    "deactivated-late-activation-deletes-the-created-profile": true,
+    "rejected-credentials-delete-the-created-profile": true,
+    "hardware-radio-block-prevents-writes": true,
+    "enterprise-handoff": true,
+    "bluetooth-discovery-lease": true,
+    "bluetooth-discovery-automatically-expires-after-30-seconds": true,
+    "late-discovery-start-after-panel-close-releases-lease": true,
+    "passkey-confirmation-explicit-trust-and-connect": true,
+    "bluetooth-pair-cancellation": true,
+    "bluetooth-pin-and-passkey-input": true,
+    "bluetooth-authentication-rejected": true,
+    "removed-device-cancels-conversation": true,
+    "network-owner-replacement-drops-prompts-and-stale-actions": true,
+    "bluez-owner-replacement-registers-new-agent": true,
+    "oversized-object-snapshot-fails-closed": true,
+    "system-bus-reconnect-recreates-agents-and-state": true,
+    "shutdown-drains-pending-agent-and-discovery-callbacks": true,
+    "secrets-excluded-from-status-logs-and-persistent-shell-config": true
+  },
+  "pearl_sha256": "1413aea3da15f1375b55a3ae829e1c12bd5e753e9042803d93ce461eb615f855",
+  "ctl_sha256": "04957bea448bc6fd50da01091e66c9df8548909a126b68fccd9f1927fd98c776"
+}
+Build Summary: 23/23 steps succeeded; 303/303 tests passed
+test success
++- run test 288 pass (288 total) 610ms MaxRSS:13M
+|  +- compile test Debug native cached 11ms MaxRSS:54M
++- run test 15 pass (15 total) 6ms MaxRSS:9M
+   +- compile test Debug native cached 14ms MaxRSS:58M
+test-network-ui success
++- run python3 success 36s
+   +- compile exe pearl-settings-test Debug native success 828ms MaxRSS:292M
+   |  +- run exe zig-wayland-scanner (wayland.zig) cached
+   |  |  +- compile exe zig-wayland-scanner Debug native cached 10ms MaxRSS:55M
+   |  +- run glib-compile-resources (pearl.gresource) cached
+   |  +- options cached
+   |  +- options cached
+   |  +- options cached
+   +- compile exe pearl-integration Debug native success 1s MaxRSS:391M
+   |  +- run pkg-config success 1ms
+   |  +- translate-c cached 14ms MaxRSS:57M
+   |  +- run glib-compile-resources (pearl.gresource) (reused)
+   |  +- options cached
+   |  +- options cached
+   |  +- run exe zig-wayland-scanner (wayland.zig) (+1 more reused dependencies)
+   |  +- options cached
+   +- compile exe pearlctl Debug native cached 14ms MaxRSS:58M
+test-connectivity success
++- run python3 success 1m
+   +- compile exe pearl-integration Debug native (+7 more reused dependencies)
+   +- compile exe pearlctl Debug native (reused)
+

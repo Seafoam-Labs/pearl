@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1460" height="1000" viewBox="0 0 1460 1000">
+  <title>Pearl Network authentication and recovery states</title>
+  <desc>Three flyout concepts show a password request, a failed connection with retry, and Wi-Fi off while Ethernet keeps internet access. Smaller examples show portal, hardware block and unavailable service messages.</desc>
+  <defs><style>
+    text { font-family:'DejaVu Sans',sans-serif; fill:#eee9f3; font-size:14px; }
+    .muted { fill:#bdb5c9; font-size:13px; } .title { font-size:18px; font-weight:600; }
+    .label { font-size:11px; letter-spacing:1.5px; fill:#bdb5c9; }
+    .accent { fill:#d4c1ff; } .good { fill:#a4dfbf; } .warn { fill:#f5cd91; }
+    .ink { fill:#291e40; font-weight:600; } .line { stroke:#45404e; }
+  </style></defs>
+  <rect width="1460" height="1000" fill="#121018"/>
+  <text x="44" y="44" class="label">PEARL / NETWORK / INTERACTION STATES</text>
+  <text x="44" y="87" style="font-size:28px;font-weight:600">Always show what happens next.</text>
+  <text x="44" y="118" class="muted">Local feedback for the selected network. Connection status stays visible throughout.</text>
+  <text x="44" y="166" class="label">03 / PASSWORD REQUIRED</text>
+  <rect x="40" y="188" width="432" height="520" rx="20" fill="#211e28" stroke="#534b60"/>
+  <text x="64" y="229" class="title">Network</text><text x="431" y="229">×</text>
+  <text x="64" y="260" class="muted">No internet connection</text>
+  <rect x="60" y="283" width="392" height="340" rx="14" fill="#2d2835"/>
+  <text x="80" y="318" class="title">Connect to Studio</text><text x="80" y="346" class="muted">Enter this network’s Wi-Fi password.</text>
+  <text x="80" y="388">Password</text>
+  <rect x="80" y="402" width="352" height="48" rx="9" fill="#211e28" stroke="#d4c1ff" stroke-width="2"/><text x="96" y="432" style="font-size:18px;letter-spacing:3px">••••••••••</text>
+  <text x="80" y="480" class="muted">This network will be saved after you connect.</text>
+  <rect x="80" y="514" width="166" height="46" rx="10" fill="#393240"/><text x="163" y="543" text-anchor="middle">Cancel</text>
+  <rect x="258" y="514" width="174" height="46" rx="10" fill="#d4c1ff"/><text x="345" y="543" text-anchor="middle" class="ink">Connect</text>
+  <text x="80" y="596" class="muted">Press Enter to connect.</text>
+  <line x1="41" y1="642" x2="471" y2="642" class="line"/><text x="64" y="669" class="muted">Network settings</text><text x="64" y="692" class="muted">Finish or cancel this connection first.</text>
+  <text x="516" y="166" class="label">04 / CONNECTION FAILED</text>
+  <rect x="512" y="188" width="432" height="520" rx="20" fill="#211e28" stroke="#534b60"/>
+  <text x="536" y="229" class="title">Network</text><text x="903" y="229">×</text><text x="536" y="260" class="muted">No internet connection</text>
+  <rect x="532" y="283" width="392" height="260" rx="14" fill="#2d2835"/>
+  <text x="552" y="318" class="title">Studio</text><text x="552" y="346" class="muted">Strong signal · Secured</text>
+  <rect x="552" y="369" width="352" height="88" rx="10" fill="#46372a"/>
+  <text x="568" y="398" class="warn">Couldn’t connect to Studio.</text><text x="568" y="424" class="muted">Try again or check the network settings.</text>
+  <rect x="552" y="477" width="166" height="46" rx="10" fill="#d4c1ff"/><text x="635" y="506" text-anchor="middle" class="ink">Try again</text><rect x="730" y="477" width="174" height="46" rx="10" fill="#393240"/><text x="817" y="506" text-anchor="middle">Dismiss</text>
+  <text x="536" y="580" class="muted">Other networks remain available below.</text><text x="536" y="605" class="muted">A retry asks for credentials only if needed.</text>
+  <line x1="513" y1="642" x2="943" y2="642" class="line"/><text x="536" y="681" class="accent">Network settings</text><text x="901" y="681" class="accent">›</text>
+  <text x="988" y="166" class="label">05 / WI-FI OFF WITH ETHERNET</text>
+  <rect x="984" y="188" width="432" height="520" rx="20" fill="#211e28" stroke="#534b60"/>
+  <text x="1008" y="229" class="title">Network</text><text x="1375" y="229">×</text><circle cx="1013" cy="255" r="4" fill="#a4dfbf"/><text x="1027" y="260" class="good">Internet available</text>
+  <rect x="1004" y="283" width="392" height="76" rx="14" fill="#2d2835"/><text x="1024" y="314">Ethernet</text><text x="1024" y="338" class="muted">Connected · enp3s0</text><text x="1359" y="326" class="good">✓</text>
+  <rect x="1004" y="375" width="392" height="228" rx="14" fill="#2d2835"/>
+  <text x="1024" y="412" class="title">Wi-Fi</text><text x="1300" y="412" class="muted">Off</text><rect x="1340" y="393" width="38" height="26" rx="13" fill="#49414f"/><circle cx="1353" cy="406" r="9" fill="#d1c9d9"/>
+  <line x1="1024" y1="436" x2="1376" y2="436" class="line"/>
+  <text x="1024" y="474" class="title">Wi-Fi is turned off</text><text x="1024" y="502" class="muted">Turn it on to find nearby networks.</text><text x="1024" y="528" class="muted">Your Ethernet connection stays active.</text>
+  <text x="1024" y="574" class="muted">No scan starts until you choose Refresh.</text>
+  <line x1="985" y1="642" x2="1415" y2="642" class="line"/><text x="1008" y="681" class="accent">Network settings</text><text x="1373" y="681" class="accent">›</text>
+  <text x="44" y="760" class="label">ADDITIONAL STATUS MESSAGES / SHARED ACROSS BOTH SURFACES</text>
+  <rect x="40" y="783" width="432" height="144" rx="14" fill="#30281f"/><text x="60" y="817" class="warn">Sign-in required</text><text x="60" y="844" class="muted">Open your browser to sign in to this network.</text><text x="60" y="881" class="muted">Keep the connected network and Disconnect</text><text x="60" y="903" class="muted">available. Do not label it “Internet available”.</text>
+  <rect x="512" y="783" width="432" height="144" rx="14" fill="#2d2835"/><text x="532" y="817">Wi-Fi is blocked by hardware</text><text x="532" y="844" class="muted">Use your device’s wireless switch to enable it.</text><text x="532" y="881" class="muted">Explain why the Wi-Fi switch is disabled.</text><text x="532" y="903" class="muted">Keep wired connection status independent.</text>
+  <rect x="984" y="783" width="432" height="144" rx="14" fill="#2d2835"/><text x="1004" y="817">Network service unavailable</text><text x="1004" y="844" class="muted">Waiting for the network service to reconnect.</text><text x="1004" y="881" class="muted">Remove stale connection claims and actions.</text><text x="1004" y="903" class="muted">Recover automatically when the service returns.</text>
+  <text x="44" y="968" class="muted">DESIGN PROPOSAL · Static state examples; captions describe behavior rather than simulate it</text>
+</svg>

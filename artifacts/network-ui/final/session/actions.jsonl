@@ -1,0 +1,6 @@
+{"service": "network", "kind": "agent-registered", "destination": ":1.2"}
+{"service": "network", "kind": "scan"}
+{"service": "network", "kind": "property", "key": "WirelessEnabled", "value": false}
+{"service": "network", "kind": "property", "key": "WirelessEnabled", "value": true}
+{"service": "network", "kind": "agent-registered", "destination": ":1.2"}
+{"service": "network", "kind": "scan"}

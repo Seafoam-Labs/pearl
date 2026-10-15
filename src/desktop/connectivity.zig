@@ -10,12 +10,16 @@ const w = @import("../ui/components/widgets.zig");
 const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const focus_state = @import("focus_state.zig");
+const network_ui = @import("../ui/components/network.zig");
 const Connection = struct { object: *object.Object, id: c_ulong };
 const Kind = enum { device, ap, saved, adapter, bluetooth };
 const Row = struct { view: *View, kind: Kind, path: Text(512), epoch: u64, title: *gtk.Label, primary: *gtk.Button, secondary: *gtk.Button };
 const Prompt = struct { box: *gtk.Box, title: *gtk.Label, entry: *gtk.PasswordEntry, accept: *gtk.Button, cancel: *gtk.Button, serial: u64 = 0, reveal_tick: c_uint = 0, reveal_frames: u8 = 0 };
 pub const Page = enum { network, bluetooth };
 pub const View = struct {
+    network_view: ?*network_ui.View = null,
+    open_settings: ?*const fn (*anyopaque) void = null,
+    settings_context: ?*anyopaque = null,
     page: Page,
     owner: @import("../services/view_ownership.zig").Owner,
     network: *Network,
@@ -43,6 +47,17 @@ pub const View = struct {
         errdefer if (page == .network) network.releaseView(owner) else bluetooth.releaseView(owner);
         const self = try a.create(View);
         self.* = .{ .page = page, .owner = owner, .network = network, .bluetooth = bluetooth, .status = undefined, .cancel = undefined, .items = undefined, .expander = undefined, .prompt = undefined };
+        if (page == .network) {
+            const view = try network_ui.View.create(host, true, self, networkRequested);
+            self.network_view = view;
+            self.status = view.status_title;
+            self.cancel = view.cancel;
+            self.items = view.sections[1];
+            self.expander = view.saved;
+            self.prompt = self.makePrompt(view.prompt_host, true);
+            self.update();
+            return self;
+        }
         const card = w.card();
         host.append(card.as(gtk.Widget));
         const state_row = w.row(10);
@@ -113,6 +128,7 @@ pub const View = struct {
         disconnect(&self.connections);
         disconnect(&self.row_connections);
         self.prompt.entry.as(gtk.Editable).setText("");
+        if (self.network_view) |view| view.destroy();
         if (self.page == .network) self.network.releaseView(self.owner) else self.bluetooth.releaseView(self.owner);
         self.connections.deinit(a);
         self.row_connections.deinit(a);
@@ -154,6 +170,21 @@ pub const View = struct {
         const n = self.network;
         const b = self.bluetooth;
         var buffer: [1024]u8 = undefined;
+        if (self.network_view) |view| {
+            var arena = std.heap.ArenaAllocator.init(a);
+            defer arena.deinit();
+            var snapshot = network_ui.model.build(arena.allocator(), n, @as(?@import("../services/view_ownership.zig").Owner, self.owner), glib.getMonotonicTime()) catch return;
+            snapshot.scan_wait_ms = @intCast(@divTrunc(@max(0, 15_000_000 - (glib.getMonotonicTime() - n.scan_last)), 1000));
+            if (n.scan_last == 0) snapshot.scan_wait_ms = 0;
+            view.update(snapshot);
+            const visible = n.ownsPrompt(self.owner) and n.prompt != null;
+            const was_visible = self.prompt.serial != 0 and self.prompt.box.as(gtk.Widget).getVisible() != 0;
+            self.updatePrompt(&self.prompt, n.prompt_serial, visible, true);
+            view.prompt_host.as(gtk.Widget).setVisible(@intFromBool(visible));
+            if (was_visible and !visible) view.restoreFocus();
+            self.prompt.title.setText(if (!visible) "" else std.fmt.bufPrintZ(&buffer, "{s} {s}\n{s}", .{ @import("text.zig").tr("Connect to", "Verbinden mit"), n.title.slice(), if (n.selected_profile.len == 0) @import("text.zig").tr("This network will be saved after you connect.", "Dieses Netzwerk wird nach dem Verbinden gespeichert.") else @import("text.zig").tr("Enter this network’s Wi-Fi password.", "Das WLAN-Passwort für dieses Netzwerk eingeben.") }) catch "Wi-Fi password");
+            return;
+        }
         var t: Text(1024) = .{};
         if (self.page == .network) {
             const net_text = n.err orelse n.peer.err orelse if (n.peer.owner.len == 0) "NetworkManager unavailable" else if (!n.hardware_enabled) "Wi-Fi blocked by hardware" else if (n.pending) (if (n.cancelled) "Cancelling connection…" else "Connecting…") else if (n.scan_pending) "Scanning for networks…" else if (!n.enabled) "Wi-Fi off" else switch (n.connectivity) {
@@ -309,13 +340,39 @@ pub const View = struct {
         if (editor) |app| {
             defer app.unref();
             var err: ?*glib.Error = null;
-            const display = self.radio.?.as(gtk.Widget).getDisplay();
+            const display = self.status.as(gtk.Widget).getDisplay();
             const context = display.getAppLaunchContext();
             defer context.unref();
             if (app.as(gio.AppInfo).launch(null, context.as(gio.AppLaunchContext), &err) != 0) return;
             if (err) |e| e.free();
         }
         self.network.err = "Install nm-connection-editor to configure enterprise, VPN or hidden networks.";
+        self.update();
+    }
+    fn networkRequested(context: *anyopaque, request: network_ui.Request) void {
+        const self: *View = @ptrCast(@alignCast(context));
+        const n = self.network;
+        const result: anyerror!void = switch (request.action) {
+            .connect => n.connectAP(self.owner, request.generation, request.path),
+            .connect_saved => n.connectSaved(self.owner, request.generation, request.path),
+            .disconnect => n.disconnect(request.generation, request.path),
+            .scan => n.scan(self.owner, request.generation, request.path),
+            .enable => n.setEnabled(true),
+            .disable => n.setEnabled(false),
+            .cancel => n.cancelOwned(self.owner),
+            .editor => {
+                editorClicked(self.cancel, self);
+                return;
+            },
+            .settings => {
+                if (!(n.pending and n.ownsPrompt(self.owner))) if (self.open_settings) |open| open(self.settings_context.?);
+                return;
+            },
+            else => return,
+        };
+        result catch |err| {
+            n.err = if (err == error.Busy) "Please wait before trying again." else "This network action is unavailable. Refresh and try again.";
+        };
         self.update();
     }
     fn stopClicked(_: *gtk.Button, self: *View) callconv(.c) void {
@@ -346,6 +403,10 @@ pub const View = struct {
         if (focus == self.probe_focus) return;
         self.probe_focus = focus;
         const widget = focus orelse return;
+        if (self.network_view) |view| if (widget == view.refresh.as(gtk.Widget)) {
+            log.info("event=connectivity-focus target=net-refresh", .{});
+            return;
+        };
         const target: []const u8 = if (widget == self.prompt.entry.as(gtk.Widget) or widget.isAncestor(self.prompt.entry.as(gtk.Widget)) != 0) (if (self.page == .network) "wifi-password" else "bluetooth-input") else if (widget == self.prompt.accept.as(gtk.Widget)) (if (self.page == .network) "wifi-confirm" else "bluetooth-confirm") else if (widget == self.expander.as(gtk.Widget)) (if (self.page == .network) "net-expander" else "bt-expander") else "other";
         log.info("event=connectivity-focus target={s}", .{target});
     }

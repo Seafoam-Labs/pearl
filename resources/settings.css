@@ -7,6 +7,9 @@
 .settings-window.$scope button.settings-nav-item:checked { background: $primary_container$; color: $primary$; }
 .settings-window.$scope button.settings-nav-item:focus-visible { outline-color: $primary$; }
 .settings-window.$scope .settings-card, .settings-window.$scope button.settings-category { background: $high$; }
+.settings-window.$scope .network-card { background: $high$; border-radius: 14px; padding: 16px; }
+.settings-window.$scope .network-view button { min-height: 32px; border-radius: 10px; }
+.settings-window.$scope .network-view .pearl-state { background: $low$; border-radius: 14px; padding: 16px; }
 .settings-window.$scope .settings-form-row + .settings-form-row { border-top: 1px solid alpha($outline$, 0.2); }
 .settings-window.$scope button.settings-value { background: mix($high$, $outline$, 0.1); border: 1px solid alpha($outline$, 0.15); }
 .settings-window.$scope .settings-footer { background: $container$; border-top: 1px solid alpha($outline$, 0.25); }

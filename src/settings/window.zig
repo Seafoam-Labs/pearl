@@ -108,6 +108,8 @@ pub const Window = struct {
         const brand_name = w.label(if (german) "Pearl Einstellungen" else "Pearl Settings", "settings-brand");
         brand_name.as(gtk.Widget).setHexpand(0);
         brand_name.setWrap(0);
+        brand_name.setEllipsize(.end);
+        brand_name.setMaxWidthChars(18);
         brand.append(brand_name.as(gtk.Widget));
         header.packStart(brand.as(gtk.Widget));
         header.setTitleWidget(gtk.Box.new(.horizontal, 0).as(gtk.Widget));
@@ -605,13 +607,18 @@ pub const Window = struct {
                 self.sampleRow(apps, "Music", "Playing audio", value("64%"));
             },
             .network => {
-                self.sampleRow(self.card(body), "Wi-Fi", "Wireless adapter · Enabled", gtk.Switch.new().as(gtk.Widget));
+                self.sampleRow(self.card(body), "Internet available", "Your device has internet access.", value("Connected"));
+                const radio = gtk.Switch.new();
+                radio.setActive(1);
+                self.sampleRow(self.card(body), "Wi-Fi", "On · Wireless connections", radio.as(gtk.Widget));
                 self.sampleRow(self.card(body), "Home network", "Connected · Strong signal", value("Disconnect"));
                 const nearby = self.card(body);
-                self.sampleRow(nearby, "Nearby networks", "Choose a network to connect", value("Scan"));
+                self.sampleRow(nearby, "Nearby networks", "Choose a network to connect", value("Refresh"));
                 self.sampleRow(nearby, "Studio", "Secured · Strong signal", value("Connect"));
-                self.sampleRow(nearby, "Guest", "Secured · Good signal", value("Connect"));
-                self.sampleRow(self.card(body), "More connections", "Saved networks, VPN and enterprise settings", value("Network editor…"));
+                self.sampleRow(nearby, "Guest", "Open network · Good signal", value("Connect"));
+                self.sampleRow(self.card(body), "Ethernet", "Disconnected · enp3s0", value("Set up…"));
+                self.sampleRow(self.card(body), "Saved networks", "View saved connections", value("View"));
+                self.sampleRow(self.card(body), "Advanced network settings", "VPN, hidden networks, IP & DNS", value("Network editor…"));
             },
             .bluetooth => {
                 self.sampleRow(self.card(body), "Bluetooth", "Built-in adapter · Available", gtk.Switch.new().as(gtk.Widget));
@@ -844,7 +851,7 @@ pub const Window = struct {
     }
     fn errorMessage(self: *Window, code: []const u8) [:0]const u8 {
         if (std.mem.eql(u8, code, "Busy")) return self.t("Pearl is busy. Your changes are retained; try again when the current work completes.", "Pearl ist beschäftigt. Änderungen bleiben erhalten; versuche es nach Abschluss erneut.");
-        if (std.mem.eql(u8, code, "NetworkEditorMissing")) return "The NetworkManager connection editor is not installed.";
+        if (std.mem.eql(u8, code, "NetworkEditorMissing")) return self.t("Install Network Connections (nm-connection-editor) to change advanced settings.", "Network Connections (nm-connection-editor) installieren, um erweiterte Einstellungen zu ändern.");
         if (std.mem.eql(u8, code, "NetworkEditorLaunchFailed")) return "The network connection editor could not be opened. You can keep using this window.";
         if (self.target.page == .system) return self.t("The scheduler action could not be completed. Review its status and refresh before retrying.", "Die Scheduler-Aktion konnte nicht abgeschlossen werden. Status prüfen und vor einem erneuten Versuch aktualisieren.");
         if (self.target.page == .network or self.target.page == .bluetooth or self.target.page == .sound or self.target.page == .power or self.target.page == .notifications or self.target.page == .overview) return "The service action could not be completed. Check the status on this page and try again.";
@@ -1193,6 +1200,16 @@ pub const Window = struct {
         }
         if (self.live_pages[@intFromEnum(self.target.page)]) |view| for (view.bindings.items) |binding| {
             try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget or f.isAncestor(binding.widget) != 0 else false, .bounds = self.bounds(binding.widget) });
+        };
+        if (self.live_pages[@intFromEnum(self.target.page)]) |view| if (view.network_view) |network| {
+            inline for (.{ .{ "network/radio", network.radio.as(gtk.Widget) }, .{ "network/refresh", network.refresh.as(gtk.Widget) }, .{ "network/adapter", network.selector.as(gtk.Widget) }, .{ "network/saved", network.saved.as(gtk.Widget) } }) |item| {
+                const widget = item[1];
+                if (widget.getMapped() != 0) try controls.append(alloc, .{ .field = item[0], .focused = focus == widget, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            }
+            for (network.rows) |maybe| if (maybe) |row| {
+                const widget = row.button.as(gtk.Widget);
+                if (widget.getMapped() != 0) try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "network:{s}", .{row.key.slice()}), .focused = focus == widget, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            };
         };
         if (self.target.page == .aqueous) if (self.aqueous_view) |view| {
             for (view.editors.items) |field| if (field.widget.getMapped() != 0) {

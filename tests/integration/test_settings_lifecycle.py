@@ -85,15 +85,15 @@ def main():
             # Focus a stable row at the bottom, then use header navigation.
             open_page('network')
             for _ in range(50):
-                if report(s, args.ctl)['button'] == 'Connect saved': break
+                if report(s, args.ctl)['button'] == 'Set up…': break
                 s.run(['wtype', '-s', '60', '-k', 'Tab', '-s', '60'])
-            else: raise AssertionError('Saved connection control unreachable')
+            else: raise AssertionError('Nearby network setup control unreachable')
             time.sleep(.2)
             before = report(s, args.ctl)
-            assert before['scroll'] > 0 and before['saved_focus'].startswith('settings-focus:connection:'), before
+            assert before['scroll'] > 0 and before['saved_focus'].startswith('settings-focus:network:'), before
             choose_page(s, args.ctl, 'sound'); settled(s, args.ctl)
             choose_page(s, args.ctl, 'network'); restored = settled(s, args.ctl)
-            assert restored['button'] == 'Connect saved', restored
+            assert restored['button'] == 'Set up…', restored
             assert abs(restored['scroll']-before['scroll']) < 2, (before, restored)
             capture(s, 'network-restored', output['connector'])
             open_page('network'); reset = settled(s, args.ctl)
@@ -102,7 +102,7 @@ def main():
             checks['internal-scroll-and-identity-focus-restore-external-heading-reset'] = True
             # Owner replacement invalidates saved row focus; never target a new device.
             for _ in range(50):
-                if report(s, args.ctl)['button'] == 'Connect saved': break
+                if report(s, args.ctl)['button'] == 'Set up…': break
                 s.run(['wtype', '-s', '60', '-k', 'Tab', '-s', '60'])
             choose_page(s, args.ctl, 'sound'); settled(s, args.ctl)
             command(network, owner=False); await_state(s, args.ctl, lambda v: not v['network']['available'])

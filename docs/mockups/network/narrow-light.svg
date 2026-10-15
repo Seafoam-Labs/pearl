@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="1240" viewBox="0 0 480 1240">
+  <title>Pearl Network narrow settings in light theme</title>
+  <desc>A 440 pixel wide settings window uses a Sections button instead of a sidebar, wrapping connection names and placing actions below their descriptions. Saved networks is expanded.</desc>
+  <defs><style>
+    text { font-family:'DejaVu Sans',sans-serif; fill:#292332; font-size:14px; }
+    .muted { fill:#665d70; font-size:13px; } .title { font-size:16px; font-weight:600; }
+    .label { font-size:11px; letter-spacing:1px; fill:#665d70; } .accent { fill:#65458d; }
+    .line { stroke:#d6cfdd; }
+  </style></defs>
+  <rect width="480" height="1240" fill="#e7e0ed"/>
+  <text x="20" y="30" class="label">06 / NARROW SETTINGS / LIGHT THEME</text>
+  <rect x="20" y="50" width="440" height="1128" rx="16" fill="#faf7fc" stroke="#b8adbf"/>
+  <text x="40" y="82" class="title">Pearl Settings</text><text x="424" y="82">×</text><line x1="21" y1="100" x2="459" y2="100" class="line"/>
+  <rect x="40" y="116" width="108" height="38" rx="9" fill="#eee7f3"/><text x="94" y="140" text-anchor="middle">‹ Sections</text>
+  <text x="40" y="194" style="font-size:28px;font-weight:600">Network</text><text x="40" y="220" class="muted">Your connections, at a glance.</text>
+  <rect x="40" y="239" width="400" height="66" rx="12" fill="#e1efe7"/><text x="58" y="267" style="fill:#26563b;font-weight:600">✓  Internet available</text><text x="58" y="289" class="muted">Your device has internet access.</text>
+  <rect x="40" y="321" width="400" height="196" rx="12" fill="#eee9f2"/><text x="58" y="354" class="title">Wi-Fi</text><text x="343" y="354" class="muted">On</text><rect x="382" y="335" width="40" height="26" rx="13" fill="#735099"/><circle cx="409" cy="348" r="9" fill="#ffffff"/>
+  <line x1="58" y1="375" x2="422" y2="375" class="line"/><text x="58" y="402" class="title">Home network with a longer name</text><text x="58" y="427" class="muted">Connected · Strong signal · Secured</text>
+  <rect x="58" y="449" width="364" height="46" rx="9" fill="#e1d9e8"/><text x="240" y="478" text-anchor="middle">Disconnect</text>
+  <text x="40" y="553" class="title">Nearby networks</text><rect x="324" y="531" width="116" height="40" rx="9" fill="#e1d9e8"/><text x="382" y="556" text-anchor="middle">Refresh</text>
+  <rect x="40" y="587" width="400" height="204" rx="12" fill="#eee9f2"/>
+  <text x="58" y="615">Studio</text><text x="58" y="637" class="muted">Strong signal · Secured</text><rect x="58" y="651" width="364" height="42" rx="9" fill="#e1d9e8"/><text x="240" y="677" text-anchor="middle">Connect</text>
+  <line x1="58" y1="710" x2="422" y2="710" class="line"/><text x="58" y="738">Guest</text><text x="58" y="762" class="muted">Good signal · Open network</text><rect x="316" y="729" width="106" height="42" rx="9" fill="#e1d9e8"/><text x="369" y="755" text-anchor="middle">Connect</text>
+  <text x="40" y="821" class="muted">2 nearby networks</text>
+  <rect x="40" y="840" width="400" height="200" rx="12" fill="#eee9f2"/><text x="58" y="872" class="title">Saved networks</text><text x="405" y="872" class="accent">⌄</text>
+  <line x1="58" y1="892" x2="422" y2="892" class="line"/><text x="58" y="920">Home network with a longer name</text><text x="58" y="943" class="muted">Connected</text>
+  <line x1="58" y1="960" x2="422" y2="960" class="line"/><text x="58" y="987">Library</text><text x="58" y="1011" class="muted">Not in range</text>
+  <rect x="40" y="1056" width="400" height="100" rx="12" fill="#eee9f2"/><text x="58" y="1086" class="accent">Advanced network settings…</text><text x="58" y="1112" class="muted">VPN, hidden networks, IP &amp; DNS.</text><text x="58" y="1136" class="muted">Opens the network editor.</text>
+  <text x="20" y="1208" class="muted">DESIGN PROPOSAL · No Ethernet adapter in this example</text>
+</svg>

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1120" viewBox="0 0 1560 1120">
+  <title>Pearl Network proposed settings and flyout</title>
+  <desc>Dark theme design concept. A settings window separates connection status, Wi-Fi, nearby networks, Ethernet and saved connections. A compact flyout shows the current Wi-Fi connection and nearby networks.</desc>
+  <defs>
+    <style>
+      text { font-family: 'DejaVu Sans', sans-serif; fill: #eee9f3; font-size: 14px; }
+      .muted { fill: #bdb5c9; font-size: 13px; } .small { font-size: 12px; }
+      .heading { font-size: 28px; font-weight: 600; } .title { font-size: 16px; font-weight: 600; }
+      .label { font-size: 11px; letter-spacing: 1.5px; fill: #bdb5c9; }
+      .accent { fill: #d4c1ff; } .good { fill: #a4dfbf; } .ink { fill: #291e40; font-weight: 600; }
+      .line { stroke: #45404e; } .icon { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: #d4c1ff; }
+    </style>
+    <g id="wifi" class="icon"><path d="M2 8 Q12 -1 22 8 M6 12 Q12 6 18 12 M10 16 Q12 14 14 16"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></g>
+    <g id="check" class="icon"><path d="m4 12 5 5 11-11"/></g>
+    <g id="wire" class="icon"><rect x="4" y="3" width="16" height="13" rx="2"/><path d="M8 3v5m4-5v5m4-5v5M9 16v5m6-5v5"/></g>
+    <g id="chevron" class="icon"><path d="m9 5 7 7-7 7"/></g>
+    <g id="refresh" class="icon"><path d="M20 9a8 8 0 1 0 0 7M20 3v6h-6"/></g>
+  </defs>
+  <rect width="1560" height="1120" fill="#121018"/>
+  <text x="44" y="44" class="label">PEARL / NETWORK</text>
+  <text x="44" y="84" class="heading">Connect with confidence.</text>
+  <text x="44" y="112" class="muted">A clear connection status, nearby networks within reach, and settings that explain themselves.</text>
+  <text x="44" y="157" class="label">01 / NETWORK SETTINGS</text>
+  <rect x="40" y="176" width="1036" height="852" rx="18" fill="#211e28" stroke="#534b60"/>
+  <path d="M58 177h1000q17 0 17 17v36H41v-36q0-17 17-17" fill="#19161f"/>
+  <circle cx="65" cy="204" r="7" fill="#d4c1ff"/><text x="84" y="209" class="small">Pearl Settings</text>
+  <text x="961" y="209" class="muted">−</text><text x="1001" y="209" class="muted">□</text><text x="1040" y="209" class="muted">×</text>
+  <path d="M41 230h211v797H58q-17 0-17-17Z" fill="#1c1922"/>
+  <line x1="252" y1="230" x2="252" y2="1027" class="line"/>
+  <text x="64" y="269" class="label">GENERAL</text><text x="79" y="304">Overview</text>
+  <text x="64" y="352" class="label">CONNECTIONS</text>
+  <rect x="54" y="368" width="184" height="46" rx="12" fill="#493568"/>
+  <use href="#wifi" x="68" y="379"/><text x="105" y="397" class="accent">Network</text>
+  <text x="79" y="447">Bluetooth</text>
+  <text x="64" y="502" class="label">DEVICES</text><text x="79" y="540">Sound</text><text x="79" y="588">Power &amp; battery</text>
+  <text x="64" y="642" class="label">DESKTOP</text><text x="79" y="680">Appearance</text><text x="79" y="728">Bar &amp; dock</text><text x="79" y="776">Notifications</text>
+  <text x="64" y="830" class="label">SYSTEM</text><text x="79" y="868">Session &amp; lock</text><text x="79" y="916">Aqueous</text><text x="79" y="964">Advanced</text>
+  <text x="284" y="278" class="heading">Network</text><text x="284" y="305" class="muted">Your connections, at a glance.</text>
+  <rect x="284" y="327" width="760" height="72" rx="14" fill="#25382f"/>
+  <circle cx="317" cy="363" r="18" fill="#324c3d"/><use href="#check" x="305" y="351"/>
+  <text x="350" y="357" class="title good">Internet available</text><text x="350" y="380" class="muted">Your device has internet access.</text>
+  <rect x="284" y="419" width="760" height="144" rx="14" fill="#2d2835"/>
+  <use href="#wifi" x="304" y="440"/><text x="344" y="452" class="title">Wi-Fi</text><text x="344" y="474" class="muted">Wireless connections</text>
+  <text x="937" y="455" class="muted">On</text><rect x="975" y="436" width="48" height="28" rx="14" fill="#d4c1ff"/><circle cx="1009" cy="450" r="10" fill="#291e40"/>
+  <line x1="304" y1="491" x2="1024" y2="491" class="line"/>
+  <use href="#check" x="306" y="515"/><text x="344" y="521" class="title">Home network</text><text x="344" y="545" class="muted">Connected · Strong signal · Secured</text>
+  <rect x="896" y="506" width="128" height="40" rx="10" fill="#393240" stroke="#534b60"/><text x="960" y="531" text-anchor="middle">Disconnect</text>
+  <text x="284" y="600" class="title">Nearby networks</text><text x="284" y="623" class="muted">Choose a network to connect.</text>
+  <rect x="908" y="581" width="136" height="42" rx="10" fill="#393240"/><use href="#refresh" x="919" y="589"/><text x="984" y="607" text-anchor="middle">Refresh</text>
+  <rect x="284" y="640" width="760" height="198" rx="14" fill="#2d2835"/>
+  <use href="#wifi" x="304" y="658"/><text x="344" y="666">Studio</text><text x="344" y="688" class="muted">Strong signal · Secured</text><rect x="918" y="653" width="106" height="40" rx="10" fill="#393240"/><text x="971" y="678" text-anchor="middle">Connect</text>
+  <line x1="304" y1="706" x2="1024" y2="706" class="line"/>
+  <use href="#wifi" x="304" y="724"/><text x="344" y="732">Guest</text><text x="344" y="754" class="muted">Good signal · Open network</text><rect x="918" y="719" width="106" height="40" rx="10" fill="#393240"/><text x="971" y="744" text-anchor="middle">Connect</text>
+  <line x1="304" y1="772" x2="1024" y2="772" class="line"/>
+  <use href="#wifi" x="304" y="790"/><text x="344" y="798">Office</text><text x="344" y="820" class="muted">Enterprise network · Additional setup required</text><rect x="918" y="785" width="106" height="40" rx="10" fill="#393240"/><text x="971" y="810" text-anchor="middle">Set up…</text>
+  <rect x="284" y="854" width="760" height="62" rx="14" fill="#2d2835"/><use href="#wire" x="304" y="873"/><text x="344" y="880">Ethernet</text><text x="344" y="901" class="muted">Disconnected · enp3s0</text><rect x="918" y="865" width="106" height="40" rx="10" fill="#393240"/><text x="971" y="890" text-anchor="middle">Set up…</text>
+  <rect x="284" y="932" width="760" height="62" rx="14" fill="#2d2835"/><text x="306" y="958">Saved networks</text><text x="306" y="980" class="muted">View saved connections</text><use href="#chevron" x="1000" y="950"/>
+  <text x="284" y="1015" class="small accent">Advanced network settings…</text><text x="1044" y="1015" class="small muted" text-anchor="end">VPN, hidden networks, IP &amp; DNS</text>
+  <text x="1112" y="157" class="label">02 / QUICK ACCESS FLYOUT</text>
+  <rect x="1112" y="176" width="408" height="638" rx="22" fill="#211e28" stroke="#534b60"/>
+  <text x="1136" y="216" class="title">Network</text><text x="1479" y="216" class="muted">×</text>
+  <circle cx="1142" cy="247" r="4" fill="#a4dfbf"/><text x="1156" y="252" class="good small">Internet available</text>
+  <rect x="1132" y="273" width="368" height="148" rx="14" fill="#2d2835"/>
+  <use href="#wifi" x="1148" y="293"/><text x="1186" y="308" class="title">Wi-Fi</text><text x="1410" y="308" class="muted">On</text><rect x="1448" y="289" width="38" height="26" rx="13" fill="#d4c1ff"/><circle cx="1473" cy="302" r="9" fill="#291e40"/>
+  <line x1="1148" y1="331" x2="1484" y2="331" class="line"/>
+  <text x="1148" y="361" class="title">Home network</text><text x="1148" y="384" class="muted">Connected · Strong signal</text><text x="1148" y="405" class="small accent">Disconnect</text><use href="#check" x="1458" y="350"/>
+  <text x="1136" y="461" class="title">Nearby networks</text><rect x="1390" y="438" width="110" height="38" rx="10" fill="#393240"/><text x="1445" y="462" text-anchor="middle">Refresh</text>
+  <use href="#wifi" x="1136" y="499"/><text x="1174" y="510">Studio</text><text x="1174" y="532" class="muted">Strong · Secured</text><rect x="1400" y="491" width="100" height="42" rx="10" fill="#393240"/><text x="1450" y="517" text-anchor="middle">Connect</text>
+  <line x1="1136" y1="550" x2="1496" y2="550" class="line"/>
+  <use href="#wifi" x="1136" y="573"/><text x="1174" y="584">Guest</text><text x="1174" y="606" class="muted">Good · Open</text><rect x="1400" y="565" width="100" height="42" rx="10" fill="#393240"/><text x="1450" y="591" text-anchor="middle">Connect</text>
+  <line x1="1136" y1="624" x2="1496" y2="624" class="line"/>
+  <use href="#wifi" x="1136" y="647"/><text x="1174" y="658">Office</text><text x="1174" y="680" class="muted">Enterprise</text><rect x="1400" y="639" width="100" height="42" rx="10" fill="#393240"/><text x="1450" y="665" text-anchor="middle">Set up…</text>
+  <line x1="1113" y1="713" x2="1519" y2="713" class="line"/>
+  <rect x="1132" y="733" width="368" height="56" rx="12" fill="#493568"/><text x="1150" y="767" class="accent">Network settings</text><use href="#chevron" x="1462" y="749"/>
+  <text x="1116" y="858" class="title">Quick actions stay close.</text>
+  <text x="1116" y="887" class="muted">The active connection gets its own space.</text>
+  <text x="1116" y="910" class="muted">Refresh is explicit. Saved and advanced</text>
+  <text x="1116" y="933" class="muted">connections live in Network settings.</text>
+  <text x="44" y="1076" class="muted">DESIGN PROPOSAL · Illustrative network names and service state · Native Zig / GTK implementation planned</text>
+</svg>

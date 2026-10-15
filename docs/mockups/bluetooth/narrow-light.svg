@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="1330" viewBox="0 0 480 1330">
+<title>Pearl Bluetooth narrow settings in light theme</title>
+<desc>A 440-pixel Bluetooth Settings window with adapter selection, power, connected and paired devices, and explicit device discovery. This tall view illustrates scrollable content.</desc>
+<defs><style>text {font-family:'DejaVu Sans',sans-serif;fill:#292332;font-size:14px}.muted {fill:#665d70;font-size:13px}.title {font-size:16px;font-weight:600}.label {font-size:11px;letter-spacing:1px;fill:#665d70}.accent {fill:#65458d}.line {stroke:#d6cfdd}</style></defs>
+<rect width="480" height="1330" fill="#e7e0ed"/><text x="20" y="30" class="label">PEARL / BLUETOOTH / NARROW LIGHT THEME</text>
+<rect x="20" y="50" width="440" height="1202" rx="16" fill="#faf7fc" stroke="#b8adbf"/>
+<text x="40" y="82" class="title">Pearl Settings</text><text x="427" y="82">×</text><line x1="21" y1="100" x2="459" y2="100" class="line"/>
+<rect x="40" y="116" width="116" height="40" rx="10" fill="#eee7f3"/><text x="98" y="142" text-anchor="middle">‹ Sections</text>
+<text x="40" y="199" style="font-size:28px;font-weight:600">Bluetooth</text><text x="40" y="226" class="muted">Connect and manage your wireless devices.</text>
+<rect x="40" y="250" width="400" height="188" rx="14" fill="#eee9f2"/>
+<text x="58" y="282" class="title">Bluetooth is on</text><text x="58" y="308" class="muted">1 device connected on this adapter</text><rect x="378" y="266" width="44" height="28" rx="14" fill="#735099"/><circle cx="408" cy="280" r="10" fill="#fff"/>
+<text x="58" y="349" class="muted">Bluetooth adapter</text><rect x="58" y="364" width="364" height="50" rx="10" fill="#e1d9e8"/><text x="76" y="395">USB adapter · hci1</text><text x="395" y="395">⌄</text>
+<text x="40" y="478" class="title">Connected devices</text><rect x="40" y="496" width="400" height="176" rx="14" fill="#eee9f2"/>
+<text x="58" y="527" class="title">Studio headphones with a</text><text x="58" y="551" class="title">longer device name</text><text x="58" y="579" class="muted">Connected</text>
+<rect x="58" y="603" width="238" height="48" rx="10" fill="#e1d9e8"/><text x="177" y="633" text-anchor="middle">Disconnect</text><rect x="308" y="603" width="114" height="48" rx="10" fill="#e1d9e8"/><text x="365" y="633" text-anchor="middle">Details</text>
+<text x="40" y="713" class="title">Paired devices</text><rect x="40" y="732" width="400" height="142" rx="14" fill="#eee9f2"/>
+<text x="58" y="763" class="title">Travel speaker</text><text x="58" y="789" class="muted">Paired · Not connected</text><rect x="58" y="808" width="238" height="48" rx="10" fill="#e1d9e8"/><text x="177" y="838" text-anchor="middle">Connect</text><rect x="308" y="808" width="114" height="48" rx="10" fill="#e1d9e8"/><text x="365" y="838" text-anchor="middle">Details</text>
+<text x="40" y="917" class="title">Add a device</text><text x="40" y="946" class="muted">Put your device in pairing mode, then select</text><text x="40" y="968" class="muted">Find devices. Opening Settings does not search.</text>
+<rect x="40" y="988" width="400" height="48" rx="10" fill="#735099"/><text x="240" y="1018" text-anchor="middle" style="fill:white">Find devices</text>
+<rect x="40" y="1054" width="400" height="122" rx="14" fill="#eee9f2"/><text x="58" y="1087" class="title">No discovered devices</text><text x="58" y="1116" class="muted">Search when you are ready to pair.</text><text x="58" y="1145" class="muted">Search stops automatically after 30 seconds.</text>
+<line x1="21" y1="1201" x2="459" y2="1201" class="line"/><text x="40" y="1232" class="muted">Changes take effect immediately.</text>
+<text x="20" y="1284" class="muted">DESIGN PROPOSAL · Adapter selector shown for 2 adapters</text><text x="20" y="1308" class="muted">Tall content preview; smaller windows scroll the body.</text>
+</svg>

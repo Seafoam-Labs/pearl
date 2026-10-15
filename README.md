@@ -51,6 +51,8 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Settings-flyout navigation plan](docs/SETTINGS_NAVIGATION_PLAN.md): proposed direct bar shortcuts and separate compact settings pages.
 - [Workspace window switcher plan](docs/WINDOW_SWITCHER_IMPLEMENTATION_PLAN.md): cycle through the current workspace with a sliding window stack; includes an interactive mockup and required Aqueous integration.
 - [Standalone Settings application plan](docs/STANDALONE_SETTINGS_APPLICATION_PLAN.md): a separately launchable Settings app, sidebar pages, backend integration, packaging and design mockups.
+- [Network interface](docs/NETWORK_UI_IMPLEMENTATION_PLAN.md): shared native connection controls, organized Network settings, [design mockups](docs/mockups/network/README.md) and [implementation captures](artifacts/network-ui/README.md).
+- [Bluetooth interface proposal](docs/BLUETOOTH_UI_IMPLEMENTATION_PLAN.md): matching flyout and Settings [mockups](docs/mockups/bluetooth/README.md), with connected devices, explicit discovery and clearer pairing flows.
 - [Qt application theming](docs/QT_THEMING.md): opt-in QtEngine + Darkly application styles for Qt 5/6, Pearl palettes, font/density settings, session setup and conditional restore. [Milestones](docs/QT_DARKLY_IMPLEMENTATION_PLAN.md) record delivery and remaining compatibility checks.
 - [Aqueous integration update plan](docs/AQUEOUS_MASTER_UPDATE_PLAN.md): implementation scope and acceptance for the pinned master contracts.
 - [Aqueous 0.8.2 update plan](docs/AQUEOUS_082_UPDATE_PLAN.md): adopt newly exposed collection transactions, display declarations and preview controls.

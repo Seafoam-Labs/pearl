@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1140" viewBox="0 0 1440 1140">
+<title>Pearl Bluetooth pairing, details and recovery proposals</title>
+<desc>Six panels illustrate confirm-code pairing, PIN entry, display-only pairing, device details and explicit trust, discovery, and unavailable states.</desc>
+<defs><style>
+text {font-family:'DejaVu Sans',sans-serif;font-size:14px;fill:#eee9f3}.muted {fill:#bdb5c9;font-size:13px}.small {font-size:12px}.title {font-size:20px;font-weight:600}.label {font-size:11px;letter-spacing:1.2px;fill:#bdb5c9}.accent {fill:#d4c1ff}.ink {fill:#291e40;font-weight:600}.line {stroke:#45404e}.code {font-family:'DejaVu Sans Mono',monospace;font-size:38px;letter-spacing:7px}
+</style></defs>
+<rect width="1440" height="1140" fill="#121018"/>
+<text x="40" y="42" class="label">PEARL / BLUETOOTH / INTERACTION STATES</text><text x="40" y="83" style="font-size:28px;font-weight:600">Pairing that tells you what to do next.</text>
+<text x="40" y="112" class="muted">Owned prompts appear inline in the flyout and as a modal in Settings. Codes below are fictional examples.</text>
+<text x="40" y="155" class="label">01 / CONFIRM THE CODE</text>
+<rect x="40" y="173" width="432" height="370" rx="18" fill="#211e28" stroke="#534b60"/>
+<text x="64" y="211" class="title">Pair with Pocket speaker?</text><text x="64" y="240" class="muted">Check that the device shows the same code.</text>
+<rect x="64" y="265" width="384" height="86" rx="12" fill="#2d2835"/><text x="256" y="321" text-anchor="middle" class="code">042 719</text>
+<text x="64" y="382" class="muted">If the codes differ, cancel pairing.</text>
+<rect x="64" y="417" width="142" height="48" rx="10" fill="#393240"/><text x="135" y="447" text-anchor="middle">Cancel</text><rect x="218" y="417" width="230" height="48" rx="10" fill="#d4c1ff"/><text x="333" y="447" text-anchor="middle" class="ink">Codes match · Pair</text>
+<text x="64" y="511" class="muted">Pairing does not automatically trust this device.</text>
+<text x="504" y="155" class="label">02 / ENTER A PIN OR PASSKEY</text>
+<rect x="504" y="173" width="432" height="370" rx="18" fill="#211e28" stroke="#534b60"/>
+<text x="528" y="211" class="title">Pair with Desk keyboard</text><text x="528" y="240" class="muted">Enter the PIN requested by the device.</text>
+<text x="528" y="282">PIN</text><rect x="528" y="296" width="384" height="56" rx="10" fill="#19161f" stroke="#d4c1ff" stroke-width="2"/><text x="546" y="331" class="muted">Enter PIN</text>
+<text x="528" y="381" class="muted">The prompt identifies whether a PIN or a</text><text x="528" y="403" class="muted">numeric passkey is required.</text>
+<rect x="528" y="429" width="184" height="48" rx="10" fill="#393240"/><text x="620" y="459" text-anchor="middle">Cancel</text><rect x="724" y="429" width="188" height="48" rx="10" fill="#d4c1ff"/><text x="818" y="459" text-anchor="middle" class="ink">Pair</text>
+<text x="528" y="511" class="muted">Entry clears on submit, cancel or replacement.</text>
+<text x="968" y="155" class="label">03 / TYPE ON THE OTHER DEVICE</text>
+<rect x="968" y="173" width="432" height="370" rx="18" fill="#211e28" stroke="#534b60"/>
+<text x="992" y="211" class="title">Check Desk keyboard</text><text x="992" y="240" class="muted">Enter this code on the device to continue.</text>
+<rect x="992" y="265" width="384" height="86" rx="12" fill="#2d2835"/><text x="1184" y="321" text-anchor="middle" class="code">042 719</text>
+<text x="992" y="385" class="accent">Waiting for the device…</text><rect x="992" y="417" width="384" height="48" rx="10" fill="#393240"/><text x="1184" y="447" text-anchor="middle">Cancel pairing</text>
+<text x="992" y="511" class="muted">Display-only prompts have no approval button.</text>
+<text x="40" y="593" class="label">04 / DEVICE DETAILS</text>
+<rect x="40" y="611" width="432" height="400" rx="18" fill="#211e28" stroke="#534b60"/>
+<text x="64" y="650" class="title">Studio headphones</text><text x="64" y="680" class="accent">Connected · Paired</text>
+<text x="64" y="723" class="muted">Address</text><text x="448" y="723" text-anchor="end">02:11:22:33:44:55</text><text x="64" y="755" class="muted">Adapter</text><text x="448" y="755" text-anchor="end">Built-in · hci0</text>
+<line x1="64" y1="777" x2="448" y2="777" class="line"/>
+<text x="64" y="811">Trust this device</text><rect x="400" y="792" width="48" height="28" rx="14" fill="#514a5c"/><circle cx="414" cy="806" r="10" fill="#eee9f3"/>
+<text x="64" y="846" class="muted">Sets Bluetooth trust for this device.</text><text x="64" y="868" class="muted">Pairing and connection are separate.</text>
+<rect x="64" y="901" width="238" height="48" rx="10" fill="#393240"/><text x="183" y="931" text-anchor="middle">Disconnect</text><rect x="314" y="901" width="134" height="48" rx="10" fill="#393240"/><text x="381" y="931" text-anchor="middle">Done</text>
+<text x="64" y="983" class="muted">No Forget action until removal is supported.</text>
+<text x="504" y="593" class="label">05 / EXPLICIT DISCOVERY</text>
+<rect x="504" y="611" width="432" height="400" rx="18" fill="#211e28" stroke="#534b60"/>
+<text x="528" y="650" class="title">Looking for devices…</text><text x="528" y="679" class="muted">Keep your device in pairing mode.</text><text x="528" y="701" class="muted">Search stops automatically after 30 seconds.</text>
+<rect x="528" y="725" width="384" height="48" rx="10" fill="#393240"/><text x="720" y="755" text-anchor="middle">Stop search</text>
+<line x1="528" y1="799" x2="912" y2="799" class="line"/>
+<text x="528" y="831" class="title">Couldn’t connect</text><text x="528" y="861" class="muted">Travel speaker may be off or unavailable.</text><text x="528" y="883" class="muted">Check the device, then try again.</text>
+<rect x="528" y="910" width="184" height="48" rx="10" fill="#393240"/><text x="620" y="940" text-anchor="middle">Dismiss</text><rect x="724" y="910" width="188" height="48" rx="10" fill="#d4c1ff"/><text x="818" y="940" text-anchor="middle" class="ink">Try again</text>
+<text x="528" y="983" class="muted">Search and failure shown as separate examples.</text>
+<text x="968" y="593" class="label">06 / OFF AND UNAVAILABLE STATES</text>
+<rect x="968" y="611" width="432" height="400" rx="18" fill="#211e28" stroke="#534b60"/>
+<text x="992" y="650" class="title">Bluetooth is off</text><text x="992" y="681" class="muted">Turn on this adapter to connect devices.</text><rect x="992" y="706" width="384" height="48" rx="10" fill="#d4c1ff"/><text x="1184" y="736" text-anchor="middle" class="ink">Turn on Bluetooth</text>
+<line x1="992" y1="780" x2="1376" y2="780" class="line"/>
+<text x="992" y="814" class="title">Bluetooth unavailable</text><text x="992" y="845" class="muted">Waiting for the Bluetooth service to reconnect.</text><text x="992" y="880" class="muted">No stale Connected labels or enabled actions.</text>
+<text x="992" y="927" class="accent">No adapter found</text><text x="992" y="951" class="muted">A distinct state when the service is available.</text><text x="992" y="983" class="muted">Three alternative states, not one live panel.</text>
+<text x="40" y="1060" class="muted">ANNOTATED DESIGN BOARD · Descriptive captions are not application controls.</text><text x="40" y="1090" class="muted">Authorization prompts additionally name the requested device or service and offer Allow / Cancel.</text>
+</svg>

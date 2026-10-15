@@ -64,6 +64,15 @@ def navigate(s,ipc,page,section=None):
     try:wait_for(lambda:probe(s,ipc)['page']==page)
     except Exception:print('navigation failed',probe(s,ipc),flush=True);raise
     time.sleep(.3)
+def connect_network(s, ipc, peer):
+    row=next(r for r in peer.page()['live']['network']['rows'] if r['section']=='nearby' and r['title']=='Fixture Secure')
+    assert row['enabled'], row
+    s.network_attempt=getattr(s,'network_attempt',0)+1
+    (s.output/f'network-before-{s.network_attempt}.json').write_text(json.dumps(probe(s,ipc),indent=2))
+    click(s,ipc,'network:'+row['key'])
+    time.sleep(.3)
+    capture(s,f'network-attempt-{s.network_attempt}',next(iter(ipc.outputs().values()))['name'])
+    (s.output/f'network-after-{s.network_attempt}.json').write_text(json.dumps(probe(s,ipc),indent=2))
 def aq_ready(s,ipc,peer=None):
     def check():
         expected=peer.aqueous() if peer else None
@@ -131,7 +140,7 @@ def main():
         peer.enter('sound');wait_for(lambda:not other.page()['live']['pending'])
         assert other.page()['live']['prompt'] is None
         checks['network-prompts-private-and-navigation-cancels-owner']=True
-        navigate(s,ipc,'network');ready(s,ipc);click(s,ipc,AP+'/connect')
+        navigate(s,ipc,'network');ready(s,ipc);connect_network(s,ipc,other)
         wait_for(lambda:probe(s,ipc)['service_prompt'])
         assert other.page()['live']['prompt'] is None
         s.run(['wtype','abandoned-test-secret'])
@@ -142,7 +151,7 @@ def main():
         app=s.child('settings-after-prompt-crash',[args.settings,'--page','network'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');ready(s,ipc)
         assert not probe(s,ipc)['service_prompt']
         checks['frontend-crash-cancels-private-credential-prompt-without-secret-replay']=True
-        click(s,ipc,AP+'/connect');wait_for(lambda:probe(s,ipc)['service_prompt'])
+        connect_network(s,ipc,other);wait_for(lambda:probe(s,ipc)['service_prompt'])
         s.run(['wtype','fixture-wifi-password','-k','Return'])
         wait_for(lambda:not probe(s,ipc)['service_prompt'] and not other.page()['live']['pending'])
         assert other.page()['live']['summary']=='Online'

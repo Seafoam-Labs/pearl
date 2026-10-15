@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "checks": {
+    "initial-list-visible-without-scan-and-saved-identity-match": true,
+    "real-refresh-and-cooldown": true,
+    "portal-limited-unknown-online-statuses": true,
+    "duplicate-AP-grouping-and-distinct-adapters": true,
+    "wired-internet-independent-of-wireless-power-and-hardware-block": true,
+    "active-network-removed-from-nearby-and-saved-state-accurate": true,
+    "complete-bounded-snapshot-exceeds-legacy-page-without-stitching": true,
+    "compact-current-status-visible-list-and-more-action": true,
+    "daemon-loss-clears-stale-rows-and-recovers": true,
+    "light-native-360-440-large-text-short-window-controls-reachable": true
+  },
+  "captures": [
+    "session/settings-dark.png",
+    "session/settings-portal.png",
+    "session/settings-limited.png",
+    "session/settings-unknown.png",
+    "session/settings-online.png",
+    "session/settings-adapter-selection.png",
+    "session/settings-wifi-off-ethernet.png",
+    "session/settings-hardware-blocked.png",
+    "session/settings-saved-networks.png",
+    "session/flyout-connected.png",
+    "session/settings-unavailable.png",
+    "session/settings-light.png",
+    "session/settings-native.png",
+    "session/settings-narrow-440.png",
+    "session/settings-narrow-360.png",
+    "session/settings-large-text.png",
+    "session/settings-short.png"
+  ],
+  "binaries": {
+    "settings": "8a91ae8618af63a419a943b6c6d3a41563327d0cdaa4f7f3eb6b3fbc35a8deb5",
+    "pearl": "1413aea3da15f1375b55a3ae829e1c12bd5e753e9042803d93ce461eb615f855",
+    "ctl": "04957bea448bc6fd50da01091e66c9df8548909a126b68fccd9f1927fd98c776"
+  }
+}

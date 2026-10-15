@@ -111,9 +111,8 @@ def main():
                 ctl(s, args.ctl, 'control-center', 'show', '--output', output['id'], '--page', 'network'); ready('network')
                 action(s, args.ctl, 'network', 'disable')
                 await_state(s, args.ctl, lambda v: not v['network']['enabled'])
-                assert 'Turn Wi-Fi on' in report(s, args.ctl)['labels']
-                disabled = [n for n in inspect() if n['role'] == 'button' and n['name'] in ('Connect', 'Connect saved', 'Scan Wi-Fi')]
-                assert disabled and all(not n['sensitive'] for n in disabled), disabled
+                assert 'Wi-Fi is turned off. Turn it on to find nearby networks.' in report(s, args.ctl)['labels']
+                assert any(n['name']=='Wi-Fi' and n['role']=='switch' for n in inspect())
                 for verb, path in [('connect', AP), ('connect_saved', SP)]:
                     assert action(s, args.ctl, 'network', verb, path, code=4)['err']['code'] == 'Unavailable'
                 capture(s, 'network-radio-off', output['connector'])
@@ -199,7 +198,7 @@ def main():
                     suffix = '-'+edge if args.full_matrix else ''
                     capture(s, f'{theme}-{variant}-{font}-{scale}-{page}{suffix}', output['connector'])
                     if font == 24 and page in ('network', 'power'):
-                        target = 'Connect saved' if page == 'network' else 'Restart…'
+                        target = 'Set up…' if page == 'network' else 'Restart…'
                         for _ in range(50):
                             if report(s, args.ctl)['button'] == target: break
                             s.run(['wtype', '-s', '50', '-k', 'Tab', '-s', '50'])

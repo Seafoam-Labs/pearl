@@ -1,0 +1,14 @@
+{
+  "status": "failed",
+  "checks": {
+    "normal-window-real-schema-221-fields": true,
+    "complete-sidebar-real-data-or-unavailable": true,
+    "network-stable-identities-and-advanced-editor-route": true,
+    "explicit-scan-and-independent-page-owners": true,
+    "network-pointer-action-and-stale-generation": true,
+    "bluetooth-discovery-stops-only-with-owner": true,
+    "network-prompts-private-and-navigation-cancels-owner": true,
+    "frontend-crash-cancels-private-credential-prompt-without-secret-replay": true
+  },
+  "error": "TimeoutError('private session condition timed out')"
+}

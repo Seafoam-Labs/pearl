@@ -1,0 +1,12 @@
+event=ready
+command={"saved_label": "Updated saved network"}
+command={"refresh": 3}
+command={"activation_delay": 600}
+command={"activation_delay": 0}
+command={"fail_device": true}
+command={"fail_device": false}
+command={"hardware": false}
+command={"hardware": true}
+command={"owner": false}
+command={"owner": true}
+command={"overflow": 520}

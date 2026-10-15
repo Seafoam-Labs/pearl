@@ -12,9 +12,12 @@ const Editor = @import("editor.zig").Editor;
 const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Prompt = struct { service: []const u8, serial: []const u8, kind: []const u8, title: []const u8, challenge: []const u8, secret: bool, editable: bool };
-const Page = struct { notification_header: ?ui.Row = null, summary: []const u8, pending: bool, truncated: bool, rows: []const ui.Row, offset: []const u8, next_offset: ?[]const u8 = null, prompt: ?Prompt = null };
+const Page = struct { network: ?@import("../services/network_presentation.zig").Snapshot = null, notification_header: ?ui.Row = null, summary: []const u8, pending: bool, truncated: bool, rows: []const ui.Row, offset: []const u8, next_offset: ?[]const u8 = null, prompt: ?Prompt = null };
 const Binding = struct { view: *View, spec: ui.Control, widget: *gtk.Widget, id: []const u8, signal: c_ulong };
 pub const View = struct {
+    network_view: ?*@import("network_view.zig").View = null,
+    network_request: ?struct { action: @import("../services/network_presentation.zig").Action, path: @import("../services/policy.zig").Text(512), generation: u64, view: u64, deadline: i64 } = null,
+    network_timer: c_uint = 0,
     editor: *Editor,
     route: nav.Route,
     window: *gtk.Window,
@@ -40,6 +43,9 @@ pub const View = struct {
         return self;
     }
     fn clear(self: *View) void {
+        self.cancelNetworkRequest();
+        if (self.network_view) |view| view.destroy();
+        self.network_view = null;
         self.invalidate(self.context, self.route);
         for (self.bindings.items) |binding| object.signalHandlerDisconnect(binding.widget.as(object.Object), binding.signal);
         if (self.header_host) |header| while (header.as(gtk.Widget).getFirstChild()) |child| header.remove(child);
@@ -56,6 +62,7 @@ pub const View = struct {
         a.destroy(self);
     }
     pub fn closePrompt(self: *View) void {
+        const restore = self.prompt != null;
         if (self.secret) |entry| entry.as(gtk.Editable).setText("");
         self.secret = null;
         if (self.prompt) |dialog| {
@@ -65,9 +72,11 @@ pub const View = struct {
         }
         self.prompt_serial = 0;
         self.prompt_message = null;
+        if (restore) if (self.network_view) |view| view.restoreFocus();
     }
     pub fn update(self: *View) void {
         if (self.editor.target.page != self.route or !self.editor.online or self.editor.state.locked or self.editor.suspended) {
+            self.cancelNetworkRequest();
             self.closePrompt();
             self.shown = null;
             if (self.header_host) |header| header.as(gtk.Widget).setSensitive(0);
@@ -86,6 +95,16 @@ pub const View = struct {
         const value = std.json.parseFromSliceLeaky(std.json.Value, alloc, bytes, .{}) catch return;
         const data = e.read(Page, alloc, value) catch return;
         self.showPrompt(data.prompt);
+        if (self.route == .network) if (data.network) |network| {
+            if (self.network_view == null) {
+                self.clear();
+                self.network_view = @import("network_view.zig").View.create(self.host, false, self, networkRequested) catch return;
+            }
+            self.network_view.?.update(network);
+            self.network_view.?.root.as(gtk.Widget).setSensitive(@intFromBool(self.network_request == null));
+            self.shown = digest;
+            return;
+        };
         var focused: @import("../services/policy.zig").Text(1024) = .{};
         var focused_text: @import("../services/policy.zig").Text(128) = .{};
         var focused_params: ?[64]u8 = null;
@@ -214,6 +233,47 @@ pub const View = struct {
         }
         self.editor.liveAction(binding.spec.op, params) catch |err| self.editor.error_code.set(@errorName(err));
     }
+    fn networkRequested(context: *anyopaque, request: @import("network_view.zig").Request) void {
+        const self: *View = @ptrCast(@alignCast(context));
+        if (self.network_request != null) return;
+        if (self.editor.live_command != null) {
+            self.network_request = .{ .action = request.action, .path = .{}, .generation = request.generation, .view = self.editor.view, .deadline = glib.getMonotonicTime() + 5_000_000 };
+            self.network_request.?.path.set(request.path);
+            self.network_timer = glib.timeoutAdd(100, networkDeferred, self);
+            if (self.network_view) |view| view.root.as(gtk.Widget).setSensitive(0);
+            return;
+        }
+        var scratch = std.heap.ArenaAllocator.init(a);
+        defer scratch.deinit();
+        const alloc = scratch.allocator();
+        const bytes = std.json.Stringify.valueAlloc(alloc, .{ .generation = @import("editor_protocol.zig").num(request.generation), .path = request.path, .action = @tagName(request.action) }, .{}) catch return;
+        const params = std.json.parseFromSliceLeaky(std.json.Value, alloc, if (request.action == .editor) "{}" else bytes, .{}) catch return;
+        self.editor.liveAction(if (request.action == .editor) .@"network.editor" else .@"network.action", params) catch |err| {
+            self.editor.error_code.set(@errorName(err));
+            return;
+        };
+        self.editor.error_code = .{};
+    }
+    fn cancelNetworkRequest(self: *View) void {
+        if (self.network_timer != 0) _ = glib.Source.remove(self.network_timer);
+        self.network_timer = 0;
+        self.network_request = null;
+    }
+    fn networkDeferred(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *View = @ptrCast(@alignCast(data.?));
+        const request = self.network_request orelse {
+            self.network_timer = 0;
+            return 0;
+        };
+        const valid = self.editor.online and !self.editor.suspended and !self.editor.state.locked and self.editor.target.page == .network and self.editor.view == request.view;
+        const expired = glib.getMonotonicTime() >= request.deadline;
+        if (valid and !expired and self.editor.live_command != null) return 1;
+        self.network_request = null;
+        self.network_timer = 0;
+        if (self.network_view) |view| view.root.as(gtk.Widget).setSensitive(@intFromBool(valid));
+        if (valid and !expired) networkRequested(self, .{ .action = request.action, .generation = request.generation, .path = request.path.slice() }) else if (expired) self.editor.error_code.set("Busy");
+        return 0;
+    }
     fn clicked(_: *gtk.Button, binding: *Binding) callconv(.c) void {
         issue(binding);
     }
@@ -271,7 +331,7 @@ pub const View = struct {
             content.append(entry.as(gtk.Widget));
         }
         _ = dialog.addButton("Cancel", @intFromEnum(gtk.ResponseType.cancel));
-        if (data.editable) _ = dialog.addButton("Confirm", @intFromEnum(gtk.ResponseType.accept));
+        if (data.editable) _ = dialog.addButton(if (self.prompt_service == .network) @import("../desktop/text.zig").tr("Connect", "Verbinden") else "Confirm", @intFromEnum(gtk.ResponseType.accept));
         _ = gtk.Dialog.signals.response.connect(dialog, *View, answered, self, .{});
         dialog.as(gtk.Window).present();
         if (self.secret) |entry| _ = entry.as(gtk.Widget).grabFocus();

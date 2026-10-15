@@ -1,0 +1,2 @@
+event=ready
+command={"delay": 2000}

@@ -53,6 +53,7 @@ test {
     _ = @import("config/merge.zig");
     _ = @import("services/notification_policy.zig");
     _ = @import("services/connectivity_policy.zig");
+    _ = @import("services/network_presentation.zig");
     _ = @import("desktop/policy.zig");
     _ = @import("desktop/resource_model.zig");
     _ = @import("desktop/settings_navigation.zig");
