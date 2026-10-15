@@ -1,0 +1,76 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='390' height='1000' viewBox='0 0 390 1000' role='img' aria-labelledby='title desc'>
+<title id='title'>Pearl Appearance redesign — narrow window</title><desc id='desc'>Static proposed settings layout with shared navigation, draft preview, visual theme choices, grouped controls and a persistent Apply and save footer.</desc>
+<defs><linearGradient id='wall' x2='1' y2='1'><stop stop-color='#21192e'/><stop offset='.55' stop-color='#574078'/><stop offset='1' stop-color='#b398c7'/></linearGradient></defs><style>
+text{font-family:Inter,'DejaVu Sans',sans-serif;font-size:14px;fill:#e7e1ec} .bg{fill:#211f26}.sidebar{fill:#1e1c21}.card{fill:#2b2831}.button,.choice{fill:#302c37;stroke:#4b4554}.selected{fill:#4f3787;stroke:#d0bcff;stroke-width:1.5}.accent{fill:#d0bcff}.on-accent{fill:#381e72}.muted{fill:#c4bbcf}.strong{font-weight:600}.small{font-size:12px}.tiny{font-size:10px;letter-spacing:1.2px}.section{font-size:17px;font-weight:600}.heading{font-size:30px;font-weight:500;letter-spacing:-.6px}.center{text-anchor:middle}.right{text-anchor:end}.wallpaper{fill:url(#wall)}.mini-surface{fill:#272130}.mini-selected{fill:#bba3eb}.mini-muted{fill:#9c91ad}.knob{fill:#c6c0ce}.knob-on{fill:#381e72}.line{stroke:#403a48;fill:none}
+</style>
+<rect x='0' y='0' width='390' height='1000' rx='16' class='bg'/>
+<rect x='0' y='0' width='390' height='52' rx='0' class='sidebar'/>
+<text x='22' y='32' class='strong'>●  Pearl Settings</text>
+<text x='368' y='32' class='right muted'>−   □   ×</text>
+<rect x='16' y='65' width='106' height='36' rx='18' class='button'/>
+<text x='69' y='88' class='center'>☰  Sections</text>
+<text x='16' y='141' class='heading'>Appearance</text>
+<text x='16' y='167' class='muted'>Make Pearl feel at home on your desktop.</text>
+<rect x='16' y='188' width='358' height='240' rx='16' class='card'/>
+<text x='32' y='218' class='strong'>Desktop preview</text>
+<rect x='32' y='234' width='326' height='146' rx='12' class='wallpaper'/>
+<rect x='42' y='244' width='108' height='15' rx='7' class='mini-surface'/>
+<rect x='281' y='244' width='67' height='15' rx='7' class='mini-surface'/>
+<rect x='171' y='244' width='48' height='15' rx='7' class='mini-surface'/>
+<rect x='113' y='278' width='163' height='68' rx='8' class='mini-surface'/>
+<rect x='125' y='291' width='50' height='5' rx='2' class='mini-muted'/>
+<rect x='125' y='305' width='139' height='12' rx='5' class='mini-selected'/>
+<rect x='148' y='353' width='94' height='19' rx='8' class='mini-surface'/>
+<rect x='159' y='357' width='12' height='11' rx='3' class='mini-selected'/>
+<rect x='180' y='357' width='12' height='11' rx='3' class='mini-selected'/>
+<rect x='201' y='357' width='12' height='11' rx='3' class='mini-selected'/>
+<rect x='222' y='357' width='12' height='11' rx='3' class='mini-selected'/>
+<text x='32' y='407' class='muted small'>Draft preview · desktop changes after Apply</text>
+<rect x='16' y='444' width='358' height='354' rx='16' class='card'/>
+<text x='36' y='476' class='section'>Theme &amp; colors</text>
+<rect x='36' y='496' width='154' height='86' rx='12' class='choice'/>
+<text x='48' y='521' class='strong'>Material</text>
+<text x='178' y='521' class='right'>○</text>
+<text x='48' y='544' class='small muted'>Built-in colors</text>
+<circle cx='53' cy='564' r='5' fill='#d0bcff'/>
+<circle cx='69' cy='564' r='5' fill='#b9c9eb'/>
+<circle cx='85' cy='564' r='5' fill='#dcbcd3'/>
+<rect x='200' y='496' width='154' height='86' rx='12' class='selected'/>
+<text x='212' y='521' class='strong'>Dynamic</text>
+<text x='342' y='521' class='right'>●</text>
+<text x='212' y='544' class='small muted'>Wallpaper or seed</text>
+<circle cx='217' cy='564' r='5' fill='#d0bcff'/>
+<circle cx='233' cy='564' r='5' fill='#b9c9eb'/>
+<circle cx='249' cy='564' r='5' fill='#dcbcd3'/>
+<rect x='36' y='592' width='154' height='86' rx='12' class='choice'/>
+<text x='48' y='617' class='strong'>GTK</text>
+<text x='178' y='617' class='right'>○</text>
+<text x='48' y='640' class='small muted'>System theme</text>
+<circle cx='53' cy='660' r='5' fill='#d0bcff'/>
+<circle cx='69' cy='660' r='5' fill='#b9c9eb'/>
+<circle cx='85' cy='660' r='5' fill='#dcbcd3'/>
+<rect x='200' y='592' width='154' height='86' rx='12' class='choice'/>
+<text x='212' y='617' class='strong'>Community</text>
+<text x='342' y='617' class='right'>○</text>
+<text x='212' y='640' class='small muted'>Installed themes</text>
+<circle cx='217' cy='660' r='5' fill='#d0bcff'/>
+<circle cx='233' cy='660' r='5' fill='#b9c9eb'/>
+<circle cx='249' cy='660' r='5' fill='#dcbcd3'/>
+<text x='36' y='716' class=''>Color variant</text>
+<text x='354' y='716' class='right muted'>Dark   ⌄</text>
+<text x='36' y='761' class=''>Colors from</text>
+<text x='354' y='761' class='right muted'>Wallpaper   ⌄</text>
+<text x='36' y='781' class='small muted'>Colors update when you apply your wallpaper.</text>
+<rect x='16' y='814' width='358' height='100' rx='16' class='card'/>
+<text x='36' y='848' class='section'>Wallpaper</text>
+<text x='36' y='884' class='muted small'>Dusk.png · Cover</text>
+<rect x='201' y='862' width='153' height='36' rx='18' class='button'/>
+<text x='277' y='885' class='center'>Choose image…</text>
+<rect x='0' y='922' width='390' height='78' rx='0' class='bg'/>
+<path d='M0 922H390' class='line'/>
+<text x='16' y='944' class='small muted'>Unsaved Pearl preferences</text>
+<rect x='130' y='954' width='92' height='36' rx='18' class='button'/>
+<text x='176' y='977' class='center'>Discard</text>
+<rect x='234' y='954' width='140' height='36' rx='18' class='accent'/>
+<text x='304' y='977' class='on-accent center'>Apply &amp; save</text>
+</svg>

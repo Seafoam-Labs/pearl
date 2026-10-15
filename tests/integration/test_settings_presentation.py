@@ -58,7 +58,8 @@ def main():
         def layout(page,case,shot=False):
             navigate(s,ipc,page,'displays' if page=='aqueous' else None);ready(s,ipc)
             if page=='aqueous':aq_ready(s,ipc,peer)
-            time.sleep(.15);v=probe(s,ipc);win=windows(ipc)[0]
+            # Allow the 150 ms cancellable wallpaper debounce and a paint frame.
+            time.sleep(.4);v=probe(s,ipc);win=windows(ipc)[0]
             body=v['body_bounds'];footer=v['footer_bounds'];header=v['header_bounds']
             assert v['connected'] and not v['fixture'],v
             if page in ('network','bluetooth','sound','power','overview'):assert 'immediately' in v['footer_text'],v['footer_text']
@@ -78,6 +79,12 @@ def main():
                     assert active['y']>=viewport['y']-1 and active['y']+active['height']<=viewport['y']+viewport['height']+1,(case,active,viewport)
             bounds=ipc.outputs()[win['output']]['bounds']
             assert v['width']<=bounds['width']+1 and v['height']<=bounds['height']+1,(case,page,v,bounds)
+            if page == 'appearance':
+                for control in v['controls']:
+                    if control['field'].startswith('mode.') or control['field'] == 'appearance.preview':
+                        rect = control['bounds']
+                        assert rect and rect['width'] > 0, (case, control)
+                        assert rect['x'] >= body['x']-1 and rect['x']+rect['width'] <= body['x']+body['width']+1, (case, control, body)
             report['layouts'].append(dict(case=case,page=page,width=v['width'],height=v['height'],body=body,footer=footer,narrow=v['narrow'],output=win['output']))
             if shot:
                 name=case+'-'+page;capture(s,name,connector)

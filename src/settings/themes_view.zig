@@ -47,6 +47,11 @@ pub const View = struct {
     initialized: bool = false,
     community: bool = false,
     draft_selection: bool = false,
+    preview_context: ?*anyopaque = null,
+    preview_callback: ?*const fn (*anyopaque, ?@import("../theme/theme.zig").Palette) void = null,
+    preview_digest: ?[64]u8 = null,
+    preview_is_draft: bool = false,
+    preview_cancel_requested: bool = false,
     pub fn create(host: *gtk.Box, editor: *Editor) !*View {
         const self = try a.create(View);
         const root = w.column(10);
@@ -138,10 +143,16 @@ pub const View = struct {
     }
     fn send(self: *View, request: cmd.Request) !void {
         try self.editor.themeCommand(request);
+        self.preview_digest = if (request.action == .preview_render) @import("editor_protocol.zig").digest(self.editor.text()) else null;
+        self.preview_is_draft = false;
+        self.preview_cancel_requested = false;
         if (self.seen) |bytes| a.free(bytes);
         self.seen = null;
         self.last = request.action;
         self.status.setText("Working…");
+    }
+    pub fn previewDraft(self: *View) !void {
+        try self.perform(.preview_draft, 0);
     }
     fn paletteCommand(context: *anyopaque, request: cmd.Request) anyerror!void {
         const self: *View = @ptrCast(@alignCast(context));
@@ -190,6 +201,7 @@ pub const View = struct {
                 defer memory.deinit();
                 const p = try @import("../config/preferences.zig").parse(memory.allocator(), self.editor.text());
                 try self.send(.{ .action = .preview_render, .theme = p.theme, .wallpaper = p.wallpaper });
+                self.preview_is_draft = true;
             },
             .install => {
                 const r = self.releases[index];
@@ -307,6 +319,13 @@ pub const View = struct {
         }
     }
     pub fn update(self: *View) void {
+        if (self.preview_digest) |digest| if (!std.mem.eql(u8, &digest, &@import("editor_protocol.zig").digest(self.editor.text()))) self.preview_root.as(gtk.Widget).setVisible(0);
+        if (self.preview_is_draft and !self.preview_cancel_requested and self.editor.theme_busy and !self.editor.application_command and self.editor.live_command == null) {
+            if (self.preview_digest) |digest| if (self.editor.target.page != .appearance or !std.mem.eql(u8, &digest, &@import("editor_protocol.zig").digest(self.editor.text()))) {
+                self.editor.cancelTheme();
+                self.preview_cancel_requested = true;
+            };
+        }
         const author_busy = self.editor.theme_busy and switch (self.last) {
             .palette_read, .palette_init, .palette_write, .palette_import, .palette_export => true,
             else => false,
@@ -414,8 +433,14 @@ pub const View = struct {
                 try self.render();
             },
             .preview, .preview_render => {
+                if (self.preview_digest) |digest| if (!std.mem.eql(u8, &digest, &@import("editor_protocol.zig").digest(self.editor.text()))) {
+                    self.preview_root.as(gtk.Widget).setVisible(0);
+                    self.status.setText("Draft changed. Preview again to see the current selection.");
+                    return;
+                };
                 const alloc = temporary.allocator();
                 const resolved = try std.json.parseFromSliceLeaky(@import("../theme/resolve.zig").Resolved, alloc, bytes, .{ .allocate = .alloc_always });
+                if (self.preview_is_draft and self.editor.target.page == .appearance) if (self.preview_callback) |callback| if (self.preview_context) |context| callback(context, resolved.palette);
                 const theme = @import("../theme/theme.zig");
                 const p = resolved.palette orelse theme.dark;
                 const tokens = try @import("../theme/style.zig").tokenCss(alloc, resolved.tokens, true);

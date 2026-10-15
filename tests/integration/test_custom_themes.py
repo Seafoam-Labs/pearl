@@ -33,6 +33,9 @@ def main():
     (args.output/'acceptance.json').write_text(json.dumps(report,indent=2)+'\n')
     with PrivateSession(args.output/'session',tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND']='memory'
+        # Isolate theme generation from first-install application profile setup.
+        legacy=Path(s.env['XDG_CONFIG_HOME'])/'pearl/last-good.json'
+        legacy.parent.mkdir(parents=True); legacy.write_text('{}')
         calls=s.base/'generator-calls'; calls.write_text('')
         mode=s.base/'generator-mode';mode.write_text('pass')
         s.env.update(PATH=str(ROOT/'tests/fixtures/theme')+':'+s.env['PATH'], PEARL_TEST_GENERATOR_LOG=str(calls),PEARL_TEST_GENERATOR_MODE=str(mode))

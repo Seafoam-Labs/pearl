@@ -1,0 +1,1 @@
+{"status": "passed", "checks": ["disclosures-and-community-picker-preserve-draft", "native-mode-seed-and-backend-preview-do-not-commit", "in-flight-color-preview-cancelled-on-navigation", "native-chooser-cancel-preview-navigation-and-apply", "expanded-text-and-desktop-controls-share-discard", "light-gtk-390px-and-large-text-layout-and-keyboard-editing"]}

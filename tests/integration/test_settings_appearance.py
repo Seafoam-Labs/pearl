@@ -4,6 +4,7 @@ import argparse
 import copy
 import hashlib
 import json
+import subprocess
 import time
 import uuid
 from pathlib import Path
@@ -29,6 +30,29 @@ def control(s, ipc, field):
 
 
 def click(s, ipc, field):
+    # Use the real disclosure headers before scrolling to their child controls.
+    # Section toggles are presentation state and never write the shared draft.
+    section = None
+    if field in ('wallpaper', 'fit', 'color') or field.startswith('slideshow_'):
+        section = 'image'
+    elif field in ('font', 'font_size', 'density', 'motion'):
+        section = 'text'
+    elif field.startswith('desktop_'):
+        section = 'desktop'
+    elif field.startswith('night_'):
+        section = 'night'
+    elif field.startswith(('qt_', 'applications.')) or field == 'sync_borders':
+        section = 'applications'
+    elif field.startswith(('themes.', 'palettes.')):
+        section = 'themes'
+    elif field == 'greeter_sync':
+        section = 'login'
+    if section:
+        header = 'appearance.section.' + section
+        state = next((c for c in probe(s, ipc)['controls'] if c['field'] == header), None)
+        if state and not state['selected']:
+            click(s, ipc, header)
+            wait_for(lambda: next(c for c in probe(s, ipc)['controls'] if c['field'] == header)['selected'])
     time.sleep(.2)  # Wait for GTK to allocate controls after snapshot/layout changes.
     if field not in ('raw', 'apply', 'discard', 'merge'):
         for _ in range(30):
@@ -51,7 +75,12 @@ def click(s, ipc, field):
 
 
 def type_text(s, text):
-    s.run(['wtype', '-s', '100', '-M', 'ctrl', 'a', '-m', 'ctrl', text, '-s', '50'])
+    # Full Advanced documents generate thousands of real input events. Keep a
+    # bounded timeout without treating the session's 10-second command limit as
+    # an editing deadline, especially while native test builds share the CPU.
+    subprocess.run(['wtype', '-s', '100', '-M', 'ctrl', 'a', '-m', 'ctrl', text, '-s', '50'],
+                   env=s.env, cwd=s.base, capture_output=True, text=True, check=True,
+                   timeout=30 if len(text) > 512 else 10)
 
 
 def raw(s, ipc, text):
@@ -141,6 +170,27 @@ def main():
             fields = {c['field'] for c in probe(s, ipc)['controls']}
             assert {'mode','variant','source','gtk_name','seed','wallpaper','color','font','font_size','fit','density','motion','choose','raw'} <= fields
             capture(s, 'appearance-real-dark')
+            before = peer.document()
+            for section in ('image', 'text', 'desktop', 'night', 'applications', 'themes', 'login'):
+                header = 'appearance.section.' + section
+                assert not next(c for c in probe(s, ipc)['controls'] if c['field'] == header)['selected']
+                click(s, ipc, header)
+                wait_for(lambda: next(c for c in probe(s, ipc)['controls'] if c['field'] == header)['selected'])
+                click(s, ipc, header)
+            assert peer.document() == before
+            passed('appearance-disclosures-do-not-edit-draft')
+            click(s, ipc, 'mode.package')
+            wait_for(lambda: next(c for c in probe(s, ipc)['controls'] if c['field'] == 'appearance.section.themes')['selected'])
+            assert peer.document() == before
+            click(s, ipc, 'appearance.section.themes')
+            for mode in ('dynamic', 'gtk', 'static'):
+                click(s, ipc, 'mode.' + mode)
+                wait_for(lambda: json.loads(peer.document())['theme']['mode'] == mode)
+                assert sum(c['selected'] is True for c in probe(s, ipc)['controls'] if c['field'].startswith('mode.')) == 1
+                assert json.loads(peer.document('committed')) == original
+            click(s, ipc, 'discard'); ready(s, ipc)
+            assert json.loads(peer.document()) == original
+            passed('appearance-mode-tiles-shared-draft-and-discard')
             assert not original['desktop_icons']['enabled']
             click(s, ipc, 'desktop_enabled')
             wait_for(lambda: json.loads(peer.document())['desktop_icons']['enabled'])

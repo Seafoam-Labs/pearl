@@ -1,0 +1,59 @@
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+[New Thread 0x7fffef7ff6c0 (LWP 1058508) (id 2)]
+[New Thread 0x7fffee7fe6c0 (LWP 1058509) (id 3)]
+[New Thread 0x7fffed7fd6c0 (LWP 1058510) (id 4)]
+[New Thread 0x7fffe7fff6c0 (LWP 1058511) (id 5)]
+ts=2026-10-15T19:16:12Z pid=1058503 info(settings): event=settings-launch activation_context=false
+[New Thread 0x7fffe6ffe6c0 (LWP 1058512) (id 6)]
+ts=2026-10-15T19:16:12Z pid=1058503 info(settings): event=settings-instance-ready session_hash=dfddd3dfdc0df087
+ts=2026-10-15T19:16:12Z pid=1058503 info(settings): event=settings-page page=overview
+ts=2026-10-15T19:16:12Z pid=1058503 info(settings): event=settings-page page=advanced
+[New Thread 0x7fffe5ffd6c0 (LWP 1058577) (id 7)]
+[New Thread 0x7fffd3fff6c0 (LWP 1058578) (id 8)]
+[New Thread 0x7fffd21ff6c0 (LWP 1058579) (id 9)]
+[New Thread 0x7fffd11fe6c0 (LWP 1058580) (id 10)]
+ts=2026-10-15T19:16:12Z pid=1058503 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-15T19:16:12Z pid=1058503 info(settings): event=settings-page page=advanced
+ts=2026-10-15T19:16:12Z pid=1058503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T19:16:12Z pid=1058503 info(settings): event=settings-page page=advanced
+
+(pearl-settings-test:1058503): Gtk-WARNING **: 15:16:20.851: Trying to snapshot GtkGizmo 0x15876e0 without a current allocation
+
+Thread 1 "pearl-settings-" received signal SIGTRAP, Trace/breakpoint trap.
+0x00007ffff6af088d in ?? () from /usr/lib/libglib-2.0.so.0
+#0  0x00007ffff6af088d in ?? () from /usr/lib/libglib-2.0.so.0
+#1  0x00007ffff6af9b6c in g_log_writer_default () from /usr/lib/libglib-2.0.so.0
+#2  0x00007ffff6af0992 in g_log_structured_array () from /usr/lib/libglib-2.0.so.0
+#3  0x00007ffff6af11e3 in g_log_structured_standard () from /usr/lib/libglib-2.0.so.0
+#4  0x00007ffff73141c8 in ?? () from /usr/lib/libgtk-4.so.1
+#5  0x00007ffff7314283 in gtk_widget_snapshot_child () from /usr/lib/libgtk-4.so.1
+#6  0x00007ffff72f9a9f in ?? () from /usr/lib/libgtk-4.so.1
+#7  0x00007ffff7311d12 in ?? () from /usr/lib/libgtk-4.so.1
+#8  0x00007ffff7314107 in ?? () from /usr/lib/libgtk-4.so.1
+#9  0x00007ffff7314283 in gtk_widget_snapshot_child () from /usr/lib/libgtk-4.so.1
+#10 0x00007ffff72f9a9f in ?? () from /usr/lib/libgtk-4.so.1
+#11 0x00007ffff7311d12 in ?? () from /usr/lib/libgtk-4.so.1
+#12 0x00007ffff7314107 in ?? () from /usr/lib/libgtk-4.so.1
+#13 0x00007ffff7314283 in gtk_widget_snapshot_child () from /usr/lib/libgtk-4.so.1
+#14 0x00007ffff72f9a9f in ?? () from /usr/lib/libgtk-4.so.1
+#15 0x00007ffff72474f9 in ?? () from /usr/lib/libgtk-4.so.1
+#16 0x00007ffff7311d12 in ?? () from /usr/lib/libgtk-4.so.1
+#17 0x00007ffff7314107 in ?? () from /usr/lib/libgtk-4.so.1
+#18 0x00007ffff7314283 in gtk_widget_snapshot_child () from /usr/lib/libgtk-4.so.1
+#19 0x00007ffff7311d12 in ?? () from /usr/lib/libgtk-4.so.1
+#20 0x00007ffff7314107 in ?? () from /usr/lib/libgtk-4.so.1
+#21 0x00007ffff7314283 in gtk_widget_snapshot_child () from /usr/lib/libgtk-4.so.1
+#22 0x00007ffff72f9a9f in ?? () from /usr/lib/libgtk-4.so.1
+#23 0x00007ffff7311d12 in ?? () from /usr/lib/libgtk-4.so.1
+#24 0x00007ffff7314107 in ?? () from /usr/lib/libgtk-4.so.1
+#25 0x00007ffff7314283 in gtk_widget_snapshot_child () from /usr/lib/libgtk-4.so.1
+#26 0x00007ffff72f9a9f in ?? () from /usr/lib/libgtk-4.so.1
+#27 0x00007ffff7311d12 in ?? () from /usr/lib/libgtk-4.so.1
+#28 0x00007ffff7314107 in ?? () from /usr/lib/libgtk-4.so.1
+#29 0x00007ffff7314283 in gtk_widget_snapshot_child () from /usr/lib/libgtk-4.so.1
+#30 0x00007ffff72f9a9f in ?? () from /usr/lib/libgtk-4.so.1
+#31 0x00007ffff7311d12 in ?? () from /usr/lib/libgtk-4.so.1
+#32 0x00007ffff7314107 in ?? () from /usr/lib/libgtk-4.so.1
+#33 0x00007ffff7314283 in gtk_widget_snapshot_child () from /usr/lib/libgtk-4.so.1
+#34 0x00007ffff72f9a9f in ?? () from /usr/lib/libgtk-4.so.1

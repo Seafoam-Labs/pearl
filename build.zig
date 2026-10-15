@@ -530,6 +530,13 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| settings_appearance.addArgs(args);
     b.step("test-settings-appearance", "Verify real standalone Appearance editing, shared drafts and save lifecycle").dependOn(&settings_appearance.step);
 
+    const appearance_redesign = b.addSystemCommand(&.{ "python3", "tests/integration/test_appearance_redesign.py", "--settings" });
+    appearance_redesign.addArtifactArg(settings_test_app);
+    appearance_redesign.addArg("--pearl");
+    appearance_redesign.addArtifactArg(app);
+    if (b.args) |args| appearance_redesign.addArgs(args);
+    b.step("test-appearance-redesign", "Verify Appearance disclosures, preview isolation and responsive native controls").dependOn(&appearance_redesign.step);
+
     const border_theme = b.addSystemCommand(&.{ "python3", "tests/integration/test_border_theme.py", "--settings" });
     border_theme.addArtifactArg(settings_test_app);
     border_theme.addArg("--pearl");
@@ -657,6 +664,7 @@ pub fn build(b: *std.Build) void {
     greeter_sync_ui.addArtifactArg(ctl);
     greeter_sync_ui.addArg("--helper");
     greeter_sync_ui.addArtifactArg(greeter_sync_test_executable);
+    if (b.args) |args| greeter_sync_ui.addArgs(args);
     b.step("test-greeter-sync-ui", "Verify native appearance sync from Settings and the flyout").dependOn(&greeter_sync_ui.step);
     const filter_settings = b.addSystemCommand(&.{ "python3", "tests/integration/test_notification_filters.py", "--settings" });
     filter_settings.addArtifactArg(settings_test_app);

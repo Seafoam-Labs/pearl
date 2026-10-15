@@ -1,0 +1,18 @@
+{
+  "status": "running",
+  "checks": {
+    "bounded-full-document-invalid-and-empty-retention": true,
+    "partial-transfer-and-digest-failure-never-mutate-draft": true,
+    "shared-cas-and-canonical-operation-deduplication": true,
+    "appearance-disclosures-do-not-edit-draft": true,
+    "appearance-mode-tiles-shared-draft-and-discard": true,
+    "desktop-icon-controls-draft-discard-and-upgrade-default": true,
+    "real-appearance-form-preserves-full-preference-document": true,
+    "invalid-advanced-navigation-close-reopen-without-save": true
+  },
+  "binaries": {
+    "settings": "cea64a7f4e610049310ca8fa373b95666e715774c14919497a60db4c02539dfd",
+    "pearl": "a27ad06c7adf44582a5fa9f6549436f00dbe408a76a23eed9af9fe9e122b20ae",
+    "ctl": "ff2675bf31af7177f6801b2b0d38a4f55b8f87cb8c49599e586474a111af5571"
+  }
+}

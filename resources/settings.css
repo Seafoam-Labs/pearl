@@ -12,6 +12,10 @@
 .settings-window.$scope .power-card { background: $high$; }
 .settings-window.$scope .power-mode { background: $high$; }
 .settings-window.$scope .power-selected { background: $primary_container$; border-color: $primary$; }
+.settings-window.$scope .appearance-mode:checked { background: $primary_container$; border-color: $primary$; }
+.settings-window.$scope .appearance-mode radio { background: $high$; border-color: $outline$; }
+.settings-window.$scope .appearance-mode radio:checked { background: $primary$; }
+.settings-window.$scope .appearance-mode:focus-visible { outline-color: $primary$; }
 .settings-window.$scope .power-chart { color: $primary$; }
 .settings-window.$scope .power-battery-icon block.filled { background: $primary$; }
 .settings-window.$scope .power-battery-icon block.empty { background: mix($high$, $outline$, 0.25); }

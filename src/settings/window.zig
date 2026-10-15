@@ -1161,12 +1161,21 @@ pub const Window = struct {
             }
         };
         if (self.preferences_view) |view| {
-            const widgets = [_]*gtk.Widget{ view.mode.as(gtk.Widget), view.variant.as(gtk.Widget), view.source.as(gtk.Widget), view.entries[0].as(gtk.Widget), view.entries[1].as(gtk.Widget), view.entries[2].as(gtk.Widget), view.entries[3].as(gtk.Widget), view.entries[4].as(gtk.Widget), view.font_size.as(gtk.Widget), view.fit.as(gtk.Widget), view.density.as(gtk.Widget), view.motion.as(gtk.Widget), view.choose.as(gtk.Widget), view.greeter_sync.button.as(gtk.Widget), view.raw_view.as(gtk.Widget), self.save.as(gtk.Widget), self.discard.as(gtk.Widget), self.merge_button.as(gtk.Widget) };
+            const widgets = [_]*gtk.Widget{ view.mode.widget(), view.variant.as(gtk.Widget), view.source.as(gtk.Widget), view.entries[0].as(gtk.Widget), view.entries[1].as(gtk.Widget), view.entries[2].as(gtk.Widget), view.entries[3].as(gtk.Widget), view.entries[4].as(gtk.Widget), view.font_size.as(gtk.Widget), view.fit.as(gtk.Widget), view.density.as(gtk.Widget), view.motion.as(gtk.Widget), view.choose.as(gtk.Widget), view.greeter_sync.button.as(gtk.Widget), view.raw_view.as(gtk.Widget), self.save.as(gtk.Widget), self.discard.as(gtk.Widget), self.merge_button.as(gtk.Widget) };
             for (widgets, [_][]const u8{ "mode", "variant", "source", "gtk_name", "seed", "wallpaper", "color", "font", "font_size", "fit", "density", "motion", "choose", "greeter_sync", "raw", "apply", "discard", "merge" }) |widget, name| {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .bounds = self.bounds(widget) });
             }
         }
         if (self.preferences_view) |view| {
+            for (view.mode.buttons, [_][]const u8{ "mode.static", "mode.dynamic", "mode.gtk", "mode.package" }) |button, name| {
+                const widget = button.as(gtk.Widget);
+                try controls.append(alloc, .{ .field = name, .focused = focus == widget, .enabled = widget.isSensitive() != 0, .selected = button.getActive() != 0, .bounds = self.bounds(widget) });
+            }
+            for ([_]@import("preferences_view.zig").Section{ view.image_section, view.text_section, view.desktop_section, view.night_section, view.apps_section, view.themes_section, view.login_section }, [_][]const u8{ "image", "text", "desktop", "night", "applications", "themes", "login" }) |section, name| {
+                try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "appearance.section.{s}", .{name}), .focused = focus == section.expander.as(gtk.Widget), .enabled = section.expander.as(gtk.Widget).isSensitive() != 0, .selected = section.expander.getExpanded() != 0, .text = std.mem.span(section.summary.getText()), .bounds = self.bounds(section.expander.getLabelWidget().?) });
+            }
+            try controls.append(alloc, .{ .field = "appearance.preview", .focused = false, .text = std.mem.span(view.desktop_preview.status.getText()), .bounds = self.bounds(view.desktop_preview.root.as(gtk.Widget)) });
+            try controls.append(alloc, .{ .field = "appearance.preview-colors", .focused = focus == view.preview_colors.as(gtk.Widget), .enabled = view.preview_colors.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(view.preview_colors.as(gtk.Widget)) });
             for ([_]*gtk.Widget{ view.desktop_enabled.as(gtk.Widget), view.desktop_hidden.as(gtk.Widget), view.desktop_output.as(gtk.Widget), view.desktop_size.as(gtk.Widget), view.desktop_arrangement.as(gtk.Widget) }, [_][]const u8{ "desktop_enabled", "desktop_hidden", "desktop_output", "desktop_size", "desktop_arrangement" }) |widget, name| {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .bounds = self.bounds(widget), .enabled = widget.isSensitive() != 0 });
             }

@@ -13,6 +13,65 @@ const model = @import("../config/preferences.zig");
 const Editor = @import("editor.zig").Editor;
 const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
+pub const Section = struct {
+    expander: *gtk.Expander,
+    body: *gtk.Box,
+    summary: *gtk.Label,
+    fn create(host: *gtk.Box, title: [:0]const u8, description: [:0]const u8) Section {
+        const expander = gtk.Expander.new(null);
+        expander.as(gtk.Widget).addCssClass("settings-card");
+        expander.as(gtk.Widget).addCssClass("appearance-section");
+        const heading = w.column(5);
+        heading.as(gtk.Widget).addCssClass("appearance-section-heading");
+        heading.append(w.label(title, "pearl-section-title").as(gtk.Widget));
+        const summary = w.label(description, "pearl-secondary");
+        heading.append(summary.as(gtk.Widget));
+        expander.setLabelWidget(heading.as(gtk.Widget));
+        w.name(expander.as(gtk.Widget), title);
+        const body = w.column(8);
+        expander.setChild(body.as(gtk.Widget));
+        host.append(expander.as(gtk.Widget));
+        return .{ .expander = expander, .body = body, .summary = summary };
+    }
+};
+pub const ModeChoice = struct {
+    buttons: [4]*gtk.CheckButton,
+    fn create(host: *gtk.Box, german: bool) ModeChoice {
+        const flow = w.flow(4);
+        flow.setHomogeneous(1);
+        flow.as(gtk.Widget).addCssClass("appearance-modes");
+        var result: ModeChoice = undefined;
+        const titles: [4][:0]const u8 = if (german) .{ "Material", "Dynamisch", "GTK", "Community" } else .{ "Material", "Dynamic", "GTK", "Community" };
+        const descriptions: [4][:0]const u8 = if (german) .{ "Integrierte Farben", "Bild oder Ausgangsfarbe", "Systemdesign", "Installierte Designs" } else .{ "Built-in colors", "Wallpaper or seed", "System theme", "Installed themes" };
+        for (titles, descriptions, 0..) |title, description, i| {
+            const button = gtk.CheckButton.new();
+            if (i > 0) button.setGroup(result.buttons[0]);
+            button.as(gtk.Widget).addCssClass("appearance-mode");
+            const content = w.column(6);
+            content.append(w.label(title, "settings-row-title").as(gtk.Widget));
+            const subtitle = w.label(description, "pearl-secondary");
+            subtitle.setMaxWidthChars(13);
+            content.append(subtitle.as(gtk.Widget));
+            button.setChild(content.as(gtk.Widget));
+            w.name(button.as(gtk.Widget), title);
+            flow.insert(button.as(gtk.Widget), -1);
+            result.buttons[i] = button;
+        }
+        result.buttons[0].setActive(1);
+        host.append(flow.as(gtk.Widget));
+        return result;
+    }
+    pub fn getSelected(self: ModeChoice) c_uint {
+        for (self.buttons, 0..) |button, i| if (button.getActive() != 0) return @intCast(i);
+        return 0;
+    }
+    fn setSelected(self: ModeChoice, index: c_uint) void {
+        self.buttons[@min(index, 3)].setActive(1);
+    }
+    pub fn widget(self: ModeChoice) *gtk.Widget {
+        return self.buttons[self.getSelected()].as(gtk.Widget);
+    }
+};
 pub const View = struct {
     editor: *Editor,
     window: *gtk.Window,
@@ -27,7 +86,19 @@ pub const View = struct {
     filling: bool = false,
     editing_form: bool = false,
     raw_invalid: bool = false,
-    mode: *gtk.DropDown,
+    mode: ModeChoice,
+    desktop_preview: *@import("appearance_preview.zig").View,
+    wallpaper_summary: *gtk.Label,
+    wallpaper_thumbnail: *gtk.Picture,
+    preview_colors: *gtk.Button,
+    customize: *gtk.Button,
+    image_section: Section,
+    text_section: Section,
+    desktop_section: Section = undefined,
+    night_section: Section = undefined,
+    apps_section: Section,
+    themes_section: Section = undefined,
+    login_section: Section = undefined,
     sync_borders: *gtk.Switch = undefined,
     variant: *gtk.DropDown,
     source: *gtk.DropDown,
@@ -88,8 +159,17 @@ pub const View = struct {
 
     pub fn create(window: *gtk.Window, host: *gtk.Box, editor: *Editor, german: bool) !*View {
         const self = try a.create(View);
+        host.as(gtk.Widget).addCssClass("appearance-view");
+        host.setSpacing(16);
+        const preview_card = card(host);
+        const desktop_preview = try @import("appearance_preview.zig").View.create(preview_card, german);
+        const preview_note = w.label("", "pearl-secondary");
+        const preview_colors = w.wrappingButton(if (german) "Farben des Entwurfs ansehen" else "Preview draft colors");
+        preview_colors.as(gtk.Widget).setHalign(.start);
+        desktop_preview.caption.append(preview_colors.as(gtk.Widget));
         const appearance = card(host);
-        const mode = dropdown(appearance, if (german) "Design" else "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme", "Community package" });
+        appearance.append(w.label(if (german) "Design und Farben" else "Theme & colors", "pearl-section-title").as(gtk.Widget));
+        const mode = ModeChoice.create(appearance, german);
         const variant = dropdown(appearance, if (german) "Farbvariante" else "Color variant", &.{ "Dark", "Light" });
         const source = dropdown(appearance, if (german) "Dynamische Farben aus" else "Dynamic colors from", &.{ "Seed color", "Wallpaper" });
         const gtk_name = entry(appearance, if (german) "GTK-Designname" else "GTK theme name", 96);
@@ -98,31 +178,39 @@ pub const View = struct {
         seed.setPlaceholderText("#6750a4");
         const hint = w.label(if (german) "Dynamische Farben benötigen matugen 4.x. Ein leerer GTK-Name folgt dem System." else "Dynamic colors need matugen 4.x. An empty GTK theme name follows the system.", "pearl-secondary");
         appearance.append(hint.as(gtk.Widget));
-        const sync_borders = toggle(appearance, if (german) "Fensterrahmen folgen dem Pearl-Design" else "Window borders follow Pearl theme");
-        appearance.append(w.label(if (german) "Verwendet Material-Farben für aktive, normale und dringende Fenster. Wartet auf ausstehende Aqueous-Änderungen. Ausschalten behält die letzten Farben; im GTK-Modus pausiert die Synchronisierung." else "Uses Material colors for focused, normal, and urgent windows. Waits for pending Aqueous edits. Turning off keeps the last colors; GTK mode pauses synchronization.", "pearl-secondary").as(gtk.Widget));
+        const customize = w.wrappingButton(if (german) "Installierte Designs und Anpassungen…" else "Installed themes & customization…");
+        customize.as(gtk.Widget).addCssClass("appearance-action");
+        appearance.append(customize.as(gtk.Widget));
         const wallpaper = card(host);
-        wallpaper.append(w.label(self.t("Wallpaper", "Hintergrundbild"), "settings-row-title").as(gtk.Widget));
-        const picture = gtk.Picture.new();
-        picture.setCanShrink(1);
-        picture.setContentFit(.cover);
-        picture.as(gtk.Widget).setSizeRequest(-1, 100);
-        picture.as(gtk.Widget).addCssClass("settings-draft-preview");
+        wallpaper.append(w.label(if (german) "Hintergrundbild" else "Wallpaper", "pearl-section-title").as(gtk.Widget));
+        const picture = desktop_preview.picture;
         w.name(picture.as(gtk.Widget), if (german) "Hintergrundvorschau" else "Wallpaper draft preview");
-        wallpaper.append(picture.as(gtk.Widget));
-        const preview_note = w.label("", "pearl-secondary");
-        wallpaper.append(preview_note.as(gtk.Widget));
-        const path = entry(wallpaper, if (german) "Hintergrundbild" else "Wallpaper image", 1024);
-        path.setPlaceholderText(if (german) "Kein Bild ausgewählt" else "No image selected");
+        const wallpaper_row = w.flow(3);
+        wallpaper_row.setHomogeneous(0);
+        wallpaper_row.as(gtk.Widget).addCssClass("appearance-wallpaper-row");
+        const thumbnail = gtk.Picture.new();
+        thumbnail.setCanShrink(1);
+        thumbnail.setContentFit(.cover);
+        thumbnail.as(gtk.Widget).setSizeRequest(96, 60);
+        thumbnail.as(gtk.Widget).setHalign(.start);
+        thumbnail.as(gtk.Widget).addCssClass("settings-draft-preview");
+        wallpaper_row.insert(thumbnail.as(gtk.Widget), -1);
+        const wallpaper_summary = w.label("", "settings-row-title");
+        wallpaper_summary.setMaxWidthChars(28);
+        wallpaper_summary.setSelectable(1);
+        wallpaper_row.insert(wallpaper_summary.as(gtk.Widget), -1);
         const choose = w.wrappingButton(if (german) "Bild auswählen…" else "Choose image…");
-        choose.as(gtk.Widget).setHalign(.end);
-        choose.as(gtk.Widget).setMarginEnd(20);
-        choose.as(gtk.Widget).setMarginBottom(12);
-        wallpaper.append(choose.as(gtk.Widget));
-        const fit = dropdown(wallpaper, if (german) "Hintergrundmodus" else "Wallpaper fit", &.{ "Material gradient", "Solid color", "Cover", "Contain" });
-        const color = entry(wallpaper, if (german) "Hintergrundfarbe" else "Background color", 7);
+        wallpaper_row.insert(choose.as(gtk.Widget), -1);
+        wallpaper.append(wallpaper_row.as(gtk.Widget));
+        wallpaper.append(preview_note.as(gtk.Widget));
+        const image_section = Section.create(wallpaper, if (german) "Bildoptionen und Diashow" else "Image options & slideshow", if (german) "Pfad, Darstellung und Bildwechsel" else "Path, fit and rotating images");
+        const path = entry(image_section.body, if (german) "Hintergrundbild" else "Wallpaper image", 1024);
+        path.setPlaceholderText(if (german) "Kein Bild ausgewählt" else "No image selected");
+        const fit = dropdown(image_section.body, if (german) "Hintergrundmodus" else "Wallpaper fit", if (german) &.{ "Material-Verlauf", "Einfarbig", "Ausfüllen", "Einpassen" } else &.{ "Material gradient", "Solid color", "Cover", "Contain" });
+        const color = entry(image_section.body, if (german) "Hintergrundfarbe" else "Background color", 7);
         // One card owns the whole wallpaper area; the slideshow is a section of it.
         // Built from locals because `self` is only assigned after every card exists.
-        const slideshow = wallpaper;
+        const slideshow = image_section.body;
         const divider = gtk.Separator.new(.horizontal);
         divider.as(gtk.Widget).setMarginTop(16);
         divider.as(gtk.Widget).setMarginBottom(16);
@@ -143,7 +231,8 @@ pub const View = struct {
         const slideshow_transition = dropdown(slideshow, if (german) "Übergang" else "Transition", if (german) &.{ "Keiner", "Überblenden", "Schieben", "Drehen", "Überdecken", "Zufällig" } else &.{ "None", "Fade", "Slide", "Rotate", "Cover", "Random" });
         const slideshow_duration = gtk.SpinButton.newWithRange(100, 5000, 20);
         row(slideshow, if (german) "Animationsdauer (ms)" else "Animation length (ms)", slideshow_duration.as(gtk.Widget));
-        const typography = card(host);
+        const text_section = Section.create(host, if (german) "Text und Abstände" else "Text & layout", "");
+        const typography = text_section.body;
         const font = entry(typography, if (german) "Schriftfamilie" else "Font family", 96);
         font.setPlaceholderText(if (german) "Systemvorgabe" else "System default");
         const font_size = gtk.SpinButton.newWithRange(10, 24, 1);
@@ -151,7 +240,10 @@ pub const View = struct {
         const density = dropdown(typography, if (german) "Abstände" else "Density", &.{ "Comfortable", "Compact" });
         const motion = gtk.Switch.new();
         row(typography, if (german) "Bewegungen reduzieren" else "Reduced motion", motion.as(gtk.Widget));
-        const qt_card = card(host);
+        const apps_section = Section.create(host, if (german) "Anwendungsdesign" else "Application appearance", if (german) "Fensterrahmen, Qt und Anwendungsfarben" else "Window borders, Qt and application colors");
+        const sync_borders = toggle(apps_section.body, if (german) "Fensterrahmen folgen dem Pearl-Design" else "Window borders follow Pearl theme");
+        apps_section.body.append(w.label(if (german) "Wartet auf ausstehende Aqueous-Änderungen. Ausschalten behält die letzten Farben; im GTK-Modus pausiert die Synchronisierung." else "Waits for pending Aqueous edits. Turning off keeps the last colors; GTK mode pauses synchronization.", "pearl-secondary").as(gtk.Widget));
+        const qt_card = card(apps_section.body);
         qt_card.append(w.label(if (german) "Qt-Anwendungen · QtEngine + Darkly" else "Qt applications · QtEngine + Darkly", "settings-row-title").as(gtk.Widget));
         qt_card.append(w.label(if (german) "QtEngine verwendet eine gemeinsame Konfiguration für Qt 5 und Qt 6. Ausgewählte Prüfungen kontrollieren die installierten Laufzeiten. GTK-Modus verwendet statische Pearl-Farben. Deaktivieren stellt unveränderte frühere Werte wieder her." else "QtEngine shares one configuration across Qt 5 and Qt 6. Selected checks verify the installed runtimes. Changes affect this user account. GTK mode uses Pearl's static colors. Disabling restores previous values that have not been edited elsewhere.", "pearl-secondary").as(gtk.Widget));
         const qt_enabled = toggle(qt_card, if (german) "Qt-Aussehen verwalten" else "Manage Qt appearance");
@@ -189,9 +281,9 @@ pub const View = struct {
         raw_view.setRightMargin(24);
         w.name(raw_view.as(gtk.Widget), if (german) "Vollständige Pearl-Einstellungen als JSON" else "Full Pearl preferences JSON");
         // The caller installs raw_view directly in Advanced's sole viewport.
-        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
-        const desktop = card(host);
-        desktop.append(w.label(self.t("Desktop icons", "Desktopsymbole"), "settings-row-title").as(gtk.Widget));
+        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .desktop_preview = desktop_preview, .wallpaper_summary = wallpaper_summary, .wallpaper_thumbnail = thumbnail, .preview_colors = preview_colors, .customize = customize, .image_section = image_section, .text_section = text_section, .apps_section = apps_section, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
+        self.desktop_section = Section.create(host, self.t("Desktop icons", "Desktopsymbole"), "");
+        const desktop = self.desktop_section.body;
         desktop.append(w.label(self.t("Files and application shortcuts from your Desktop folder. Enabled automatically for new installations.", "Dateien und Programmstarter aus deinem Desktopordner. Bei neuen Installationen automatisch aktiviert."), "pearl-secondary").as(gtk.Widget));
         self.desktop_enabled = toggle(desktop, self.t("Show desktop icons", "Desktopsymbole anzeigen"));
         self.desktop_output = entry(desktop, self.t("Display connector", "Bildschirmanschluss"), 128);
@@ -202,8 +294,8 @@ pub const View = struct {
         for ([_]*gtk.Switch{ self.desktop_enabled, self.desktop_hidden }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "active" });
         for ([_]*gtk.DropDown{ self.desktop_size, self.desktop_arrangement }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
         _ = gtk.Editable.signals.changed.connect(self.desktop_output.as(gtk.Editable), *View, edited, self, .{});
-        const night = card(host);
-        night.append(w.label(self.t("Night Light", "Nachtlicht"), "settings-row-title").as(gtk.Widget));
+        self.night_section = Section.create(host, self.t("Night Light", "Nachtlicht"), "");
+        const night = self.night_section.body;
         night.append(w.label(self.t("Warmer screen colors on supported displays. The status below shows which displays can apply your saved schedule.", "Wärmere Farben auf unterstützten Bildschirmen. Der Status unten zeigt, welche Bildschirme den gespeicherten Zeitplan anwenden können."), "pearl-secondary").as(gtk.Widget));
         self.night_enabled = toggle(night, self.t("Enable Night Light", "Nachtlicht aktivieren"));
         self.night_temperature = gtk.SpinButton.newWithRange(2500, 6500, 100);
@@ -231,10 +323,15 @@ pub const View = struct {
         _ = object.Object.signals.notify.connect(self.night_schedule.as(object.Object), *View, selected, self, .{ .detail = "selected" });
         _ = gtk.SpinButton.signals.value_changed.connect(self.night_temperature, *View, spun, self, .{});
         for (self.night_times) |control| _ = gtk.SpinButton.signals.value_changed.connect(control, *View, spun, self, .{});
-        self.themes = try @import("themes_view.zig").View.create(host, editor);
-        self.profiles = try @import("profiles_view.zig").View.create(host, editor);
-        host.reorderChildAfter(self.themes.root.as(gtk.Widget), appearance.as(gtk.Widget));
-        self.greeter_sync = try @import("greeter_sync.zig").View.create(host, self, syncPreferences, german);
+        host.reorderChildAfter(apps_section.expander.as(gtk.Widget), self.night_section.expander.as(gtk.Widget));
+        self.themes_section = Section.create(host, self.t("Themes & customization", "Designs und Anpassungen"), self.t("Installed themes, palettes and widget styles", "Installierte Designs, Paletten und Widget-Stile"));
+        self.themes = try @import("themes_view.zig").View.create(self.themes_section.body, editor);
+        self.themes.preview_context = self;
+        self.themes.preview_callback = previewPalette;
+        self.profiles = try @import("profiles_view.zig").View.create(apps_section.body, editor);
+        self.login_section = Section.create(host, self.t("Login screen", "Anmeldebildschirm"), self.t("Copy appearance with administrator authentication", "Aussehen mit Administrator-Authentifizierung kopieren"));
+        self.greeter_sync = try @import("greeter_sync.zig").View.create(self.login_section.body, self, syncPreferences, german);
+        host.reorderChildAfter(message.as(gtk.Widget), null);
         self.sync_borders = sync_borders;
         _ = object.Object.signals.notify.connect(sync_borders.as(object.Object), *View, selected, self, .{ .detail = "active" });
         gtk.StyleContext.addProviderForDisplay(window.as(gtk.Widget).getDisplay(), self.preview_css.as(gtk.StyleProvider), 602);
@@ -246,7 +343,10 @@ pub const View = struct {
         _ = gtk.Editable.signals.changed.connect(qt_icon.as(gtk.Editable), *View, edited, self, .{});
         _ = gtk.SpinButton.signals.value_changed.connect(qt_radius, *View, spun, self, .{});
         for (self.entries) |control| _ = gtk.Editable.signals.changed.connect(control.as(gtk.Editable), *View, edited, self, .{});
-        for ([_]*gtk.DropDown{ mode, variant, source, fit, density }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        for (mode.buttons) |control| _ = gtk.CheckButton.signals.toggled.connect(control, *View, modeChosen, self, .{});
+        _ = gtk.Button.signals.clicked.connect(customize, *View, openThemes, self, .{});
+        _ = gtk.Button.signals.clicked.connect(preview_colors, *View, previewColors, self, .{});
+        for ([_]*gtk.DropDown{ variant, source, fit, density }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
         _ = gtk.SpinButton.signals.value_changed.connect(font_size, *View, spun, self, .{});
         _ = object.Object.signals.notify.connect(motion.as(object.Object), *View, selected, self, .{ .detail = "active" });
         _ = gtk.Button.signals.clicked.connect(choose, *View, chooseWallpaper, self, .{});
@@ -271,6 +371,7 @@ pub const View = struct {
         self.closeFolderPicker();
         if (self.preview_idle != 0) _ = glib.Source.remove(self.preview_idle);
         self.cancelPreview();
+        self.desktop_preview.destroy();
         gtk.StyleContext.removeProviderForDisplay(self.window.as(gtk.Widget).getDisplay(), self.preview_css.as(gtk.StyleProvider));
         self.preview_css.unref();
         if (self.shown) |s| a.free(s);
@@ -339,6 +440,65 @@ pub const View = struct {
         self.mode_hint.as(gtk.Widget).setVisible(@intFromBool(self.mode.getSelected() != 0));
         self.mode_hint.setText(if (self.mode.getSelected() == 2) self.t("An empty GTK theme name follows the system.", "Ein leerer GTK-Name folgt dem System.") else if (self.mode.getSelected() == 3) "Select an installed community theme below." else self.t("Dynamic colors need matugen 4.x.", "Dynamische Farben benötigen matugen 4.x."));
         self.message.setText(if (self.raw_invalid) self.t("Advanced JSON is invalid. Correct it there to use these controls.", "Das JSON ist ungültig. Korrigiere es unter Erweitert, um diese Regler zu nutzen.") else "");
+        self.message.as(gtk.Widget).setVisible(@intFromBool(self.raw_invalid));
+        self.customize.as(gtk.Widget).setVisible(@intFromBool(self.mode.getSelected() == 3));
+        self.preview_colors.as(gtk.Widget).setSensitive(@intFromBool(editable and !self.editor.theme_busy and self.editor.client.capabilities.community_themes and self.mode.getSelected() != 2));
+        self.preview_colors.setLabel(self.t("Preview draft colors", "Farben des Entwurfs ansehen"));
+        self.presentation();
+        self.queuePreview();
+    }
+    fn presentation(self: *View) void {
+        if (self.raw_invalid) return;
+        const p = self.prefs;
+        if (self.editor.target.page == .appearance) self.desktop_preview.update(p);
+        if (self.themes.preview_is_draft and self.editor.theme_error.len > 0 and !self.themes.preview_cancel_requested) self.desktop_preview.status.setText(self.editor.theme_error.z());
+        var buf: [1024]u8 = undefined;
+        self.text_section.summary.setText(std.fmt.bufPrintZ(&buf, "{s} · {d} px · {s}{s}", .{ if (p.font.len == 0) self.t("System font", "Systemschrift") else p.font, p.font_size, if (p.density == .compact) self.t("Compact", "Kompakt") else self.t("Comfortable", "Komfortabel"), if (p.reduced_motion) self.t(" · Reduced motion", " · Weniger Bewegung") else "" }) catch "");
+        self.desktop_section.summary.setText(std.fmt.bufPrintZ(&buf, "{s} · {d} px · {s}", .{ if (p.desktop_icons.enabled) self.t("On", "An") else self.t("Off", "Aus"), p.desktop_icons.icon_size, if (@intFromEnum(p.desktop_icons.arrangement) == 0) self.t("Automatic arrangement", "Automatische Anordnung") else self.t("Manual arrangement", "Manuelle Anordnung") }) catch "");
+        const night_summary = self.editor.night_summary.slice();
+        self.night_section.summary.setText(if (night_summary.len > 0) std.fmt.bufPrintZ(&buf, "{s}", .{night_summary[0 .. std.mem.indexOfScalar(u8, night_summary, '\n') orelse night_summary.len]}) catch "" else if (p.night_light.enabled) self.t("On · warmer screen colors", "An · wärmere Bildschirmfarben") else self.t("Off · warmer screen colors on supported displays", "Aus · wärmere Farben auf unterstützten Bildschirmen"));
+        var qt_attention = false;
+        for ([_][]const u8{ "failed", "conflict", "missing_dependency", "restore_incomplete", "Restart", "Log in" }) |needle| if (std.mem.indexOf(u8, self.editor.qt_summary.slice(), needle) != null) {
+            qt_attention = true;
+            break;
+        };
+        self.apps_section.summary.setText(if (self.editor.qt_review_text.len > 0) self.t("External Qt changes need review", "Externe Qt-Änderungen prüfen") else if (qt_attention) self.t("Qt needs attention · expand to review status", "Qt benötigt Aufmerksamkeit · Status aufklappen") else self.t("Window borders, Qt and application colors", "Fensterrahmen, Qt und Anwendungsfarben"));
+        self.themes_section.summary.setText(if (self.editor.theme_error.len > 0 and !self.editor.application_command) self.editor.theme_error.z() else std.mem.span(self.themes.selection.getText()));
+        if (self.editor.application_command and self.editor.theme_error.len > 0) self.apps_section.summary.setText(self.editor.theme_error.z());
+        self.login_section.summary.setText(std.mem.span(self.greeter_sync.status.getText()));
+        const fit_names: [4][:0]const u8 = if (self.german) .{ "Material-Verlauf", "Einfarbig", "Ausfüllen", "Einpassen" } else .{ "Material gradient", "Solid color", "Cover", "Contain" };
+        const fit_name = fit_names[@intFromEnum(p.wallpaper.mode)];
+        const filename = if (p.wallpaper.path.len > 0) std.fs.path.basename(p.wallpaper.path) else self.t("No image selected", "Kein Bild ausgewählt");
+        self.wallpaper_summary.setText(if (@intFromEnum(p.wallpaper.mode) < 2) fit_name else std.fmt.bufPrintZ(&buf, "{s}\n{s}", .{ filename, fit_name }) catch fit_name);
+        self.image_section.summary.setText(if (p.wallpaper.slideshow.enabled) self.t("Slideshow on · path, fit and timing", "Diashow an · Pfad, Darstellung und Zeit") else self.t("Slideshow off · path, fit and background color", "Diashow aus · Pfad, Darstellung und Hintergrundfarbe"));
+    }
+    fn modeChosen(button: *gtk.CheckButton, self: *View) callconv(.c) void {
+        if (button.getActive() == 0 or self.filling) return;
+        // Community needs a concrete selection. Keep the valid current draft
+        // while opening its picker, rather than stranding it in an invalid mode.
+        if (self.mode.getSelected() == 3 and self.prefs.theme.package_id.len == 0 and self.prefs.theme.palette_id.len == 0) {
+            self.filling = true;
+            self.mode.setSelected(@intFromEnum(self.prefs.theme.mode));
+            self.filling = false;
+            self.themes_section.expander.setExpanded(1);
+            _ = self.themes_section.expander.as(gtk.Widget).grabFocus();
+            return;
+        }
+        self.saveForm();
+        if (self.mode.getSelected() == 3) self.themes_section.expander.setExpanded(1);
+    }
+    fn openThemes(_: *gtk.Button, self: *View) callconv(.c) void {
+        self.themes_section.expander.setExpanded(1);
+        _ = self.themes_section.expander.as(gtk.Widget).grabFocus();
+    }
+    fn previewColors(_: *gtk.Button, self: *View) callconv(.c) void {
+        self.themes.previewDraft() catch |err| {
+            self.desktop_preview.status.setText(@errorName(err));
+        };
+    }
+    fn previewPalette(context: *anyopaque, palette: ?@import("../theme/theme.zig").Palette) void {
+        const self: *View = @ptrCast(@alignCast(context));
+        self.desktop_preview.palette(palette, self.prefs.theme.mode == .gtk);
     }
     fn fill(self: *View, prefs: model.Preferences) void {
         self.desktop_enabled.setActive(@intFromBool(prefs.desktop_icons.enabled));
@@ -575,11 +735,13 @@ pub const View = struct {
         defer file.unref();
         const path = file.getPath() orelse {
             self.message.setText(self.t("Choose an image stored on this computer.", "Wähle ein lokal gespeichertes Bild."));
+            self.message.as(gtk.Widget).setVisible(1);
             return;
         };
         defer glib.free(path);
         if (std.mem.span(path).len > 1024 or !std.unicode.utf8ValidateSlice(std.mem.span(path))) {
             self.message.setText(self.t("The image path is too long or is not valid UTF-8.", "Der Bildpfad ist zu lang oder kein gültiges UTF-8."));
+            self.message.as(gtk.Widget).setVisible(1);
             return;
         }
         self.filling = true;
@@ -627,12 +789,14 @@ pub const View = struct {
         defer file.unref();
         const path = file.getPath() orelse {
             self.message.setText(self.t("Choose a folder stored on this computer.", "Wähle einen lokal gespeicherten Ordner."));
+            self.message.as(gtk.Widget).setVisible(1);
             return;
         };
         defer glib.free(path);
         const folder = std.mem.span(path);
         if (folder.len > 1024 or !std.unicode.utf8ValidateSlice(folder)) {
             self.message.setText(self.t("The folder path is too long or is not valid UTF-8.", "Der Ordnerpfad ist zu lang oder kein gültiges UTF-8."));
+            self.message.as(gtk.Widget).setVisible(1);
             return;
         }
         self.filling = true;
@@ -655,6 +819,26 @@ pub const View = struct {
         }
     }
     fn queuePreview(self: *View) void {
+        if (self.editor.target.page != .appearance or self.raw_invalid) {
+            if (self.preview_idle != 0) _ = glib.Source.remove(self.preview_idle);
+            self.preview_idle = 0;
+            if (self.preview != null) {
+                self.cancelPreview();
+                if (self.preview_key) |key| a.free(key);
+                self.preview_key = null;
+            }
+            return;
+        }
+        const key = std.fmt.allocPrint(a, "{d}:{s}:{s}", .{ self.fit.getSelected(), text(self.entries[3]), text(self.entries[2]) }) catch return;
+        defer a.free(key);
+        if (self.preview_key) |old| if (std.mem.eql(u8, old, key)) return;
+        // A superseded decoder must lose its owner immediately, including during
+        // the debounce window. Its completion only releases its own resources.
+        if (self.preview != null) {
+            self.cancelPreview();
+            if (self.preview_key) |old| a.free(old);
+            self.preview_key = null;
+        }
         if (self.preview_idle == 0) self.preview_idle = glib.timeoutAdd(150, refreshPreview, self);
     }
     fn refreshPreview(data: ?*anyopaque) callconv(.c) c_int {
@@ -673,8 +857,10 @@ pub const View = struct {
         self.cancelPreview();
         self.preview_ready = false;
         self.picture.setPaintable(null);
+        self.wallpaper_thumbnail.setPaintable(null);
         self.picture.setContentFit(if (mode == 3) .contain else .cover);
-        const css = std.fmt.allocPrintSentinel(a, ".settings-window .settings-draft-preview {{ background: {s}; }}", .{if (mode == 0) "linear-gradient(155deg, #211a2b, #9576b5)" else if (model.hex(color)) color else "#141218"}, 0) catch return 0;
+        self.wallpaper_thumbnail.setContentFit(if (mode == 3) .contain else .cover);
+        const css = std.fmt.allocPrintSentinel(a, ".settings-window .appearance-view .settings-draft-preview {{ background: {s}; }}", .{if (mode == 0) "linear-gradient(155deg, #211a2b, #9576b5)" else if (model.hex(color)) color else "#141218"}, 0) catch return 0;
         defer a.free(css);
         self.preview_css.loadFromString(css);
         self.preview_note.setText(self.t("Draft preview · Changes take effect after Apply & save.", "Entwurfsvorschau · Änderungen werden erst beim Anwenden wirksam."));
@@ -682,6 +868,7 @@ pub const View = struct {
         const z = a.dupeZ(u8, path) catch return 0;
         defer a.free(z);
         const preview = a.create(Preview) catch return 0;
+        self.preview_note.setText(self.t("Loading wallpaper preview…", "Hintergrundvorschau wird geladen…"));
         preview.* = .{ .owner = self, .file = gio.File.newForPath(z), .cancel = gio.Cancellable.new() };
         self.preview = preview;
         preview.file.readAsync(0, preview.cancel, Preview.opened, preview);
@@ -733,6 +920,8 @@ const Preview = struct {
             const texture = gdk.Texture.newForPixbuf(image);
             defer texture.unref();
             owner.picture.setPaintable(texture.as(gdk.Paintable));
+            owner.wallpaper_thumbnail.setPaintable(texture.as(gdk.Paintable));
+            owner.preview_note.setText(owner.t("Wallpaper draft preview · Changes take effect after Apply & save.", "Hintergrundvorschau · Änderungen erst nach Anwenden und Speichern."));
             owner.preview_ready = true;
             owner.preview = null;
         }

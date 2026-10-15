@@ -24,6 +24,9 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     with PrivateSession(args.output/'session', tool_prefix=fixture_prefix()) as s:
         s.env['GSETTINGS_BACKEND'] = 'memory'
+        # Keep first-install profile initialization out of the sync-only check.
+        legacy = Path(s.env['XDG_CONFIG_HOME'])/'pearl/last-good.json'
+        legacy.parent.mkdir(parents=True); legacy.write_text('{}')
         config_dir = s.base/'greeter-config'
         config_dir.mkdir()
         config = config_dir/'greeter.json'

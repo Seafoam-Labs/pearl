@@ -44,7 +44,10 @@ def main():
         assert not qtroot.exists()
         click(s,ipc,'qt_enabled'); wait_for(lambda:json.loads(peer.document())['qt']['enabled'])
         assert not qtroot.exists(), 'Draft preview wrote external settings'
-        click(s,ipc,'apply'); state=settled(peer)
+        revision=int(peer.state()['revision'])
+        click(s,ipc,'apply')
+        wait_for(lambda:(state if int((state:=peer.state())['revision'])>revision and not state['dirty'] and not state['busy'] else False),30)
+        state=settled(peer)
         assert state['qt']['qt5']['state']==state['qt']['qt6']['state']==state['qt']['engine']['state']=='applied',state
         capture(s,'qt-appearance-enabled')
         checks.append('real-ui-opt-in-and-committed-apply')

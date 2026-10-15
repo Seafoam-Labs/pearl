@@ -1,0 +1,87 @@
+{
+  "status": "passed",
+  "checks": [
+    "disclosures-and-community-picker-preserve-draft",
+    "native-mode-seed-and-backend-preview-do-not-commit",
+    "in-flight-color-preview-cancelled-on-navigation",
+    "native-chooser-cancel-preview-navigation-and-apply",
+    "expanded-text-and-desktop-controls-share-discard",
+    "light-gtk-390px-and-large-text-layout-and-keyboard-editing"
+  ],
+  "captures": [
+    {
+      "name": "dark",
+      "path": "dark.png",
+      "window": {
+        "x": 200,
+        "y": 94,
+        "width": 1200,
+        "height": 960
+      }
+    },
+    {
+      "name": "wallpaper",
+      "path": "wallpaper.png",
+      "window": {
+        "x": 200,
+        "y": 94,
+        "width": 1200,
+        "height": 960
+      }
+    },
+    {
+      "name": "details",
+      "path": "details.png",
+      "window": {
+        "x": 200,
+        "y": 94,
+        "width": 1200,
+        "height": 960
+      }
+    },
+    {
+      "name": "light",
+      "path": "light.png",
+      "window": {
+        "x": 200,
+        "y": 94,
+        "width": 1200,
+        "height": 960
+      }
+    },
+    {
+      "name": "native",
+      "path": "native.png",
+      "window": {
+        "x": 280,
+        "y": 194,
+        "width": 1040,
+        "height": 760
+      }
+    },
+    {
+      "name": "narrow",
+      "path": "narrow.png",
+      "window": {
+        "x": 605,
+        "y": 124,
+        "width": 390,
+        "height": 900
+      }
+    },
+    {
+      "name": "large-text",
+      "path": "large-text.png",
+      "window": {
+        "x": 520,
+        "y": 124,
+        "width": 560,
+        "height": 900
+      }
+    }
+  ],
+  "binaries": {
+    "settings": "2fa94caf52049c9640c9ef044993c7edbf9965b1d6aef0bbad15ef58242c1972",
+    "pearl": "a27ad06c7adf44582a5fa9f6549436f00dbe408a76a23eed9af9fe9e122b20ae"
+  }
+}

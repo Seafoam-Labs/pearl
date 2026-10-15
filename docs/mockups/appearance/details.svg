@@ -1,0 +1,81 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1280' height='1120' viewBox='0 0 1280 1120' role='img' aria-labelledby='title desc'>
+<title id='title'>Pearl Appearance redesign — additional settings</title><desc id='desc'>Static proposed settings layout with shared navigation, draft preview, visual theme choices, grouped controls and a persistent Apply and save footer.</desc>
+<defs><linearGradient id='wall' x2='1' y2='1'><stop stop-color='#21192e'/><stop offset='.55' stop-color='#574078'/><stop offset='1' stop-color='#b398c7'/></linearGradient></defs><style>
+text{font-family:Inter,'DejaVu Sans',sans-serif;font-size:14px;fill:#e7e1ec} .bg{fill:#211f26}.sidebar{fill:#1e1c21}.card{fill:#2b2831}.button,.choice{fill:#302c37;stroke:#4b4554}.selected{fill:#4f3787;stroke:#d0bcff;stroke-width:1.5}.accent{fill:#d0bcff}.on-accent{fill:#381e72}.muted{fill:#c4bbcf}.strong{font-weight:600}.small{font-size:12px}.tiny{font-size:10px;letter-spacing:1.2px}.section{font-size:17px;font-weight:600}.heading{font-size:30px;font-weight:500;letter-spacing:-.6px}.center{text-anchor:middle}.right{text-anchor:end}.wallpaper{fill:url(#wall)}.mini-surface{fill:#272130}.mini-selected{fill:#bba3eb}.mini-muted{fill:#9c91ad}.knob{fill:#c6c0ce}.knob-on{fill:#381e72}.line{stroke:#403a48;fill:none}
+</style>
+<rect x='0' y='0' width='1280' height='1120' rx='16' class='bg'/>
+<rect x='0' y='0' width='1280' height='52' rx='0' class='sidebar'/>
+<text x='22' y='32' class='strong'>●  Pearl Settings</text>
+<text x='1258' y='32' class='right muted'>−   □   ×</text>
+<rect x='0' y='52' width='220' height='1068' rx='0' class='sidebar'/>
+<text x='24' y='84' class='tiny muted'>GENERAL</text>
+<text x='24' y='118' class=''>Overview</text>
+<text x='24' y='162' class='tiny muted'>CONNECTIONS</text>
+<text x='24' y='196' class=''>Network</text>
+<text x='24' y='240' class=''>Bluetooth</text>
+<text x='24' y='284' class='tiny muted'>DEVICES</text>
+<text x='24' y='318' class=''>Sound</text>
+<text x='24' y='362' class=''>Power &amp; battery</text>
+<text x='24' y='406' class='tiny muted'>DESKTOP</text>
+<rect x='12' y='415' width='196' height='42' rx='11' class='selected'/>
+<text x='24' y='440' class=''>Appearance</text>
+<text x='24' y='484' class=''>Assistant</text>
+<text x='24' y='528' class=''>Bar &amp; dock</text>
+<text x='24' y='572' class=''>Notifications</text>
+<text x='24' y='616' class='tiny muted'>SYSTEM</text>
+<text x='24' y='650' class=''>System</text>
+<text x='24' y='694' class=''>Session &amp; lock</text>
+<text x='24' y='738' class=''>Aqueous</text>
+<text x='24' y='782' class=''>Advanced</text>
+<text x='24' y='826' class=''>Plugins</text>
+<text x='250' y='101' class='heading'>Appearance</text>
+<text x='250' y='127' class='muted'>Make Pearl feel at home on your desktop.</text>
+<text x='250' y='163' class='small muted'>Appearance · continued below Wallpaper</text>
+<rect x='250' y='182' width='1000' height='226' rx='16' class='card'/>
+<text x='270' y='215' class='section'>Text &amp; layout</text>
+<text x='270' y='260' class=''>Font family</text>
+<text x='1230' y='260' class='right muted'>System default</text>
+<text x='270' y='304' class=''>Text size</text>
+<text x='1230' y='304' class='right muted'>−     14 px     +</text>
+<text x='270' y='348' class=''>Density</text>
+<text x='1230' y='348' class='right muted'>Comfortable   ⌄</text>
+<text x='270' y='392' class=''>Reduced motion</text>
+<text x='1230' y='392' class='right muted'></text>
+<rect x='1186' y='374' width='44' height='24' rx='12' class='button'/>
+<circle cx='1199' cy='386' r='8' class='knob'/>
+<rect x='250' y='424' width='1000' height='166' rx='16' class='card'/>
+<text x='270' y='457' class='section'>Desktop icons</text>
+<rect x='1186' y='438' width='44' height='24' rx='12' class='accent'/>
+<circle cx='1217' cy='450' r='8' class='knob-on'/>
+<text x='270' y='500' class=''>Icon size</text>
+<text x='1230' y='500' class='right muted'>48 px   ⌄</text>
+<text x='270' y='543' class=''>Arrangement</text>
+<text x='1230' y='543' class='right muted'>Automatic · Name   ⌄</text>
+<text x='270' y='574' class='muted small'>›  Display &amp; hidden files</text>
+<rect x='250' y='606' width='1000' height='76' rx='16' class='card'/>
+<text x='270' y='635' class='strong'>Night Light</text>
+<text x='270' y='659' class='muted small'>Off · warmer screen colors on supported displays</text>
+<text x='1226' y='648' class='right muted'>›</text>
+<rect x='250' y='696' width='1000' height='76' rx='16' class='card'/>
+<text x='270' y='725' class='strong'>Application appearance</text>
+<text x='270' y='749' class='muted small'>Window borders, Qt applications and application color profiles</text>
+<text x='1226' y='738' class='right muted'>›</text>
+<rect x='250' y='786' width='1000' height='76' rx='16' class='card'/>
+<text x='270' y='815' class='strong'>Themes &amp; customization</text>
+<text x='270' y='839' class='muted small'>Installed and community themes, palette overrides and widget styles</text>
+<text x='1226' y='828' class='right muted'>›</text>
+<rect x='250' y='876' width='1000' height='76' rx='16' class='card'/>
+<text x='270' y='905' class='strong'>Login screen</text>
+<text x='270' y='929' class='muted small'>Review appearance before copying it to the login screen</text>
+<text x='1226' y='918' class='right muted'>›</text>
+<text x='250' y='982' class='small muted'>Expand a section to edit its settings. Errors remain visible when collapsed.</text>
+<rect x='220' y='1042' width='1060' height='78' rx='0' class='bg'/>
+<path d='M220 1042H1280' class='line'/>
+<text x='250' y='1072' class='small muted'>Unsaved Pearl preferences · shared across tabs</text>
+<text x='250' y='1093' class='small muted'>Your desktop changes after Apply &amp; save.</text>
+<rect x='1020' y='1063' width='92' height='36' rx='18' class='button'/>
+<text x='1066' y='1086' class='center'>Discard</text>
+<rect x='1124' y='1063' width='140' height='36' rx='18' class='accent'/>
+<text x='1194' y='1086' class='on-accent center'>Apply &amp; save</text>
+<rect x='1272' y='642' width='3' height='218' rx='2' class='mini-muted'/>
+</svg>

@@ -129,3 +129,27 @@
 .settings-window .sound-menu button { min-height: 32px; }
 .settings-window.pearl-gtk .sound-card { background: alpha(currentColor, 0.04); border: 1px solid alpha(currentColor, 0.12); }
 .settings-window .sound-muted { outline: 1px solid currentColor; outline-offset: -2px; }
+
+/* Appearance shares the settings card rhythm and measures all rows naturally. */
+.settings-window .appearance-view .pearl-section-title { font-size: 1.15em; font-weight: 600; }
+.settings-window .appearance-modes { margin: 0 20px 12px; }
+.settings-window .appearance-mode { padding: 14px 12px; border-radius: 12px; border: 1px solid alpha(currentColor, 0.18); }
+.settings-window .appearance-mode:checked { background: alpha(@accent_color, 0.15); border-color: @accent_color; }
+.settings-window .appearance-mode:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.settings-window .appearance-mode radio { margin-right: 8px; }
+.settings-window .appearance-section-heading { margin: 16px 20px 16px 10px; }
+.settings-window .appearance-section > box { padding-bottom: 12px; }
+.settings-window .appearance-section .settings-card { background: transparent; }
+.settings-window .appearance-section .pearl-secondary { margin-left: 20px; margin-right: 20px; }
+.settings-window .appearance-section-heading .pearl-secondary { margin: 0; }
+.settings-window .appearance-preview-layout { margin: 18px 20px; }
+.settings-window .appearance-wallpaper-row { margin: 0 20px 12px; }
+.settings-window .appearance-wallpaper-row .settings-draft-preview { margin: 0; min-width: 96px; min-height: 60px; }
+.settings-window .appearance-desktop-preview { border-radius: 12px; }
+.settings-window .appearance-desktop-preview .settings-draft-preview { margin: 0; }
+.settings-window .appearance-mini-surface { border-radius: 7px; padding: 5px; background: @theme_bg_color; color: @theme_fg_color; }
+.settings-window .appearance-mini-title { font-size: 10px; }
+.settings-window .appearance-mini-selection { border-radius: 5px; padding: 2px 6px; background: alpha(@accent_color, 0.25); }
+.settings-window .appearance-action { margin: 0 20px 16px; }
+.settings-window.settings-narrow .appearance-modes { margin-left: 14px; margin-right: 14px; }
+.settings-window.settings-narrow .appearance-preview-layout { margin-left: 14px; margin-right: 14px; }

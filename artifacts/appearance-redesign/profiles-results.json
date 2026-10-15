@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "checks": [
+    "first-install-gtk3-gtk4-management-and-restart-persistence",
+    "defaults-shared-draft-discard-no-external-writes",
+    "defaults-apply-and-visible-target-controls",
+    "profile-dropdown-selection-apply-and-discard",
+    "real-gtk3-gtk4-dark-light-color-consumers",
+    "restart-persistence-and-off-restoration",
+    "existing-preferences-and-last-good-do-not-enable-management"
+  ]
+}
