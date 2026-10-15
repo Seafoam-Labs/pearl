@@ -11,6 +11,7 @@ pub const Request = struct {
     palette: ?@import("../theme/theme.zig").Palette = null,
 };
 pub const State = struct { visible: bool, busy: bool, suspended: bool, runtime: bool, conversations: usize, turns: []const @import("controller.zig").Turn, sources: usize, status: []const u8, error_code: []const u8 = "", draft_chars: usize = 0 };
+// enforced_memory remains false for compatibility with existing status clients.
 pub const ComputeStatus = struct { busy: bool = false, loaded: bool = false, gpu: bool = false, backend: @import("config.zig").Backend = .auto, layers: u16 = 0, fallback: bool = false, enforced_memory: bool = false };
 pub const Reply = struct { agent: u8 = 1, id: u64, ok: bool = true, err: ?[]const u8 = null, settings: bool = false, compute: ?ComputeStatus = null, state: ?State = null };
 pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {

@@ -794,6 +794,14 @@ pub fn build(b: *std.Build) void {
     assistant_launcher.step.dependOn(agent_build);
     if (b.args) |args| assistant_launcher.addArgs(args);
     b.step("test-agent-launcher", "Verify real launcher handoff and Settings controls with private search fixtures").dependOn(&assistant_launcher.step);
+    const assistant_models = b.addSystemCommand(&.{ "python3", "tests/integration/test_agent_model_settings.py", "--pearl" });
+    assistant_models.addArtifactArg(integration_app);
+    assistant_models.addArg("--settings");
+    assistant_models.addArtifactArg(settings_test_app);
+    assistant_models.addArg("--ctl");
+    assistant_models.addArtifactArg(ctl);
+    if (b.args) |args| assistant_models.addArgs(args);
+    b.step("test-agent-model-settings", "Verify model choices and resource settings through the native Settings draft").dependOn(&assistant_models.step);
     const lock_tests = b.addSystemCommand(&.{ "python3", "tests/integration/test_lock.py", "--locker" });
     lock_tests.addArtifactArg(test_locker);
     lock_tests.addArg("--pam-module");

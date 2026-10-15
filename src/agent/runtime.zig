@@ -28,8 +28,8 @@ pub const Runtime = struct {
     gpu: bool = false,
     offload_layers: u16 = 0,
     fallback_reason: []const u8 = "",
-    group: memory.Group = .{},
-    enforced_memory: bool = false,
+    inference_seconds: u16 = 60,
+    check_tokens: u32 = 256,
     lockfd: c_int = -1,
     pid: c_int = 0,
     logfd: c_int = -1,
@@ -43,7 +43,6 @@ pub const Runtime = struct {
             _ = p.wait(null, null);
             p.unref();
         }
-        self.group.close();
         if (self.lockfd >= 0) _ = std.c.close(self.lockfd);
         if (self.keyfile) |path| _ = std.c.unlink(path);
         if (self.arena) |*arena| arena.deinit();
@@ -56,7 +55,7 @@ pub const Runtime = struct {
         const resolved = try probe.resolve(temporary, cfg.runtime);
         const model_path = if (registry.find(cfg.model_id)) |model| try @import("downloads.zig").path(temporary, model) else try temporary.dupeZ(u8, cfg.custom_model);
         const model_identity = probe.fingerprint(temporary, model_path) catch return error.ModelNotInstalled;
-        const identity = try std.json.Stringify.valueAlloc(a, .{ cfg.model_id, cfg.custom_model, cfg.cpu_threads, cfg.context_tokens, cfg.runtime, cfg.compute, try probe.fingerprint(temporary, resolved), model_identity }, .{});
+        const identity = try std.json.Stringify.valueAlloc(a, .{ cfg.model_id, cfg.custom_model, cfg.cpu_threads, cfg.contextTokens(), cfg.answerTokens(), cfg.runtime, cfg.compute, try probe.fingerprint(temporary, resolved), model_identity }, .{});
         defer a.free(identity);
         if (self.process) |process| if (process.getIdentifier() != null and std.mem.eql(u8, identity, self.identity)) return;
         self.launch(cfg, cancel) catch |err| {
@@ -82,14 +81,18 @@ pub const Runtime = struct {
         self.arena = .init(a);
         errdefer self.stop();
         const alloc = self.arena.?.allocator();
-        self.deadline = glib.getMonotonicTime() + 90 * std.time.us_per_s;
+        self.inference_seconds = cfg.inferenceSeconds();
+        self.deadline = glib.getMonotonicTime() + @as(i64, self.inference_seconds) * 3 * std.time.us_per_s;
         const lockpath = try std.fmt.allocPrintSentinel(alloc, "{s}/pearl-assistant-runtime.lock", .{glib.getUserRuntimeDir()}, 0);
         self.lockfd = std.c.open(lockpath, .{ .ACCMODE = .RDWR, .CREAT = true, .CLOEXEC = true, .NOFOLLOW = true, .NONBLOCK = true }, @as(c_uint, 0o600));
         if (self.lockfd < 0 or fetch.c.flock(self.lockfd, fetch.c.LOCK_EX | fetch.c.LOCK_NB) != 0) return error.AssistantRuntimeBusy;
         const model = registry.find(cfg.model_id);
+        const reasoning = if (model) |m| m.reasoning else false;
+        self.check_tokens = if (reasoning) cfg.answerTokens() else 256;
         const filename = if (model) |m| try @import("downloads.zig").path(alloc, m) else try alloc.dupeZ(u8, cfg.custom_model);
         _ = try @import("downloads.zig").verify(filename, model, cancel);
         const info = try probe.inspect(alloc, cfg.runtime, cfg.compute.mode != .cpu, cancel);
+        if (reasoning and !info.has("--reasoning-format")) return error.RuntimeReasoningUnsupported;
         self.executable = info.executable;
         self.version = info.version;
         var layers: u16 = 0;
@@ -98,8 +101,10 @@ pub const Runtime = struct {
             layers = cfg.compute.offload_layers orelse total;
             if (layers > total) return error.InvalidOffloadLayers;
             // Budget includes conservative cache/working-space allowance.
-            const weights = if (model) |m| m.bytes / (1024 * 1024) else 768;
-            const required = weights * layers / total + @as(u64, cfg.context_tokens) / 16 + 128;
+            var st: std.os.linux.Statx = undefined;
+            if (std.os.linux.statx(std.os.linux.AT.FDCWD, filename, 0, .{ .SIZE = true }, &st) != 0) return error.ModelNotInstalled;
+            const weights = std.math.divCeil(u64, st.size, 1024 * 1024) catch return error.InvalidModelFile;
+            const required = weights * layers / total + @as(u64, cfg.contextTokens()) / 16 + 128;
             self.device = try compute.select(info.devices, cfg.compute, required);
             if (self.device) |device| {
                 if (!info.has("--device") or !info.has("--split-mode")) return error.GpuRuntimeCapabilityMissing;
@@ -134,19 +139,12 @@ pub const Runtime = struct {
         const env = try alloc.allocSentinel(?[*:0]const u8, info.child_environment.len, null);
         for (info.child_environment, 0..) |value, i| env[i] = value.ptr;
         launcher.setEnviron(@ptrCast(env.ptr));
-        // GPU-capable runtimes may map driver address space even in CPU mode.
-        // Bound resident host memory rather than virtual address reservations.
-        self.group = memory.Group.create(alloc);
-        self.enforced_memory = self.group.procs >= 0;
-        if (self.group.procs >= 0) {
-            launcher.takeFd(self.group.procs, 4);
-            self.group.procs = -1;
-        }
-        var setup: Setup = .{ .group = self.enforced_memory, .parent = c.getpid() };
+        if (cfg.cpu_threads != 0) launcher.setenv("OMP_NUM_THREADS", try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.cpu_threads}, 0), 1);
+        var setup: Setup = .{ .parent = c.getpid() };
         launcher.setChildSetup(childSetup, &setup, null);
         const port_z = try std.fmt.allocPrintSentinel(alloc, "{d}", .{port}, 0);
-        const context = try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.context_tokens}, 0);
-        const threads = try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.cpu_threads}, 0);
+        const context = try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.contextTokens()}, 0);
+        const threads = try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.threads()}, 0);
         var args: std.ArrayList(?[*:0]const u8) = .empty;
         try args.appendSlice(alloc, &.{ info.executable, "-m", filename, "--alias", "pearl-local", "--host", "127.0.0.1", "--port", port_z, "--api-key-file", temp, "--jinja", "--ctx-size", context, "--parallel", "1", "--threads", threads, "--threads-batch", threads, "--threads-http", "2", "--batch-size", "128", "--ubatch-size", "64", "--gpu-layers", if (self.gpu) try std.fmt.allocPrintSentinel(alloc, "{d}", .{layers}, 0) else "0" });
         for ([_][:0]const u8{ "--no-webui", "--no-agent", "--no-op-offload" }) |flag| if (info.has(flag)) {
@@ -155,6 +153,8 @@ pub const Runtime = struct {
         if (!info.has("--no-webui") and info.has("--no-ui")) try args.append(alloc, "--no-ui");
         if (info.has("--fit")) try args.appendSlice(alloc, &.{ "--fit", "off" });
         if (info.has("--poll")) try args.appendSlice(alloc, &.{ "--poll", "0" });
+        // Keep internal reasoning out of answer text and citation validation.
+        if (info.has("--reasoning-format")) try args.appendSlice(alloc, &.{ "--reasoning-format", "deepseek" });
         if (info.has("--device")) try args.appendSlice(alloc, &.{ "--device", if (self.device) |d| try alloc.dupeZ(u8, d.name) else "none" });
         if (self.gpu) try args.appendSlice(alloc, &.{ "--split-mode", "none" });
         try args.append(alloc, null);
@@ -220,18 +220,14 @@ pub const Runtime = struct {
 };
 pub fn recoverable(err: anyerror) bool {
     return switch (err) {
-        error.GpuUnavailableOrMemoryInsufficient, error.GpuRuntimeCapabilityMissing, error.GpuOffloadUnverified, error.RuntimeStartupFailed, error.RuntimeLaunchFailed, error.InferenceFailed, error.RequestFailed, error.RuntimeExited, error.RuntimeMemoryBudgetExceeded, error.SystemMemoryPressure => true,
+        error.GpuUnavailableOrMemoryInsufficient, error.GpuRuntimeCapabilityMissing, error.GpuOffloadUnverified, error.RuntimeStartupFailed, error.RuntimeLaunchFailed, error.InferenceFailed, error.RequestFailed, error.RuntimeExited, error.SystemMemoryPressure => true,
         else => false,
     };
 }
-const Setup = struct { group: bool, parent: c_int };
+const Setup = struct { parent: c_int };
 fn childSetup(data: ?*anyopaque) callconv(.c) void {
     const setup: *Setup = @ptrCast(@alignCast(data.?));
     _ = c.setpgid(0, 0);
-    if (setup.group) {
-        if (std.c.write(4, "0", 1) != 1) c._exit(1);
-        _ = std.c.close(4);
-    }
     const parent = setup.parent;
     _ = c.prctl(c.PR_SET_PDEATHSIG, @as(c_int, c.SIGKILL), @as(c_ulong, 0), @as(c_ulong, 0), @as(c_ulong, 0));
     if (c.getppid() != parent) c._exit(1);

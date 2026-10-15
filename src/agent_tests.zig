@@ -11,4 +11,6 @@ test {
     _ = @import("agent/runtime_install.zig");
     _ = @import("agent/compute.zig");
     _ = @import("agent/memory.zig");
+    _ = @import("agent/model_registry.zig");
+    _ = @import("agent/downloads.zig");
 }

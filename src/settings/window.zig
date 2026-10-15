@@ -1111,7 +1111,7 @@ pub const Window = struct {
         var controls: std.ArrayList(ControlProbe) = .empty;
         const focus = self.window.getFocus();
         if (self.assistant_view) |view| if (self.target.page == .assistant) {
-            inline for (.{ "enabled", "model", "custom", "endpoint", "provider", "read_pages", "runtime_source", "runtime_path", "compute_mode", "backend", "device", "fallback", "layers", "gpu_memory" }) |name| {
+            inline for (.{ "enabled", "model", "custom", "endpoint", "provider", "read_pages", "runtime_source", "runtime_path", "compute_mode", "backend", "device", "fallback", "layers", "gpu_memory", "threads", "context", "tokens" }) |name| {
                 const widget = @field(view, name).as(gtk.Widget);
                 try controls.append(alloc, .{ .field = "assistant." ++ name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
             }

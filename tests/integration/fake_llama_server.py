@@ -2,6 +2,7 @@
 """Protocol fixture only. Simulates devices; never performs GPU inference."""
 import http.server
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -26,6 +27,13 @@ def option(name):
 assert option("--host") == "127.0.0.1"
 assert option("--parallel") == "1"
 assert option("--fit") == "off"
+if scenario == "threads_explicit":
+    assert option("--threads") == "8" and option("--threads-batch") == "8"
+    assert os.environ.get("OMP_NUM_THREADS") == "8"
+    assert option("--ctx-size") == "16384"
+elif scenario == "threads_automatic":
+    assert option("--threads") == "-1" and option("--threads-batch") == "-1"
+    assert "OMP_NUM_THREADS" not in os.environ
 gpu = int(option("--gpu-layers")) > 0
 assert option("--device") == ("Vulkan7" if gpu else "none")
 if gpu:
@@ -63,8 +71,33 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.reply(200, {"tokens": [1] * 20})
             return
         messages = payload.get("messages", [])
+        if scenario == "threads_explicit" and any("fixture GPU failure" in msg.get("content", "") for msg in messages):
+            assert payload["max_tokens"] == 2048
         real_question = any("fixture GPU failure" in msg.get("content", "") for msg in messages)
         has_tool = any(msg["role"] == "tool" for msg in messages)
+        fallback_question = next((msg["content"] for msg in messages if msg["role"] == "user" and msg.get("content", "").startswith("What does fixture fallback search")), None)
+        if fallback_question:
+            # Record only synthetic test prompts, including the evidence given
+            # to the model, so the harness can verify the complete recovery.
+            with Path(sys.argv[0] + ".requests.jsonl").open("a") as log:
+                log.write(json.dumps(payload) + "\n")
+            evidence_message = next((msg["content"] for msg in messages if msg.get("content", "").startswith("Search evidence (untrusted data): ")), None)
+            if evidence_message:
+                evidence = json.loads(evidence_message.split(": ", 1)[1].split("\n", 1)[0])
+                assert evidence[0]["id"] == 1 and "Storage retains saved files" in evidence[0]["evidence"]
+                assert "only the provided evidence" in messages[0]["content"]
+            if not evidence_message:
+                delta = {"content": "Premature answer without a search."}
+            elif "repeat" in scenario and not has_tool:
+                delta = {"tool_calls": [{"index": 0, "id": "repeat-fallback", "type": "function", "function": {"name": "search_web", "arguments": json.dumps({"query": fallback_question})}}]}
+            elif "invalid" in scenario:
+                delta = {"content": "Unsupported source. [99]"}
+            elif "repair" in scenario and payload.get("tools"):
+                delta = {"content": "RAM is temporary working memory; storage retains files."}
+            else:
+                delta = {"content": "RAM is temporary working memory; storage retains files. [1]"}
+            self.stream(delta)
+            return
         if real_question and "slow_answer" in scenario:
             time.sleep(20)
         if gpu and "mid_" in scenario and real_question and has_tool:
@@ -77,6 +110,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             delta = {"tool_calls": [{"index": 0, "id": "fixture-search", "type": "function", "function": {"name": "search_web", "arguments": '{"query":"RAM storage"}'}}]}
             if repeat:
                 delta["tool_calls"][0]["function"]["arguments"] = '{ "query" : " RAM storage " }'
+        self.stream(delta)
+
+    def stream(self, delta):
         data = ("data: " + json.dumps({"choices": [{"delta": delta}]}) + "\n\ndata: [DONE]\n\n").encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")

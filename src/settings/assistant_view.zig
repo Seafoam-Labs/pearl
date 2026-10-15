@@ -31,11 +31,12 @@ pub const View = struct {
     host: *gtk.Box,
     enabled: *gtk.Switch,
     model: *gtk.DropDown,
+    model_license: *gtk.LinkButton,
     custom: *gtk.Entry,
     read_pages: *gtk.Switch,
     all: *gtk.Switch,
     threads: *gtk.SpinButton,
-    context: *gtk.DropDown,
+    context: *gtk.SpinButton,
     tokens: *gtk.SpinButton,
     idle: *gtk.SpinButton,
     provider: *gtk.DropDown,
@@ -82,13 +83,16 @@ pub const View = struct {
         const enabled = toggle(general, "Enable launcher assistant");
         const read_pages = toggle(general, "Read search result pages");
         const models = section(host, "Models");
-        const model = choice(models, "Selected model", &.{ registry.models[0].name, registry.models[1].name, "Custom local GGUF (compatibility checked)" });
+        var model_labels: [registry.models.len + 1][:0]const u8 = undefined;
+        for (registry.models, 0..) |item, i| model_labels[i] = item.name;
+        model_labels[registry.models.len] = "Custom local GGUF (compatibility checked)";
+        const model = choice(models, "Selected model", &model_labels);
         const custom = entry(models, "Custom GGUF absolute path", 4096);
         const readiness = w.label("", "pearl-secondary");
         readiness.setWrap(1);
         models.append(readiness.as(gtk.Widget));
-        note(models, "LiquidAI LFM2.5-350M: Q4_K_M downloads 229 MB; Q8_0 downloads 379 MB. Selecting does not download it. Downloads are immediate and independent of Apply/Discard. Imported models are limited to 768 MB. Disable and Apply before removing a model.");
-        const license = gtk.LinkButton.newWithLabel(registry.license_url, "LiquidAI model license");
+        note(models, "Download sizes are shown with each model. Selecting does not download it. Downloads are immediate and independent of Apply/Discard. Local GGUF files have no Pearl size limit. Selecting a different model resets context and generation tokens to its automatic profile. Disable and Apply before removing a model.");
+        const license = gtk.LinkButton.newWithLabel(registry.license_url, "Selected model license");
         models.append(license.as(gtk.Widget));
         const download = button(models, "Download selected model");
         const verify = button(models, "Verify model and test tools locally");
@@ -118,7 +122,7 @@ pub const View = struct {
         const advanced_body = w.column(8);
         const layers = number(advanced_body, "GPU layers (0 = automatic)", 0, 1024, 1);
         const gpu_memory = number(advanced_body, "GPU memory target MiB (0 = automatic)", 0, 1048576, 128);
-        note(advanced_body, "Memory targets are estimates, not hard VRAM caps. Integrated GPUs share system RAM. Pearl reserves desktop headroom, monitors host memory and uses a cgroup limit when available.");
+        note(advanced_body, "GPU memory targets are estimates, not hard VRAM caps. Integrated GPUs share system RAM. Pearl has no host RAM cap; available hardware and operating-system limits determine what can run.");
         advanced.setChild(advanced_body.as(gtk.Widget));
         runtime_section.append(advanced.as(gtk.Widget));
         note(runtime_section, "Check runs the selected executable and a local model/tool test; no web searches. Stop any current answer first. The idle model unloads before testing. Tests use draft settings and do not Apply them.");
@@ -152,9 +156,10 @@ pub const View = struct {
         note(engines, "Keys use Secret Service. If it is unavailable or locked, unlock it before saving. Test sends the sample query “Pearl desktop” to this engine immediately.");
         const test_provider = button(engines, "Test connection now");
         const resources = section(host, "Resources");
-        const threads = number(resources, "CPU threads", 1, 2, 1);
-        const context = choice(resources, "Context tokens", &.{ "2048", "4096" });
-        const tokens = number(resources, "Maximum answer tokens", 64, 512, 32);
+        const threads = number(resources, "CPU threads (0 = runtime automatic)", 0, std.math.maxInt(c_int), 1);
+        const context = number(resources, "Context tokens (0 = model profile)", 0, std.math.maxInt(c_int), 1024);
+        const tokens = number(resources, "Generation tokens (0 = model profile)", 0, std.math.maxInt(c_int), 128);
+        note(resources, "Generation tokens include reasoning for thinking models. Context must leave room for the question, evidence and generation. Explicit thread counts are passed to the runtime without a Pearl hardware cap.");
         const idle = number(resources, "Unload after idle seconds", 15, 300, 15);
         note(resources, "Conversations stay in this session only. Disabling the assistant clears conversations and stops its processes. Close or Escape cancels work; clicking another window keeps the chat open.");
         const status = w.label("", "pearl-secondary");
@@ -162,11 +167,11 @@ pub const View = struct {
         status.setSelectable(1);
         host.append(status.as(gtk.Widget));
         const cancel_button = button(host, "Cancel operation");
-        self.* = .{ .host = host, .editor = editor, .enabled = enabled, .model = model, .custom = custom, .read_pages = read_pages, .all = all, .threads = threads, .context = context, .tokens = tokens, .idle = idle, .provider = provider, .provider_names = names, .provider_kind = provider_kind, .provider_name = provider_name, .endpoint = endpoint, .engine_id = engine_id, .language = language, .provider_enabled = provider_enabled, .default_provider = default_provider, .safe = safe, .secret = secret, .session_key = session_key, .status = status, .readiness = readiness, .cancel_button = cancel_button, .runtime_source = runtime_source, .runtime_path = runtime_path, .compute_mode = compute_mode, .backend = backend, .device = device, .device_names = device_names, .fallback = fallback, .layers = layers, .gpu_memory = gpu_memory, .runtime_details = runtime_details, .buttons = .{ download, verify, remove, test_provider, store_key, remove_key, discover, runtime_check, benchmark, setup_runtime } };
+        self.* = .{ .host = host, .editor = editor, .enabled = enabled, .model = model, .model_license = license, .custom = custom, .read_pages = read_pages, .all = all, .threads = threads, .context = context, .tokens = tokens, .idle = idle, .provider = provider, .provider_names = names, .provider_kind = provider_kind, .provider_name = provider_name, .endpoint = endpoint, .engine_id = engine_id, .language = language, .provider_enabled = provider_enabled, .default_provider = default_provider, .safe = safe, .secret = secret, .session_key = session_key, .status = status, .readiness = readiness, .cancel_button = cancel_button, .runtime_source = runtime_source, .runtime_path = runtime_path, .compute_mode = compute_mode, .backend = backend, .device = device, .device_names = device_names, .fallback = fallback, .layers = layers, .gpu_memory = gpu_memory, .runtime_details = runtime_details, .buttons = .{ download, verify, remove, test_provider, store_key, remove_key, discover, runtime_check, benchmark, setup_runtime } };
         for ([_]*gtk.Switch{ enabled, read_pages, all, provider_enabled, default_provider, safe, fallback }) |s| _ = object.Object.signals.notify.connect(s.as(object.Object), *View, changed, self, .{ .detail = "active" });
-        for ([_]*gtk.DropDown{ model, context, provider_kind, runtime_source, compute_mode, backend }) |s| _ = object.Object.signals.notify.connect(s.as(object.Object), *View, changed, self, .{ .detail = "selected" });
+        for ([_]*gtk.DropDown{ model, provider_kind, runtime_source, compute_mode, backend }) |s| _ = object.Object.signals.notify.connect(s.as(object.Object), *View, changed, self, .{ .detail = "selected" });
         for ([_]*gtk.Entry{ custom, provider_name, endpoint, engine_id, language, runtime_path }) |e| _ = gtk.Editable.signals.changed.connect(e.as(gtk.Editable), *View, textChanged, self, .{});
-        for ([_]*gtk.SpinButton{ threads, tokens, idle, layers, gpu_memory }) |s| _ = gtk.SpinButton.signals.value_changed.connect(s, *View, numberChanged, self, .{});
+        for ([_]*gtk.SpinButton{ threads, context, tokens, idle, layers, gpu_memory }) |s| _ = gtk.SpinButton.signals.value_changed.connect(s, *View, numberChanged, self, .{});
         _ = object.Object.signals.notify.connect(provider.as(object.Object), *View, providerSelected, self, .{ .detail = "selected" });
         _ = gtk.Button.signals.clicked.connect(add, *View, addProvider, self, .{});
         _ = gtk.Button.signals.clicked.connect(remove_provider, *View, removeProvider, self, .{});
@@ -221,11 +226,9 @@ pub const View = struct {
         var value = self.document(alloc) catch return;
         var config = &value.assistant;
         config.enabled = self.enabled.getActive() != 0;
-        config.model_id = switch (self.model.getSelected()) {
-            0 => registry.models[0].id,
-            1 => registry.models[1].id,
-            else => "custom",
-        };
+        const selected_model = registry.selected(self.model.getSelected());
+        const model_changed = !std.mem.eql(u8, config.model_id, selected_model);
+        config.model_id = selected_model;
         config.custom_model = std.mem.span(self.custom.as(gtk.Editable).getText());
         config.runtime.source = @enumFromInt(self.runtime_source.getSelected());
         config.runtime.executable = std.mem.span(self.runtime_path.as(gtk.Editable).getText());
@@ -237,8 +240,8 @@ pub const View = struct {
         config.read_pages = self.read_pages.getActive() != 0;
         config.search_mode = if (self.all.getActive() != 0) .all else .default;
         config.cpu_threads = @intCast(self.threads.getValueAsInt());
-        config.context_tokens = if (self.context.getSelected() == 0) 2048 else 4096;
-        config.answer_tokens = @intCast(self.tokens.getValueAsInt());
+        config.context_tokens = if (model_changed) 0 else @intCast(self.context.getValueAsInt());
+        config.answer_tokens = if (model_changed) 0 else @intCast(self.tokens.getValueAsInt());
         config.idle_unload_seconds = @intCast(self.idle.getValueAsInt());
         if (self.provider_index < config.providers.len) {
             const list = alloc.dupe(cfg.Provider, config.providers) catch return;
@@ -267,7 +270,7 @@ pub const View = struct {
         const config = value.assistant;
         self.host.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable()));
         self.enabled.setActive(@intFromBool(config.enabled));
-        self.model.setSelected(if (std.mem.eql(u8, config.model_id, registry.models[0].id)) 0 else if (std.mem.eql(u8, config.model_id, registry.models[1].id)) 1 else 2);
+        self.model.setSelected(registry.selection(config.model_id));
         fill(alloc, self.custom, config.custom_model);
         self.runtime_source.setSelected(@intFromEnum(config.runtime.source));
         fill(alloc, self.runtime_path, config.runtime.executable);
@@ -275,8 +278,8 @@ pub const View = struct {
         self.backend.setSelected(@intFromEnum(config.compute.backend));
         self.fallback.setActive(@intFromBool(config.compute.allow_cpu_fallback));
         self.fallback.as(gtk.Widget).setSensitive(@intFromBool(config.compute.mode == .gpu));
-        self.layers.setValue(@floatFromInt(config.compute.offload_layers orelse 0));
-        self.gpu_memory.setValue(@floatFromInt(config.compute.gpu_memory_target_mib orelse 0));
+        fillNumber(self.layers, config.compute.offload_layers orelse 0);
+        fillNumber(self.gpu_memory, config.compute.gpu_memory_target_mib orelse 0);
         self.device_names.splice(0, self.device_names.as(gio.ListModel).getNItems(), null);
         self.device_names.append("Automatic device selection");
         var selected: u32 = 0;
@@ -292,10 +295,10 @@ pub const View = struct {
         self.device.setSelected(selected);
         self.read_pages.setActive(@intFromBool(config.read_pages));
         self.all.setActive(@intFromBool(config.search_mode == .all));
-        self.threads.setValue(@floatFromInt(config.cpu_threads));
-        self.context.setSelected(if (config.context_tokens == 2048) 0 else 1);
-        self.tokens.setValue(@floatFromInt(config.answer_tokens));
-        self.idle.setValue(@floatFromInt(config.idle_unload_seconds));
+        fillNumber(self.threads, config.cpu_threads);
+        fillNumber(self.context, config.context_tokens);
+        fillNumber(self.tokens, config.answer_tokens);
+        fillNumber(self.idle, config.idle_unload_seconds);
         const current = @min(self.provider_index, config.providers.len -| 1);
         self.provider_names.splice(0, self.provider_names.as(gio.ListModel).getNItems(), null);
         for (config.providers) |p| self.provider_names.append(alloc.dupeZ(u8, p.name) catch continue);
@@ -318,9 +321,14 @@ pub const View = struct {
             self.safe.setActive(@intFromBool(p.safe_search));
         }
         if (registry.find(config.model_id)) |model| {
+            self.model_license.setUri(model.license_url);
+            self.model_license.as(gtk.Widget).setVisible(1);
             const filename = @import("../agent/downloads.zig").path(alloc, model) catch return;
-            self.readiness.setText(if (std.c.access(filename, std.c.F_OK) == 0) "Model downloaded. It is verified again before loading." else "Model not installed. Download is optional and explicit.");
-        } else self.readiness.setText("Custom GGUF: verify compatibility before use.");
+            self.readiness.setText(std.fmt.allocPrintSentinel(alloc, "{s}\nContext: {d} tokens · Generation: {d} tokens{s}", .{ if (std.c.access(filename, std.c.F_OK) == 0) @as([]const u8, "Model downloaded. It is verified again before loading.") else "Model not installed. Download is optional and explicit.", config.contextTokens(), config.answerTokens(), if (model.reasoning) @as([]const u8, " · Includes reasoning") else "" }, 0) catch "Model selected");
+        } else {
+            self.model_license.as(gtk.Widget).setVisible(0);
+            self.readiness.setText("Custom GGUF: verify compatibility before use.");
+        }
         for (self.buttons) |b| b.as(gtk.Widget).setSensitive(@intFromBool(self.job == null));
         const needs_key = current < config.providers.len and (config.providers[current].kind == .brave or config.providers[current].kind == .google_legacy);
         self.buttons[@intFromEnum(Action.store_key)].as(gtk.Widget).setSensitive(@intFromBool(self.job == null and needs_key));
@@ -587,9 +595,10 @@ pub const View = struct {
             error.AssistantRuntimeNotInstalled => "Runtime missing. Use Set up runtime (install if needed).",
             error.RuntimeInstallationUnsupportedDistribution => "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then discover the runtime.",
             error.RuntimePackageManagerUnavailable => "Package manager unavailable. Devario requires /usr/bin/shelly; Arch requires /usr/bin/pacman and /usr/bin/sudo.",
-            error.RuntimeInstallTerminalUnavailable => "Setup needs a terminal: foot, kitty, alacritty, konsole or xterm. Install one and retry.",
+            error.RuntimeInstallTerminalUnavailable => "Setup needs a terminal: foot, Ghostty, kitty, alacritty, konsole or xterm. Install one and retry.",
             error.RuntimePackageInstallationFailed => "Installation failed or was cancelled. Check the package manager's repository, network or database-lock error, then retry Set up runtime. No repository was added or version pinned.",
             error.RuntimeCapabilityMissing => "This runtime lacks required capabilities. Use Set up runtime to install the repository version. If it still fails, your repository needs a compatible llama.cpp update.",
+            error.RuntimeReasoningUnsupported => "This thinking model needs a runtime with reasoning-format support. Update llama.cpp or choose an Instruct model.",
             else => @errorName(err),
         } else "Operation complete. Apply saves your configuration selection.");
         if (job.failure != null and (job.action == .runtime_check or job.action == .verify or job.action == .discover or job.action == .setup_runtime)) self.runtime_details.setText("Compatibility not confirmed. Review the operation error and retry setup or the runtime check.");
@@ -660,6 +669,11 @@ fn number(host: *gtk.Box, title: [:0]const u8, min: f64, max: f64, step: f64) *g
     const s = gtk.SpinButton.newWithRange(min, max, step);
     formRow(host, title, s.as(gtk.Widget));
     return s;
+}
+fn fillNumber(spin: *gtk.SpinButton, value: u32) void {
+    // Setting even the same value replaces text that has not yet been committed
+    // by Return or focus loss. Editor status refreshes must preserve that input.
+    if (spin.getValueAsInt() != value) spin.setValue(@floatFromInt(value));
 }
 fn button(host: *gtk.Box, title: [:0]const u8) *gtk.Button {
     const b = w.wrappingButton(title);

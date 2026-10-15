@@ -93,3 +93,13 @@ test "SSE survives byte boundaries and accumulates split tool arguments" {
     for ("data: {\"choices\":[{\"delta\":{\"content\":\"Grüße\"}}]}\n\ndata: [DONE]\n") |ch| try text.feed(&.{ch});
     try std.testing.expectEqualStrings("Grüße", text.content.items);
 }
+
+test "reasoning deltas are excluded from visible answers and citations" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var stream: Stream = .{ .a = arena.allocator() };
+    try stream.feed("data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"Consider an unsupported source [99].\"}}]}\n\n");
+    try stream.feed("data: {\"choices\":[{\"delta\":{\"content\":\"Supported answer. [1]\"}}]}\n\ndata: [DONE]\n\n");
+    try std.testing.expect(stream.done);
+    try std.testing.expectEqualStrings("Supported answer. [1]", stream.content.items);
+}

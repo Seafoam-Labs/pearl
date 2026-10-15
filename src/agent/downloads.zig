@@ -15,11 +15,11 @@ pub fn verify(filename: [:0]const u8, model: ?registry.Model, cancel: *gio.Cance
     if (fd < 0) return error.ModelNotInstalled;
     defer _ = std.c.close(fd);
     var st: std.os.linux.Statx = undefined;
-    if (std.os.linux.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .TYPE = true, .SIZE = true }, &st) != 0 or st.mode & std.c.S.IFMT != std.c.S.IFREG or st.size < 16 or st.size > 768 * 1024 * 1024) return error.InvalidModelFile;
+    if (std.os.linux.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .TYPE = true, .SIZE = true }, &st) != 0 or st.mode & std.c.S.IFMT != std.c.S.IFREG or st.size < 16) return error.InvalidModelFile;
     if (model) |m| if (st.size != m.bytes) return error.ModelChecksumMismatch;
     var sha = std.crypto.hash.sha2.Sha256.init(.{});
     var buffer: [65536]u8 = undefined;
-    var total: usize = 0;
+    var total: u64 = 0;
     while (true) {
         if (cancel.isCancelled() != 0) return error.Cancelled;
         const n = std.c.read(fd, &buffer, buffer.len);
@@ -60,7 +60,7 @@ pub fn install(model: registry.Model, cancel: *gio.Cancellable, progress: *std.a
     if (std.c.lseek(fd, @intCast(offset), std.c.SEEK.SET) < 0) return error.ModelDownloadFailed;
     progress.store(offset, .monotonic);
     if (offset < model.bytes) {
-        const response = try fetch.request(alloc, .{ .url = try std.fmt.allocPrint(alloc, "{s}{s}", .{ registry.base_url, model.filename }), .max_bytes = model.bytes - offset, .resume_from = offset, .timeout_seconds = 1800, .output_fd = fd, .progress = progress }, cancel);
+        const response = try fetch.request(alloc, .{ .url = try std.fmt.allocPrint(alloc, "{s}{s}", .{ model.base_url, model.filename }), .max_bytes = model.bytes - offset, .resume_from = offset, .timeout_seconds = 1800, .output_fd = fd, .progress = progress }, cancel);
         if (response.status != (if (offset > 0) @as(c_long, 206) else 200)) return error.ModelDownloadFailed;
     }
     if (std.c.fsync(fd) != 0) return error.ModelDownloadFailed;
@@ -75,4 +75,20 @@ pub fn remove(model: registry.Model) !void {
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     if (std.c.unlink(try path(arena.allocator(), model)) != 0) return error.ModelRemoveFailed;
+}
+
+test "large custom GGUFs reach cancellable verification without a size ceiling" {
+    var name = "/tmp/pearl-large-model-XXXXXX".*;
+    const fd = glib.mkstempFull(&name, @bitCast(std.c.O{ .ACCMODE = .RDWR, .CLOEXEC = true }), 0o600);
+    try std.testing.expect(fd >= 0);
+    defer _ = std.c.close(fd);
+    defer _ = std.c.unlink(&name);
+    try std.testing.expectEqual(@as(isize, 16), std.c.write(fd, "GGUF\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16));
+    // Sparse file: exercise the multi-GB boundary without allocating weights.
+    try std.testing.expectEqual(@as(c_int, 0), fetch.c.ftruncate(fd, 4 * @as(i64, 1024 * 1024 * 1024)));
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    cancel.cancel();
+    try std.testing.expectError(error.Cancelled, verify(&name, null, cancel));
+    try std.testing.expectError(error.ModelChecksumMismatch, verify(&name, registry.models[0], cancel));
 }

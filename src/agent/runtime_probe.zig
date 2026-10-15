@@ -4,7 +4,7 @@ const gio = @import("gio2");
 const glib = @import("glib2");
 const config = @import("config.zig");
 const helper = @import("../config/helper_process.zig");
-pub const environment = [_][:0]const u8{ "PATH=/usr/bin:/usr/local/bin", "LANG=C.UTF-8", "LC_ALL=C", "MALLOC_ARENA_MAX=2", "OMP_NUM_THREADS=2", "NO_COLOR=1" };
+pub const environment = [_][:0]const u8{ "PATH=/usr/bin:/usr/local/bin", "LANG=C.UTF-8", "LC_ALL=C", "NO_COLOR=1" };
 pub const Probe = struct {
     executable: [:0]const u8,
     fingerprint: []const u8,

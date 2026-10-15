@@ -476,9 +476,10 @@ const App = struct {
             error.ModelNotInstalled => "Download the selected model in Settings, then Send to retry.",
             error.AssistantRuntimeNotInstalled => "Install the runtime with Settings → Runtime & acceleration → Set up runtime (install if needed), then Apply and retry.",
             error.RuntimeCapabilityMissing, error.RuntimeAuthenticationMissing, error.ModelToolsIncompatible => "This runtime/model did not pass compatibility checks. Choose another runtime or model in Settings.",
+            error.RuntimeReasoningUnsupported => "This thinking model needs a newer runtime with reasoning-format support. Update llama.cpp or choose an Instruct model in Settings.",
             error.AssistantRuntimeBusy => "Another local model test or answer is using the runtime. Stop it or wait, then retry.",
             error.GpuUnavailableOrMemoryInsufficient, error.GpuOffloadUnverified, error.GpuRuntimeCapabilityMissing, error.AmbiguousGpuDevice => "The selected GPU could not be used. Choose a device or enable CPU fallback in Settings, then retry.",
-            error.RuntimeMemoryBudgetExceeded, error.SystemMemoryPressure => "Available memory is too low. Close other applications or select CPU in Settings, then retry.",
+            error.SystemMemoryPressure => "Available memory is too low for the selected shared-memory GPU. Close other applications or select CPU in Settings, then retry.",
             error.RuntimeCheckTimedOut, error.HelperTimedOut => "The local runtime check timed out. Retry or select another runtime in Settings.",
             error.SearchUnavailable, error.SearchEndpointRequired, error.SearchProviderRequired => "Configure and test a search engine in Settings, then retry.",
             error.Cancelled => "Stopped. Your question is preserved; Send retries it.",
@@ -565,7 +566,7 @@ const App = struct {
         const text = if (self.runtime.process == null) "Model unloaded" else if (self.runtime.device) |d| std.fmt.bufPrintZ(&buffer, "GPU · {s} · {s} · {d} layers", .{ @tagName(d.backend), d.description, self.runtime.offload_layers }) catch "GPU" else if (self.runtime.fallback_reason.len > 0) "CPU · fallback" else "CPU · local inference";
         self.compute_label.setText(text);
         if (self.runtime.process != null) {
-            const detail = std.fmt.allocPrintSentinel(a, "{s}\n{s}\n{s}\n{s}", .{ self.runtime.executable, self.runtime.version, self.runtime.fallback_reason, if (self.runtime.enforced_memory) "Host memory: cgroup limit" else "Host memory: monitored (GPU allocations are best effort)" }, 0) catch return;
+            const detail = std.fmt.allocPrintSentinel(a, "{s}\n{s}\n{s}\nHost memory: no Pearl limit", .{ self.runtime.executable, self.runtime.version, self.runtime.fallback_reason }, 0) catch return;
             defer a.free(detail);
             self.compute_label.as(gtk.Widget).setTooltipText(detail);
             self.compute_details.setText(detail);
@@ -579,7 +580,7 @@ const App = struct {
     }
     fn computeStatus(self: *App) protocol.ComputeStatus {
         const busy = self.job != null;
-        return if (busy) .{ .busy = true } else .{ .loaded = self.runtime.process != null, .gpu = self.runtime.gpu, .backend = if (self.runtime.device) |d| d.backend else .auto, .layers = self.runtime.offload_layers, .fallback = self.runtime.fallback_reason.len > 0, .enforced_memory = self.runtime.enforced_memory };
+        return if (busy) .{ .busy = true } else .{ .loaded = self.runtime.process != null, .gpu = self.runtime.gpu, .backend = if (self.runtime.device) |d| d.backend else .auto, .layers = self.runtime.offload_layers, .fallback = self.runtime.fallback_reason.len > 0 };
     }
     fn tick(data: ?*anyopaque) callconv(.c) c_int {
         const self: *App = @ptrCast(@alignCast(data.?));

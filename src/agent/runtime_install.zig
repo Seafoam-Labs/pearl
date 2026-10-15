@@ -73,6 +73,29 @@ pub fn ensureWith(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancell
 pub fn ensure(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable) !Result {
     return ensureWith(a, cfg, cancel, Desktop{});
 }
+fn installInTerminal(a: std.mem.Allocator, cmd: []const [:0]const u8, cancel: *gio.Cancellable, environment: anytype) !void {
+    const terminals = [_][]const [:0]const u8{
+        &.{ "/usr/bin/foot", "-e" },
+        // Devario ships Ghostty. -e starts a separate instance and keeps it
+        // alive until the command exits, so setup waits before probing again.
+        &.{ "/usr/bin/ghostty", "-e" },
+        &.{ "/usr/bin/kitty", "--" },
+        &.{ "/usr/bin/alacritty", "-e" },
+        &.{ "/usr/bin/konsole", "--nofork", "-e" },
+        &.{ "/usr/bin/xterm", "-e" },
+    };
+    for (terminals) |terminal| {
+        if (!environment.executable(terminal[0])) continue;
+        var args: std.ArrayList(?[*:0]const u8) = .empty;
+        defer args.deinit(a);
+        for (terminal) |arg| try args.append(a, arg.ptr);
+        for (cmd) |arg| try args.append(a, arg.ptr);
+        try args.append(a, null);
+        if (cancel.isCancelled() != 0) return error.Cancelled;
+        if (try environment.launch(args.items)) return;
+    }
+    return error.RuntimeInstallTerminalUnavailable;
+}
 const Desktop = struct {
     fn inspect(_: Desktop, a: std.mem.Allocator, runtime: config.RuntimeConfig, cancel: *gio.Cancellable) !probe.Probe {
         return probe.inspect(a, runtime, true, cancel);
@@ -86,30 +109,58 @@ const Desktop = struct {
         for (cmd[0..if (selected == .pacman) @as(usize, 2) else 1]) |exe| {
             if (std.c.access(exe, std.c.X_OK) != 0) return error.RuntimePackageManagerUnavailable;
         }
-        const terminals = [_][]const [:0]const u8{
-            &.{ "/usr/bin/foot", "-e" },
-            &.{ "/usr/bin/kitty", "--" },
-            &.{ "/usr/bin/alacritty", "-e" },
-            &.{ "/usr/bin/konsole", "--nofork", "-e" },
-            &.{ "/usr/bin/xterm", "-e" },
-        };
-        for (terminals) |terminal| {
-            if (std.c.access(terminal[0], std.c.X_OK) != 0) continue;
-            var args: std.ArrayList(?[*:0]const u8) = .empty;
-            for (terminal) |arg| try args.append(a, arg.ptr);
-            for (cmd) |arg| try args.append(a, arg.ptr);
-            try args.append(a, null);
-            if (cancel.isCancelled() != 0) return error.Cancelled;
-            const child = gio.Subprocess.newv(@ptrCast(args.items.ptr), .{}, null) orelse continue;
-            defer child.unref();
-            // No cancellation, timeout, parent-death signal, or forceExit:
-            // stopping a package commit can leave a damaged system database.
-            if (child.wait(null, null) == 0 or child.getSuccessful() == 0) return error.RuntimePackageInstallationFailed;
-            return;
-        }
-        return error.RuntimeInstallTerminalUnavailable;
+        try installInTerminal(a, cmd, cancel, Desktop{});
+    }
+    fn executable(_: Desktop, path: [:0]const u8) bool {
+        return std.c.access(path, std.c.X_OK) == 0;
+    }
+    fn launch(_: Desktop, args: []const ?[*:0]const u8) !bool {
+        const child = gio.Subprocess.newv(@ptrCast(args.ptr), .{}, null) orelse return false;
+        defer child.unref();
+        // No cancellation, timeout, parent-death signal, or forceExit:
+        // stopping a package commit can leave a damaged system database.
+        if (child.wait(null, null) == 0 or child.getSuccessful() == 0) return error.RuntimePackageInstallationFailed;
+        return true;
     }
 };
+
+test "Devario setup launches Shelly when Ghostty is the only terminal" {
+    const Fake = struct {
+        present: bool = true,
+        fail: bool = false,
+        launches: usize = 0,
+        fn executable(self: *@This(), path: [:0]const u8) bool {
+            return self.present and std.mem.eql(u8, path, "/usr/bin/ghostty");
+        }
+        fn launch(self: *@This(), args: []const ?[*:0]const u8) !bool {
+            self.launches += 1;
+            const expected = [_][]const u8{ "/usr/bin/ghostty", "-e", "/usr/bin/shelly", "install", "standard", "--needed", "llama-cpp" };
+            try std.testing.expectEqual(expected.len + 1, args.len);
+            for (expected, args[0..expected.len]) |want, got| try std.testing.expectEqualStrings(want, std.mem.span(got.?));
+            try std.testing.expect(args[expected.len] == null);
+            if (self.fail) return error.RuntimePackageInstallationFailed;
+            return true;
+        }
+    };
+    const a = std.testing.allocator;
+    const cmd = try command(a, try manager("ID=devario\nID_LIKE=arch\n"), .{});
+    defer a.free(cmd);
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    var desktop: Fake = .{};
+    try installInTerminal(a, cmd, cancel, &desktop);
+    try std.testing.expectEqual(@as(usize, 1), desktop.launches);
+    desktop.fail = true;
+    try std.testing.expectError(error.RuntimePackageInstallationFailed, installInTerminal(a, cmd, cancel, &desktop));
+    try std.testing.expectEqual(@as(usize, 2), desktop.launches);
+    cancel.cancel();
+    try std.testing.expectError(error.Cancelled, installInTerminal(a, cmd, cancel, &desktop));
+    try std.testing.expectEqual(@as(usize, 2), desktop.launches);
+    cancel.reset();
+    desktop.present = false;
+    try std.testing.expectError(error.RuntimeInstallTerminalUnavailable, installInTerminal(a, cmd, cancel, &desktop));
+    try std.testing.expectEqual(@as(usize, 2), desktop.launches);
+}
 
 test "distribution identity gives Devario precedence and never evaluates shell text" {
     try std.testing.expectEqual(Manager.shelly, try manager("ID=devario\nID_LIKE=arch\n"));

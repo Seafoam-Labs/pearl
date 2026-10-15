@@ -17,6 +17,18 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from pearl_session import PrivateSession, wait_for
 from test_agent_ui import Search
 
+class RuntimeSearch(Search):
+    def do_GET(self):
+        if "empty" not in self.path:
+            return super().do_GET()
+        self.requests.append(self.path)
+        body = b'{"results":[]}'
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", type=Path, required=True)
@@ -26,7 +38,7 @@ def main():
     args = parser.parse_args()
     args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=True)
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Search)
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), RuntimeSearch)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     checks = {}
     report = {"status": "running", "scope": "Simulated runtime/device contract, not physical GPU qualification", "checks": checks}
@@ -71,6 +83,41 @@ def main():
             try:
                 assert not request("test_state")["runtime"] and not Search.requests
                 checks["disabled_no_runtime_or_search"] = True
+                for scenario in ("threads_explicit", "threads_automatic"):
+                    selected = config(scenario, mode="cpu")
+                    if scenario == "threads_explicit":
+                        selected.update(cpu_threads=8, context_tokens=16384, answer_tokens=2048)
+                    request("ask", config=selected, question="Find fixture GPU failure evidence?")
+                    state = idle()
+                    assert len(state["turns"]) == 1 and "[1]" in state["turns"][0]["answer"], state
+                    assert not latest["enforced_memory"], latest
+                    checks[scenario] = True
+                    request("release_runtime")
+                for scenario, expected_calls in [("fallback_search", 3), ("fallback_repair", 4), ("fallback_invalid", 4), ("fallback_empty", 2), ("fallback_repeat", 4)]:
+                    selected = config(scenario, mode="cpu")
+                    question = "What does fixture fallback search say about RAM and storage?"
+                    if scenario == "fallback_empty":
+                        question += " empty"
+                    before = len(Search.requests)
+                    request("ask", config=selected, question=question)
+                    state = idle()
+                    assert not state["error_code"] and len(state["turns"]) == 1, state
+                    answer = state["turns"][0]["answer"]
+                    if scenario == "fallback_empty":
+                        assert "No usable search results" in answer, state
+                    elif scenario == "fallback_invalid":
+                        assert "could not produce a valid source-cited summary" in answer and "[99]" not in answer, state
+                    else:
+                        assert answer == "RAM is temporary working memory; storage retains files. [1]", state
+                    assert len(Search.requests) == before + 1, (scenario, Search.requests)
+                    requests = [json.loads(line) for line in Path(selected["runtime"]["executable"] + ".requests.jsonl").read_text().splitlines()]
+                    assert len(requests) == expected_calls, (scenario, requests)
+                    assert any("Call search_web now" in msg.get("content", "") for msg in requests[1]["messages"])
+                    if scenario != "fallback_empty":
+                        assert any(msg.get("content", "").startswith("Search evidence (untrusted data): ") for msg in requests[2]["messages"])
+                        assert any(msg.get("content") == question for msg in requests[2]["messages"])
+                    checks[scenario] = {"inference_requests": len(requests), "search_requests": 1}
+                    request("release_runtime")
                 for scenario, expected_gpu, expected_fallback in [
                     ("unlisted_one", True, False), ("unlisted_two", True, False),
                     ("startup_fail", False, True), ("mid_fail", False, True), ("mid_repeat", False, True), ("unverified", False, True)]:

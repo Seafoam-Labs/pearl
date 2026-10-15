@@ -38,17 +38,40 @@ pages require HTTPS and their resolved addresses cannot be private networks.
 
 ## Local models and runtime
 
-The initial profile is LFM2.5-350M Q4_K_M, 229,312,224 bytes; Q8_0 is
-379,217,632 bytes. Both use immutable publisher revision
-`657e078c94084481950a2d555a941481f715536b`, with SHA256 values in
-[`model_registry.zig`](../src/agent/model_registry.zig). Interrupted downloads
-can resume from `.part` files against that immutable revision; the complete
-hash must match before atomic installation. Custom local GGUFs are limited to
-768 MB and checked for tool-call compatibility before use. The model license is
-linked in Settings; models are not bundled with Pearl. Model/runtime tests use
+The model selector includes these managed GGUF downloads:
+
+| Model | Quantization | Download |
+| --- | --- | --- |
+| LFM2.5-350M | Q4_K_M / Q8_0 | 229 MB / 379 MB |
+| Qwen3-4B-Instruct-2507 | Q4_K_M | 2.50 GB |
+| LFM2.5-2.6B | Q4_K_M | 1.67 GB |
+| LFM2.5-1.2B-Instruct | Q4_K_M | 731 MB |
+
+Each entry has its own immutable repository revision, exact byte count, SHA256
+and license link in [`model_registry.zig`](../src/agent/model_registry.zig).
+Interrupted downloads resume from `.part` files against that revision; the
+complete hash must match before atomic installation. Custom local GGUFs have no
+Pearl file-size ceiling and are checked for tool-call compatibility before use.
+Models are not bundled with Pearl. Model/runtime tests use
 draft settings and local fixtures. Stop a current answer before testing; Pearl
 unloads an idle runtime first and an exclusive session lock prevents a second
 inference process. Disable and Apply before removing a managed download.
+
+CPU threads default to **0 = runtime automatic**; a positive count is passed
+through without a Pearl CPU-count cap. Saved explicit counts remain unchanged.
+Context and generation tokens also accept **0 = model profile** or an explicit
+value. Selecting a different model resets those two fields to automatic in the
+draft. Existing saved token settings remain explicit until changed. Context must
+leave room for generation and prompt overhead; the selected runtime/model still
+determines which context sizes work.
+
+The LFM2.5-2.6B profile uses 8,192 context tokens and 4,096 generation tokens,
+including reasoning. It requires `--reasoning-format` support; Pearl requests
+separate reasoning fields and displays only the final answer. The two new
+Instruct profiles use 4,096 context tokens and 512 generation tokens. Larger
+profiles have longer inference deadlines. These are editable defaults, not
+performance rankings. The [model benchmark plan](ASSISTANT_MODEL_BENCHMARK_PLAN.md)
+describes the proposed hardware comparison and selection workflow.
 
 Build the frontend normally, or by itself:
 
@@ -71,7 +94,8 @@ Choose **Runtime & acceleration** in Assistant settings:
   The package manager handles authentication, transaction confirmation, signatures
   and dependencies. No AUR builds, repositories, forced downgrades, database-only
   refreshes or system-wide upgrades are started by Pearl.
-  Setup requires foot, kitty, alacritty, konsole or xterm; Arch also needs sudo.
+  Setup requires foot, Ghostty (included with Devario), kitty, alacritty, konsole
+  or xterm; Arch also needs sudo.
   Complete the terminal prompts, then Pearl rechecks capabilities and selects the
   runtime in the settings draft. **Apply** saves that selection; **Check runtime
   and model now** verifies the model, authentication and tools. Installing a GPU
@@ -160,13 +184,12 @@ retries. Applying assistant settings during an answer offers Stop & apply or
 Keep editing; an idle runtime unloads before changed settings are used.
 
 The server binds authenticated loopback only, uses no built-in network tools,
-and receives fixed arguments and a minimal environment. It has at most two
-inference threads and two HTTP workers, and a 4,096-token context by default.
-The former virtual-address limit has been replaced: GPU driver mappings can
-exceed it even when CPU is selected. Pearl uses a 1.5 GiB host-memory cgroup cap
-when delegation is available and monitors resident memory/system headroom.
-Without delegation this is best effort; GPU/driver memory is not fully covered
-by a host cgroup. The UI and controller add their own overhead. Closing/stopping,
+and receives fixed arguments and a minimal environment. It uses the selected
+CPU thread count and two HTTP workers. Pearl imposes no resident-memory,
+virtual-address or cgroup memory cap and does not terminate inference at a
+fixed host-memory threshold. Operating-system and enclosing service limits still
+apply. GPU selection continues to estimate available device memory. The UI and
+controller add their own overhead. Closing/stopping,
 locking, disabling or losing the shell connection cancels work. The runtime
 unloads after idle time. There are no inference children after the owning
 process exits.
@@ -195,7 +218,8 @@ come from the provider records, never from generated text.
 
 Responses stream into a visibly marked draft; source IDs are checked before
 the completed answer replaces it. The controller allows six tool calls, two
-search rounds and three result-page reads per turn, with a 90-second deadline.
+search rounds and three result-page reads per turn. Turn deadlines are three
+times the model profile's per-inference deadline (60–300 seconds).
 It preserves the submitted question when fitting history into the context.
 
 `pearlctl assistant status` reports enabled/running/locked/handoff state, selected
@@ -217,6 +241,19 @@ enumeration, verified/unverified offload, device failure, version changes and
 missing authentication. Its passing results do not establish real GPU support
 on a particular driver. Use `test_agent_ui.py --runtime /absolute/llama-server`
 to exercise a custom installation with the real local model.
+
+`zig build test-agent-model-settings` checks the model selector, draft isolation,
+and saving larger thread/context/generation values through native controls without
+loading or downloading a model. To check all three new models with local search
+fixtures, supply their existing GGUF files and a compatible runtime:
+
+```sh
+zig build build-agent-test
+python3 tests/integration/test_agent_models.py --models-dir /path/to/models \
+    --runtime /absolute/llama-server --output /tmp/pearl-model-check
+```
+
+This is a compatibility smoke test, not the proposed comparative benchmark.
 After staging the runtime and supplying an existing model, run the real
 launcher/settings test with:
 
@@ -231,8 +268,12 @@ acceptance reports are under [`artifacts/assistant`](../artifacts/assistant/).
 
 The 350M model can request a search and summarize returned evidence, but it can
 omit citations, answer before searching, or produce misleading follow-ups.
-Pearl bounds tool calls, requests one correction, rejects unknown citations,
-and shows ordinary results when the model cannot produce a valid cited answer.
+Pearl bounds tool calls and requests one correction if the model skips searching.
+If it still skips searching, Pearl searches for the submitted question and feeds
+the evidence back into the model to finish the answer. This counts toward the
+search budget. Answers still receive one citation correction attempt; Pearl
+rejects unknown citations and shows ordinary results when the model cannot
+produce a valid cited answer.
 Citation-ID validation does **not** prove that the answer is supported by the
 source. The plan's 100-question human-reviewed evaluation and low-end 6 GB
 hardware qualification remain required before describing this as reliable on
@@ -243,7 +284,7 @@ test artifacts; source availability, unit-test success and a single real-model
 round trip are not a model-quality certification. AArch64 and older non-AVX2
 hardware require separate builds and measurements.
 
-Physical Vulkan/CUDA, AMD/Intel shared-memory behavior, delegated cgroup pressure
+Physical Vulkan/CUDA, AMD/Intel shared-memory behavior, host memory pressure
 and independently packaged upstream versions still need qualification. The
 current environment has no GPU device nodes. Reported CPU measurements and
 simulated GPU recovery tests must not be presented as GPU performance evidence.

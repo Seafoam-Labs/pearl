@@ -49,9 +49,10 @@ pub const Config = struct {
     default_provider_id: []const u8 = "bing",
     search_mode: enum { default, all } = .default,
     read_pages: bool = true,
-    context_tokens: u16 = 4096,
-    answer_tokens: u16 = 384,
-    cpu_threads: u8 = 2,
+    // Zero selects the model profile or the runtime's CPU thread detection.
+    context_tokens: u32 = 0,
+    answer_tokens: u32 = 0,
+    cpu_threads: u32 = 0,
     idle_unload_seconds: u16 = 60,
     pub fn validate(self: Config) !void {
         try text(self.runtime.executable, 4096);
@@ -73,8 +74,22 @@ pub const Config = struct {
         }
         if (self.default_provider_id.len > 0 and self.provider(self.default_provider_id) == null) return error.UnknownSearchProvider;
         if (self.search_mode == .all and active > 3) return error.TooManyEnabledProviders;
-        if (self.context_tokens != 2048 and self.context_tokens != 4096) return error.InvalidAssistantContext;
-        if (self.answer_tokens < 64 or self.answer_tokens > 512 or self.cpu_threads < 1 or self.cpu_threads > 2 or self.idle_unload_seconds < 15 or self.idle_unload_seconds > 300) return error.InvalidAssistantBudget;
+        if (self.contextTokens() > std.math.maxInt(c_int) or self.contextTokens() <= @as(u64, self.answerTokens()) + 700) return error.InvalidAssistantContext;
+        if (self.cpu_threads > std.math.maxInt(c_int) or self.idle_unload_seconds < 15 or self.idle_unload_seconds > 300) return error.InvalidAssistantBudget;
+    }
+    pub fn contextTokens(self: Config) u32 {
+        if (self.context_tokens != 0) return self.context_tokens;
+        return if (@import("model_registry.zig").find(self.model_id)) |m| m.context_tokens else 4096;
+    }
+    pub fn answerTokens(self: Config) u32 {
+        if (self.answer_tokens != 0) return self.answer_tokens;
+        return if (@import("model_registry.zig").find(self.model_id)) |m| m.answer_tokens else 384;
+    }
+    pub fn inferenceSeconds(self: Config) u16 {
+        return if (@import("model_registry.zig").find(self.model_id)) |m| m.inference_seconds else 300;
+    }
+    pub fn threads(self: Config) i32 {
+        return if (self.cpu_threads == 0) -1 else @intCast(self.cpu_threads);
     }
     pub fn provider(self: Config, id: []const u8) ?Provider {
         for (self.providers) |p| if (std.mem.eql(u8, id, p.id)) return p;
@@ -107,9 +122,10 @@ test "disabled default selects Bing RSS without requiring provider setup" {
     try std.testing.expectEqualStrings("", cfg.provider("bing").?.endpoint);
     try std.testing.expect(cfg.selected(cfg.providers[0]));
 }
-test "provider identity, endpoint and CPU budgets are strict" {
+test "provider identity and endpoints are validated without a CPU thread cap" {
     try std.testing.expectError(error.DuplicateSearchProvider, (Config{ .providers = &.{ .{}, .{} } }).validate());
-    try std.testing.expectError(error.InvalidAssistantBudget, (Config{ .cpu_threads = 8 }).validate());
+    try (Config{ .cpu_threads = 8 }).validate();
+    try (Config{ .cpu_threads = 1024, .context_tokens = 131072, .answer_tokens = 8192 }).validate();
     try std.testing.expectError(error.InvalidSearchEndpoint, (Provider{ .endpoint = "https://user:secret@host" }).validate());
     try std.testing.expectError(error.UnknownSearchProvider, (Config{ .providers = &.{} }).validate());
     try (Config{ .providers = &.{}, .default_provider_id = "" }).validate();
@@ -123,4 +139,29 @@ test "saved configured providers retain their explicit default" {
     try cfg.validate();
     try std.testing.expect(cfg.selected(cfg.providers[0]));
     try std.testing.expectEqual(ProviderKind.google, cfg.providers[0].kind);
+}
+
+test "automatic model profiles and explicit resource choices survive round trips" {
+    const registry = @import("model_registry.zig");
+    for (registry.models) |model| {
+        const automatic: Config = .{ .model_id = model.id };
+        try automatic.validate();
+        try std.testing.expectEqual(model.context_tokens, automatic.contextTokens());
+        try std.testing.expectEqual(model.answer_tokens, automatic.answerTokens());
+        try std.testing.expectEqual(@as(i32, -1), automatic.threads());
+    }
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const old = try std.json.parseFromSliceLeaky(Config, a, "{\"cpu_threads\":2,\"context_tokens\":2048,\"answer_tokens\":384}", .{});
+    try old.validate();
+    try std.testing.expectEqual(@as(i32, 2), old.threads());
+    try std.testing.expectEqual(@as(u32, 2048), old.contextTokens());
+    const explicit: Config = .{ .cpu_threads = 512, .context_tokens = 131072, .answer_tokens = 8192 };
+    const copy = try std.json.parseFromSliceLeaky(Config, a, try std.json.Stringify.valueAlloc(a, explicit, .{}), .{});
+    try copy.validate();
+    try std.testing.expectEqual(@as(i32, 512), copy.threads());
+    try std.testing.expectEqual(@as(u32, 131072), copy.contextTokens());
+    try std.testing.expectEqual(@as(u32, 8192), copy.answerTokens());
+    try std.testing.expectError(error.InvalidAssistantContext, (Config{ .context_tokens = 2048, .answer_tokens = 4096 }).validate());
 }

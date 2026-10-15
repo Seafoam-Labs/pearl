@@ -1,5 +1,10 @@
 # Assistant GPU and runtime update plan
 
+Resource-policy update, October 15, 2026: Pearl no longer imposes the model-file,
+host-memory or two-thread ceilings described in this historical plan. The
+[current behavior](ASSISTANT.md) and [model benchmark plan](ASSISTANT_MODEL_BENCHMARK_PLAN.md)
+supersede its fixed host-memory policy and related acceptance criteria.
+
 Status: experimental implementation added, October 14, 2026. See the
 [current setup and behavior](ASSISTANT.md) and
 [qualification report](../artifacts/assistant/gpu-runtime/README.md). Physical GPU,
