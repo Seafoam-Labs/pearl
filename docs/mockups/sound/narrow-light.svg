@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="1130" viewBox="0 0 440 1130">
+<title>Pearl Sound — compact light proposal</title>
+<desc>Static 440-pixel-wide light-theme proposal showing vertically reflowed Sound controls. This is a tall content preview; the body scrolls in shorter windows. Device selection changes the default. Other devices expands individual volume and mute controls. Each active stream has a mute toggle, slider, percentage and menu with Move to default. The muted input retains its volume and has an explicit Muted label. The application list contains one playback and one recording stream. No microphone level metering is claimed. Device names and stream data are illustrative.</desc>
+<defs><style>
+text{font-family:'DejaVu Sans',sans-serif;font-size:14px;fill:#28232e}.secondary{fill:#696171;font-size:12px}.section{font-size:17px;font-weight:600}.icon{fill:none;stroke:#6b4d94;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.line{stroke:#e1dbe8}.track{stroke:#ddd4e9;stroke-width:6;stroke-linecap:round}.fill{stroke:#76549e;stroke-width:6;stroke-linecap:round}.button{fill:#eee7f5}
+</style>
+<g id="speaker" class="icon"><path d="M2 9h5l6-5v16l-6-5H2Z M17 8q4 4 0 8 M20 4q8 8 0 16"/></g>
+<g id="mic" class="icon"><rect x="8" y="2" width="8" height="13" rx="4"/><path d="M4 11v2a8 8 0 0 0 16 0v-2 M12 21v3 M8 24h8"/></g>
+<g id="more" fill="#696171"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></g>
+</defs>
+<rect width="440" height="1130" fill="#f5f1f8"/>
+<path d="M0 0h440v54H0Z" fill="#ebe5f0"/><circle cx="24" cy="27" r="6" fill="#76549e"/><text x="42" y="32" font-size="12">Pearl Settings</text><text x="408" y="33">×</text>
+<path d="m27 77-6 6 6 6" class="icon"/><text x="39" y="88" class="secondary">All settings</text>
+<text x="20" y="134" style="font-size:28px;font-weight:600">Sound</text><text x="20" y="161" class="secondary">Choose your devices and adjust their volume.</text>
+<text x="20" y="203" class="section">Output</text>
+<rect x="20" y="219" width="400" height="224" rx="14" fill="#fff"/>
+<use href="#speaker" x="38" y="237"/><text x="76" y="249" font-weight="600">Studio headphones</text><text x="76" y="270" class="secondary">Default output</text>
+<rect x="38" y="286" width="364" height="44" rx="10" class="button"/><text x="54" y="314">Change device</text><path d="m376 304 5 5 5-5" class="icon"/>
+<rect x="38" y="342" width="44" height="44" rx="10" class="button"/><use href="#speaker" x="48" y="352"/>
+<path d="M101 364H338" class="track"/><path d="M101 364H262" class="fill"/><circle cx="262" cy="364" r="9" fill="#76549e"/><text x="402" y="369" text-anchor="end">68%</text>
+<path d="M38 399h364" class="line"/><text x="38" y="426" class="secondary">Other output devices</text><text x="372" y="426" class="secondary">2</text><path d="m390 415 5 5-5 5" class="icon"/>
+<text x="20" y="485" class="section">Input</text>
+<rect x="20" y="501" width="400" height="224" rx="14" fill="#fff"/>
+<use href="#mic" x="38" y="518"/><text x="76" y="531" font-weight="600">Built-in microphone</text><text x="76" y="552" class="secondary">Default input · Muted</text>
+<rect x="38" y="568" width="364" height="44" rx="10" class="button"/><text x="54" y="596">Change device</text><path d="m376 586 5 5 5-5" class="icon"/>
+<rect x="38" y="624" width="44" height="44" rx="10" fill="#e4d5f6" stroke="#76549e"/><use href="#mic" x="48" y="633"/><path d="m48 657 24-24" class="icon"/>
+<path d="M101 646H338" class="track"/><path d="M101 646H224" stroke="#8b8098" stroke-width="6" stroke-linecap="round"/><circle cx="224" cy="646" r="9" fill="#8b8098"/><text x="402" y="651" text-anchor="end">52%</text>
+<path d="M38 681h364" class="line"/><text x="38" y="708" class="secondary">Other input devices</text><text x="372" y="708" class="secondary">1</text><path d="m390 697 5 5-5 5" class="icon"/>
+<text x="20" y="767" class="section">Applications</text><text x="420" y="767" text-anchor="end" class="secondary">2 active streams</text>
+<rect x="20" y="783" width="400" height="258" rx="14" fill="#fff"/>
+<text x="38" y="813" font-weight="600">Firefox</text><text x="38" y="835" class="secondary">Output · Studio headphones</text><rect x="358" y="797" width="44" height="44" rx="10" class="button"/><use href="#more" x="368" y="807"/>
+<rect x="38" y="852" width="44" height="44" rx="10" class="button"/><use href="#speaker" x="48" y="862"/><path d="M101 874H338" class="track"/><path d="M101 874H291" class="fill"/><circle cx="291" cy="874" r="9" fill="#76549e"/><text x="402" y="879" text-anchor="end">80%</text>
+<path d="M38 912h364" class="line"/>
+<text x="38" y="942" font-weight="600">Recorder</text><text x="38" y="964" class="secondary">Input · Built-in microphone</text><rect x="358" y="926" width="44" height="44" rx="10" class="button"/><use href="#more" x="368" y="936"/>
+<rect x="38" y="981" width="44" height="44" rx="10" class="button"/><use href="#mic" x="48" y="990"/><path d="M101 1003H338" class="track"/><path d="M101 1003H338" class="fill"/><circle cx="338" cy="1003" r="9" fill="#76549e"/><text x="402" y="1008" text-anchor="end">100%</text>
+<text x="20" y="1074" class="secondary">Changes take effect immediately.</text>
+<path d="M0 1091h440" class="line"/><text x="20" y="1116" class="secondary">STATIC MOCKUP · Compact layout / muted input</text>
+</svg>

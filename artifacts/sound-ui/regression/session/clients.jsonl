@@ -1,0 +1,9 @@
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "notification", "id": 1}
+{"kind": "notification-signal", "signal": "NotificationClosed", "args": [1, 2]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "Pause", "args": []}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.mpris.MediaPlayer2.Player", "method": "SetPosition", "args": ["/track/one", 60000000]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}
+{"kind": "call", "path": "/org/mpris/MediaPlayer2", "interface": "org.freedesktop.DBus.Properties", "method": "GetAll", "args": ["org.mpris.MediaPlayer2.Player"]}

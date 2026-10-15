@@ -1,0 +1,3 @@
+event=ready
+command={"deny": "profile"}
+command={"deny": false}

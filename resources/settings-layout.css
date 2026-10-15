@@ -101,3 +101,20 @@
 .settings-window .bar-menu button { padding: 8px 10px; }
 .settings-window .network-card { border-radius: 14px; padding: 16px; }
 .settings-window .network-view button { min-height: 32px; }
+
+/* Sound keeps primary volume controls visible and secondary routes in menus. */
+.settings-window .sound-card { border-radius: 14px; padding: 16px; }
+.settings-window .sound-view .pearl-section-title { font-size: 1.15em; font-weight: 600; }
+.settings-window .sound-view .settings-row-title { font-weight: 600; }
+.settings-window .sound-device + .sound-device { border-top: 1px solid alpha(currentColor, 0.12); padding-top: 16px; }
+.settings-window .sound-view flowboxchild { padding: 0; }
+.settings-window .sound-view button { border-radius: 10px; min-height: 32px; }
+.settings-window .sound-view .sound-mute { min-width: 32px; padding: 4px; }
+.settings-window .sound-view scale { min-width: 50px; }
+.settings-window .sound-view .sound-percent { min-width: 0; }
+.settings-window .sound-view .sound-percent button { min-width: 12px; min-height: 20px; padding: 2px; }
+.settings-window .sound-view .sound-percent text { min-width: 2em; padding: 4px; }
+.settings-window .sound-menu { padding: 8px; }
+.settings-window .sound-menu button { min-height: 32px; }
+.settings-window.pearl-gtk .sound-card { background: alpha(currentColor, 0.04); border: 1px solid alpha(currentColor, 0.12); }
+.settings-window .sound-muted { outline: 1px solid currentColor; outline-offset: -2px; }

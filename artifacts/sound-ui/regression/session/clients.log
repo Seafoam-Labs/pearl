@@ -1,0 +1,3 @@
+event=ready
+command={"notify": {"body": "Private fixture notification", "resident": true, "summary": "Standalone notification"}}
+command={"capability": "CanSeek", "value": false}

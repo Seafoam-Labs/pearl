@@ -1,0 +1,1515 @@
+{
+  "status": "investigated-not-reproduced-no-permanent-fix-verified",
+  "date": "2026-10-15",
+  "gpu": "AMD Radeon 610M / RADV RAPHAEL_MENDOCINO (PCI 1002:13c0)",
+  "mesa": "26.2.4-arch3.1",
+  "gtk": "4.24.1",
+  "backend": "private headless Aqueous on real AMD GPU",
+  "binaries_sha256": {
+    "/home/zoey/Pearl/zig-out/bin/pearl": "78bb4c098dfd4c2ee37778ebc3731e61733f61292a84f2901ef46617a670031f",
+    "/home/zoey/Pearl/.cache/aqueous-global-switcher/bin/aqueous": "99d6e49491a82b8f5874974c9b68add322fbc6e2ec3950c65c9f7bc63d8ed845",
+    "/home/zoey/RiderProjects/Aqueous/compositor/zig-out/bin/aqueous": "eb91771eba650118640f77b4b9170fc70184dcf45245055e9a46f61e6497a3fb",
+    "/usr/lib/libgtk-4.so.1": "fd50597c435753a2ac7382702e4cd107557e647c975d9d3ed12824d167edad07",
+    "/usr/lib/libvulkan_radeon.so": "beb888991d47606a01b0738dece66d28f2b1c01a7f48403c6505e4d55dbcd73b"
+  },
+  "gtk_review": {
+    "release": "02b85fda7f2078b601774bef3e5c0daddca12b2a",
+    "stable": "9c1bfcdfdebb3ed773cc0fbe237a2687eba7c6f3",
+    "main": "ce6b23ca7c88dad14cfe7a788a7e98c013fde7bf",
+    "conclusion": "No verified upstream fix matching the reported artifact identified in reviewed changes. Full redraw bypasses node differencing; it does not identify the defective layer."
+  },
+  "limitations": [
+    "Affected GPU model, installed versions, scale and access not supplied.",
+    "Headless tests do not exercise physical DRM/KMS scanout.",
+    "Local Aqueous binaries predate current source HEAD; binary hashes recorded instead of claiming source equivalence.",
+    "Before/after comparisons sample the left panel, not every intermediate animation frame.",
+    "Baseline hover cross-run comparison differs around active workspace button; before/after within each run is exact. Title/opacity comparisons should be used for partial-vs-full equivalence.",
+    "Vulkan validation requested only for fractional GTK clients, not compositor. A deprecated layer-setting warning was emitted; no VUID or sync hazard appeared."
+  ],
+  "next_required": "Reproduce on affected hardware/software; capture client damage and compositor output, isolate node diff versus buffer preservation versus output damage, then patch the responsible component and verify with partial redraw enabled.",
+  "runs": [
+    {
+      "test": "hover",
+      "cases": [
+        {
+          "case": "vulkan-partial",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Desktop",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 543,
+                "height": 40
+              },
+              {
+                "x": 568,
+                "y": 4,
+                "width": 145,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "empty",
+              "groups": 0,
+              "truncated": false,
+              "rect": {
+                "x": 596,
+                "y": 632,
+                "width": 88,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            "Extension available: VK_KHR_device_group_creation v0.0.1",
+            "Extension available: VK_KHR_get_physical_device_properties2 v0.0.2",
+            "Vulkan Device 0:",
+            "VK_KHR_buffer_device_address",
+            "VK_KHR_device_address_commands",
+            "VK_KHR_device_fault",
+            "VK_KHR_device_group",
+            "VK_EXT_buffer_device_address",
+            "VK_EXT_device_address_binding_report",
+            "VK_EXT_device_fault",
+            "VK_EXT_device_generated_commands",
+            "VK_EXT_device_memory_report",
+            "VK_EXT_physical_device_drm",
+            "VK_EXT_zero_initialize_device_memory",
+            "VK_AMD_device_coherent_memory",
+            "Using Vulkan device 0, queue 0",
+            "failed to load Vulkan pipeline cache file '/tmp/pearl-dev-6yxgapzv/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100': Error opening file /tmp/pearl-dev-6yxgapzv/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100: No such file or directory"
+          ],
+          "exit": 0
+        },
+        {
+          "case": "vulkan-full",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Desktop",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 543,
+                "height": 40
+              },
+              {
+                "x": 568,
+                "y": 4,
+                "width": 145,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "empty",
+              "groups": 0,
+              "truncated": false,
+              "rect": {
+                "x": 596,
+                "y": 632,
+                "width": 88,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            "Extension available: VK_KHR_device_group_creation v0.0.1",
+            "Extension available: VK_KHR_get_physical_device_properties2 v0.0.2",
+            "Vulkan Device 0:",
+            "VK_KHR_buffer_device_address",
+            "VK_KHR_device_address_commands",
+            "VK_KHR_device_fault",
+            "VK_KHR_device_group",
+            "VK_EXT_buffer_device_address",
+            "VK_EXT_device_address_binding_report",
+            "VK_EXT_device_fault",
+            "VK_EXT_device_generated_commands",
+            "VK_EXT_device_memory_report",
+            "VK_EXT_physical_device_drm",
+            "VK_EXT_zero_initialize_device_memory",
+            "VK_AMD_device_coherent_memory",
+            "Using Vulkan device 0, queue 0",
+            "failed to load Vulkan pipeline cache file '/tmp/pearl-dev-s9_41y8h/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100': Error opening file /tmp/pearl-dev-s9_41y8h/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100: No such file or directory"
+          ],
+          "exit": 0
+        },
+        {
+          "case": "gl-partial",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Desktop",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 543,
+                "height": 40
+              },
+              {
+                "x": 568,
+                "y": 4,
+                "width": 145,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "empty",
+              "groups": 0,
+              "truncated": false,
+              "rect": {
+                "x": 596,
+                "y": 632,
+                "width": 88,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            " - Client APIs: OpenGL OpenGL_ES",
+            "Using OpenGL backend EGL",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20"
+          ],
+          "exit": 0
+        },
+        {
+          "case": "gl-full",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Desktop",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 543,
+                "height": 40
+              },
+              {
+                "x": 568,
+                "y": 4,
+                "width": 145,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "empty",
+              "groups": 0,
+              "truncated": false,
+              "rect": {
+                "x": 596,
+                "y": 632,
+                "width": 88,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            " - Client APIs: OpenGL OpenGL_ES",
+            "Using OpenGL backend EGL",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20"
+          ],
+          "exit": 0
+        }
+      ],
+      "partial_vs_full": {
+        "vulkan": {
+          "crop_pixels": [
+            0,
+            0,
+            560,
+            48
+          ],
+          "bbox": [
+            68,
+            4,
+            90,
+            44
+          ],
+          "mean": [
+            0.0003348214285714286,
+            0.0005208333333333333,
+            0.00026041666666666666
+          ]
+        },
+        "gl": {
+          "crop_pixels": [
+            0,
+            0,
+            560,
+            48
+          ],
+          "bbox": [
+            68,
+            4,
+            90,
+            44
+          ],
+          "mean": [
+            0.0003348214285714286,
+            0.0005208333333333333,
+            0.00026041666666666666
+          ]
+        }
+      }
+    },
+    {
+      "test": "title-opacity",
+      "cases": [
+        {
+          "case": "vulkan-partial",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw probe",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 48,
+              "width": 1280,
+              "height": 672
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 581,
+                "height": 40
+              },
+              {
+                "x": 603,
+                "y": 4,
+                "width": 145,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "visible",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 610,
+                "y": 632,
+                "width": 60,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            "Extension available: VK_KHR_device_group_creation v0.0.1",
+            "Extension available: VK_KHR_get_physical_device_properties2 v0.0.2",
+            "Vulkan Device 0:",
+            "VK_KHR_buffer_device_address",
+            "VK_KHR_device_address_commands",
+            "VK_KHR_device_fault",
+            "VK_KHR_device_group",
+            "VK_EXT_buffer_device_address",
+            "VK_EXT_device_address_binding_report",
+            "VK_EXT_device_fault",
+            "VK_EXT_device_generated_commands",
+            "VK_EXT_device_memory_report",
+            "VK_EXT_physical_device_drm",
+            "VK_EXT_zero_initialize_device_memory",
+            "VK_AMD_device_coherent_memory",
+            "Using Vulkan device 0, queue 0",
+            "failed to load Vulkan pipeline cache file '/tmp/pearl-dev-ypqd416x/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100': Error opening file /tmp/pearl-dev-ypqd416x/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100: No such file or directory"
+          ],
+          "exit": 0
+        },
+        {
+          "case": "vulkan-full",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw probe",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 48,
+              "width": 1280,
+              "height": 672
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 581,
+                "height": 40
+              },
+              {
+                "x": 603,
+                "y": 4,
+                "width": 145,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "visible",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 610,
+                "y": 632,
+                "width": 60,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            "Extension available: VK_KHR_device_group_creation v0.0.1",
+            "Extension available: VK_KHR_get_physical_device_properties2 v0.0.2",
+            "Vulkan Device 0:",
+            "VK_KHR_buffer_device_address",
+            "VK_KHR_device_address_commands",
+            "VK_KHR_device_fault",
+            "VK_KHR_device_group",
+            "VK_EXT_buffer_device_address",
+            "VK_EXT_device_address_binding_report",
+            "VK_EXT_device_fault",
+            "VK_EXT_device_generated_commands",
+            "VK_EXT_device_memory_report",
+            "VK_EXT_physical_device_drm",
+            "VK_EXT_zero_initialize_device_memory",
+            "VK_AMD_device_coherent_memory",
+            "Using Vulkan device 0, queue 0",
+            "failed to load Vulkan pipeline cache file '/tmp/pearl-dev-0ws5laau/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100': Error opening file /tmp/pearl-dev-0ws5laau/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100: No such file or directory"
+          ],
+          "exit": 0
+        },
+        {
+          "case": "gl-partial",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw probe",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 48,
+              "width": 1280,
+              "height": 672
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 581,
+                "height": 40
+              },
+              {
+                "x": 603,
+                "y": 4,
+                "width": 146,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "visible",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 610,
+                "y": 632,
+                "width": 60,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            " - Client APIs: OpenGL OpenGL_ES",
+            "Using OpenGL backend EGL",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20"
+          ],
+          "exit": 0
+        },
+        {
+          "case": "gl-full",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw probe",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 48,
+              "width": 1280,
+              "height": 672
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 581,
+                "height": 40
+              },
+              {
+                "x": 603,
+                "y": 4,
+                "width": 146,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "visible",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 610,
+                "y": 632,
+                "width": 60,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            " - Client APIs: OpenGL OpenGL_ES",
+            "Using OpenGL backend EGL",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20",
+            "OpenGL ES version: 3.2 (core)",
+            "GLSL version: OpenGL ES GLSL ES 3.20"
+          ],
+          "exit": 0
+        }
+      ],
+      "partial_vs_full": {
+        "vulkan": {
+          "crop_pixels": [
+            0,
+            0,
+            560,
+            48
+          ],
+          "bbox": null,
+          "mean": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "gl": {
+          "crop_pixels": [
+            0,
+            0,
+            560,
+            48
+          ],
+          "bbox": null,
+          "mean": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "test": "fractional-validation",
+      "cases": [
+        {
+          "case": "vulkan-partial",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw probe",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1.25,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1024,
+              "height": 576
+            },
+            "usable": {
+              "x": 0,
+              "y": 70,
+              "width": 1024,
+              "height": 506
+            },
+            "bar_edge": "top",
+            "bar_size": 70,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 70,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 443,
+                "height": 62
+              },
+              {
+                "x": 465,
+                "y": 4,
+                "width": 146,
+                "height": 62
+              },
+              {
+                "x": 623,
+                "y": 4,
+                "width": 391,
+                "height": 62
+              }
+            ],
+            "dock": {
+              "reason": "visible",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 482,
+                "y": 488,
+                "width": 60,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            "Extension available: VK_KHR_device_group_creation v0.0.1",
+            "Extension available: VK_KHR_get_physical_device_properties2 v0.0.2",
+            "Vulkan Device 0:",
+            "VK_KHR_buffer_device_address",
+            "VK_KHR_device_address_commands",
+            "VK_KHR_device_fault",
+            "VK_KHR_device_group",
+            "VK_EXT_buffer_device_address",
+            "VK_EXT_device_address_binding_report",
+            "VK_EXT_device_fault",
+            "VK_EXT_device_generated_commands",
+            "VK_EXT_device_memory_report",
+            "VK_EXT_physical_device_drm",
+            "VK_EXT_zero_initialize_device_memory",
+            "VK_AMD_device_coherent_memory",
+            "Using Vulkan device 0, queue 0",
+            "failed to load Vulkan pipeline cache file '/tmp/pearl-dev-tcgcaiw0/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100': Error opening file /tmp/pearl-dev-tcgcaiw0/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100: No such file or directory"
+          ],
+          "exit": 0
+        },
+        {
+          "case": "vulkan-full",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw probe",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1.25,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1024,
+              "height": 576
+            },
+            "usable": {
+              "x": 0,
+              "y": 70,
+              "width": 1024,
+              "height": 506
+            },
+            "bar_edge": "top",
+            "bar_size": 70,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 70,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 443,
+                "height": 62
+              },
+              {
+                "x": 465,
+                "y": 4,
+                "width": 146,
+                "height": 62
+              },
+              {
+                "x": 623,
+                "y": 4,
+                "width": 391,
+                "height": 62
+              }
+            ],
+            "dock": {
+              "reason": "visible",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 482,
+                "y": 488,
+                "width": 60,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "renderer_log": [
+            "Extension available: VK_KHR_device_group_creation v0.0.1",
+            "Extension available: VK_KHR_get_physical_device_properties2 v0.0.2",
+            "Vulkan Device 0:",
+            "VK_KHR_buffer_device_address",
+            "VK_KHR_device_address_commands",
+            "VK_KHR_device_fault",
+            "VK_KHR_device_group",
+            "VK_EXT_buffer_device_address",
+            "VK_EXT_device_address_binding_report",
+            "VK_EXT_device_fault",
+            "VK_EXT_device_generated_commands",
+            "VK_EXT_device_memory_report",
+            "VK_EXT_physical_device_drm",
+            "VK_EXT_zero_initialize_device_memory",
+            "VK_AMD_device_coherent_memory",
+            "Using Vulkan device 0, queue 0",
+            "failed to load Vulkan pipeline cache file '/tmp/pearl-dev-39z8d3td/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100': Error opening file /tmp/pearl-dev-39z8d3td/cache/gtk-4.0/vulkan-pipeline-cache/ac3da3d1-9386-ed23-d795-ff786b3cb33e.109060100: No such file or directory"
+          ],
+          "exit": 0
+        }
+      ],
+      "partial_vs_full": {
+        "vulkan": {
+          "crop_pixels": [
+            0,
+            0,
+            560,
+            88
+          ],
+          "bbox": null,
+          "mean": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "test": "firefox",
+      "cases": [
+        {
+          "case": "firefox-developer-edition-partial",
+          "browser_version": "Mozilla Firefox 159.0b1",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw baseline \u2014 Firefox Developer Edition",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 48,
+              "width": 1280,
+              "height": 672
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 700,
+                "height": 40
+              },
+              {
+                "x": 722,
+                "y": 4,
+                "width": 145,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "overlap",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 596,
+                "y": 632,
+                "width": 88,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "title_events": [
+            "[17:10:07.989455] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+            "[17:10:08.069583] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Firefox Developer Edition\")",
+            "[17:10:08.149662] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Firefox Developer Edition\")",
+            "[17:10:08.229654] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+            "[17:10:08.309612] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Firefox Developer Edition\")",
+            "[17:10:08.389761] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Firefox Developer Edition\")",
+            "[17:10:08.469891] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+            "[17:10:08.550626] {Default Queue}  -> xdg_toplevel#72.set_title(\"Redraw baseline \u2014 Firefox Developer Edition\")"
+          ],
+          "dmabuf_used": true,
+          "browser_errors": [],
+          "pearl_exit": 0
+        },
+        {
+          "case": "firefox-developer-edition-full",
+          "browser_version": "Mozilla Firefox 159.0b1",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw baseline \u2014 Firefox Developer Edition",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 48,
+              "width": 1280,
+              "height": 672
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 703,
+                "height": 40
+              },
+              {
+                "x": 725,
+                "y": 4,
+                "width": 142,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "overlap",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 596,
+                "y": 632,
+                "width": 88,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "title_events": [
+            "[17:10:26.771264] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+            "[17:10:26.851426] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Firefox Developer Edition\")",
+            "[17:10:26.931586] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Firefox Developer Edition\")",
+            "[17:10:27.011486] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+            "[17:10:27.092012] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Firefox Developer Edition\")",
+            "[17:10:27.172545] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Firefox Developer Edition\")",
+            "[17:10:27.252526] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+            "[17:10:27.332167] {Default Queue}  -> xdg_toplevel#72.set_title(\"Redraw baseline \u2014 Firefox Developer Edition\")"
+          ],
+          "dmabuf_used": true,
+          "browser_errors": [],
+          "pearl_exit": 0
+        },
+        {
+          "case": "firefox-partial",
+          "browser_version": "Mozilla Firefox 157.0.1",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw baseline \u2014 Mozilla Firefox",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 48,
+              "width": 1280,
+              "height": 672
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 703,
+                "height": 40
+              },
+              {
+                "x": 725,
+                "y": 4,
+                "width": 142,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "overlap",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 596,
+                "y": 632,
+                "width": 88,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "title_events": [
+            "[17:10:45.623946] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+            "[17:10:45.703818] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Mozilla Firefox\")",
+            "[17:10:45.784369] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Mozilla Firefox\")",
+            "[17:10:45.864063] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+            "[17:10:45.944504] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Mozilla Firefox\")",
+            "[17:10:46.024149] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Mozilla Firefox\")",
+            "[17:10:46.104182] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+            "[17:10:46.184416] {Default Queue}  -> xdg_toplevel#72.set_title(\"Redraw baseline \u2014 Mozilla Firefox\")"
+          ],
+          "dmabuf_used": true,
+          "browser_errors": [],
+          "pearl_exit": 0
+        },
+        {
+          "case": "firefox-full",
+          "browser_version": "Mozilla Firefox 157.0.1",
+          "output": {
+            "keyboard": "\u2014",
+            "title": "Redraw baseline \u2014 Mozilla Firefox",
+            "groups": {
+              "left": "launcher,workspaces,title",
+              "center": "clock",
+              "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+            },
+            "id": "1",
+            "connector": "HEADLESS-2",
+            "scale": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1280,
+              "height": 720
+            },
+            "usable": {
+              "x": 0,
+              "y": 48,
+              "width": 1280,
+              "height": 672
+            },
+            "bar_edge": "top",
+            "bar_size": 48,
+            "bar_mode": "always",
+            "bar_visible": true,
+            "bar_visibility_reason": "always",
+            "bar_sensor_visible": false,
+            "bar_exclusive_zone": 48,
+            "frames": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "islands": true,
+            "island_rects": [
+              {
+                "x": 10,
+                "y": 4,
+                "width": 703,
+                "height": 40
+              },
+              {
+                "x": 725,
+                "y": 4,
+                "width": 142,
+                "height": 40
+              },
+              {
+                "x": 879,
+                "y": 4,
+                "width": 391,
+                "height": 40
+              }
+            ],
+            "dock": {
+              "reason": "overlap",
+              "groups": 1,
+              "truncated": false,
+              "rect": {
+                "x": 596,
+                "y": 632,
+                "width": 88,
+                "height": 80
+              },
+              "edge": "bottom"
+            }
+          },
+          "diff_bbox": null,
+          "mean_difference": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "title_events": [
+            "[17:11:04.364777] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+            "[17:11:04.444736] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Mozilla Firefox\")",
+            "[17:11:04.524999] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Mozilla Firefox\")",
+            "[17:11:04.605374] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+            "[17:11:04.684922] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Mozilla Firefox\")",
+            "[17:11:04.765353] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Mozilla Firefox\")",
+            "[17:11:04.845233] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+            "[17:11:04.925242] {Default Queue}  -> xdg_toplevel#72.set_title(\"Redraw baseline \u2014 Mozilla Firefox\")"
+          ],
+          "dmabuf_used": true,
+          "browser_errors": [],
+          "pearl_exit": 0
+        }
+      ],
+      "crop_pixels": [
+        0,
+        0,
+        550,
+        48
+      ],
+      "description": "Fresh private browser profiles; native Wayland; animated canvas and 90 short/long/Unicode title changes; Pearl Vulkan partial versus full redraw; 45 percent panel background opacity.",
+      "limitations": [
+        "Headless output; no physical scanout.",
+        "Samples before/during/after, not every frame.",
+        "No video decoding, HDR, tab switching, fullscreen or browser overlap beneath panel exercised.",
+        "Different clock widths between cases preclude claiming full-panel cross-run pixel equivalence."
+      ]
+    }
+  ],
+  "firefox_research": {
+    "user_observation": "Seems to occur only with Firefox Developer Edition.",
+    "known_upstream_bug": "https://bugzilla.mozilla.org/show_bug.cgi?id=2063033",
+    "fix_commit": "https://github.com/mozilla-firefox/firefox/commit/e3333a67c2d365929ee0207019475b169de7a853",
+    "fixed_in": "Firefox 156",
+    "assessment": "A real Wayland borrowed-texture ownership fix, but no evidence it explains this report. Tested Developer Edition 159.0b1 is newer.",
+    "needed_from_affected_system": [
+      "Firefox version and about:support Graphics section",
+      "Artifact location: Pearl panel versus Firefox content versus multiple windows",
+      "Exact triggering action/page; whether video, fullscreen or tab changes are involved"
+    ],
+    "/usr/lib/firefox-developer-edition/platform.ini": "[Build]\nBuildID=20261012195009\nMilestone=159.0\nSourceRepository=https://hg.mozilla.org/releases/mozilla-beta\nSourceStamp=c0c03f3f899017ae4b7e56c0713f1ada51173c41\n",
+    "/usr/lib/firefox/platform.ini": "[Build]\nBuildID=20261006025005\nMilestone=157.0.1\nSourceRepository=https://hg.mozilla.org/releases/mozilla-release\nSourceStamp=737ec77d798755890b062aab541a90d6c75afd19\n"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "checks": {
+    "sound-pointer-volume-mute-real-libpulse": true,
+    "sound-slider-focus-mute-preserves-volume-and-device-selection": true,
+    "application-stream-target-choices-and-routing": true,
+    "sound-stream-menu-routing-and-recording-hotplug": true,
+    "sound-complete-inventory-beyond-generic-pagination": true,
+    "sound-input-volume-and-mute": true,
+    "sound-long-names-dark-light-native-360px-and-large-text": true,
+    "sound-empty-application-list": true,
+    "sound-default-device-removal": true,
+    "sound-service-loss-and-reconnection": true
+  }
+}

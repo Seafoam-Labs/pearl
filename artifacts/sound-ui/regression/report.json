@@ -1,0 +1,17 @@
+{
+  "status": "failed",
+  "checks": {
+    "sound-pointer-volume-mute-real-libpulse": true,
+    "sound-slider-focus-mute-preserves-volume-and-device-selection": true,
+    "application-stream-target-choices-and-routing": true,
+    "sound-stream-menu-routing-and-recording-hotplug": true,
+    "sound-complete-inventory-beyond-generic-pagination": true,
+    "power-pointer-brightness-and-profile-with-stable-generation": true,
+    "denied-power-operation-receipt-and-feedback": true,
+    "power-confirmation-cannot-be-used-by-another-peer": true,
+    "notifications-dnd-history-and-stable-dismissal": true,
+    "overview-media-actions-and-capability-state": true,
+    "live-pages-dark-light-native-and-480px-layout": true
+  },
+  "error": "JSONDecodeError('Expecting value: line 1 column 1 (char 0)')"
+}

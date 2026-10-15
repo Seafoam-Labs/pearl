@@ -325,6 +325,7 @@ pub const Live = struct {
         var pending = false;
         var truncated = false;
         var prompt: ?ui.Prompt = null;
+        var sound_snapshot: ?ui.Sound = null;
         switch (route) {
             .network => {
                 const n = self.network;
@@ -375,13 +376,19 @@ pub const Live = struct {
                 summary = sound.err orelse if (sound.ready) "Sound devices and application streams" else "Audio service unavailable";
                 pending = self.busy(.audio);
                 truncated = sound.truncated;
+                const devices = try alloc.alloc(ui.SoundDevice, sound.count);
+                for (sound.devices[0..sound.count], devices) |*device, *item| {
+                    const current = if (device.key.kind == .sink or device.key.kind == .source) sound.default(device.key.kind) else null;
+                    item.* = .{ .kind = device.key.kind, .index = device.key.index, .label = device.label.slice(), .volume = device.volume, .muted = device.mute, .writable = device.writable, .is_default = if (current) |d| d.key.index == device.key.index else false, .target = device.target };
+                }
+                sound_snapshot = .{ .generation = try std.fmt.allocPrint(alloc, "{d}", .{sound.generation}), .ready = sound.ready, .pending = pending, .truncated = truncated, .error_message = sound.err orelse "", .devices = devices };
                 for (sound.devices[0..sound.count]) |*device| {
                     var controls: std.ArrayList(ui.Control) = .empty;
                     var volume = try ui.button(alloc, "volume", "Volume", .@"audio.set", .{ .generation = p.num(device.key.generation), .kind = device.key.kind, .device = device.key.index }, device.writable and sound.ready);
                     volume.kind = .number;
                     volume.field = "volume";
                     volume.value = @floatFromInt(device.volume);
-                    volume.max = 150;
+                    volume.max = 100;
                     try controls.append(alloc, volume);
                     try controls.append(alloc, try ui.button(alloc, "mute", if (device.mute) "Unmute" else "Mute", .@"audio.set", .{ .generation = p.num(device.key.generation), .kind = device.key.kind, .device = device.key.index, .mute = !device.mute }, device.writable and sound.ready));
                     if (device.key.kind == .sink or device.key.kind == .source) {
@@ -478,7 +485,7 @@ pub const Live = struct {
         if (route == .network) {
             network = try @import("../services/network_presentation.zig").build(alloc, self.network, scope.network, glib.getMonotonicTime());
         }
-        return .{ .network = network, .notification_header = if (route == .notifications and rows.items.len > 0) rows.items[0] else null, .summary = summary, .pending = pending, .truncated = truncated, .rows = rows.items[first..end], .offset = p.num(first), .next_offset = if (end < rows.items.len) p.num(end) else null, .prompt = prompt };
+        return .{ .sound = sound_snapshot, .network = network, .notification_header = if (route == .notifications and rows.items.len > 0) rows.items[0] else null, .summary = summary, .pending = pending, .truncated = truncated, .rows = rows.items[first..end], .offset = p.num(first), .next_offset = if (end < rows.items.len) p.num(end) else null, .prompt = prompt };
     }
 };
 fn json(alloc: std.mem.Allocator, value: anytype) !std.json.Value {

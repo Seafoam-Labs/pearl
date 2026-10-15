@@ -1,0 +1,109 @@
+ts=2026-10-15T17:20:54Z pid=812235 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-15T17:20:54Z pid=812235 info(platform): event=blur-capability available=false
+ts=2026-10-15T17:20:54Z pid=812235 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-15T17:20:54Z pid=812235 info(pearl): event=ready mode=session
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-request op=hello
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-request op=hello
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-response op=hello
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-response op=hello
+ts=2026-10-15T17:20:54Z pid=812235 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:54Z pid=812235 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-15T17:20:54Z pid=812235 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-15T17:20:54Z pid=812235 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-15T17:20:54Z pid=812235 info(pearl): event=settings-backend-ready session_hash=60555f599380ec88
+ts=2026-10-15T17:20:54Z pid=812235 info(pearl): event=control-ready session_hash=60555f599380ec88
+ts=2026-10-15T17:20:54Z pid=812235 info(desktop): event=app-index-ready entries=168 truncated=false
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:54Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:55Z pid=812235 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-10-15T17:20:55Z pid=812235 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=33269 success=true
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:55Z pid=812235 info(desktop): event=app-index-ready entries=168 truncated=false
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:55Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:56Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:56Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:56Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:56Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:56Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:56Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:56Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:56Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:57Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:57Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:57Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:57Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:57Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:57Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:57Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:57Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:58Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:58Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:58Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:58Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:59Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:59Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:20:59Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:20:59Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:04Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:04Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:04Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:04Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:04Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:04Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:05Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:05Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:08Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:08Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:08Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:08Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:08Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:08Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:08Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:08Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:08Z pid=812235 info(config): event=preferences-applied revision=2 mode=static cache=false
+ts=2026-10-15T17:21:08Z pid=812235 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=25572 success=true
+ts=2026-10-15T17:21:10Z pid=812235 info(config): event=preferences-applied revision=3 mode=static cache=false
+ts=2026-10-15T17:21:10Z pid=812235 info(config): event=wallpaper-applications-applied generation=7 elapsed_us=35477 success=true
+ts=2026-10-15T17:21:12Z pid=812235 info(config): event=preferences-applied revision=4 mode=gtk cache=false
+ts=2026-10-15T17:21:12Z pid=812235 info(config): event=wallpaper-applications-applied generation=9 elapsed_us=14017 success=false
+ts=2026-10-15T17:21:14Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:14Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:17Z pid=812235 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-15T17:21:17Z pid=812235 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:17Z pid=812235 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-15T17:21:17Z pid=812235 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:17Z pid=812235 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-15T17:21:17Z pid=812235 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:17Z pid=812235 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-15T17:21:17Z pid=812235 info(ui): event=popup-close-reason reason=locked
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:17Z pid=812235 info(config): event=wallpaper-applications-applied generation=11 elapsed_us=3303 success=false
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T17:21:17Z pid=812235 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T17:21:17Z pid=812235 info(pearl): event=stopping reason=signal pending=false
+ts=2026-10-15T17:21:17Z pid=812235 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-15T17:21:17Z pid=812235 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-15T17:21:17Z pid=812235 info(pearl): event=stopped

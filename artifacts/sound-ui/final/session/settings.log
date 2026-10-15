@@ -1,0 +1,8 @@
+ts=2026-10-15T17:19:34Z pid=805749 info(settings): event=settings-launch activation_context=false
+ts=2026-10-15T17:19:34Z pid=805749 info(settings): event=settings-instance-ready session_hash=2fae3cff38221410
+ts=2026-10-15T17:19:34Z pid=805749 info(settings): event=settings-page page=overview
+ts=2026-10-15T17:19:34Z pid=805749 info(settings): event=settings-page page=sound
+ts=2026-10-15T17:19:34Z pid=805749 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-15T17:19:34Z pid=805749 info(settings): event=settings-page page=sound
+ts=2026-10-15T17:19:40Z pid=805749 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T17:19:40Z pid=805749 info(settings): event=settings-page page=sound

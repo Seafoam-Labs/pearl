@@ -13,6 +13,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('settings','pearl','ctl','spike'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--output',type=Path,default=ROOT/'artifacts/settings-app/s4/devices')
+    p.add_argument('--sound-only',action='store_true')
     args=p.parse_args()
     for name in ('settings','pearl','ctl','spike','output'):setattr(args,name,getattr(args,name).resolve())
     args.output.mkdir(parents=True,exist_ok=True);checks={};report=dict(status='running',checks=checks)
@@ -30,7 +31,7 @@ def main():
         power=s.child('power',['python3',FIX/'power.py'],input_pipe=True);power.expect('event=ready')
         s.env['PULSE_SERVER']='unix:'+str(s.runtime/'pulse/native');s.env['PIPEWIRE_REMOTE']='pipewire-0'
         s.child('pipewire',['pipewire','-c',FIX/'pipewire.conf']);wait_for(lambda:(s.runtime/'pipewire-0').is_socket())
-        s.child('pulse',['pipewire-pulse','-c',FIX/'pulse.conf']);wait_for(lambda:(s.runtime/'pulse/native').is_socket())
+        pulse=s.child('pulse',['pipewire-pulse','-c',FIX/'pulse.conf']);wait_for(lambda:(s.runtime/'pulse/native').is_socket())
         wait_for(lambda:s.run(['pactl','info'],check=False).returncode==0)
         for name in ('test_output_a','test_output_b'):s.run(['pactl','load-module','module-null-sink','sink_name='+name,'sink_properties=device.description='+name])
         wait_for(lambda:'test_output_b' in s.run(['pactl','list','short','sinks']).stdout)
@@ -43,20 +44,132 @@ def main():
         live=await_services(s,args.ctl,lambda v:v['audio']['ready'] and v['audio']['count']>=4 and v['brightness']['available'] and all(v['power']['profiles']))
         app=s.child('settings',[args.settings,'--page','sound'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');ready(s,ipc)
         peer=Peer(s,ipc);peer.enter('sound')
+        names={d['label'] for d in peer.page()['live']['sound']['devices']}
+        assert 'test_output_a' in names and 'test_output_b' in names,names
         first=next(d for d in live['audio']['devices'] if d['name']=='test_output_a');row='sink:'+str(first['index'])
         click(s,ipc,row+'/volume');type_text(s,'55');keys(s,'Tab')
         wait_for(lambda:'55%' in s.run(['pactl','get-sink-volume','test_output_a']).stdout)
         click(s,ipc,row+'/mute');wait_for(lambda:'yes' in s.run(['pactl','get-sink-mute','test_output_a']).stdout)
         checks['sound-pointer-volume-mute-real-libpulse']=True
+        # Retained sliders and exact numeric entry share the real audio value.
+        click(s,ipc,row+'/slider');keys(s,'Home');keys(s,'Right')
+        wait_for(lambda:'1%' in s.run(['pactl','get-sink-volume','test_output_a']).stdout)
+        assert next(c for c in probe(s,ipc)['controls'] if c['field']==row+'/slider')['focused']
+        click(s,ipc,row+'/volume');type_text(s,'55');keys(s,'Tab')
+        wait_for(lambda:'55%' in s.run(['pactl','get-sink-volume','test_output_a']).stdout)
+        click(s,ipc,row+'/mute');wait_for(lambda:'no' in s.run(['pactl','get-sink-mute','test_output_a']).stdout)
+        assert '55%' in s.run(['pactl','get-sink-volume','test_output_a']).stdout
+        second=next(d for d in live['audio']['devices'] if d['name']=='test_output_b');other_row='sink:'+str(second['index'])
+        assert other_row+'/volume' not in [c['field'] for c in probe(s,ipc)['controls']]
+        click(s,ipc,'sound/other-outputs')
+        click(s,ipc,other_row+'/volume');type_text(s,'37');keys(s,'Tab')
+        wait_for(lambda:'37%' in s.run(['pactl','get-sink-volume','test_output_b']).stdout)
+        assert s.run(['pactl','get-default-sink']).stdout.strip()=='test_output_a'
+        click(s,ipc,'sound/other-outputs')
+        click(s,ipc,row+'/menu');click(s,ipc,other_row+'/default')
+        # This fixture has no session manager; acknowledge its configured default.
+        wait_for(lambda:'test_output_b' in s.run(['pw-metadata','-n','default','0','default.configured.audio.sink']).stdout)
+        s.run(['pw-metadata','-n','default','0','default.audio.sink','{"name":"test_output_b"}','Spa:String:JSON'])
+        wait_for(lambda:s.run(['pactl','get-default-sink']).stdout.strip()=='test_output_b')
+        wait_for(lambda:any(c['field']==other_row+'/menu' for c in probe(s,ipc)['controls']))
+        click(s,ipc,other_row+'/menu');click(s,ipc,row+'/default')
+        wait_for(lambda:'test_output_a' in s.run(['pw-metadata','-n','default','0','default.configured.audio.sink']).stdout)
+        s.run(['pw-metadata','-n','default','0','default.audio.sink','{"name":"test_output_a"}','Spa:String:JSON'])
+        wait_for(lambda:s.run(['pactl','get-default-sink']).stdout.strip()=='test_output_a')
+        checks['sound-slider-focus-mute-preserves-volume-and-device-selection']=True
         # Real application streams exercise nested device choices and routing.
         playback=s.child('playback',['pacat','--playback','--raw','--rate=48000','--channels=2'],input_pipe=True)
         playback.proc.stdin.write('0'*4096);playback.proc.stdin.flush()
         wait_for(lambda:any(r['id'].startswith('playback:') for r in peer.page()['live']['rows']))
+        assert 'test_output_a' in {d['label'] for d in peer.page()['live']['sound']['devices']}
         navigate(s,ipc,'sound');ready(s,ipc)
         stream=next(r for r in peer.page()['live']['rows'] if r['id'].startswith('playback:'))
         target=next(c for c in stream['controls'] if c['id']=='target');assert len(target['choices'])>=2
         r=peer.live_action(target,target=int(target['choices'][-1]['value']));assert r['ok'] and r['result']['state']!='failed',r
         checks['application-stream-target-choices-and-routing']=True
+        wait_for(lambda:next(d for d in peer.page()['live']['sound']['devices'] if d['kind']=='playback')['target']==int(target['choices'][-1]['value']))
+        click(s,ipc,stream['id']+'/menu')
+        wait_for(lambda:any(c['field']==stream['id']+'/default' and c['enabled'] for c in probe(s,ipc)['controls']))
+        capture(s,'sound-stream-menu',output['name'])
+        click(s,ipc,stream['id']+'/default')
+        (s.output/'sound-after-route.json').write_text(json.dumps(dict(probe=probe(s,ipc),live=peer.page()),indent=2))
+        wait_for(lambda:next(d for d in peer.page()['live']['sound']['devices'] if d['kind']=='playback')['target']==first['index'])
+        recorder=s.child('recorder',['parec','--raw','--rate=48000','--channels=2'])
+        wait_for(lambda:any(d['kind']=='recording' for d in peer.page()['live']['sound']['devices']))
+        capture(s,'sound-streams',output['name'])
+        recorder.stop()
+        wait_for(lambda:not any(d['kind']=='recording' for d in peer.page()['live']['sound']['devices']))
+        checks['sound-stream-menu-routing-and-recording-hotplug']=True
+        # The grouped view must include inventory beyond the legacy 16-row page.
+        modules=[s.run(['pactl','load-module','module-null-sink','sink_name=extra_'+str(i)]).stdout.strip() for i in range(8)]
+        wait_for(lambda:len(peer.page()['live']['sound']['devices'])>=21)
+        assert len(peer.page()['live']['rows'])==16
+        click(s,ipc,'sound/other-outputs')
+        devices=peer.page()['live']['sound']['devices']
+        ids={c['field'] for c in probe(s,ipc)['controls']}
+        assert all('sink:'+str(d['index'])+'/volume' in ids for d in devices if d['kind']=='sink')
+        for module in modules:s.run(['pactl','unload-module',module])
+        wait_for(lambda:len(peer.page()['live']['sound']['devices'])==5)
+        checks['sound-complete-inventory-beyond-generic-pagination']=True
+        # Sound-specific presentation checks run independently of power/media.
+        if args.sound_only:
+            ctl(s,args.ctl,'session','action','--command','dnd_on')
+            source=next(d for d in peer.page()['live']['sound']['devices'] if d['kind']=='source' and d['is_default'])
+            source_row='source:'+str(source['index'])
+            click(s,ipc,source_row+'/volume');type_text(s,'42');keys(s,'Tab')
+            wait_for(lambda:'42%' in s.run(['pactl','get-source-volume','test_output_a.monitor']).stdout)
+            click(s,ipc,source_row+'/mute')
+            wait_for(lambda:'yes' in s.run(['pactl','get-source-mute','test_output_a.monitor']).stdout)
+            assert '42%' in s.run(['pactl','get-source-volume','test_output_a.monitor']).stdout
+            checks['sound-input-volume-and-mute']=True
+            long_name='Studio_headphones_with_a_deliberately_long_device_name_for_wrapping'
+            long_module=s.run(['pactl','load-module','module-null-sink','sink_name=test_long','sink_properties=device.description='+long_name]).stdout.strip()
+            wait_for(lambda:any(d['label']==long_name for d in peer.page()['live']['sound']['devices']))
+            s.run(['pactl','set-default-sink','test_long'])
+            s.run(['pw-metadata','-n','default','0','default.audio.sink','{"name":"test_long"}','Spa:String:JSON'])
+            first=wait_for(lambda:next((d for d in peer.page()['live']['sound']['devices'] if d['label']==long_name and d['is_default']),None))
+            row='sink:'+str(first['index'])
+            for width,height,font,mode,variant in [(1040,850,14,'static','dark'),(440,760,14,'static','light'),(360,700,14,'static','dark'),(480,760,24,'static','dark'),(440,760,14,'gtk','light')]:
+                apply_preferences(s,args.ctl,theme=dict(mode=mode,variant=variant),font_size=font)
+                rules.write_text('[[window]]\napp_id="'+APP_ID+'"\nfloating=true\nwidth='+str(width)+'\nheight='+str(height)+'\n')
+                ipc.call('command',action='session.reload',fields={})
+                app.stop();clean(app)
+                app=s.child('settings-'+str(width)+'-'+str(font)+'-'+mode,[args.settings,'--page','sound'],G_DEBUG='fatal-warnings')
+                app.expect('event=settings-window-created');ready(s,ipc)
+                wait_for(lambda:any(c['field']==row+'/volume' for c in probe(s,ipc)['controls']))
+                time.sleep(.3)
+                v=probe(s,ipc);assert v['width']==width,v
+                body=v['body_bounds']
+                for c in v['controls']:
+                    if c['field'].startswith(('sink:','source:','playback:','sound/')):
+                        bounds=c['bounds'];assert bounds and bounds['width']>0,c
+                        assert bounds['x']>=body['x'] and bounds['x']+bounds['width']<=body['x']+body['width']+1,(width,font,c,body)
+                capture(s,'sound-'+str(width)+'-'+str(font)+'-'+mode+'-'+variant,output['name'])
+                click(s,ipc,row+'/volume');type_text(s,'58');keys(s,'Tab')
+                wait_for(lambda:'58%' in s.run(['pactl','get-sink-volume','test_long']).stdout)
+            checks['sound-long-names-dark-light-native-360px-and-large-text']=True
+            playback.stop()
+            wait_for(lambda:not any(d['kind']=='playback' for d in peer.page()['live']['sound']['devices']))
+            checks['sound-empty-application-list']=True
+            s.run(['pactl','unload-module',long_module])
+            wait_for(lambda:not any(d['index']==first['index'] and d['kind']=='sink' for d in peer.page()['live']['sound']['devices']))
+            wait_for(lambda:row+'/volume' not in [c['field'] for c in probe(s,ipc)['controls']])
+            capture(s,'sound-device-removed',output['name'])
+            checks['sound-default-device-removal']=True
+            pulse.stop()
+            wait_for(lambda:not peer.page()['live']['sound']['ready'])
+            wait_for(lambda:not any(c['field'].startswith(('sink:','source:')) for c in probe(s,ipc)['controls']))
+            capture(s,'sound-unavailable',output['name'])
+            s.child('pulse-reconnected',['pipewire-pulse','-c',FIX/'pulse.conf'])
+            wait_for(lambda:s.run(['pactl','info'],check=False).returncode==0)
+            s.run(['pactl','load-module','module-null-sink','sink_name=reconnected'])
+            wait_for(lambda:peer.page()['live']['sound']['ready'] and len(peer.page()['live']['sound']['devices'])>0)
+            capture(s,'sound-reconnected',output['name'])
+            checks['sound-service-loss-and-reconnection']=True
+            app.stop();clean(app);peer.close();shell.stop();clean(shell)
+            report['status']='passed'
+            print(json.dumps(report,indent=2))
+            return
         navigate(s,ipc,'power');ready(s,ipc);peer.enter('power')
         click(s,ipc,'power/brightness');type_text(s,'63');keys(s,'Tab')
         wait_for(lambda:(root/'test_panel/brightness').read_text().strip()=='630')

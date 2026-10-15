@@ -1,0 +1,374 @@
+[
+  {
+    "case": "firefox-developer-edition-partial",
+    "browser_version": "Mozilla Firefox 159.0b1",
+    "output": {
+      "keyboard": "\u2014",
+      "title": "Redraw baseline \u2014 Firefox Developer Edition",
+      "groups": {
+        "left": "launcher,workspaces,title",
+        "center": "clock",
+        "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+      },
+      "id": "1",
+      "connector": "HEADLESS-2",
+      "scale": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "usable": {
+        "x": 0,
+        "y": 48,
+        "width": 1280,
+        "height": 672
+      },
+      "bar_edge": "top",
+      "bar_size": 48,
+      "bar_mode": "always",
+      "bar_visible": true,
+      "bar_visibility_reason": "always",
+      "bar_sensor_visible": false,
+      "bar_exclusive_zone": 48,
+      "frames": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "islands": true,
+      "island_rects": [
+        {
+          "x": 10,
+          "y": 4,
+          "width": 700,
+          "height": 40
+        },
+        {
+          "x": 722,
+          "y": 4,
+          "width": 145,
+          "height": 40
+        },
+        {
+          "x": 879,
+          "y": 4,
+          "width": 391,
+          "height": 40
+        }
+      ],
+      "dock": {
+        "reason": "overlap",
+        "groups": 1,
+        "truncated": false,
+        "rect": {
+          "x": 596,
+          "y": 632,
+          "width": 88,
+          "height": 80
+        },
+        "edge": "bottom"
+      }
+    },
+    "diff_bbox": null,
+    "mean_difference": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "title_events": [
+      "[17:10:07.989455] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+      "[17:10:08.069583] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Firefox Developer Edition\")",
+      "[17:10:08.149662] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Firefox Developer Edition\")",
+      "[17:10:08.229654] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+      "[17:10:08.309612] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Firefox Developer Edition\")",
+      "[17:10:08.389761] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Firefox Developer Edition\")",
+      "[17:10:08.469891] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+      "[17:10:08.550626] {Default Queue}  -> xdg_toplevel#72.set_title(\"Redraw baseline \u2014 Firefox Developer Edition\")"
+    ],
+    "dmabuf_used": true,
+    "browser_errors": [],
+    "pearl_exit": 0
+  },
+  {
+    "case": "firefox-developer-edition-full",
+    "browser_version": "Mozilla Firefox 159.0b1",
+    "output": {
+      "keyboard": "\u2014",
+      "title": "Redraw baseline \u2014 Firefox Developer Edition",
+      "groups": {
+        "left": "launcher,workspaces,title",
+        "center": "clock",
+        "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+      },
+      "id": "1",
+      "connector": "HEADLESS-2",
+      "scale": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "usable": {
+        "x": 0,
+        "y": 48,
+        "width": 1280,
+        "height": 672
+      },
+      "bar_edge": "top",
+      "bar_size": 48,
+      "bar_mode": "always",
+      "bar_visible": true,
+      "bar_visibility_reason": "always",
+      "bar_sensor_visible": false,
+      "bar_exclusive_zone": 48,
+      "frames": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "islands": true,
+      "island_rects": [
+        {
+          "x": 10,
+          "y": 4,
+          "width": 703,
+          "height": 40
+        },
+        {
+          "x": 725,
+          "y": 4,
+          "width": 142,
+          "height": 40
+        },
+        {
+          "x": 879,
+          "y": 4,
+          "width": 391,
+          "height": 40
+        }
+      ],
+      "dock": {
+        "reason": "overlap",
+        "groups": 1,
+        "truncated": false,
+        "rect": {
+          "x": 596,
+          "y": 632,
+          "width": 88,
+          "height": 80
+        },
+        "edge": "bottom"
+      }
+    },
+    "diff_bbox": null,
+    "mean_difference": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "title_events": [
+      "[17:10:26.771264] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+      "[17:10:26.851426] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Firefox Developer Edition\")",
+      "[17:10:26.931586] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Firefox Developer Edition\")",
+      "[17:10:27.011486] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+      "[17:10:27.092012] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Firefox Developer Edition\")",
+      "[17:10:27.172545] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Firefox Developer Edition\")",
+      "[17:10:27.252526] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Firefox Developer Edition\")",
+      "[17:10:27.332167] {Default Queue}  -> xdg_toplevel#72.set_title(\"Redraw baseline \u2014 Firefox Developer Edition\")"
+    ],
+    "dmabuf_used": true,
+    "browser_errors": [],
+    "pearl_exit": 0
+  },
+  {
+    "case": "firefox-partial",
+    "browser_version": "Mozilla Firefox 157.0.1",
+    "output": {
+      "keyboard": "\u2014",
+      "title": "Redraw baseline \u2014 Mozilla Firefox",
+      "groups": {
+        "left": "launcher,workspaces,title",
+        "center": "clock",
+        "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+      },
+      "id": "1",
+      "connector": "HEADLESS-2",
+      "scale": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "usable": {
+        "x": 0,
+        "y": 48,
+        "width": 1280,
+        "height": 672
+      },
+      "bar_edge": "top",
+      "bar_size": 48,
+      "bar_mode": "always",
+      "bar_visible": true,
+      "bar_visibility_reason": "always",
+      "bar_sensor_visible": false,
+      "bar_exclusive_zone": 48,
+      "frames": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "islands": true,
+      "island_rects": [
+        {
+          "x": 10,
+          "y": 4,
+          "width": 703,
+          "height": 40
+        },
+        {
+          "x": 725,
+          "y": 4,
+          "width": 142,
+          "height": 40
+        },
+        {
+          "x": 879,
+          "y": 4,
+          "width": 391,
+          "height": 40
+        }
+      ],
+      "dock": {
+        "reason": "overlap",
+        "groups": 1,
+        "truncated": false,
+        "rect": {
+          "x": 596,
+          "y": 632,
+          "width": 88,
+          "height": 80
+        },
+        "edge": "bottom"
+      }
+    },
+    "diff_bbox": null,
+    "mean_difference": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "title_events": [
+      "[17:10:45.623946] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+      "[17:10:45.703818] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Mozilla Firefox\")",
+      "[17:10:45.784369] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Mozilla Firefox\")",
+      "[17:10:45.864063] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+      "[17:10:45.944504] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Mozilla Firefox\")",
+      "[17:10:46.024149] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Mozilla Firefox\")",
+      "[17:10:46.104182] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+      "[17:10:46.184416] {Default Queue}  -> xdg_toplevel#72.set_title(\"Redraw baseline \u2014 Mozilla Firefox\")"
+    ],
+    "dmabuf_used": true,
+    "browser_errors": [],
+    "pearl_exit": 0
+  },
+  {
+    "case": "firefox-full",
+    "browser_version": "Mozilla Firefox 157.0.1",
+    "output": {
+      "keyboard": "\u2014",
+      "title": "Redraw baseline \u2014 Mozilla Firefox",
+      "groups": {
+        "left": "launcher,workspaces,title",
+        "center": "clock",
+        "right": "media,tray,audio,network,battery,notifications,clipboard,keyboard,control"
+      },
+      "id": "1",
+      "connector": "HEADLESS-2",
+      "scale": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "usable": {
+        "x": 0,
+        "y": 48,
+        "width": 1280,
+        "height": 672
+      },
+      "bar_edge": "top",
+      "bar_size": 48,
+      "bar_mode": "always",
+      "bar_visible": true,
+      "bar_visibility_reason": "always",
+      "bar_sensor_visible": false,
+      "bar_exclusive_zone": 48,
+      "frames": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "islands": true,
+      "island_rects": [
+        {
+          "x": 10,
+          "y": 4,
+          "width": 703,
+          "height": 40
+        },
+        {
+          "x": 725,
+          "y": 4,
+          "width": 142,
+          "height": 40
+        },
+        {
+          "x": 879,
+          "y": 4,
+          "width": 391,
+          "height": 40
+        }
+      ],
+      "dock": {
+        "reason": "overlap",
+        "groups": 1,
+        "truncated": false,
+        "rect": {
+          "x": 596,
+          "y": 632,
+          "width": 88,
+          "height": 80
+        },
+        "edge": "bottom"
+      }
+    },
+    "diff_bbox": null,
+    "mean_difference": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "title_events": [
+      "[17:11:04.364777] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+      "[17:11:04.444736] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Mozilla Firefox\")",
+      "[17:11:04.524999] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Mozilla Firefox\")",
+      "[17:11:04.605374] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+      "[17:11:04.684922] {Default Queue}  -> xdg_toplevel#72.set_title(\"Short \u2014 Mozilla Firefox\")",
+      "[17:11:04.765353] {Default Queue}  -> xdg_toplevel#72.set_title(\"A much longer page title with text that moves the panel boundary \u2014 Firefox redraw probe \u2014 Mozilla Firefox\")",
+      "[17:11:04.845233] {Default Queue}  -> xdg_toplevel#72.set_title(\"\ud83e\udd8a Example \u65e5\u672c\u8a9e \u0627\u0644\u0639\u0631\u0628\u064a\u0629 e\u0301 \u2014 Mozilla Firefox\")",
+      "[17:11:04.925242] {Default Queue}  -> xdg_toplevel#72.set_title(\"Redraw baseline \u2014 Mozilla Firefox\")"
+    ],
+    "dmabuf_used": true,
+    "browser_errors": [],
+    "pearl_exit": 0
+  }
+]

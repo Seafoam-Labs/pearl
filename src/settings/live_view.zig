@@ -12,9 +12,10 @@ const Editor = @import("editor.zig").Editor;
 const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Prompt = struct { service: []const u8, serial: []const u8, kind: []const u8, title: []const u8, challenge: []const u8, secret: bool, editable: bool };
-const Page = struct { network: ?@import("../services/network_presentation.zig").Snapshot = null, notification_header: ?ui.Row = null, summary: []const u8, pending: bool, truncated: bool, rows: []const ui.Row, offset: []const u8, next_offset: ?[]const u8 = null, prompt: ?Prompt = null };
+const Page = struct { sound: ?ui.Sound = null, network: ?@import("../services/network_presentation.zig").Snapshot = null, notification_header: ?ui.Row = null, summary: []const u8, pending: bool, truncated: bool, rows: []const ui.Row, offset: []const u8, next_offset: ?[]const u8 = null, prompt: ?Prompt = null };
 const Binding = struct { view: *View, spec: ui.Control, widget: *gtk.Widget, id: []const u8, signal: c_ulong };
 pub const View = struct {
+    sound_view: ?*@import("sound_view.zig").View = null,
     network_view: ?*@import("network_view.zig").View = null,
     network_request: ?struct { action: @import("../services/network_presentation.zig").Action, path: @import("../services/policy.zig").Text(512), generation: u64, view: u64, deadline: i64 } = null,
     network_timer: c_uint = 0,
@@ -43,6 +44,8 @@ pub const View = struct {
         return self;
     }
     fn clear(self: *View) void {
+        if (self.sound_view) |view| view.destroy();
+        self.sound_view = null;
         self.cancelNetworkRequest();
         if (self.network_view) |view| view.destroy();
         self.network_view = null;
@@ -76,6 +79,7 @@ pub const View = struct {
     }
     pub fn update(self: *View) void {
         if (self.editor.target.page != self.route or !self.editor.online or self.editor.state.locked or self.editor.suspended) {
+            if (self.sound_view) |view| view.cancel();
             self.cancelNetworkRequest();
             self.closePrompt();
             self.shown = null;
@@ -95,6 +99,16 @@ pub const View = struct {
         const value = std.json.parseFromSliceLeaky(std.json.Value, alloc, bytes, .{}) catch return;
         const data = e.read(Page, alloc, value) catch return;
         self.showPrompt(data.prompt);
+        if (self.route == .sound) if (data.sound) |sound| {
+            if (self.sound_view) |view| if (view.lease != self.editor.view) self.clear();
+            if (self.sound_view == null) {
+                self.clear();
+                self.sound_view = @import("sound_view.zig").View.create(self.host, self.window, self.editor) catch return;
+            }
+            self.sound_view.?.update(sound);
+            self.shown = digest;
+            return;
+        };
         if (self.route == .network) if (data.network) |network| {
             if (self.network_view == null) {
                 self.clear();

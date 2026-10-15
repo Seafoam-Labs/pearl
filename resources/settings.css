@@ -8,6 +8,10 @@
 .settings-window.$scope button.settings-nav-item:focus-visible { outline-color: $primary$; }
 .settings-window.$scope .settings-card, .settings-window.$scope button.settings-category { background: $high$; }
 .settings-window.$scope .network-card { background: $high$; border-radius: 14px; padding: 16px; }
+.settings-window.$scope .sound-card { background: $high$; }
+.settings-window.$scope .sound-view scale trough { background: mix($high$, $outline$, 0.35); }
+.settings-window.$scope .sound-view menubutton > button, .settings-window.$scope .sound-view .sound-mute { background: mix($high$, $outline$, 0.12); }
+.settings-window.$scope .sound-view .sound-muted { background: $primary_container$; color: $primary$; }
 .settings-window.$scope .network-view button { min-height: 32px; border-radius: 10px; }
 .settings-window.$scope .network-view .pearl-state { background: $low$; border-radius: 14px; padding: 16px; }
 .settings-window.$scope .settings-form-row + .settings-form-row { border-top: 1px solid alpha($outline$, 0.2); }

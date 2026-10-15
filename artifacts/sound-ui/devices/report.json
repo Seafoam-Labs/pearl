@@ -1,0 +1,11 @@
+{
+  "status": "failed",
+  "checks": {
+    "sound-pointer-volume-mute-real-libpulse": true,
+    "sound-slider-focus-mute-preserves-volume-and-device-selection": true,
+    "application-stream-target-choices-and-routing": true,
+    "sound-stream-menu-routing-and-recording-hotplug": true,
+    "sound-complete-inventory-beyond-generic-pagination": true
+  },
+  "error": "TimeoutError('private session condition timed out')"
+}

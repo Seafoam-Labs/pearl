@@ -1216,6 +1216,11 @@ pub const Window = struct {
         if (self.live_pages[@intFromEnum(self.target.page)]) |view| for (view.bindings.items) |binding| {
             try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget or f.isAncestor(binding.widget) != 0 else false, .bounds = self.bounds(binding.widget) });
         };
+        if (self.live_pages[@intFromEnum(self.target.page)]) |view| if (view.sound_view) |sound| {
+            for (sound.controls.items) |control| if (control.widget.getMapped() != 0) {
+                try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |f| f == control.widget or f.isAncestor(control.widget) != 0 else false, .enabled = control.widget.isSensitive() != 0, .bounds = self.bounds(control.widget) });
+            };
+        };
         if (self.live_pages[@intFromEnum(self.target.page)]) |view| if (view.network_view) |network| {
             inline for (.{ .{ "network/radio", network.radio.as(gtk.Widget) }, .{ "network/refresh", network.refresh.as(gtk.Widget) }, .{ "network/adapter", network.selector.as(gtk.Widget) }, .{ "network/saved", network.saved.as(gtk.Widget) } }) |item| {
                 const widget = item[1];

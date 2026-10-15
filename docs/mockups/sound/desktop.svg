@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="1040" viewBox="0 0 1160 1040">
+<title>Pearl Settings — Sound proposal</title>
+<desc>Static design proposal with illustrative devices and streams. Output and Input each show the default device, a device selector that sets the default, volume, and a mute toggle. Other devices expands to independent device volume and mute controls without changing the default. Application rows remain separate streams, show their observed route, and expose Move to default in the overflow menu. Changing the default does not implicitly move existing streams. Sliders range from 0 to 100 percent. Muting preserves the slider value. Names wrap in implementation. No input level meter or speaker test is implied. Production code is unchanged.</desc>
+<defs>
+ <style>
+ text{font-family:'DejaVu Sans',sans-serif;font-size:14px;fill:#eee9f3}
+ .secondary{fill:#bdb5c9;font-size:13px}.section{font-size:17px;font-weight:600}.heading{font-size:28px;font-weight:600}.navgroup{font-size:10px;letter-spacing:1.5px;fill:#bdb5c9}.accent{fill:#d4c1ff}.small{font-size:12px}.icon{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;color:#d4c1ff}.divider{stroke:#45404e;stroke-opacity:.65}.track{stroke:#51495e;stroke-width:6;stroke-linecap:round}.fill{stroke:#d4c1ff;stroke-width:6;stroke-linecap:round}.button{fill:#393240}
+ </style>
+ <g id="speaker" class="icon"><path d="M2 9h5l6-5v16l-6-5H2Z M17 8q4 4 0 8 M20 4q8 8 0 16"/></g>
+ <g id="mic" class="icon"><rect x="8" y="2" width="8" height="13" rx="4"/><path d="M4 11v2a8 8 0 0 0 16 0v-2 M12 21v3 M8 24h8"/></g>
+ <g id="chevron" class="icon"><path d="m3 7 5 5 5-5"/></g>
+ <g id="more" fill="#bdb5c9"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></g>
+ <g id="grid" class="icon"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></g>
+ <g id="wifi" class="icon"><path d="M2 7q10-9 20 0 M5 11q7-6 14 0 M9 15q3-3 6 0"/><circle cx="12" cy="19" r="1"/></g>
+ <g id="bt" class="icon"><path d="M11 1v22l8-7L4 5m0 14L19 8 11 1"/></g>
+ <g id="battery" class="icon"><rect x="6" y="4" width="12" height="18" rx="2"/><path d="M10 1h4 M9 9h6v9H9Z"/></g>
+ <g id="window" class="icon"><rect x="2" y="3" width="20" height="18" rx="3"/><path d="M2 9h20"/></g>
+ <g id="bell" class="icon"><path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5Z M10 21h4"/></g>
+ <g id="lock" class="icon"><rect x="4" y="10" width="16" height="12" rx="3"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></g>
+ <g id="gear" class="icon"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/></g>
+ </defs>
+<rect width="1160" height="1040" fill="#121018"/>
+<text x="30" y="30" class="navgroup">PEARL / SOUND / DESIGN PROPOSAL</text>
+<rect x="30" y="50" width="1100" height="940" rx="18" fill="#211e28" stroke="#534b60"/>
+<path d="M48 51h1064q17 0 17 17v36H31V68q0-17 17-17" fill="#19161f"/>
+<circle cx="54" cy="78" r="7" fill="#d4c1ff"/><text x="73" y="83" class="small">Pearl Settings</text>
+<text x="1018" y="84">−</text><text x="1057" y="84">□</text><text x="1096" y="84">×</text>
+<path d="M31 104h218v885H48q-17 0-17-17Z" fill="#1c1922"/><path d="M249 104v885" class="divider"/>
+<text x="54" y="134" class="navgroup">GENERAL</text><use href="#grid" x="54" y="152"/><text x="91" y="169">Overview</text>
+<text x="54" y="215" class="navgroup">CONNECTIONS</text><use href="#wifi" x="54" y="235"/><text x="91" y="252">Network</text><use href="#bt" x="54" y="279"/><text x="91" y="296">Bluetooth</text>
+<text x="54" y="344" class="navgroup">DEVICES</text>
+<rect x="42" y="359" width="194" height="44" rx="12" fill="#493568"/><use href="#speaker" x="54" y="369"/><text x="91" y="387" class="accent">Sound</text><use href="#battery" x="54" y="416"/><text x="91" y="433">Power &amp; battery</text>
+<text x="54" y="481" class="navgroup">DESKTOP</text><circle cx="66" cy="511" r="9" fill="#d4c1ff"/><path d="M66 502a9 9 0 0 1 0 18Z" fill="#75608f"/><text x="91" y="517">Appearance</text>
+<use href="#window" x="54" y="542"/><text x="91" y="560">Assistant</text><use href="#window" x="54" y="585"/><text x="91" y="603">Bar &amp; dock</text><use href="#bell" x="54" y="628"/><text x="91" y="646">Notifications</text>
+<text x="54" y="694" class="navgroup">SYSTEM</text><use href="#gear" x="54" y="713"/><text x="91" y="731">System</text><use href="#lock" x="54" y="756"/><text x="91" y="774">Session &amp; lock</text><use href="#window" x="54" y="799"/><text x="91" y="817">Aqueous</text><use href="#gear" x="54" y="842"/><text x="91" y="860">Advanced</text>
+<text x="285" y="158" class="heading">Sound</text><text x="285" y="185" class="secondary">Choose your devices and adjust their volume.</text>
+
+<text x="285" y="227" class="section">Output</text>
+<rect x="285" y="243" width="808" height="176" rx="14" fill="#2d2835"/>
+<rect x="305" y="261" width="44" height="44" rx="12" fill="#393240"/><use href="#speaker" x="315" y="271"/>
+<text x="365" y="279" font-weight="600">Studio headphones</text><text x="365" y="300" class="secondary">Default output</text>
+<rect x="902" y="262" width="171" height="42" rx="10" class="button"/><text x="920" y="288">Change device</text><use href="#chevron" x="1045" y="275"/>
+<rect x="305" y="322" width="44" height="44" rx="10" class="button"/><use href="#speaker" x="315" y="332"/>
+<path d="M371 344H997" class="track"/><path d="M371 344H797" class="fill"/><circle cx="797" cy="344" r="9" fill="#d4c1ff"/>
+<text x="1073" y="349" text-anchor="end">68%</text>
+<path d="M305 377h768" class="divider"/><text x="307" y="402" class="secondary">Other output devices</text><text x="1040" y="402" class="secondary" text-anchor="end">2</text><path d="m1063 390 5 5-5 5" class="icon"/>
+
+<text x="285" y="461" class="section">Input</text>
+<rect x="285" y="477" width="808" height="176" rx="14" fill="#2d2835"/>
+<rect x="305" y="495" width="44" height="44" rx="12" fill="#393240"/><use href="#mic" x="315" y="504"/>
+<text x="365" y="513" font-weight="600">Built-in microphone</text><text x="365" y="534" class="secondary">Default input</text>
+<rect x="902" y="496" width="171" height="42" rx="10" class="button"/><text x="920" y="522">Change device</text><use href="#chevron" x="1045" y="509"/>
+<rect x="305" y="556" width="44" height="44" rx="10" class="button"/><use href="#mic" x="315" y="565"/>
+<path d="M371 578H997" class="track"/><path d="M371 578H697" class="fill"/><circle cx="697" cy="578" r="9" fill="#d4c1ff"/><text x="1073" y="583" text-anchor="end">52%</text>
+<path d="M305 611h768" class="divider"/><text x="307" y="636" class="secondary">Other input devices</text><text x="1040" y="636" class="secondary" text-anchor="end">1</text><path d="m1063 624 5 5-5 5" class="icon"/>
+
+<text x="285" y="695" class="section">Applications</text><text x="1093" y="695" class="secondary" text-anchor="end">3 active streams</text>
+<rect x="285" y="711" width="808" height="234" rx="14" fill="#2d2835"/>
+<rect x="305" y="728" width="42" height="42" rx="12" fill="#493c36"/><circle cx="326" cy="749" r="11" fill="none" stroke="#edb48e" stroke-width="2"/><path d="M315 749h22m-11-11q-9 11 0 22m0-22q9 11 0 22" fill="none" stroke="#edb48e"/>
+<text x="363" y="743" font-weight="600">Firefox</text><text x="363" y="765" class="secondary">Output · Studio headphones</text>
+<rect x="657" y="727" width="44" height="44" rx="10" class="button"/><use href="#speaker" x="667" y="737"/><path d="M723 749H959" class="track"/><path d="M723 749H912" class="fill"/><circle cx="912" cy="749" r="8" fill="#d4c1ff"/><text x="1020" y="754" text-anchor="end">80%</text><rect x="1033" y="727" width="44" height="44" rx="10" fill="#393240"/><use href="#more" x="1043" y="737"/>
+<path d="M305 789h768" class="divider"/>
+<rect x="305" y="806" width="42" height="42" rx="12" fill="#38354c"/><path d="M325 816v21m0-16 11-3v16" class="icon"/><ellipse cx="321" cy="837" rx="4" ry="3" fill="#d4c1ff"/><ellipse cx="332" cy="834" rx="4" ry="3" fill="#d4c1ff"/>
+<text x="363" y="821" font-weight="600">Music</text><text x="363" y="843" class="secondary">Output · Built-in speakers</text>
+<rect x="657" y="805" width="44" height="44" rx="10" class="button"/><use href="#speaker" x="667" y="815"/><path d="M723 827H959" class="track"/><path d="M723 827H874" class="fill"/><circle cx="874" cy="827" r="8" fill="#d4c1ff"/><text x="1020" y="832" text-anchor="end">64%</text><rect x="1033" y="805" width="44" height="44" rx="10" class="button"/><use href="#more" x="1043" y="815"/>
+<path d="M305 867h768" class="divider"/>
+<rect x="305" y="884" width="42" height="42" rx="12" fill="#34433f"/><use href="#mic" x="314" y="892"/>
+<text x="363" y="899" font-weight="600">Recorder</text><text x="363" y="921" class="secondary">Input · Built-in microphone</text>
+<rect x="657" y="883" width="44" height="44" rx="10" class="button"/><use href="#mic" x="667" y="892"/><path d="M723 905H959" class="track"/><path d="M723 905H959" class="fill"/><circle cx="959" cy="905" r="8" fill="#d4c1ff"/><text x="1020" y="910" text-anchor="end">100%</text><rect x="1033" y="883" width="44" height="44" rx="10" class="button"/><use href="#more" x="1043" y="893"/>
+<text x="285" y="974" class="secondary small">Changes take effect immediately.</text>
+<text x="30" y="1020" class="secondary small">STATIC MOCKUP · Illustrative devices and streams · Device controls first; application routing in each row’s menu.</text>
+</svg>
