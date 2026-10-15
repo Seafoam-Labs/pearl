@@ -821,6 +821,12 @@ pub fn build(b: *std.Build) void {
     assistant_models.addArtifactArg(ctl);
     if (b.args) |args| assistant_models.addArgs(args);
     b.step("test-agent-model-settings", "Verify model choices and resource settings through the native Settings draft").dependOn(&assistant_models.step);
+    const assistant_layout = b.addSystemCommand(&.{ "python3", "tests/integration/test_assistant_layout.py", "--pearl" });
+    assistant_layout.addArtifactArg(integration_app);
+    assistant_layout.addArg("--settings");
+    assistant_layout.addArtifactArg(settings_test_app);
+    if (b.args) |args| assistant_layout.addArgs(args);
+    b.step("test-assistant-layout", "Verify Assistant disclosures, draft controls and responsive presentation").dependOn(&assistant_layout.step);
     const benchmark_settings = b.addSystemCommand(&.{ "python3", "tests/integration/test_agent_benchmark_settings.py" });
     for ([_][]const u8{ "--pearl", "--ctl", "--settings" }, [_]*std.Build.Step.Compile{ integration_app, ctl, settings_test_app }) |flag, binary| {
         benchmark_settings.addArg(flag);

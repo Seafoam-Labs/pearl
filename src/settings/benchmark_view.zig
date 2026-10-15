@@ -5,6 +5,7 @@ const gio = @import("gio2");
 const glib = @import("glib2");
 const object = @import("gobject2");
 const w = @import("../ui/components/widgets.zig");
+const layout = @import("assistant_layout.zig");
 const benchmark = @import("../agent/benchmark.zig");
 const registry = @import("../agent/model_registry.zig");
 const cfg = @import("../agent/config.zig");
@@ -28,6 +29,7 @@ pub const View = struct {
     owner: *anyopaque,
     owner_idle: *const fn (*anyopaque) bool,
     expander: *gtk.Expander,
+    section_summary: *gtk.Label,
     host: *gtk.Box,
     hardware_label: *gtk.Label,
     candidates: [registry.models.len]*gtk.CheckButton,
@@ -66,56 +68,63 @@ pub const View = struct {
 
     pub fn create(host: *gtk.Box, editor: *Editor, owner: *anyopaque, owner_idle: *const fn (*anyopaque) bool) !*View {
         const self = try a.create(View);
-        const expander = gtk.Expander.new("Compare suggested models");
-        const body = w.column(12);
-        expander.setChild(body.as(gtk.Widget));
-        host.append(expander.as(gtk.Widget));
-        const hardware_label = label(body, "Expand to review this computer and saved comparisons.");
+        const section = layout.Section.create(host, "Compare models", "Choose models, compare local performance and review saved results");
+        const expander = section.expander;
+        const body = section.body;
+        const hardware = layout.Section.create(body, "This computer", "Hardware, available memory and selected runtime");
+        const hardware_label = label(hardware.body, "Expand to review this computer and saved comparisons.");
         _ = label(body, "Choose models to compare on this computer. Downloads are separate and explicit. Tests use local sample evidence and do not send searches or use your conversations.");
         var checks: [registry.models.len]*gtk.CheckButton = undefined;
         var installed: [registry.models.len]*gtk.Label = undefined;
         for (registry.models, 0..) |model, i| {
+            const candidate = layout.card(body, "");
             checks[i] = gtk.CheckButton.newWithLabel(model.name);
             if (checks[i].getChild()) |child| if (object.ext.cast(gtk.Label, child)) |text| {
                 text.setWrap(1);
                 text.setWrapMode(.word_char);
             };
             checks[i].setActive(@intFromBool(i >= 2));
-            body.append(checks[i].as(gtk.Widget));
-            installed[i] = label(body, "");
+            candidate.append(checks[i].as(gtk.Widget));
+            installed[i] = label(candidate, "");
             const license = gtk.LinkButton.newWithLabel(model.license_url, "Model license");
             license.as(gtk.Widget).setHalign(.start);
-            body.append(license.as(gtk.Widget));
+            candidate.append(license.as(gtk.Widget));
         }
         const summary = label(body, "");
         const mode = choice(body, "Hardware to compare", &.{ "CPU", "Current configuration", "Compare CPU and GPU" });
         const detail = choice(body, "Comparison depth", &.{ "Quick · model profiles", "Detailed · threads and contexts" });
-        _ = label(body, "Each configuration runs a warm-up and three measured repetitions of two question/follow-up pairs. Detailed runs test more thread counts and contexts and can take much longer. Current configuration includes your entered thread and token settings. Memory estimates are advisory; you can cancel at any time.");
-        const download = button(body, "Download selected missing models");
-        const start = button(body, "Compare installed selections");
-        const stop_start = button(body, "Stop answer and benchmark");
+        _ = label(body, "Warm-up + three measured repetitions per fixture. Detailed comparisons take longer. Current configuration includes your thread and token settings. Comparisons start immediately; you can cancel.");
+        const actions = layout.actions(body);
+        const download = layout.button(actions, "Download selected missing models");
+        const start = layout.button(actions, "Compare installed selections");
+        const stop_start = layout.button(actions, "Stop answer and benchmark");
         stop_start.as(gtk.Widget).setVisible(0);
-        const cancel_button = button(body, "Cancel comparison or download");
+        const job_actions = layout.actions(body);
+        const cancel_button = layout.button(job_actions, "Cancel comparison or download");
         cancel_button.as(gtk.Widget).setSensitive(0);
         const status = label(body, "No comparison running.");
-        const refresh = button(body, "Refresh saved results and availability");
+        const saved = layout.card(body, "Saved results");
+        const refresh = button(saved, "Refresh saved results and availability");
         const history_names = gtk.StringList.new(null);
         _ = history_names.ref();
         const history = gtk.DropDown.new(history_names.as(gio.ListModel), null);
-        body.append(history.as(gtk.Widget));
-        const sort = choice(body, "Sort results", &.{ "Completion time", "Memory use", "Model name" });
-        _ = label(body, "Suggestions compare successful results within the same context workload. Balanced chooses the lowest memory within 20% of the fastest median or its observed range, whichever is larger. Fixture checks are limited; inspect the sample answers before choosing.");
+        layout.wrapChoice(history);
+        layout.row(saved, "Comparison history", history.as(gtk.Widget));
+        const sort = choice(saved, "Sort results", &.{ "Completion time", "Memory use", "Model name" });
+        const methodology = layout.Section.create(saved, "How comparisons work", "Workload, suggestions and measurement limits");
+        _ = label(methodology.body, "Suggestions compare successful results within the same context workload. Balanced chooses the lowest memory within 20% of the fastest median or its observed range, whichever is larger. Fixture checks are limited; inspect the sample answers before choosing. Memory estimates are advisory. Download size is separate from runtime RAM.");
         const results = w.column(8);
-        body.append(results.as(gtk.Widget));
-        const details = label(body, "Select Show samples to inspect a result.");
+        saved.append(results.as(gtk.Widget));
+        const details = label(saved, "Select Show samples to inspect a result.");
         details.setSelectable(1);
-        const export_button = button(body, "Export selected comparison…");
-        const delete_button = button(body, "Delete selected comparison");
-        self.* = .{ .editor = editor, .owner = owner, .owner_idle = owner_idle, .expander = expander, .host = body, .hardware_label = hardware_label, .candidates = checks, .installed = installed, .mode = mode, .detail = detail, .sort = sort, .start = start, .stop_start = stop_start, .download = download, .cancel_button = cancel_button, .refresh = refresh, .export_button = export_button, .delete_button = delete_button, .history = history, .history_names = history_names, .summary = summary, .status = status, .results = results, .details = details };
-        self.skip_button = w.wrappingButton("Skip current configuration");
-        body.insertChildAfter(self.skip_button.as(gtk.Widget), cancel_button.as(gtk.Widget));
+        const history_actions = layout.actions(saved);
+        const export_button = layout.button(history_actions, "Export selected comparison…");
+        const delete_button = layout.button(history_actions, "Delete selected comparison");
+        self.* = .{ .editor = editor, .owner = owner, .owner_idle = owner_idle, .expander = expander, .section_summary = section.summary, .host = body, .hardware_label = hardware_label, .candidates = checks, .installed = installed, .mode = mode, .detail = detail, .sort = sort, .start = start, .stop_start = stop_start, .download = download, .cancel_button = cancel_button, .refresh = refresh, .export_button = export_button, .delete_button = delete_button, .history = history, .history_names = history_names, .summary = summary, .status = status, .results = results, .details = details };
+        self.skip_button = layout.button(job_actions, "Skip current configuration");
         self.skip_button.as(gtk.Widget).setSensitive(0);
         _ = gtk.Button.signals.clicked.connect(self.skip_button, *View, clicked, self, .{});
+        _ = object.Object.signals.notify.connect(status.as(object.Object), *View, statusChanged, self, .{ .detail = "label" });
         _ = object.Object.signals.notify.connect(expander.as(object.Object), *View, expanded, self, .{ .detail = "expanded" });
         for (checks) |check| _ = gtk.CheckButton.signals.toggled.connect(check, *View, selected, self, .{});
         for ([_]*gtk.Button{ start, stop_start, download, cancel_button, refresh, export_button, delete_button }) |b| _ = gtk.Button.signals.clicked.connect(b, *View, clicked, self, .{});
@@ -168,6 +177,10 @@ pub const View = struct {
     }
     fn fail(self: *View, err: anyerror) void {
         self.status.setText(@errorName(err));
+        self.expander.setExpanded(1);
+    }
+    fn statusChanged(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
+        self.section_summary.setText(self.status.getText());
     }
     fn availability(self: *View) !void {
         var arena = std.heap.ArenaAllocator.init(a);
@@ -233,34 +246,31 @@ pub const View = struct {
         const order = try alloc.alloc(usize, run.results.len);
         for (order, 0..) |*item, i| item.* = i;
         std.mem.sort(usize, order, Sort{ .results = run.results, .mode = self.sort.getSelected() }, Sort.less);
-        const scroll = gtk.ScrolledWindow.new();
-        scroll.setPolicy(.automatic, .never);
-        const grid = gtk.Grid.new();
-        grid.setColumnSpacing(12);
-        grid.setRowSpacing(12);
-        scroll.setChild(grid.as(gtk.Widget));
-        self.results.append(scroll.as(gtk.Widget));
-        for ([_][:0]const u8{ "Model and configuration", "Answer time (ms)", "Memory and checks" }, 0..) |text, col| grid.attach(cell(text), @intCast(col), 0, 1, 1);
-        for (order, 0..) |index, position| {
+        for (order) |index| {
             const result = run.results[index];
             const summary = benchmark.summarize(result);
             const rec = benchmark.recommend(run.results, result.group, stale);
             const tags = try std.fmt.allocPrint(alloc, "{s}{s}{s}", .{ if (rec.fastest == index) "Fastest successful · " else "", if (rec.memory == index) "Lowest memory · " else "", if (rec.balanced == index) "Balanced" else "" });
             const model = registry.find(result.settings.model_id);
-            const row: c_int = @intCast(position + 1);
+            const result_card = layout.card(self.results, "");
+            const metrics = w.flow(3);
+            metrics.setHomogeneous(1);
+            result_card.append(metrics.as(gtk.Widget));
             const actions = w.column(6);
             actions.append(cell(try std.fmt.allocPrintSentinel(alloc, "{s}\n{s} · threads {d} · context {d} · generation {d}\n{s}\n{s}", .{ if (model) |m| m.name else result.settings.model_id, @tagName(result.settings.compute.mode), result.settings.threads, result.settings.context, result.settings.generation, tags, reasons[index] orelse (if (result.successful()) "Checks passed" else if (result.error_code.len > 0) result.error_code else "Incomplete or failed samples; inspect details") }, 0)));
-            grid.attach(cell(try std.fmt.allocPrintSentinel(alloc, "First visible: {s}\nComplete median: {s}\nRange: {s}\n{d} measured samples", .{ if (summary.first_ms) |ms| try std.fmt.allocPrint(alloc, "{d:.0}", .{ms}) else "unavailable", if (summary.measured > 0) try std.fmt.allocPrint(alloc, "{d:.0}", .{summary.median_ms}) else "unavailable", if (summary.measured > 0) try std.fmt.allocPrint(alloc, "{d:.0}–{d:.0}", .{ summary.min_ms, summary.max_ms }) else "unavailable", summary.measured }, 0)), 1, row, 1, 1);
-            grid.attach(cell(try std.fmt.allocPrintSentinel(alloc, "Actual: {s}\nPeak RSS: {s} MiB\n{d}/{d} checks\nInitial GPU offload: {d} layers", .{ result.actualCompute(), if (result.peak_rss_kib) |rss| try std.fmt.allocPrint(alloc, "{d:.0}", .{@as(f64, @floatFromInt(rss)) / 1024}) else "unavailable", summary.passed, summary.measured, result.offload_layers }, 0)), 2, row, 1, 1);
-            const use = button(actions, "Use this configuration");
+            metrics.insert(actions.as(gtk.Widget), -1);
+            metrics.insert(cell(try std.fmt.allocPrintSentinel(alloc, "Answer time (ms)\nFirst visible: {s}\nComplete median: {s}\nRange: {s}\n{d} measured samples", .{ if (summary.first_ms) |ms| try std.fmt.allocPrint(alloc, "{d:.0}", .{ms}) else "unavailable", if (summary.measured > 0) try std.fmt.allocPrint(alloc, "{d:.0}", .{summary.median_ms}) else "unavailable", if (summary.measured > 0) try std.fmt.allocPrint(alloc, "{d:.0}–{d:.0}", .{ summary.min_ms, summary.max_ms }) else "unavailable", summary.measured }, 0)), -1);
+            metrics.insert(cell(try std.fmt.allocPrintSentinel(alloc, "Actual backend: {s}\nPeak RSS: {s} MiB\n{d}/{d} checks\nInitial GPU offload: {d} layers", .{ result.actualCompute(), if (result.peak_rss_kib) |rss| try std.fmt.allocPrint(alloc, "{d:.0}", .{@as(f64, @floatFromInt(rss)) / 1024}) else "unavailable", summary.passed, summary.measured, result.offload_layers }, 0)), -1);
+            const row_actions = layout.actions(result_card);
+            const use = layout.button(row_actions, "Use this configuration");
             use.as(gtk.Widget).setSensitive(@intFromBool(!stale[index] and result.successful() and self.job == null and self.editor.editable()));
-            const show = button(actions, "Show samples");
+            const show = layout.button(row_actions, "Show samples");
+            _ = label(result_card, "Use updates the draft; Apply & save persists it.");
             const context = try alloc.create(Row);
             context.* = .{ .view = self, .index = index };
             _ = gtk.Button.signals.clicked.connect(use, *Row, adopt, context, .{});
             _ = gtk.Button.signals.clicked.connect(show, *Row, showSamples, context, .{});
             try self.row_controls.append(alloc, .{ .index = index, .use = use, .show = show, .eligible = !stale[index] and result.successful() });
-            grid.attach(actions.as(gtk.Widget), 0, row, 1, 1);
         }
     }
     const Sort = struct {
@@ -522,10 +532,10 @@ fn button(box: *gtk.Box, text: [:0]const u8) *gtk.Button {
     return b;
 }
 fn choice(box: *gtk.Box, title: [:0]const u8, names: []const [:0]const u8) *gtk.DropDown {
-    _ = label(box, title);
     var list: [5]?[*:0]const u8 = @splat(null);
     for (names, 0..) |name, i| list[i] = name;
     const d = gtk.DropDown.newFromStrings(@ptrCast(&list));
-    box.append(d.as(gtk.Widget));
+    layout.wrapChoice(d);
+    layout.row(box, title, d.as(gtk.Widget));
     return d;
 }

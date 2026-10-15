@@ -1127,10 +1127,16 @@ pub const Window = struct {
             const item = &self.links[(if (self.narrow) @as(usize, navigation_count) else 0) + i];
             link.* = .{ .page = item.target.page, .section = item.target.section, .visible = item.button.as(gtk.Widget).getVisible() != 0, .focused = self.window.getFocus() == item.button.as(gtk.Widget), .active = item.button.getActive() != 0, .bounds = self.bounds(item.button.as(gtk.Widget)) };
         }
-        const ControlProbe = struct { field: []const u8, focused: bool, enabled: bool = true, selected: ?bool = null, text: ?[]const u8 = null, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
+        const ControlProbe = struct { field: []const u8, focused: bool, enabled: bool = true, visible: bool = true, selected: ?bool = null, text: ?[]const u8 = null, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
         var controls: std.ArrayList(ControlProbe) = .empty;
         const focus = self.window.getFocus();
         if (self.assistant_view) |view| if (self.target.page == .assistant) {
+            inline for (.{ "model_options", "runtime_options", "engines_section", "resources_section" }) |name| {
+                const section = @field(view, name);
+                const widget = section.expander.getLabelWidget().?;
+                try controls.append(alloc, .{ .field = "assistant." ++ name, .focused = focus == widget, .selected = section.expander.getExpanded() != 0, .text = std.mem.span(section.summary.getText()), .bounds = self.bounds(widget) });
+            }
+            for (view.compute_mode.buttons, 0..) |check, i| try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "assistant.compute.{d}", .{i}), .focused = focus == check.as(gtk.Widget), .selected = check.getActive() != 0, .enabled = check.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(check.as(gtk.Widget)) });
             if (view.comparison) |comparison| {
                 const toggle = comparison.expander.getLabelWidget().?;
                 try controls.append(alloc, .{ .field = "benchmark.open", .focused = focus == toggle, .bounds = self.bounds(toggle) });
@@ -1146,9 +1152,13 @@ pub const Window = struct {
                 try controls.append(alloc, .{ .field = "benchmark.status", .focused = false, .text = std.mem.span(comparison.status.getText()), .bounds = self.bounds(comparison.status.as(gtk.Widget)) });
                 try controls.append(alloc, .{ .field = "benchmark.samples", .focused = false, .text = std.mem.span(comparison.details.getText()), .bounds = self.bounds(comparison.details.as(gtk.Widget)) });
             }
-            inline for (.{ "enabled", "model", "custom", "endpoint", "provider", "read_pages", "runtime_source", "runtime_path", "compute_mode", "backend", "device", "fallback", "layers", "gpu_memory", "threads", "context", "tokens" }) |name| {
+            inline for (.{ "enabled", "model", "custom", "endpoint", "provider", "provider_kind", "engine_id", "read_pages", "runtime_source", "runtime_path", "compute_mode", "backend", "device", "fallback", "layers", "gpu_memory", "threads", "context", "tokens" }) |name| {
                 const widget = @field(view, name).as(gtk.Widget);
-                try controls.append(alloc, .{ .field = "assistant." ++ name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+                try controls.append(alloc, .{ .field = "assistant." ++ name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .visible = widget.getMapped() != 0, .bounds = self.bounds(widget) });
+            }
+            inline for (.{ "enable_summary", "runtime_summary", "model_status", "runtime_status", "provider_status" }) |name| {
+                const label = @field(view, name);
+                try controls.append(alloc, .{ .field = "assistant." ++ name, .focused = false, .visible = label.as(gtk.Widget).getMapped() != 0, .text = std.mem.span(label.getText()), .bounds = self.bounds(label.as(gtk.Widget)) });
             }
             inline for (.{ "download", "verify", "remove", "test_provider", "store_key", "remove_key", "discover", "runtime_check", "benchmark", "setup_runtime" }, 0..) |name, i| {
                 const widget = view.buttons[i].as(gtk.Widget);

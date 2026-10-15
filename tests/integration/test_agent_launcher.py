@@ -65,7 +65,11 @@ def main():
             desktop(s, "Question", "What is RAM?", command="/usr/bin/true")
             model_dir = Path(s.env["XDG_DATA_HOME"]) / "pearl/assistant/models"
             model_dir.mkdir(parents=True)
-            os.link(args.model.resolve(), model_dir / "LFM2.5-350M-Q4_K_M.gguf")
+            local_model = model_dir / "LFM2.5-350M-Q4_K_M.gguf"
+            try:
+                os.link(args.model.resolve(), local_model)
+            except OSError:
+                shutil.copyfile(args.model, local_model)
             pearl = s.child("pearl", [args.pearl], G_DEBUG="fatal-warnings")
             pearl.expect("event=control-ready")
             pearl.expect("event=app-index-ready")
@@ -151,6 +155,7 @@ def main():
             expected = {"runtime_source", "runtime_path", "compute_mode", "device", "backend", "fallback", "discover", "runtime_check", "setup_runtime"}
             assert expected <= {c["field"].removeprefix("assistant.") for c in v["controls"]}
             before_check = len(Search.requests)
+            click_widget(s, ipc, reach("runtime_options")["bounds"])
             click_widget(s, ipc, reach("setup_runtime")["bounds"])
             wait_for(lambda: "Using compatible installed runtime" in settings_probe(s, ipc)["assistant_state"]["runtime"], 15)
             assert len(Search.requests) == before_check
@@ -167,9 +172,8 @@ def main():
             wait_for(lambda: "Compatible" in settings_probe(s, ipc)["assistant_state"]["runtime"], 90)
             assert len(Search.requests) == before_check
             checks["native_runtime_discovery_and_local_check_without_search"] = True
-            mode_control = reach("compute_mode")
+            mode_control = reach("compute.1")
             click_widget(s, ipc, mode_control["bounds"])
-            keys(s, "Home", "Down", "Return")
             view = wait_for(lambda: (p if (p := settings_probe(s, ipc))["editor"]["can_apply"] else False))
             assert agent()["compute_mode"] == "cpu", agent()
             capture(s, "runtime-acceleration-settings")

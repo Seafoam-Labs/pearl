@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 import time
-from test_settings_app import PrivateSession, IPC, wait_for, probe, windows, click_widget, keys
+from test_settings_app import PrivateSession, IPC, wait_for, probe, windows, click_widget, keys, capture
 from settings_editor import EditorPeer
 
 
@@ -34,6 +34,11 @@ def main():
         wait_for(lambda: probe(session, ipc)["connected"])
         peer = EditorPeer(session, ipc)
         def reach(field):
+            if field in {"threads", "context", "tokens", "read_pages"}:
+                section = next(c for c in probe(session, ipc)["controls"] if c["field"] == "assistant.resources_section")
+                if not section["selected"]:
+                    click_widget(session, ipc, reach("resources_section")["bounds"])
+                    wait_for(lambda: next(c for c in probe(session, ipc)["controls"] if c["field"] == "assistant.resources_section")["selected"])
             for _ in range(80):
                 view = probe(session, ipc)
                 control = next(c for c in view["controls"] if c["field"] == "assistant." + field)
@@ -69,12 +74,16 @@ def main():
             checks["all_suggested_models_and_custom_are_selectable_in_draft"] = True
             for field, key, value in [("threads", "cpu_threads", 8), ("context", "context_tokens", 16384), ("tokens", "answer_tokens", 2048)]:
                 settled()
-                click_widget(session, ipc, reach(field)["bounds"])
+                # Click the editable text, not the spin button's stepper half.
+                rect = dict(reach(field)["bounds"])
+                rect["width"] /= 3
+                click_widget(session, ipc, rect)
                 session.run(["wtype", "-M", "ctrl", "-k", "a", "-m", "ctrl", "-s", "100", str(value), "-s", "500", "-k", "Tab"])
                 try:
                     wait_for(lambda: json.loads(peer.document())["assistant"][key] == value)
                 except TimeoutError:
                     (args.output / "edit-failure.json").write_text(json.dumps({"field": field, "expected": value, "draft": json.loads(peer.document()), "view": probe(session, ipc)}, indent=2))
+                    capture(session, "edit-failure")
                     raise
             assert json.loads(peer.document("committed"))["assistant"] == original
             view = wait_for(lambda: (v if (v := probe(session, ipc))["editor"]["can_apply"] else False))

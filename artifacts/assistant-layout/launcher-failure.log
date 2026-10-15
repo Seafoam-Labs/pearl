@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_agent_launcher.py", line 230, in <module>
+    main()
+    ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_agent_launcher.py", line 114, in main
+    assert windows[0]["floating"] and windows[0]["geometry"]["width"] == 440, windows
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [{'kind': 'window', 'id': 'dc622e463b16ce758e62695724ed9cb5', 'backend': 'xdg', 'app_id': 'org.aqueous.Pearl.Agent', 'class': None, 'title': 'Pearl Assistant', 'tag': None, 'description': None, 'icon': None, 'workspace': '1', 'output': '1', 'geometry': {'x': 256, 'y': 182, 'width': 768, 'height': 403}, 'outer_geometry': {'x': 254, 'y': 180, 'width': 772, 'height': 407}, 'focused': True, 'visible': True, 'floating': False, 'minimized': False, 'maximized': False, 'fullscreen': False, 'skip_taskbar': False, 'skip_switcher': False, 'always_above': False, 'always_below': False, 'snapped': False, 'fixed_position': False, 'layout': 'tiled', 'can_minimize': True, 'can_maximize': True, 'can_activate': True}]
+test-agent-launcher
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_agent_launcher.py --pearl ./.zig-cache/o/d27211c8d2bb899eb24d963451c19279/pearl-integration --ctl ./.zig-cache/o/cc39c9058df99b12b1ce1cd682e1bab1/pearlctl --locker ./.zig-cache/o/4350f4a9daa9fe9b18fbf2be57478c18/pearl-lock-test --pam-module ./.zig-cache/o/2865b8aaf24539dfc9e50bdc4ff7fac4/libpearl-pam-fixture.so --settings ./.zig-cache/o/60d8502a206658f58c1eb6d0f01c2e32/pearl-settings-test --agent /home/zoey/Pearl/zig-out/bin/pearl-agent --model /home/zoey/.local/share/pearl/assistant/models/LFM2.5-350M-Q4_K_M.gguf --output /home/zoey/Pearl/artifacts/assistant-layout/launcher
+
+Build Summary: 23/25 steps succeeded (1 failed)
+test-agent-launcher transitive failure
++- run python3 failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/2f9ea57671183b735a0fc67f48332037/build /usr/bin/zig /usr/lib/zig /home/zoey/Pearl .zig-cache /tmp/pearl-zig-cache --seed 0x349cff29 -Z7f73c469396d06d0 test-agent-launcher -Doptimize=ReleaseSafe -- --model /home/zoey/.local/share/pearl/assistant/models/LFM2.5-350M-Q4_K_M.gguf --output /home/zoey/Pearl/artifacts/assistant-layout/launcher

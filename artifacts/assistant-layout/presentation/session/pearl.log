@@ -1,0 +1,34 @@
+ts=2026-10-15T21:04:06Z pid=1236674 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-15T21:04:06Z pid=1236674 info(platform): event=blur-capability available=false
+ts=2026-10-15T21:04:06Z pid=1236674 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-15T21:04:06Z pid=1236674 info(pearl): event=ready mode=session
+ts=2026-10-15T21:04:06Z pid=1236674 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-15T21:04:06Z pid=1236674 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-15T21:04:06Z pid=1236674 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-15T21:04:06Z pid=1236674 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-15T21:04:06Z pid=1236674 info(pearl): event=settings-backend-ready session_hash=37e4a3222d602441
+ts=2026-10-15T21:04:06Z pid=1236674 info(pearl): event=control-ready session_hash=37e4a3222d602441
+ts=2026-10-15T21:04:06Z pid=1236674 info(desktop): event=app-index-ready entries=168 truncated=false
+ts=2026-10-15T21:04:07Z pid=1236674 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-10-15T21:04:07Z pid=1236674 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=11410 success=true
+ts=2026-10-15T21:04:07Z pid=1236674 info(desktop): event=app-index-ready entries=168 truncated=false
+ts=2026-10-15T21:04:16Z pid=1236674 info(config): event=preferences-applied revision=2 mode=static cache=false
+ts=2026-10-15T21:04:16Z pid=1236674 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=6760 success=true
+ts=2026-10-15T21:04:22Z pid=1236674 info(config): event=preferences-applied revision=3 mode=static cache=false
+ts=2026-10-15T21:04:22Z pid=1236674 info(config): event=wallpaper-applications-applied generation=7 elapsed_us=16376 success=true
+ts=2026-10-15T21:04:28Z pid=1236674 info(config): event=preferences-applied revision=4 mode=gtk cache=false
+ts=2026-10-15T21:04:28Z pid=1236674 info(config): event=wallpaper-applications-applied generation=9 elapsed_us=5779 success=false
+ts=2026-10-15T21:04:34Z pid=1236674 info(config): event=preferences-applied revision=5 mode=static cache=false
+ts=2026-10-15T21:04:34Z pid=1236674 info(config): event=wallpaper-applications-applied generation=11 elapsed_us=18763 success=true
+ts=2026-10-15T21:04:41Z pid=1236674 info(config): event=preferences-applied revision=6 mode=static cache=false
+ts=2026-10-15T21:04:41Z pid=1236674 info(config): event=wallpaper-applications-applied generation=13 elapsed_us=13018 success=true
+ts=2026-10-15T21:04:47Z pid=1236674 info(config): event=preferences-applied revision=7 mode=gtk cache=false
+ts=2026-10-15T21:04:47Z pid=1236674 info(config): event=wallpaper-applications-applied generation=15 elapsed_us=5220 success=false
+ts=2026-10-15T21:04:54Z pid=1236674 info(config): event=preferences-applied revision=8 mode=static cache=false
+ts=2026-10-15T21:04:54Z pid=1236674 info(config): event=wallpaper-applications-applied generation=17 elapsed_us=15365 success=true
+ts=2026-10-15T21:05:00Z pid=1236674 info(config): event=preferences-applied revision=9 mode=static cache=false
+ts=2026-10-15T21:05:00Z pid=1236674 info(config): event=wallpaper-applications-applied generation=19 elapsed_us=4988 success=true
+ts=2026-10-15T21:05:49Z pid=1236674 warning(aqueous): event=ipc-disconnected reason=Eof
+ts=2026-10-15T21:05:49Z pid=1236674 info(pearl): event=aqueous-availability state=reconnecting
+ts=2026-10-15T21:05:49Z pid=1236674 warning(pearl): event=aqueous-disconnected reason=Eof
+Gdk-Message: 17:05:49.409: Error flushing display: Broken pipe

@@ -1,0 +1,58 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='390' height='1120' viewBox='0 0 390 1120' role='img' aria-labelledby='title desc'><title id='title'>Assistant settings layout — narrow</title><desc id='desc'>Static design proposal using Pearl settings cards, summary disclosures, native control styling and a persistent shared draft footer. Sample states and data are illustrative.</desc>
+<style>text{font-family:Inter,'DejaVu Sans',sans-serif;font-size:14px;fill:#e7e1ec}.bg{fill:#211f26}.sidebar{fill:#1e1c21}.card{fill:#2b2831}.button{fill:#302c37;stroke:#4b4554}.selected{fill:#4f3787;stroke:#d0bcff}.accent{fill:#d0bcff}.on-accent{fill:#381e72}.muted{fill:#c4bbcf}.strong{font-weight:600}.small{font-size:12px}.tiny{font-size:10px;letter-spacing:1.4px}.section{font-size:17px;font-weight:600}.heading{font-size:30px;font-weight:500;letter-spacing:-.6px}.center{text-anchor:middle}.right{text-anchor:end}.line{stroke:#403a48;fill:none}.hidden{display:none}</style>
+<rect x='0' y='0' width='390' height='1120' rx='16' class='bg'/>
+<rect x='0' y='0' width='390' height='52' rx='0' class='sidebar'/>
+<text x='22' y='32' class='strong'>●  Pearl Settings</text>
+<text x='368' y='32' class='right muted'>−   □   ×</text>
+<rect x='16' y='65' width='106' height='40' rx='12' class='button'/>
+<text x='69' y='90' class='center'>☰  Sections</text>
+<text x='16' y='141' class='heading'>Assistant</text>
+<text x='16' y='167' class='muted'>Local answers, your search engines.</text>
+<rect x='16' y='190' width='358' height='150' rx='16' class='card'/>
+<text x='36' y='222' class='section'>Launcher assistant</text>
+<rect x='310' y='210' width='44' height='24' rx='12' class='accent'/>
+<circle cx='341' cy='222' r='8' class='on-accent'/>
+<text x='36' y='248' class='small muted'>On in draft · Apply to enable</text>
+<text x='36' y='274' class='small muted'>Answers run locally. Submitted questions</text>
+<text x='36' y='293' class='small muted'>go to your engine; typing sends nothing.</text>
+<text x='36' y='318' class='small muted'>Experimental · Answers can be wrong.</text>
+<rect x='16' y='356' width='358' height='202' rx='16' class='card'/>
+<text x='36' y='388' class='section'>Model</text>
+<rect x='36' y='404' width='318' height='50' rx='10' class='button'/>
+<text x='50' y='435' class='strong'>LFM2.5-1.2B-Instruct</text>
+<text x='340' y='435' class='right'>⌄</text>
+<text x='36' y='477' class='small muted'>Q4_K_M · 731 MB · Downloaded</text>
+<rect x='36' y='494' width='154' height='40' rx='12' class='button'/>
+<text x='113' y='519' class='center'>Verify model now</text>
+<rect x='200' y='494' width='154' height='40' rx='12' class='button'/>
+<text x='277' y='519' class='center'>Model options  ⌄</text>
+<rect x='16' y='574' width='358' height='268' rx='16' class='card'/>
+<text x='36' y='606' class='section'>Runtime &amp; acceleration</text>
+<text x='36' y='631' class='small muted'>System installation · Not checked</text>
+<rect x='36' y='646' width='318' height='44' rx='12' class='selected'/>
+<text x='48' y='673' class=''>●</text>
+<text x='72' y='673' class='strong'>CPU</text>
+<rect x='36' y='698' width='318' height='44' rx='12' class='button'/>
+<text x='48' y='725' class=''>○</text>
+<text x='72' y='725' class='strong'>Automatic</text>
+<rect x='36' y='750' width='318' height='44' rx='12' class='button'/>
+<text x='48' y='777' class=''>○</text>
+<text x='72' y='777' class='strong'>Selected GPU</text>
+<text x='36' y='821' class='small'>Runtime setup &amp; checks  ›</text>
+<rect x='16' y='858' width='358' height='76' rx='16' class='card'/>
+<text x='36' y='887' class='strong'>Search engines</text>
+<text x='36' y='911' class='muted small'>Bing · Default · No key needed</text>
+<text x='354' y='898' class='right'>›</text>
+<rect x='16' y='950' width='358' height='76' rx='16' class='card'/>
+<text x='36' y='979' class='strong'>Compare models</text>
+<text x='36' y='1003' class='muted small'>Choose models and run local tests</text>
+<text x='354' y='990' class='right'>›</text>
+<rect x='0' y='1042' width='390' height='78' rx='0' class='bg'/>
+<path d='M0 1042H390' class='line'/>
+<text x='16' y='1064' class='small muted'>Unsaved Pearl preferences</text>
+<rect x='130' y='1074' width='92' height='40' rx='12' class='button'/>
+<text x='176' y='1099' class='center'>Discard</text>
+<rect x='234' y='1074' width='140' height='40' rx='12' class='accent'/>
+<text x='304' y='1099' class='on-accent center'>Apply &amp; save</text>
+<rect x='383' y='190' width='3' height='180' rx='2' class='muted'/>
+</svg>

@@ -1,0 +1,14 @@
+ts=2026-10-15T21:04:06Z pid=1236655 info(settings): event=settings-launch activation_context=false
+ts=2026-10-15T21:04:06Z pid=1236655 info(settings): event=settings-instance-ready session_hash=13f00a6962d466cf
+ts=2026-10-15T21:04:06Z pid=1236655 info(settings): event=settings-page page=overview
+ts=2026-10-15T21:04:06Z pid=1236655 info(settings): event=settings-page page=assistant
+ts=2026-10-15T21:04:06Z pid=1236655 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-15T21:04:07Z pid=1236655 info(settings): event=settings-page page=assistant
+ts=2026-10-15T21:04:12Z pid=1236655 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:04:12Z pid=1236655 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:04:12Z pid=1236655 info(settings): event=settings-page page=assistant
+
+(pearl-settings-test:1236655): Gdk-WARNING **: 17:04:14.376: gdk_frame_timings_discarded() called on already presented frame.
+ts=2026-10-15T21:04:22Z pid=1236655 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:04:22Z pid=1236655 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:04:22Z pid=1236655 info(settings): event=settings-page page=assistant

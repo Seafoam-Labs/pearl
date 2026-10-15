@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "checks": {
+    "runtime_check_invalidates_when_compute_draft_changes": true,
+    "opening_does_not_download_or_run": true,
+    "comparison_keeps_preferences_unchanged": true,
+    "use_configuration_respects_apply_discard": true,
+    "export_selected_history": true,
+    "runtime_changes_mark_results_stale": true,
+    "cancel_keeps_history_and_releases_runtime": true,
+    "delete_selected_history": true,
+    "closing_cancels_comparison": true,
+    "narrow_results_and_sample_controls": true
+  }
+}

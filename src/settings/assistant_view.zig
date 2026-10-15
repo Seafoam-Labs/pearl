@@ -5,6 +5,7 @@ const gio = @import("gio2");
 const glib = @import("glib2");
 const object = @import("gobject2");
 const w = @import("../ui/components/widgets.zig");
+const layout = @import("assistant_layout.zig");
 const prefs = @import("../config/preferences.zig");
 const cfg = @import("../agent/config.zig");
 const registry = @import("../agent/model_registry.zig");
@@ -55,7 +56,26 @@ pub const View = struct {
     readiness: *gtk.Label,
     runtime_source: *gtk.DropDown,
     runtime_path: *gtk.Entry,
-    compute_mode: *gtk.DropDown,
+    compute_mode: layout.ComputeChoice,
+    model_options: layout.Section,
+    runtime_options: layout.Section,
+    engines_section: layout.Section,
+    resources_section: layout.Section,
+    enable_summary: *gtk.Label,
+    runtime_summary: *gtk.Label,
+    model_status: *gtk.Label,
+    runtime_status: *gtk.Label,
+    provider_status: *gtk.Label,
+    provider_editor: *gtk.Box,
+    credentials: *gtk.Box,
+    legacy_notice: *gtk.Label,
+    gpu_options: *gtk.Box,
+    custom_runtime: *gtk.Box,
+    operation: *gtk.Box,
+    comparison_status: *gtk.Label,
+    local_cancels: [3]*gtk.Button,
+    last_action: ?Action = null,
+    checked_fingerprint: ?u64 = null,
     backend: *gtk.DropDown,
     device: *gtk.DropDown,
     device_names: *gtk.StringList,
@@ -79,98 +99,134 @@ pub const View = struct {
     comparison: ?*@import("benchmark_view.zig").View = null,
     pub fn create(host: *gtk.Box, editor: *Editor) !*View {
         const self = try a.create(View);
-        const general = section(host, "General");
-        note(general, "Off by default. Answers run on this device; submitted questions go to your selected search engines. Typing never sends a request. This experimental small model can make mistakes.");
-        const enabled = toggle(general, "Enable launcher assistant");
-        const read_pages = toggle(general, "Read search result pages");
-        const models = section(host, "Models");
+        host.as(gtk.Widget).addCssClass("assistant-view");
+        host.setSpacing(16);
+        const operation = section(host, "Current operation");
+        const status = statusLabel(operation);
+        const comparison_status = statusLabel(operation);
+        const cancel_button = button(operation, "Cancel operation");
+        const general = section(host, "");
+        const enabled = toggle(general, "Launcher assistant");
+        const enable_summary = statusLabel(general);
+        note(general, "Answers run locally. Submitted questions go to your search engine; typing sends nothing. Experimental: check answers and their sources.");
+        const models = section(host, "Model");
         var model_labels: [registry.models.len + 1][:0]const u8 = undefined;
         for (registry.models, 0..) |item, i| model_labels[i] = item.name;
         model_labels[registry.models.len] = "Custom local GGUF (compatibility checked)";
         const model = choice(models, "Selected model", &model_labels);
-        const custom = entry(models, "Custom GGUF absolute path", 4096);
+        const model_options = layout.Section.create(models, "Model options", "License, downloads, custom file and comparisons");
+        const custom = entry(model_options.body, "Custom GGUF absolute path", 4096);
         const readiness = w.label("", "pearl-secondary");
         readiness.setWrap(1);
         models.append(readiness.as(gtk.Widget));
-        note(models, "Download sizes are shown with each model. Selecting does not download it. Downloads are immediate and independent of Apply/Discard. Local GGUF files have no Pearl size limit. Selecting a different model resets context and generation tokens to its automatic profile. Disable and Apply before removing a model.");
+        note(model_options.body, "Selection never downloads a model. Changing models resets context and generation tokens to its automatic profile.");
+        note(model_options.body, "Downloads and removal are immediate and independent of Apply/Discard. Local GGUF files have no Pearl size limit. Disable and Apply before removing a model.");
         const license = gtk.LinkButton.newWithLabel(registry.license_url, "Selected model license");
-        models.append(license.as(gtk.Widget));
-        const download = button(models, "Download selected model");
+        model_options.body.append(license.as(gtk.Widget));
+        const model_actions = layout.actions(model_options.body);
+        const download = layout.button(model_actions, "Download selected model");
         const verify = button(models, "Verify model and test tools locally");
-        const remove = button(models, "Remove selected download");
+        const remove = layout.button(model_actions, "Remove selected download");
+        const benchmark = layout.button(model_actions, "Compare models on CPU and GPU…");
+        const model_status = statusLabel(models);
+        const model_cancel = button(models, "Cancel model operation");
+        models.reorderChildAfter(model_options.expander.as(gtk.Widget), model_cancel.as(gtk.Widget));
         const runtime_section = section(host, "Runtime & acceleration");
-        note(runtime_section, "Set up reuses a compatible runtime or installs llama.cpp using Shelly on Devario and pacman on Arch. Complete authentication and package confirmation in the terminal. CPU is the default; no exact release is pinned.");
-        const setup_runtime = button(runtime_section, "Set up runtime (install if needed)");
-        note(runtime_section, "Setup installs llama-cpp, plus ggml-vulkan for Automatic/Vulkan or ggml-cuda for CUDA. It selects the runtime in your draft. Apply saves the selection. Package installations are immediate; closing Settings does not stop a transaction.");
-        const runtime_source = choice(runtime_section, "Runtime source", &.{ "System installation", "Pearl runtime package", "Custom executable" });
-        const runtime_path = entry(runtime_section, "Custom llama-server absolute path", 4096);
-        const browse = button(runtime_section, "Browse for llama-server…");
+        const runtime_summary = statusLabel(runtime_section);
+        const compute_mode = layout.ComputeChoice.create(runtime_section);
+        const runtime_options = layout.Section.create(runtime_section, "Runtime setup & checks", "Select a runtime, discover devices or check compatibility");
+        const runtime_body = runtime_options.body;
+        const runtime_source = choice(runtime_body, "Runtime source", &.{ "System installation", "Pearl runtime package", "Custom executable" });
+        const custom_runtime = w.column(8);
+        runtime_body.append(custom_runtime.as(gtk.Widget));
+        const runtime_path = entry(custom_runtime, "Custom llama-server absolute path", 4096);
+        const browse = button(custom_runtime, "Browse for llama-server…");
+        note(runtime_body, "Setup reuses a compatible runtime or installs llama.cpp with Shelly on Devario and pacman on Arch. Complete authentication and package confirmation in the terminal.");
+        note(runtime_body, "Packages install immediately; Apply saves the runtime selection. Closing Settings does not stop installation. Setup includes ggml-vulkan for Automatic/Vulkan or ggml-cuda for CUDA.");
+        const runtime_actions = layout.actions(runtime_body);
+        const setup_runtime = layout.button(runtime_actions, "Set up runtime (install if needed)");
+        const discover = layout.button(runtime_actions, "Discover runtime and GPU devices");
+        const runtime_check = layout.button(runtime_actions, "Check runtime and model now");
         const runtime_details = w.label("Runtime not checked. Discovery and testing run only when requested.", "pearl-secondary");
         runtime_details.setWrap(1);
         runtime_details.setWrapMode(.word_char);
         runtime_details.setSelectable(1);
-        runtime_section.append(runtime_details.as(gtk.Widget));
-        const discover = button(runtime_section, "Discover runtime and GPU devices");
-        const compute_mode = choice(runtime_section, "Run model on", &.{ "CPU", "Automatic (GPU when available, otherwise CPU)", "Selected GPU" });
-        const backend = choice(runtime_section, "GPU backend", &.{ "Automatic", "Vulkan", "CUDA" });
+        runtime_body.append(runtime_details.as(gtk.Widget));
+        const gpu_options = w.column(12);
+        runtime_body.append(gpu_options.as(gtk.Widget));
+        const backend = choice(gpu_options, "GPU backend", &.{ "Automatic", "Vulkan", "CUDA" });
         const device_names = gtk.StringList.new(null);
         _ = device_names.ref();
         device_names.append("Automatic device selection");
         const device = gtk.DropDown.new(device_names.as(gio.ListModel), null);
-        formRow(runtime_section, "GPU device", device.as(gtk.Widget));
-        const fallback = toggle(runtime_section, "Use CPU if the selected GPU is unavailable");
+        layout.wrapChoice(device);
+        formRow(gpu_options, "GPU device", device.as(gtk.Widget));
+        const fallback = toggle(gpu_options, "Use CPU if the selected GPU is unavailable");
         const advanced = gtk.Expander.new("Advanced memory and layer offload");
         const advanced_body = w.column(8);
         const layers = number(advanced_body, "GPU layers (0 = automatic)", 0, 1024, 1);
         const gpu_memory = number(advanced_body, "GPU memory target MiB (0 = automatic)", 0, 1048576, 128);
         note(advanced_body, "GPU memory targets are estimates, not hard VRAM caps. Integrated GPUs share system RAM. Pearl has no host RAM cap; available hardware and operating-system limits determine what can run.");
         advanced.setChild(advanced_body.as(gtk.Widget));
-        runtime_section.append(advanced.as(gtk.Widget));
-        note(runtime_section, "Check runs the selected executable and a local model/tool test; no web searches. Stop any current answer first. The idle model unloads before testing. Tests use draft settings and do not Apply them.");
-        const runtime_check = button(runtime_section, "Check runtime and model now");
-        const benchmark = button(runtime_section, "Compare models on CPU and GPU…");
-        const engines = section(host, "Search engines");
-        note(engines, "Bing is the default search engine and works without an account, API key or server setup. Questions are sent to Bing only when you ask or test the connection. Other engines remain available below.");
+        gpu_options.append(advanced.as(gtk.Widget));
+        note(runtime_body, "Checks use draft settings and a local model/tool test, without searches or Apply. Stop any current answer first; the idle model unloads before testing.");
+        const runtime_status = statusLabel(runtime_section);
+        const runtime_cancel = button(runtime_section, "Cancel runtime check");
+        const engines_section = layout.Section.create(host, "Search engines", "Choose the default engine and edit connections");
+        const engines = engines_section.body;
         const all = toggle(engines, "Search all enabled engines (maximum 3)");
         const names = gtk.StringList.new(null);
         _ = names.ref();
         const provider = gtk.DropDown.new(names.as(gio.ListModel), null);
+        layout.wrapChoice(provider);
         formRow(engines, "Edit engine", provider.as(gtk.Widget));
-        const add = button(engines, "Add search engine");
-        const remove_provider = button(engines, "Remove this engine");
-        const provider_name = entry(engines, "Display name", 80);
-        const provider_kind = choice(engines, "Connection", &.{ "Google through SearXNG", "SearXNG", "Brave Search API", "Google API (existing accounts only)", "Bing (no setup required)" });
-        const endpoint = entry(engines, "SearXNG base URL", 1024);
+        const engine_actions = layout.actions(engines);
+        const add = layout.button(engine_actions, "Add search engine");
+        const remove_provider = layout.button(engine_actions, "Remove this engine");
+        const provider_editor = w.column(12);
+        engines.append(provider_editor.as(gtk.Widget));
+        const provider_name = entry(provider_editor, "Display name", 80);
+        const provider_kind = choice(provider_editor, "Connection", &.{ "Google through SearXNG", "SearXNG", "Brave Search API", "Google API (existing accounts only)", "Bing (no setup required)" });
+        const endpoint = entry(provider_editor, "SearXNG base URL", 1024);
         endpoint.setPlaceholderText("https://search.example.org");
-        const engine_id = entry(engines, "Google API search engine ID", 128);
-        note(engines, "Google's direct JSON API is closed to new customers and retires January 1, 2027. The existing-account connection requires an API key and engine ID.");
-        const language = entry(engines, "Search language", 16);
-        const provider_enabled = toggle(engines, "Engine enabled");
-        const default_provider = toggle(engines, "Use as default engine");
-        const safe = toggle(engines, "Safe search");
+        const engine_id = entry(provider_editor, "Google API search engine ID", 128);
+        const legacy_notice = statusLabel(provider_editor);
+        legacy_notice.setText("Google's direct JSON API is closed to new customers and retires January 1, 2027. Existing accounts require an API key and engine ID.");
+        const language = entry(provider_editor, "Search language", 16);
+        const provider_enabled = toggle(provider_editor, "Engine enabled");
+        const default_provider = toggle(provider_editor, "Use as default engine");
+        const safe = toggle(provider_editor, "Safe search");
+        const credentials = w.column(12);
+        provider_editor.append(credentials.as(gtk.Widget));
         const secret = gtk.PasswordEntry.new();
         secret.setShowPeekIcon(1);
-        formRow(engines, "API key (never included in preferences)", secret.as(gtk.Widget));
-        const session_key = toggle(engines, "Keep key in Secret Service session collection only");
-        const store_key = button(engines, "Save or replace key now");
-        const remove_key = button(engines, "Remove saved key now");
-        note(engines, "Keys use Secret Service. If it is unavailable or locked, unlock it before saving. Test sends the sample query “Pearl desktop” to this engine immediately.");
-        const test_provider = button(engines, "Test connection now");
-        const resources = section(host, "Resources");
+        formRow(credentials, "API key (never included in preferences)", secret.as(gtk.Widget));
+        const session_key = toggle(credentials, "Keep key in Secret Service session collection only");
+        note(credentials, "Keys use Secret Service. Unlock it before saving. Saving or removing a key happens immediately, separately from Apply.");
+        const key_actions = layout.actions(credentials);
+        const store_key = layout.button(key_actions, "Save or replace key now");
+        const remove_key = layout.button(key_actions, "Remove saved key now");
+        note(provider_editor, "Test sends “Pearl desktop” to the selected engine immediately. Bing needs no account, API key or server setup.");
+        const test_provider = button(provider_editor, "Test connection now");
+        const provider_status = statusLabel(engines);
+        const provider_cancel = button(engines, "Cancel engine operation");
+        // Comparison is one sibling section; all shortcuts reveal this instance.
+        const comparison_host = w.column(0);
+        host.append(comparison_host.as(gtk.Widget));
+        const resources_section = layout.Section.create(host, "Resources & behavior", "Automatic model profile and idle unload");
+        const resources = resources_section.body;
+        const read_pages = toggle(resources, "Read search result pages");
         const threads = number(resources, "CPU threads (0 = runtime automatic)", 0, std.math.maxInt(c_int), 1);
         const context = number(resources, "Context tokens (0 = model profile)", 0, std.math.maxInt(c_int), 1024);
         const tokens = number(resources, "Generation tokens (0 = model profile)", 0, std.math.maxInt(c_int), 128);
         note(resources, "Generation tokens include reasoning for thinking models. Context must leave room for the question, evidence and generation. Explicit thread counts are passed to the runtime without a Pearl hardware cap.");
         const idle = number(resources, "Unload after idle seconds", 15, 300, 15);
         note(resources, "Conversations stay in this session only. Disabling the assistant clears conversations and stops its processes. Close or Escape cancels work; clicking another window keeps the chat open.");
-        const status = w.label("", "pearl-secondary");
-        status.setWrap(1);
-        status.setSelectable(1);
-        host.append(status.as(gtk.Widget));
-        const cancel_button = button(host, "Cancel operation");
-        self.* = .{ .host = host, .editor = editor, .enabled = enabled, .model = model, .model_license = license, .custom = custom, .read_pages = read_pages, .all = all, .threads = threads, .context = context, .tokens = tokens, .idle = idle, .provider = provider, .provider_names = names, .provider_kind = provider_kind, .provider_name = provider_name, .endpoint = endpoint, .engine_id = engine_id, .language = language, .provider_enabled = provider_enabled, .default_provider = default_provider, .safe = safe, .secret = secret, .session_key = session_key, .status = status, .readiness = readiness, .cancel_button = cancel_button, .runtime_source = runtime_source, .runtime_path = runtime_path, .compute_mode = compute_mode, .backend = backend, .device = device, .device_names = device_names, .fallback = fallback, .layers = layers, .gpu_memory = gpu_memory, .runtime_details = runtime_details, .buttons = .{ download, verify, remove, test_provider, store_key, remove_key, discover, runtime_check, benchmark, setup_runtime } };
+        self.* = .{ .host = host, .editor = editor, .enabled = enabled, .model = model, .model_license = license, .custom = custom, .read_pages = read_pages, .all = all, .threads = threads, .context = context, .tokens = tokens, .idle = idle, .provider = provider, .provider_names = names, .provider_kind = provider_kind, .provider_name = provider_name, .endpoint = endpoint, .engine_id = engine_id, .language = language, .provider_enabled = provider_enabled, .default_provider = default_provider, .safe = safe, .secret = secret, .session_key = session_key, .status = status, .readiness = readiness, .cancel_button = cancel_button, .runtime_source = runtime_source, .runtime_path = runtime_path, .compute_mode = compute_mode, .backend = backend, .device = device, .device_names = device_names, .fallback = fallback, .layers = layers, .gpu_memory = gpu_memory, .runtime_details = runtime_details, .buttons = .{ download, verify, remove, test_provider, store_key, remove_key, discover, runtime_check, benchmark, setup_runtime }, .model_options = model_options, .runtime_options = runtime_options, .engines_section = engines_section, .resources_section = resources_section, .enable_summary = enable_summary, .runtime_summary = runtime_summary, .model_status = model_status, .runtime_status = runtime_status, .provider_status = provider_status, .provider_editor = provider_editor, .credentials = credentials, .legacy_notice = legacy_notice, .gpu_options = gpu_options, .custom_runtime = custom_runtime, .operation = operation, .comparison_status = comparison_status, .local_cancels = .{ model_cancel, runtime_cancel, provider_cancel } };
         for ([_]*gtk.Switch{ enabled, read_pages, all, provider_enabled, default_provider, safe, fallback }) |s| _ = object.Object.signals.notify.connect(s.as(object.Object), *View, changed, self, .{ .detail = "active" });
-        for ([_]*gtk.DropDown{ model, provider_kind, runtime_source, compute_mode, backend }) |s| _ = object.Object.signals.notify.connect(s.as(object.Object), *View, changed, self, .{ .detail = "selected" });
+        for ([_]*gtk.DropDown{ model, provider_kind, runtime_source, backend }) |s| _ = object.Object.signals.notify.connect(s.as(object.Object), *View, changed, self, .{ .detail = "selected" });
+        for (compute_mode.buttons) |b| _ = gtk.CheckButton.signals.toggled.connect(b, *View, computeChanged, self, .{});
+        self.compute_mode.connectKeys();
         for ([_]*gtk.Entry{ custom, provider_name, endpoint, engine_id, language, runtime_path }) |e| _ = gtk.Editable.signals.changed.connect(e.as(gtk.Editable), *View, textChanged, self, .{});
         for ([_]*gtk.SpinButton{ threads, context, tokens, idle, layers, gpu_memory }) |s| _ = gtk.SpinButton.signals.value_changed.connect(s, *View, numberChanged, self, .{});
         _ = object.Object.signals.notify.connect(provider.as(object.Object), *View, providerSelected, self, .{ .detail = "selected" });
@@ -178,9 +234,10 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(remove_provider, *View, removeProvider, self, .{});
         for (self.buttons) |b| _ = gtk.Button.signals.clicked.connect(b, *View, actionClicked, self, .{});
         _ = gtk.Button.signals.clicked.connect(cancel_button, *View, cancelClicked, self, .{});
+        for (self.local_cancels) |b| _ = gtk.Button.signals.clicked.connect(b, *View, cancelClicked, self, .{});
         _ = gtk.Button.signals.clicked.connect(browse, *View, browseClicked, self, .{});
         _ = object.Object.signals.notify.connect(device.as(object.Object), *View, deviceSelected, self, .{ .detail = "selected" });
-        self.comparison = try @import("benchmark_view.zig").View.create(models, editor, self, comparisonAvailable);
+        self.comparison = try @import("benchmark_view.zig").View.create(comparison_host, editor, self, comparisonAvailable);
         self.timer = glib.timeoutAdd(250, tick, self);
         self.update();
         return self;
@@ -222,7 +279,10 @@ pub const View = struct {
     fn save(self: *View) void {
         if (self.filling or self.editing or !self.editor.editable()) return;
         self.editing = true;
-        defer self.editing = false;
+        defer {
+            self.editing = false;
+            self.update();
+        }
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
         const alloc = arena.allocator();
@@ -259,7 +319,7 @@ pub const View = struct {
             config.providers = list;
             if (self.default_provider.getActive() != 0) config.default_provider_id = p.id else if (std.mem.eql(u8, p.id, config.default_provider_id)) config.default_provider_id = "";
         }
-        self.runtime_details.setText("Selection changed; check the runtime and model before use.");
+        if (model_changed and std.mem.eql(u8, selected_model, "custom")) self.model_options.expander.setExpanded(1);
         self.commit(value, alloc) catch |err| self.editor.error_code.set(@errorName(err));
     }
     pub fn update(self: *View) void {
@@ -271,6 +331,38 @@ pub const View = struct {
         const alloc = arena.allocator();
         const value = self.document(alloc) catch return;
         const config = value.assistant;
+        config.validate() catch |err| switch (err) {
+            error.AbsoluteRuntimePathRequired, error.SelectGpuDevice, error.InvalidOffloadLayers, error.InvalidGpuMemoryTarget => self.runtime_options.expander.setExpanded(1),
+            error.AbsoluteModelPathRequired, error.UnknownAssistantModel => self.model_options.expander.setExpanded(1),
+            error.InvalidAssistantContext, error.InvalidAssistantBudget => self.resources_section.expander.setExpanded(1),
+            else => self.engines_section.expander.setExpanded(1),
+        };
+        const fingerprint = runtimeFingerprint(alloc, config) catch return;
+        if (self.checked_fingerprint) |checked| if (checked != fingerprint) {
+            self.checked_fingerprint = null;
+            self.runtime_details.setText("Not checked for this draft. Check the runtime and model before use.");
+        };
+        const committed = std.json.parseFromSliceLeaky(prefs.Preferences, alloc, self.editor.current orelse self.editor.base orelse "{}", .{}) catch prefs.Preferences{};
+        self.enable_summary.setText(if (config.enabled != committed.assistant.enabled)
+            (if (config.enabled) "On in draft · Apply & save to enable" else "Off in draft · Apply & save to disable")
+        else if (config.enabled) "On · Open with Super + Space" else "Off · Configure the assistant before enabling it");
+        const runtime_name = switch (config.runtime.source) {
+            .system => "System installation",
+            .packaged => "Pearl runtime package",
+            .custom => "Custom executable",
+        };
+        self.runtime_summary.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ runtime_name, if (self.checked_fingerprint != null) "Check details available below" else "Not checked for this draft" }, 0) catch "Not checked for this draft");
+        self.custom_runtime.as(gtk.Widget).setVisible(@intFromBool(config.runtime.source == .custom));
+        self.gpu_options.as(gtk.Widget).setVisible(@intFromBool(config.compute.mode != .cpu));
+        layout.showRow(self.custom.as(gtk.Widget), std.mem.eql(u8, config.model_id, "custom"));
+        self.resources_section.summary.setText(std.fmt.allocPrintSentinel(alloc, "{s} · Unload after {d} seconds · Read result pages {s}", .{ if (config.cpu_threads == 0 and config.context_tokens == 0 and config.answer_tokens == 0) @as([]const u8, "Automatic model profile") else "Custom resource settings", config.idle_unload_seconds, if (config.read_pages) "on" else "off" }, 0) catch "Resource settings");
+        var engine_count: usize = 0;
+        var default_name: []const u8 = "No default engine";
+        for (config.providers) |p| {
+            if (p.enabled) engine_count += 1;
+            if (std.mem.eql(u8, p.id, config.default_provider_id)) default_name = p.name;
+        }
+        if (self.last_action == null or !providerAction(self.last_action.?)) self.engines_section.summary.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {d} enabled · {s}", .{ default_name, engine_count, if (config.search_mode == .all) "Search all enabled (maximum 3)" else "Default engine only" }, 0) catch "Search engines");
         self.host.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable()));
         self.enabled.setActive(@intFromBool(config.enabled));
         self.model.setSelected(registry.selection(config.model_id));
@@ -303,10 +395,17 @@ pub const View = struct {
         fillNumber(self.tokens, config.answer_tokens);
         fillNumber(self.idle, config.idle_unload_seconds);
         const current = @min(self.provider_index, config.providers.len -| 1);
-        self.provider_names.splice(0, self.provider_names.as(gio.ListModel).getNItems(), null);
-        for (config.providers) |p| self.provider_names.append(alloc.dupeZ(u8, p.name) catch continue);
+        var names_changed = self.provider_names.as(gio.ListModel).getNItems() != config.providers.len;
+        if (!names_changed) for (config.providers, 0..) |p, i| {
+            if (!std.mem.eql(u8, std.mem.span(self.provider_names.getString(@intCast(i)).?), p.name)) names_changed = true;
+        };
+        if (names_changed) {
+            self.provider_names.splice(0, self.provider_names.as(gio.ListModel).getNItems(), null);
+            for (config.providers) |p| self.provider_names.append(alloc.dupeZ(u8, p.name) catch continue);
+        }
         self.provider_index = current;
         self.provider.setSelected(@intCast(current));
+        self.provider_editor.as(gtk.Widget).setVisible(@intFromBool(current < config.providers.len));
         if (current < config.providers.len) {
             const p = config.providers[current];
             self.provider_kind.setSelected(@intFromEnum(p.kind));
@@ -317,6 +416,10 @@ pub const View = struct {
             self.endpoint.as(gtk.Widget).setSensitive(@intFromBool(p.kind == .google or p.kind == .searxng));
             self.engine_id.as(gtk.Widget).setSensitive(@intFromBool(p.kind == .google_legacy));
             const needs_key = p.kind == .brave or p.kind == .google_legacy;
+            layout.showRow(self.endpoint.as(gtk.Widget), p.kind == .google or p.kind == .searxng);
+            layout.showRow(self.engine_id.as(gtk.Widget), p.kind == .google_legacy);
+            self.credentials.as(gtk.Widget).setVisible(@intFromBool(needs_key));
+            self.legacy_notice.as(gtk.Widget).setVisible(@intFromBool(p.kind == .google_legacy));
             self.secret.as(gtk.Widget).setSensitive(@intFromBool(needs_key));
             self.session_key.as(gtk.Widget).setSensitive(@intFromBool(needs_key));
             self.provider_enabled.setActive(@intFromBool(p.enabled));
@@ -332,11 +435,12 @@ pub const View = struct {
             self.model_license.as(gtk.Widget).setVisible(0);
             self.readiness.setText("Custom GGUF: verify compatibility before use.");
         }
-        for (self.buttons) |b| b.as(gtk.Widget).setSensitive(@intFromBool(self.job == null));
+        const available = self.job == null and (if (self.comparison) |comparison| !comparison.busy() else true);
+        for (self.buttons) |b| b.as(gtk.Widget).setSensitive(@intFromBool(available));
         const needs_key = current < config.providers.len and (config.providers[current].kind == .brave or config.providers[current].kind == .google_legacy);
-        self.buttons[@intFromEnum(Action.store_key)].as(gtk.Widget).setSensitive(@intFromBool(self.job == null and needs_key));
-        self.buttons[@intFromEnum(Action.remove_key)].as(gtk.Widget).setSensitive(@intFromBool(self.job == null and needs_key));
-        self.cancel_button.as(gtk.Widget).setSensitive(@intFromBool(if (self.job) |job| job.action != .setup_runtime else false));
+        self.buttons[@intFromEnum(Action.store_key)].as(gtk.Widget).setSensitive(@intFromBool(available and needs_key));
+        self.buttons[@intFromEnum(Action.remove_key)].as(gtk.Widget).setSensitive(@intFromBool(available and needs_key));
+        self.feedback();
     }
     fn providerSelected(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
         if (self.filling) return;
@@ -448,14 +552,19 @@ pub const View = struct {
                 }
                 return;
             }
-            self.begin(@enumFromInt(i)) catch |err| self.status.setText(@errorName(err));
+            self.begin(@enumFromInt(i)) catch |err| {
+                self.status.setText(@errorName(err));
+                self.revealOperation();
+            };
             return;
         };
     }
     fn begin(self: *View, action: Action) !void {
+        self.last_action = action;
         if (self.comparison) |comparison| if (comparison.busy()) return error.OperationInProgress;
         if (self.job != null) return error.OperationInProgress;
         if (!self.editor.editable()) return error.SettingsUnavailable;
+        if (action == .verify or action == .runtime_check or action == .discover or action == .setup_runtime) self.checked_fingerprint = null;
         const job = try a.create(Job);
         job.* = .{ .view = self, .action = action, .config = undefined, .provider = .{}, .secret = undefined, .session_only = self.session_key.getActive() != 0 };
         errdefer {
@@ -588,6 +697,7 @@ pub const View = struct {
                 const tested_json = std.json.Stringify.valueAlloc(alloc, job.config, .{}) catch "";
                 const current_json = if (current) |value| std.json.Stringify.valueAlloc(alloc, value.assistant, .{}) catch "" else "invalid";
                 self.runtime_details.setText(if (std.mem.eql(u8, tested_json, current_json)) alloc.dupeZ(u8, job.details) catch "Check completed" else "The tested draft has changed. Check the new selection before use.");
+                self.checked_fingerprint = runtimeFingerprint(alloc, job.config) catch null;
             }
             if (job.action == .apply_status) {
                 if (job.busy) self.confirmApply() else self.editor.act(.apply);
@@ -604,10 +714,16 @@ pub const View = struct {
             else => @errorName(err),
         } else "Operation complete. Apply saves your configuration selection.");
         if (job.failure != null and (job.action == .runtime_check or job.action == .verify or job.action == .discover or job.action == .setup_runtime)) self.runtime_details.setText("Compatibility not confirmed. Review the operation error and retry setup or the runtime check.");
+        if (providerAction(job.action)) {
+            const message = std.fmt.allocPrintSentinel(job.arena.allocator(), "{s}: {s}", .{ job.provider.name, std.mem.span(self.status.getText()) }, 0) catch "Engine operation finished";
+            self.status.setText(message);
+        }
+        if (job.failure != null) self.revealOperation();
         self.update();
     }
     fn cancelClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         if (self.cancel) |cancel| cancel.cancel();
+        if (self.comparison) |comparison| if (comparison.cancel) |cancel| cancel.cancel();
     }
     fn tick(data: ?*anyopaque) callconv(.c) c_int {
         const self: *View = @ptrCast(@alignCast(data.?));
@@ -617,7 +733,49 @@ pub const View = struct {
             self.status.setText(text);
         };
         if (!self.editor.editable()) if (self.cancel) |cancel| cancel.cancel();
+        self.feedback();
         return 1;
+    }
+    fn computeChanged(button_: *gtk.CheckButton, self: *View) callconv(.c) void {
+        if (button_.getActive() != 0) self.save();
+    }
+    fn revealOperation(self: *View) void {
+        const action = self.last_action orelse return;
+        if (providerAction(action)) self.engines_section.expander.setExpanded(1) else switch (action) {
+            .download, .remove => self.model_options.expander.setExpanded(1),
+            .verify, .runtime_check, .discover, .setup_runtime => self.runtime_options.expander.setExpanded(1),
+            else => {},
+        }
+    }
+    fn feedback(self: *View) void {
+        const text = self.status.getText();
+        const comparing = if (self.comparison) |comparison| comparison.busy() else false;
+        if (comparing) self.comparison_status.setText(self.comparison.?.status.getText());
+        self.comparison_status.as(gtk.Widget).setVisible(@intFromBool(comparing));
+        self.status.as(gtk.Widget).setVisible(@intFromBool(!comparing));
+        self.operation.as(gtk.Widget).setVisible(@intFromBool(text[0] != 0 or comparing));
+        const cancellable = if (self.job) |job| job.action != .setup_runtime else comparing;
+        self.cancel_button.as(gtk.Widget).setVisible(@intFromBool(cancellable));
+        self.cancel_button.as(gtk.Widget).setSensitive(@intFromBool(cancellable));
+        for (self.local_cancels, 0..) |b, i| {
+            const active = if (self.job) |job| job.action != .setup_runtime and i == operationSection(job.action) else false;
+            b.as(gtk.Widget).setVisible(@intFromBool(active));
+            b.as(gtk.Widget).setSensitive(@intFromBool(active));
+        }
+        if (self.last_action) |action| {
+            const local = if (providerAction(action)) self.provider_status else switch (action) {
+                .download, .verify, .remove => self.model_status,
+                else => self.runtime_status,
+            };
+            if (!std.mem.eql(u8, std.mem.span(local.getText()), std.mem.span(text))) local.setText(text);
+            if (providerAction(action)) self.engines_section.summary.setText(text) else if (action == .runtime_check or action == .discover or action == .setup_runtime) self.runtime_options.summary.setText(text);
+        }
+        for ([_]*gtk.Label{ self.model_status, self.runtime_status, self.provider_status }) |label| label.as(gtk.Widget).setVisible(@intFromBool(label.getText()[0] != 0));
+        const available = self.job == null and !comparing;
+        for (self.buttons, 0..) |b, i| {
+            if (i == @intFromEnum(Action.store_key) or i == @intFromEnum(Action.remove_key)) continue;
+            b.as(gtk.Widget).setSensitive(@intFromBool(available));
+        }
     }
     fn changed(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
         self.save();
@@ -630,11 +788,7 @@ pub const View = struct {
     }
 };
 fn section(host: *gtk.Box, title: [:0]const u8) *gtk.Box {
-    const box = w.column(10);
-    box.as(gtk.Widget).addCssClass("settings-card");
-    box.append(w.label(title, "settings-row-title").as(gtk.Widget));
-    host.append(box.as(gtk.Widget));
-    return box;
+    return layout.card(host, title);
 }
 fn note(host: *gtk.Box, text: [:0]const u8) void {
     const l = w.label(text, "pearl-secondary");
@@ -642,11 +796,7 @@ fn note(host: *gtk.Box, text: [:0]const u8) void {
     host.append(l.as(gtk.Widget));
 }
 fn formRow(host: *gtk.Box, title: [:0]const u8, widget: *gtk.Widget) void {
-    const box = w.column(4);
-    box.append(w.label(title, "settings-row-title").as(gtk.Widget));
-    w.name(widget, title);
-    box.append(widget);
-    host.append(box.as(gtk.Widget));
+    layout.row(host, title, widget);
 }
 fn toggle(host: *gtk.Box, title: [:0]const u8) *gtk.Switch {
     const s = gtk.Switch.new();
@@ -657,6 +807,8 @@ fn toggle(host: *gtk.Box, title: [:0]const u8) *gtk.Switch {
 fn entry(host: *gtk.Box, title: [:0]const u8, max: c_int) *gtk.Entry {
     const e = gtk.Entry.new();
     e.setMaxLength(max);
+    e.as(gtk.Editable).setWidthChars(14);
+    e.as(gtk.Editable).setMaxWidthChars(22);
     formRow(host, title, e.as(gtk.Widget));
     return e;
 }
@@ -664,7 +816,11 @@ fn choice(host: *gtk.Box, title: [:0]const u8, names: []const [:0]const u8) *gtk
     var list: [8]?[*:0]const u8 = @splat(null);
     for (names, 0..) |name, i| list[i] = name;
     const d = gtk.DropDown.newFromStrings(@ptrCast(&list));
-    formRow(host, title, d.as(gtk.Widget));
+    layout.wrapChoice(d);
+    if (std.mem.eql(u8, title, "Selected model")) {
+        w.name(d.as(gtk.Widget), title);
+        host.append(d.as(gtk.Widget));
+    } else formRow(host, title, d.as(gtk.Widget));
     return d;
 }
 fn number(host: *gtk.Box, title: [:0]const u8, min: f64, max: f64, step: f64) *gtk.SpinButton {
@@ -679,10 +835,31 @@ fn fillNumber(spin: *gtk.SpinButton, value: u32) void {
 }
 fn button(host: *gtk.Box, title: [:0]const u8) *gtk.Button {
     const b = w.wrappingButton(title);
+    b.as(gtk.Widget).addCssClass("settings-value");
+    b.as(gtk.Widget).setHalign(.start);
     host.append(b.as(gtk.Widget));
     return b;
 }
 fn fill(alloc: std.mem.Allocator, e: *gtk.Entry, text: []const u8) void {
     if (e.as(gtk.Widget).hasFocus() != 0 or e.as(gtk.Widget).getFocusChild() != null) return;
-    e.as(gtk.Editable).setText(alloc.dupeZ(u8, text) catch return);
+    if (!std.mem.eql(u8, std.mem.span(e.as(gtk.Editable).getText()), text)) e.as(gtk.Editable).setText(alloc.dupeZ(u8, text) catch return);
+}
+fn statusLabel(host: *gtk.Box) *gtk.Label {
+    const label = w.label("", "pearl-secondary");
+    label.setSelectable(1);
+    host.append(label.as(gtk.Widget));
+    return label;
+}
+fn providerAction(action: Action) bool {
+    return action == .test_provider or action == .store_key or action == .remove_key;
+}
+fn operationSection(action: Action) usize {
+    return if (providerAction(action)) 2 else switch (action) {
+        .download, .verify, .remove => 0,
+        else => 1,
+    };
+}
+fn runtimeFingerprint(alloc: std.mem.Allocator, config: cfg.Config) !u64 {
+    const text = try std.json.Stringify.valueAlloc(alloc, .{ config.model_id, config.custom_model, config.runtime, config.compute, config.cpu_threads, config.context_tokens, config.answer_tokens }, .{});
+    return std.hash.Wyhash.hash(0, text);
 }

@@ -1,0 +1,81 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='1120' viewBox='0 0 1200 1120' role='img' aria-labelledby='title desc'><title id='title'>Assistant settings layout — comparison</title><desc id='desc'>Static design proposal using Pearl settings cards, summary disclosures, native control styling and a persistent shared draft footer. Sample states and data are illustrative.</desc>
+<style>text{font-family:Inter,'DejaVu Sans',sans-serif;font-size:14px;fill:#e7e1ec}.bg{fill:#211f26}.sidebar{fill:#1e1c21}.card{fill:#2b2831}.button{fill:#302c37;stroke:#4b4554}.selected{fill:#4f3787;stroke:#d0bcff}.accent{fill:#d0bcff}.on-accent{fill:#381e72}.muted{fill:#c4bbcf}.strong{font-weight:600}.small{font-size:12px}.tiny{font-size:10px;letter-spacing:1.4px}.section{font-size:17px;font-weight:600}.heading{font-size:30px;font-weight:500;letter-spacing:-.6px}.center{text-anchor:middle}.right{text-anchor:end}.line{stroke:#403a48;fill:none}.hidden{display:none}</style>
+<rect x='0' y='0' width='1200' height='1120' rx='16' class='bg'/>
+<rect x='0' y='0' width='1200' height='52' rx='0' class='sidebar'/>
+<text x='22' y='32' class='strong'>●  Pearl Settings</text>
+<text x='1178' y='32' class='right muted'>−   □   ×</text>
+<rect x='0' y='52' width='220' height='1068' rx='0' class='sidebar'/>
+<text x='24' y='84' class='tiny muted'>GENERAL</text>
+<text x='24' y='118' class=''>Overview</text>
+<text x='24' y='162' class='tiny muted'>CONNECTIONS</text>
+<text x='24' y='196' class=''>Network</text>
+<text x='24' y='240' class=''>Bluetooth</text>
+<text x='24' y='284' class='tiny muted'>DEVICES</text>
+<text x='24' y='318' class=''>Sound</text>
+<text x='24' y='362' class=''>Power &amp; battery</text>
+<text x='24' y='406' class='tiny muted'>DESKTOP</text>
+<text x='24' y='440' class=''>Appearance</text>
+<rect x='12' y='459' width='196' height='42' rx='11' class='selected'/>
+<text x='24' y='484' class=''>Assistant</text>
+<text x='24' y='528' class=''>Bar &amp; dock</text>
+<text x='24' y='572' class=''>Notifications</text>
+<text x='24' y='616' class='tiny muted'>SYSTEM</text>
+<text x='24' y='650' class=''>System</text>
+<text x='24' y='694' class=''>Session &amp; lock</text>
+<text x='24' y='738' class=''>Aqueous</text>
+<text x='24' y='782' class=''>Advanced</text>
+<text x='24' y='826' class=''>Plugins</text>
+<text x='250' y='101' class='heading'>Assistant</text>
+<text x='250' y='127' class='muted'>Local answers with your chosen search engines.</text>
+<text x='250' y='160' class='small muted'>Assistant / Compare models · Expanded section · Illustrative results</text>
+<rect x='250' y='180' width='920' height='252' rx='16' class='card'/>
+<text x='270' y='212' class='section'>Choose models</text>
+<text x='270' y='237' class='small muted'>Uses local sample evidence. No searches or conversation history are used.</text>
+<text x='270' y='278' class=''>☑  LFM2.5-1.2B-Instruct · Q4_K_M</text>
+<text x='1150' y='278' class='right muted'>731 MB · Downloaded · License ↗</text>
+<text x='270' y='322' class=''>☑  Qwen3-4B-Instruct-2507 · Q4_K_M</text>
+<text x='1150' y='322' class='right muted'>2.50 GB · Downloaded · License ↗</text>
+<text x='270' y='366' class=''>☐  LFM2.5-2.6B · Q4_K_M</text>
+<text x='1150' y='366' class='right muted'>1.67 GB · Not installed · License ↗</text>
+<text x='270' y='407' class='small'>Other models (2)  ›</text>
+<text x='1150' y='407' class='right small muted'>2 selected · No downloads needed</text>
+<rect x='250' y='448' width='920' height='156' rx='16' class='card'/>
+<text x='270' y='490' class=''>Hardware / comparison depth</text>
+<text x='1150' y='490' class='right muted'>CPU   ⌄        Quick · model profiles   ⌄</text>
+<text x='270' y='519' class='small muted'>Warm-up + 3 measured runs per fixture. Detailed comparisons take longer.</text>
+<rect x='270' y='540' width='236' height='40' rx='12' class='button'/>
+<text x='388' y='565' class='center'>Compare installed selections</text>
+<text x='526' y='566' class='small muted'>Starts immediately · You can cancel</text>
+<rect x='250' y='620' width='920' height='350' rx='16' class='card'/>
+<text x='270' y='652' class='section'>Saved results</text>
+<text x='1150' y='652' class='right small'>Sort: Completion time  ⌄</text>
+<text x='270' y='680' class='small muted'>Example run · CPU · Same 4096-token context · Values are mock data</text>
+<text x='270' y='716' class='small muted'>MODEL / ACTUAL BACKEND</text>
+<text x='640' y='716' class='small muted'>COMPLETE ANSWER</text>
+<text x='890' y='716' class='small muted'>PEAK RAM / OUTCOME</text>
+<rect x='260' y='731' width='900' height='40' rx='8' class='selected'/>
+<text x='270' y='758' class=''>●  LFM2.5-1.2B-Instruct · CPU</text>
+<text x='1150' y='758' class='right muted'></text>
+<text x='640' y='758' class=''>4.8 s · range 4.4–5.3 s</text>
+<text x='890' y='758' class=''>1.4 GiB · Completed</text>
+<text x='270' y='803' class=''>○  Qwen3-4B-Instruct-2507 · CPU</text>
+<text x='1150' y='803' class='right muted'></text>
+<text x='640' y='803' class=''>8.9 s · range 8.3–9.6 s</text>
+<text x='890' y='803' class=''>3.6 GiB · Completed</text>
+<rect x='270' y='829' width='138' height='40' rx='12' class='button'/>
+<text x='339' y='854' class='center'>Show samples</text>
+<rect x='418' y='829' width='198' height='40' rx='12' class='button'/>
+<text x='517' y='854' class='center'>Use this configuration</text>
+<text x='636' y='855' class='small muted'>Updates the draft; Apply saves it</text>
+<text x='270' y='901' class='small muted'>Download size is separate from runtime RAM. Inspect samples before choosing.</text>
+<text x='270' y='939' class='small'>History  ⌄       Refresh       Export selected…       Delete selected…</text>
+<rect x='220' y='1042' width='980' height='78' rx='0' class='bg'/>
+<path d='M220 1042H1200' class='line'/>
+<text x='250' y='1072' class='small muted'>Unsaved Pearl preferences · shared across tabs</text>
+<text x='250' y='1093' class='small muted'>Downloads and tests are separate immediate actions.</text>
+<rect x='940' y='1061' width='92' height='40' rx='12' class='button'/>
+<text x='986' y='1086' class='center'>Discard</text>
+<rect x='1044' y='1061' width='140' height='40' rx='12' class='accent'/>
+<text x='1114' y='1086' class='on-accent center'>Apply &amp; save</text>
+<rect x='1193' y='410' width='3' height='180' rx='2' class='muted'/>
+</svg>

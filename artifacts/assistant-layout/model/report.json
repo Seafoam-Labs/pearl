@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "checks": {
+    "all_suggested_models_and_custom_are_selectable_in_draft": true,
+    "explicit_resources_persist_only_after_apply": true,
+    "no_models_downloaded": true
+  }
+}

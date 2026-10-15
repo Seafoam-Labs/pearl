@@ -1,0 +1,89 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='1120' viewBox='0 0 1200 1120' role='img' aria-labelledby='title desc'><title id='title'>Assistant settings layout — details</title><desc id='desc'>Static design proposal using Pearl settings cards, summary disclosures, native control styling and a persistent shared draft footer. Sample states and data are illustrative.</desc>
+<style>text{font-family:Inter,'DejaVu Sans',sans-serif;font-size:14px;fill:#e7e1ec}.bg{fill:#211f26}.sidebar{fill:#1e1c21}.card{fill:#2b2831}.button{fill:#302c37;stroke:#4b4554}.selected{fill:#4f3787;stroke:#d0bcff}.accent{fill:#d0bcff}.on-accent{fill:#381e72}.muted{fill:#c4bbcf}.strong{font-weight:600}.small{font-size:12px}.tiny{font-size:10px;letter-spacing:1.4px}.section{font-size:17px;font-weight:600}.heading{font-size:30px;font-weight:500;letter-spacing:-.6px}.center{text-anchor:middle}.right{text-anchor:end}.line{stroke:#403a48;fill:none}.hidden{display:none}</style>
+<rect x='0' y='0' width='1200' height='1120' rx='16' class='bg'/>
+<rect x='0' y='0' width='1200' height='52' rx='0' class='sidebar'/>
+<text x='22' y='32' class='strong'>●  Pearl Settings</text>
+<text x='1178' y='32' class='right muted'>−   □   ×</text>
+<rect x='0' y='52' width='220' height='1068' rx='0' class='sidebar'/>
+<text x='24' y='84' class='tiny muted'>GENERAL</text>
+<text x='24' y='118' class=''>Overview</text>
+<text x='24' y='162' class='tiny muted'>CONNECTIONS</text>
+<text x='24' y='196' class=''>Network</text>
+<text x='24' y='240' class=''>Bluetooth</text>
+<text x='24' y='284' class='tiny muted'>DEVICES</text>
+<text x='24' y='318' class=''>Sound</text>
+<text x='24' y='362' class=''>Power &amp; battery</text>
+<text x='24' y='406' class='tiny muted'>DESKTOP</text>
+<text x='24' y='440' class=''>Appearance</text>
+<rect x='12' y='459' width='196' height='42' rx='11' class='selected'/>
+<text x='24' y='484' class=''>Assistant</text>
+<text x='24' y='528' class=''>Bar &amp; dock</text>
+<text x='24' y='572' class=''>Notifications</text>
+<text x='24' y='616' class='tiny muted'>SYSTEM</text>
+<text x='24' y='650' class=''>System</text>
+<text x='24' y='694' class=''>Session &amp; lock</text>
+<text x='24' y='738' class=''>Aqueous</text>
+<text x='24' y='782' class=''>Advanced</text>
+<text x='24' y='826' class=''>Plugins</text>
+<text x='250' y='101' class='heading'>Assistant</text>
+<text x='250' y='127' class='muted'>Local answers with your chosen search engines.</text>
+<rect x='250' y='150' width='920' height='332' rx='16' class='card'/>
+<text x='270' y='182' class='section'>Runtime setup &amp; checks</text>
+<text x='1150' y='182' class='right'>⌄</text>
+<text x='270' y='226' class=''>Runtime source</text>
+<text x='1150' y='226' class='right muted'>Custom executable   ⌄</text>
+<rect x='270' y='244' width='756' height='42' rx='10' class='button'/>
+<text x='284' y='271' class='muted'>/home/zoey/bin/llama-server</text>
+<rect x='1040' y='244' width='110' height='40' rx='12' class='button'/>
+<text x='1095' y='269' class='center'>Browse…</text>
+<rect x='270' y='300' width='160' height='40' rx='12' class='button'/>
+<text x='350' y='325' class='center'>Set up runtime…</text>
+<rect x='440' y='300' width='182' height='40' rx='12' class='button'/>
+<text x='531' y='325' class='center'>Discover devices now</text>
+<rect x='632' y='300' width='218' height='40' rx='12' class='button'/>
+<text x='741' y='325' class='center'>Check runtime &amp; model now</text>
+<text x='270' y='367' class='small muted'>Setup may install packages immediately; Apply saves only the runtime selection.</text>
+<text x='270' y='391' class='small muted'>Not checked for this draft · Checks run locally and do not send searches.</text>
+<text x='270' y='436' class=''>GPU options</text>
+<text x='1150' y='436' class='right muted'>Automatic backend · Automatic device   ›</text>
+<text x='270' y='464' class='small muted'>Device, fallback, layer and memory controls appear when relevant to the selected mode.</text>
+<rect x='250' y='498' width='920' height='270' rx='16' class='card'/>
+<text x='270' y='530' class='section'>Search engines</text>
+<text x='1150' y='530' class='right'>⌄</text>
+<text x='270' y='574' class=''>Edit engine</text>
+<text x='1150' y='574' class='right muted'>Bing · Default   ⌄</text>
+<text x='270' y='616' class=''>Safe search</text>
+<text x='1150' y='616' class='right muted'></text>
+<rect x='1106' y='600' width='44' height='24' rx='12' class='accent'/>
+<circle cx='1137' cy='612' r='8' class='on-accent'/>
+<text x='270' y='651' class='small muted'>Test sends “Pearl desktop” to Bing now. Changing settings does not send a request.</text>
+<rect x='270' y='670' width='180' height='40' rx='12' class='button'/>
+<text x='360' y='695' class='center'>Test connection now</text>
+<rect x='460' y='670' width='160' height='40' rx='12' class='button'/>
+<text x='540' y='695' class='center'>Add engine…</text>
+<rect x='630' y='670' width='178' height='40' rx='12' class='button'/>
+<text x='719' y='695' class='center'>Engine options  ⌄</text>
+<text x='270' y='746' class='small'>Search all enabled engines (maximum 3)</text>
+<rect x='1106' y='730' width='44' height='24' rx='12' class='button'/>
+<circle cx='1119' cy='742' r='8' class='muted'/>
+<rect x='250' y='784' width='920' height='206' rx='16' class='card'/>
+<text x='270' y='816' class='section'>Resources &amp; behavior</text>
+<text x='270' y='860' class=''>CPU threads / context / generation tokens</text>
+<text x='1150' y='860' class='right muted'>Automatic / Model profile / Model profile  ›</text>
+<text x='270' y='905' class=''>Unload model after idle</text>
+<text x='1150' y='905' class='right muted'>−       60 seconds       +</text>
+<text x='270' y='950' class=''>Read search result pages</text>
+<text x='1150' y='950' class='right muted'></text>
+<rect x='1106' y='934' width='44' height='24' rx='12' class='accent'/>
+<circle cx='1137' cy='946' r='8' class='on-accent'/>
+<text x='270' y='979' class='small muted'>Conversations stay in this session. Applying Off stops the assistant and clears them.</text>
+<rect x='220' y='1042' width='980' height='78' rx='0' class='bg'/>
+<path d='M220 1042H1200' class='line'/>
+<text x='250' y='1072' class='small muted'>Unsaved Pearl preferences · shared across tabs</text>
+<text x='250' y='1093' class='small muted'>Downloads and tests are separate immediate actions.</text>
+<rect x='940' y='1061' width='92' height='40' rx='12' class='button'/>
+<text x='986' y='1086' class='center'>Discard</text>
+<rect x='1044' y='1061' width='140' height='40' rx='12' class='accent'/>
+<text x='1114' y='1086' class='on-accent center'>Apply &amp; save</text>
+<rect x='1193' y='410' width='3' height='180' rx='2' class='muted'/>
+</svg>

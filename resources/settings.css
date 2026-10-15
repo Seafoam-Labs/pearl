@@ -16,6 +16,11 @@
 .settings-window.$scope .appearance-mode radio { background: $high$; border-color: $outline$; }
 .settings-window.$scope .appearance-mode radio:checked { background: $primary$; }
 .settings-window.$scope .appearance-mode:focus-visible { outline-color: $primary$; }
+.settings-window.$scope .assistant-mode:checked { background: $primary_container$; border-color: $primary$; }
+.settings-window.$scope .assistant-mode radio { background: $high$; border-color: $outline$; }
+.settings-window.$scope .assistant-mode radio:checked { background: $primary$; }
+.settings-window.$scope .assistant-mode:focus-visible { outline-color: $primary$; }
+.settings-window.$scope .assistant-view dropdown > button { background: mix($high$, $outline$, 0.1); border: 1px solid alpha($outline$, 0.15); }
 .settings-window.$scope .power-chart { color: $primary$; }
 .settings-window.$scope .power-battery-icon block.filled { background: $primary$; }
 .settings-window.$scope .power-battery-icon block.empty { background: mix($high$, $outline$, 0.25); }

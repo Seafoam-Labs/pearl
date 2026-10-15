@@ -1,0 +1,126 @@
+{
+  "status": "passed",
+  "checks": [
+    "native-disclosures-do-not-edit-draft",
+    "radio-selection-shared-draft-navigation-and-discard",
+    "custom-runtime-path-and-local-failure-recovery",
+    "conditional-engine-fields-preserve-hidden-values",
+    "resources-preserve-focus-and-expansion-without-implicit-operations",
+    "dark-light-gtk-narrow-large-text-scales-and-radio-keyboard"
+  ],
+  "captures": [
+    {
+      "name": "dark",
+      "path": "session/dark.png",
+      "window": {
+        "x": 200,
+        "y": 94,
+        "width": 1200,
+        "height": 960
+      }
+    },
+    {
+      "name": "runtime-recovery",
+      "path": "session/runtime-recovery.png",
+      "window": {
+        "x": 200,
+        "y": 94,
+        "width": 1200,
+        "height": 960
+      }
+    },
+    {
+      "name": "expanded",
+      "path": "session/expanded.png",
+      "window": {
+        "x": 200,
+        "y": 94,
+        "width": 1200,
+        "height": 960
+      }
+    },
+    {
+      "name": "light",
+      "path": "session/light.png",
+      "window": {
+        "x": 200,
+        "y": 124,
+        "width": 1200,
+        "height": 900
+      }
+    },
+    {
+      "name": "native",
+      "path": "session/native.png",
+      "window": {
+        "x": 280,
+        "y": 124,
+        "width": 1040,
+        "height": 900
+      }
+    },
+    {
+      "name": "narrow",
+      "path": "session/narrow.png",
+      "window": {
+        "x": 605,
+        "y": 124,
+        "width": 390,
+        "height": 900
+      }
+    },
+    {
+      "name": "narrow-light",
+      "path": "session/narrow-light.png",
+      "window": {
+        "x": 580,
+        "y": 124,
+        "width": 440,
+        "height": 900
+      }
+    },
+    {
+      "name": "large-text",
+      "path": "session/large-text.png",
+      "window": {
+        "x": 520,
+        "y": 124,
+        "width": 560,
+        "height": 900
+      }
+    },
+    {
+      "name": "scale-125",
+      "path": "session/scale-125.png",
+      "window": {
+        "x": 120,
+        "y": 64,
+        "width": 1040,
+        "height": 800
+      }
+    },
+    {
+      "name": "scale-150",
+      "path": "session/scale-150.png",
+      "window": {
+        "x": 13,
+        "y": 75,
+        "width": 1040,
+        "height": 653
+      }
+    },
+    {
+      "name": "scale-200",
+      "path": "session/scale-200.png",
+      "window": {
+        "x": 50,
+        "y": 91,
+        "width": 700,
+        "height": 470
+      }
+    }
+  ],
+  "frame_warnings": [
+    "(pearl-settings-test:1236655): Gdk-WARNING **: 17:04:14.376: gdk_frame_timings_discarded() called on already presented frame."
+  ]
+}

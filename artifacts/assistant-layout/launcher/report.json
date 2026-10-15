@@ -1,0 +1,7 @@
+{
+  "status": "running",
+  "checks": {
+    "disabled_by_default_no_agent_or_search": true,
+    "question_rank_exact_app_calculator_and_no_typing_inference": true
+  }
+}

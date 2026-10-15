@@ -1,0 +1,43 @@
+{
+  "build": "passed",
+  "unit_tests": "passed",
+  "format_and_whitespace": "passed",
+  "checks": {
+    "layout": {
+      "status": "passed",
+      "report": "native/results.json"
+    },
+    "models": {
+      "status": "passed",
+      "report": "model/report.json"
+    },
+    "benchmark": {
+      "status": "passed",
+      "report": "benchmark/report.json"
+    },
+    "presentation": {
+      "status": "failed",
+      "reason": "Compositor assertion during output removal after layout/scale checks passed",
+      "report": "presentation/results.json"
+    },
+    "accessibility": {
+      "status": "failed",
+      "reason": "Legacy test-settings-page endpoint unavailable",
+      "report": "accessibility/results.json"
+    },
+    "launcher": {
+      "status": "failed",
+      "reason": "Private compositor tiles the conversation window; floating-window assertion fails before Settings checks",
+      "log": "launcher-failure.log"
+    }
+  },
+  "sha256": {
+    "src/settings/assistant_layout.zig": "bd8c2b8fbde319048f6aa262628326e0e7e9195ad5968349084e5535122abb58",
+    "src/settings/assistant_view.zig": "3997ce16c45f3b75173e7708b22749b3e851ed0a6e7d8793a6c7f2dbb762858b",
+    "src/settings/benchmark_view.zig": "a80c4406819297b3e76067500753dc3cd2624286e4c65feb6204deb9dc2b7551",
+    "resources/settings-layout.css": "a642c9d3cf846bbc3e74ee8610e6ec8e6c7086e51d74e720688dff0581ee5ce2",
+    "resources/settings.css": "931c9a56f73083bffffb9342141bd5cc5870eb87c3377823dfa714df9ffef22e",
+    "zig-out/bin/pearl-settings": "11b68dafbee776ab44bfc297f5d173736de2bc266ba48e0bffe9cdf3051b694f",
+    "zig-out/test/pearl-settings-test": "7ff6e9bd2c89f9465f0b56a7b5cf28da69086f2eaa4cb44208f00d38d8528483"
+  }
+}

@@ -49,6 +49,8 @@ def main():
         legacy.write_text(json.dumps({"assistant": {"cpu_threads": 8, "context_tokens": 8192, "runtime": {"source": "custom", "executable": str(runtime)}}}))
         shell = session.child("pearl", [args.pearl.resolve()], G_DEBUG="fatal-criticals")
         shell.expect("event=control-ready")
+        # The frontend must start after the asynchronous initial preferences load.
+        shell.expect("event=preferences-applied")
         wait_for(lambda: not json.loads(session.run([args.ctl.resolve(), "assistant", "status"]).stdout)["result"]["locked"])
         app = session.child("settings", [args.settings.resolve(), "--page", "assistant"], G_DEBUG="fatal-criticals")
         app.expect("event=settings-window-created")
@@ -98,6 +100,19 @@ def main():
 
         try:
             original = json.loads(peer.document("committed"))["assistant"]
+            settled()
+            click("assistant.runtime_options")
+            click("assistant.runtime_check")
+            wait_for(lambda: "Compatible" in probe(session, ipc)["assistant_state"]["runtime"], 20)
+            click("assistant.compute.1")
+            settled()
+            wait_for(lambda: "Not checked for this draft" in probe(session, ipc)["assistant_state"]["runtime"])
+            assert json.loads(peer.document("committed"))["assistant"] == original
+            peer.action("discard")
+            settled()
+            assert json.loads(peer.document())["assistant"] == original
+            checks["runtime_check_invalidates_when_compute_draft_changes"] = True
+            click("assistant.runtime_options")
             click("benchmark.open")
             assert not list(history.glob("*.json")), "Opening started a benchmark"
             assert list(model.parent.iterdir()) == [model]
