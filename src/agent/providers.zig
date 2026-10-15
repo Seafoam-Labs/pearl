@@ -11,12 +11,14 @@ pub fn string(value: std.json.Value, key: []const u8) []const u8 {
     return if (v == .string) v.string else "";
 }
 pub fn parse(a: std.mem.Allocator, kind: config.ProviderKind, provider: []const u8, bytes: []const u8) ![]Source {
+    if (kind == .bing) return @import("bing.zig").parse(a, provider, bytes);
     try @import("../config/preferences.zig").boundedJson(bytes, 2 * 1024 * 1024, 24);
     const value = try std.json.parseFromSliceLeaky(std.json.Value, a, bytes, .{});
     const results = switch (kind) {
         .google, .searxng => field(value, "results"),
         .google_legacy => field(value, "items"),
         .brave => if (field(value, "web")) |web| field(web, "results") else null,
+        .bing => unreachable,
     } orelse return &.{};
     if (results != .array) return error.InvalidSearchResponse;
     var sources: std.ArrayList(Source) = .empty;
@@ -29,6 +31,7 @@ pub fn parse(a: std.mem.Allocator, kind: config.ProviderKind, provider: []const 
             .google, .searxng => "content",
             .brave => "description",
             .google_legacy => "snippet",
+            .bing => unreachable,
         });
         if (title.len > 2048 or snippet.len > 16384) continue;
         try sources.append(a, .{ .title = title, .url = url, .snippet = snippet, .provider = provider });
@@ -48,6 +51,7 @@ pub fn search(a: std.mem.Allocator, p: config.Provider, query: []const u8, cance
     var secret: ?[]const u8 = null;
     defer if (secret) |s| std.crypto.secureZero(u8, @constCast(s));
     const url = switch (p.kind) {
+        .bing => try @import("bing.zig").url(a, p, query),
         .google, .searxng => blk: {
             if (p.endpoint.len == 0) return error.SearchEndpointRequired;
             break :blk try std.fmt.allocPrint(a, "{s}/search?q={s}&format=json&language={s}&safesearch={d}{s}", .{ std.mem.trimEnd(u8, p.endpoint, "/"), q, lang, @as(u8, if (p.safe_search) 1 else 0), if (p.kind == .google) "&engines=google" else "" });

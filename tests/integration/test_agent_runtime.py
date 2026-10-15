@@ -65,7 +65,7 @@ def main():
                 executable = location / scenario
                 shutil.copyfile(Path(__file__).with_name("fake_llama_server.py"), executable)
                 executable.chmod(0o755)
-                return dict(enabled=True, read_pages=False, runtime=dict(source="custom", executable=str(executable)),
+                return dict(enabled=True, read_pages=False, default_provider_id="google", runtime=dict(source="custom", executable=str(executable)),
                     compute=dict(mode=mode, backend="vulkan", device_id="vulkan:NVIDIA Fixture:8192", allow_cpu_fallback=fallback),
                     providers=[dict(id="google", kind="google", endpoint=f"http://127.0.0.1:{server.server_port}")])
             try:

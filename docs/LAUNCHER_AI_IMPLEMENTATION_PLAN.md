@@ -42,7 +42,7 @@ provider statuses are illustrative, not live search results.
 | Opt-in | Disabled on fresh installs and when older preferences omit the field. |
 | Disabled footprint | No agent process, model load, model download, classification inference or search request. |
 | Initial model | LFM2.5-350M Q4_K_M; approximately 229 MB of weights. Q8_0 is approximately 379 MB. |
-| Providers | Google is selected by default through a user-configured SearXNG instance. Also support general SearXNG, Brave Search API and existing-account Google JSON API connections. No endpoint is configured or contacted automatically. |
+| Providers | Bing RSS is selected by default without an API key or server setup. Google through SearXNG, general SearXNG, Brave Search API and existing-account Google JSON API remain available. Search requests require an explicit Ask or connection test. |
 | Network trigger | Enter or a deliberate Ask/Send activation; typing never sends text to a provider. |
 | Conversation | One floating window per verified Pearl session; in-memory conversations by default. |
 | Scope of tools | Web search and reading search results. No shell, desktop actions, file writes or arbitrary MCP servers. |
@@ -187,8 +187,8 @@ Proposed preference shape (illustrative, not an implemented schema):
     "enabled": false,
     "model_id": "liquid-lfm25-350m-q4km",
     "search_mode": "default",
-    "default_provider_id": "google",
-    "providers": [{"id":"google","name":"Google","kind":"google","enabled":true,"endpoint":""}],
+    "default_provider_id": "bing",
+    "providers": [{"id":"bing","name":"Bing","kind":"bing","enabled":true,"endpoint":""}],
     "read_pages": true,
     "context_tokens": 4096,
     "answer_tokens": 384,
@@ -356,11 +356,14 @@ model. Recalculate all allowances when a custom model has a smaller context.
 
 ## Search engines and page extraction
 
-Google is the initial provider selection. Its supported default connection is
-the Google engine on a SearXNG instance chosen by the user (`engines=google`).
-Do not silently select a public SearXNG instance. The instance must enable
-Google and permit JSON responses. No request is sent until an explicit Ask or
-connection test. This is Google through SearXNG, not a direct Google API.
+Bing RSS is the initial provider selection. Its public HTTPS search feed needs
+no account, API key or server setup. Parse bounded RSS without DTDs or external
+entities, normalize at most five results and retain the public-page URL checks.
+No request is sent until an explicit Ask or connection test. The feed is a
+best-effort integration and errors must not silently switch search providers.
+
+Google remains available through a user-selected SearXNG instance
+(`engines=google`). The instance must enable Google and permit JSON responses.
 
 Keep a distinct legacy Google API adapter for existing credentials (`key` and
 `cx`), with secrets in Secret Service. Google's Custom Search JSON API is

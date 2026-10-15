@@ -6,24 +6,27 @@ llama.cpp installations and experimental Vulkan/CUDA execution. See the
 [validation evidence](../artifacts/assistant/gpu-runtime/README.md).
 
 Pearl's experimental assistant is opt-in and disabled by default. In Settings →
-Assistant, choose a local model, explicitly download it, configure a search
-engine, enable the assistant and Apply. Type a question in Super+Space and
+Assistant, choose a local model, explicitly download it, enable the assistant
+and Apply. Bing search works without provider setup. Type a question in Super+Space and
 activate **Ask Pearl**. Pearl opens a
 separate native chat window and searches only the selected engine(s). Typing
 does not start a model or make a network request.
 
-## Google and other engines
+## Bing and other engines
 
-The initial provider is **Google through SearXNG**. Supply the base URL of a
-SearXNG instance you choose, enable its Google engine, and permit JSON output.
-Pearl sends `engines=google`; it does not bundle or choose a public instance.
+The initial provider is **Bing RSS**, using Bing's public HTTPS search feed.
+No API key, account or server URL is required. Pearl sends the model's query,
+language and safe-search preference only when you ask or test the connection.
+The feed is a best-effort integration, not Microsoft's retired Search API;
+network failures and invalid responses are reported without switching providers.
 **Test connection now** sends the disclosed sample query “Pearl desktop”.
-Google is selected by default but the feature is not ready without a configured
-connection and downloaded model.
+The local model must still be downloaded and its runtime installed.
 
-General SearXNG, Brave Search API, and Google's existing-account JSON API are
+Google through SearXNG, general SearXNG, Brave Search API, and Google's existing-account JSON API are
 also available. Default mode uses one engine; all-enabled mode accepts at most
-three. There is no silent fallback to another provider. Google JSON API needs
+three. Existing configured providers are preserved. Google through SearXNG
+requires your instance URL with its Google engine and JSON output enabled;
+Pearl sends `engines=google`. Google JSON API needs
 an API key and search engine ID; it is closed to new customers and retires
 January 1, 2027. [Google's lifecycle notice](https://developers.google.com/custom-search/v1/overview).
 

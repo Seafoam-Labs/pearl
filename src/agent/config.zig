@@ -1,10 +1,10 @@
 //! Assistant preferences contain no credentials or downloaded-model state.
 const std = @import("std");
-pub const ProviderKind = enum { google, searxng, brave, google_legacy };
+pub const ProviderKind = enum { google, searxng, brave, google_legacy, bing };
 pub const Provider = struct {
-    id: []const u8 = "google",
-    name: []const u8 = "Google",
-    kind: ProviderKind = .google,
+    id: []const u8 = "bing",
+    name: []const u8 = "Bing",
+    kind: ProviderKind = .bing,
     enabled: bool = true,
     endpoint: []const u8 = "",
     engine_id: []const u8 = "",
@@ -46,7 +46,7 @@ pub const Config = struct {
     model_id: []const u8 = "liquid-lfm25-350m-q4km",
     custom_model: []const u8 = "",
     providers: []const Provider = &default_providers,
-    default_provider_id: []const u8 = "google",
+    default_provider_id: []const u8 = "bing",
     search_mode: enum { default, all } = .default,
     read_pages: bool = true,
     context_tokens: u16 = 4096,
@@ -99,12 +99,13 @@ pub fn text(value: []const u8, max: usize) !void {
     if (value.len > max or !std.unicode.utf8ValidateSlice(value)) return error.InvalidAssistantText;
     for (value) |ch| if (ch < 32 or ch == 127) return error.InvalidAssistantText;
 }
-test "disabled default selects Google without configuring or contacting a service" {
+test "disabled default selects Bing RSS without requiring provider setup" {
     const cfg: Config = .{};
     try cfg.validate();
     try std.testing.expect(!cfg.enabled);
-    try std.testing.expectEqual(ProviderKind.google, cfg.provider("google").?.kind);
-    try std.testing.expectEqualStrings("", cfg.provider("google").?.endpoint);
+    try std.testing.expectEqual(ProviderKind.bing, cfg.provider("bing").?.kind);
+    try std.testing.expectEqualStrings("", cfg.provider("bing").?.endpoint);
+    try std.testing.expect(cfg.selected(cfg.providers[0]));
 }
 test "provider identity, endpoint and CPU budgets are strict" {
     try std.testing.expectError(error.DuplicateSearchProvider, (Config{ .providers = &.{ .{}, .{} } }).validate());
@@ -112,4 +113,14 @@ test "provider identity, endpoint and CPU budgets are strict" {
     try std.testing.expectError(error.InvalidSearchEndpoint, (Provider{ .endpoint = "https://user:secret@host" }).validate());
     try std.testing.expectError(error.UnknownSearchProvider, (Config{ .providers = &.{} }).validate());
     try (Config{ .providers = &.{}, .default_provider_id = "" }).validate();
+}
+test "saved configured providers retain their explicit default" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const cfg = try std.json.parseFromSliceLeaky(Config, arena.allocator(),
+        \\{"providers":[{"id":"google","name":"Google","kind":"google","endpoint":"https://search.example.org"}],"default_provider_id":"google"}
+    , .{});
+    try cfg.validate();
+    try std.testing.expect(cfg.selected(cfg.providers[0]));
+    try std.testing.expectEqual(ProviderKind.google, cfg.providers[0].kind);
 }

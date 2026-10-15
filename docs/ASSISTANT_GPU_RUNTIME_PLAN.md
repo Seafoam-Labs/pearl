@@ -23,8 +23,8 @@ needs, with version information retained for diagnostics and testing.
 
 The assistant stays opt-in. Super+Space questions still open a small floating
 conversation, search the configured engines and stream a local summary with
-sources. Google through a user-configured SearXNG instance remains the default
-provider. No public endpoint is chosen automatically.
+sources. Bing's public RSS search is the default provider and needs no account
+or server setup. Searches run only after an explicit Ask or connection test.
 
 ## Mockups
 

@@ -94,7 +94,7 @@ def main():
             checks["disabled_by_default_no_agent_or_search"] = True
             ctl(s, args.ctl, "launcher", "hide")
             runtime_path = args.agent.parent.parent / "libexec/pearl/assistant/llama-server"
-            apply_preferences(s, args.ctl, assistant=dict(enabled=True, read_pages=False, runtime=dict(source="custom", executable=str(runtime_path)),
+            apply_preferences(s, args.ctl, assistant=dict(enabled=True, read_pages=False, default_provider_id="google", runtime=dict(source="custom", executable=str(runtime_path)),
                 providers=[dict(id="google", kind="google", name="Google", endpoint=f"http://127.0.0.1:{server.server_port}")]))
             show()
             assert query("12*(3+4)")["rows"][0]["kind"] == "calculator"

@@ -125,7 +125,7 @@ pub const View = struct {
         const runtime_check = button(runtime_section, "Check runtime and model now");
         const benchmark = button(runtime_section, "Compare CPU and selected GPU locally");
         const engines = section(host, "Search engines");
-        note(engines, "Google is the default choice through your SearXNG instance. Enter its base URL and enable the Google engine there. Pearl does not choose a public instance for you. HTTP/private addresses are allowed only for the explicitly configured SearXNG endpoint.");
+        note(engines, "Bing is the default search engine and works without an account, API key or server setup. Questions are sent to Bing only when you ask or test the connection. Other engines remain available below.");
         const all = toggle(engines, "Search all enabled engines (maximum 3)");
         const names = gtk.StringList.new(null);
         _ = names.ref();
@@ -134,7 +134,7 @@ pub const View = struct {
         const add = button(engines, "Add search engine");
         const remove_provider = button(engines, "Remove this engine");
         const provider_name = entry(engines, "Display name", 80);
-        const provider_kind = choice(engines, "Connection", &.{ "Google through SearXNG", "SearXNG", "Brave Search API", "Google API (existing accounts only)" });
+        const provider_kind = choice(engines, "Connection", &.{ "Google through SearXNG", "SearXNG", "Brave Search API", "Google API (existing accounts only)", "Bing (no setup required)" });
         const endpoint = entry(engines, "SearXNG base URL", 1024);
         endpoint.setPlaceholderText("https://search.example.org");
         const engine_id = entry(engines, "Google API search engine ID", 128);
@@ -308,6 +308,11 @@ pub const View = struct {
             fill(alloc, self.endpoint, p.endpoint);
             fill(alloc, self.engine_id, p.engine_id);
             fill(alloc, self.language, p.language);
+            self.endpoint.as(gtk.Widget).setSensitive(@intFromBool(p.kind == .google or p.kind == .searxng));
+            self.engine_id.as(gtk.Widget).setSensitive(@intFromBool(p.kind == .google_legacy));
+            const needs_key = p.kind == .brave or p.kind == .google_legacy;
+            self.secret.as(gtk.Widget).setSensitive(@intFromBool(needs_key));
+            self.session_key.as(gtk.Widget).setSensitive(@intFromBool(needs_key));
             self.provider_enabled.setActive(@intFromBool(p.enabled));
             self.default_provider.setActive(@intFromBool(std.mem.eql(u8, config.default_provider_id, p.id)));
             self.safe.setActive(@intFromBool(p.safe_search));
@@ -317,6 +322,9 @@ pub const View = struct {
             self.readiness.setText(if (std.c.access(filename, std.c.F_OK) == 0) "Model downloaded. It is verified again before loading." else "Model not installed. Download is optional and explicit.");
         } else self.readiness.setText("Custom GGUF: verify compatibility before use.");
         for (self.buttons) |b| b.as(gtk.Widget).setSensitive(@intFromBool(self.job == null));
+        const needs_key = current < config.providers.len and (config.providers[current].kind == .brave or config.providers[current].kind == .google_legacy);
+        self.buttons[@intFromEnum(Action.store_key)].as(gtk.Widget).setSensitive(@intFromBool(self.job == null and needs_key));
+        self.buttons[@intFromEnum(Action.remove_key)].as(gtk.Widget).setSensitive(@intFromBool(self.job == null and needs_key));
         self.cancel_button.as(gtk.Widget).setSensitive(@intFromBool(if (self.job) |job| job.action != .setup_runtime else false));
     }
     fn providerSelected(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {

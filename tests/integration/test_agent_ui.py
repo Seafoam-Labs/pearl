@@ -107,7 +107,7 @@ def main():
                 initial = state()
                 assert not initial["visible"] and not initial["runtime"] and not Search.requests, initial
                 checks["no_inference_or_network_before_ask"] = True
-                config = dict(enabled=True, read_pages=False, idle_unload_seconds=15,
+                config = dict(enabled=True, read_pages=False, idle_unload_seconds=15, default_provider_id="google",
                     runtime=dict(source="custom", executable=str(args.runtime.resolve())) if args.runtime else dict(source="packaged"),
                     providers=[dict(id="google", kind="google", name="Google", endpoint=f"http://127.0.0.1:{server.server_port}")])
                 started = time.monotonic()
