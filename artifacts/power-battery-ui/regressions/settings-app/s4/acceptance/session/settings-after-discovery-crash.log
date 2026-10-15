@@ -1,0 +1,45 @@
+ts=2026-10-15T18:07:32Z pid=874503 info(settings): event=settings-launch activation_context=false
+ts=2026-10-15T18:07:32Z pid=874503 info(settings): event=settings-instance-ready session_hash=5cd59ce8beeb5f92
+ts=2026-10-15T18:07:32Z pid=874503 info(settings): event=settings-page page=overview
+ts=2026-10-15T18:07:32Z pid=874503 info(settings): event=settings-page page=bluetooth
+ts=2026-10-15T18:07:32Z pid=874503 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-15T18:07:32Z pid=874503 info(settings): event=settings-page page=bluetooth
+ts=2026-10-15T18:07:33Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:33Z pid=874503 info(settings): event=settings-page page=bar
+ts=2026-10-15T18:07:34Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:34Z pid=874503 info(settings): event=settings-page page=sound
+ts=2026-10-15T18:07:34Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:34Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:37Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:37Z pid=874503 info(settings): event=settings-page page=sound
+ts=2026-10-15T18:07:37Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:37Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:38Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:38Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:39Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:39Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:41Z pid=874503 info(settings): event=settings-aqueous-action action=validate pending=false
+ts=2026-10-15T18:07:41Z pid=874503 info(settings): event=settings-aqueous-action action=apply pending=false
+ts=2026-10-15T18:07:43Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:43Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:43Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:43Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:43Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:43Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:44Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:44Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:44Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:44Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:45Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:45Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:45Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:45Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:47Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:47Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:49Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:49Z pid=874503 info(settings): event=settings-page page=sound
+ts=2026-10-15T18:07:50Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:50Z pid=874503 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:51Z pid=874503 info(settings): event=settings-aqueous-action action=apply pending=false
+ts=2026-10-15T18:07:51Z pid=874503 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:51Z pid=874503 info(settings): event=settings-page page=sound

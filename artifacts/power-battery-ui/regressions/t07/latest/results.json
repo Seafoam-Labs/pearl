@@ -1,0 +1,15 @@
+{
+  "status": "running",
+  "checks": {
+    "initial-audio-battery-logind-profiles-and-validated-backlight": true,
+    "audio-startup-baseline-is-silent": true,
+    "volume-external-local-mute-zero-text-reuse-and-focus": true,
+    "volume-unchanged-and-unrelated-events-do-not-renew": true,
+    "volume-default-switch-establishes-silent-baseline": true,
+    "volume-inactive-session-discards-feedback-without-replay": true,
+    "volume-light-dark-gtk-and-bottom-bar-visuals": true,
+    "volume-card-click-through-and-native-lock-without-replay": true
+  },
+  "pearl_sha256": "73bd7ae9a5eea9254f9aeca374dc2edaa53adc87d720f84b1736ac41f99558dd",
+  "ctl_sha256": "5581d1b106421fed0f456065cf379655bd6b98cc7e13f0733ca5def3b53588ad"
+}

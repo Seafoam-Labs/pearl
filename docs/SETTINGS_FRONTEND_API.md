@@ -612,3 +612,30 @@ across clients, and revalidates config, executables, and runtime state before wr
 Dropdown changes are local. Apply and stop affect system-wide runtime scheduling
 without touching either shared preference draft. The page does not edit loader
 boot defaults. Missing snapshot support disables this page's controls.
+## Power page additions
+
+The `power_settings` capability advertises immediate, persisted power preference
+edits. Live Power pages include a typed `power` snapshot with independent battery
+presence and optional telemetry, bounded session history, active/available profiles,
+brightness, idle/display-power capabilities, saved configuration, `saving`, and
+the committed preference `revision`. Generic control rows remain available for
+compatible clients; an absent battery produces no battery row.
+
+`power.settings` takes `view`, `operation`, `revision`, `source` (`ac` or
+`battery`), `field` (`screen_off_seconds`, `suspend_seconds`, `dim`, or
+`automatic_saver`), and integer `value`. Revision is a decimal string, as in the
+existing editor protocol. Boolean dim values are 0/1. The operation requires a
+current Power-page lease and the normal active/unlocked session gate. Battery-only
+and display operations additionally require their hardware capabilities.
+
+The backend validates the allowlisted patch against committed preferences,
+preflights the retained draft for conflicts, and uses the existing atomic save
+worker. It never invokes global draft apply. Successful saves rebase disjoint
+drafts; concurrent conflicts leave the original draft intact. Operation receipts
+use the existing nonce/fingerprint ledger and can be queried after an uncertain
+response. Failed saves do not publish a runtime policy. `saving` covers both the
+save worker and pending reloads.
+
+`power.action` accepts optional `cancel: true` with the current confirmation
+serial and reboot value to dismiss a connection-owned power confirmation without
+performing the action. Existing requests default to `cancel: false`.

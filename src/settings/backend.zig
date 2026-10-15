@@ -150,9 +150,30 @@ pub const Backend = struct {
         return std.fmt.allocPrint(alloc, "{s},\"snapshot\":{s},\"live\":{s}}}", .{ metadata[0 .. metadata.len - 1], state, data });
     }
     pub fn handle(self: *Backend, peer: *Peer, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
+        if (self.live) |*live| live.preferences = self.service;
         const params = request.params orelse return error.InvalidRequest;
         peer.expire();
         switch (request.op) {
+            .@"power.settings" => {
+                const v = try p.fields(@import("live_protocol.zig").PowerSettings, alloc, params);
+                try self.allowed(self.context);
+                if (try p.number(v.view) != peer.view or peer.target == null or peer.target.?.page != .power or peer.scope.power == null) return error.StaleView;
+                const revision = try p.number(v.revision);
+                const live = if (self.live) |*live| live else return error.Unavailable;
+                if ((v.source == .battery or v.field == .automatic_saver) and !live.power.battery_present) return error.Unavailable;
+                if (v.field == .dim and (!live.power.brightnessAvailable() or !live.lifecycle.idle.screenAvailable())) return error.Unavailable;
+                if (v.field == .screen_off_seconds and !live.lifecycle.idle.screenAvailable()) return error.Unavailable;
+                if (v.field == .automatic_saver and !live.power.profiles[0]) return error.Unavailable;
+                const canonical = try std.json.Stringify.valueAlloc(alloc, .{ .op = request.op, .params = v }, .{});
+                const reserved = try self.reserve(v.operation, p.digest(canonical));
+                if (!reserved.fresh) return self.receipt(alloc, reserved.entry.*);
+                self.service.applyPower(revision, v.source, v.field, v.value) catch |err| {
+                    self.complete(reserved.entry, err);
+                    return self.receipt(alloc, reserved.entry.*);
+                };
+                reserved.entry.job = self.service.jobs;
+                return self.receipt(alloc, reserved.entry.*);
+            },
             .@"notifications.test" => {
                 const f = @import("../services/notification_filter_policy.zig");
                 const v = try p.fields(struct { view: []const u8, draft_revision: []const u8, revision: []const u8, sample_serial: []const u8, sample: f.Sample }, alloc, params);

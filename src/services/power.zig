@@ -8,6 +8,7 @@ const object = @import("gobject2");
 const policy = @import("policy.zig");
 const Text = policy.Text;
 const brightness_feedback = @import("brightness_feedback.zig");
+const presentation = @import("power_presentation.zig");
 const a = std.heap.c_allocator;
 pub const Event = @import("audio.zig").Event;
 const Tag = enum { battery, upower, login, session, profiles, legacy_profiles };
@@ -36,6 +37,16 @@ pub const Power = struct {
     running: bool = false,
     retry_source: c_uint = 0,
     battery_present: bool = false,
+    battery_available: bool = false,
+    percentage_valid: bool = false,
+    health: ?f64 = null,
+    history: presentation.History = .{},
+    battery_identity: Text(512) = .{},
+    saver: presentation.Saver = .{},
+    saver_threshold: u8 = 0,
+    dim_restore: ?u8 = null,
+    dim_restoring: bool = false,
+    dim_generation: u64 = 0,
     percentage: f64 = 0,
     battery_state: u32 = 0,
     time_to_empty: i64 = 0,
@@ -98,6 +109,12 @@ pub const Power = struct {
         slot.signals = .{ 0, 0, 0 };
     }
     pub fn stop(self: *Power) void {
+        // This last restoration has no callback into the retiring service and is
+        // independent of the cancellable used by ordinary interactive requests.
+        if (self.dim_restore) |before| if (self.dim_generation == self.brightnessGeneration()) if (self.available(.session)) |slot| {
+            const value = policy.brightness(before, self.backlight.maximum) catch 0;
+            if (value > 0) slot.proxy.?.getConnection().call(slot.owner.z(), self.session_path.z(), interfaces[@intFromEnum(Tag.session)], "SetBrightness", tuple(&.{ glib.Variant.newString("backlight"), glib.Variant.newString(self.backlight.name.z()), glib.Variant.newUint32(value) }), null, .{ .no_auto_start = true }, 1000, null, null, null);
+        };
         self.running = false;
         self.interest.revoke();
         self.panel_open = false;
@@ -206,6 +223,7 @@ pub const Power = struct {
             slot.owner.set(name);
             if (name.len != 0) self.err = null;
             switch (slot.tag) {
+                .battery => self.history.len = 0,
                 .login => {
                     self.capability_pending = .{ false, false };
                     self.can_off = false;
@@ -220,6 +238,7 @@ pub const Power = struct {
                     if (name.len != 0) self.capabilities();
                 },
                 .profiles, .legacy_profiles => {
+                    if (self.saver.owned or self.saver.awaiting) self.saver.failed();
                     self.profile_pending = false;
                     self.profile_wanted = null;
                 },
@@ -268,17 +287,44 @@ pub const Power = struct {
         return v.getBoolean() != 0;
     }
     fn refresh(self: *Power) void {
+        const was_present = self.battery_present;
+        self.battery_available = self.available(.battery) != null;
         self.battery_present = self.boolean(.battery, "IsPresent");
+        // DisplayDevice is UPower's aggregate system supply, never a peripheral.
+        // Type 2 is a battery; UPS (3) is deliberately not a laptop battery.
+        if (self.prop(.battery, "Type", "u")) |v| {
+            defer v.unref();
+            self.battery_present = self.battery_present and v.getUint32() == 2;
+        }
+        if (self.prop(.battery, "NativePath", "s")) |v| {
+            defer v.unref();
+            const identity = std.mem.span(v.getString(null));
+            if (!std.mem.eql(u8, identity, self.battery_identity.slice())) self.history.len = 0;
+            self.battery_identity.set(identity);
+        }
+        if (!self.battery_present or !was_present) self.history.len = 0;
         self.on_battery = self.boolean(.upower, "OnBattery");
         self.percentage = 0;
+        self.percentage_valid = false;
+        self.health = null;
         self.battery_state = 0;
         self.time_to_empty = 0;
         self.time_to_full = 0;
         if (self.prop(.battery, "Percentage", "d")) |v| {
             defer v.unref();
             const n = v.getDouble();
-            if (std.math.isFinite(n) and n >= 0 and n <= 100) self.percentage = n else self.battery_present = false;
+            if (presentation.validPercent(n)) |valid| {
+                self.percentage = valid;
+                self.percentage_valid = true;
+            }
         }
+        if (self.prop(.battery, "Capacity", "d")) |v| {
+            defer v.unref();
+            // UPower uses 0 for unknown capacity. Never infer health from charge.
+            const capacity = presentation.validPercent(v.getDouble());
+            if (capacity != null and capacity.? > 0) self.health = capacity;
+        }
+        if (self.battery_present) self.history.add(@divFloor(glib.getRealTime(), 1_000_000), if (self.percentage_valid) self.percentage else null);
         if (self.prop(.battery, "State", "u")) |v| {
             defer v.unref();
             self.battery_state = v.getUint32();
@@ -318,7 +364,49 @@ pub const Power = struct {
                 }
             }
         }
+        self.updateSaver();
         self.changed(self.context, .state);
+    }
+    pub fn configureSaver(self: *Power, threshold: u8) void {
+        if (self.saver_threshold == threshold) return;
+        self.saver_threshold = threshold;
+        self.updateSaver();
+    }
+    fn updateSaver(self: *Power) void {
+        var current: ?u8 = null;
+        for (profile_names, 0..) |name, i| if (std.mem.eql(u8, self.profile.slice(), name)) {
+            current = @intCast(i);
+        };
+        if (self.saver.update(self.saver_threshold, self.battery_present, self.on_battery and self.battery_state == 2, if (self.percentage_valid) self.percentage else null, current, self.profiles, self.profile_pending or self.profile_wanted != null)) |index| {
+            self.profile_wanted = index;
+            if (self.write_source == 0) self.write_source = glib.timeoutAdd(40, pump, self);
+        }
+    }
+    pub fn dim(self: *Power, active: bool) void {
+        if (active) {
+            if (self.dim_restore != null or !self.brightnessAvailable() or self.brightness_pending or self.brightness_wanted != null) return;
+            const before = self.backlight.percent();
+            if (before <= 20) return;
+            self.dim_restore = before;
+            self.dim_generation = self.brightnessGeneration();
+            self.brightness_wanted = 20;
+            self.arm();
+        } else if (self.dim_restore != null) {
+            if (self.dim_generation != self.brightnessGeneration() or !self.brightnessAvailable()) {
+                self.dim_restore = null;
+                self.dim_restoring = false;
+                return;
+            }
+            if (!self.brightness_pending and self.brightness_wanted == 20) {
+                self.brightness_wanted = null;
+                self.dim_restore = null;
+                return;
+            }
+            // Re-read the device before restoring, including when no view polls it.
+            // Hardware hotkeys may change sysfs without an inotify notification.
+            self.dim_restoring = true;
+            self.scan();
+        }
     }
     pub fn brightnessAvailable(self: *Power) bool {
         return self.session_active and !self.preparing and self.backlight.maximum > 0 and self.available(.session) != null;
@@ -326,12 +414,15 @@ pub const Power = struct {
     pub fn setBrightness(self: *Power, percent: u8) !void {
         _ = try policy.brightness(percent, self.backlight.maximum);
         if (!self.brightnessAvailable()) return error.Unavailable;
+        self.dim_restore = null;
+        self.dim_restoring = false;
         self.brightness_wanted = percent;
         self.err = null;
         self.arm();
     }
     pub fn setProfile(self: *Power, index: u8) !void {
         if (index >= 3 or !self.profiles[index] or self.profilesSlot() == null) return error.Unavailable;
+        self.saver.manual();
         self.profile_wanted = index;
         self.err = null;
         self.arm();
@@ -471,7 +562,10 @@ pub const Power = struct {
             } else "Service did not confirm the change.";
             switch (job.purpose) {
                 .brightness => self.brightness_wanted = null,
-                .profile => self.profile_wanted = null,
+                .profile => {
+                    self.profile_wanted = null;
+                    self.saver.failed();
+                },
                 else => {},
             }
             self.changed(self.context, .failure);
@@ -599,6 +693,21 @@ pub const Power = struct {
         self.scan_pending = false;
         if (!self.running) return;
         if (!std.mem.eql(u8, self.backlight.name.slice(), job.result.name.slice())) self.brightness_wanted = null;
+        if (self.dim_restore) |before| {
+            if (!std.mem.eql(u8, self.backlight.name.slice(), job.result.name.slice()) or self.dim_generation != self.brightnessGeneration()) {
+                self.dim_restore = null;
+                self.dim_restoring = false;
+            } else if (!self.brightness_pending and self.brightness_wanted == null) {
+                if (self.dim_restoring) {
+                    self.dim_restoring = false;
+                    self.dim_restore = null;
+                    if (job.result.percent() == 20 and self.brightnessAvailable()) {
+                        self.brightness_wanted = before;
+                        self.arm();
+                    }
+                } else if (job.result.percent() != 20) self.dim_restore = null;
+            }
+        }
         self.backlight = job.result;
         self.brightness_change = self.observed.observe(if (self.backlight.maximum > 0) brightness_feedback.Brightness.from(self.backlight) else null);
         self.watchBrightness();

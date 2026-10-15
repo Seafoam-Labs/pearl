@@ -36,6 +36,8 @@ test {
     _ = @import("services/clipboard_policy.zig");
     _ = @import("lock/conversation.zig");
     _ = @import("services/idle_policy.zig");
+    _ = @import("services/power_presentation.zig");
+    _ = @import("config/power_patch.zig");
     _ = @import("services/session_environment.zig");
     _ = @import("config/aqueous_model.zig");
     _ = @import("config/aqueous_draft.zig");

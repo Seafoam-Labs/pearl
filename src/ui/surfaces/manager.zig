@@ -248,7 +248,7 @@ pub const Manager = struct {
         self.night_light.start();
         self.night_light.configure(self.preferences.prefs().night_light);
         self.audio.start();
-        self.lifecycle = .{ .app = self.app.as(gio.Application), .display = self.display, .client = self.client, .context = self, .changed = lifecycleChanged, .request_logout = logoutRequested, .activity_broker = self.activity };
+        self.lifecycle = .{ .app = self.app.as(gio.Application), .display = self.display, .client = self.client, .context = self, .changed = lifecycleChanged, .request_logout = logoutRequested, .activity_broker = self.activity, .power = &self.power };
         self.auth = .{ .app = self.app.as(gio.Application), .context = self, .changed = authChanged, .activity_broker = self.activity };
         self.auth.start();
         try self.lifecycle.start();
@@ -580,6 +580,7 @@ pub const Manager = struct {
         if (self.popup) |surface| if (surface.wallpapers) |view| view.update();
         if (self.popup) |surface| if (surface.resources) |view| view.update(self.preferences.prefs().forOutput(surface.output.connector).resource_series);
         self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
+        self.power.configureSaver(self.preferences.prefs().idle.automatic_saver);
         self.slideshow.configure();
         if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
         self.authChangedSelf();

@@ -1,0 +1,12 @@
+event=ready
+event=session-lookup
+event=session-lookup
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"begin": true}
+command={"cancel": true}
+event=authentication
+event=cancel
+event=delay-released
+event=unregistered

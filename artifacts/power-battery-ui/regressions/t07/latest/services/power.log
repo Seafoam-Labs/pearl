@@ -1,0 +1,3 @@
+event=ready
+command={"active": false}
+command={"active": true}

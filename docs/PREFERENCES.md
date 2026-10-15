@@ -1,5 +1,45 @@
 # Preferences, wallpaper and themes
 
+## Power and battery
+
+Power & battery applies brightness and power modes immediately. Its sleep,
+dimming, and automatic power-saver controls also save immediately, through a
+revision-checked patch limited to the selected power field. This does not apply
+unrelated pending preferences. Disjoint shared drafts are rebased; conflicting
+or invalid drafts remain retained and prevent the power save.
+
+The version-1 `idle` block now accepts:
+
+```json
+"idle": {
+  "ac": {"lock_seconds": 0, "suspend_seconds": 0, "screen_off_seconds": 0, "dim": false},
+  "battery": {"lock_seconds": 0, "suspend_seconds": 0, "screen_off_seconds": 0, "dim": false},
+  "automatic_saver": 0
+}
+```
+
+These are the migration defaults: zero disables a timeout or automatic saver.
+Timeouts are bounded to 86400 seconds. Suspend requires an earlier nonzero lock
+timeout; screen off cannot be later than an enabled suspend timeout. Dimming
+reduces brightness to 20% before screen off (up to 30 seconds beforehand) and
+restores the prior brightness on activity unless the user changed it. Dimming
+does nothing when screen off is Never or brightness is already at or below 20%.
+Screen off requires the compositor's output-power protocol and idle notifications.
+
+Automatic saver accepts 0, 10, 20, or 30. It selects power-saver below the enabled
+threshold while discharging and exits after a five-point recovery margin or AC
+connection. It restores only a profile it still owns. A manual/external profile
+change suppresses automation until the low-battery episode ends. It runs while
+Settings is closed and never rewrites the user's saved threshold.
+
+Without a system battery, the battery card, source selector, and automatic-saver
+row are hidden; timers edit AC settings. Battery settings remain saved. The
+session-only history contains at most 361 samples covering six hours; it resets
+on battery identity/service changes. Unknown charge or health is never shown as
+zero or “Good.” UPS and peripheral batteries do not appear as laptop batteries.
+
+Older strict parsers reject these new fields. Remove them before downgrading.
+
 ## Desktop icons
 
 **Appearance → Desktop icons** edits the enabled state, display connector, icon

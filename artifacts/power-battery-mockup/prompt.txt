@@ -1,0 +1,19 @@
+Generated using the built-in image generation tool.
+
+Initial prompt:
+
+Use case: ui-mockup
+Create a high fidelity desktop application mockup for an improved Pearl Settings "Power & battery" tab. Use the provided screenshot as a style reference for Pearl's existing dark charcoal and muted lavender design, sidebar navigation, rounded cards, thin borders, and native Linux desktop feel. This is a proposed UI design, with illustrative battery data. Render one beautifully composed, sharply legible flat front-facing application window filling a 1536x1152 landscape image, on a narrow muted deep plum background. No perspective, no device frame, no annotations.
+Keep a slim titlebar labeled "Pearl Settings", subtle window controls, and a 235px left sidebar with section labels GENERAL, CONNECTIONS, DEVICES, DESKTOP, SYSTEM. Sidebar entries: Overview; Network; Bluetooth; Sound; Power & battery (selected lavender pill); Appearance; Assistant; Bar & dock; Notifications; System; Session & lock; Aqueous; Advanced. Small consistent line icons.
+Main pane has generous 32px padding and compact polished spacing, heading "Power & battery", subtitle "Balance performance, comfort, and battery life."
+Top wide status card: a tasteful large horizontal lavender battery icon, large "73%" and "On battery", secondary text "About 4 hours remaining". Right side a small subtle descending battery history sparkline labeled "Last 6 hours", small caption "Battery health: Good". Avoid redundant charts.
+Next section heading "Power mode"; three equally sized horizontal selectable cards: "Power saver" / "Extend battery life"; "Balanced" / "Performance when you need it"; "Performance" / "Prioritize speed". Balanced visibly selected with lavender border, subtly violet surface and checked radio indicator, others dark neutral. Tiny tasteful leaf, balanced gauge, lightning line icons.
+Next section heading "Display"; one rounded card with row "Brightness" with sun icon, a long lavender slider with thumb at 63%, and "63%" at right. Second row separated by fine divider: "Dim screen when inactive" with muted description "Reduce brightness before the screen turns off" and enabled lavender toggle.
+Next section heading "Sleep & energy saving"; one rounded card with tidy rows and right aligned controls. First row label "Settings for" and segmented control "On battery" (selected) and "Plugged in". Next "Turn screen off after" with dropdown "5 minutes"; next "Suspend after" dropdown "15 minutes"; next "Automatic power saver" muted subtitle "Switch modes when battery is low" dropdown "Below 20%".
+Bottom small quiet strip with "Session actions" left, compact outlined buttons "Lock", "Suspend", and "More" with chevron. Bottom subtle text "Changes apply automatically."
+Precise typography similar to Inter or native sans, white headings, readable light gray body, muted secondary text, restrained lavender accents only for selected states and controls, aligned baselines, logical grouping, realistic actionable controls. No excessive glow, no glass effects, no bright gradients, no marketing text. All text correctly spelled and comfortably legible.
+
+Final correction prompt:
+
+Edit only the battery history chart in the upper right of this Pearl Settings mockup. Keep the entire rest of the image, layout, text, controls, colors and dimensions exactly unchanged. The graph must agree with the current 73% battery reading: its lavender line should start near 100% at the far left and descend gently to exactly 73% at the far right, so the final point is between the 100% and 50% gridlines, slightly closer to 50% than to 100%. Keep axis labels 100%, 50%, 0%, heading Last 6 hours, and Battery health: Good. The filled area under the line should match the corrected gentle curve. Change nothing else.
+

@@ -17,6 +17,7 @@ pub const Scope = struct {
 };
 pub const Pending = enum { sched_ext, none, audio, network, scan, bluetooth, discovery, brightness, profile, power, media, lifecycle, layout };
 pub const Live = struct {
+    preferences: ?*@import("../config/service.zig").Service = null,
     sched_ext: ?*@import("../services/sched_ext.zig").Service = null,
     night_light: ?*@import("../services/night_light.zig").NightLight = null,
     plugins: ?*@import("../plugins/manager.zig").Manager = null,
@@ -266,9 +267,11 @@ pub const Live = struct {
                     const confirmation = scope.power_confirmation orelse return error.StaleConfirmation;
                     if (confirmation.serial != try p.number(serial) or confirmation.reboot != v.reboot or confirmation.deadline < glib.getMonotonicTime()) return error.StaleConfirmation;
                     scope.power_confirmation = null;
+                    if (v.cancel) return .none;
                     try self.power.powerAction(v.reboot);
                     return .power;
                 }
+                if (v.cancel) return error.StaleConfirmation;
                 scope.power_confirmation = .{ .serial = revision, .reboot = v.reboot, .deadline = glib.getMonotonicTime() + 20000000 };
                 return .none;
             },
@@ -326,6 +329,7 @@ pub const Live = struct {
         var truncated = false;
         var prompt: ?ui.Prompt = null;
         var sound_snapshot: ?ui.Sound = null;
+        var power_snapshot: ?@import("../services/power_presentation.zig").Snapshot = null;
         switch (route) {
             .network => {
                 const n = self.network;
@@ -414,9 +418,34 @@ pub const Live = struct {
             },
             .power => {
                 const power = self.power;
-                summary = power.err orelse if (power.battery_present) "Power and battery" else "No battery reported";
+                summary = power.err orelse "";
+                power_snapshot = .{
+                    .available = power.battery_available,
+                    .battery_present = power.battery_present,
+                    .percentage = if (power.battery_present and power.percentage_valid) power.percentage else null,
+                    .state = power.battery_state,
+                    .estimate = if (power.battery_state == 1) power.time_to_full else if (power.battery_state == 2) power.time_to_empty else 0,
+                    .health = if (power.battery_present) power.health else null,
+                    .history = if (power.battery_present) try alloc.dupe(@import("../services/power_presentation.zig").Point, power.history.points[0..power.history.len]) else &.{},
+                    .on_battery = power.on_battery,
+                    .profile = power.profile.slice(),
+                    .profiles = power.profiles,
+                    .profile_generation = try std.fmt.allocPrint(alloc, "{d}", .{power.profileGeneration()}),
+                    .profile_pending = self.busy(.profile),
+                    .degraded = power.degraded.slice(),
+                    .brightness = power.backlight.percent(),
+                    .brightness_available = power.brightnessAvailable(),
+                    .brightness_pending = self.busy(.brightness),
+                    .brightness_generation = try std.fmt.allocPrint(alloc, "{d}", .{power.brightnessGeneration()}),
+                    .display_power_available = self.lifecycle.idle.screenAvailable(),
+                    .idle_available = self.lifecycle.idle.notifier != null and self.lifecycle.idle.seat != null,
+                    .config = if (self.preferences) |prefs| prefs.prefs().idle else self.lifecycle.config,
+                    .revision = try std.fmt.allocPrint(alloc, "{d}", .{if (self.preferences) |prefs| prefs.revision else 0}),
+                    .saving = if (self.preferences) |prefs| prefs.job != null or prefs.pending_reload else false,
+                    .error_message = power.err orelse "",
+                };
                 pending = self.busy(.brightness) or self.busy(.profile) or self.busy(.power);
-                try rows.append(alloc, .{ .id = "battery", .title = if (power.on_battery) "On battery" else "AC power", .detail = if (power.battery_present) try std.fmt.allocPrint(alloc, "{d:.0}% · {s}", .{ power.percentage, if (power.battery_state == 1) "Charging" else if (power.battery_state == 2) "Discharging" else if (power.battery_state == 4) "Fully charged" else "Battery" }) else "Battery information is unavailable on this system." });
+                if (power.battery_present) try rows.append(alloc, .{ .id = "battery", .title = if (power.on_battery) "On battery" else "AC power", .detail = if (power.percentage_valid) try std.fmt.allocPrint(alloc, "{d:.0}%", .{power.percentage}) else "Charge unavailable" });
                 var controls: std.ArrayList(ui.Control) = .empty;
                 var brightness = try ui.button(alloc, "brightness", "Brightness", .@"brightness.set", .{ .generation = p.num(power.brightnessGeneration()) }, power.brightnessAvailable());
                 brightness.kind = .number;
@@ -463,7 +492,10 @@ pub const Live = struct {
                 const confirmation = if (scope.power_confirmation) |c| if (c.reboot == reboot and c.deadline > glib.getMonotonicTime()) @as(?p.Number, p.num(c.serial)) else null else null;
                 try controls.append(alloc, try ui.button(alloc, if (reboot) "reboot" else "shutdown", if (confirmation != null) (if (reboot) "Confirm restart" else "Confirm shutdown") else if (reboot) "Restart…" else "Shut down…", .@"power.action", .{ .reboot = reboot, .confirmation = confirmation }, if (reboot) self.power.can_reboot else self.power.can_off));
             }
-            try rows.append(alloc, .{ .id = "session", .title = "Session", .detail = life.err orelse "Lock your session, manage automatic idle, or shut down.", .controls = controls.items });
+            if (scope.power_confirmation) |confirmation| if (confirmation.deadline > glib.getMonotonicTime()) {
+                try controls.append(alloc, try ui.button(alloc, "power-cancel", "Cancel power action", .@"power.action", .{ .reboot = confirmation.reboot, .confirmation = p.num(confirmation.serial), .cancel = true }, true));
+            };
+            try rows.append(alloc, .{ .id = "session", .title = "Session", .detail = life.err orelse "", .controls = controls.items });
         }
         if (route == .overview) {
             if (self.layout_rows) |get| try rows.appendSlice(alloc, try get(self.layout_context.?, alloc));
@@ -485,7 +517,7 @@ pub const Live = struct {
         if (route == .network) {
             network = try @import("../services/network_presentation.zig").build(alloc, self.network, scope.network, glib.getMonotonicTime());
         }
-        return .{ .sound = sound_snapshot, .network = network, .notification_header = if (route == .notifications and rows.items.len > 0) rows.items[0] else null, .summary = summary, .pending = pending, .truncated = truncated, .rows = rows.items[first..end], .offset = p.num(first), .next_offset = if (end < rows.items.len) p.num(end) else null, .prompt = prompt };
+        return .{ .power = power_snapshot, .sound = sound_snapshot, .network = network, .notification_header = if (route == .notifications and rows.items.len > 0) rows.items[0] else null, .summary = summary, .pending = pending, .truncated = truncated, .rows = rows.items[first..end], .offset = p.num(first), .next_offset = if (end < rows.items.len) p.num(end) else null, .prompt = prompt };
     }
 };
 fn json(alloc: std.mem.Allocator, value: anytype) !std.json.Value {

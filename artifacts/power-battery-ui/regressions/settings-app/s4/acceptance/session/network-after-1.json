@@ -1,0 +1,2001 @@
+{
+  "assistant_state": {
+    "busy": false,
+    "devices": 0,
+    "runtime": "Runtime not checked. Discovery and testing run only when requested.",
+    "status": "",
+    "apply_prompt": false
+  },
+  "sched_ext": {
+    "scheduler": "",
+    "mode": "auto",
+    "current": "",
+    "summary": "",
+    "feedback": ""
+  },
+  "window_rules": {
+    "dialog": false,
+    "error_text": "",
+    "controls": [],
+    "body": null
+  },
+  "notification_filters": {
+    "dialog": false,
+    "error_text": "",
+    "test_result": "",
+    "controls": [],
+    "body": null
+  },
+  "launcher_icon_picker": false,
+  "bar_groups": [
+    "Left \u00b7 3 widgets",
+    "Center \u00b7 1 widgets",
+    "Right \u00b7 9 widgets"
+  ],
+  "links": [
+    {
+      "page": "overview",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 88,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "network",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": true,
+      "bounds": {
+        "x": 12,
+        "y": 167,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "bluetooth",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 215,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "sound",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 294,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "power",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 342,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "appearance",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 421,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "assistant",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 469,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "bar",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 517,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "notifications",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 565,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "system",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 644,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "session",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 692,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 740,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "appearance",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "layouts",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "input",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "keybinds",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "rules",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "displays",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "advanced",
+      "visible": false,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": -1,
+        "y": 56,
+        "width": 26,
+        "height": 2
+      }
+    },
+    {
+      "page": "advanced",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 788,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "plugins",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 836,
+        "width": 195,
+        "height": 46
+      }
+    }
+  ],
+  "controls": [
+    {
+      "field": "mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "variant",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "source",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "gtk_name",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 205,
+        "y": 141,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "seed",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 205,
+        "y": 141,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "wallpaper",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 205,
+        "y": 141,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "color",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 205,
+        "y": 141,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "font",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 205,
+        "y": 141,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "font_size",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "fit",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "density",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "motion",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "choose",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "greeter_sync",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "raw",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 208,
+        "y": 140,
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "field": "apply",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 340,
+        "y": 823,
+        "width": 120,
+        "height": 40
+      }
+    },
+    {
+      "field": "discard",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 244,
+        "y": 823,
+        "width": 88,
+        "height": 40
+      }
+    },
+    {
+      "field": "merge",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 227,
+        "y": 813,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "desktop_enabled",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "desktop_hidden",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "desktop_output",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 205,
+        "y": 141,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "desktop_size",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "desktop_arrangement",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "night_enabled",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "night_temperature",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "night_schedule",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "night_start_hour",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "night_start_minute",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "night_end_hour",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "night_end_minute",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "sync_borders",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "slideshow_enabled",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "slideshow_folder",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 205,
+        "y": 141,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "slideshow_choose",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "slideshow_interval",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "slideshow_order",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "slideshow_transition",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "slideshow_duration",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "palettes.slug",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": "meadow",
+      "bounds": null
+    },
+    {
+      "field": "palettes.name",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": "Meadow",
+      "bounds": null
+    },
+    {
+      "field": "palettes.expander",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "palettes.create",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "palettes.duplicate",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "palettes.save",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "palettes.discard",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "palettes.open",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "palettes.variant",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "palettes.surface",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": "#101c19",
+      "bounds": null
+    },
+    {
+      "field": "palettes.on_surface",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": "#e8f4e9",
+      "bounds": null
+    },
+    {
+      "field": "palettes.primary",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": "#a4dfb0",
+      "bounds": null
+    },
+    {
+      "field": "palettes.json",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "palettes.import_file",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "palettes.export_file",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "themes.installed.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "themes.community.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "themes.source_default.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "themes.cancel.0",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "themes.builtin.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "themes.defaults.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "themes.inherit_colors.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "themes.default_style.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "themes.preview_draft.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "themes.source_add.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "themes.source_remove.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "themes.import_archive.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": null
+    },
+    {
+      "field": "themes.source_select.0",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "applications.enabled",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "applications.defaults",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "applications.source",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.seed",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 205,
+        "y": 141,
+        "width": 30,
+        "height": 22
+      }
+    },
+    {
+      "field": "applications.zed.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.zed.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.equibop.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.equibop.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.fluxer.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.fluxer.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.starship.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.starship.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.steam.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.steam.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.gtk.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.gtk.profile",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.qt5ct.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.qt5ct.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.qt6ct.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.qt6ct.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.kcolorscheme.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.kcolorscheme.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.ghostty.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.ghostty.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.kitty.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.kitty.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.foot.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.foot.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.alacritty.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.alacritty.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.wezterm.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.wezterm.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.nvim.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.nvim.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.vscode.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.vscode.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.emacs.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.emacs.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.firefox.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.firefox.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.zenbrowser.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.zenbrowser.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.pywalfox.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.pywalfox.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.vesktop.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.vesktop.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.vencord.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.vencord.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.fcitx5.mode",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "applications.fcitx5.profile",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 220,
+        "y": 152,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "field": "qt_enabled",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "qt_retry",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "qt_review",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "qt_reapply",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 203,
+        "y": 142,
+        "width": 34,
+        "height": 20
+      }
+    },
+    {
+      "field": "qt_kde",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 219,
+        "y": 151,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "field": "network/radio",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 944,
+        "y": 270,
+        "width": 50,
+        "height": 26
+      }
+    },
+    {
+      "field": "network/refresh",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 924,
+        "y": 474,
+        "width": 86,
+        "height": 52
+      }
+    },
+    {
+      "field": "network/saved",
+      "focused": false,
+      "enabled": true,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 250,
+        "y": 926,
+        "width": 760,
+        "height": 17
+      }
+    },
+    {
+      "field": "network:nearby:bd2aa6c67808216821562a2bffd85586f757e1855b56e3852aca8cacf5f3a16c",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 905,
+        "y": 566,
+        "width": 89,
+        "height": 52
+      }
+    },
+    {
+      "field": "network:nearby:f751ac5aae8f5b1b6718ee6768e9accdb334d7b4280f506c754300c4d00f9128",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 904,
+        "y": 658,
+        "width": 90,
+        "height": 52
+      }
+    },
+    {
+      "field": "network:nearby:5f47f9d8cd4a2f23af1dcf3580540132b3b46798703e6f8702d22d5aa3022a73",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 904,
+        "y": 750,
+        "width": 90,
+        "height": 52
+      }
+    },
+    {
+      "field": "network:nearby:58b659b527f0de3d0bb48d525caa536eb890083f4292b5668a09114181346a5e",
+      "focused": false,
+      "enabled": false,
+      "selected": null,
+      "text": null,
+      "bounds": {
+        "x": 904,
+        "y": 842,
+        "width": 90,
+        "height": 52
+      }
+    }
+  ],
+  "editor": {
+    "ready": true,
+    "online": true,
+    "recovery": false,
+    "state": {
+      "revision": 1,
+      "draft_revision": 0,
+      "base_revision": 1,
+      "dirty": false,
+      "valid": true,
+      "conflict": false,
+      "busy": false,
+      "locked": false
+    },
+    "local": false,
+    "upload": "none",
+    "download": "none",
+    "error_code": "",
+    "validation": "",
+    "export_error": "",
+    "bytes": 2753,
+    "sha256": "b3326876e6720e5b8726444f53f5e7de673a78171ea2c05a1903c3e8e67e6709",
+    "picker": false,
+    "folder_picker": false,
+    "preview": false,
+    "close_dialog": false,
+    "can_apply": false,
+    "can_edit": true
+  },
+  "theme_busy": false,
+  "theme_status": "No themes installed. Choose Community \u00b7 refresh to browse themes.",
+  "service_prompt": true,
+  "aqueous": {
+    "online": true,
+    "ready": true,
+    "recovery": false,
+    "dirty": false,
+    "version": 2,
+    "revision": 0,
+    "backend_version": 1,
+    "mode": "idle",
+    "phase": 0,
+    "busy": false,
+    "receipt_pending": false,
+    "recording": false,
+    "shared_review": false,
+    "display_changes": 0,
+    "display_blocked": false,
+    "fields": 221,
+    "err": null,
+    "detail": ""
+  },
+  "greeter_sync_status": "Copies this background and theme. Administrator authentication is required.",
+  "footer_text": "Changes on this page take effect immediately.",
+  "widget_focus": "none",
+  "focus": "body",
+  "active": false,
+  "key_events": 0,
+  "header_bounds": {
+    "x": 250,
+    "y": 75,
+    "width": 760,
+    "height": 34
+  },
+  "footer_bounds": {
+    "x": 220,
+    "y": 810,
+    "width": 820,
+    "height": 40
+  },
+  "body_bounds": {
+    "x": 220,
+    "y": 152,
+    "width": 820,
+    "height": 658
+  },
+  "retry_bounds": {
+    "x": 203,
+    "y": 41,
+    "width": 34,
+    "height": 20
+  },
+  "navigation_bounds": {
+    "x": 0,
+    "y": 51,
+    "width": 220,
+    "height": 799
+  },
+  "sections_bounds": {
+    "x": 895,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  "pid": 871925,
+  "page": "network",
+  "section": null,
+  "connected": true,
+  "fixture": false,
+  "narrow": false,
+  "width": 1040,
+  "height": 850,
+  "visible": true,
+  "scroll": 0,
+  "heading": "Network",
+  "status": "",
+  "style": "dark",
+  "appearance_updates": 3,
+  "activation_contexts": 0,
+  "sections_open": false
+}

@@ -1,0 +1,8 @@
+ts=2026-10-15T18:07:30Z pid=873706 info(settings): event=settings-launch activation_context=false
+ts=2026-10-15T18:07:30Z pid=873706 info(settings): event=settings-instance-ready session_hash=5cd59ce8beeb5f92
+ts=2026-10-15T18:07:30Z pid=873706 info(settings): event=settings-page page=overview
+ts=2026-10-15T18:07:30Z pid=873706 info(settings): event=settings-page page=network
+ts=2026-10-15T18:07:30Z pid=873706 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-15T18:07:30Z pid=873706 info(settings): event=settings-page page=network
+ts=2026-10-15T18:07:31Z pid=873706 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:31Z pid=873706 info(settings): event=settings-page page=bluetooth

@@ -1,0 +1,101 @@
+Traceback (most recent call last):
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_lifecycle.py", line 202, in <module>
+    if __name__ == '__main__': main()
+                               ~~~~^^
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_lifecycle.py", line 88, in main
+    if report(s, args.ctl)['button'] == 'Set up…': break
+       ~~~~~~^^^^^^^^^^^^^
+  File "/tmp/pearl-power-baseline/tests/integration/settings_navigation.py", line 10, in report
+    return ctl(session, binary, 'aqueous', 'status', '--text', 'test-settings-page')['result']
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/pearl-power-baseline/tests/integration/test_surfaces.py", line 77, in ctl
+    assert result.returncode == code, (args, result.returncode, result.stdout, result.stderr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('aqueous', 'status', '--text', 'test-settings-page'), 4, '{"pearl":1,"id":"1","ok":false,"err":{"code":"Unavailable"}}\n', '')
+Traceback (most recent call last):
+  File "/tmp/pearl-power-baseline/tests/integration/test_services.py", line 294, in <module>
+    if __name__=='__main__': main()
+                             ~~~~^^
+  File "/tmp/pearl-power-baseline/tests/integration/test_services.py", line 97, in main
+    exercise(s,args.ctl,pearl,power,command,checks,args.spike.resolve())
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/pearl-power-baseline/tests/integration/volume_osd.py", line 143, in exercise
+    eventually_status(s, binary, lambda v: not v['osd'] and all(o['id'] != output['id'] for o in v['outputs']))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/pearl-power-baseline/tests/integration/test_surfaces.py", line 92, in eventually_status
+    return wait_for(check)
+  File "/tmp/pearl-power-baseline/scripts/pearl_session.py", line 32, in wait_for
+    raise TimeoutError('private session condition timed out')
+TimeoutError: private session condition timed out
+test-settings-lifecycle
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_lifecycle.py --pearl ./.zig-cache/o/f9e0767a3ed50cf7cd069f847b410000/pearl-integration --ctl ./.zig-cache/o/5e22b3771e383164bfbee9763d5bf7f1/pearlctl --spike ./.zig-cache/o/cb8a42eaf276f695a8ef52588c8a3940/pearl-t00
+
+test-services
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_services.py --pearl ./.zig-cache/o/f9e0767a3ed50cf7cd069f847b410000/pearl-integration --ctl ./.zig-cache/o/5e22b3771e383164bfbee9763d5bf7f1/pearlctl --spike ./.zig-cache/o/cb8a42eaf276f695a8ef52588c8a3940/pearl-t00
+
+Traceback (most recent call last):
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_presentation.py", line 148, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_presentation.py", line 95, in main
+    wait_for(lambda:probe(s,ipc)['style']==('gtk' if theme=='gtk' else variant));size(width,height)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/pearl-power-baseline/scripts/pearl_session.py", line 28, in wait_for
+    value = check()
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_presentation.py", line 95, in <lambda>
+    wait_for(lambda:probe(s,ipc)['style']==('gtk' if theme=='gtk' else variant));size(width,height)
+                    ~~~~~^^^^^^^
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_app.py", line 30, in probe
+    result = request(s, ipc, op='probe')
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_app.py", line 23, in request
+    sock.settimeout(5); sock.connect(str(endpoint(s, ipc)))
+                        ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [Errno 111] Connection refused
+test-settings-presentation
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_presentation.py --settings ./.zig-cache/o/c52e3c35bc09b46dc279cfc85ffa7d7a/pearl-settings-test --pearl ./.zig-cache/o/f9e0767a3ed50cf7cd069f847b410000/pearl-integration --ctl ./.zig-cache/o/5e22b3771e383164bfbee9763d5bf7f1/pearlctl
+
+Traceback (most recent call last):
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_services.py", line 340, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_services.py", line 307, in main
+    navigate(s,ipc,'aqueous','displays');aq_ready(s,ipc,peer);peer.aq_action('discard');aq_ready(s,ipc,peer)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_services.py", line 63, in navigate
+    assert request(s,ipc,**params)['ok']
+           ~~~~~~~^^^^^^^^^^^^^^^^
+  File "/tmp/pearl-power-baseline/tests/integration/test_settings_app.py", line 26, in request
+    with sock.makefile('rb') as f: return json.loads(f.readline())
+                                          ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+test-settings-services
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_services.py --settings ./.zig-cache/o/c52e3c35bc09b46dc279cfc85ffa7d7a/pearl-settings-test --pearl ./.zig-cache/o/5098614d6ad2ebd6356441e672309181/pearl --ctl ./.zig-cache/o/5e22b3771e383164bfbee9763d5bf7f1/pearlctl --spike ./.zig-cache/o/cb8a42eaf276f695a8ef52588c8a3940/pearl-t00
+
+Build Summary: 19/27 steps succeeded (4 failed)
+test-services transitive failure
++- run python3 failure
+test-settings-services transitive failure
++- run python3 failure
+test-settings-lifecycle transitive failure
++- run python3 failure
+test-settings-presentation transitive failure
++- run python3 failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/a5a70eecbdd7308dcb17ecb17c47b8fe/build /usr/bin/zig /usr/lib/zig /tmp/pearl-power-baseline .zig-cache /home/zoey/Pearl/.cache/zig-global --seed 0xef6e065f -Zc3d17269f2e7f022 test-services test-settings-services test-settings-lifecycle test-settings-presentation -j2

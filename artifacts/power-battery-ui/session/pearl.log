@@ -1,0 +1,84 @@
+ts=2026-10-15T18:23:33Z pid=961801 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-10-15T18:23:33Z pid=961801 info(platform): event=blur-capability available=false
+ts=2026-10-15T18:23:33Z pid=961801 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-15T18:23:33Z pid=961801 info(pearl): event=ready mode=session
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-request op=hello
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-request op=hello
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-response op=hello
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-response op=hello
+ts=2026-10-15T18:23:33Z pid=961801 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:33Z pid=961801 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-15T18:23:33Z pid=961801 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-15T18:23:33Z pid=961801 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-15T18:23:33Z pid=961801 info(pearl): event=settings-backend-ready session_hash=f268f2f19ac058c2
+ts=2026-10-15T18:23:33Z pid=961801 info(pearl): event=control-ready session_hash=f268f2f19ac058c2
+ts=2026-10-15T18:23:33Z pid=961801 info(desktop): event=app-index-ready entries=168 truncated=false
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:33Z pid=961801 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-10-15T18:23:33Z pid=961801 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=32783 success=true
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:33Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:34Z pid=961801 info(desktop): event=app-index-ready entries=168 truncated=false
+ts=2026-10-15T18:23:35Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:35Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:35Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:35Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:35Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:35Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:36Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:36Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:37Z pid=961801 info(config): event=preferences-applied revision=2 mode=static cache=false
+ts=2026-10-15T18:23:37Z pid=961801 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=29010 success=true
+ts=2026-10-15T18:23:37Z pid=961801 info(config): event=preferences-applied revision=3 mode=static cache=false
+ts=2026-10-15T18:23:37Z pid=961801 info(config): event=wallpaper-applications-applied generation=7 elapsed_us=27037 success=true
+ts=2026-10-15T18:23:37Z pid=961801 info(config): event=preferences-applied revision=4 mode=static cache=false
+ts=2026-10-15T18:23:37Z pid=961801 info(config): event=wallpaper-applications-applied generation=9 elapsed_us=25697 success=true
+ts=2026-10-15T18:23:39Z pid=961801 info(config): event=preferences-applied revision=5 mode=static cache=false
+ts=2026-10-15T18:23:39Z pid=961801 info(config): event=wallpaper-applications-applied generation=11 elapsed_us=27179 success=true
+ts=2026-10-15T18:23:39Z pid=961801 info(config): event=preferences-applied revision=6 mode=static cache=false
+ts=2026-10-15T18:23:39Z pid=961801 info(config): event=wallpaper-applications-applied generation=13 elapsed_us=26621 success=true
+ts=2026-10-15T18:23:39Z pid=961801 info(config): event=preferences-applied revision=7 mode=static cache=false
+ts=2026-10-15T18:23:39Z pid=961801 info(config): event=wallpaper-applications-applied generation=15 elapsed_us=24597 success=true
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:43Z pid=961801 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-15T18:23:43Z pid=961801 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:43Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:43Z pid=961801 info(config): event=preferences-applied revision=8 mode=static cache=false
+ts=2026-10-15T18:23:43Z pid=961801 info(config): event=wallpaper-applications-applied generation=17 elapsed_us=25298 success=true
+ts=2026-10-15T18:23:44Z pid=961801 info(config): event=preferences-applied revision=9 mode=static cache=false
+ts=2026-10-15T18:23:44Z pid=961801 info(config): event=wallpaper-applications-applied generation=19 elapsed_us=26900 success=true
+ts=2026-10-15T18:23:46Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:46Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:47Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:47Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:48Z pid=961801 info(config): event=preferences-applied revision=10 mode=static cache=false
+ts=2026-10-15T18:23:48Z pid=961801 info(config): event=wallpaper-applications-applied generation=21 elapsed_us=41393 success=true
+ts=2026-10-15T18:23:48Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:48Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:49Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:49Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:49Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:49Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:50Z pid=961801 debug(aqueous): event=ipc-request op=ack
+ts=2026-10-15T18:23:50Z pid=961801 debug(aqueous): event=ipc-response op=ack
+ts=2026-10-15T18:23:50Z pid=961801 info(pearl): event=stopping reason=signal pending=false
+ts=2026-10-15T18:23:50Z pid=961801 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-15T18:23:50Z pid=961801 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-15T18:23:50Z pid=961801 info(pearl): event=stopped

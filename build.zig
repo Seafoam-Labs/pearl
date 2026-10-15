@@ -195,6 +195,8 @@ pub fn build(b: *std.Build) void {
     scanner.generate("zwlr_output_manager_v1", 4);
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-idle-notify-v1.xml"));
     scanner.generate("ext_idle_notifier_v1", 1);
+    scanner.addCustomProtocol(b.path("bindings/protocols/wlr-output-power-management-unstable-v1.xml"));
+    scanner.generate("zwlr_output_power_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-data-control-v1.xml"));
     scanner.generate("ext_data_control_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/wlr-screencopy-unstable-v1.xml"));

@@ -1,0 +1,9 @@
+ts=2026-10-15T18:07:52Z pid=879191 info(settings): event=settings-launch activation_context=false
+ts=2026-10-15T18:07:52Z pid=879191 info(settings): event=settings-instance-ready session_hash=5cd59ce8beeb5f92
+ts=2026-10-15T18:07:52Z pid=879191 info(settings): event=settings-page page=overview
+ts=2026-10-15T18:07:52Z pid=879191 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:52Z pid=879191 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-15T18:07:52Z pid=879191 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:54Z pid=879191 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:54Z pid=879191 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:54Z pid=879191 info(settings): event=settings-aqueous-action action=apply pending=false

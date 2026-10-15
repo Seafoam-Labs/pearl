@@ -42,6 +42,7 @@ pub const Job = struct {
     requested: ?[]const u8 = null,
     first_install: bool = false,
     draft_revision: ?u64 = null,
+    power_patch: bool = false,
     expected: [64]u8,
     disk: ?io.Read = null,
     prefs: model.Preferences = .{},
@@ -379,6 +380,19 @@ pub const Service = struct {
         defer arena.deinit();
         _ = try model.parse(arena.allocator(), json);
         try self.launch(json);
+    }
+    pub fn applyPower(self: *Service, revision: u64, source: @import("power_patch.zig").Source, field: @import("power_patch.zig").Field, value: u32) !void {
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const alloc = arena.allocator();
+        const json = try @import("power_patch.zig").patch(alloc, self.prefs(), source, field, value);
+        if (self.draft.text) |draft| {
+            // Preflight overlap, invalid drafts, and combined validation before disk writes.
+            _ = try @import("merge.zig").json(alloc, self.draft.base orelse return error.Conflict, draft, json);
+        }
+        try self.apply(json, revision);
+        self.job.?.draft_revision = null;
+        self.job.?.power_patch = true;
     }
     fn cancelApplicationActionBusy(self: *Service) bool {
         if (self.theme_jobs.job) |job| if (job.request.action == .application_install or job.request.action == .application_retry or job.request.action == .application_review) {
@@ -1018,6 +1032,10 @@ pub const Service = struct {
                 if (j.requested != null or (j.first_install and !j.recovered)) {
                     self.observed = io.digest(j.json);
                     self.revision += 1;
+                }
+                if (j.power_patch and self.draft.text != null) {
+                    // Concurrent edits are merged again; on conflict the original draft survives.
+                    self.draft.merge(a, self.draft.revision, self.revision, j.json) catch {};
                 }
                 gtk.StyleContext.addProviderForDisplay(self.display, j.provider.?.as(gtk.StyleProvider), 601);
                 if (j.native_provider) |p| gtk.StyleContext.addProviderForDisplay(self.display, p.as(gtk.StyleProvider), 599);

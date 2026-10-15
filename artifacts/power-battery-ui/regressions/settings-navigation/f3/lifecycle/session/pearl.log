@@ -1,0 +1,70 @@
+ts=2026-10-15T18:07:20Z pid=869890 info(pearl): event=aqueous-availability state=connecting
+ts=2026-10-15T18:07:20Z pid=869890 info(pearl): event=ready mode=session
+ts=2026-10-15T18:07:20Z pid=869890 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-10-15T18:07:20Z pid=869890 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-10-15T18:07:20Z pid=869890 info(pearl): event=aqueous-availability state=ready
+ts=2026-10-15T18:07:20Z pid=869890 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1
+ts=2026-10-15T18:07:20Z pid=869890 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-15T18:07:20Z pid=869890 info(pearl): event=settings-backend-ready session_hash=6201f8a6ec631c55
+ts=2026-10-15T18:07:20Z pid=869890 info(pearl): event=control-ready session_hash=6201f8a6ec631c55
+ts=2026-10-15T18:07:20Z pid=869890 debug(ui): event=popup-close-reason reason=popup-hide
+ts=2026-10-15T18:07:20Z pid=869890 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T18:07:20Z pid=869890 debug(ui): event=popup-opened output=1
+ts=2026-10-15T18:07:20Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:20Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:20Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:20Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:20Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:20Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 debug(ui): event=popup-closed
+ts=2026-10-15T18:07:21Z pid=869890 debug(ui): event=popup-close-reason reason=popup-hide
+ts=2026-10-15T18:07:21Z pid=869890 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T18:07:21Z pid=869890 debug(ui): event=popup-opened output=1
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:21Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-closed
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-opened output=1
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-closed
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-opened output=2
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=popup-close-reason reason=output-removed
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-closed
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-opened output=1
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=true control=true pane=control
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-close-reason reason=focus-lost
+ts=2026-10-15T18:07:22Z pid=869890 debug(ui): event=popup-closed
+ts=2026-10-15T18:07:22Z pid=869890 info(ui): event=settings-page-probe popup=false control=false pane=control
+ts=2026-10-15T18:07:22Z pid=869890 info(pearl): event=stopping reason=signal pending=false
+ts=2026-10-15T18:07:22Z pid=869890 info(pearl): event=aqueous-availability state=stopped
+ts=2026-10-15T18:07:22Z pid=869890 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-10-15T18:07:22Z pid=869890 info(pearl): event=stopped

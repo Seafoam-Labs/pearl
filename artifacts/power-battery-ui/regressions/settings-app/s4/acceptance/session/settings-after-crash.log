@@ -1,0 +1,12 @@
+ts=2026-10-15T18:07:55Z pid=879612 info(settings): event=settings-launch activation_context=false
+ts=2026-10-15T18:07:55Z pid=879612 info(settings): event=settings-instance-ready session_hash=5cd59ce8beeb5f92
+ts=2026-10-15T18:07:55Z pid=879612 info(settings): event=settings-page page=overview
+ts=2026-10-15T18:07:55Z pid=879612 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:55Z pid=879612 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-15T18:07:55Z pid=879612 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:56Z pid=879612 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T18:07:56Z pid=879612 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T18:07:57Z pid=879612 info(settings): event=settings-aqueous-action action=apply pending=false
+ts=2026-10-15T18:07:57Z pid=879612 info(settings): event=settings-activation activation_context=false
+
+(pearl-settings-test:879612): Gdk-WARNING **: 14:07:57.771: (../gtk/gdk/gdkframetimings.c:443):gdk_frame_timings_throttling_hint: runtime check failed: (self->result != GDK_FRAME_PREPARING)

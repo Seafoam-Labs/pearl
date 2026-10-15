@@ -79,6 +79,7 @@ pub const Window = struct {
     close: *const fn (*anyopaque) void,
     connected: bool = false,
     fixture: bool,
+    fixture_power: ?*@import("power_view.zig").View = null,
     narrow: bool = false,
     changing: bool = false,
     german: bool,
@@ -322,6 +323,7 @@ pub const Window = struct {
         return self;
     }
     pub fn destroy(self: *Window) void {
+        if (self.fixture_power) |view| view.destroy();
         if (self.navigation_reveal_id != 0) _ = glib.Source.remove(self.navigation_reveal_id);
         for ([_]*gtk.ScrolledWindow{ self.sidebar, self.popup_scroll }, self.navigation_signals) |scroll, signal| {
             if (signal != 0) object.signalHandlerDisconnect(scroll.getVadjustment().as(object.Object), signal);
@@ -628,6 +630,18 @@ pub const Window = struct {
                 self.sampleRow(self.card(body), "Find nearby devices", "Discovery starts when you choose Find devices.", value("Find devices"));
             },
             .power => {
+                if (self.fixture) {
+                    const view = @import("power_view.zig").View.create(body, self.window, self.editor) catch return;
+                    self.fixture_power = view;
+                    const ui = @import("live_protocol.zig");
+                    const alloc = self.arena.allocator();
+                    const controls = [_]ui.Control{
+                        ui.button(alloc, "lock", "Lock", .@"lifecycle.action", .{ .action = "lock" }, true) catch return,
+                        ui.button(alloc, "suspend", "Suspend", .@"lifecycle.action", .{ .action = "suspend" }, true) catch return,
+                    };
+                    view.update(.{ .available = true, .battery_present = true, .percentage = 73, .state = 2, .estimate = 14400, .health = 92, .history = &.{ .{ .seconds = 0, .percent = 100 }, .{ .seconds = 60, .percent = 90 }, .{ .seconds = 120, .percent = 73 } }, .on_battery = true, .profile = "balanced", .profiles = .{ true, true, true }, .brightness = 63, .brightness_available = true, .display_power_available = true, .idle_available = true, .config = .{ .battery = .{ .lock_seconds = 120, .screen_off_seconds = 300, .suspend_seconds = 900, .dim = true }, .automatic_saver = 20 } }, &.{.{ .id = "session", .title = "Session actions", .controls = &controls }});
+                    return;
+                }
                 self.sampleRow(self.card(body), "Battery", "Charging · About 35 minutes until full", value("82%"));
                 self.sampleRow(self.card(body), "Power mode", "Balance performance and energy use", value("Balanced"));
                 self.sampleRow(self.card(body), "Brightness", "Built-in display", value("72%"));
@@ -850,6 +864,12 @@ pub const Window = struct {
         self.requestSelect(.{ .page = if (self.aqueous.draft != null and self.target.page != .aqueous) .aqueous else .advanced }, false);
     }
     fn errorMessage(self: *Window, code: []const u8) [:0]const u8 {
+        if (self.target.page == .power) {
+            if (std.mem.eql(u8, code, "LockBeforeSuspendRequired")) return self.t("Set an automatic lock time earlier than suspend in Session & lock. This change was not saved.", "Unter Sitzung und Sperre eine automatische Sperre vor der Bereitschaft festlegen. Die Änderung wurde nicht gespeichert.");
+            if (std.mem.eql(u8, code, "ScreenOffAfterSuspend")) return self.t("The screen must turn off before or at the suspend timeout. This change was not saved.", "Der Bildschirm muss spätestens bei Bereitschaft ausgehen. Die Änderung wurde nicht gespeichert.");
+            if (std.mem.eql(u8, code, "MergeConflict") or std.mem.eql(u8, code, "Conflict")) return self.t("Power settings changed in another editor. Review the retained draft in Advanced, then try again.", "Energieeinstellungen wurden anderswo geändert. Den behaltenen Entwurf unter Erweitert prüfen und erneut versuchen.");
+            if (std.mem.eql(u8, code, "Busy")) return self.t("Power settings are still saving. Wait for completion, then try again.", "Energieeinstellungen werden noch gespeichert. Danach erneut versuchen.");
+        }
         if (std.mem.eql(u8, code, "Busy")) return self.t("Pearl is busy. Your changes are retained; try again when the current work completes.", "Pearl ist beschäftigt. Änderungen bleiben erhalten; versuche es nach Abschluss erneut.");
         if (std.mem.eql(u8, code, "NetworkEditorMissing")) return self.t("Install Network Connections (nm-connection-editor) to change advanced settings.", "Network Connections (nm-connection-editor) installieren, um erweiterte Einstellungen zu ändern.");
         if (std.mem.eql(u8, code, "NetworkEditorLaunchFailed")) return "The network connection editor could not be opened. You can keep using this window.";
@@ -1218,6 +1238,11 @@ pub const Window = struct {
         };
         if (self.live_pages[@intFromEnum(self.target.page)]) |view| if (view.sound_view) |sound| {
             for (sound.controls.items) |control| if (control.widget.getMapped() != 0) {
+                try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |f| f == control.widget or f.isAncestor(control.widget) != 0 else false, .enabled = control.widget.isSensitive() != 0, .bounds = self.bounds(control.widget) });
+            };
+        };
+        if (self.live_pages[@intFromEnum(self.target.page)]) |view| if (view.power_view) |power| {
+            for (power.controls.items) |control| if (control.widget.getMapped() != 0) {
                 try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |f| f == control.widget or f.isAncestor(control.widget) != 0 else false, .enabled = control.widget.isSensitive() != 0, .bounds = self.bounds(control.widget) });
             };
         };

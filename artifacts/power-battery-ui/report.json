@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "checks": {
+    "power-no-battery-at-startup": true,
+    "power-pointer-brightness-and-profile-with-stable-generation": true,
+    "power-battery-absent-hotplug-zero-and-peripheral": true,
+    "power-scoped-save-validation-draft-isolation-and-automatic-saver": true,
+    "power-real-idle-dim-screen-off-and-wake-restore": true,
+    "denied-power-operation-receipt-and-feedback": true,
+    "power-confirmation-cannot-be-used-by-another-peer": true,
+    "power-desktop-and-narrow-battery-layouts": true,
+    "power-light-large-text-and-german": true
+  }
+}

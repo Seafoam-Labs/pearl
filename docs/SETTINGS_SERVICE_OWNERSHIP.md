@@ -1,5 +1,26 @@
 # Settings service-view ownership
 
+## Power settings and idle display policy
+
+The shell Power service owns battery telemetry, a bounded session history, and
+automatic low-battery profile selection. A Settings view renders the typed power
+snapshot and retains its GTK controls during updates. Removing the system battery
+removes all battery-specific presentation without creating a replacement card.
+Manual brightness/profile actions retain their existing service-generation checks.
+Automatic profile decisions use the same serialized write queue and stop restoring
+a profile after a manual or external override.
+
+Lifecycle owns dim/screen-off idle notifications and output-power objects. It
+restores only outputs it turned off; output removal and protocol failure invalidate
+their handles. Power owns temporary backlight dimming and abandons restoration
+after a detected manual change or device/session-generation change. Existing lock,
+sleep, and inhibitor behavior remains authoritative.
+
+Immediate power preference edits belong to the existing backend and preference
+worker, with page lease, revision, allowed-field, capability, and draft-conflict
+checks. Settings does not write preferences or open hardware services itself.
+Session & lock and Advanced continue using the shared explicit-Apply draft.
+
 The compact flyout and a future Settings frontend share the shell's service
 objects. F3 introduces the in-process ownership interface below. The standalone
 plan still owns its authenticated, versioned frontend transport.

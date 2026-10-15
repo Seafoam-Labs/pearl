@@ -319,8 +319,10 @@ pub const View = struct {
         p.wallpaper.path = text(self.entries[2]);
         p.wallpaper.color = text(self.entries[3]);
         p.font = text(self.entries[4]);
-        p.idle.ac = .{ .lock_seconds = @intCast(self.idle_spins[0].getValueAsInt()), .suspend_seconds = @intCast(self.idle_spins[1].getValueAsInt()) };
-        p.idle.battery = .{ .lock_seconds = @intCast(self.idle_spins[2].getValueAsInt()), .suspend_seconds = @intCast(self.idle_spins[3].getValueAsInt()) };
+        p.idle.ac.lock_seconds = @intCast(self.idle_spins[0].getValueAsInt());
+        p.idle.ac.suspend_seconds = @intCast(self.idle_spins[1].getValueAsInt());
+        p.idle.battery.lock_seconds = @intCast(self.idle_spins[2].getValueAsInt());
+        p.idle.battery.suspend_seconds = @intCast(self.idle_spins[3].getValueAsInt());
         p.font_size = @intCast(self.font_size.getValueAsInt());
         p.bar.size = @intCast(self.bar_size.getValueAsInt());
         p.reduced_motion = self.motion.getActive() != 0;

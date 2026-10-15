@@ -11,6 +11,7 @@ bus=Gio.bus_get_sync(Gio.BusType.SYSTEM,None)
 loop=GLib.MainLoop()
 denied=False; delay=180
 battery={'IsPresent':GLib.Variant('b',True),'Percentage':GLib.Variant('d',72.5),'State':GLib.Variant('u',2),'TimeToEmpty':GLib.Variant('x',7200),'TimeToFull':GLib.Variant('x',0)}
+battery.update(Type=GLib.Variant('u',2),Capacity=GLib.Variant('d',92.0),NativePath=GLib.Variant('s','test-battery'))
 profile={'ActiveProfile':GLib.Variant('s','balanced'),'Profiles':GLib.Variant('aa{sv}',[{'Profile':GLib.Variant('s',n)} for n in ('power-saver','balanced','performance')]),'PerformanceDegraded':GLib.Variant('s','')}
 session={'Active':GLib.Variant('b',True),'Id':GLib.Variant('s','test'),'Class':GLib.Variant('s','user'),'User':GLib.Variant('(uo)',(os.getuid(),'/org/freedesktop/login1/user/test'))}
 upower={'OnBattery':GLib.Variant('b',True)}
@@ -92,6 +93,11 @@ def command(channel,condition):
         battery['Percentage']=GLib.Variant('d',data['battery']); changed('/org/freedesktop/UPower/devices/DisplayDevice','org.freedesktop.UPower.Device',battery)
     if 'present' in data:
         battery['IsPresent']=GLib.Variant('b',data['present']); changed('/org/freedesktop/UPower/devices/DisplayDevice','org.freedesktop.UPower.Device',battery)
+    for key,prop,signature in [('battery_type','Type','u'),('battery_state','State','u'),('health','Capacity','d'),('identity','NativePath','s')]:
+        if key in data:
+            battery[prop]=GLib.Variant(signature,data[key]); changed('/org/freedesktop/UPower/devices/DisplayDevice','org.freedesktop.UPower.Device',battery)
+    if 'on_battery' in data:
+        upower['OnBattery']=GLib.Variant('b',data['on_battery']); changed('/org/freedesktop/UPower','org.freedesktop.UPower',upower)
     if 'active' in data:
         session['Active']=GLib.Variant('b',data['active']); changed('/org/freedesktop/login1/session/test','org.freedesktop.login1.Session',session)
     if 'profile' in data:

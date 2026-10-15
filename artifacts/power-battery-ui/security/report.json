@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "checks": {
+    "uwsm-compositor-session-without-shell-session-environment": true,
+    "compositor-session-overrides-inactive-user-display-and-stale-environment": true,
+    "managed-compositor-inherited-session-validated-by-logind": true,
+    "foreign-greeter-missing-and-inactive-sessions-cannot-authenticate": true,
+    "user-service-without-pid-session-registers-for-display-session": true,
+    "display-session-validation-recovery-and-inactivity-cancellation": true,
+    "logind-session-native-idle-and-authority-registration": true,
+    "authority-identities-cancellation-and-unsupported-identity": true,
+    "authority-restart-and-escape-cleanup": true,
+    "confirmation-generation-and-sleep-inhibitor": true,
+    "native-lock-acquisition-acknowledgement": true,
+    "output-removal-return-remains-locked": true,
+    "pam-multi-message-failure-cancellation-and-success": true,
+    "native-lock-material-light-and-gtk-theme": true,
+    "suspend-lock-before-call-delay-release-and-resume-rearm": true,
+    "external-sleep-preparation": true,
+    "ac-battery-policy-selection": true,
+    "actual-idle-policy-pause-and-automatic-suspend": true,
+    "logind-restart": true,
+    "inactive-session-actions-gated": true,
+    "account-policy-denial-never-unlocks": true,
+    "shell-exit-preserves-independent-lock": true,
+    "false-ready-times-out-no-suspend-and-failed-preparation-retains-delay": true,
+    "locker-crash-fails-closed-and-aqueous-allows-authenticated-recovery": true,
+    "shell-sigkill-preserves-owned-locker-and-authentication": true,
+    "acknowledged-aqueous-logout-stops-shell": true,
+    "ipc-session-token-reaches-logs-only-as-a-digest": true
+  },
+  "binaries": {
+    "pearl": "6d3a08340e8f849c0fed6c7d22770dbd2725e4014cfafdec3990240802ebcc1e",
+    "ctl": "afedd6ee38f085b92a8f439daf504fa60738bf4dc8f7cbec27751fa8e3437bdf",
+    "locker": "eca1a6ee9fb0ad1e5ee0cd5bb91278bb48c8277507ff82dca76ead722c5d0475",
+    "pam_module": "1f1c7d4bb257da360c85ae16a7a7d8abb6228fa4b3d36221c2f148b28609f145"
+  },
+  "locked_capture_allowed": true
+}

@@ -1,0 +1,159 @@
+{
+  "status": "passed",
+  "checks": {
+    "two-process-handshake-persistent-heartbeat-and-capability-gating": true,
+    "cross-session-display-version-and-unimplemented-operation-denial": true,
+    "duplicate-id-denied": true,
+    "fragmented-frames-oversize-invalid-utf8-empty-frame": true,
+    "partial-handshake-timeout": true,
+    "eight-client-bound-and-disconnect-slot-reuse": true,
+    "handshake-does-not-create-popup-or-change-flyout-routing": true,
+    "backend-crash-eof-stale-socket-recovery-new-epoch-session-isolation": true,
+    "graceful-endpoint-cleanup": true
+  },
+  "pearl_sha256": "5540a1a03efff585386a8b8184893c9d00504dca06fe93555eb2da85c92dbb65"
+}
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_settings_lifecycle.py", line 202, in <module>
+    if __name__ == '__main__': main()
+                               ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_lifecycle.py", line 88, in main
+    if report(s, args.ctl)['button'] == 'Set up…': break
+       ~~~~~~^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/settings_navigation.py", line 10, in report
+    return ctl(session, binary, 'aqueous', 'status', '--text', 'test-settings-page')['result']
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 77, in ctl
+    assert result.returncode == code, (args, result.returncode, result.stdout, result.stderr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('aqueous', 'status', '--text', 'test-settings-page'), 4, '{"pearl":1,"id":"1","ok":false,"err":{"code":"Unavailable"}}\n', '')
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_settings_services.py", line 340, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_services.py", line 307, in main
+    navigate(s,ipc,'aqueous','displays');aq_ready(s,ipc,peer);peer.aq_action('discard');aq_ready(s,ipc,peer)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_services.py", line 63, in navigate
+    assert request(s,ipc,**params)['ok']
+           ~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_app.py", line 26, in request
+    with sock.makefile('rb') as f: return json.loads(f.readline())
+                                          ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+test-settings-lifecycle
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_lifecycle.py --pearl ./.zig-cache/o/c8e2ca2a751a6f5e81b90f13eb8f0b75/pearl-integration --ctl ./.zig-cache/o/d3f8ac1dbce132de94f87172c2f04d31/pearlctl --spike ./.zig-cache/o/f5cb764a0a29f65971c256a1f9eb5930/pearl-t00
+
+test-settings-services
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_services.py --settings ./.zig-cache/o/3c758d5f92c0d30198ab5256bee472d5/pearl-settings-test --pearl ./.zig-cache/o/ed4c2a49143de05662d5dbf8093723c7/pearl --ctl ./.zig-cache/o/d3f8ac1dbce132de94f87172c2f04d31/pearlctl --spike ./.zig-cache/o/f5cb764a0a29f65971c256a1f9eb5930/pearl-t00
+
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_services.py", line 294, in <module>
+    if __name__=='__main__': main()
+                             ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_services.py", line 97, in main
+    exercise(s,args.ctl,pearl,power,command,checks,args.spike.resolve())
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/volume_osd.py", line 143, in exercise
+    eventually_status(s, binary, lambda v: not v['osd'] and all(o['id'] != output['id'] for o in v['outputs']))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 92, in eventually_status
+    return wait_for(check)
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 32, in wait_for
+    raise TimeoutError('private session condition timed out')
+TimeoutError: private session condition timed out
+{
+  "status": "passed",
+  "checks": {
+    "uwsm-compositor-session-without-shell-session-environment": true,
+    "compositor-session-overrides-inactive-user-display-and-stale-environment": true,
+    "managed-compositor-inherited-session-validated-by-logind": true,
+    "foreign-greeter-missing-and-inactive-sessions-cannot-authenticate": true,
+    "user-service-without-pid-session-registers-for-display-session": true,
+    "display-session-validation-recovery-and-inactivity-cancellation": true,
+    "logind-session-native-idle-and-authority-registration": true,
+    "authority-identities-cancellation-and-unsupported-identity": true,
+    "authority-restart-and-escape-cleanup": true,
+    "confirmation-generation-and-sleep-inhibitor": true,
+    "native-lock-acquisition-acknowledgement": true,
+    "output-removal-return-remains-locked": true,
+    "pam-multi-message-failure-cancellation-and-success": true,
+    "native-lock-material-light-and-gtk-theme": true,
+    "suspend-lock-before-call-delay-release-and-resume-rearm": true,
+    "external-sleep-preparation": true,
+    "ac-battery-policy-selection": true,
+    "actual-idle-policy-pause-and-automatic-suspend": true,
+    "logind-restart": true,
+    "inactive-session-actions-gated": true,
+    "account-policy-denial-never-unlocks": true,
+    "shell-exit-preserves-independent-lock": true,
+    "false-ready-times-out-no-suspend-and-failed-preparation-retains-delay": true,
+    "locker-crash-fails-closed-and-aqueous-allows-authenticated-recovery": true,
+    "shell-sigkill-preserves-owned-locker-and-authentication": true,
+    "acknowledged-aqueous-logout-stops-shell": true,
+    "ipc-session-token-reaches-logs-only-as-a-digest": true
+  },
+  "binaries": {
+    "pearl": "73bd7ae9a5eea9254f9aeca374dc2edaa53adc87d720f84b1736ac41f99558dd",
+    "ctl": "5581d1b106421fed0f456065cf379655bd6b98cc7e13f0733ca5def3b53588ad",
+    "locker": "7a488075c5497b395bc0fcf29f1842d6d319403ee50ada6920ab790527081f53",
+    "pam_module": "1f1c7d4bb257da360c85ae16a7a7d8abb6228fa4b3d36221c2f148b28609f145"
+  },
+  "locked_capture_allowed": true
+}
+test-services
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_services.py --pearl ./.zig-cache/o/c8e2ca2a751a6f5e81b90f13eb8f0b75/pearl-integration --ctl ./.zig-cache/o/d3f8ac1dbce132de94f87172c2f04d31/pearlctl --spike ./.zig-cache/o/f5cb764a0a29f65971c256a1f9eb5930/pearl-t00
+
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_settings_presentation.py", line 148, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_presentation.py", line 130, in main
+    wait_for(lambda:other['id'] not in ipc.outputs())
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zoey/Pearl/scripts/pearl_session.py", line 28, in wait_for
+    value = check()
+  File "/home/zoey/Pearl/tests/integration/test_settings_presentation.py", line 130, in <lambda>
+    wait_for(lambda:other['id'] not in ipc.outputs())
+                                       ~~~~~~~~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 68, in outputs
+    return {e['id']: e for e in self.state() if e['kind'] == 'output' and e['enabled'] and e['powered']}
+                                ~~~~~~~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 65, in state
+    return self.call('snapshot')['batch']['upsert']
+           ~~~~~~~~~^^^^^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_surfaces.py", line 59, in call
+    self.sock.sendall(json.dumps(req).encode() + b'\n')
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+test-settings-presentation
++- run python3 failure
+error: process exited with error code 1
+failed command: python3 tests/integration/test_settings_presentation.py --settings ./.zig-cache/o/3c758d5f92c0d30198ab5256bee472d5/pearl-settings-test --pearl ./.zig-cache/o/c8e2ca2a751a6f5e81b90f13eb8f0b75/pearl-integration --ctl ./.zig-cache/o/d3f8ac1dbce132de94f87172c2f04d31/pearlctl
+
+Build Summary: 27/35 steps succeeded (4 failed)
+test-services transitive failure
++- run python3 failure
+test-settings-services transitive failure
++- run python3 failure
+test-settings-lifecycle transitive failure
++- run python3 failure
+test-settings-presentation transitive failure
++- run python3 failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/21fe07ef6e91d8370940350048735230/build /usr/bin/zig /usr/lib/zig /home/zoey/Pearl .zig-cache .cache/zig-global --seed 0xa3512320 -Z2b45b743e48ccc62 test-services test-settings-services test-settings-boundary test-settings-lifecycle test-settings-presentation test-security -j2

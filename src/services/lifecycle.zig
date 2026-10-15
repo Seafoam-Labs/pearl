@@ -24,6 +24,7 @@ pub const Lifecycle = struct {
     request_logout: *const fn (*anyopaque) void,
     peer: db.Peer = undefined,
     idle: Idle = undefined,
+    power: ?*@import("power.zig").Power = null,
     gate: policy.Gate = .{},
     config: policy.Config = .{},
     on_battery: bool = false,
@@ -97,6 +98,7 @@ pub const Lifecycle = struct {
         self.rearm();
     }
     fn rearm(self: *Lifecycle) void {
+        if (self.power) |power| power.dim(false);
         self.idle.configure(if (self.idle_held or (pearl_session_portal_holds() & 8) != 0 or !self.gate.available or !self.gate.active or self.gate.preparing) .{} else if (self.on_battery) self.config.battery else self.config.ac);
     }
     pub fn sync(self: *Lifecycle) void {
@@ -452,13 +454,21 @@ pub const Lifecycle = struct {
         const self: *Lifecycle = @ptrCast(@alignCast(data));
         if (!self.running) return;
         switch (event) {
+            .display_changed => {},
             .unavailable => {
+                self.idle.setScreenOff(false);
+                if (self.power) |power| power.dim(false);
                 self.gate.sleep_pending = false;
                 self.err = "Compositor idle notifications unavailable.";
             },
             .resumed => {
+                if (self.power) |power| power.dim(false);
                 if (!self.gate.preparing) self.gate.sleep_pending = false;
             },
+            .dim => if (self.gate.active and !self.gate.preparing and !self.idle_held) {
+                if (self.power) |power| power.dim(true);
+            },
+            .screen_off => if (self.gate.active and !self.gate.preparing and !self.idle_held) self.idle.setScreenOff(true),
             .lock => self.query(.lock) catch |err| {
                 if (err != error.Busy) log.err("event=lifecycle-failed op=query-lock error={s}", .{@errorName(err)});
             },
