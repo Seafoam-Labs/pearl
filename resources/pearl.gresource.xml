@@ -10,6 +10,9 @@
     <file alias="fixture-license.txt">../tests/fixtures/aqueous/GPL-3.0-only.txt</file>
     <file>demo.txt</file>
     <file>icons/scalable/actions/pearl-application-x-executable-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-applications-graphics-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-user-available-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-system-lock-screen-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-audio-volume-high-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-audio-volume-muted-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-avatar-default-symbolic.svg</file>

@@ -410,11 +410,11 @@ pub const Window = struct {
             .bluetooth => "pearl-bluetooth-active-symbolic",
             .sound => "pearl-audio-volume-high-symbolic",
             .power => "pearl-battery-symbolic",
-            .appearance => "applications-graphics-symbolic",
-            .assistant => "user-available-symbolic",
+            .appearance => "pearl-applications-graphics-symbolic",
+            .assistant => "pearl-user-available-symbolic",
             .bar, .aqueous => "pearl-window-symbolic",
             .notifications => "pearl-notifications-symbolic",
-            .session => "system-lock-screen-symbolic",
+            .session => "pearl-system-lock-screen-symbolic",
             .system, .advanced, .plugins => "pearl-emblem-system-symbolic",
         };
     }
