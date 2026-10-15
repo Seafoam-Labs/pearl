@@ -3,6 +3,10 @@
 const std = @import("std");
 const gio = @import("gio2");
 pub const c = @cImport({
+    // glibc's fortified variadic open/openat wrappers cannot be translated by
+    // Zig 0.16. This affects header translation only; file I/O uses std.c.
+    @cUndef("_FORTIFY_SOURCE");
+    @cDefine("_FORTIFY_SOURCE", "0");
     @cInclude("curl/curl.h");
     @cInclude("pthread.h");
     @cInclude("sys/socket.h");
