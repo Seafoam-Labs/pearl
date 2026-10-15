@@ -36,6 +36,7 @@ pub const Runtime = struct {
     logs: std.ArrayList(u8) = .empty,
     deadline: i64 = 0,
     last_memory_check: i64 = 0,
+    telemetry: ?*@import("telemetry.zig").Metrics = null,
     pub fn stop(self: *Runtime) void {
         if (self.process) |p| {
             if (self.pid > 0) _ = std.c.kill(-self.pid, std.c.SIG.KILL);
@@ -46,7 +47,7 @@ pub const Runtime = struct {
         if (self.lockfd >= 0) _ = std.c.close(self.lockfd);
         if (self.keyfile) |path| _ = std.c.unlink(path);
         if (self.arena) |*arena| arena.deinit();
-        self.* = .{};
+        self.* = .{ .telemetry = self.telemetry };
     }
     pub fn ensure(self: *Runtime, cfg: config.Config, cancel: *gio.Cancellable) !void {
         var scratch = std.heap.ArenaAllocator.init(a);
@@ -90,7 +91,17 @@ pub const Runtime = struct {
         const reasoning = if (model) |m| m.reasoning else false;
         self.check_tokens = if (reasoning) cfg.answerTokens() else 256;
         const filename = if (model) |m| try @import("downloads.zig").path(alloc, m) else try alloc.dupeZ(u8, cfg.custom_model);
-        _ = try @import("downloads.zig").verify(filename, model, cancel);
+        {
+            const verify_start = glib.getMonotonicTime();
+            defer if (self.telemetry) |metrics| {
+                metrics.verification_us += glib.getMonotonicTime() - verify_start;
+            };
+            _ = try @import("downloads.zig").verify(filename, model, cancel);
+        }
+        const load_start = glib.getMonotonicTime();
+        defer if (self.telemetry) |metrics| {
+            metrics.load_us += glib.getMonotonicTime() - load_start;
+        };
         const info = try probe.inspect(alloc, cfg.runtime, cfg.compute.mode != .cpu, cancel);
         if (reasoning and !info.has("--reasoning-format")) return error.RuntimeReasoningUnsupported;
         self.executable = info.executable;
@@ -167,7 +178,7 @@ pub const Runtime = struct {
             try self.monitor();
             if (self.process.?.getIdentifier() == null) return error.RuntimeStartupFailed;
             const ready = self.get(alloc, "/v1/models", cancel) catch |err| {
-                if (err != error.RequestFailed) return err;
+                if (err != error.RequestFailed and err != error.RequestTimedOut) return err;
                 glib.usleep(200000);
                 continue;
             };
@@ -187,6 +198,8 @@ pub const Runtime = struct {
         return error.RuntimeStartupFailed;
     }
     pub fn monitor(self: *Runtime) !void {
+        if (self.telemetry) |metrics| if (metrics.skip) |skip| if (skip.load(.monotonic)) return error.BenchmarkSkipped;
+        if (self.telemetry) |metrics| metrics.sample(self.pid);
         if (self.deadline != 0 and glib.getMonotonicTime() > self.deadline) return error.RuntimeCheckTimedOut;
         if (self.logfd >= 0) {
             var poll = [_]std.c.pollfd{.{ .fd = self.logfd, .events = std.c.POLL.IN, .revents = 0 }};
@@ -220,7 +233,7 @@ pub const Runtime = struct {
 };
 pub fn recoverable(err: anyerror) bool {
     return switch (err) {
-        error.GpuUnavailableOrMemoryInsufficient, error.GpuRuntimeCapabilityMissing, error.GpuOffloadUnverified, error.RuntimeStartupFailed, error.RuntimeLaunchFailed, error.InferenceFailed, error.RequestFailed, error.RuntimeExited, error.SystemMemoryPressure => true,
+        error.GpuUnavailableOrMemoryInsufficient, error.GpuRuntimeCapabilityMissing, error.GpuOffloadUnverified, error.RuntimeStartupFailed, error.RuntimeLaunchFailed, error.InferenceFailed, error.RequestFailed, error.RequestTimedOut, error.RuntimeExited, error.SystemMemoryPressure => true,
         else => false,
     };
 }

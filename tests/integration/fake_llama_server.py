@@ -71,6 +71,31 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.reply(200, {"tokens": [1] * 20})
             return
         messages = payload.get("messages", [])
+        if scenario.startswith("benchmark_"):
+            self.server.completions = getattr(self.server, "completions", 0) + 1
+            # First two calls are the production runtime compatibility check.
+            measuring = self.server.completions > 2
+            evidence = any(m["role"] == "tool" or m.get("content", "").startswith(("Search evidence", "Previous search evidence")) for m in messages)
+            if measuring and ("slow" in scenario or "delayed_answer" in scenario):
+                time.sleep(10)
+            if measuring and gpu and "mid_fail" in scenario and evidence:
+                self.reply(503, {"error": "simulated device loss"})
+                return
+            if measuring and "fallback" in scenario and not evidence:
+                delta = {"content": "Premature answer without evidence."}
+            elif not evidence and payload.get("tools"):
+                delta = {"tool_calls": [{"index": 0, "id": "local-search", "type": "function", "function": {"name": "search_web", "arguments": '{"query":"local benchmark evidence"}'}}]}
+            else:
+                question = " ".join(m.get("content", "") for m in messages if m["role"] == "user")
+                returning = any(m["role"] == "user" and m.get("content", "").startswith("The return trip takes 13") for m in messages)
+                answer = "The return trip takes 60 minutes. [1]" if returning else "The trip takes 47 minutes. [1]" if "depot timetable" in question else "RAM is temporary working memory; storage retains saved files. [1]"
+                if measuring and "invalid" in scenario:
+                    answer = "Unsupported answer. [99]"
+                if measuring and "repair" in scenario and payload.get("tools"):
+                    answer = "Uncited answer."
+                delta = {"content": answer}
+            self.stream(delta, finish="length" if measuring and "truncated" in scenario else "stop", telemetry=True)
+            return
         if scenario == "threads_explicit" and any("fixture GPU failure" in msg.get("content", "") for msg in messages):
             assert payload["max_tokens"] == 2048
         real_question = any("fixture GPU failure" in msg.get("content", "") for msg in messages)
@@ -112,8 +137,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 delta["tool_calls"][0]["function"]["arguments"] = '{ "query" : " RAM storage " }'
         self.stream(delta)
 
-    def stream(self, delta):
-        data = ("data: " + json.dumps({"choices": [{"delta": delta}]}) + "\n\ndata: [DONE]\n\n").encode()
+    def stream(self, delta, finish="stop", telemetry=False):
+        frames = [{"choices": [{"delta": {"reasoning_content": "Internal test reasoning, never a visible answer."}}]}, {"choices": [{"delta": delta, "finish_reason": finish}]}]
+        if telemetry:
+            frames.append({"choices": [], "usage": {"prompt_tokens": 40, "completion_tokens": 30, "completion_tokens_details": {"reasoning_tokens": 10}}, "timings": {"prompt_ms": 2.0, "predicted_ms": 50.0}})
+        data = ("".join("data: " + json.dumps(frame) + "\n\n" for frame in frames) + "data: [DONE]\n\n").encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Content-Length", str(len(data)))

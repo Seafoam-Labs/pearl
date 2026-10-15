@@ -1,8 +1,24 @@
 # Assistant model benchmarking and selection plan
 
-Status: proposed benchmark workflow, October 15, 2026. The model catalog and
-resource-limit changes are implemented separately; the comparison workflow below
-is not yet implemented.
+Status: comparison workflow implemented, October 15, 2026. The design below is
+implemented in [`benchmark.zig`](../src/agent/benchmark.zig),
+[`telemetry.zig`](../src/agent/telemetry.zig) and the native
+[`benchmark_view.zig`](../src/settings/benchmark_view.zig). See
+[usage and validation](ASSISTANT.md#compare-models-on-your-computer).
+
+The implementation includes explicit candidate downloads, CPU/current/CPU-and-GPU
+modes, detailed thread/context candidates, local fixtures through the production
+controller, cancellation and skipping, atomic history, export/delete, stale-result
+checks, transparent suggestions, and draft-only adoption. Closing Settings waits
+for cancellation and runtime cleanup. GPU failures retain their actual CPU/mixed
+sample results and are excluded from successful GPU recommendations.
+
+Qualification remains ongoing: the three suggested models passed the local CPU
+fixtures on one Ryzen 9 9950X3D. Broader human-reviewed quality evaluation, older
+x86/AArch64 machines, and physical discrete/shared-memory GPU testing require
+additional hardware and review. Runtime GPU memory and separate visible/reasoning
+throughput are reported unavailable where the runtime provides no measurement.
+The original design and acceptance criteria follow.
 
 Let users compare Pearl's suggested models on their own CPU or GPU and choose a
 model and configuration based on measured response time, memory use and usable

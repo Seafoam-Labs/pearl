@@ -70,8 +70,9 @@ including reasoning. It requires `--reasoning-format` support; Pearl requests
 separate reasoning fields and displays only the final answer. The two new
 Instruct profiles use 4,096 context tokens and 512 generation tokens. Larger
 profiles have longer inference deadlines. These are editable defaults, not
-performance rankings. The [model benchmark plan](ASSISTANT_MODEL_BENCHMARK_PLAN.md)
-describes the proposed hardware comparison and selection workflow.
+performance rankings. **Compare suggested models** measures the models on your
+computer; the [implementation plan](ASSISTANT_MODEL_BENCHMARK_PLAN.md) records
+the design and remaining hardware qualification.
 
 Build the frontend normally, or by itself:
 
@@ -170,9 +171,9 @@ conservatively as potentially using system RAM.
 Advanced controls allow automatic or bounded manual layer counts and a GPU
 memory target. Pearl reserves the greater of 512 MiB or 20% of device capacity,
 includes working/cache allowance, preserves context size and selects one device.
-Targets are estimates, not hard VRAM caps. A local CPU/GPU comparison uses a
-fixed short prompt and excludes model loading; it sends no search request and
-does not change saved settings.
+Targets are estimates, not hard VRAM caps. **Compare models on CPU and GPU**
+opens the same model-comparison workflow described below. It uses repeated local
+fixtures and reports model loading separately from warm answer timing.
 
 The chat's compute button reports verified offload, CPU fallback or Model
 unloaded. Its popover shows the executable, reported build, device/profile and
@@ -193,6 +194,72 @@ controller add their own overhead. Closing/stopping,
 locking, disabling or losing the shell connection cancels work. The runtime
 unloads after idle time. There are no inference children after the owning
 process exits.
+
+## Compare models on your computer
+
+Open **Settings → Assistant → Models → Compare suggested models**. Opening the
+panel reads hardware and saved results; it does not load or download models.
+Choose any of the three suggested Q4_K_M models, or the optional 350M baselines.
+Each entry shows installation status, download size, license and a rough RAM
+planning estimate. Estimates are advisory and do not impose a memory ceiling.
+
+Use **Download selected missing models** explicitly, or **Compare installed
+selections** to skip downloads. Choose **CPU**, **Current configuration**, or
+**Compare CPU and GPU**. Quick CPU comparisons use runtime-automatic threads and
+each model's profile. Current configuration preserves entered thread and token
+settings. Detailed mode adds allowed CPU topology-derived thread counts, your
+entered count, compatible 4K/8K contexts and your entered context. GPU comparisons
+test discovered compatible devices and retain explicit offload/memory choices.
+Detailed mode rotates candidate order and can take considerably longer.
+
+Each configuration loads in isolation, verifies its model and runtime, then runs
+one warm-up and three measured repetitions of two local question/follow-up pairs.
+The fixtures cover memory/storage explanations and a fictional timetable with
+known numeric answers. They use the same controller, tools, fallback and citation
+repair as chat, with local evidence replacing network providers and page fetches.
+No live searches, credentials or personal conversations are used. The runtime's
+exclusive lock prevents concurrent inference. An active answer is left running
+unless you choose **Stop answer and benchmark**.
+
+Progress identifies the model, configuration, sample and phase. **Cancel** stops
+the comparison and preserves completed results. **Skip current configuration**
+continues with the next candidate; an in-progress file verification completes
+before the skip takes effect. Closing Settings cancels, reaps inference and saves
+the final checkpoint before exiting. Locking or losing the Settings connection
+also cancels work.
+
+Results sort by completion time, memory or model name. They show median first
+visible answer latency, median complete-answer time and range, peak sampled
+process-tree RSS, fixture pass counts and actual CPU/GPU execution. Hidden
+reasoning, tool handling and citation correction count toward answer latency.
+Checksum verification and load/compatibility time are separate. Token throughput
+comes from runtime-reported counts/timing when available; hidden reasoning is
+never counted as visible output. OS high-water sums and sampled RSS can miss brief
+child-process peaks. GPU memory and separate reasoning throughput remain marked
+unavailable when they cannot be measured. Disk caches are not cleared.
+
+**Fastest successful**, **Lowest memory** and **Balanced** compare only successful
+results in the same context workload. Balanced picks lower memory within 20% of
+the fastest median, or its observed range if larger. Failed, truncated, incomplete,
+stale, and GPU-fallback results are excluded. Fallback samples retain their actual
+CPU label; they are not ranked as GPU successes. These small fixture checks do not
+establish general answer quality. **Show samples** exposes the answers and errors
+so you can judge the tradeoff yourself.
+
+**Use this configuration** changes only the Settings draft, including the exact
+tested model, runtime, compute, thread, context and generation choices. It preserves
+your enable/disable choice and search providers. **Apply** saves it; **Discard**
+restores the prior configuration. Result files and downloads are independent of
+Apply/Discard.
+
+History is stored atomically under
+`$XDG_STATE_HOME/pearl/assistant/benchmarks/` (normally `~/.local/state/pearl/assistant/benchmarks/`).
+Interrupted runs remain identifiable. **Export selected comparison** saves JSON;
+**Delete selected comparison** removes only that history file. Changes to model
+files/revisions, runtime executable, fixture version, CPU/affinity, OS, observable
+GPU/driver identity or power profile mark results stale on refresh and prevent
+adoption. Runtime capability/device checks still run again before inference;
+fingerprints are not a substitute for those checks.
 
 ## Floating window integration
 
@@ -253,7 +320,30 @@ python3 tests/integration/test_agent_models.py --models-dir /path/to/models \
     --runtime /absolute/llama-server --output /tmp/pearl-model-check
 ```
 
-This is a compatibility smoke test, not the proposed comparative benchmark.
+This is a compatibility smoke test. The implemented comparative benchmark has
+separate integration checks:
+
+```sh
+zig build test-agent-benchmark test-agent-benchmark-settings -- \
+    --model /path/to/LFM2.5-350M-Q4_K_M.gguf
+zig build build-benchmark-check
+```
+
+The test driver `zig-out/test/pearl-benchmark-check INPUT.json` accepts an object
+with `config` (assistant preferences) and `options` (`selected`: five catalog-order
+booleans, `mode`: `cpu`, `current` or `cpu_gpu`, and `detailed`: boolean). It uses
+the caller's XDG directories, prints the run as JSON and saves the same history as
+Settings. It never downloads. Use isolated XDG directories for automated tests.
+The fixture suite verifies fallback, citation correction, truncation, GPU failure,
+cancellation, skipping, checksum/missing-runtime errors and persistence. The native
+suite verifies draft adoption, Apply/Discard, stale results and shutdown cleanup.
+
+The three suggested models completed 48 fixture answers/follow-ups (36 measured,
+12 warm-up) on a Ryzen 9 9950X3D CPU. This is one-machine validation with background
+activity, not a general model ranking or physical GPU qualification. Recorded
+configuration and samples are in
+[`cpu-fixture-report.json`](../artifacts/assistant/model-benchmarks/cpu-fixture-report.json).
+
 After staging the runtime and supplying an existing model, run the real
 launcher/settings test with:
 

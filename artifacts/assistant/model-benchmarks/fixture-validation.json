@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "checks": {
+    "benchmark_ok": true,
+    "benchmark_fallback": true,
+    "benchmark_repair": true,
+    "benchmark_invalid": true,
+    "benchmark_truncated": true,
+    "gpu_fallback_labeled_cpu": true,
+    "mid_answer_gpu_recovery": true,
+    "cancel_releases_runtime_and_saves": true,
+    "probe_cancellation_saved": true,
+    "skip_releases_current_runtime": true,
+    "failures_continue_and_persist": true,
+    "completed_result_survives_later_failure": true,
+    "checksum_failure_recorded": true,
+    "history_retained": true
+  }
+}

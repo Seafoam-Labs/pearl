@@ -43,9 +43,15 @@ class EditorPeer:
         return reply['result']['snapshot']
 
     def document(self, kind='draft'):
-        state = self.state()
-        revision = state['revision' if kind == 'committed' else 'draft_revision']
-        reply = self.call('document.get', domain='pearl', kind=kind, revision=revision)
+        # Native controls can publish a draft between page.get and document.get.
+        # Retry that explicit optimistic-read race, never other protocol errors.
+        for _ in range(8):
+            state = self.state()
+            revision = state['revision' if kind == 'committed' else 'draft_revision']
+            reply = self.call('document.get', domain='pearl', kind=kind, revision=revision)
+            if reply['ok'] or reply.get('err', {}).get('code') != 'StaleDraft':
+                break
+            time.sleep(.01)
         assert reply['ok'], reply
         meta = reply['result']
         content = b''

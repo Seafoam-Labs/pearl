@@ -1111,6 +1111,21 @@ pub const Window = struct {
         var controls: std.ArrayList(ControlProbe) = .empty;
         const focus = self.window.getFocus();
         if (self.assistant_view) |view| if (self.target.page == .assistant) {
+            if (view.comparison) |comparison| {
+                const toggle = comparison.expander.getLabelWidget().?;
+                try controls.append(alloc, .{ .field = "benchmark.open", .focused = focus == toggle, .bounds = self.bounds(toggle) });
+                inline for (.{ "start", "stop_start", "download", "cancel_button", "skip_button", "refresh", "export_button", "delete_button", "mode", "detail", "sort", "history" }) |name| {
+                    const widget = @field(comparison, name).as(gtk.Widget);
+                    try controls.append(alloc, .{ .field = "benchmark." ++ name, .focused = focus == widget, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+                }
+                for (comparison.candidates, 0..) |check, i| try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "benchmark.model.{d}", .{i}), .selected = check.getActive() != 0, .focused = focus == check.as(gtk.Widget), .enabled = check.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(check.as(gtk.Widget)) });
+                for (comparison.row_controls.items) |row| {
+                    try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "benchmark.use.{d}", .{row.index}), .focused = focus == row.use.as(gtk.Widget), .enabled = row.use.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(row.use.as(gtk.Widget)) });
+                    try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "benchmark.show.{d}", .{row.index}), .focused = focus == row.show.as(gtk.Widget), .enabled = row.show.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(row.show.as(gtk.Widget)) });
+                }
+                try controls.append(alloc, .{ .field = "benchmark.status", .focused = false, .text = std.mem.span(comparison.status.getText()), .bounds = self.bounds(comparison.status.as(gtk.Widget)) });
+                try controls.append(alloc, .{ .field = "benchmark.samples", .focused = false, .text = std.mem.span(comparison.details.getText()), .bounds = self.bounds(comparison.details.as(gtk.Widget)) });
+            }
             inline for (.{ "enabled", "model", "custom", "endpoint", "provider", "read_pages", "runtime_source", "runtime_path", "compute_mode", "backend", "device", "fallback", "layers", "gpu_memory", "threads", "context", "tokens" }) |name| {
                 const widget = @field(view, name).as(gtk.Widget);
                 try controls.append(alloc, .{ .field = "assistant." ++ name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });

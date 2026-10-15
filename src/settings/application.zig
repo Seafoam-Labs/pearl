@@ -28,6 +28,7 @@ const App = struct {
     forwarding: bool = false,
     forward_deadline: c_uint = 0,
     forward_retry: c_uint = 0,
+    benchmark_close_wait: c_uint = 0,
     signals: [2]c_uint = @splat(0),
     target: nav.Target,
     activation: ?[]const u8,
@@ -211,7 +212,7 @@ const App = struct {
                     window.editingChanged();
                 };
             },
-            .close_ready => self.app.as(gio.Application).quit(),
+            .close_ready => self.finishClose(),
             .close_failed => if (self.window) |window| {
                 window.closeFailure();
             },
@@ -231,6 +232,24 @@ const App = struct {
     fn retry(context: *anyopaque) void {
         const self: *App = @ptrCast(@alignCast(context));
         self.client.begin();
+    }
+    fn finishClose(self: *App) void {
+        // Keep the main context alive until the benchmark worker has reaped
+        // inference and atomically saved its cancelled checkpoint.
+        if (self.window) |window| if (window.assistant_view) |assistant| if (assistant.comparison) |comparison| if (comparison.busy()) {
+            if (comparison.cancel) |cancel| cancel.cancel();
+            window.window.as(gtk.Widget).setSensitive(0);
+            if (self.benchmark_close_wait == 0) self.benchmark_close_wait = glib.timeoutAdd(25, benchmarkClosed, self);
+            return;
+        };
+        self.app.as(gio.Application).quit();
+    }
+    fn benchmarkClosed(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *App = @ptrCast(@alignCast(data.?));
+        if (self.window) |window| if (window.assistant_view) |assistant| if (assistant.comparison) |comparison| if (comparison.busy()) return 1;
+        self.benchmark_close_wait = 0;
+        self.app.as(gio.Application).quit();
+        return 0;
     }
     fn close(context: *anyopaque) void {
         const self: *App = @ptrCast(@alignCast(context));
@@ -291,6 +310,7 @@ pub fn run(target: nav.Target) !u8 {
     self.forward.framer.limit = 8192;
     defer self.forward.deinit();
     defer {
+        if (self.benchmark_close_wait != 0) _ = glib.Source.remove(self.benchmark_close_wait);
         if (self.forward_deadline != 0) _ = glib.Source.remove(self.forward_deadline);
         if (self.forward_retry != 0) _ = glib.Source.remove(self.forward_retry);
         for (self.signals) |id| if (id != 0) {

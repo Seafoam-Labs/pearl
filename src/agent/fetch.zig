@@ -151,7 +151,8 @@ pub fn request(a: std.mem.Allocator, opts: Options, cancel: *gio.Cancellable) !R
         try option(handle, c.CURLOPT_POSTFIELDSIZE, @as(c_long, @intCast(body.len)));
         try option(handle, c.CURLOPT_POSTFIELDS, body.ptr);
     }
-    if (c.curl_easy_perform(handle) != c.CURLE_OK) return transfer.failure orelse if (cancel.isCancelled() != 0) error.Cancelled else error.RequestFailed;
+    const performed = c.curl_easy_perform(handle);
+    if (performed != c.CURLE_OK) return transfer.failure orelse if (cancel.isCancelled() != 0) error.Cancelled else if (performed == c.CURLE_OPERATION_TIMEDOUT) error.RequestTimedOut else error.RequestFailed;
     var status: c_long = 0;
     _ = c.curl_easy_getinfo(handle, c.CURLINFO_RESPONSE_CODE, &status);
     var mime: ?[*:0]u8 = null;

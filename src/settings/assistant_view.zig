@@ -76,6 +76,7 @@ pub const View = struct {
     job: ?*Job = null,
     timer: c_uint = 0,
     buttons: [10]*gtk.Button = undefined,
+    comparison: ?*@import("benchmark_view.zig").View = null,
     pub fn create(host: *gtk.Box, editor: *Editor) !*View {
         const self = try a.create(View);
         const general = section(host, "General");
@@ -127,7 +128,7 @@ pub const View = struct {
         runtime_section.append(advanced.as(gtk.Widget));
         note(runtime_section, "Check runs the selected executable and a local model/tool test; no web searches. Stop any current answer first. The idle model unloads before testing. Tests use draft settings and do not Apply them.");
         const runtime_check = button(runtime_section, "Check runtime and model now");
-        const benchmark = button(runtime_section, "Compare CPU and selected GPU locally");
+        const benchmark = button(runtime_section, "Compare models on CPU and GPU…");
         const engines = section(host, "Search engines");
         note(engines, "Bing is the default search engine and works without an account, API key or server setup. Questions are sent to Bing only when you ask or test the connection. Other engines remain available below.");
         const all = toggle(engines, "Search all enabled engines (maximum 3)");
@@ -179,12 +180,14 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(cancel_button, *View, cancelClicked, self, .{});
         _ = gtk.Button.signals.clicked.connect(browse, *View, browseClicked, self, .{});
         _ = object.Object.signals.notify.connect(device.as(object.Object), *View, deviceSelected, self, .{ .detail = "selected" });
+        self.comparison = try @import("benchmark_view.zig").View.create(models, editor, self, comparisonAvailable);
         self.timer = glib.timeoutAdd(250, tick, self);
         self.update();
         return self;
     }
     pub fn destroy(self: *View) void {
         self.dead = true;
+        if (self.comparison) |comparison| comparison.destroy();
         if (self.timer != 0) _ = glib.Source.remove(self.timer);
         self.timer = 0;
         if (self.cancel) |cancel| cancel.cancel();
@@ -437,11 +440,20 @@ pub const View = struct {
     }
     fn actionClicked(button_: *gtk.Button, self: *View) callconv(.c) void {
         for (self.buttons, 0..) |b, i| if (button_ == b) {
+            if (i == @intFromEnum(Action.benchmark)) {
+                if (self.comparison) |comparison| {
+                    comparison.mode.setSelected(2);
+                    comparison.expander.setExpanded(1);
+                    _ = comparison.expander.as(gtk.Widget).grabFocus();
+                }
+                return;
+            }
             self.begin(@enumFromInt(i)) catch |err| self.status.setText(@errorName(err));
             return;
         };
     }
     fn begin(self: *View, action: Action) !void {
+        if (self.comparison) |comparison| if (comparison.busy()) return error.OperationInProgress;
         if (self.job != null) return error.OperationInProgress;
         if (!self.editor.editable()) return error.SettingsUnavailable;
         const job = try a.create(Job);
@@ -474,6 +486,10 @@ pub const View = struct {
         self.status.setText(if (action == .setup_runtime) "Checking installed runtimes… If installation is needed, complete the package manager prompts in the terminal. Setup continues until the terminal exits." else "Working…");
         self.update();
     }
+    fn comparisonAvailable(context: *anyopaque) bool {
+        const self: *View = @ptrCast(@alignCast(context));
+        return !self.dead and self.job == null;
+    }
     fn work(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, cancel: ?*gio.Cancellable) callconv(.c) void {
         const job: *Job = @ptrCast(@alignCast(data.?));
         operate(job, cancel.?) catch |err| {
@@ -503,7 +519,8 @@ pub const View = struct {
             .apply_stop => {
                 _ = try @import("../agent/control.zig").command(alloc, "cancel", cancel);
             },
-            .verify, .runtime_check, .benchmark => {
+            .benchmark => return error.UseModelComparison,
+            .verify, .runtime_check => {
                 _ = try @import("../agent/control.zig").command(alloc, "release", cancel);
                 var runtime: @import("../agent/runtime.zig").Runtime = .{};
                 defer runtime.stop();
@@ -518,21 +535,6 @@ pub const View = struct {
                     break;
                 }
                 job.details = try std.fmt.allocPrint(alloc, "{s}\n{s}\nCompatible · {s}\n{s}", .{ runtime.executable, runtime.version, if (runtime.gpu) "GPU offload verified" else "CPU", runtime.fallback_reason });
-                if (job.action == .benchmark) {
-                    if (!runtime.gpu) return error.SelectGpuForComparison;
-                    const llama = @import("../agent/llama.zig");
-                    const messages = [_]llama.Message{.{ .role = "user", .content = "Explain briefly how rain forms." }};
-                    const start = glib.getMonotonicTime();
-                    _ = try llama.complete(alloc, &runtime, &messages, 64, false, cancel);
-                    const gpu_ms = @divTrunc(glib.getMonotonicTime() - start, 1000);
-                    var cpu = job.config;
-                    cpu.compute.mode = .cpu;
-                    try runtime.ensure(cpu, cancel);
-                    const cpu_start = glib.getMonotonicTime();
-                    _ = try llama.complete(alloc, &runtime, &messages, 64, false, cancel);
-                    const cpu_ms = @divTrunc(glib.getMonotonicTime() - cpu_start, 1000);
-                    job.details = try std.fmt.allocPrint(alloc, "Local sample completion (up to 64 tokens, load excluded): GPU {d} ms; CPU {d} ms. Output lengths may differ. Settings unchanged.", .{ gpu_ms, cpu_ms });
-                }
             },
             .test_provider => {
                 _ = try @import("../agent/providers.zig").search(alloc, job.provider, "Pearl desktop", cancel);

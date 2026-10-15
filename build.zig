@@ -305,6 +305,15 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "gio2", "giounix2", "glib2", "gobject2" }) |name| agent_tests.addImport(name, bindings.module(name));
     for ([_][]const u8{ "gio-2.0", "libcurl", "libxml-2.0", "libsecret-1" }) |name| agent_tests.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     b.step("test-agent", "Test assistant policy, tools, providers and native extraction").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = agent_tests })).step);
+    const benchmark_module = b.createModule(.{ .root_source_file = b.path("src/benchmark_check.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "giounix2", "glib2", "gobject2" }) |name| benchmark_module.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gio-2.0", "libcurl", "libxml-2.0", "libsecret-1" }) |name| benchmark_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+    const benchmark_check = b.addExecutable(.{ .name = "pearl-benchmark-check", .root_module = benchmark_module });
+    b.step("build-benchmark-check", "Build the headless local model comparison driver").dependOn(&b.addInstallArtifact(benchmark_check, .{ .dest_dir = .{ .override = .{ .custom = "test" } } }).step);
+    const benchmark_tests = b.addSystemCommand(&.{ "python3", "tests/integration/test_agent_benchmark.py", "--driver" });
+    benchmark_tests.addArtifactArg(benchmark_check);
+    if (b.args) |args| benchmark_tests.addArgs(args);
+    b.step("test-agent-benchmark", "Verify local benchmark lifecycle, failures and persistence").dependOn(&benchmark_tests.step);
     var agent_build: *std.Build.Step = undefined;
     for ([_]bool{ false, true }) |instrumented| {
         const agent_module = b.createModule(.{ .root_source_file = b.path("src/agent_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
@@ -802,6 +811,13 @@ pub fn build(b: *std.Build) void {
     assistant_models.addArtifactArg(ctl);
     if (b.args) |args| assistant_models.addArgs(args);
     b.step("test-agent-model-settings", "Verify model choices and resource settings through the native Settings draft").dependOn(&assistant_models.step);
+    const benchmark_settings = b.addSystemCommand(&.{ "python3", "tests/integration/test_agent_benchmark_settings.py" });
+    for ([_][]const u8{ "--pearl", "--ctl", "--settings" }, [_]*std.Build.Step.Compile{ integration_app, ctl, settings_test_app }) |flag, binary| {
+        benchmark_settings.addArg(flag);
+        benchmark_settings.addArtifactArg(binary);
+    }
+    if (b.args) |args| benchmark_settings.addArgs(args);
+    b.step("test-agent-benchmark-settings", "Verify native benchmark comparison and draft adoption").dependOn(&benchmark_settings.step);
     const lock_tests = b.addSystemCommand(&.{ "python3", "tests/integration/test_lock.py", "--locker" });
     lock_tests.addArtifactArg(test_locker);
     lock_tests.addArg("--pam-module");

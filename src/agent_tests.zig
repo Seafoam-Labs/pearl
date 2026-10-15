@@ -13,4 +13,6 @@ test {
     _ = @import("agent/memory.zig");
     _ = @import("agent/model_registry.zig");
     _ = @import("agent/downloads.zig");
+    _ = @import("agent/benchmark.zig");
+    _ = @import("agent/telemetry.zig");
 }
