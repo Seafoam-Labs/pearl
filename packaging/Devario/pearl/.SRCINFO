@@ -1,6 +1,6 @@
 pkgbase = pearl
 	pkgdesc = GTK desktop shell exclusively for Aqueous (release candidate)
-	pkgver = 0.2.5
+	pkgver = 0.2.6
 	pkgrel = 1
 	epoch = 1
 	url = https://github.com/Seafoam-Labs/pearl
@@ -37,7 +37,7 @@ pkgbase = pearl
 	makedepends = cairo>=1.18.4
 	options = !strip
 	options = !debug
-	source = pearl-0.2.5::git+https://github.com/Seafoam-Labs/pearl.git#tag=v0.2.5
+	source = pearl-0.2.6::git+https://github.com/Seafoam-Labs/pearl.git#tag=v0.2.6
 	source = https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.2/wasmtime-v48.0.2-x86_64-linux-c-api.tar.xz
 	source = https://github.com/bytecodealliance/wit-bindgen/releases/download/v0.62.0/wit-bindgen-0.62.0-x86_64-linux.tar.gz
 	source = https://github.com/bytecodealliance/wasm-tools/releases/download/v1.259.0/wasm-tools-1.259.0-x86_64-linux.tar.gz
@@ -79,7 +79,7 @@ pkgname = pearl
 	optdepends = pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported
 	optdepends = llama-cpp: system runtime for launcher assistant setup
 	optdepends = shelly: assistant runtime installation on Devario
-	optdepends = foot: terminal for interactive assistant runtime installation
+	optdepends = ghostty: terminal for interactive assistant runtime installation
 	optdepends = gvfs: Trash, SFTP connections, and administrative filesystems in Phyto
 	optdepends = gvfs-smb: SMB network connections in Phyto
 	optdepends = gvfs-dnssd: WebDAV connections and network discovery in Phyto

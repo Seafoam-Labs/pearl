@@ -1,8 +1,8 @@
-# Devario Core: build the v0.2.5 Pearl release tag.
+# Devario Core: build the v0.2.6 Pearl release tag.
 # One build produces the independently installable shell and login greeter.
 pkgbase=pearl
 pkgname=(pearl pearl-greeter)
-pkgver=0.2.5
+pkgver=0.2.6
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1

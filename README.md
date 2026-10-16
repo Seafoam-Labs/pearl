@@ -4,7 +4,7 @@ Pearl is a **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with
 
 Pearl's initial design and implementation used **spec-driven development**. Written specifications defined the product's behavior, visual direction, architecture and acceptance criteria before implementation. Those specifications guided AI-assisted implementation and verification, keeping the work tied to explicit requirements and testable outcomes.
 
-Version **0.2.5** includes the local launcher assistant with Bing RSS search by default, alongside floating islands, a dock, migration tooling and Arch packaging. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
+Version **0.2.6** adds live Pearl theme following in Dome and updated Settings pages, alongside the local launcher assistant with Bing RSS search by default, floating islands, a dock, migration tooling and Arch packaging. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
 
 The pinned Zig 0.16.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
