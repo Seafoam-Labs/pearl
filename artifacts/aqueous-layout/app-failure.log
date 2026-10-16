@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/home/zoey/Pearl/tests/integration/test_settings_app.py", line 395, in <module>
+    if __name__ == '__main__': main()
+                               ~~~~^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_app.py", line 294, in main
+    v = choose_navigation(s, ipc, 'aqueous', pointer=False)
+  File "/home/zoey/Pearl/tests/integration/test_settings_app.py", line 93, in choose_navigation
+    row = next(link for link in probe(s, ipc)['links'] if link['page'] == page and link['section'] == section)
+                                ~~~~~^^^^^^^^
+  File "/home/zoey/Pearl/tests/integration/test_settings_app.py", line 30, in probe
+    result = request(s, ipc, op='probe')
+  File "/home/zoey/Pearl/tests/integration/test_settings_app.py", line 23, in request
+    sock.settimeout(5); sock.connect(str(endpoint(s, ipc)))
+                        ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [Errno 111] Connection refused

@@ -40,6 +40,7 @@ test {
     _ = @import("config/power_patch.zig");
     _ = @import("services/session_environment.zig");
     _ = @import("config/aqueous_model.zig");
+    _ = @import("config/aqueous_presentation.zig");
     _ = @import("config/aqueous_draft.zig");
     _ = @import("config/border_theme.zig");
     _ = @import("config/aqueous_contract.zig");

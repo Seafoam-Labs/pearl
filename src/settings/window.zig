@@ -92,6 +92,9 @@ pub const Window = struct {
     native: ?*gdk.Surface = null,
     resize_id: c_uint = 0,
     restore_id: c_uint = 0,
+    restore_tick: c_uint = 0,
+    restore_frame: bool = false,
+    restore_new_focus: bool = false,
     pub fn create(app: *gtk.Application, context: *anyopaque, retry: @FieldType(Window, "retry"), close: @FieldType(Window, "close"), fixture: bool, editor: *@import("editor.zig").Editor, aqueous: *@import("aqueous_editor.zig").Editor) !*Window {
         const self = try a.create(Window);
         const win = gtk.ApplicationWindow.new(app).as(gtk.Window);
@@ -294,8 +297,10 @@ pub const Window = struct {
         if (!fixture) {
             const host = object.ext.cast(gtk.Box, self.pages[@intFromEnum(nav.Route.aqueous)].body).?;
             while (host.as(gtk.Widget).getFirstChild()) |child| host.remove(child);
-            self.aqueous_view = try @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).createIn(host, aqueous, win, aqueous_footer);
+            self.aqueous_view = try @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).createIn(host, aqueous, win, aqueous_footer, self.german);
             self.aqueous_view.?.rebuild_observer = .{ .context = self, .notify = aqueousRebuilt };
+            self.aqueous_view.?.open_appearance = .{ .context = self, .notify = aqueousAppearanceRequested };
+            self.aqueous_view.?.open_section = .{ .context = self, .notify = aqueousSectionRequested };
         }
         _ = gtk.Button.signals.clicked.connect(review_button, *Window, reviewClicked, self, .{});
         gtk.StyleContext.addProviderForDisplay(display, self.css.as(gtk.StyleProvider), 600);
@@ -349,6 +354,7 @@ pub const Window = struct {
         if (self.preferences_view) |view| view.destroy();
         if (self.assistant_view) |view| view.destroy();
         if (self.restore_id != 0) _ = glib.Source.remove(self.restore_id);
+        if (self.restore_tick != 0) self.stack.as(gtk.Widget).removeTickCallback(self.restore_tick);
         if (self.resize_id != 0) _ = glib.Source.remove(self.resize_id);
         if (self.native) |surface| if (self.layout_id != 0) {
             object.signalHandlerDisconnect(surface.as(object.Object), self.layout_id);
@@ -673,6 +679,10 @@ pub const Window = struct {
             _ = glib.Source.remove(self.restore_id);
             self.restore_id = 0;
         }
+        if (self.restore_tick != 0) {
+            self.stack.as(gtk.Widget).removeTickCallback(self.restore_tick);
+            self.restore_tick = 0;
+        }
         const previous = &self.pages[@intFromEnum(self.target.page)];
         if (self.target.page == .aqueous) self.aqueous_states[self.aqueous_section].scroll = previous.scroll.getVadjustment().getValue();
         if (self.window.getFocus()) |focus| if (focus == previous.body or focus.isAncestor(previous.body) != 0) {
@@ -693,7 +703,9 @@ pub const Window = struct {
         const context_title = std.fmt.allocPrintSentinel(a, "Aqueous / {s}", .{heading}, 0) catch unreachable;
         defer a.free(context_title);
         w.name(self.heading_anchor, if (target.page == .aqueous) context_title else heading);
-        self.subtitle.setText(if (target.page == .aqueous and self.aqueous_section == 5) "Make your screens match your workspace." else self.description(target.page));
+        const aqueous_en = [_][:0]const u8{ "Window borders, effects and desktop details.", "Arrange windows and shape your workspace.", "Make your keyboard and pointer feel right.", "Find actions and customize their shortcuts.", "Choose how matching windows behave.", "Make your screens match your workspace.", "Configuration status, sources and recovery." };
+        const aqueous_de = [_][:0]const u8{ "Fensterrahmen, Effekte und Desktop-Details.", "Fenster und Arbeitsflächen anordnen.", "Tastatur und Zeiger nach Wunsch einstellen.", "Aktionen finden und Tastenkürzel anpassen.", "Das Verhalten passender Fenster festlegen.", "Bildschirme an die Arbeitsfläche anpassen.", "Konfigurationsstatus, Quellen und Wiederherstellung." };
+        self.subtitle.setText(if (target.page == .aqueous) (if (self.german) aqueous_de[self.aqueous_section] else aqueous_en[self.aqueous_section]) else self.description(target.page));
         self.stack.setVisibleChildName(target.page.id());
         const keep_open = self.keep_sections_open and !external and self.popover.as(gtk.Widget).getVisible() != 0;
         self.keep_sections_open = false;
@@ -704,7 +716,7 @@ pub const Window = struct {
             self.pageFocus().* = null;
             if (target.page == .aqueous) self.aqueous_states[self.aqueous_section].scroll = 0;
         }
-        self.restore_id = glib.idleAdd(restore, self);
+        self.scheduleRestore(false);
         const preference = switch (target.page) {
             .appearance, .assistant, .bar, .notifications, .session, .advanced, .plugins => true,
             else => false,
@@ -717,6 +729,28 @@ pub const Window = struct {
         if (!self.fixture) self.editingChanged();
         log.info("event=settings-page page={s}", .{target.page.id()});
     }
+    fn scheduleRestore(self: *Window, rebuilding: bool) void {
+        self.restore_new_focus = rebuilding;
+        if (self.target.page != .aqueous) {
+            self.restore_id = glib.idleAdd(restore, self);
+            return;
+        }
+        // Stack sections have independent heights. Wait until the first frame
+        // allocated the destination before restoring its adjustment, otherwise
+        // GTK clamps it against the preceding section's shorter scroll range.
+        self.restore_frame = false;
+        self.restore_tick = self.stack.as(gtk.Widget).addTickCallback(restoreFrame, self, null);
+    }
+    fn restoreFrame(_: *gtk.Widget, _: *gdk.FrameClock, context: ?*anyopaque) callconv(.c) c_int {
+        const self: *Window = @ptrCast(@alignCast(context.?));
+        if (!self.restore_frame) {
+            self.restore_frame = true;
+            return 1;
+        }
+        self.restore_tick = 0;
+        _ = restore(self);
+        return 0;
+    }
     fn restore(context: ?*anyopaque) callconv(.c) c_int {
         const self: *Window = @ptrCast(@alignCast(context.?));
         self.restore_id = 0;
@@ -726,7 +760,14 @@ pub const Window = struct {
         }
         const page = &self.pages[@intFromEnum(self.target.page)];
         const scroll = if (self.target.page == .aqueous) self.aqueous_states[self.aqueous_section].scroll else page.scroll.getVadjustment().getValue();
-        const focus = self.pageFocus().*;
+        if (self.target.page == .aqueous) if (self.aqueous_view) |view| if (view.focusIssue()) {
+            self.revealNavigation();
+            return 0;
+        };
+        // A modal editor can restore its own trigger after rebuilding the page.
+        // Do not let the deferred scroll restoration replace that newer focus.
+        const current = self.window.getFocus();
+        const focus = if (self.restore_new_focus and current != null and current.?.getMapped() != 0 and current.?.isAncestor(page.body) != 0) current else self.pageFocus().*;
         if (focus) |widget| {
             if (widget.getMapped() == 0 or widget.isAncestor(page.body) == 0 or widget.grabFocus() == 0) _ = self.heading_anchor.grabFocus();
         } else _ = self.heading_anchor.grabFocus();
@@ -736,6 +777,14 @@ pub const Window = struct {
     }
     fn pageFocus(self: *Window) *?*gtk.Widget {
         return if (self.target.page == .aqueous) &self.aqueous_states[self.aqueous_section].focus else &self.pages[@intFromEnum(self.target.page)].focus;
+    }
+    fn aqueousAppearanceRequested(context: *anyopaque) void {
+        const self: *Window = @ptrCast(@alignCast(context));
+        self.requestSelect(.{ .page = .appearance }, false);
+    }
+    fn aqueousSectionRequested(context: *anyopaque, section: []const u8) void {
+        const self: *Window = @ptrCast(@alignCast(context));
+        self.requestSelect(.{ .page = .aqueous, .section = section }, false);
     }
     fn aqueousRebuilt(context: *anyopaque, rebuilding: bool) void {
         const self: *Window = @ptrCast(@alignCast(context));
@@ -750,7 +799,7 @@ pub const Window = struct {
                     break;
                 };
             };
-            if (!self.changing and self.target.page == .aqueous and self.restore_id == 0) self.aqueous_states[self.aqueous_section].scroll = self.pages[@intFromEnum(nav.Route.aqueous)].scroll.getVadjustment().getValue();
+            if (!self.changing and self.target.page == .aqueous and self.restore_id == 0 and self.restore_tick == 0) self.aqueous_states[self.aqueous_section].scroll = self.pages[@intFromEnum(nav.Route.aqueous)].scroll.getVadjustment().getValue();
             for (&self.aqueous_states) |*state| state.focus = null;
         } else {
             if (self.display_focus_id[0] != 0) if (self.aqueous_view) |view| {
@@ -759,7 +808,7 @@ pub const Window = struct {
                     break;
                 };
             };
-            if (!self.changing and self.target.page == .aqueous and self.restore_id == 0 and self.popover.as(gtk.Widget).getVisible() == 0) self.restore_id = glib.idleAdd(restore, self);
+            if (!self.changing and self.target.page == .aqueous and self.restore_id == 0 and self.restore_tick == 0 and self.popover.as(gtk.Widget).getVisible() == 0) self.scheduleRestore(true);
         }
     }
     pub fn connection(self: *Window, connected: bool, err: ?anyerror) void {
@@ -828,7 +877,7 @@ pub const Window = struct {
         self.aqueous_footer.as(gtk.Widget).setVisible(@intFromBool(self.target.page == .aqueous or self.aqueous.phase != 0));
         self.footer_text.as(gtk.Widget).setVisible(@intFromBool(self.target.page != .aqueous));
         self.footer.as(gtk.Orientable).setOrientation(if (self.narrow or self.font_size > 18 or self.target.page == .notifications or self.target.page == .aqueous or self.aqueous.phase != 0) .vertical else .horizontal);
-        self.review_button.as(gtk.Widget).setVisible(@intFromBool((self.editor.state.dirty or self.editor.local != null or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
+        self.review_button.as(gtk.Widget).setVisible(@intFromBool((self.editor.state.dirty or self.editor.local != null or self.aqueous.draft != null) and (self.target.page != .aqueous or self.aqueous.recovery)));
     }
     fn reviewClicked(_: *gtk.Button, self: *Window) callconv(.c) void {
         if (self.aqueous.recovery) {
@@ -1042,7 +1091,7 @@ pub const Window = struct {
         }
     }
     fn focusChanged(_: *object.Object, _: *object.ParamSpec, self: *Window) callconv(.c) void {
-        if (self.changing or self.restore_id != 0 or self.aqueous_rebuilding) return;
+        if (self.changing or self.restore_id != 0 or self.restore_tick != 0 or self.aqueous_rebuilding) return;
         const page = &self.pages[@intFromEnum(self.target.page)];
         const focus = self.window.getFocus() orelse return;
         // Remember body focus before a pointer click moves it to navigation.
@@ -1288,9 +1337,10 @@ pub const Window = struct {
             };
         };
         if (self.target.page == .aqueous) if (self.aqueous_view) |view| {
+            if (view.issue_button.as(gtk.Widget).getMapped() != 0) try controls.append(alloc, .{ .field = "aqueous.issue", .focused = false, .bounds = self.bounds(view.issue_button.as(gtk.Widget)) });
             for (view.editors.items) |field| if (field.widget.getMapped() != 0) {
                 const id = @import("../config/aqueous_model.zig").str(@import("../config/aqueous_model.zig").get(field.field, "id"));
-                try controls.append(alloc, .{ .field = id, .focused = if (focus) |f| f == field.widget or f.isAncestor(field.widget) != 0 else false, .bounds = self.bounds(field.widget) });
+                try controls.append(alloc, .{ .field = id, .focused = if (focus) |f| f == field.widget or f.isAncestor(field.widget) != 0 else false, .enabled = field.widget.isSensitive() != 0, .bounds = self.bounds(field.widget) });
                 if (field.record) |record| try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "record:{s}", .{id}), .focused = false, .bounds = self.bounds(record.as(gtk.Widget)) });
             };
             if (view.rules_view) |rules| for (rules.controls.items) |control| if (control.widget.getMapped() != 0) {
@@ -1299,8 +1349,16 @@ pub const Window = struct {
             for (view.display_controls.items) |control| if (control.widget.getMapped() != 0) {
                 try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |widget| widget == control.widget or widget.isAncestor(control.widget) != 0 else false, .enabled = control.widget.getSensitive() != 0, .bounds = self.bounds(control.widget) });
             };
-            for (view.draft_buttons, [_][]const u8{ "aqueous.discard", "aqueous.rebase" }) |button, id| try controls.append(alloc, .{ .field = id, .focused = false, .enabled = button.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(button.as(gtk.Widget)) });
-            for (view.buttons, [_][]const u8{ "aqueous.refresh", "aqueous.validate", "aqueous.apply" }) |button, id| try controls.append(alloc, .{ .field = id, .focused = false, .enabled = button.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(button.as(gtk.Widget)) });
+            for (view.layout.controls.items) |control| if (control.widget.getMapped() != 0) {
+                const widget = control.widget;
+                try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .selected = if (object.ext.cast(gtk.ToggleButton, widget)) |b| b.getActive() != 0 else if (object.ext.cast(gtk.CheckButton, widget)) |b| b.getActive() != 0 else false, .bounds = self.bounds(widget) });
+            };
+            for (view.draft_buttons, [_][]const u8{ "aqueous.discard", "aqueous.rebase" }) |button, id| if (button.as(gtk.Widget).getMapped() != 0) {
+                try controls.append(alloc, .{ .field = id, .focused = false, .enabled = button.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(button.as(gtk.Widget)) });
+            };
+            for (view.buttons, [_][]const u8{ "aqueous.refresh", "aqueous.validate", "aqueous.apply" }) |button, id| if (button.as(gtk.Widget).getMapped() != 0) {
+                try controls.append(alloc, .{ .field = id, .focused = false, .enabled = button.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(button.as(gtk.Widget)) });
+            };
         };
         defer controls.deinit(alloc);
         const editor_state = .{ .ready = self.editor.ready, .online = self.editor.online, .recovery = self.editor.recovery, .state = self.editor.state, .local = self.editor.local != null, .upload = self.editor.upload, .download = self.editor.download, .error_code = self.editor.error_code.slice(), .validation = self.editor.validation.slice(), .export_error = self.editor.export_error.slice(), .bytes = self.editor.text().len, .sha256 = @import("editor_protocol.zig").digest(self.editor.text())[0..], .picker = if (self.preferences_view) |view| view.picker != null else false, .folder_picker = if (self.preferences_view) |view| view.folder_picker != null else false, .preview = if (self.preferences_view) |view| view.preview_ready else false, .close_dialog = self.close_dialog != null, .can_apply = self.save.as(gtk.Widget).getSensitive() != 0, .can_edit = self.editor.editable() };
@@ -1314,6 +1372,6 @@ pub const Window = struct {
                 bar_groups[i] = std.mem.span(label.getText());
             };
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .assistant_state = if (self.assistant_view) |view| view.diagnostic() else null, .sched_ext = if (self.sched_ext_view) |view| .{ .scheduler = view.selected.slice(), .mode = @tagName(view.selected_mode), .current = std.mem.span(view.current.getText()), .summary = std.mem.span(view.summary.getText()), .feedback = std.mem.span(view.feedback.getText()) } else null, .window_rules = if (self.aqueous_view) |view| if (view.rules_view) |rules| try rules.diagnostic(alloc) else null else null, .notification_filters = if (self.notification_filters) |view| try view.diagnostic(alloc) else null, .launcher_icon_picker = if (self.preference_pages[0]) |view| if (view.bar) |bar| bar.picker != null else false else false, .bar_groups = bar_groups, .links = links, .controls = controls.items, .editor = editor_state, .theme_busy = self.editor.theme_busy, .theme_status = if (self.preferences_view) |view| std.mem.span(view.themes.status.getText()) else "", .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .assistant_state = if (self.assistant_view) |view| view.diagnostic() else null, .sched_ext = if (self.sched_ext_view) |view| .{ .scheduler = view.selected.slice(), .mode = @tagName(view.selected_mode), .current = std.mem.span(view.current.getText()), .summary = std.mem.span(view.summary.getText()), .feedback = std.mem.span(view.feedback.getText()) } else null, .window_rules = if (self.aqueous_view) |view| if (view.rules_view) |rules| try rules.diagnostic(alloc) else null else null, .notification_filters = if (self.notification_filters) |view| try view.diagnostic(alloc) else null, .launcher_icon_picker = if (self.preference_pages[0]) |view| if (view.bar) |bar| bar.picker != null else false else false, .bar_groups = bar_groups, .links = links, .controls = controls.items, .editor = editor_state, .theme_busy = self.editor.theme_busy, .theme_status = if (self.preferences_view) |view| std.mem.span(view.themes.status.getText()) else "", .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_focus = if (self.aqueous_view) |view| view.sharedFocus() else "", .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
     }
 };

@@ -1,0 +1,8 @@
+PASS native-create-multiple-conditions-and-typed-effect-separate-draft
+PASS pending-addition-edit-false-zero-bounds-and-delete-without-backend-id
+PASS repeated-edit-merges-earlier-delta-and-emits-null-removal
+PASS competing-draft-keeps-modal-input-and-rejects-stale-save
+PASS move-projects-order-and-blocks-cross-page-mutations
+PASS canonical-validate-apply-receipt-and-preference-isolation
+PASS 390-and-560-pixel-dialogs-with-reachable-actions
+PASS unsupported-authoritative-tester-explains-requirement

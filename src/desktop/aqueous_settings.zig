@@ -9,6 +9,7 @@ const m = @import("../config/aqueous_model.zig");
 const w = @import("../ui/components/widgets.zig");
 const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
+const layout = @import("aqueous_layout.zig");
 const Signals = struct {
     items: std.ArrayList(struct { instance: *object.Object, id: c_ulong }) = .empty,
     pub fn add(self: *Signals, instance: *object.Object, id: c_ulong) void {
@@ -32,9 +33,17 @@ pub fn ViewFor(comptime ClientType: type) type {
     return struct {
         const Self = @This();
         const Pages = if (@hasDecl(ClientType, "standalone")) gtk.Stack else gtk.Notebook;
-        const Editor = struct { view: *Self, field: m.Value, widget: *gtk.Widget, record: ?*gtk.Button = null };
+        pub const Editor = struct { view: *Self, field: m.Value, widget: *gtk.Widget, record: ?*gtk.Button = null, row: ?*gtk.Box = null, group: layout.map.Group = .keybinds_extra };
+        const Layout = layout.For(Self);
         const Monitor = struct { view: *Self, id: []const u8, name: []const u8, x: *gtk.SpinButton, y: *gtk.SpinButton, scale: *gtk.SpinButton, transform: *gtk.DropDown, mode: *gtk.Entry, mirror: *gtk.Entry };
 
+        german: bool = false,
+        layout: layout.State = .{},
+        open_appearance: ?struct { context: *anyopaque, notify: *const fn (*anyopaque) void } = null,
+        open_section: ?struct { context: *anyopaque, notify: *const fn (*anyopaque, []const u8) void } = null,
+        issue_button: *gtk.Button,
+        issue_focus: [256:0]u8 = @splat(0),
+        announced_status: [1000:0]u8 = @splat(0),
         rules_view: ?*@import("../settings/window_rules_view.zig").For(Self) = null,
         host: *gtk.Box,
         client: *ClientType,
@@ -92,9 +101,9 @@ pub fn ViewFor(comptime ClientType: type) type {
         root_signals: Signals = .{},
         form_signals: Signals = .{},
         pub fn create(host: *gtk.Box, client: *ClientType, window: *gtk.Window) !*Self {
-            return createIn(host, client, window, host);
+            return createIn(host, client, window, host, false);
         }
-        pub fn createIn(host: *gtk.Box, client: *ClientType, window: *gtk.Window, footer: *gtk.Box) !*Self {
+        pub fn createIn(host: *gtk.Box, client: *ClientType, window: *gtk.Window, footer: *gtk.Box, german: bool) !*Self {
             const self = try a.create(Self);
             if (!@hasDecl(ClientType, "standalone")) {
                 host.append(w.label("Aqueous settings", "pearl-title").as(gtk.Widget));
@@ -120,6 +129,8 @@ pub fn ViewFor(comptime ClientType: type) type {
             actions.insert(validate.as(gtk.Widget), -1);
             const apply = gtk.Button.newWithLabel("Apply & save");
             actions.insert(apply.as(gtk.Widget), -1);
+            const issue = w.wrappingButton(if (german) "Problem prüfen" else "Review issue");
+            actions.insert(issue.as(gtk.Widget), -1);
             apply.as(gtk.Widget).addCssClass("pearl-primary");
             const preview_actions = w.flow(3);
             preview_actions.setHomogeneous(0);
@@ -130,8 +141,9 @@ pub fn ViewFor(comptime ClientType: type) type {
             preview_actions.insert(reload.as(gtk.Widget), -1);
             preview_actions.insert(keep.as(gtk.Widget), -1);
             preview_actions.insert(revert.as(gtk.Widget), -1);
-            self.* = .{ .host = host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .footer_line = footer_line, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .preview_actions = preview_actions, .reload_button = reload, .window = window };
+            self.* = .{ .issue_button = issue, .german = german, .host = host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .footer_line = footer_line, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .preview_actions = preview_actions, .reload_button = reload, .window = window };
             self.root_signals.add(refresh.as(object.Object), gtk.Button.signals.clicked.connect(refresh, *Self, refreshed, self, .{}));
+            self.root_signals.add(issue.as(object.Object), gtk.Button.signals.clicked.connect(issue, *Self, issueClicked, self, .{}));
             self.root_signals.add(discard.as(object.Object), gtk.Button.signals.clicked.connect(discard, *Self, discarded, self, .{}));
             self.root_signals.add(validate.as(object.Object), gtk.Button.signals.clicked.connect(validate, *Self, validated, self, .{}));
             self.root_signals.add(apply.as(object.Object), gtk.Button.signals.clicked.connect(apply, *Self, applied, self, .{}));
@@ -150,6 +162,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             return self;
         }
         pub fn destroy(self: *Self) void {
+            self.layout.clear();
             if (self.rules_view) |view| view.destroy();
             if (self.shared_dialog) |dialog| dialog.as(gtk.Window).destroy();
             if (self.preview_dialog) |dialog| {
@@ -170,6 +183,9 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.arena.deinit();
             a.destroy(self);
         }
+        pub fn t(self: *Self, en: [:0]const u8, de: [:0]const u8) [:0]const u8 {
+            return if (self.german) de else en;
+        }
         pub fn z(self: *Self, text: []const u8) [:0]const u8 {
             return self.arena.allocator().dupeZ(u8, text) catch "";
         }
@@ -178,9 +194,11 @@ pub fn ViewFor(comptime ClientType: type) type {
             scroll.setPolicy(.never, .automatic);
             scroll.as(gtk.Widget).setVexpand(1);
             const box = w.column(16);
+            box.as(gtk.Widget).addCssClass("aqueous-view");
             inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(box.as(gtk.Widget), 12);
             scroll.setChild(box.as(gtk.Widget));
             if (@hasDecl(ClientType, "standalone")) {
+                inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(box.as(gtk.Widget), 0);
                 // The normal window supplies the single page viewport.
                 _ = box.ref();
                 scroll.setChild(null);
@@ -210,6 +228,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             if (self.display_canvas) |canvas| canvas.setDrawFunc(null, null, null);
             self.display_canvas = null;
             self.form_signals.clear();
+            self.layout.clear();
             self.notebook = null;
             self.page_count = 0;
             self.page_widgets = @splat(null);
@@ -230,10 +249,10 @@ pub fn ViewFor(comptime ClientType: type) type {
             const notebook = Pages.new();
             self.notebook = notebook;
             if (@hasDecl(ClientType, "standalone")) {
-                // Keep the common vertical extent used for section scroll
-                // restoration, while measuring only the active page's width.
+                // Each section measures its own extent; disclosures must not
+                // create blank scroll space on other sections.
                 notebook.setHhomogeneous(0);
-                notebook.setVhomogeneous(1);
+                notebook.setVhomogeneous(0);
             } else notebook.setScrollable(1);
             notebook.as(gtk.Widget).setVexpand(1);
             self.content.append(notebook.as(gtk.Widget));
@@ -243,146 +262,139 @@ pub fn ViewFor(comptime ClientType: type) type {
             const draft = m.parse(alloc, self.client.draft orelse try self.client.emptyDraft(alloc), m.max_request) catch m.Value.null;
             self.rule_move_pending = @import("../config/aqueous_rule_editor.zig").hasMove(draft);
             for (categories, titles) |category, title| {
-                var box = self.page(notebook, title);
-                if (std.mem.eql(u8, category, "appearance")) {
-                    box.append(w.label("To match window borders to Material or matugen colors automatically, enable ‘Window borders follow Pearl theme’ in Pearl’s Appearance settings.", "pearl-secondary").as(gtk.Widget));
-                    try self.inventory(box, self.client.value(), "desktop_typography", "Desktop font synchronization");
-                    try self.inventory(box, self.client.value(), "desktop_cursor", "Desktop cursor synchronization");
-                }
-                if (std.mem.eql(u8, category, "displays")) {
-                    if (@hasDecl(ClientType, "standalone")) inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(box.as(gtk.Widget), 0);
-                    if (@import("../config/aqueous_contract.zig").Capabilities.read(snapshot).display_mutations) {
-                        try @import("aqueous_display_setup.zig").For(Self).render(self, box, snapshot);
-                    } else try @import("aqueous_displays.zig").render(self, box, snapshot);
-                    const extra = gtk.Expander.new("Additional display configuration");
-                    (self.display_advanced_box orelse box).append(extra.as(gtk.Widget));
-                    box = w.column(12);
-                    extra.setChild(box.as(gtk.Widget));
-                    try self.inventory(box, snapshot, "monitors", "Configured displays (including offline outputs)");
-                    try self.inventory(box, snapshot, "live_outputs", "Connected displays and modes");
-                    if (!@import("../config/aqueous_contract.zig").Capabilities.read(snapshot).display_mutations) {
-                        for (m.list(m.get(snapshot, "monitors"))) |monitor| try self.monitorEditor(box, monitor, false);
-                        for (m.list(m.get(snapshot, "live_outputs"))) |monitor| {
-                            var configured = false;
-                            for (m.list(m.get(snapshot, "monitors"))) |existing| if (std.mem.eql(u8, m.str(m.get(existing, "name")), m.str(m.get(monitor, "name")))) {
-                                configured = true;
-                                break;
-                            };
-                            if (!configured) try self.monitorEditor(box, monitor, true);
-                        }
-                    }
-                }
-                if (std.mem.eql(u8, category, "keybinds")) {
-                    box.append(w.label("Enter chords such as Super+Return, separated by commas. Record waits for Aqueous to inhibit shortcuts. Escape cancels. Custom bindings use the structured editor below.", "pearl-secondary").as(gtk.Widget));
-                    try self.inventory(box, snapshot, "custom_keybinds", "Custom bindings");
-                }
-                if (std.mem.eql(u8, category, "keybinds") or std.mem.eql(u8, category, "layouts")) try @import("aqueous_collections.zig").For(@This()).render(self, box, snapshot, category);
-                if (std.mem.eql(u8, category, "rules")) {
-                    if (self.rules_view == null) self.rules_view = try @import("../settings/window_rules_view.zig").For(Self).create(self);
-                    try self.rules_view.?.render(box, snapshot);
-                    try self.inventory(box, snapshot, "window_rules", "Saved rule inventory");
-                }
-                if (std.mem.eql(u8, category, "layouts")) {
-                    try @import("aqueous_snap_layouts.zig").For(@This()).render(self, box, snapshot);
-                    try self.inventory(box, snapshot, "snap_zones", "Snap zones");
-                    try self.inventory(box, snapshot, "snap_layouts", "Snap layouts");
-                }
-                for (m.list(m.get(snapshot, "fields"))) |field| {
-                    if (!std.mem.eql(u8, m.fieldCategory(field), category)) continue;
-                    var value = m.get(field, "value");
-                    for (m.list(m.get(draft, "changes"))) |c| if (std.mem.eql(u8, m.str(m.get(c, "id")), m.str(m.get(field, "id")))) {
-                        value = m.get(c, "value");
-                        break;
-                    };
-                    const row = w.column(4);
-                    box.append(row.as(gtk.Widget));
-                    const label = w.label(self.z(m.str(m.get(field, "label"))), null);
-                    row.append(label.as(gtk.Widget));
-                    row.as(gtk.Widget).setTooltipText(self.z(m.str(m.get(field, "description"))));
-                    const editor = try alloc.create(Editor);
-                    editor.* = .{ .view = self, .field = field, .widget = undefined };
-                    const kind = m.str(m.get(field, "type"));
-                    if (std.mem.eql(u8, kind, "boolean")) {
-                        const input = gtk.CheckButton.new();
-                        input.setActive(@intFromBool(value == .bool and value.bool));
-                        editor.widget = input.as(gtk.Widget);
-                        self.form_signals.add(input.as(object.Object), gtk.CheckButton.signals.toggled.connect(input, *Editor, toggled, editor, .{}));
-                    } else if (std.mem.eql(u8, kind, "integer") or std.mem.eql(u8, kind, "double")) {
-                        const input = gtk.SpinButton.newWithRange(number(m.get(field, "min"), -1000000), number(m.get(field, "max"), 1000000), if (std.mem.eql(u8, kind, "integer")) 1 else 0.01);
-                        input.setDigits(if (std.mem.eql(u8, kind, "integer")) 0 else 3);
-                        input.setValue(number(value, 0));
-                        editor.widget = input.as(gtk.Widget);
-                        self.form_signals.add(input.as(object.Object), gtk.SpinButton.signals.value_changed.connect(input, *Editor, spun, editor, .{}));
-                    } else if (std.mem.eql(u8, kind, "select")) {
-                        const opts = m.list(m.get(field, "options"));
-                        const strings = try alloc.allocSentinel(?[*:0]const u8, opts.len, null);
-                        var selected_index: c_uint = 0;
-                        for (opts, 0..) |option, i| {
-                            strings[i] = self.z(m.str(option));
-                            if (m.equal(option, value)) selected_index = @intCast(i);
-                        }
-                        const input = gtk.DropDown.newFromStrings(@ptrCast(strings.ptr));
-                        input.setSelected(selected_index);
-                        editor.widget = input.as(gtk.Widget);
-                        self.form_signals.add(input.as(object.Object), object.Object.signals.notify.connect(input.as(object.Object), *Editor, selected, editor, .{ .detail = "selected" }));
-                    } else {
-                        const input = gtk.Entry.new();
-                        input.setMaxLength(8192);
-                        var text = m.str(value);
-                        if (value == .array) {
-                            var joined: std.ArrayList(u8) = .empty;
-                            for (value.array.items, 0..) |item, i| {
-                                if (i != 0) try joined.appendSlice(alloc, ", ");
-                                try joined.appendSlice(alloc, m.str(item));
-                            }
-                            text = joined.items;
-                        }
-                        input.as(gtk.Editable).setText(self.z(text));
-                        editor.widget = input.as(gtk.Widget);
-                        self.form_signals.add(input.as(object.Object), gtk.Editable.signals.changed.connect(input.as(gtk.Editable), *Editor, edited, editor, .{}));
-                    }
-                    w.name(editor.widget, self.z(m.str(m.get(field, "label"))));
-                    row.append(editor.widget);
-                    try self.editors.append(alloc, editor);
-                    if (std.mem.eql(u8, category, "keybinds") and std.mem.eql(u8, kind, "string_list")) {
-                        const record_button = gtk.Button.newWithLabel("Record shortcut");
-                        row.append(record_button.as(gtk.Widget));
-                        editor.record = record_button;
-                        self.form_signals.add(record_button.as(object.Object), gtk.Button.signals.clicked.connect(record_button, *Editor, recordClicked, editor, .{}));
-                    }
-                    // Raw edits own the whole file; typed widgets cannot obscure them.
-                    row.as(gtk.Widget).setSensitive(@intFromBool(draft == .object and m.get(m.get(draft, "raw_files"), m.str(m.get(field, "file"))) == .null));
-                }
+                const box = self.page(notebook, title);
+                try Layout.render(self, box, snapshot, draft, category);
             }
             const advanced = self.page(notebook, "Advanced");
+            try Layout.status(self, advanced);
+            const receipts = try Layout.group(self, advanced, .receipts);
             if (self.client.preview_report) |report| {
                 const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .preview = try m.parse(alloc, report, m.max_response) }, .{});
-                try self.inventory(advanced, try m.parse(alloc, wrapper, m.max_response), "preview", "Latest native preview and rollback status");
+                try self.inventory(receipts, try m.parse(alloc, wrapper, m.max_response), "preview", "Latest native preview and rollback status");
             }
             if (self.client.report) |report| {
                 const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .operation = try m.parse(alloc, report, m.max_response) }, .{});
-                try self.inventory(advanced, try m.parse(alloc, wrapper, m.max_response), "operation", "Latest operation receipt and recovery details");
+                try self.inventory(receipts, try m.parse(alloc, wrapper, m.max_response), "operation", "Latest operation receipt and recovery details");
             }
             if (self.client.review) |review| {
                 const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .review = try m.parse(alloc, review, m.max_response) }, .{});
-                try self.inventory(advanced, try m.parse(alloc, wrapper, m.max_response), "review", "Validated candidate effects");
+                try self.inventory(receipts, try m.parse(alloc, wrapper, m.max_response), "review", "Validated candidate effects");
             }
-            advanced.append(w.label("Raw edits are retained as you type, including invalid TOML. A file cannot have both raw and structured edits; resolve overlaps in the request below.", "pearl-secondary").as(gtk.Widget));
+            const raw_host = try Layout.group(self, advanced, .raw);
+            raw_host.append(w.label("Raw edits are retained as you type, including invalid TOML. A file cannot have both raw and structured edits; resolve overlaps in the request below.", "pearl-secondary").as(gtk.Widget));
             self.raw_file = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "wm", "layout", "input", "outputs", "rules", "appearance" }));
-            advanced.append(self.raw_file.?.as(gtk.Widget));
-            self.raw_buffer = textArea(advanced, "Raw Aqueous TOML", 220);
+            self.raw_file.?.setSelected(self.layout.raw_source);
+            raw_host.append(self.raw_file.?.as(gtk.Widget));
+            self.raw_buffer = textArea(raw_host, "Raw Aqueous TOML", 220);
+            try self.layout.controls.append(alloc, .{ .id = "aqueous.raw-source", .widget = self.raw_file.?.as(gtk.Widget) });
+            try self.layout.controls.append(alloc, .{ .id = "aqueous.raw", .widget = raw_host.as(gtk.Widget).getLastChild().? });
             self.loadRaw();
             self.form_signals.add(self.raw_buffer.?.as(object.Object), gtk.TextBuffer.signals.insert_text.connect(self.raw_buffer.?, *Self, inserting, self, .{}));
             self.form_signals.add(self.raw_buffer.?.as(object.Object), gtk.TextBuffer.signals.changed.connect(self.raw_buffer.?, *Self, rawEdited, self, .{}));
             self.form_signals.add(self.raw_file.?.as(object.Object), object.Object.signals.notify.connect(self.raw_file.?.as(object.Object), *Self, rawSelected, self, .{ .detail = "selected" }));
-            advanced.append(w.label("Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. System configuration stays read-only unless create_user_override is explicitly true.", "pearl-secondary").as(gtk.Widget));
-            self.request_buffer = textArea(advanced, "Aqueous draft request JSON", 280);
+            const request_host = try Layout.group(self, advanced, .request);
+            request_host.append(w.label("Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. System configuration stays read-only unless create_user_override is explicitly true.", "pearl-secondary").as(gtk.Widget));
+            self.request_buffer = textArea(request_host, "Aqueous draft request JSON", 280);
+            try self.layout.controls.append(alloc, .{ .id = "aqueous.request", .widget = request_host.as(gtk.Widget).getLastChild().? });
             self.request_buffer.?.setText(self.z(self.client.draft orelse try self.client.emptyDraft(alloc)), -1);
             self.form_signals.add(self.request_buffer.?.as(object.Object), gtk.TextBuffer.signals.insert_text.connect(self.request_buffer.?, *Self, inserting, self, .{}));
             self.form_signals.add(self.request_buffer.?.as(object.Object), gtk.TextBuffer.signals.changed.connect(self.request_buffer.?, *Self, requestEdited, self, .{}));
+            // Unknown future categories remain editable in Advanced.
+            for (m.list(m.get(snapshot, "fields"))) |field| {
+                const category = m.fieldCategory(field);
+                var known = false;
+                for (categories) |name| if (std.mem.eql(u8, name, category)) {
+                    known = true;
+                    break;
+                };
+                if (!known) try self.fieldEditor(request_host, field, draft, .request);
+            }
+            Layout.filter(self);
             self.selectPage(self.page_index);
         }
-        fn monitorEditor(self: *Self, box: *gtk.Box, original: m.Value, live: bool) !void {
+        pub fn fieldEditor(self: *Self, box: *gtk.Box, field: m.Value, draft: m.Value, group_id: layout.map.Group) !void {
+            const alloc = self.arena.allocator();
+            const category = m.fieldCategory(field);
+            var value = m.get(field, "value");
+            for (m.list(m.get(draft, "changes"))) |c| if (std.mem.eql(u8, m.str(m.get(c, "id")), m.str(m.get(field, "id")))) {
+                value = m.get(c, "value");
+                break;
+            };
+            const row = w.column(8);
+            row.as(gtk.Widget).addCssClass("aqueous-field");
+            box.append(row.as(gtk.Widget));
+            const label = w.label(self.z(m.str(m.get(field, "label"))), null);
+            label.as(gtk.Widget).addCssClass("settings-row-title");
+            row.append(label.as(gtk.Widget));
+            row.as(gtk.Widget).setTooltipText(self.z(m.str(m.get(field, "description"))));
+            const editor = try alloc.create(Editor);
+            editor.* = .{ .view = self, .field = field, .widget = undefined, .row = row, .group = group_id };
+            const kind = m.str(m.get(field, "type"));
+            if (std.mem.eql(u8, kind, "boolean")) {
+                row.as(gtk.Orientable).setOrientation(.horizontal);
+                const input = gtk.CheckButton.new();
+                input.setActive(@intFromBool(value == .bool and value.bool));
+                editor.widget = input.as(gtk.Widget);
+                self.form_signals.add(input.as(object.Object), gtk.CheckButton.signals.toggled.connect(input, *Editor, toggled, editor, .{}));
+            } else if (std.mem.eql(u8, kind, "integer") or std.mem.eql(u8, kind, "double")) {
+                const input = gtk.SpinButton.newWithRange(number(m.get(field, "min"), -1000000), number(m.get(field, "max"), 1000000), if (std.mem.eql(u8, kind, "integer")) 1 else 0.01);
+                input.setDigits(if (std.mem.eql(u8, kind, "integer")) 0 else 3);
+                input.setValue(number(value, 0));
+                editor.widget = input.as(gtk.Widget);
+                self.form_signals.add(input.as(object.Object), gtk.SpinButton.signals.value_changed.connect(input, *Editor, spun, editor, .{}));
+            } else if (std.mem.eql(u8, kind, "select")) {
+                const opts = m.list(m.get(field, "options"));
+                var known = false;
+                for (opts) |option| if (m.equal(option, value)) {
+                    known = true;
+                    break;
+                };
+                const strings = try alloc.allocSentinel(?[*:0]const u8, opts.len + @intFromBool(!known), null);
+                var selected_index: c_uint = @intCast(opts.len);
+                for (opts, 0..) |option, i| {
+                    strings[i] = self.z(m.str(option));
+                    if (m.equal(option, value)) selected_index = @intCast(i);
+                }
+                if (!known) strings[opts.len] = self.z(try std.fmt.allocPrint(alloc, "{s}: {s}", .{ self.t("Preserved value", "Beibehaltener Wert"), try std.json.Stringify.valueAlloc(alloc, value, .{}) }));
+                const input = gtk.DropDown.newFromStrings(@ptrCast(strings.ptr));
+                @import("../settings/assistant_layout.zig").wrapChoice(input);
+                input.setSelected(selected_index);
+                editor.widget = input.as(gtk.Widget);
+                self.form_signals.add(input.as(object.Object), object.Object.signals.notify.connect(input.as(object.Object), *Editor, selected, editor, .{ .detail = "selected" }));
+                if (known and opts.len > 0 and opts.len <= 16 and std.mem.eql(u8, m.str(m.get(field, "id")), "layout.default")) editor.widget = try Layout.choices(self, row, input, field);
+            } else {
+                const input = gtk.Entry.new();
+                input.setMaxLength(8192);
+                input.as(gtk.Editable).setWidthChars(12);
+                var text = m.str(value);
+                if (value == .array) {
+                    var joined: std.ArrayList(u8) = .empty;
+                    for (value.array.items, 0..) |item, i| {
+                        if (i != 0) try joined.appendSlice(alloc, ", ");
+                        try joined.appendSlice(alloc, m.str(item));
+                    }
+                    text = joined.items;
+                }
+                input.as(gtk.Editable).setText(self.z(text));
+                editor.widget = input.as(gtk.Widget);
+                self.form_signals.add(input.as(object.Object), gtk.Editable.signals.changed.connect(input.as(gtk.Editable), *Editor, edited, editor, .{}));
+            }
+            w.name(editor.widget, self.z(m.str(m.get(field, "label"))));
+            try self.editors.append(alloc, editor);
+            if (std.mem.eql(u8, category, "keybinds") and std.mem.eql(u8, kind, "string_list")) {
+                const inputs = w.row(8);
+                editor.widget.setHexpand(1);
+                inputs.append(editor.widget);
+                const record_button = w.wrappingButton(self.t("Record shortcut", "Tastenkürzel aufnehmen"));
+                inputs.append(record_button.as(gtk.Widget));
+                row.append(inputs.as(gtk.Widget));
+                editor.record = record_button;
+                self.form_signals.add(record_button.as(object.Object), gtk.Button.signals.clicked.connect(record_button, *Editor, recordClicked, editor, .{}));
+            } else row.append(editor.widget);
+            // Raw edits own the whole file; typed widgets cannot obscure them.
+            row.as(gtk.Widget).setSensitive(@intFromBool(draft == .object and m.get(m.get(draft, "raw_files"), m.str(m.get(field, "file"))) == .null));
+        }
+        pub fn monitorEditor(self: *Self, box: *gtk.Box, original: m.Value, live: bool) !void {
             const alloc = self.arena.allocator();
             const name = m.str(m.get(original, "name"));
             if (name.len == 0) return;
@@ -508,6 +520,9 @@ pub fn ViewFor(comptime ClientType: type) type {
         pub fn update(self: *Self) void {
             if (self.review_version != self.client.review_version or self.revision != self.client.revision or (self.version != self.client.version and (self.client.draft == null or self.request_buffer == null))) self.build() catch |err| self.fail(err);
             const c = self.client;
+            Layout.update(self);
+            self.issue_button.as(gtk.Widget).setVisible(@intFromBool(c.err != null));
+            self.issue_button.as(gtk.Widget).getParent().?.setVisible(@intFromBool(c.err != null));
             if (self.rules_view) |view| view.update();
             self.updatePreviewDialog();
             self.reload_button.as(gtk.Widget).setVisible(@intFromBool(c.reload_state == .failed or c.reload_state == .unknown or c.reload_state == .unavailable));
@@ -555,8 +570,15 @@ pub fn ViewFor(comptime ClientType: type) type {
                 if (c.detail[0] != 0) " · " else "",
                 std.mem.sliceTo(&c.detail, 0),
             }) catch "Settings status unavailable";
-            self.message.setText(if (self.rule_move_pending) "Rule order changed. Apply & save or Discard draft before making other Aqueous edits." else text);
+            if (self.layout.status) |status| status.setText(text);
+            self.message.setText(if (self.rule_move_pending) self.t("Rule order changed. Review & apply or Discard before making other Aqueous edits.", "Regelreihenfolge geändert. Vor weiteren Änderungen prüfen und anwenden oder verwerfen.") else if (c.err != null or c.conflict() or c.unresolved) text else if (c.job != null or c.previewPhase() != 0) self.z(outcome) else if (c.draft != null) self.t("Unsaved Aqueous changes · Review includes every section.", "Ungespeicherte Aqueous-Änderungen · Die Prüfung umfasst alle Bereiche.") else self.t("All Aqueous settings saved", "Alle Aqueous-Einstellungen gespeichert"));
             const simple = self.page_index == 5 and self.display_canvas != null;
+            if (!simple and c.draft != null and c.err == null and !c.conflict() and !c.unresolved and c.job == null and !self.rule_move_pending) {
+                var arena = std.heap.ArenaAllocator.init(a);
+                defer arena.deinit();
+                const draft = m.parse(arena.allocator(), c.draft.?, m.max_request) catch .null;
+                self.message.setText(layout.map.footer(arena.allocator(), c.baseValue(), draft, self.german) catch self.t("Unsaved Aqueous changes", "Ungespeicherte Aqueous-Änderungen"));
+            }
             if (simple) self.footer_line.as(gtk.Widget).addCssClass("display-footer") else self.footer_line.as(gtk.Widget).removeCssClass("display-footer");
             self.footer_line.as(gtk.Orientable).setOrientation(if (simple and self.host.as(gtk.Widget).getWidth() >= 620) .horizontal else .vertical);
             self.actions.as(gtk.Widget).setHalign(.fill);
@@ -565,19 +587,28 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.message.setMaxWidthChars(if (simple) 42 else -1);
             self.preview_actions.as(gtk.Widget).setVisible(@intFromBool(!self.preview_visible));
             if (simple and c.previewPhase() != 0) self.message.setText(self.z(outcome));
-            self.buttons[0].as(gtk.Widget).setVisible(@intFromBool(!simple));
-            self.buttons[1].as(gtk.Widget).setVisible(@intFromBool(!simple));
-            self.draft_buttons[1].as(gtk.Widget).setVisible(@intFromBool(!simple));
-            for ([_]*gtk.Button{ self.buttons[0], self.buttons[1], self.draft_buttons[1] }) |button| button.as(gtk.Widget).getParent().?.setVisible(@intFromBool(!simple));
+            // Advanced owns routine diagnostics; recovery actions remain available here.
+            const recovery_actions = !simple and self.page_index != 6 and (c.err != null or c.conflict() or c.unresolved);
+            for ([_]*gtk.Button{ self.buttons[0], self.buttons[1], self.draft_buttons[1] }) |button| {
+                button.as(gtk.Widget).setVisible(@intFromBool(recovery_actions));
+                button.as(gtk.Widget).getParent().?.setVisible(@intFromBool(recovery_actions));
+            }
             self.draft_buttons[0].as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.draft != null));
-            self.draft_buttons[0].setLabel(if (simple) "Discard" else "Discard draft");
-            self.buttons[2].setLabel(if (simple) (if (c.job != null) "Checking settings…" else "Apply changes") else "Apply & save");
+            self.draft_buttons[0].setLabel(self.t("Discard", "Verwerfen"));
+            self.buttons[2].setLabel(if (c.job != null) self.t("Checking settings…", "Einstellungen werden geprüft…") else if (simple) self.t("Apply changes", "Änderungen anwenden") else self.t("Review & apply", "Prüfen und anwenden"));
             self.preview_buttons[0].setLabel(if (simple) "Keep changes" else "Keep displays");
             self.preview_buttons[1].setLabel(if (simple) "Revert" else "Revert displays");
             if (simple and (self.display_blocked or self.display_changes + self.display_other_changes == 0)) self.buttons[2].as(gtk.Widget).setSensitive(0);
             if (simple and c.previewPhase() == 0 and c.job == null and c.err == null and !c.conflict() and !c.unresolved) {
                 var message: [256]u8 = undefined;
                 self.message.setText(if (c.draft != null) (std.fmt.bufPrintZ(&message, "{d} unsaved display changes · {d} other Aqueous changes.\nApply to try this setup. Keep it only if everything looks right.", .{ self.display_changes, self.display_other_changes }) catch "Display settings") else "All display settings saved.\nChanges take effect only when you apply them.");
+            }
+            if (c.job == null and (c.err != null or c.unresolved or (c.outcome == .saved and c.draft == null))) {
+                const status = std.mem.span(self.message.getText());
+                if (!std.mem.eql(u8, status, std.mem.sliceTo(&self.announced_status, 0))) {
+                    _ = std.fmt.bufPrintZ(&self.announced_status, "{s}", .{status}) catch "";
+                    self.message.as(gtk.Accessible).announce(self.message.getText(), .medium);
+                }
             }
         }
         fn save(editor: *Editor, value: m.Value) void {
@@ -686,6 +717,14 @@ pub fn ViewFor(comptime ClientType: type) type {
         fn edited(widget: *gtk.Editable, editor: *Editor) callconv(.c) void {
             save(editor, .{ .string = std.mem.span(widget.getText()) });
         }
+        pub fn perform(self: *Self, action: layout.Action) void {
+            switch (action) {
+                .refresh => refreshed(self.buttons[0], self),
+                .validate => validated(self.buttons[1], self),
+                .rebase => rebased(self.draft_buttons[1], self),
+                .appearance => if (self.open_appearance) |link| link.notify(link.context),
+            }
+        }
         fn refreshed(_: *gtk.Button, self: *Self) callconv(.c) void {
             self.client.begin(.refresh) catch |err| self.fail(err);
         }
@@ -703,7 +742,8 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.client.begin(.apply) catch |err| self.fail(err);
         }
         fn confirmShared(displays: *Self, discard: bool) bool {
-            if (displays.page_index != 5 or displays.display_other_changes == 0) return false;
+            if (displays.client.draft == null) return false;
+            if (displays.page_index == 5 and displays.display_other_changes == 0) return false;
             if (displays.shared_dialog) |dialog| {
                 dialog.as(gtk.Window).present();
                 return true;
@@ -712,29 +752,41 @@ pub fn ViewFor(comptime ClientType: type) type {
             const dialog = gtk.Dialog.new();
             const win = dialog.as(gtk.Window);
             self.styleDialog(win);
-            win.setTitle(if (discard) "Discard all Aqueous changes?" else "Apply all Aqueous changes?");
+            win.setTitle(if (discard) self.t("Discard all Aqueous changes?", "Alle Aqueous-Änderungen verwerfen?") else self.t("Review Aqueous changes", "Aqueous-Änderungen prüfen"));
             win.setTransientFor(self.window);
             win.setModal(1);
-            win.setDefaultSize(460, -1);
+            win.setDefaultSize(@min(520, @max(300, self.window.as(gtk.Widget).getWidth() - 40)), 420);
             self.shared_dialog = dialog;
             self.shared_discard = discard;
             self.shared_revision = self.client.revision;
-            const content = dialog.getContentArea();
+            const scroller = gtk.ScrolledWindow.new();
+            scroller.setPolicy(.never, .automatic);
+            scroller.as(gtk.Widget).setVexpand(1);
+            const content = w.column(12);
+            scroller.setChild(content.as(gtk.Widget));
+            dialog.getContentArea().append(scroller.as(gtk.Widget));
             inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(content.as(gtk.Widget), 20);
-            content.append(w.label("Your Aqueous draft also includes changes in these sections:", null).as(gtk.Widget));
+            content.append(w.label(self.t("This action includes the complete Aqueous draft. Pearl preferences are separate.", "Diese Aktion umfasst den gesamten Aqueous-Entwurf. Pearl-Einstellungen bleiben getrennt."), null).as(gtk.Widget));
             const draft = m.parse(self.arena.allocator(), self.client.draft orelse "{}", m.max_request) catch .null;
-            const summary = @import("../config/aqueous_display_setup.zig").sharedSummary(self.arena.allocator(), self.client.baseValue(), draft) catch "Other Aqueous settings";
+            const summary = layout.map.summary(self.arena.allocator(), self.client.baseValue(), draft, self.german) catch "Other Aqueous settings";
             content.append(w.label(self.z(summary), "pearl-secondary").as(gtk.Widget));
-            content.append(w.label("This action includes those edits and your display changes.", null).as(gtk.Widget));
-            _ = dialog.addButton("Cancel", 0);
-            _ = dialog.addButton(if (discard) "Discard all Aqueous changes" else "Apply all Aqueous changes", 1);
+            content.append(w.label(self.t("Apply validates the candidate. Display effects require a protected preview before saving.", "Anwenden prüft den Entwurf. Bildschirmänderungen benötigen vor dem Speichern eine geschützte Vorschau."), "pearl-secondary").as(gtk.Widget));
+            const cancel = dialog.addButton(self.t("Cancel", "Abbrechen"), 0);
+            const accept = dialog.addButton(if (discard) self.t("Discard all Aqueous changes", "Alle Aqueous-Änderungen verwerfen") else self.t("Apply all Aqueous changes", "Alle Aqueous-Änderungen anwenden"), 1);
+            for ([_]*gtk.Widget{ cancel, accept }) |button| if (object.ext.cast(gtk.Button, button)) |b| if (b.getChild()) |child| if (object.ext.cast(gtk.Label, child)) |label| {
+                label.setWrap(1);
+                label.setWrapMode(.word_char);
+            };
+            accept.addCssClass("pearl-primary");
             self.root_signals.add(dialog.as(object.Object), gtk.Dialog.signals.response.connect(dialog, *Self, sharedResponse, self, .{}));
             win.present();
+            _ = cancel.grabFocus();
             return true;
         }
         fn sharedResponse(dialog: *gtk.Dialog, response: c_int, self: *Self) callconv(.c) void {
             dialog.as(gtk.Window).destroy();
             self.shared_dialog = null;
+            _ = (if (self.shared_discard) self.draft_buttons[0] else self.buttons[2]).as(gtk.Widget).grabFocus();
             if (response != 1) return;
             if (self.shared_revision != self.client.revision) {
                 self.fail(error.StaleDraft);
@@ -745,6 +797,13 @@ pub fn ViewFor(comptime ClientType: type) type {
                 self.build() catch |err| self.fail(err);
                 self.update();
             } else self.client.begin(.apply) catch |err| self.fail(err);
+        }
+        pub fn sharedFocus(self: *Self) []const u8 {
+            const dialog = self.shared_dialog orelse return "";
+            const focus = dialog.as(gtk.Window).getFocus() orelse return "";
+            if (dialog.getWidgetForResponse(1)) |accept| if (focus == accept or focus.isAncestor(accept) != 0) return "accept";
+            if (dialog.getWidgetForResponse(0)) |cancel| if (focus == cancel or focus.isAncestor(cancel) != 0) return "cancel";
+            return "content";
         }
         fn rebased(_: *gtk.Button, self: *Self) callconv(.c) void {
             self.client.rebase() catch |err| {
@@ -764,6 +823,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.client.requestReload() catch |err| self.fail(err);
         }
         fn rawSelected(_: *object.Object, _: *object.ParamSpec, self: *Self) callconv(.c) void {
+            self.layout.raw_source = self.raw_file.?.getSelected();
             self.loadRaw();
         }
         fn rawEdited(_: *gtk.TextBuffer, self: *Self) callconv(.c) void {
@@ -785,6 +845,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             try request.object.put(alloc, "raw_files", raw);
             try self.client.keepDraft(try std.json.Stringify.valueAlloc(alloc, request, .{ .whitespace = .indent_2 }));
             self.syncRequest();
+            self.forms_stale = true;
             self.update();
         }
         fn requestEdited(buffer: *gtk.TextBuffer, self: *Self) callconv(.c) void {
@@ -816,7 +877,10 @@ pub fn ViewFor(comptime ClientType: type) type {
         }
         pub fn record(self: *Self, id: []const u8) !void {
             self.selectPage(3);
-            for (self.editors.items) |editor| if (editor.record != null and std.mem.eql(u8, m.str(m.get(editor.field, "id")), id)) return self.startRecording(editor);
+            for (self.editors.items) |editor| if (editor.record != null and std.mem.eql(u8, m.str(m.get(editor.field, "id")), id)) {
+                if (self.layout.sections[@intFromEnum(editor.group)]) |section| section.reveal();
+                return self.startRecording(editor);
+            };
             return error.UnknownField;
         }
         fn selectPage(self: *Self, index: c_int) void {
@@ -826,6 +890,8 @@ pub fn ViewFor(comptime ClientType: type) type {
             } else notebook.setCurrentPage(index);
         }
         pub fn showPage(self: *Self, name: []const u8) !void {
+            if (self.forms_stale and !self.filling) try self.build();
+            if (self.issue_focus[0] != 0) self.revealIssue();
             const names = @import("settings_navigation.zig").aqueous_sections;
             for (names, 0..) |v, index| if (std.mem.eql(u8, v, name)) {
                 self.page_index = @intCast(index);
@@ -839,6 +905,43 @@ pub fn ViewFor(comptime ClientType: type) type {
                 return;
             };
             return error.UnknownPage;
+        }
+        fn issueClicked(_: *gtk.Button, self: *Self) callconv(.c) void {
+            const detail = std.mem.sliceTo(&self.client.detail, 0);
+            var section: []const u8 = "advanced";
+            @memset(&self.issue_focus, 0);
+            for (self.editors.items) |editor| {
+                const id = m.str(m.get(editor.field, "id"));
+                if (id.len == 0 or id.len >= self.issue_focus.len or std.mem.indexOf(u8, detail, id) == null) continue;
+                @memcpy(self.issue_focus[0..id.len], id);
+                section = layout.map.spec(editor.group).page;
+                break;
+            }
+            if (self.issue_focus[0] == 0) @memcpy(self.issue_focus[0..8], "@request");
+            self.revealIssue();
+            if (self.open_section) |callback| callback.notify(callback.context, section) else self.showPage(section) catch {};
+        }
+        fn revealIssue(self: *Self) void {
+            const id = std.mem.sliceTo(&self.issue_focus, 0);
+            if (std.mem.eql(u8, id, "@request")) {
+                if (self.layout.sections[@intFromEnum(layout.map.Group.request)]) |section| section.reveal();
+            } else for (self.editors.items) |editor| if (std.mem.eql(u8, id, m.str(m.get(editor.field, "id")))) {
+                if (std.mem.eql(u8, m.fieldCategory(editor.field), "keybinds")) {
+                    @memset(&self.layout.search, 0);
+                    if (self.layout.search_entry) |entry| entry.as(gtk.Editable).setText("");
+                    Layout.filter(self);
+                }
+                if (self.layout.sections[@intFromEnum(editor.group)]) |section| section.reveal();
+                break;
+            };
+        }
+        pub fn focusIssue(self: *Self) bool {
+            if (self.issue_focus[0] == 0) return false;
+            defer @memset(&self.issue_focus, 0);
+            const id = std.mem.sliceTo(&self.issue_focus, 0);
+            for (self.editors.items) |editor| if (std.mem.eql(u8, id, m.str(m.get(editor.field, "id")))) return editor.widget.grabFocus() != 0;
+            if (self.layout.sections[@intFromEnum(layout.map.Group.request)]) |section| if (section.button) |button| return button.as(gtk.Widget).grabFocus() != 0;
+            return false;
         }
         pub fn focusName(window: *gtk.Window) []const u8 {
             var current = window.getFocus();

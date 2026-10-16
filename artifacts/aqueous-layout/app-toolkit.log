@@ -1,0 +1,10 @@
+ts=2026-10-16T01:40:19Z pid=1754498 info(settings): event=settings-launch activation_context=false
+ts=2026-10-16T01:40:19Z pid=1754498 info(settings): event=settings-instance-ready session_hash=e88c52602597ad38
+ts=2026-10-16T01:40:19Z pid=1754498 info(settings): event=settings-page page=overview
+ts=2026-10-16T01:40:19Z pid=1754498 info(settings): event=settings-page page=appearance
+ts=2026-10-16T01:40:19Z pid=1754498 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-16T01:40:19Z pid=1754498 info(settings): event=settings-activation activation_context=false
+ts=2026-10-16T01:40:19Z pid=1754498 info(settings): event=settings-page page=appearance
+ts=2026-10-16T01:40:19Z pid=1754498 info(settings): event=settings-page page=appearance
+
+(pearl-settings-test:1754498): Gdk-WARNING **: 21:40:20.708: Duplicate call to gdk_frame_timings_presented() with different values: presentation time is 16.109ms off from expected

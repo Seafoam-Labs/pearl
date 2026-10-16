@@ -1166,6 +1166,20 @@
     "options": []
   },
   {
+    "id": "test-aqueous-layout",
+    "description": "Verify Aqueous cards, search, shared review and responsive layout in a private session",
+    "groups": ["integration"],
+    "cwd": ".",
+    "targets": ["test-aqueous-layout"],
+    "capabilities": ["zig", "native", "session", "aqueous"],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": ["tests/integration/test_aqueous_layout.py"],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test-settings-devices",
     "description": "Verify standalone audio, power, notifications and media against private services",
     "groups": [

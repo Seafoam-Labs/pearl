@@ -5,10 +5,10 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from test_settings_app import ROOT, PrivateSession, IPC, wait_for, capture, probe, keys, resize, clean, ctl
+from test_settings_app import ROOT, PrivateSession, IPC, wait_for, capture, probe, keys, resize, clean, ctl, click_widget
 from pearl_session import fixture_prefix, fixture_source
-from test_settings_appearance import ready, click, type_text
-from test_settings_services import Peer, aq_ready, navigate
+from test_settings_appearance import ready, click, type_text, control
+from test_settings_services import Peer, aq_ready, navigate, accept_aqueous_review
 
 
 def dialog(s, ipc):
@@ -160,7 +160,12 @@ def main():
         choose(s,ipc,'rules.value.floating',1); save(s,ipc,peer)
         # Exercise the existing receipt/impact/protected apply route.
         for action, outcome in (('validate','validated'),('apply','saved')):
-            click(s,ipc,'aqueous.'+action)
+            navigate(s,ipc,'aqueous','advanced' if action=='validate' else 'rules')
+            if action=='validate':
+                click(s,ipc,'aqueous.validate')
+            else:
+                click_widget(s,ipc,control(s,ipc,'aqueous.apply'))
+                accept_aqueous_review(s,ipc)
             try:
                 wait_for(lambda:peer.aqueous()['outcome']==outcome and not peer.aqueous()['busy'],45)
             except TimeoutError:

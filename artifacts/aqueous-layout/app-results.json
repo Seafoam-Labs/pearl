@@ -1,0 +1,24 @@
+{
+  "status": "running",
+  "checks": {
+    "direct-launch-without-shell-normal-window": true,
+    "production-excludes-samples-and-shell-agent-dependencies": true,
+    "second-launch-selects-page-and-retains-one-window": true,
+    "generic-launch-strict-validation-and-aqueous-sections": true,
+    "aqueous-sublist-pointer-keyboard-parent-return-and-external-default": true,
+    "concurrent-launches-single-owner": true,
+    "gio-launcher-token-forwards-and-restores-minimized-window": true,
+    "ordinary-minimize-maximize-reactivation-and-escape": true,
+    "pointer-sidebar-selection-and-external-heading-focus": true,
+    "keyboard-focus-distinct-from-selection": true,
+    "internal-body-focus-and-page-scroll-restoration": true,
+    "committed-material-light-dark-native-gtk": true,
+    "narrow-navigation-fixed-footer-and-escape": true
+  },
+  "binaries": {
+    "settings": "fcdd51aa264de2b88b434390e1ef12126d4c8782e4b364c8bdff3532e175289b",
+    "production": "190168dbd6299435ffe88f80c6e472e897b00fbdc2e68e4f30ced7a02657c18f",
+    "pearl": "c072a7f4ca8b616c2089447c71f72170b0120a5bc6ddf8e0432449d6c1b43c28",
+    "ctl": "afedd6ee38f085b92a8f439daf504fa60738bf4dc8f7cbec27751fa8e3437bdf"
+  }
+}

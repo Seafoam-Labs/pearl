@@ -402,6 +402,7 @@ pub fn build(b: *std.Build) void {
     b.step("test-bindings", "Test generated binding types and API coverage").dependOn(&b.addRunArtifact(bindings_test).step);
 
     const pure_module = b.createModule(.{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize });
+    pure_module.addAnonymousImport("aqueous_presentation_fixture", .{ .root_source_file = b.path("tests/fixtures/aqueous-master/snapshot.json") });
     pure_module.addImport("aqueous_fixtures", b.createModule(.{ .root_source_file = b.path("tests/fixtures/aqueous/fixtures.zig"), .target = target, .optimize = optimize }));
     const pure = b.addTest(.{ .root_module = pure_module });
     const filter_module = b.createModule(.{ .root_source_file = b.path("src/notification_filter_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
@@ -698,6 +699,12 @@ pub fn build(b: *std.Build) void {
     system_layout.addArtifactArg(integration_app);
     if (b.args) |args| system_layout.addArgs(args);
     b.step("test-system-layout", "Verify System radios, disclosures, runtime selection and responsive layout using private fixtures").dependOn(&system_layout.step);
+    const aqueous_layout = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_layout.py", "--settings" });
+    aqueous_layout.addArtifactArg(settings_test_app);
+    aqueous_layout.addArg("--pearl");
+    aqueous_layout.addArtifactArg(integration_app);
+    if (b.args) |args| aqueous_layout.addArgs(args);
+    b.step("test-aqueous-layout", "Verify Aqueous cards, search, shared review and responsive layout in a private session").dependOn(&aqueous_layout.step);
     const settings_devices = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_devices.py", "--settings" });
     settings_devices.addArtifactArg(settings_test_app);
     settings_devices.addArg("--pearl");

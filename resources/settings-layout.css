@@ -193,3 +193,23 @@
 .settings-window.settings-narrow .system-card { padding: 14px; }
 .settings-window.settings-narrow .system-section-body { padding: 0 14px 14px; }
 .settings-window.pearl-gtk .system-card { background: alpha(currentColor, 0.04); border: 1px solid alpha(currentColor, 0.12); }
+
+/* Aqueous uses the same cards and disclosure rhythm as Appearance and System. */
+.settings-window .aqueous-card { padding: 20px; border-radius: 16px; }
+.settings-window .aqueous-card > label { margin: 0; }
+.settings-window .aqueous-view .pearl-section-title { font-size: 1.15em; font-weight: 600; }
+.settings-window .aqueous-view .settings-row-title { font-weight: 600; }
+.settings-window .aqueous-field + .aqueous-field { border-top: 1px solid alpha(currentColor, 0.09); padding-top: 12px; }
+.settings-window .aqueous-view flowboxchild { padding: 0; }
+.settings-window .aqueous-view button { min-height: 32px; border-radius: 10px; }
+.settings-window .aqueous-view dropdown, .settings-window .aqueous-view entry { min-width: 0; }
+.settings-window .aqueous-view .aqueous-disclosure { padding: 0; background: transparent; border: none; box-shadow: none; }
+.settings-window .aqueous-disclosure:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.settings-window .aqueous-mode { padding: 14px 12px; border-radius: 12px; border: 1px solid alpha(currentColor, 0.18); }
+.settings-window .aqueous-mode:checked { background: alpha(@accent_color, 0.15); border-color: @accent_color; }
+.settings-window .aqueous-mode:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.settings-window .aqueous-mode radio { margin-right: 8px; }
+.settings-window .aqueous-preview { border-radius: 12px; }
+.settings-window .aqueous-search { margin-bottom: 4px; }
+.settings-window.settings-narrow .aqueous-card { padding: 14px; }
+.settings-window.pearl-gtk .aqueous-card { background: alpha(currentColor, 0.04); border: 1px solid alpha(currentColor, 0.12); }

@@ -80,6 +80,14 @@ def aq_ready(s,ipc,peer=None):
         return v if aq['ready'] and aq['fields']>=221 and not aq['dirty'] and not aq['busy'] and (expected is None or aq['revision']==int(expected['revision']) and aq['backend_version']==int(expected['version'])) else False
     return wait_for(check,20)
 
+def accept_aqueous_review(s,ipc):
+    wait_for(lambda:probe(s,ipc)['aqueous']['shared_review'])
+    for _ in range(6):
+        if probe(s,ipc)['aqueous']['shared_focus']=='accept':break
+        keys(s,'Tab')
+    assert probe(s,ipc)['aqueous']['shared_focus']=='accept'
+    keys(s,'Return')
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('settings','pearl','ctl','spike'):parser.add_argument('--'+name,type=Path,required=True)
@@ -217,8 +225,11 @@ def main():
         click(s,ipc,'layout.gaps_outer');type_text(s,'18');keys(s,'Tab');aq_ready(s,ipc,peer)
         checks['aqueous-sublist-draft-transfer-section-restoration-and-rebuild']=True
         for action in ('validate','apply'):
-            time.sleep(.3)
-            click_widget(s,ipc,control(s,ipc,'aqueous.'+action))
+            navigate(s,ipc,'aqueous','advanced' if action=='validate' else 'layouts')
+            if action=='validate':click(s,ipc,'aqueous.validate')
+            else:
+                click_widget(s,ipc,control(s,ipc,'aqueous.apply'))
+                accept_aqueous_review(s,ipc)
             try:wait_for(lambda:peer.aqueous()['outcome']==('validated' if action=='validate' else 'saved') and not peer.aqueous()['busy'],45)
             except Exception:print('action failed',action,peer.aqueous(),probe(s,ipc)['aqueous'],flush=True);raise
             aq_ready(s,ipc,peer)
@@ -271,7 +282,11 @@ def main():
         navigate(s,ipc,'aqueous','displays');aq_ready(s,ipc,peer);time.sleep(.3)
         click_widget(s,ipc,control(s,ipc,'aqueous.apply'))
         wait_preview(peer)
-        navigate(s,ipc,'sound');wait_for(lambda:probe(s,ipc)['aqueous']['phase']==1,5)
+        navigate(s,ipc,'sound')
+        try:wait_for(lambda:probe(s,ipc)['aqueous']['phase']==1,5)
+        except TimeoutError:
+            print('PREVIEW NAVIGATION',peer.aqueous(),probe(s,ipc)['aqueous'],flush=True)
+            raise
         denied=peer.aq_action('keep');assert denied['state']=='failed' and denied['error_code']=='NotOwner',denied
         capture(s,'display-preview-during-sound',output['name'])
         app.stop();clean(app);wait_for(lambda:not peer.aqueous()['busy'],45)
@@ -328,7 +343,9 @@ def main():
         click_widget(s,ipc,control(s,ipc,'aqueous.rebase'));aq_ready(s,ipc,peer)
         assert peer.aq_document('draft')['changes'][0]['value']==19
         assert not probe(s,ipc)['aqueous']['recovery']
-        click_widget(s,ipc,control(s,ipc,'aqueous.discard'));wait_for(lambda:not peer.aqueous()['draft']);aq_ready(s,ipc,peer)
+        click_widget(s,ipc,control(s,ipc,'aqueous.discard'))
+        accept_aqueous_review(s,ipc)
+        wait_for(lambda:not peer.aqueous()['draft']);aq_ready(s,ipc,peer)
         checks['aqueous-backend-restart-no-replay-explicit-rebase-and-discard']=True
         app.stop();clean(app);peer.close();shell.stop();clean(shell)
       report['status']='passed'

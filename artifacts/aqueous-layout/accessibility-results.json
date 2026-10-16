@@ -1,0 +1,11 @@
+{
+  "status": "failed",
+  "checks": {
+    "actual-service-icon-clicks-toggle-and-switch-on-all-four-edges": true,
+    "bar-retains-approved-no-keyboard-focus-policy": true,
+    "accessible-service-actions-retain-status-descriptions": true
+  },
+  "pearl_sha256": "c072a7f4ca8b616c2089447c71f72170b0120a5bc6ddf8e0432449d6c1b43c28",
+  "ctl_sha256": "afedd6ee38f085b92a8f439daf504fa60738bf4dc8f7cbec27751fa8e3437bdf",
+  "error": "(('aqueous', 'status', '--text', 'test-settings-page'), 4, '{\"pearl\":1,\"id\":\"1\",\"ok\":false,\"err\":{\"code\":\"Unavailable\"}}\\n', '')"
+}
