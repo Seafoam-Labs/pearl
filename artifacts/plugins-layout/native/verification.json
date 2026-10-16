@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "checks": [
+    "collapsed-cards-and-approval-gate",
+    "review-cancel-does-not-edit-and-restores-focus",
+    "review-stages-exact-fingerprint-and-grants-without-enabling-or-writing",
+    "approval-enable-and-apply-preserve-native-bar-placement",
+    "enabled-and-attention-filters-preserve-draft",
+    "case-insensitive-page-search-empty-results-and-pagination",
+    "package-replacement-closes-stale-review-and-resets-grants",
+    "discard-does-not-reuse-old-package-permissions",
+    "unrelated-row-expansion-and-draft-survive-discovery",
+    "discovery-errors-visible-without-expanding-diagnostics",
+    "missing-package-retains-preferences-and-can-be-disabled",
+    "dark-light-560-390-layout-and-reachable-footer",
+    "compact-review-keyboard-actions",
+    "no-gtk-warnings-or-criticals"
+  ],
+  "captures": [
+    "session/dark.png",
+    "session/review.png",
+    "session/light.png",
+    "session/narrow.png",
+    "session/compact.png",
+    "session/compact-review.png"
+  ]
+}

@@ -213,3 +213,21 @@
 .settings-window .aqueous-search { margin-bottom: 4px; }
 .settings-window.settings-narrow .aqueous-card { padding: 14px; }
 .settings-window.pearl-gtk .aqueous-card { background: alpha(currentColor, 0.04); border: 1px solid alpha(currentColor, 0.12); }
+
+/* Plugins share the Settings draft and expose runtime diagnostics on demand. */
+.settings-window .plugins-hero { padding: 18px 20px; }
+.settings-window .plugins-scene { border-radius: 12px; padding: 12px; background: alpha(currentColor, 0.06); }
+.settings-window .plugins-mini-surface, .settings-window .plugins-mini-window { border-radius: 8px; padding: 5px 10px; background: @theme_bg_color; color: @theme_fg_color; }
+.settings-window .plugins-mini-selection { border-radius: 6px; padding: 3px 8px; background: alpha(currentColor, 0.12); }
+.settings-window .plugins-card-header { padding: 18px 20px 0; }
+.settings-window .plugins-card > label { margin: 8px 20px; }
+.settings-window .plugins-card .plugins-review { margin: 4px 20px 12px; }
+.settings-window button.plugins-expand { border-radius: 0; padding: 10px 20px; border-top: 1px solid alpha(currentColor, 0.10); }
+.settings-window .plugins-diagnostics label { margin: 12px 20px; }
+.settings-window .plugins-discovery { padding: 16px 20px; }
+.settings-window.settings-narrow .plugins-hero { padding: 14px; }
+.settings-window.settings-narrow .plugins-card-header { padding: 14px 14px 0; }
+.settings-window.settings-narrow .plugins-card > label { margin-left: 14px; margin-right: 14px; }
+.settings-window.settings-narrow .plugins-card .plugins-review { margin-left: 14px; margin-right: 14px; }
+.settings-window.settings-narrow .plugins-diagnostics label { margin-left: 14px; margin-right: 14px; }
+.settings-window.settings-narrow .plugins-discovery { padding-left: 14px; padding-right: 14px; }

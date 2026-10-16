@@ -7,6 +7,9 @@
 .settings-window.$scope button.settings-nav-item:checked { background: $primary_container$; color: $primary$; }
 .settings-window.$scope button.settings-nav-item:focus-visible { outline-color: $primary$; }
 .settings-window.$scope .settings-card, .settings-window.$scope button.settings-category { background: $high$; }
+.settings-window.$scope .plugins-scene { background: linear-gradient(145deg, $primary_container$, mix($primary_container$, $primary$, 0.45)); }
+.settings-window.$scope .plugins-mini-surface, .settings-window.$scope .plugins-mini-window { background: $low$; color: $text$; }
+.settings-window.$scope .plugins-mini-selection { background: $primary$; color: $on_primary$; }
 .settings-window.$scope .network-card { background: $high$; border-radius: 14px; padding: 16px; }
 .settings-window.$scope .sound-card { background: $high$; }
 .settings-window.$scope .power-card { background: $high$; }

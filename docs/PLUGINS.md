@@ -81,8 +81,11 @@ version. Multiple packages with one ID in the same root are a conflict. The page
 shows the selected source and candidate paths; remove the extra copy to resolve it.
 Discovery does not execute any plugin.
 
-Open Plugins, review the package fingerprint and requested permissions, choose
-**Approve package**, then enable it and **Apply & save**. Enabling a plugin in
+Open Plugins, choose **Review package**, review the exact fingerprint and optional
+permissions, then **Save review to draft**. Enable the plugin and **Apply & save**.
+Cancel leaves the draft unchanged; saving a review does not enable a new plugin.
+If that package changes or disappears during review, the dialog closes and the
+new package needs a fresh review. Enabling a plugin in
 Bar mode adds it to the right bar group, including per-output overrides; an
 existing placement in another group is preserved. **Add to bar** switches an
 overlay back to Bar mode and adds any missing references in the draft. Choosing
@@ -91,6 +94,15 @@ permission. Turning that permission off returns the enabled plugin to the bar. B
 `plugin:pearl.timer-c/main`; they may also be entered in Bar & dock or per-output
 preferences. Unknown references remain harmless until a matching plugin runs.
 The native launcher is optional, so a bar may hold plugin references alone.
+
+Plugin cards show live status and mark unsaved preference changes separately.
+**Settings and placement** exposes controls and immediate **Retry** / **Preview**
+actions. **Package details and diagnostics** contains full source paths,
+fingerprints, input activity availability and runtime errors. Package failures
+and discovery errors remain visible while these sections are collapsed.
+Search and the All / Enabled in draft / Needs attention filters operate on the
+current page; use **Next page** or **First page** to navigate the bounded inventory.
+Search, filtering and expanding details do not modify preferences.
 
 Schema controls support text, bounded integer and boolean values. Enablement,
 approvals, permissions, settings, and placement share Pearl's retained draft,

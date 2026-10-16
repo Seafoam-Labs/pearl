@@ -647,6 +647,15 @@ pub fn build(b: *std.Build) void {
     if (!wasm_plugins) discovery_test.addArg("--runtime-disabled");
     if (b.args) |args| discovery_test.addArgs(args);
     b.step("test-plugin-discovery", "Verify live plugin installation, replacement and removal in a private session").dependOn(&discovery_test.step);
+    const plugins_layout = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugins_layout.py" });
+    plugins_layout.step.dependOn(integration_build);
+    plugins_layout.addArgs(&.{ "--pearl", b.getInstallPath(.{ .custom = "test" }, "pearl-integration"), "--examples", plugin_examples });
+    for ([_][]const u8{ "--settings", "--ctl" }, [_]*std.Build.Step.Compile{ settings_test_app, ctl }) |flag, binary| {
+        plugins_layout.addArg(flag);
+        plugins_layout.addArtifactArg(binary);
+    }
+    if (b.args) |args| plugins_layout.addArgs(args);
+    b.step("test-plugins-layout", "Verify native plugin reviews, pagination and responsive layout in a private session").dependOn(&plugins_layout.step);
     var plugin_activity_test: ?*std.Build.Step.Run = null;
     if (wasm_plugins) {
         const activity = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugin_activity.py" });

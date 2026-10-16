@@ -1,0 +1,5 @@
+Build Summary: 3/3 steps succeeded; 298/298 tests passed
+test-plugin-unit success
++- run test 298 pass (298 total) 126ms MaxRSS:6M
+   +- compile test ReleaseSafe native cached 11ms MaxRSS:59M
+

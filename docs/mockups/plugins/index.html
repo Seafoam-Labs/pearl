@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pearl · Plugins design preview</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header class="review"><div><span class="eyebrow">Pearl / Design preview</span><h1>A little more, on your desktop.</h1></div><div class="review-tools"><label class="sr" for="scenario">Preview scenario (resets sample changes)</label><select id="scenario"><option value="installed">Installed plugins</option><option value="changed">Package updated</option><option value="missing">Package removed</option><option value="unavailable">Runtime unavailable</option><option value="empty">No plugins</option></select><button id="theme" class="outline">Light preview</button></div></header>
+<section class="window" aria-label="Pearl Settings prototype">
+<header class="titlebar"><span class="brand"><span class="pearl"></span>Pearl Settings</span><button id="sections" aria-expanded="false" aria-controls="navigation">☰ Sections</button><span class="window-marks" aria-hidden="true">− □ ×</span></header>
+<div class="layout"><nav id="navigation" aria-label="Settings sections"></nav>
+<main><header class="heading"><div><h2>Plugins</h2><p>Make room for the little things that make your desktop yours.</p></div><span class="tag">Experimental</span></header>
+<div class="content" id="content">
+<section class="hero card"><div class="desktop-preview" aria-label="Illustration of a plugin in the desktop bar"><div class="mini-bar"><span>● &nbsp; 1 &nbsp; 2</span><span class="mini-timer">◷ 00:42</span><span>◦ ◦ ◦</span></div><div class="mini-window"><i></i><i></i><i></i></div><div class="cat"></div><div class="mini-dock"><i></i><i></i><i></i><i></i></div></div><div class="hero-copy"><span class="eyebrow">Small additions. Your space.</span><h3>At home in your bar.<br> Or out on your desktop.</h3><p>Enable a widget, choose its place, and give it only the permissions it needs.</p><span class="quiet">Illustrative preview · Your desktop is unchanged</span></div></section>
+<div id="notice" class="notice" role="status" hidden></div>
+<div class="section-heading"><div><h3>Installed plugins <span id="count" class="count"></span></h3><p id="summary" class="sub"></p></div><button id="refresh" class="outline">↻ Refresh plugins</button></div>
+<div class="filters"><label class="search"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="search" type="search" placeholder="Find a plugin…" aria-label="Find a plugin"></label><label class="sr" for="filter">Filter plugins</label><select id="filter"><option value="all">All plugins</option><option value="enabled">Enabled in draft</option><option value="attention">Needs attention</option></select></div>
+<div id="plugins" aria-label="Installed plugin list"></div>
+<details class="discovery"><summary><span>Plugin discovery<span class="sub" id="monitoring">Watching installed packages automatically</span></span></summary><div class="discovery-body"><p>New packages appear automatically. Updates need a fresh permission review before they can run.</p><dl><dt>User packages</dt><dd><code>~/.local/share/pearl/plugins/</code></dd><dt>System packages</dt><dd><code>/usr/share/pearl/plugins/</code></dd></dl><p>Install a complete package in one of these folders, then refresh.</p><a href="../../PLUGIN_DEVELOPMENT.md">Plugin development guide ↗</a></div></details>
+<p class="live-note">Refresh, Retry and Preview act immediately. Preferences change after Apply &amp; save.</p>
+</div>
+<footer class="footer"><div><strong id="draft-status" role="status">All changes saved</strong><span>Shared Pearl preferences · This preview keeps changes in memory.</span></div><div class="footer-actions"><button id="discard" class="outline" disabled>Discard</button><button id="apply" class="primary" disabled>Apply &amp; save</button></div></footer>
+</main></div></section>
+<div class="caption"><span>Interactive mockup · Sample data · No connection to Pearl</span><span>Settings / Plugins</span></div>
+<dialog id="review-dialog" aria-labelledby="review-title"><form id="review-form"><header class="dialog-head"><span class="eyebrow">Package & permissions</span><h2 id="review-title">Review plugin</h2><p id="review-description" class="sub"></p></header><div class="dialog-body" id="review-body"></div><footer class="dialog-foot"><button type="button" data-close="review-dialog">Cancel</button><button type="submit" class="primary">Save review to draft</button></footer></form></dialog>
+<dialog id="preview-dialog" aria-labelledby="preview-title"><header class="dialog-head"><span class="eyebrow">Synthetic preview</span><h2 id="preview-title">Plugin preview</h2></header><div class="dialog-body"><div class="preview-scene" id="preview-scene"></div><p class="sub">An illustrative response using saved settings. No real input activity is sent.</p></div><footer class="dialog-foot"><button class="primary" data-close="preview-dialog">Done</button></footer></dialog>
+<div id="toast" class="toast" role="status"></div>
+<script src="mockup.js"></script>
+</body></html>

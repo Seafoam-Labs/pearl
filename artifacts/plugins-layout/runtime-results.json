@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "checks": [
+    "four-real-components-active-in-shell-invalid-png-isolated",
+    "main-settings-page-and-live-registry",
+    "enable-places-companion-on-output-bars-and-overlay-selection-grants-placement",
+    "actual-settings-refresh-button-preserves-all-instances",
+    "unrelated-row-focus-and-unsaved-values-survive-update",
+    "flyout-rejects-plugins-route",
+    "disable-through-settings-draft-apply",
+    "changed-package-failure-isolated-explicit-retry",
+    "inactive-session-clears-scenes-and-restarts-new-generations"
+  ]
+}
