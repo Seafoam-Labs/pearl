@@ -1,6 +1,6 @@
 pkgbase = pearl
 	pkgdesc = GTK desktop shell exclusively for Aqueous (release candidate)
-	pkgver = 0.2.7
+	pkgver = 0.2.8
 	pkgrel = 1
 	epoch = 1
 	url = https://github.com/Seafoam-Labs/pearl
@@ -67,7 +67,7 @@ pkgbase = pearl
 	options = !debug
 	backup = etc/pam.d/pearl
 	backup = etc/pearl/portal-policy.conf
-	source = pearl-0.2.7::git+https://github.com/Seafoam-Labs/pearl.git#tag=v0.2.7
+	source = pearl-0.2.8::git+https://github.com/Seafoam-Labs/pearl.git#tag=v0.2.8
 	source = https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.2/wasmtime-v48.0.2-x86_64-linux-c-api.tar.xz
 	source = https://github.com/bytecodealliance/wit-bindgen/releases/download/v0.62.0/wit-bindgen-0.62.0-x86_64-linux.tar.gz
 	source = https://github.com/bytecodealliance/wasm-tools/releases/download/v1.259.0/wasm-tools-1.259.0-x86_64-linux.tar.gz

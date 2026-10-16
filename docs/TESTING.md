@@ -13,6 +13,19 @@ recovery, and records screenshots plus 10,000-file rendering measurements. Use
 `zig build build-desktop-icons-test` to stage the instrumented shell and CLI for
 direct harness runs; these test probes are absent from the production shell.
 
+Settings portal regression coverage is available with
+`zig build test-portal-settings -Doptimize=ReleaseSafe` (also included in
+`zig build test-portals`). It requires PyGObject, `dbus-run-session`,
+`glib-compile-schemas`, and the installed xdg-desktop-portal frontend, document
+portal and permission store. It stages Pearl's package files and tests the real
+`org.freedesktop.portal.Desktop` interface with temporary HOME/XDG directories,
+a keyfile GSettings backend and private D-Bus sessions; no compositor is needed.
+Coverage includes theme values and types, namespace filters, overrides and
+resets, single change signals, missing schemas/keys, Pearl appearance ownership,
+and Zig lifecycle checks that verify signal disconnection and object release.
+The broader `test-portals` suite also needs the private Aqueous fixture, `wtype`,
+Pillow, and GTK/Qt client build dependencies.
+
 System layout acceptance is registered as `test-system-layout`. Run
 `zig build test-system-layout -Doptimize=ReleaseSafe` for native mode radios,
 disclosures, focus across polling, draft separation, and responsive captures.

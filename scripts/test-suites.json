@@ -1,5 +1,19 @@
 [
   {
+    "id": "test-portal-settings",
+    "description": "Packaged public Settings portal, isolated GSettings and lifecycle cleanup",
+    "groups": ["native"],
+    "cwd": ".",
+    "targets": ["test-portal-settings"],
+    "capabilities": ["zig", "native", "bus"],
+    "fixture": null,
+    "output": "none",
+    "timeout": 180,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test-theme-github",
     "description": "Verify direct GitHub theme discovery and installation in private storage",
     "groups": [

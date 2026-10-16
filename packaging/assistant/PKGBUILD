@@ -8,7 +8,7 @@ if [[ $_backend != cpu ]]; then
     conflicts=('pearl-assistant-runtime')
 fi
 pkgver=0.6.0
-pkgrel=2
+pkgrel=3
 pkgdesc="Optional $_backend llama.cpp runtime for Pearl (system or custom builds also supported)"
 arch=('x86_64' 'aarch64')
 url='https://github.com/ggml-org/llama.cpp'

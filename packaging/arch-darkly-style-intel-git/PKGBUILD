@@ -2,7 +2,7 @@
 # Latest upstream Git Darkly application styles for Pearl. No KWin decorations or Plasma theme.
 pkgname=pearl-darkly-style-intel-git
 pkgver=0.5.39.r0.g65f6fa6
-pkgrel=1
+pkgrel=2
 pkgdesc='Darkly application styles for Qt 5 and Qt 6, without KWin decorations (Intel baseline, Git version)'
 arch=('x86_64')
 url='https://github.com/Bali10050/Darkly'

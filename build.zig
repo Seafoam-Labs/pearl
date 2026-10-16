@@ -76,6 +76,16 @@ pub fn build(b: *std.Build) void {
     const session_fixture_build = b.step("build-portal-session-test", "Build the private portal session fixture using the Zig session adapter");
     session_fixture_build.dependOn(&session_fixture_install.step);
     const portal_tests = b.step("test-portals", "Run the portal contracts, shared chooser, print worker and staging checks in isolated sessions");
+    const settings_module = b.createModule(.{ .root_source_file = b.path("src/portal_settings_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| settings_module.addImport(name, bindings.module(name));
+    settings_module.addOptions("portal_identity", portal_identity);
+    settings_module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    const settings_unit = b.addTest(.{ .root_module = settings_module });
+    const settings_check = b.addSystemCommand(&.{ "python3", "tests/portal/test_settings.py", "--lifecycle" });
+    settings_check.addArtifactArg(settings_unit);
+    settings_check.step.dependOn(portal_build);
+    b.step("test-portal-settings", "Test packaged Settings through a private public portal and isolated GSettings").dependOn(&settings_check.step);
+    portal_tests.dependOn(&settings_check.step);
     for ([_][]const u8{ "tests/portal/test_startup.py", "tests/portal/test_contracts.py", "tests/portal/test_native.py", "tests/portal/test_print_worker.py", "tests/portal/test_package.py", "tests/portal/test_frontend.py", "tests/portal/test_ipp.py" }) |script| {
         const check = b.addSystemCommand(&.{ "python3", script });
         check.step.dependOn(portal_build);

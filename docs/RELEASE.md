@@ -10,10 +10,11 @@ no Flatpak-wide support is claimed. Before downgrade/removal, disable Qt managem
 and complete conditional restoration using the [recovery procedure](QT_THEMING.md#shared-files-conflicts-and-recovery).
 Preserve user ownership records; package scripts must not remove them.
 
-Pearl `0.2.7` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
-This candidate registers Dome's `appearance-rejected` log event, fixing the
-catalog check that blocked package builds. It retains live Pearl theme following
-in Dome and updated Settings pages.
+Pearl `0.2.8` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
+This candidate bundles Phyto, Dome and Coral `0.1.1` and Pearl Material's VS Code
+theme `1.0.1`, with refreshed Arch and Devario packaging. It retains Dome's
+`appearance-rejected` log-event catalog fix, live Pearl theme following in Dome
+and updated Settings pages.
 It also includes the local launcher assistant with Bing RSS search by default,
 current-master transactions, collection forms and native capture.
 This is a release candidate: physical, actual login-session, screen-reader and
@@ -41,9 +42,9 @@ session dispatcher and asynchronous capture-backend patch together. See the
 [capture picker implementation record](FILE_CHOOSER_IMPLEMENTATION_PLAN.md#capture-picker-implementation-record)
 for verification and rebuild details.
 
-The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.7`.
-Its Arch version is `1:0.2.7-1`; the epoch allows upgrades from the earlier
-`1.0.0rc2` packages. The source and runtime version are also `0.2.7`.
+The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.2.8`.
+Its Arch version is `1:0.2.8-1`; the epoch allows upgrades from the earlier
+`1.0.0rc2` packages. The source and runtime version are also `0.2.8`.
 The Devario [standard split recipe](../packaging/Devario/pearl/PKGBUILD) uses the
 same tag and produces `pearl` and `pearl-greeter` from one checkout and build.
 The [Devario Git split recipe](../packaging/Devario/pearl-git/PKGBUILD) tracks the
@@ -56,8 +57,8 @@ Each output has its own runtime dependencies and backups; installing either
 shell alone does not install a greeter. Installing a greeter retains the existing
 next-boot setup hook. PKGBUILDs and pacman install hooks use shell because these
 are the package manager's required integration format; application builds use Zig.
-Publish `v0.2.7` from the commit containing this version bump and the log-event
-catalog fix before these recipes can fetch the release. The standard packages install
+Publish `v0.2.8` from the commit containing this version bump before these recipes
+can fetch the release. The standard packages install
 `pearl-agent`; Git packages install `pearl-agent-git` and the matching desktop entry.
 Git sources
 use `SKIP` in `sha256sums`; downloaded SDK archives retain their pinned checksums.
@@ -142,7 +143,7 @@ makepkg
 
 This fetches the upstream repository's default branch and generates a version
 from its release metadata, commit count and abbreviated commit hash (for example,
-`1:0.2.7.r232.g1716e10-1`). It uses the same dependencies, ReleaseSafe build and
+`1:0.2.8.r233.gfecc966-1`). It uses the same dependencies, ReleaseSafe build and
 checks as the release recipe, with `-Dcpu=baseline` for baseline x86-64 CPU
 compatibility. The moving Git source uses `SKIP` for its checksum;
 the release archive recipe remains checksum-locked. One checkout and build produce:

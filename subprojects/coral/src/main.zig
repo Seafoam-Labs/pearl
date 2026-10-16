@@ -50,11 +50,11 @@ pub fn main(init: std.process.Init) void {
             },
         }
         if (std.mem.eql(u8, arg, "--help")) {
-            c.g_print("Coral 0.1.0 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
+            c.g_print("Coral 0.1.1 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         }
         if (std.mem.eql(u8, arg, "--version")) {
-            c.g_print("Coral 0.1.0\n");
+            c.g_print("Coral 0.1.1\n");
             return;
         }
         if (std.mem.eql(u8, arg, "--light")) settings.theme = 1 else if (std.mem.eql(u8, arg, "--dark")) settings.theme = 0 else if (std.mem.eql(u8, arg, "--native-theme")) settings.theme = 2 else if (std.mem.startsWith(u8, arg, "--width=")) width = std.math.clamp(std.fmt.parseInt(c_int, arg[8..], 10) catch 1000, 390, 3840) else if (std.mem.startsWith(u8, arg, "--height=")) height = std.math.clamp(std.fmt.parseInt(c_int, arg[9..], 10) catch 740, 400, 2160) else if (std.mem.startsWith(u8, arg, "--")) {

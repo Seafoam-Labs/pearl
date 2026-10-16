@@ -1338,7 +1338,7 @@ fn onAction(action: ?*c.GSimpleAction, _: ?*c.GVariant, data: ?*anyopaque) callc
         if (self.active()) |d| self.requestSuggestions(d);
     } else if (std.mem.eql(u8, name, "preferences")) self.preferences() else if (std.mem.eql(u8, name, "close")) {
         if (self.active()) |d| self.closeDocument(d);
-    } else if (std.mem.eql(u8, name, "quit")) self.quit() else if (std.mem.eql(u8, name, "about")) c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.0"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null));
+    } else if (std.mem.eql(u8, name, "quit")) self.quit() else if (std.mem.eql(u8, name, "about")) c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.1"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null));
 }
 fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(App, data.?);

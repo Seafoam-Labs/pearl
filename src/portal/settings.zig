@@ -9,6 +9,52 @@ pub var style: [*c]ffi.GtkCssProvider = null;
 
 pub var pending_css: [*c]u8 = null;
 
+const interface_namespace = "org.gnome.desktop.interface";
+const theme_keys = .{
+    .{ "gtk-theme", "s" },
+    .{ "icon-theme", "s" },
+    .{ "cursor-theme", "s" },
+    .{ "cursor-size", "i" },
+};
+
+// GSettings is the source for theme selection only. Pearl owns appearance,
+// font and motion; never feed these changes through GTK or generated CSS.
+fn interface_changed(settings: [*c]ffi.GSettings, key: [*c]const u8, data: ffi.gpointer) callconv(.c) void {
+    const p: [*c]Portal = @ptrCast(@alignCast(data));
+    inline for (theme_keys) |entry| {
+        if (ffi.strcmp(key, entry[0]) == 0) {
+            const value = ffi.g_settings_get_value(settings, key);
+            defer ffi.g_variant_unref(value);
+            if (ffi.g_variant_is_of_type(value, ffi.g_variant_type_checked_(entry[1])) != 0) {
+                // get_value returns a full reference; setting retains its own.
+                setting(p, interface_namespace, key, value);
+            }
+            return;
+        }
+    }
+}
+
+fn interface_init(p: [*c]Portal) void {
+    const source = ffi.g_settings_schema_source_get_default() orelse return;
+    const schema = ffi.g_settings_schema_source_lookup(source, interface_namespace, 1) orelse return;
+    defer ffi.g_settings_schema_unref(schema);
+    p.*.interface_settings = ffi.g_settings_new_full(schema, null, null);
+    // Connect before reading: GSettings only signals keys read after connecting.
+    p.*.interface_settings_changed = ffi.g_signal_connect_data(
+        p.*.interface_settings,
+        "changed",
+        @ptrCast(&interface_changed),
+        p,
+        null,
+        0,
+    );
+    inline for (theme_keys) |entry| {
+        if (ffi.g_settings_schema_has_key(schema, entry[0]) != 0) {
+            interface_changed(p.*.interface_settings, entry[0], p);
+        }
+    }
+}
+
 pub fn portal_style_display(display: ?*ffi.GdkDisplay) callconv(.c) void {
     if ((style != null) and !(ffi.g_object_get_data(ffi.cast([*c]ffi.GObject, display), "pearl-portal-style") != null)) {
         ffi.gtk_style_context_add_provider_for_display(display, ffi.cast(?*ffi.GtkStyleProvider, style), 600);
@@ -184,6 +230,7 @@ pub fn portal_settings_init(p: [*c]Portal) callconv(.c) void {
     active = p;
     p.*.settings = ffi.g_hash_table_new_full(ffi.g_str_hash, ffi.g_str_equal, ffi.g_free, @ptrCast(@alignCast(@constCast(&ffi.g_variant_unref))));
     portal_appearance(1, @as(f64, 208.0) / @as(f64, 255.0), @as(f64, 188.0) / @as(f64, 255.0), @floatFromInt(1), 0, "Sans 14", "");
+    interface_init(p);
     read_policy(p, 1);
     const file: ?*ffi.GFile = ffi.g_file_new_for_path(identity.policy_path);
     defer if (file != null) ffi.g_object_unref(@ptrCast(file));
@@ -202,6 +249,11 @@ pub fn portal_settings_init(p: [*c]Portal) callconv(.c) void {
 
 pub fn portal_settings_stop(p: [*c]Portal) callconv(.c) void {
     active = null;
+    if (p.*.interface_settings_changed != 0) {
+        ffi.g_signal_handler_disconnect(p.*.interface_settings, p.*.interface_settings_changed);
+        p.*.interface_settings_changed = 0;
+    }
+    ffi.clear(&p.*.interface_settings, ffi.g_object_unref);
     if ((style != null) and (ffi.gdk_display_get_default() != null)) {
         ffi.gtk_style_context_remove_provider_for_display(ffi.gdk_display_get_default(), ffi.cast(?*ffi.GtkStyleProvider, style));
     }

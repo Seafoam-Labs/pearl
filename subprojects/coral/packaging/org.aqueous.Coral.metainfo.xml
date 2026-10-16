@@ -11,5 +11,8 @@
   <description><p>Edit text in tabs, find and replace, highlight syntax, and check spelling with installed dictionaries.</p></description>
   <launchable type="desktop-id">org.aqueous.Coral.desktop</launchable>
   <provides><binary>coral</binary></provides>
-  <releases><release version="0.1.0" date="2026-09-21"/></releases>
+  <releases>
+    <release version="0.1.1" date="2026-10-16"/>
+    <release version="0.1.0" date="2026-09-21"/>
+  </releases>
 </component>

@@ -576,6 +576,10 @@ pub extern fn g_set_error_literal(err: [*c][*c]GError, domain: GQuark, code: gin
 
 pub extern fn g_settings_get_boolean(settings: [*c]GSettings, key: [*c]const gchar) gboolean;
 
+pub extern fn g_settings_get_value(settings: [*c]GSettings, key: [*c]const gchar) ?*GVariant;
+
+pub extern fn g_signal_handler_disconnect(instance: gpointer, handler_id: gulong) void;
+
 pub extern fn g_settings_new_full(schema: ?*GSettingsSchema, backend: ?*GSettingsBackend, path: [*c]const gchar) [*c]GSettings;
 
 pub extern fn g_settings_schema_has_key(schema: ?*GSettingsSchema, name: [*c]const gchar) gboolean;

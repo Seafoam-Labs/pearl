@@ -86,7 +86,7 @@ pub fn main(init: std.process.Init) void {
             glib.print("Phyto — native Pearl file explorer\nUsage: phyto [--light] [--compact] [--native-theme] [--width=N] [--height=N]\n             [--log-level LEVEL] [--log-scopes LIST] [PATH_OR_URI]\n\nCtrl+L location, Ctrl+F filter, Ctrl+T new tab, F3 split panes, F6 switch pane.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         } else if (std.mem.eql(u8, arg, "--version")) {
-            glib.print("Phyto 0.1.0 (Zig 0.16.0 / GTK4)\n");
+            glib.print("Phyto 0.1.1 (Zig 0.16.0 / GTK4)\n");
             return;
         } else if (std.mem.eql(u8, arg, "--light")) options.light = true else if (std.mem.eql(u8, arg, "--compact")) options.compact = true else if (std.mem.eql(u8, arg, "--native-theme")) options.native = true else if (std.mem.startsWith(u8, arg, "--width=")) {
             options.width = std.fmt.parseInt(c_int, arg[8..], 10) catch 1180;
