@@ -2,17 +2,17 @@ const std = @import("std");
 const u = @import("widgets.zig");
 const c = u.c;
 const m = @import("../core/model.zig");
+const Colors = @import("colors.zig").Colors;
 pub const Graph = struct {
     history: *m.History,
     duration: *i64,
-    light: *bool,
-    native: ?*bool = null,
+    colors: *const Colors,
     unit: enum { percent, bytes, rate, celsius, rpm } = .percent,
     accent: usize = 0,
     fixed: ?f64 = null,
-    pub fn create(history: *m.History, duration: *i64, light: *bool, native: *bool, accent: usize, height: c_int, fixed: ?f64, key: []const u8) u.W {
+    pub fn create(history: *m.History, duration: *i64, colors: *const Colors, accent: usize, height: c_int, fixed: ?f64, key: []const u8) u.W {
         const self = u.a.create(Graph) catch unreachable;
-        self.* = .{ .history = history, .duration = duration, .light = light, .native = native, .accent = accent, .fixed = fixed, .unit = if (std.mem.startsWith(u8, key, "disk:") or std.mem.startsWith(u8, key, "net:")) .rate else if (std.mem.eql(u8, key, "memory")) .bytes else if (std.mem.startsWith(u8, key, "sensor:")) (if (accent == 5) .celsius else .rpm) else .percent };
+        self.* = .{ .history = history, .duration = duration, .colors = colors, .accent = accent, .fixed = fixed, .unit = if (std.mem.startsWith(u8, key, "disk:") or std.mem.startsWith(u8, key, "net:")) .rate else if (std.mem.eql(u8, key, "memory")) .bytes else if (std.mem.startsWith(u8, key, "sensor:")) (if (accent == 5) .celsius else .rpm) else .percent };
         const area = c.gtk_drawing_area_new().?;
         c.gtk_drawing_area_set_content_height(u.cast(c.GtkDrawingArea, area), height);
         u.expand(area);
@@ -29,7 +29,15 @@ pub const Graph = struct {
         if (width < 2 or height < 2) return;
         const w: @TypeOf(@as(f64, 0)) = @floatFromInt(width);
         const h: f64 = @floatFromInt(height - 12);
-        c.cairo_set_source_rgba(ctx, if (self.light.*) 0.35 else 0.65, if (self.light.*) 0.3 else 0.6, if (self.light.*) 0.4 else 0.7, 0.16);
+        var foreground = self.colors.text;
+        var rgb = self.colors.series[self.accent % 6];
+        if (self.colors.native and area != null) {
+            var color: c.GdkRGBA = undefined;
+            c.gtk_widget_get_color(@ptrCast(area.?), &color);
+            foreground = .{ color.red, color.green, color.blue };
+            rgb = foreground;
+        }
+        c.cairo_set_source_rgba(ctx, foreground[0], foreground[1], foreground[2], 0.16);
         c.cairo_set_line_width(ctx, 0.5);
         for (0..5) |i| {
             const y = h * @as(f64, @floatFromInt(i)) / 4;
@@ -54,16 +62,6 @@ pub const Graph = struct {
                 if (point.time < from) continue;
                 if (point.value) |v| maximum = @max(maximum, v * 1.15);
                 if (point.second) |v| maximum = @max(maximum, v * 1.15);
-            }
-        }
-        const dark = [_][3]f64{ .{ 0.816, 0.737, 1 }, .{ 0.93, 0.737, 0.627 }, .{ 0.65, 0.84, 0.71 }, .{ 0.655, 0.784, 0.98 }, .{ 0.91, 0.71, 0.83 }, .{ 0.86, 0.81, 0.58 } };
-        const light = [_][3]f64{ .{ 0.404, 0.314, 0.643 }, .{ 0.58, 0.33, 0.18 }, .{ 0.2, 0.44, 0.3 }, .{ 0.22, 0.38, 0.59 }, .{ 0.58, 0.32, 0.47 }, .{ 0.46, 0.4, 0.12 } };
-        var rgb = (if (self.light.*) light else dark)[self.accent % 6];
-        if (self.native) |native| {
-            if (native.* and area != null) {
-                var color: c.GdkRGBA = undefined;
-                c.gtk_widget_get_color(@ptrCast(area.?), &color);
-                rgb = .{ color.red, color.green, color.blue };
             }
         }
         for (0..2) |series| {
@@ -110,3 +108,29 @@ pub const Graph = struct {
         }
     }
 };
+
+test "drawing uses changed colors without a new history sample" {
+    var history: m.History = .{};
+    history.add(0, 50, null);
+    history.add(1000000, 50, null);
+    var duration: i64 = 1000000;
+    var colors: Colors = .{ .native = false };
+    var graph: Graph = .{ .history = &history, .duration = &duration, .colors = &colors, .fixed = 100 };
+    const surface = c.cairo_image_surface_create(c.CAIRO_FORMAT_ARGB32, 100, 100).?;
+    defer c.cairo_surface_destroy(surface);
+    const cr = c.cairo_create(surface).?;
+    defer c.cairo_destroy(cr);
+    c.cairo_set_antialias(cr, c.CAIRO_ANTIALIAS_NONE);
+    for ([_][3]f64{ .{ 1, 0, 0 }, .{ 0, 1, 0 } }, [_]u32{ 0x00ff0000, 0x0000ff00 }) |color, expected| {
+        c.cairo_set_source_rgb(cr, 0, 0, 0);
+        c.cairo_paint(cr);
+        colors.series[0] = color;
+        Graph.draw(null, cr, 100, 100, &graph);
+        c.cairo_surface_flush(surface);
+        const stride: usize = @intCast(c.cairo_image_surface_get_stride(surface));
+        const pixels = c.cairo_image_surface_get_data(surface);
+        const pixel: *align(1) const u32 = @ptrCast(pixels + 44 * stride + 50 * 4);
+        try std.testing.expectEqual(expected, pixel.* & 0x00ffffff);
+        try std.testing.expectEqual(@as(usize, 2), history.len);
+    }
+}

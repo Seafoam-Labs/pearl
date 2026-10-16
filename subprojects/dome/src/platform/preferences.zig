@@ -2,8 +2,8 @@ const std = @import("std");
 const io = @import("io.zig");
 const c = io.c;
 pub const Preferences = struct {
-    light: bool = false,
-    native: bool = false,
+    pub const Theme = enum { follow_pearl, native_gtk, light, dark };
+    theme: Theme = .follow_pearl,
     compact: bool = false,
     bits: bool = false,
     per_core: bool = false,
@@ -43,12 +43,18 @@ pub const Preferences = struct {
         if (c.g_key_file_load_from_file(file, path, 0, &err) == 0) {
             return .{ .prefs = p, .outcome = classifyLoad(err) };
         }
-        // A stored version other than 1 is not a format this build understands;
-        // discard it rather than misreading shifted keys.
-        if (c.g_key_file_get_integer(file, "Dome", "version", null) != 1) {
+        const version = c.g_key_file_get_integer(file, "Dome", "version", null);
+        if (version != 1 and version != 2) {
             return .{ .prefs = p, .outcome = .version };
         }
-        inline for (.{ "light", "native", "compact", "bits", "per_core" }) |key| @field(p, key) = c.g_key_file_get_boolean(file, "Dome", key, null) != 0;
+        if (version == 1) {
+            // Preserve historical choices, including native taking precedence.
+            if (has(file, "native") or has(file, "light")) p.theme = if (c.g_key_file_get_boolean(file, "Dome", "native", null) != 0) .native_gtk else if (c.g_key_file_get_boolean(file, "Dome", "light", null) != 0) .light else .dark;
+        } else if (c.g_key_file_get_string(file, "Dome", "theme", null)) |value| {
+            defer c.g_free(value);
+            p.theme = std.meta.stringToEnum(Theme, std.mem.span(value)) orelse .follow_pearl;
+        }
+        inline for (.{ "compact", "bits", "per_core" }) |key| @field(p, key) = c.g_key_file_get_boolean(file, "Dome", key, null) != 0;
         if (has(file, "columns")) p.columns = @as(u32, @intCast(std.math.clamp(c.g_key_file_get_integer(file, "Dome", "columns", null), 0, 63))) | 5;
         if (has(file, "sort_column")) {
             p.sort_column = @intCast(std.math.clamp(c.g_key_file_get_integer(file, "Dome", "sort_column", null), 0, 5));
@@ -78,11 +84,12 @@ pub const Preferences = struct {
         const path = io.path("{s}/preferences.ini", .{dir});
         const file = c.g_key_file_new().?;
         defer c.g_key_file_unref(file);
-        c.g_key_file_set_integer(file, "Dome", "version", 1);
+        c.g_key_file_set_integer(file, "Dome", "version", 2);
+        c.g_key_file_set_string(file, "Dome", "theme", @tagName(p.theme));
         c.g_key_file_set_integer(file, "Dome", "columns", @intCast(p.columns));
         c.g_key_file_set_integer(file, "Dome", "sort_column", @intCast(p.sort_column));
         c.g_key_file_set_boolean(file, "Dome", "sort_descending", @intFromBool(p.sort_descending));
-        inline for (.{ "light", "native", "compact", "bits", "per_core" }) |key| c.g_key_file_set_boolean(file, "Dome", key, @intFromBool(@field(p, key)));
+        inline for (.{ "compact", "bits", "per_core" }) |key| c.g_key_file_set_boolean(file, "Dome", key, @intFromBool(@field(p, key)));
         c.g_key_file_set_int64(file, "Dome", "interval", p.interval);
         c.g_key_file_set_int64(file, "Dome", "duration", p.duration);
         c.g_key_file_set_integer(file, "Dome", "width", p.width);
@@ -161,14 +168,14 @@ test "preferences round-trip through save and load, including the version key" {
         removeTree(dir);
         allocator.free(dir);
     }
-    var stored: Preferences = .{ .light = true, .compact = true, .columns = 55, .sort_column = 4, .sort_descending = false, .interval = 2500000, .duration = 600000000, .width = 1440, .height = 900, .page = 3 };
+    const stored: Preferences = .{ .theme = .light, .compact = true, .columns = 55, .sort_column = 4, .sort_descending = false, .interval = 2500000, .duration = 600000000, .width = 1440, .height = 900, .page = 3 };
     try stored.saveIn(dir);
     const path = try joinZ(dir, "preferences.ini");
     defer allocator.free(path);
     const loaded = Preferences.loadFrom(path);
     try std.testing.expectEqual(Preferences.LoadOutcome.loaded, loaded.outcome);
     const p = loaded.prefs;
-    try std.testing.expectEqual(stored.light, p.light);
+    try std.testing.expectEqual(stored.theme, p.theme);
     try std.testing.expectEqual(stored.compact, p.compact);
     try std.testing.expectEqual(stored.columns, p.columns);
     try std.testing.expectEqual(stored.sort_column, p.sort_column);
@@ -190,6 +197,7 @@ test "a missing file is the normal first run and yields defaults" {
     defer allocator.free(path);
     const loaded = Preferences.loadFrom(path);
     try std.testing.expectEqual(Preferences.LoadOutcome.first_run, loaded.outcome);
+    try std.testing.expectEqual(Preferences.Theme.follow_pearl, loaded.prefs.theme);
     try std.testing.expectEqual(@as(c_int, 1120), loaded.prefs.width);
     try std.testing.expectEqual(@as(i64, 1000000), loaded.prefs.interval);
 }
@@ -207,7 +215,7 @@ test "a malformed file is classified, not silently defaulted" {
     try std.testing.expectEqual(Preferences.LoadOutcome.malformed, loaded.outcome);
 }
 
-test "a stored version other than 1 is rejected" {
+test "an unknown stored version is rejected" {
     const dir = try tempDir();
     defer {
         removeTree(dir);
@@ -215,7 +223,7 @@ test "a stored version other than 1 is rejected" {
     }
     const path = try joinZ(dir, "preferences.ini");
     defer allocator.free(path);
-    try writeFile(path, "[Dome]\nversion=2\nwidth=2000\n");
+    try writeFile(path, "[Dome]\nversion=3\nwidth=2000\n");
     const loaded = Preferences.loadFrom(path);
     try std.testing.expectEqual(Preferences.LoadOutcome.version, loaded.outcome);
     // Discarded, so the stale width never leaks through.
@@ -255,6 +263,48 @@ test "saving over an unwritable target reports a write failure" {
     if (c.g_mkdir_with_parents(blocked, 0o700) != 0) return error.TestSetup;
     const empty: Preferences = .{};
     try std.testing.expectError(error.Write, empty.saveIn(dir));
+}
+
+test "legacy themes migrate without changing monitoring preferences" {
+    const dir = try tempDir();
+    defer {
+        removeTree(dir);
+        allocator.free(dir);
+    }
+    const path = try joinZ(dir, "preferences.ini");
+    defer allocator.free(path);
+    const cases = .{
+        .{ "native=true\nlight=true\n", Preferences.Theme.native_gtk },
+        .{ "native=false\nlight=true\n", Preferences.Theme.light },
+        .{ "native=false\nlight=false\n", Preferences.Theme.dark },
+        .{ "", Preferences.Theme.follow_pearl },
+    };
+    inline for (cases) |case| {
+        try writeFile(path, "[Dome]\nversion=1\ninterval=5000000\npage=7\n" ++ case[0]);
+        const loaded = Preferences.loadFrom(path);
+        try std.testing.expectEqual(case[1], loaded.prefs.theme);
+        try loaded.prefs.saveIn(dir);
+        const migrated = Preferences.loadFrom(path);
+        try std.testing.expectEqual(case[1], migrated.prefs.theme);
+        try std.testing.expectEqual(@as(i64, 5000000), migrated.prefs.interval);
+        try std.testing.expectEqual(@as(u32, 7), migrated.prefs.page);
+    }
+}
+
+test "all explicit theme modes survive save and reload" {
+    const dir = try tempDir();
+    defer {
+        removeTree(dir);
+        allocator.free(dir);
+    }
+    const path = try joinZ(dir, "preferences.ini");
+    defer allocator.free(path);
+    inline for (std.meta.tags(Preferences.Theme)) |mode| {
+        try (Preferences{ .theme = mode }).saveIn(dir);
+        try std.testing.expectEqual(mode, Preferences.loadFrom(path).prefs.theme);
+    }
+    try writeFile(path, "[Dome]\nversion=2\ntheme=unknown\n");
+    try std.testing.expectEqual(Preferences.Theme.follow_pearl, Preferences.loadFrom(path).prefs.theme);
 }
 
 test "saving under a path whose parent is a file reports a directory failure" {

@@ -40,13 +40,14 @@ Linux. The highest GTK API version used is **4.12** (`gtk_css_provider_load_from
 older GTK/GLib combinations have not been build-tested. Process control requires
 Linux pidfds. Unsupported control fails without falling back to unsafe PID signals.
 
-The implementation uses a single Zig `@cImport` of the installed GTK/GIO/Cairo and
-Linux headers instead of the proposed generated GObject dependency. This keeps
-the standalone build free of fetched dependencies. `platform/c.zig` contains
-header-only compatibility definitions for Zig 0.16's C translator and the local
-GLib/GTK headers. Runtime libraries are ordinary dynamically linked system
-libraries; no GTK, GObject or libc implementation is copied into Dome. Portability
-of this import shim is an explicit follow-up gate.
+The UI and collectors use a Zig `@cImport` of the installed GTK/GIO/Cairo and
+Linux headers. `platform/c.zig` contains header-only compatibility definitions
+for Zig 0.16's C translator and the local GLib/GTK headers. The shared appearance
+client additionally uses Pearl's pinned generated GObject and Wayland bindings,
+with libpng for verified theme assets. Build from the Pearl checkout; runtime
+startup remains independent of Pearl. Libraries are dynamically linked; no GTK,
+GObject or libc implementation is copied into Dome. Portability of the C import
+shim remains an explicit follow-up gate.
 
 `core/model.zig` owns pure parsing, identities, rates and histories. A collector
 worker builds arena-owned snapshots, retains its previous baseline and publishes
@@ -114,11 +115,16 @@ rows, service operations/denial/disappearance, theme modes, 480-pixel layout,
 200% GTK font size, and helper timeout. Synthetic rows and special keys exist only
 in the separately instrumented integration build and are visibly labeled.
 
+Follow Pearl now uses the shared verified committed-appearance subscription.
+New profiles default to it; version-1 profiles preserve their previous selection.
+Palette, font and compatible component styles update windows, dialogs and paused
+graphs. Startup without Pearl uses native GTK; temporary disconnects retain the
+last valid appearance. Manual light/dark/native modes remain available. The
+`integration-themes` target exercises this behavior in a private Aqueous session.
+
 The following remain open; the original milestone exit criteria are not all
 marked complete:
 
-- Live Pearl committed-appearance protocol integration; current themes use
-  built-in Pearl colors or native GTK settings. Standalone startup needs no Pearl.
 - Intel hardware qualification and richer Intel/DRM engine providers; broader AMD
   and NVIDIA driver/version coverage, hotplug and suspend on physical hardware.
 - Desktop-entry/ancestry enrichment beyond cgroups, NetworkManager Wi-Fi details,

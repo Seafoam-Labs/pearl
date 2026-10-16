@@ -10,7 +10,9 @@ processes with right-click row menus, safe process termination, optional systemd
 service controls and a compact summary. Sampling, graph duration, colors, columns
 and units are configurable. It runs independently of Pearl and Aqueous.
 
-Build with Zig 0.16.0, `pkg-config`, GTK4/GLib development headers and libc:
+Build from the Pearl checkout with Zig 0.16.0, `pkg-config`, GTK4/GLib,
+Wayland and libpng development headers and libc. Dome uses Pearl's shared
+appearance client and pinned Zig GObject/Wayland bindings:
 
 ```sh
 cd subprojects/dome
@@ -25,12 +27,26 @@ alternate staging directory; `-Dgit-variant=true` builds `dome-git` with the sep
 `org.aqueous.Dome.Git` identity. The tested GTK version is 4.22.5; see the
 [implementation status and capability limits](docs/IMPLEMENTATION_STATUS.md).
 
-Useful options: `--light`, `--dark`, `--native-theme`, `--compact`, `--page=0..8`,
+Useful options: `--follow-pearl`, `--light`, `--dark`, `--native-theme`, `--compact`, `--page=0..8`,
 `--width=N`, `--height=N`, `--dump` (one read-only JSON snapshot), `--version`,
 `--log-level LEVEL`, `--log-scopes LIST`. Diagnostics share Pearl's log handler
 and land wherever stderr goes; see [logging](../../docs/LOGGING.md).
 NVIDIA support loads NVML optionally at runtime. Missing GPU metrics or systemd
 do not prevent resource and process monitoring.
+
+New installations default to **Follow Pearl**. Committed Pearl palette, font and
+compatible component styles update the open window, dialogs and graphs without
+restarting or resuming paused sampling. Draft previews do not affect Dome.
+Without a compatible Pearl session, Dome starts with native GTK styling; after
+connecting it retains the last valid appearance during temporary disconnects
+and reconnects automatically. Pearl's GTK mode follows its selected GTK theme.
+
+Preferences → Appearance also offers **Native GTK**, **Light** and **Dark**,
+which ignore Pearl updates. Existing version-1 preferences keep their previous
+selection when migrated to version 2. To enable theme following on an existing
+installation, select **Follow Pearl** and Apply, or launch with `--follow-pearl`.
+Theme flags are processed in order; the last one wins. As before, the selected
+mode is saved on normal close. No Pearl settings or GTK configuration are written.
 
 | Shortcut | Action |
 | --- | --- |
@@ -53,6 +69,7 @@ Native verification uses Pearl's existing private Aqueous session harness:
 
 ```sh
 zig build integration -Doptimize=ReleaseSafe
+zig build integration-themes -Doptimize=ReleaseSafe -- --pearl ../../zig-out/bin/pearl
 zig build benchmark -Doptimize=ReleaseSafe
 python3 tests/soak.py --binary zig-out/bin/dome --seconds 1800
 ```
@@ -62,6 +79,9 @@ prefix, `wtype`, `wlr-randr`, `grim`, D-Bus and Python GObject bindings. An alte
 prefix is accepted through `zig build integration -- --aqueous-prefix PATH`.
 Tests create their own display, configuration and service manager fixture; process
 actions target only disposable children. They do not alter host services.
+The theme integration test additionally needs a built Pearl executable. It checks
+live commits, community colors, open dialogs, paused graphs, mode changes,
+standalone fallback, reconnect and preference persistence in the private session.
 
 Browse the [native screenshots and results](artifacts/native/README.md),
 [implementation report](docs/IMPLEMENTATION_STATUS.md), and

@@ -10,8 +10,8 @@ pub fn main() void {
         history.add(@intCast(i * 500000), if (i % 101 == 0) null else value, value / 2);
     }
     var duration: i64 = 600000000;
-    var light = false;
-    var graph: Graph = .{ .history = &history, .duration = &duration, .light = &light, .fixed = 100 };
+    const colors: @import("ui/colors.zig").Colors = .{ .native = false };
+    var graph: Graph = .{ .history = &history, .duration = &duration, .colors = &colors, .fixed = 100 };
     const surface = c.cairo_image_surface_create(c.CAIRO_FORMAT_ARGB32, 900, 220).?;
     defer c.cairo_surface_destroy(surface);
     const cr = c.cairo_create(surface).?;

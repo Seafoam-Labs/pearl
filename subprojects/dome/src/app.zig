@@ -8,6 +8,7 @@ const Table = @import("ui/table.zig").Table;
 const Graph = @import("ui/graph.zig").Graph;
 const Services = @import("platform/services.zig").Controller;
 const Preferences = @import("platform/preferences.zig").Preferences;
+const Appearance = @import("ui/appearance.zig").Appearance;
 const Target = @import("platform/actions.zig").Target;
 const test_hooks = @import("build_options").test_hooks;
 const log = std.log.scoped(.config);
@@ -32,6 +33,8 @@ pub const App = struct {
     search: u.W,
     nvml: @import("platform/nvml.zig").Provider = .{},
     prefs: Preferences,
+    appearance: Appearance = undefined,
+    theme_selector: ?u.W = null,
     worker: linux.Worker = .{},
     snapshot: ?*m.Snapshot = null,
     closed: bool = false,
@@ -70,7 +73,7 @@ pub const App = struct {
     top_ids: [3]m.Identity = @splat(.{}),
     last_update_us: i64 = 0,
     fixture_count: usize = 0,
-    pref_widgets: [12]?u.W = @splat(null),
+    pref_widgets: [7]?u.W = @splat(null),
     visible_labels: usize = 0,
     pub fn create(application: *c.GtkApplication, prefs: Preferences) *App {
         const self = u.a.create(App) catch unreachable;
@@ -181,6 +184,7 @@ pub const App = struct {
         c.gtk_column_view_sort_by_column(u.cast(c.GtkColumnView, self.processes.view), self.processes.columns[prefs.sort_column].widget, if (prefs.sort_descending) c.GTK_SORT_DESCENDING else c.GTK_SORT_ASCENDING);
         self.processes.column_mask = prefs.columns;
         self.processes.narrow(self.narrow);
+        self.appearance = .{ .context = self, .changed = appearanceChanged };
         self.applyTheme();
         self.worker.interval = prefs.interval;
         self.worker.start() catch self.message("Could not start the system collector");
@@ -191,6 +195,7 @@ pub const App = struct {
     }
     pub fn destroy(self: *App) void {
         self.closed = true;
+        self.appearance.deinit();
         if (self.timer != 0) {
             _ = c.g_source_remove(self.timer);
             self.timer = 0;
@@ -219,13 +224,19 @@ pub const App = struct {
         u.a.destroy(self);
     }
     fn applyTheme(self: *App) void {
-        for ([_][*:0]const u8{ "light", "dark", "compact" }) |name| c.gtk_widget_remove_css_class(self.window, name);
-        if (!self.prefs.native) u.class(self.window, if (self.prefs.light) "light" else "dark");
-        if (self.prefs.compact) u.class(self.window, "compact");
+        self.appearance.setMode(self.prefs.theme);
+        appearanceChanged(self);
         const i: u32 = if (self.prefs.interval <= 500000) 0 else if (self.prefs.interval <= 1000000) 1 else if (self.prefs.interval <= 2000000) 2 else 3;
         self.building = true;
         c.gtk_drop_down_set_selected(u.cast(c.GtkDropDown, self.interval), i);
         self.building = false;
+    }
+    fn appearanceChanged(context: *anyopaque) void {
+        const self: *App = @ptrCast(@alignCast(context));
+        if (self.closed) return;
+        self.appearance.styleWindow(self.window, self.prefs.compact);
+        if (self.dialog) |dialog| self.appearance.styleWindow(dialog, self.prefs.compact);
+        for (self.drawings.items) |widget| c.gtk_widget_queue_draw(widget);
     }
     fn bindAction(self: *App, button: u.W, command: u32) void {
         c.g_object_set_data(@ptrCast(button), "dome-action", @ptrFromInt(command + 1));
@@ -291,7 +302,7 @@ pub const App = struct {
         return widget;
     }
     fn plot(self: *App, parent: u.W, key: []const u8, accent: usize, height: c_int, maximum: ?f64) void {
-        const widget = Graph.create(self.history(key), &self.prefs.duration, &self.prefs.light, &self.prefs.native, accent, height, maximum, key);
+        const widget = Graph.create(self.history(key), &self.prefs.duration, &self.appearance.palette, accent, height, maximum, key);
         u.append(parent, widget);
         self.drawings.append(u.a, widget) catch unreachable;
     }
@@ -1186,6 +1197,7 @@ pub const App = struct {
         return 0;
     }
     fn newDialog(self: *App, title: [*:0]const u8) u.W {
+        self.theme_selector = null;
         if (self.dialog) |old| {
             self.removeDetailBindings();
             c.gtk_window_destroy(u.cast(c.GtkWindow, old));
@@ -1198,9 +1210,15 @@ pub const App = struct {
         c.gtk_window_set_modal(u.cast(c.GtkWindow, dialog), 1);
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, dialog), 420, -1);
         u.class(dialog, "dome-root");
-        if (!self.prefs.native) u.class(dialog, if (self.prefs.light) "light" else "dark");
+        self.appearance.styleWindow(dialog, self.prefs.compact);
         u.margin(@ptrCast(c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, dialog))), 20);
         u.connect(dialog, "response", &dialogResponse, self);
+        if (test_hooks) {
+            const keys = c.gtk_event_controller_key_new().?;
+            u.connect(keys, "key-pressed", &dialogKeyPressed, self);
+            c.gtk_event_controller_set_propagation_phase(keys, c.GTK_PHASE_CAPTURE);
+            c.gtk_widget_add_controller(dialog, keys);
+        }
         return dialog;
     }
     fn confirmProcess(self: *App, force: bool) void {
@@ -1251,7 +1269,13 @@ pub const App = struct {
         const dialog = self.newDialog("Preferences");
         const area: u.W = @ptrCast(c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, dialog)));
         u.append(area, u.label("Appearance & monitoring", "title"));
-        const definitions = [_]struct { text: [*:0]const u8, value: bool }{ .{ .text = "Light appearance", .value = self.prefs.light }, .{ .text = "Use native GTK colors", .value = self.prefs.native }, .{ .text = "Compact process rows", .value = self.prefs.compact }, .{ .text = "Network rates in bits per second", .value = self.prefs.bits }, .{ .text = "Process CPU: one core = 100%", .value = self.prefs.per_core }, .{ .text = "Keep 10 minutes of graph history", .value = self.prefs.duration > 120000000 }, .{ .text = "Show PID column", .value = self.prefs.columns & 2 != 0 }, .{ .text = "Show memory column", .value = self.prefs.columns & 8 != 0 }, .{ .text = "Show disk I/O columns", .value = self.prefs.columns & 48 != 0 } };
+        const themes = [_]?[*:0]const u8{ "Follow Pearl", "Native GTK", "Light", "Dark", null };
+        const selector = c.gtk_drop_down_new_from_strings(@ptrCast(&themes)).?;
+        c.gtk_drop_down_set_selected(u.cast(c.GtkDropDown, selector), @intFromEnum(self.prefs.theme));
+        self.theme_selector = selector;
+        u.append(area, u.label("Appearance", null));
+        u.append(area, selector);
+        const definitions = [_]struct { text: [*:0]const u8, value: bool }{ .{ .text = "Compact process rows", .value = self.prefs.compact }, .{ .text = "Network rates in bits per second", .value = self.prefs.bits }, .{ .text = "Process CPU: one core = 100%", .value = self.prefs.per_core }, .{ .text = "Keep 10 minutes of graph history", .value = self.prefs.duration > 120000000 }, .{ .text = "Show PID column", .value = self.prefs.columns & 2 != 0 }, .{ .text = "Show memory column", .value = self.prefs.columns & 8 != 0 }, .{ .text = "Show disk I/O columns", .value = self.prefs.columns & 48 != 0 } };
         for (definitions, 0..) |d, i| {
             const check = c.gtk_check_button_new_with_label(d.text).?;
             c.gtk_check_button_set_active(u.cast(c.GtkCheckButton, check), @intFromBool(d.value));
@@ -1275,16 +1299,16 @@ pub const App = struct {
         }
         if (response == c.GTK_RESPONSE_APPLY and self.service_generation == self.services.generation) self.services.action(self.service_target.z(), self.service_action.z());
         if (response == 43) {
-            self.prefs.light = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[0].?)) != 0;
-            self.prefs.native = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[1].?)) != 0;
-            self.prefs.compact = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[2].?)) != 0;
-            self.prefs.bits = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[3].?)) != 0;
-            self.prefs.per_core = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[4].?)) != 0;
-            self.prefs.duration = if (c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[5].?)) != 0) 600000000 else 120000000;
+            const selected = c.gtk_drop_down_get_selected(u.cast(c.GtkDropDown, self.theme_selector.?));
+            self.prefs.theme = if (selected < std.meta.tags(Preferences.Theme).len) @enumFromInt(selected) else .follow_pearl;
+            self.prefs.compact = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[0].?)) != 0;
+            self.prefs.bits = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[1].?)) != 0;
+            self.prefs.per_core = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[2].?)) != 0;
+            self.prefs.duration = if (c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[3].?)) != 0) 600000000 else 120000000;
             self.prefs.columns = 5;
-            if (c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[6].?)) != 0) self.prefs.columns |= 2;
-            if (c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[7].?)) != 0) self.prefs.columns |= 8;
-            if (c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[8].?)) != 0) self.prefs.columns |= 48;
+            if (c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[4].?)) != 0) self.prefs.columns |= 2;
+            if (c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[5].?)) != 0) self.prefs.columns |= 8;
+            if (c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[6].?)) != 0) self.prefs.columns |= 48;
             self.processes.column_mask = self.prefs.columns;
             self.processes.narrow(self.narrow);
             self.applyTheme();
@@ -1298,6 +1322,7 @@ pub const App = struct {
         }
         self.removeDetailBindings();
         self.dialog = null;
+        self.theme_selector = null;
         c.gtk_window_destroy(@ptrCast(dialog));
         if (!self.closed) {
             self.buildPage();
@@ -1309,6 +1334,13 @@ pub const App = struct {
         const ctrl = modifiers & c.GDK_CONTROL_MASK != 0;
         if (test_hooks and key == c.GDK_KEY_F12) {
             self.probe();
+            return 1;
+        }
+        if (test_hooks and key == c.GDK_KEY_F2 and self.dialog != null and self.theme_selector != null) {
+            // Exercise the actual preferences Apply handler in isolated tests.
+            const selector = u.cast(c.GtkDropDown, self.theme_selector.?);
+            c.gtk_drop_down_set_selected(selector, (c.gtk_drop_down_get_selected(selector) + 1) % 4);
+            c.gtk_dialog_response(u.cast(c.GtkDialog, self.dialog.?), 43);
             return 1;
         }
         if (test_hooks and self.dialog == null) {
@@ -1390,7 +1422,32 @@ pub const App = struct {
         }
         return 0;
     }
+    fn dialogKeyPressed(controller: ?*c.GtkEventControllerKey, key: c_uint, code: c_uint, modifiers: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
+        if (key == c.GDK_KEY_F12 or key == c.GDK_KEY_F2) return keyPressed(controller, key, code, modifiers, data);
+        return 0;
+    }
     fn probe(self: *App) void {
+        if (test_hooks) {
+            var foreground: c.GdkRGBA = undefined;
+            c.gtk_widget_get_color(self.window, &foreground);
+            var dialog_foreground = foreground;
+            if (self.dialog) |dialog| c.gtk_widget_get_color(dialog, &dialog_foreground);
+            const theme = std.json.Stringify.valueAlloc(u.a, .{
+                .mode = self.prefs.theme,
+                .revision = self.appearance.revision,
+                .native = self.appearance.palette.native,
+                .subscribed = self.appearance.subscription != null,
+                .foreground = .{ foreground.red, foreground.green, foreground.blue },
+                .dialog_foreground = .{ dialog_foreground.red, dialog_foreground.green, dialog_foreground.blue },
+                .accent = self.appearance.palette.series[0],
+                .pearl_class = c.gtk_widget_has_css_class(self.window, "pearl") != 0,
+                .dialog_pearl_class = if (self.dialog) |dialog| c.gtk_widget_has_css_class(dialog, "pearl") != 0 else false,
+            }, .{}) catch return;
+            defer u.a.free(theme);
+            const z = u.a.dupeZ(u8, theme) catch return;
+            defer u.a.free(z);
+            c.g_print("DOME_THEME %s\n", z.ptr);
+        }
         const selected = self.processes.selected();
         c.g_print("DOME_PROBE {\"page\":%u,\"sample\":%llu,\"processes\":%zu,\"visible\":%u,\"realized_cells\":%zu,\"paused\":%s,\"sidebar\":%s,\"selected_pid\":%d,\"services\":%zu,\"service_visible\":%u,\"update_us\":%lld,\"width\":%d,\"gpu_provider_count\":%zu,\"gpu_timeouts\":%zu,\"service_error\":%s,\"dialog\":%s}\n", self.page, @as(c_ulonglong, if (self.snapshot) |s| s.sequence else 0), if (self.snapshot) |s| s.processes.len else @as(usize, 0), self.processes.countVisible(), self.processes.realized, @as([*:0]const u8, if (self.paused) "true" else "false"), @as([*:0]const u8, if (c.gtk_widget_get_visible(self.sidebar) != 0) "true" else "false"), @as(c_int, if (selected) |r| r.process.id.pid else 0), self.services.items.items.len, self.services_table.countVisible(), @as(c_longlong, self.last_update_us), c.gtk_widget_get_width(self.window), self.nvml.count, self.nvml.timeouts, @as([*:0]const u8, if (self.services.failure_until > io.monotonic()) "true" else "false"), @as([*:0]const u8, if (self.dialog != null) "true" else "false"));
     }

@@ -1,43 +1,18 @@
 //! Typed observer for the verified, committed appearance shared by external Pearl UI.
 const std = @import("std");
 const gtk = @import("gtk4");
-const glib = @import("glib2");
 const gdk = @import("gdk4");
-const Client = @import("../settings/client.zig").Client;
-const Identity = @import("../settings/identity.zig").Identity;
+const Subscription = @import("appearance_subscription.zig").Subscription;
 pub const Snapshot = @import("../settings/appearance.zig").Snapshot;
 const a = std.heap.c_allocator;
 pub const Observer = struct {
     context: *anyopaque,
     changed: *const fn (*anyopaque, Snapshot, [3]f64, [:0]const u8, [:0]const u8) void,
     native_css: ?*gtk.CssProvider = null,
-    client: Client,
-    identity: ?Identity = null,
-    display: [:0]u8,
-    retry: c_uint = 0,
-    fn native(context: *anyopaque) void {
+    subscription: ?*Subscription = null,
+    fn changedSnapshot(context: *anyopaque, snapshot: Snapshot) void {
         const self: *Observer = @ptrCast(@alignCast(context));
-        self.client.nativeChanged(self.identity.?.session);
-    }
-    fn event(context: *anyopaque, value: @import("../settings/client.zig").Event) void {
-        const self: *Observer = @ptrCast(@alignCast(context));
-        switch (value) {
-            .connected => |snapshot| if (snapshot) |s| self.apply(s) catch {},
-            .failed => if (self.retry == 0) {
-                self.retry = glib.timeoutAdd(3000, retryTick, self);
-            },
-            else => {},
-        }
-    }
-    fn retryTick(data: ?*anyopaque) callconv(.c) c_int {
-        const self: *Observer = @ptrCast(@alignCast(data.?));
-        self.retry = 0;
-        self.client.begin();
-        return 0;
-    }
-
-    fn env(name: [:0]const u8) [:0]const u8 {
-        return if (glib.getenv(name)) |v| std.mem.span(v) else "";
+        self.apply(snapshot) catch {};
     }
     pub fn apply(self: *Observer, s: Snapshot) !void {
         if (self.native_css == null) {
@@ -66,26 +41,18 @@ pub const Observer = struct {
         self.changed(self.context, s, rgb, font, css);
     }
     pub fn start(context: *anyopaque, changed: @FieldType(Observer, "changed")) !*Observer {
-        const display = try @import("../cli/protocol.zig").displayPath(a, env("XDG_RUNTIME_DIR"), env("WAYLAND_DISPLAY"));
-        errdefer a.free(display);
         const self = try a.create(Observer);
-        self.* = .{ .context = context, .changed = changed, .display = display, .client = .{ .context = self, .notify = Observer.event, .runtime = env("XDG_RUNTIME_DIR"), .display = display, .aqueous_path = env("AQUEOUS_SOCKET") } };
-        self.client.init();
+        self.* = .{ .context = context, .changed = changed };
         self.apply(.{}) catch {};
-        self.identity = Identity.init(gdk.Display.getDefault().?, self, Observer.native) catch null;
-        if (self.identity) |*identity| identity.start();
-        self.client.begin();
+        self.subscription = Subscription.start(self, changedSnapshot) catch null;
         return self;
     }
     pub fn stop(self: *Observer) void {
-        if (self.retry != 0) _ = glib.Source.remove(self.retry);
-        if (self.identity) |*identity| identity.deinit();
-        self.client.deinit();
+        if (self.subscription) |subscription| subscription.stop();
         if (self.native_css) |provider| {
             if (gdk.Display.getDefault()) |display| gtk.StyleContext.removeProviderForDisplay(display, provider.as(gtk.StyleProvider));
             provider.unref();
         }
-        a.free(self.display);
         a.destroy(self);
     }
 };

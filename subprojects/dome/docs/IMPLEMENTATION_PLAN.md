@@ -235,7 +235,9 @@ versioned schema. Persist theme, interval, units, columns, page and window size;
 do not persist process command lines or monitoring history by default. Optional
 Pearl appearance integration follows its
 [committed appearance contract](../../../docs/SETTINGS_FRONTEND_API.md), with
-stock palettes as the standalone fallback.
+native GTK styling as the standalone fallback. The implemented Follow Pearl mode
+retains the last valid appearance during disconnects; explicit light/dark modes
+continue to use the stock palettes.
 
 ## 7. Proposed project structure
 

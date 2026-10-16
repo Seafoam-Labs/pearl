@@ -163,6 +163,13 @@ S3 subscribes to change events and refreshes committed appearance after an
 event. Its steady-state heartbeat is **15 seconds**, with one request outstanding
 and a five-second reply deadline. The one-second S2 compatibility heartbeat is
 used only when talking to a backend without the editor capability.
+Standalone GTK consumers can use `src/appearance_client.zig`'s `Subscription`.
+It shares native/IPC identity verification, asset verification and reconnect
+handling with the Settings client, enters the read-only Appearance page to
+subscribe to change events, and delivers borrowed committed snapshots. It does
+not install CSS or supply a default snapshot; each application owns its rendering
+and offline fallback. `src/ui/appearance_observer.zig` layers portal/picker CSS
+on that subscription, while Dome renders its own scoped widget styles.
 An unavailable or incompatible session leaves a normal window with an explicit
 Retry action. The frontend neither starts Pearl nor writes preference files.
 

@@ -3,4 +3,6 @@ test {
     _ = @import("collectors/linux.zig");
     _ = @import("platform/actions.zig");
     _ = @import("platform/preferences.zig");
+    _ = @import("ui/appearance.zig");
+    _ = @import("ui/graph.zig");
 }

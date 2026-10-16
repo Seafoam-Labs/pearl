@@ -86,7 +86,7 @@ def main():
                 assert not any(word in line for line in app.lines for word in ['WARNING', 'CRITICAL', 'panic:']), app.lines[-30:]
                 wait_for(lambda: not windows())
 
-            initial = launch()
+            initial = launch(1120, 800, '--dark')
             assert initial['processes'] > 0
             capture('overview-dark')
             for index, name in enumerate(['overview', 'cpu', 'memory', 'disks', 'network', 'gpu', 'sensors', 'processes', 'services']):

@@ -5,7 +5,7 @@ const App = @import("app.zig").App;
 const Preferences = @import("platform/preferences.zig").Preferences;
 const options = @import("build_options");
 const logging = @import("logging");
-const diagnostics = @import("diagnostics");
+const diagnostics = @import("appearance_client").diagnostics;
 const log = std.log.scoped(.cli);
 pub const std_options = logging.std_options;
 pub const identity = if (options.git_variant) "org.aqueous.Dome.Git" else "org.aqueous.Dome";
@@ -51,7 +51,7 @@ pub fn main(init: std.process.Init) void {
             },
         }
         if (std.mem.eql(u8, arg, "--help")) {
-            c.g_print("Dome — native Linux system monitor\nUsage: dome [--light|--dark|--native-theme] [--compact] [--page=0..8] [--width=N] [--height=N]\n             [--log-level LEVEL] [--log-scopes LIST]\n       dome --dump  (one read-only JSON snapshot)\nCtrl+1 Overview, Ctrl+2 Processes, Ctrl+P pause, F5 sample, Ctrl+F search, Ctrl+W close.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
+            c.g_print("Dome — native Linux system monitor\nUsage: dome [--follow-pearl|--light|--dark|--native-theme] [--compact] [--page=0..8] [--width=N] [--height=N]\n             [--log-level LEVEL] [--log-scopes LIST]\n       dome --dump  (one read-only JSON snapshot)\nCtrl+1 Overview, Ctrl+2 Processes, Ctrl+P pause, F5 sample, Ctrl+F search, Ctrl+W close.\nFollow Pearl is the first-run default; without Pearl it uses native GTK colors.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         }
         if (std.mem.eql(u8, arg, "--version")) {
@@ -67,12 +67,12 @@ pub fn main(init: std.process.Init) void {
             return;
         }
         if (std.mem.eql(u8, arg, "--light")) {
-            prefs.light = true;
-            prefs.native = false;
+            prefs.theme = .light;
         } else if (std.mem.eql(u8, arg, "--dark")) {
-            prefs.light = false;
-            prefs.native = false;
-        } else if (std.mem.eql(u8, arg, "--native-theme")) prefs.native = true else if (std.mem.eql(u8, arg, "--compact")) prefs.compact = true else if (std.mem.startsWith(u8, arg, "--width=")) prefs.width = std.math.clamp(std.fmt.parseInt(c_int, arg[8..], 10) catch 1120, 390, 3840) else if (std.mem.startsWith(u8, arg, "--height=")) prefs.height = std.math.clamp(std.fmt.parseInt(c_int, arg[9..], 10) catch 800, 400, 2160) else if (std.mem.startsWith(u8, arg, "--page=")) prefs.page = std.math.clamp(std.fmt.parseInt(u32, arg[7..], 10) catch 0, 0, 8) else {
+            prefs.theme = .dark;
+        } else if (std.mem.eql(u8, arg, "--follow-pearl")) {
+            prefs.theme = .follow_pearl;
+        } else if (std.mem.eql(u8, arg, "--native-theme")) prefs.theme = .native_gtk else if (std.mem.eql(u8, arg, "--compact")) prefs.compact = true else if (std.mem.startsWith(u8, arg, "--width=")) prefs.width = std.math.clamp(std.fmt.parseInt(c_int, arg[8..], 10) catch 1120, 390, 3840) else if (std.mem.startsWith(u8, arg, "--height=")) prefs.height = std.math.clamp(std.fmt.parseInt(c_int, arg[9..], 10) catch 800, 400, 2160) else if (std.mem.startsWith(u8, arg, "--page=")) prefs.page = std.math.clamp(std.fmt.parseInt(u32, arg[7..], 10) catch 0, 0, 8) else {
             log.err("Unknown option: {f}", .{diagnostics.safe(arg)});
             std.process.exit(2);
         }

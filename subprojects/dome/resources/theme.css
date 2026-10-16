@@ -1,0 +1,19 @@
+/* Colors resolved from Pearl's committed semantic palette. Layout stays in style.css. */
+.dome-root.$scope { background: $surface$; color: $text$; }
+.dome-root.$scope headerbar { background: $container$; color: $text$; }
+.dome-root.$scope .sidebar { background: $low$; }
+.dome-root.$scope .card, .dome-root.$scope .detail { background: $container$; }
+.dome-root.$scope .toolbar, .dome-root.$scope .status { background: $surface$; color: $text$; }
+.dome-root.$scope button { color: $text$; background: transparent; background-image: none; border: 1px solid transparent; }
+.dome-root.$scope button:hover { background: alpha($text$,.08); }
+.dome-root.$scope button.active { background: $primary_container$; color: $on_container$; }
+.dome-root.$scope button.card { background: $container$; border-color: alpha($outline$,.3); }
+.dome-root.$scope entry, .dome-root.$scope dropdown > button { background: $container$; color: $text$; border-color: alpha($outline$,.4); }
+.dome-root.$scope columnview, .dome-root.$scope columnview listview, .dome-root.$scope columnview row { background: $low$; color: $text$; }
+.dome-root.$scope columnview header { background: $container$; color: $secondary$; }
+.dome-root.$scope columnview row:hover { background: $container$; }
+.dome-root.$scope columnview row:selected, .dome-root.$scope selection { background: $primary_container$; color: $on_container$; }
+.dome-root.$scope .error { color: $error_color$; }
+.dome-root.$scope .destructive-action { background: $error_container$; color: $error_color$; }
+.dome-root.$scope popover contents { background: $container$; color: $text$; }
+.dome-root.$scope checkbutton check:checked { background: $primary$; color: $on_primary$; }

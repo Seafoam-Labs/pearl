@@ -2,6 +2,16 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const bindings = b.dependency("gobject", .{ .target = target, .optimize = optimize });
+    const scanner = @import("wayland").Scanner.create(b, .{ .wayland_xml = b.path("../../bindings/protocols/wayland.xml"), .wayland_protocols = b.path("../../bindings/protocols") });
+    scanner.addCustomProtocol(b.path("../../bindings/protocols/aqueous-shell-v1.xml"));
+    scanner.addCustomProtocol(b.path("../../bindings/protocols/ext-workspace-v1.xml"));
+    scanner.generate("aqueous_shell_manager_v1", 2);
+    const native = b.createModule(.{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
+    const appearance = b.createModule(.{ .root_source_file = b.path("../../src/appearance_client.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| appearance.addImport(name, bindings.module(name));
+    appearance.addImport("wayland", native);
+    for ([_][]const u8{ "gtk4", "wayland-client", "libpng" }) |name| appearance.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     const options = b.addOptions();
     options.addOption(bool, "test_hooks", b.option(bool, "test-hooks", "Enable isolated integration instrumentation") orelse false);
     const git_variant = b.option(bool, "git-variant", "Use the Git application identity") orelse false;
@@ -11,12 +21,12 @@ pub fn build(b: *std.Build) void {
     module.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
     module.addOptions("build_options", options);
     module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    module.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
+    module.addImport("appearance_client", appearance);
     // Shared by path with the parent tree so every executable renders identical
     // log lines and redacts untrusted text the same way.
     const logging = b.createModule(.{ .root_source_file = b.path("../../src/core/logging.zig"), .target = target, .optimize = optimize });
-    const diagnostics = b.createModule(.{ .root_source_file = b.path("../../src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize });
     module.addImport("logging", logging);
-    module.addImport("diagnostics", diagnostics);
     const exe = b.addExecutable(.{ .name = if (git_variant) "dome-git" else "dome", .root_module = module });
     b.installArtifact(exe);
     const generated = b.addWriteFiles();
@@ -41,6 +51,8 @@ pub fn build(b: *std.Build) void {
             tm.root_source_file = b.path("src/tests.zig");
             tm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
             tm.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
+            tm.addImport("appearance_client", appearance);
+            tm.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
             break :blk b.addTest(.{ .root_module = tm });
         };
         test_step.dependOn(&b.addRunArtifact(tests).step);
@@ -53,13 +65,18 @@ pub fn build(b: *std.Build) void {
     im.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
     im.addOptions("build_options", test_options);
     im.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    im.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
+    im.addImport("appearance_client", appearance);
     im.addImport("logging", logging);
-    im.addImport("diagnostics", diagnostics);
     const ie = b.addExecutable(.{ .name = "dome-test", .root_module = im });
     const integration = b.addSystemCommand(&.{ "python3", "tests/native.py", "--binary" });
     integration.addArtifactArg(ie);
     if (b.args) |args| integration.addArgs(args);
     b.step("integration", "Run native GTK tests in a private Aqueous session").dependOn(&integration.step);
+    const themes = b.addSystemCommand(&.{ "python3", "tests/themes.py", "--binary" });
+    themes.addArtifactArg(ie);
+    if (b.args) |args| themes.addArgs(args);
+    b.step("integration-themes", "Verify live committed Pearl appearance in a private session").dependOn(&themes.step);
     const bm = b.createModule(.{ .root_source_file = b.path("src/benchmark.zig"), .target = target, .optimize = optimize, .link_libc = true });
     bm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
     bm.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
