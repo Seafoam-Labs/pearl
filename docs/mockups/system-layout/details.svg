@@ -1,0 +1,60 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='1000' viewBox='0 0 1200 1000' role='img' aria-labelledby='title desc'><title id='title'>System layout proposal — details</title><desc id='desc'>Static Pearl Settings design. Current scheduler and staged selection are separate. Runtime actions do not change boot settings. Data is illustrative.</desc>
+<style>text{font-family:Inter,'DejaVu Sans',sans-serif;font-size:14px;fill:#e7e1ec}.bg{fill:#211f26}.sidebar{fill:#1e1c21}.card{fill:#2b2831}.button{fill:#302c37;stroke:#4b4554}.selected{fill:#4f3787;stroke:#d0bcff}.accent{fill:#d0bcff}.on-accent{fill:#381e72}.muted{fill:#c4bbcf}.strong{font-weight:600}.small{font-size:12px}.tiny{font-size:10px;letter-spacing:1.4px}.section{font-size:17px;font-weight:600}.runtime{font-size:26px;font-weight:500}.heading{font-size:30px;font-weight:500;letter-spacing:-.6px}.center{text-anchor:middle}.right{text-anchor:end}.mono{font-family:'DejaVu Sans Mono',monospace;font-size:13px}.line{stroke:#403a48;fill:none}</style>
+<rect x='0' y='0' width='1200' height='1000' rx='16' class='bg'/>
+<rect x='0' y='0' width='1200' height='52' rx='0' class='sidebar'/>
+<text x='22' y='32' class='strong'>●  Pearl Settings</text>
+<text x='1178' y='32' class='right muted'>−   □   ×</text>
+<rect x='0' y='52' width='220' height='948' rx='0' class='sidebar'/>
+<text x='24' y='84' class='tiny muted'>GENERAL</text>
+<text x='24' y='118' class=''>Overview</text>
+<text x='24' y='162' class='tiny muted'>CONNECTIONS</text>
+<text x='24' y='196' class=''>Network</text>
+<text x='24' y='240' class=''>Bluetooth</text>
+<text x='24' y='284' class='tiny muted'>DEVICES</text>
+<text x='24' y='318' class=''>Sound</text>
+<text x='24' y='362' class=''>Power &amp; battery</text>
+<text x='24' y='406' class='tiny muted'>DESKTOP</text>
+<text x='24' y='440' class=''>Appearance</text>
+<text x='24' y='484' class=''>Assistant</text>
+<text x='24' y='528' class=''>Bar &amp; dock</text>
+<text x='24' y='572' class=''>Notifications</text>
+<text x='24' y='616' class='tiny muted'>SYSTEM</text>
+<rect x='12' y='625' width='196' height='42' rx='11' class='selected'/>
+<text x='24' y='650' class=''>System</text>
+<text x='24' y='694' class=''>Session &amp; lock</text>
+<text x='24' y='738' class=''>Aqueous</text>
+<text x='24' y='782' class=''>Advanced</text>
+<text x='24' y='826' class=''>Plugins</text>
+<text x='250' y='101' class='heading'>System</text>
+<text x='250' y='127' class='muted'>Manage CPU scheduling.</text>
+<text x='250' y='160' class='small muted'>Expanded sections · Example configuration · Alternate scroll position</text>
+<rect x='250' y='182' width='920' height='296' rx='16' class='card'/>
+<text x='270' y='216' class='section'>Scheduler details</text>
+<text x='1150' y='216' class='right'>⌄</text>
+<text x='270' y='246' class='muted'>2 installed · 1 missing executable</text>
+<text x='270' y='286' class='strong'>Selected mode arguments</text>
+<text x='1150' y='286' class='right muted'>scx_bpfland · Gaming</text>
+<rect x='270' y='302' width='880' height='52' rx='10' class='button'/>
+<text x='286' y='334' class='mono'>[&quot;-m&quot;, &quot;all&quot;]</text>
+<text x='270' y='382' class='small muted'>Read-only resolved arguments. The loader supplies these when you apply this mode.</text>
+<text x='270' y='422' class='strong'>Missing executable</text>
+<text x='1150' y='422' class='right mono muted'>scx_missing</text>
+<text x='270' y='451' class='small muted'>Unavailable in the scheduler selector. Refresh after installing it outside Pearl.</text>
+<rect x='250' y='494' width='920' height='204' rx='16' class='card'/>
+<text x='270' y='528' class='section'>Startup configuration</text>
+<text x='1150' y='528' class='right'>⌄</text>
+<text x='270' y='570' class=''>Configured scheduler</text>
+<text x='1150' y='570' class='right muted'>scx_bpfland</text>
+<text x='270' y='610' class=''>Configured mode</text>
+<text x='1150' y='610' class='right muted'>Auto</text>
+<text x='270' y='657' class='small muted'>Read-only · Managed by scx_loader configuration. Runtime actions do not change these values.</text>
+<rect x='250' y='730' width='920' height='132' rx='16' class='card'/>
+<text x='270' y='764' class='section'>When a mode has no distinct arguments</text>
+<text x='270' y='798' class='muted'>Show this explanation directly below the mode choices:</text>
+<text x='270' y='832' class=''>No distinct arguments are configured for Gaming. Uses scheduler defaults.</text>
+<text x='254' y='896' class='small muted'>The last card is a copy example, not an additional section in the native page.</text>
+<rect x='220' y='928' width='980' height='72' rx='0' class='bg'/>
+<path d='M220 928H1200' class='line'/>
+<text x='250' y='956' class='small muted'>Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.</text>
+<text x='250' y='978' class='small muted'>System actions are separate from saved Pearl preferences.</text>
+</svg>

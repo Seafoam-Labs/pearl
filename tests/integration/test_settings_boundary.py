@@ -74,7 +74,7 @@ def main():
                 state = hello['result']; epoch = state['epoch']
                 assert state['session'] == token and state['display'] == display
                 assert epoch != hello2['result']['epoch']
-                capabilities = ('handshake', 'committed_appearance', 'page_snapshots', 'pearl_draft', 'aqueous_draft', 'live_controls', 'prompts', 'display_preview', 'community_themes', 'theme_assets', 'application_profiles', 'notification_filters', 'bar_widgets', 'launcher_icon', 'night_light')
+                capabilities = ('handshake', 'committed_appearance', 'page_snapshots', 'pearl_draft', 'aqueous_draft', 'live_controls', 'prompts', 'display_preview', 'community_themes', 'theme_assets', 'application_profiles', 'notification_filters', 'bar_widgets', 'launcher_icon', 'night_light', 'power_settings')
                 assert all(state['capabilities'][k] for k in capabilities)
                 assert not any(v for k, v in state['capabilities'].items() if k not in (*capabilities, 'application_profiles_version'))
                 assert f.call()['result']['epoch'] == epoch

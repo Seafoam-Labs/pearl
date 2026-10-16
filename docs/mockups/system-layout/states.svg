@@ -1,0 +1,74 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='1000' viewBox='0 0 1200 1000' role='img' aria-labelledby='title desc'><title id='title'>System layout proposal — states</title><desc id='desc'>Static Pearl Settings design. Current scheduler and staged selection are separate. Runtime actions do not change boot settings. Data is illustrative.</desc>
+<style>text{font-family:Inter,'DejaVu Sans',sans-serif;font-size:14px;fill:#e7e1ec}.bg{fill:#211f26}.sidebar{fill:#1e1c21}.card{fill:#2b2831}.button{fill:#302c37;stroke:#4b4554}.selected{fill:#4f3787;stroke:#d0bcff}.accent{fill:#d0bcff}.on-accent{fill:#381e72}.muted{fill:#c4bbcf}.strong{font-weight:600}.small{font-size:12px}.tiny{font-size:10px;letter-spacing:1.4px}.section{font-size:17px;font-weight:600}.runtime{font-size:26px;font-weight:500}.heading{font-size:30px;font-weight:500;letter-spacing:-.6px}.center{text-anchor:middle}.right{text-anchor:end}.mono{font-family:'DejaVu Sans Mono',monospace;font-size:13px}.line{stroke:#403a48;fill:none}</style>
+<rect x='0' y='0' width='1200' height='1000' rx='16' class='bg'/>
+<rect x='0' y='0' width='1200' height='52' rx='0' class='sidebar'/>
+<text x='22' y='32' class='strong'>●  Pearl Settings</text>
+<text x='1178' y='32' class='right muted'>−   □   ×</text>
+<rect x='0' y='52' width='220' height='948' rx='0' class='sidebar'/>
+<text x='24' y='84' class='tiny muted'>GENERAL</text>
+<text x='24' y='118' class=''>Overview</text>
+<text x='24' y='162' class='tiny muted'>CONNECTIONS</text>
+<text x='24' y='196' class=''>Network</text>
+<text x='24' y='240' class=''>Bluetooth</text>
+<text x='24' y='284' class='tiny muted'>DEVICES</text>
+<text x='24' y='318' class=''>Sound</text>
+<text x='24' y='362' class=''>Power &amp; battery</text>
+<text x='24' y='406' class='tiny muted'>DESKTOP</text>
+<text x='24' y='440' class=''>Appearance</text>
+<text x='24' y='484' class=''>Assistant</text>
+<text x='24' y='528' class=''>Bar &amp; dock</text>
+<text x='24' y='572' class=''>Notifications</text>
+<text x='24' y='616' class='tiny muted'>SYSTEM</text>
+<rect x='12' y='625' width='196' height='42' rx='11' class='selected'/>
+<text x='24' y='650' class=''>System</text>
+<text x='24' y='694' class=''>Session &amp; lock</text>
+<text x='24' y='738' class=''>Aqueous</text>
+<text x='24' y='782' class=''>Advanced</text>
+<text x='24' y='826' class=''>Plugins</text>
+<text x='250' y='101' class='heading'>System</text>
+<text x='250' y='127' class='muted'>Manage CPU scheduling.</text>
+<text x='250' y='160' class='small muted'>Independent examples · Keep observed runtime and pending selection separate</text>
+<rect x='250' y='182' width='452' height='222' rx='16' class='card'/>
+<text x='270' y='216' class='section'>Kernel default</text>
+<text x='270' y='254' class='small muted'>No sched-ext scheduler is active.</text>
+<text x='270' y='279' class='small muted'>Loader and kernel state agree.</text>
+<text x='270' y='304' class='small muted'>Use kernel default is disabled.</text>
+<text x='270' y='367' class='small muted'>Choose a scheduler below</text>
+<rect x='718' y='182' width='452' height='222' rx='16' class='card'/>
+<text x='738' y='216' class='section'>Currently applied</text>
+<text x='738' y='254' class='small muted'>Running: scx_bpfland · Gaming</text>
+<text x='738' y='279' class='small muted'>Selection: scx_bpfland · Gaming</text>
+<text x='738' y='304' class='small muted'>Apply is disabled until the choice changes.</text>
+<text x='738' y='367' class='small muted'>No change to apply</text>
+<rect x='250' y='420' width='452' height='222' rx='16' class='card'/>
+<text x='270' y='454' class='section'>Applying scheduler…</text>
+<text x='270' y='492' class='small muted'>Selected: scx_bpfland · Gaming</text>
+<text x='270' y='517' class='small muted'>Waiting for observed runtime confirmation.</text>
+<text x='270' y='542' class='small muted'>Competing actions are disabled.</text>
+<text x='270' y='605' class='small muted'>Applying…</text>
+<rect x='718' y='420' width='452' height='222' rx='16' class='card'/>
+<text x='738' y='454' class='section'>Scheduler tools unavailable</text>
+<text x='738' y='492' class='small muted'>scxctl was not found.</text>
+<text x='738' y='517' class='small muted'>Scheduler changes are unavailable.</text>
+<text x='738' y='542' class='small muted'>Install outside Pearl, then refresh.</text>
+<rect x='738' y='576' width='120' height='44' rx='12' class='button'/>
+<text x='798' y='604' class='center'>Refresh</text>
+<rect x='250' y='658' width='452' height='222' rx='16' class='card'/>
+<text x='270' y='692' class='section'>Scheduler change failed</text>
+<text x='270' y='730' class='small muted'>The loader denied the requested change.</text>
+<text x='270' y='755' class='small muted'>Selection retained: scx_bpfland · Gaming</text>
+<text x='270' y='780' class='small muted'>Review observed status before retrying.</text>
+<rect x='270' y='814' width='120' height='44' rx='12' class='button'/>
+<text x='330' y='842' class='center'>Refresh</text>
+<rect x='718' y='658' width='452' height='222' rx='16' class='card'/>
+<text x='738' y='692' class='section'>External or unknown scheduler</text>
+<text x='738' y='730' class='small muted'>The kernel and loader do not agree.</text>
+<text x='738' y='755' class='small muted'>Current ownership is not confirmed.</text>
+<text x='738' y='780' class='small muted'>Do not show Kernel default as active.</text>
+<rect x='738' y='814' width='120' height='44' rx='12' class='button'/>
+<text x='798' y='842' class='center'>Refresh</text>
+<rect x='220' y='928' width='980' height='72' rx='0' class='bg'/>
+<path d='M220 928H1200' class='line'/>
+<text x='250' y='956' class='small muted'>Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.</text>
+<text x='250' y='978' class='small muted'>System actions are separate from saved Pearl preferences.</text>
+</svg>

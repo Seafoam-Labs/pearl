@@ -692,6 +692,12 @@ pub fn build(b: *std.Build) void {
     sched_ext.addArtifactArg(spike);
     if (b.args) |args| sched_ext.addArgs(args);
     b.step("test-settings-sched-ext", "Verify scheduler commands, ownership and Settings against private scxctl fixtures").dependOn(&sched_ext.step);
+    const system_layout = b.addSystemCommand(&.{ "python3", "tests/integration/test_system_layout.py", "--settings" });
+    system_layout.addArtifactArg(settings_test_app);
+    system_layout.addArg("--pearl");
+    system_layout.addArtifactArg(integration_app);
+    if (b.args) |args| system_layout.addArgs(args);
+    b.step("test-system-layout", "Verify System radios, disclosures, runtime selection and responsive layout using private fixtures").dependOn(&system_layout.step);
     const settings_devices = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_devices.py", "--settings" });
     settings_devices.addArtifactArg(settings_test_app);
     settings_devices.addArg("--pearl");

@@ -1,0 +1,20 @@
+ts=2026-10-15T21:33:43Z pid=1341138 info(settings): event=settings-launch activation_context=false
+ts=2026-10-15T21:33:43Z pid=1341138 info(settings): event=settings-instance-ready session_hash=51510b9af7f4edd6
+ts=2026-10-15T21:33:43Z pid=1341138 info(settings): event=settings-page page=overview
+ts=2026-10-15T21:33:43Z pid=1341138 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T21:33:43Z pid=1341138 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-10-15T21:33:43Z pid=1341138 info(settings): event=settings-page page=aqueous
+ts=2026-10-15T21:33:44Z pid=1341138 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:33:44Z pid=1341138 info(settings): event=settings-page page=appearance
+ts=2026-10-15T21:33:45Z pid=1341138 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:33:45Z pid=1341138 info(settings): event=settings-page page=network
+ts=2026-10-15T21:33:45Z pid=1341138 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:33:45Z pid=1341138 info(settings): event=settings-page page=bluetooth
+ts=2026-10-15T21:33:46Z pid=1341138 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:33:46Z pid=1341138 info(settings): event=settings-page page=sound
+ts=2026-10-15T21:33:47Z pid=1341138 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:33:47Z pid=1341138 info(settings): event=settings-page page=power
+ts=2026-10-15T21:33:48Z pid=1341138 info(settings): event=settings-activation activation_context=false
+ts=2026-10-15T21:33:48Z pid=1341138 info(settings): event=settings-page page=aqueous
+
+(pearl-settings-test:1341138): Gdk-WARNING **: 17:33:49.287: gdk_frame_timings_discarded() called on already presented frame.

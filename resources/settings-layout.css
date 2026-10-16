@@ -173,3 +173,23 @@
 .settings-window.settings-narrow .assistant-card { padding: 14px; }
 .settings-window.settings-narrow .assistant-section-body { padding: 0 14px 14px; }
 .settings-window.pearl-gtk .assistant-card { background: alpha(currentColor, 0.04); border: 1px solid alpha(currentColor, 0.12); }
+
+/* System uses the same native cards, with runtime state separate from selection. */
+.settings-window .system-card { padding: 20px; border-radius: 16px; }
+.settings-window .system-card > label { margin: 0; }
+.settings-window .system-view .pearl-section-title { font-size: 1.15em; font-weight: 600; }
+.settings-window .system-view .settings-row-title { font-weight: 600; }
+.settings-window .system-current { font-size: 1.65em; font-weight: 500; }
+.settings-window .system-badge { border-radius: 12px; padding: 4px 10px; background: alpha(currentColor, 0.08); font-size: 0.86em; }
+.settings-window .system-section-heading { margin: 12px 16px 12px 8px; }
+.settings-window .system-section-body { padding: 0 20px 20px; }
+.settings-window .system-view flowboxchild { padding: 0; }
+.settings-window .system-view button { min-height: 32px; border-radius: 10px; }
+.settings-window .system-view dropdown { min-width: 0; }
+.settings-window .system-mode { min-width: 140px; padding: 12px; border-radius: 12px; border: 1px solid alpha(currentColor, 0.18); }
+.settings-window .system-mode:checked { background: alpha(@accent_color, 0.15); border-color: @accent_color; }
+.settings-window .system-mode:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.settings-window .system-mode radio { margin-right: 8px; }
+.settings-window.settings-narrow .system-card { padding: 14px; }
+.settings-window.settings-narrow .system-section-body { padding: 0 14px 14px; }
+.settings-window.pearl-gtk .system-card { background: alpha(currentColor, 0.04); border: 1px solid alpha(currentColor, 0.12); }

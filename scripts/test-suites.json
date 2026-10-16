@@ -1152,6 +1152,20 @@
     "options": []
   },
   {
+    "id": "test-system-layout",
+    "description": "Verify System radios, disclosures, runtime selection and responsive layout using private fixtures",
+    "groups": ["integration"],
+    "cwd": ".",
+    "targets": ["test-system-layout"],
+    "capabilities": ["zig", "native", "session", "aqueous"],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": ["tests/integration/test_system_layout.py"],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test-settings-devices",
     "description": "Verify standalone audio, power, notifications and media against private services",
     "groups": [

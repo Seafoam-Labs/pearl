@@ -91,7 +91,7 @@ def main():
 
         click(s, ipc, 'sched-ext/scheduler'); keys(s, 'End', 'Return')
         wait_for(lambda: probe(s, ipc)['sched_ext']['scheduler'] == 'scx_lavd')
-        click(s, ipc, 'sched-ext/mode'); keys(s, 'End', 'Return')
+        click(s, ipc, 'sched-ext/mode/powersave')
         wait_for(lambda: probe(s, ipc)['sched_ext']['mode'] == 'powersave')
         assert mutations() == [], mutations()
         time.sleep(3.3)

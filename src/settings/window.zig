@@ -1167,7 +1167,19 @@ pub const Window = struct {
         };
         if (self.sched_ext_view) |view| if (self.target.page == .system) {
             for ([_]*gtk.Widget{ view.scheduler.as(gtk.Widget), view.mode.as(gtk.Widget), view.apply.as(gtk.Widget), view.stop.as(gtk.Widget), view.refresh.as(gtk.Widget) }, [_][]const u8{ "sched-ext/scheduler", "sched-ext/mode", "sched-ext/apply", "sched-ext/stop", "sched-ext/refresh" }) |widget, name| {
-                try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+                try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .visible = widget.getMapped() != 0, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
+            }
+            for (view.mode_buttons, std.enums.values(@import("../services/sched_ext_model.zig").Mode)) |button, mode_value| {
+                const widget = button.as(gtk.Widget);
+                try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "sched-ext/mode/{s}", .{@tagName(mode_value)}), .focused = focus == widget, .visible = widget.getMapped() != 0, .enabled = widget.isSensitive() != 0, .selected = button.getActive() != 0, .bounds = self.bounds(widget) });
+            }
+            inline for (.{ "details_section", "boot_section" }) |name| {
+                const section = @field(view, name);
+                try controls.append(alloc, .{ .field = "sched-ext/" ++ name, .focused = focus == section.expander.as(gtk.Widget), .visible = section.expander.as(gtk.Widget).getMapped() != 0, .enabled = section.expander.as(gtk.Widget).isSensitive() != 0, .selected = section.expander.getExpanded() != 0, .text = std.mem.span(section.summary.getText()), .bounds = self.bounds(section.expander.getLabelWidget().?) });
+            }
+            inline for (.{ "badge", "observation", "selection", "mode_note", "arguments", "missing", "boot", "summary", "feedback", "stop_feedback" }) |name| {
+                const label = @field(view, name);
+                try controls.append(alloc, .{ .field = "sched-ext/" ++ name, .focused = false, .visible = label.as(gtk.Widget).getMapped() != 0, .text = std.mem.span(label.getText()), .bounds = self.bounds(label.as(gtk.Widget)) });
             }
         };
         if (self.preferences_view) |view| {
