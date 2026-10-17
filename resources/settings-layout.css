@@ -64,7 +64,11 @@
 .settings-window .display-selector { border-radius: 10px; padding: 8px 12px; }
 .settings-window .display-selector:checked { background: #49366b; color: #eee8f4; outline: 1px solid #d0bcff; }
 .settings-window.pearl-light .display-selector:checked { background: #e9ddfa; color: #302045; outline-color: #70509c; }
-.settings-window expander > title { padding: 10px 0; }
+/* Type selectors on `expander` never match in this GTK build, and a collapsed
+   expander drops its body from the child list, so section chrome is reached
+   through classes: bodies carry per-page classes and the internal arrow
+   widget is tagged `settings-section-arrow` at construction. */
+.settings-window .settings-section-arrow { margin-left: 4px; }
 .settings-window flowboxchild { padding: 0; }
 .settings-window .display-arrangement .pearl-title { font-size: 1em; font-weight: 600; }
 .settings-window button.display-selector { border-radius: 10px; }
@@ -100,7 +104,7 @@
 .settings-window .bar-menu { padding: 10px; }
 .settings-window .bar-menu button { padding: 8px 10px; }
 .settings-window .network-card { border-radius: 14px; padding: 16px; }
-.settings-window .network-view button { min-height: 32px; }
+.settings-window .network-view button { min-height: 20px; }
 
 /* Sound keeps primary volume controls visible and secondary routes in menus. */
 .settings-window .sound-card { border-radius: 14px; padding: 16px; }
@@ -130,6 +134,15 @@
 .settings-window.pearl-gtk .sound-card { background: alpha(currentColor, 0.04); border: 1px solid alpha(currentColor, 0.12); }
 .settings-window .sound-muted { outline: 1px solid currentColor; outline-offset: -2px; }
 
+/* Disclosure sections share one card rhythm: the heading block sits optically
+   centred, and nested cards stay flat. */
+.settings-window .settings-section-heading { margin: 14px 6px; }
+.settings-window .settings-section-heading .pearl-section-title { font-size: 1.15em; font-weight: 600; }
+.settings-window .settings-section-heading .pearl-secondary { margin: 0; }
+.settings-window .settings-section .settings-card { background: transparent; }
+.settings-window .settings-section-body { padding: 6px 20px 18px; }
+.settings-window.settings-narrow .settings-section-body { padding: 4px 14px 14px; }
+
 /* Appearance shares the settings card rhythm and measures all rows naturally. */
 .settings-window .appearance-view .pearl-section-title { font-size: 1.15em; font-weight: 600; }
 .settings-window .appearance-modes { margin: 0 20px 12px; }
@@ -137,11 +150,8 @@
 .settings-window .appearance-mode:checked { background: alpha(@accent_color, 0.15); border-color: @accent_color; }
 .settings-window .appearance-mode:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
 .settings-window .appearance-mode radio { margin-right: 8px; }
-.settings-window .appearance-section-heading { margin: 16px 20px 16px 10px; }
-.settings-window .appearance-section > box { padding-bottom: 12px; }
-.settings-window .appearance-section .settings-card { background: transparent; }
-.settings-window .appearance-section .pearl-secondary { margin-left: 20px; margin-right: 20px; }
-.settings-window .appearance-section-heading .pearl-secondary { margin: 0; }
+.settings-window .appearance-section-body { padding-bottom: 12px; }
+.settings-window .appearance-section-body .pearl-secondary { margin-left: 20px; margin-right: 20px; }
 .settings-window .appearance-preview-layout { margin: 18px 20px; }
 .settings-window .appearance-wallpaper-row { margin: 0 20px 12px; }
 .settings-window .appearance-wallpaper-row .settings-draft-preview { margin: 0; min-width: 96px; min-height: 60px; }
@@ -159,7 +169,6 @@
 .settings-window .assistant-card > label { margin: 0; }
 .settings-window .assistant-view .pearl-section-title { font-size: 1.15em; font-weight: 600; }
 .settings-window .assistant-view .settings-row-title { font-weight: 600; }
-.settings-window .assistant-section-heading { margin: 12px 16px 12px 8px; }
 .settings-window .assistant-section-body { padding: 0 20px 20px; }
 .settings-window .assistant-card .assistant-section { background: transparent; }
 .settings-window .assistant-card .assistant-section-body { padding-left: 0; padding-right: 0; }
@@ -181,7 +190,6 @@
 .settings-window .system-view .settings-row-title { font-weight: 600; }
 .settings-window .system-current { font-size: 1.65em; font-weight: 500; }
 .settings-window .system-badge { border-radius: 12px; padding: 4px 10px; background: alpha(currentColor, 0.08); font-size: 0.86em; }
-.settings-window .system-section-heading { margin: 12px 16px 12px 8px; }
 .settings-window .system-section-body { padding: 0 20px 20px; }
 .settings-window .system-view flowboxchild { padding: 0; }
 .settings-window .system-view button { min-height: 32px; border-radius: 10px; }

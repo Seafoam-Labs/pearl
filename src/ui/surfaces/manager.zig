@@ -347,9 +347,16 @@ pub const Manager = struct {
     fn closeCropFor(self: *Manager, window: *gtk.Window) void {
         if (self.crop) |editor| if (editor.parentIs(window)) self.closeCrop();
     }
-    fn cropClosed(context: *anyopaque) void {
+    fn cropClosed(context: *anyopaque, parent: *gtk.Window) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.crop = null;
+        // The editor held activation while it was open; the surface that opened
+        // it has to wait for a fresh focus grant before a loss reads as a
+        // dismissal, exactly like a chooser remapping its parent.
+        if (self.popup) |popup| if (popup.window == parent) {
+            popup.popup_had_focus = false;
+            popup.popup_had_seat_focus = false;
+        };
     }
     /// Double-clicking the background crops the wallpaper filling that output.
     fn wallpaperPressed(_: *gtk.GestureClick, presses: c_int, _: f64, _: f64, s: *Surface) callconv(.c) void {
@@ -993,13 +1000,17 @@ pub const Manager = struct {
     fn sync(self: *Manager) !void {
         if (self.popup) |popup| {
             const picker_open = if (popup.settings) |view| view.wallpaper_picker != null else false;
+            // The crop editor is a layer-shell window of its own, so while it is
+            // open it holds the activation the popup would otherwise keep; that
+            // is the editor working, not the popup being dismissed.
+            const crop_open = if (self.crop) |editor| editor.parentIs(popup.window) else false;
             var seat_focus_lost = false;
             if (self.client.model.focus(null)) |focus| {
                 if (focus.seat.focus_kind == .layer_surface) {
                     popup.popup_had_seat_focus = true;
                 } else seat_focus_lost = popup.popup_had_seat_focus;
             } else |_| {}
-            if (!picker_open and (seat_focus_lost or (popup.popup_had_focus and popup.window.isActive() == 0))) {
+            if (!picker_open and !crop_open and (seat_focus_lost or (popup.popup_had_focus and popup.window.isActive() == 0))) {
                 log.debug("event=popup-close-reason reason=focus-lost", .{});
                 self.hidePopup();
             }
@@ -1699,16 +1710,17 @@ pub const Manager = struct {
             }
         }
         var rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
-        if (self.pane == .wallpapers or self.pane == .resources or self.pane == .tray) {
-            if (o.bar) |surface| if (surface.bar) |bar| if (bar.pane_anchor) |anchor| {
-                rect = policy.followAnchor(rect, o.bounds, o.usable, .{
-                    .x = anchor.x,
-                    .y = anchor.y,
-                    .width = anchor.width,
-                    .height = anchor.height,
-                }, o.reservations.bar_edge);
-            };
-        }
+        // Any pane opened from a bar widget sits under that widget, whatever
+        // island it lives in; centered panes (launcher, capture) and panes
+        // opened elsewhere keep their placement.
+        if (!centered) if (o.bar) |surface| if (surface.bar) |bar| if (bar.pane_anchor) |anchor| {
+            rect = policy.followAnchor(rect, o.bounds, o.usable, .{
+                .x = anchor.x,
+                .y = anchor.y,
+                .width = anchor.width,
+                .height = anchor.height,
+            }, o.reservations.bar_edge);
+        };
         if (self.popup_rect) |previous| if (std.meta.eql(previous, rect)) return;
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;
@@ -1743,6 +1755,11 @@ pub const Manager = struct {
             self.settings_page = null;
             self.popup_rect = null;
             if (s.output.bar.?.autohide) |controller| controller.holdPopup(false);
+            // A recorded anchor belongs to the opening click only; a later
+            // keyboard or CLI popup must fall back to edge placement.
+            if (s.output.bar) |surface| if (surface.bar) |bar| {
+                bar.pane_anchor = null;
+            };
             if (self.layout) |*layout| layout.cancel();
             s.destroy();
             self.positionNotifications();

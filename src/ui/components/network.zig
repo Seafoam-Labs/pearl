@@ -123,7 +123,16 @@ pub const View = struct {
         const more = w.wrappingButton(tr("View all nearby networks", "Alle Netzwerke in der Nähe anzeigen"));
         root.append(more.as(gtk.Widget));
         root.append(sections[2].as(gtk.Widget));
-        const saved = gtk.Expander.new(tr("Saved networks", "Gespeicherte Netzwerke"));
+        const saved_title = tr("Saved networks", "Gespeicherte Netzwerke");
+        const saved = gtk.Expander.new(null);
+        saved.as(gtk.Widget).addCssClass("settings-card");
+        saved.as(gtk.Widget).addCssClass("settings-section");
+        w.tagExpanderArrow(saved, "settings-section-arrow");
+        const saved_heading = w.column(5);
+        saved_heading.as(gtk.Widget).addCssClass("settings-section-heading");
+        saved_heading.append(w.label(saved_title, "pearl-section-title").as(gtk.Widget));
+        saved.setLabelWidget(saved_heading.as(gtk.Widget));
+        sections[3].as(gtk.Widget).addCssClass("settings-section-body");
         saved.setChild(sections[3].as(gtk.Widget));
         const saved_empty = w.label(tr("No saved networks", "Keine gespeicherten Netzwerke"), "pearl-secondary");
         sections[3].append(saved_empty.as(gtk.Widget));

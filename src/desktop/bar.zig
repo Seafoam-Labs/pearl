@@ -720,7 +720,9 @@ pub const Bar = struct {
         return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .clocks = clock_reports.items, .background_opacity = self.background_opacity, .background_color = self.background_color, .keyboard_mode = keyboard_mode, .launcher_icon = self.launcher_icon.selection, .launcher_icon_loading = self.launcher_icon.job != null, .launcher_icon_failed = self.launcher_icon.failed, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
     }
     fn clicked(button: *gtk.Button, data: *Button) callconv(.c) void {
-        if (data.event == .pane) data.owner.recordPaneAnchor(button.as(gtk.Widget));
+        // Settings widgets carry a navigation route instead of a pane tag but
+        // open the same popup, so they anchor like every other pane button.
+        if (data.event == .pane or data.event == .settings) data.owner.recordPaneAnchor(button.as(gtk.Widget));
         data.owner.action(data.owner.context, data.event);
     }
     /// Root-relative geometry of the widget that opened a pane, so the popup can

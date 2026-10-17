@@ -21,8 +21,18 @@ pub const View = struct {
     idle: c_uint = 0,
     pub fn create(parent: *gtk.Box, editor: *Editor) !*View {
         const self = try a.create(View);
-        const expander = gtk.Expander.new(tr("Application launchers", "Anwendungsstarter"));
+        const title = tr("Application launchers", "Anwendungsstarter");
+        const expander = gtk.Expander.new(null);
+        expander.as(gtk.Widget).addCssClass("settings-card");
+        expander.as(gtk.Widget).addCssClass("settings-section");
+        widgets.tagExpanderArrow(expander, "settings-section-arrow");
+        const heading = widgets.column(5);
+        heading.as(gtk.Widget).addCssClass("settings-section-heading");
+        heading.append(widgets.label(title, "pearl-section-title").as(gtk.Widget));
+        expander.setLabelWidget(heading.as(gtk.Widget));
+        widgets.name(expander.as(gtk.Widget), title);
         const host = gtk.Box.new(.vertical, 8);
+        host.as(gtk.Widget).addCssClass("settings-section-body");
         expander.setChild(host.as(gtk.Widget));
         parent.append(expander.as(gtk.Widget));
         self.* = .{ .host = host, .expander = expander, .editor = editor };

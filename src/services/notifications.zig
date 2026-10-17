@@ -231,7 +231,7 @@ pub const Notifications = struct {
                 const filters = @import("notification_filter_policy.zig");
                 if (filters.desktopId(id)) r.desktop_entry.set(filters.withoutSuffix(id));
             }
-            const decision = if (self.filters) |*filters| (filters.evaluate(r) catch {
+            const decision = if (policy.compositorReloadAnnouncement(r)) .block else if (self.filters) |*filters| (filters.evaluate(r) catch {
                 invocation.returnDbusError("org.freedesktop.DBus.Error.Failed", "Notification filter evaluation failed.");
                 return;
             }).decision else .normal;

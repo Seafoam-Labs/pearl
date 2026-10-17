@@ -53,7 +53,16 @@ pub const View = struct {
             const dock_start = std.mem.eql(u8, spec.path, "dock.enabled");
             if (!idle and (dock_start or std.mem.eql(u8, spec.path, "popup.dismiss_outside"))) {
                 if (dock_start) self.bar = try @import("bar_view.zig").View.create(host, editor, context, invalidate);
-                const expander = gtk.Expander.new(if (dock_start) "Dock" else "Flyouts");
+                const title: [:0]const u8 = if (dock_start) "Dock" else "Flyouts";
+                const expander = gtk.Expander.new(null);
+                expander.as(gtk.Widget).addCssClass("settings-card");
+                expander.as(gtk.Widget).addCssClass("settings-section");
+                w.tagExpanderArrow(expander, "settings-section-arrow");
+                const heading = w.column(5);
+                heading.as(gtk.Widget).addCssClass("settings-section-heading");
+                heading.append(w.label(title, "pearl-section-title").as(gtk.Widget));
+                expander.setLabelWidget(heading.as(gtk.Widget));
+                w.name(expander.as(gtk.Widget), title);
                 card = w.column(0);
                 card.as(gtk.Widget).addCssClass("settings-card");
                 expander.setChild(card.as(gtk.Widget));
