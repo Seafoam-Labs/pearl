@@ -2,7 +2,8 @@ const u = @import("../c.zig");
 const c = u.c;
 const std = @import("std");
 pub const Settings = struct {
-    theme: c_int = 0,
+    /// 0 Pearl dark, 1 Pearl light, 2 Native GTK, 3 Follow Pearl (default).
+    theme: c_int = 3,
     font: c_int = 14,
     lines: bool = true,
     wrap: bool = true,
@@ -35,7 +36,7 @@ pub const Settings = struct {
         inline for (.{ "lines", "wrap", "spaces", "spelling" }) |key| {
             if (c.g_key_file_has_key(k, "Coral", key, null) != 0) @field(s, key) = c.g_key_file_get_boolean(k, "Coral", key, null) != 0;
         }
-        s.theme = std.math.clamp(s.theme, 0, 2);
+        s.theme = std.math.clamp(s.theme, 0, 3);
         s.font = std.math.clamp(s.font, 8, 32);
         s.indent = std.math.clamp(s.indent, 1, 8);
         const lang = c.g_key_file_get_string(k, "Coral", "language", null);
@@ -133,6 +134,21 @@ test "settings round-trip through save and load" {
     try std.testing.expectEqual(stored.indent, loaded.indent);
     try std.testing.expectEqual(stored.spelling, loaded.spelling);
     try std.testing.expectEqualStrings("en_US", std.mem.sliceTo(&loaded.language, 0));
+}
+
+test "missing or out-of-range theme falls back to Follow Pearl" {
+    const missing = Settings.loadFrom("/nonexistent/coral/preferences.ini");
+    try std.testing.expectEqual(@as(c_int, 3), missing.theme);
+    const dir = try tempDir();
+    defer {
+        removeTree(dir);
+        allocator.free(dir);
+    }
+    const stored: Settings = .{ .theme = 9 };
+    try stored.saveIn(dir);
+    const path = try joinZ(dir, "preferences.ini");
+    defer allocator.free(path);
+    try std.testing.expectEqual(@as(c_int, 3), Settings.loadFrom(path).theme);
 }
 
 test "saving over an unwritable target reports a write failure" {

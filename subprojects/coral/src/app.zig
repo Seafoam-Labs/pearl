@@ -41,6 +41,7 @@ pub const App = struct {
     closing: bool = false,
     css: *c.GtkCssProvider,
     font_css: *c.GtkCssProvider,
+    appearance: @import("appearance.zig").Appearance = undefined,
     dialog: ?W = null,
     dialog_doc: ?*Document = null,
     popover: ?W = null,
@@ -139,6 +140,8 @@ pub const App = struct {
         c.gtk_css_provider_load_from_string(self.css, @embedFile("style"));
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.font_css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
+        self.appearance = .{ .context = self, .changed = appearanceChanged };
+        self.appearance.setMode(@import("appearance.zig").modeFrom(settings.theme));
         c.gtk_widget_add_css_class(window, "coral");
         u.connect(window, "close-request", &onCloseWindow, self);
         u.connect(notebook, "switch-page", &onSwitch, self);
@@ -163,6 +166,7 @@ pub const App = struct {
     }
     pub fn deinit(self: *App) void {
         if (self.timer != 0) _ = c.g_source_remove(self.timer);
+        self.appearance.deinit();
         self.worker.stop();
         // File operations keep the application alive and prevent window closure.
         for (self.docs.items) |d| d.destroy();
@@ -253,11 +257,15 @@ pub const App = struct {
         const manager = c.gtk_source_style_scheme_manager_get_default();
         var prefer_dark: c_int = 0;
         c.g_object_get(c.gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &prefer_dark, @as(?*anyopaque, null));
-        const name: [*:0]const u8 = if (self.settings.theme == 2) (if (prefer_dark != 0) "Adwaita-dark" else "Adwaita") else if (self.settings.theme == 1) "coral-light" else "coral-dark";
+        const following = self.settings.theme == 3 and self.appearance.revision != null;
+        const native_look = std.mem.eql(u8, "native", self.appearance.themeClass());
+        const name: [*:0]const u8 = if (native_look) (if (prefer_dark != 0) "Adwaita-dark" else "Adwaita") else if (following) self.appearance.ensureScheme() else if (self.settings.theme == 1) "coral-light" else "coral-dark";
         const scheme = c.gtk_source_style_scheme_manager_get_scheme(manager, name);
         c.gtk_source_buffer_set_style_scheme(u.cast(c.GtkSourceBuffer, d.buffer), scheme);
         var underline: c.GdkRGBA = undefined;
-        _ = c.gdk_rgba_parse(&underline, if (self.settings.theme == 1) "#9b2a21" else "#ffb4ab");
+        const underline_hex: [:0]u8 = if (following) u.z(self.appearance.palette.error_color) else if (self.settings.theme == 1) u.z("#9b2a21") else u.z("#ffb4ab");
+        defer a.free(underline_hex);
+        _ = c.gdk_rgba_parse(&underline, underline_hex);
         c.g_object_set(d.tag, "underline-rgba", &underline, @as(?*anyopaque, null));
         const language_manager = c.gtk_source_language_manager_get_default();
         const language = if (d.path) |p| c.gtk_source_language_manager_guess_language(language_manager, p, null) else null;
@@ -265,17 +273,27 @@ pub const App = struct {
         c.gtk_source_buffer_set_highlight_syntax(u.cast(c.GtkSourceBuffer, d.buffer), @intFromBool(!d.large));
     }
     fn styleWindow(self: *App, widget: W) void {
-        if (self.settings.theme == 2) c.gtk_widget_remove_css_class(widget, "coral") else c.gtk_widget_add_css_class(widget, "coral");
-        if (self.settings.theme == 1) c.gtk_widget_add_css_class(widget, "light") else c.gtk_widget_remove_css_class(widget, "light");
+        self.themeClasses(widget);
+    }
+    fn themeClasses(self: *App, widget: W) void {
+        const class = self.appearance.themeClass();
+        if (std.mem.eql(u8, "native", class)) c.gtk_widget_remove_css_class(widget, "coral") else c.gtk_widget_add_css_class(widget, "coral");
+        inline for (.{ "dark", "light" }) |name| {
+            if (std.mem.eql(u8, name, class)) c.gtk_widget_add_css_class(widget, name) else c.gtk_widget_remove_css_class(widget, name);
+        }
     }
     fn applySettings(self: *App) void {
         if (self.dialog) |dialog| self.styleWindow(dialog);
-        if (self.settings.theme == 2) c.gtk_widget_remove_css_class(self.window, "coral") else c.gtk_widget_add_css_class(self.window, "coral");
-        if (self.settings.theme == 1) c.gtk_widget_add_css_class(self.window, "light") else c.gtk_widget_remove_css_class(self.window, "light");
+        self.themeClasses(self.window);
         const css = u.fmt("textview {{ font-family: monospace; font-size: {d:.3}em; }}", .{@as(f64, @floatFromInt(self.settings.font)) / 14.667});
         defer a.free(css);
         c.gtk_css_provider_load_from_string(self.font_css, css);
         for (self.docs.items) |d| self.configure(d);
+    }
+    fn appearanceChanged(context: *anyopaque) void {
+        const self: *App = @ptrCast(@alignCast(context));
+        if (self.closing) return;
+        self.applySettings();
     }
     fn message(self: *App, text: []const u8) void {
         u.setLabel(self.notice, text);
@@ -585,7 +603,7 @@ pub const App = struct {
         c.gtk_widget_add_css_class(heading, "title-2");
         u.append(box, heading);
         const theme = c.gtk_combo_box_text_new().?;
-        for ([_][*:0]const u8{ "Pearl dark", "Pearl light", "Native GTK" }) |name| c.gtk_combo_box_text_append_text(u.cast(c.GtkComboBoxText, theme), name);
+        for ([_][*:0]const u8{ "Pearl dark", "Pearl light", "Native GTK", "Follow Pearl" }) |name| c.gtk_combo_box_text_append_text(u.cast(c.GtkComboBoxText, theme), name);
         c.gtk_combo_box_set_active(u.cast(c.GtkComboBox, theme), self.settings.theme);
         self.prefRow(box, "Appearance", theme);
         u.connect(theme, "changed", &prefTheme, self);
@@ -1241,6 +1259,8 @@ fn onContext(gesture: ?*c.GtkGestureClick, _: c_int, x: f64, y: f64, data: ?*any
 fn prefTheme(widget: ?*c.GtkComboBox, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     self.settings.theme = c.gtk_combo_box_get_active(widget);
+    self.appearance.setMode(@import("appearance.zig").modeFrom(self.settings.theme));
+    self.settings.save() catch |err| config_log.err("event=preferences-save-failed error={s}", .{@errorName(err)});
     self.applySettings();
 }
 fn prefFont(widget: ?*c.GtkSpinButton, data: ?*anyopaque) callconv(.c) void {

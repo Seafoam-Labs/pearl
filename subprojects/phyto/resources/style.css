@@ -1,6 +1,5 @@
-/* Layout shared by Material and native GTK mode. Semantic colors below mirror
- * Pearl src/theme/theme.zig; this stylesheet is scoped to this application. */
-.phyto-root { font-family: Inter, sans-serif; font-size: 14px; }
+/* Layout shared by Material and native GTK mode. Semantic colors live in
+ * theme.css and are resolved from Pearl's committed palette at runtime. */
 .phyto-root headerbar { min-height: 48px; padding: 0 16px; }
 .phyto-root .brand { font-weight: 600; }
 .phyto-root button { border-radius: 12px; padding: 6px 12px; min-height: 30px; box-shadow: none; }
@@ -47,45 +46,7 @@
 .phyto-root.narrow .content { margin: 4px 8px 8px; }
 .phyto-root.narrow .status { padding: 4px 12px 12px; }
 
-.phyto-root.dark { color: #e6e0e9; background: #141218; }
-.phyto-root.dark headerbar, .phyto-root.dark .details, .phyto-root.dark .segmented, .phyto-root.dark .tabs { background: #211f26; color: #e6e0e9; }
-.phyto-root.dark .sidebar, .phyto-root.dark .pane, .phyto-root.dark gridview, .phyto-root.dark columnview, .phyto-root.dark columnview header { background: #1d1b20; color: #e6e0e9; }
-.phyto-root.dark .secondary, .phyto-root.dark .section-label, .phyto-root.dark .status { color: #cac4d0; }
-.phyto-root.dark button { background: transparent; color: #e6e0e9; border-color: transparent; }
-.phyto-root.dark button:hover { background: alpha(#e6e0e9, 0.08); }
-.phyto-root.dark button:active { background: alpha(#e6e0e9, 0.12); }
-.phyto-root.dark .breadcrumb, .phyto-root.dark .details-art, .phyto-root.dark .tonal { background: #2b2930; }
-.phyto-root.dark .selected, .phyto-root.dark gridview > child:selected, .phyto-root.dark columnview row:selected { background: #4f378b; color: #eaddff; }
-.phyto-root.dark .selected-tab { background: #1d1b20; border-bottom-color: #d0bcff; }
-.phyto-root.dark .active-pane { border-color: #d0bcff; }
-.phyto-root.dark .file-card image, .phyto-root.dark .file-name image, .phyto-root.dark .details-art image, .phyto-root.dark .brand image { color: #d0bcff; }
-.phyto-root.dark entry, .phyto-root.dark searchentry { background: #211f26; color: #e6e0e9; border: 1px solid #79747e; border-radius: 12px; }
-.phyto-root.dark popover > contents { background: #211f26; color: #e6e0e9; border-radius: 12px; }
-.phyto-root.dark .suggested-action, .phyto-root.dark progress { background: #d0bcff; color: #381e72; }
-.phyto-root.dark .error { color: #ffb4ab; }
-.phyto-root.dark button:focus-visible, .phyto-root.dark entry:focus-within { outline-color: #d0bcff; }
-
-.phyto-root.light { color: #1d1b20; background: #fdf7ff; }
-.phyto-root.light headerbar, .phyto-root.light .details, .phyto-root.light .segmented, .phyto-root.light .tabs { background: #f3edf7; color: #1d1b20; }
-.phyto-root.light .sidebar, .phyto-root.light .pane, .phyto-root.light gridview, .phyto-root.light columnview, .phyto-root.light columnview header { background: #f7f2fa; color: #1d1b20; }
-.phyto-root.light .secondary, .phyto-root.light .section-label, .phyto-root.light .status { color: #49454f; }
-.phyto-root.light button { background: transparent; color: #1d1b20; border-color: transparent; }
-.phyto-root.light button:hover { background: alpha(#1d1b20, 0.08); }
-.phyto-root.light button:active { background: alpha(#1d1b20, 0.12); }
-.phyto-root.light .breadcrumb, .phyto-root.light .details-art, .phyto-root.light .tonal { background: #ece6f0; }
-.phyto-root.light .selected, .phyto-root.light gridview > child:selected, .phyto-root.light columnview row:selected { background: #eaddff; color: #21005d; }
-.phyto-root.light .selected-tab { background: #f7f2fa; border-bottom-color: #6750a4; }
-.phyto-root.light .active-pane { border-color: #6750a4; }
-.phyto-root.light .file-card image, .phyto-root.light .file-name image, .phyto-root.light .details-art image, .phyto-root.light .brand image { color: #6750a4; }
-.phyto-root.light entry, .phyto-root.light searchentry { background: #f3edf7; color: #1d1b20; border: 1px solid #79747e; border-radius: 12px; }
-.phyto-root.light popover > contents { background: #f3edf7; color: #1d1b20; border-radius: 12px; }
-.phyto-root.light .suggested-action, .phyto-root.light progress { background: #6750a4; color: #ffffff; }
-.phyto-root.light .error { color: #8c1d18; }
-.phyto-root.light button:focus-visible, .phyto-root.light entry:focus-within { outline-color: #6750a4; }
 .phyto-root.native .sidebar, .phyto-root.native .details { background: alpha(currentColor, 0.03); }
-
-.phyto-root.dark .browser, .phyto-root.dark .toolbar { background: #141218; color: #e6e0e9; }
-.phyto-root.light .browser, .phyto-root.light .toolbar { background: #fdf7ff; color: #1d1b20; }
 
 /* Native GMenu/GActions provide focus, scrolling and submenu navigation. */
 .phyto-root popover.context-menu > contents { padding: 6px; border-radius: 12px; }
@@ -93,20 +54,10 @@
 .phyto-root.compact popover.context-menu modelbutton { min-height: 20px; }
 .phyto-root popover.context-menu separator { margin: 6px 8px; }
 .phyto-root popover.context-menu modelbutton:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
-.phyto-root.dark popover.context-menu modelbutton:hover { background: alpha(#e6e0e9, 0.08); }
-.phyto-root.light popover.context-menu modelbutton:hover { background: alpha(#1d1b20, 0.08); }
-
 /* Preview geometry is independent of image dimensions. */
 .phyto-root .preview-slot { border-radius: 8px; }
 .phyto-root .preview-body { padding: 16px; }
 .phyto-root .preview-slot textview { padding: 8px; }
-
-.phyto-root.dark .preview-slot textview,
-.phyto-root.dark .preview-slot textview text { background: #211f26; color: #e6e0e9; }
-.phyto-root.light .preview-slot textview,
-.phyto-root.light .preview-slot textview text { background: #f3edf7; color: #1d1b20; }
-.phyto-root.dark .preview-slot textview text selection { background: #4f378b; color: #e6e0e9; }
-.phyto-root.light .preview-slot textview text selection { background: #e8def8; color: #1d1b20; }
 
 .phyto-root .network-page { padding: 16px; }
 .phyto-root .network-card { padding: 14px; border: 1px solid alpha(currentColor, 0.15); border-radius: 12px; }

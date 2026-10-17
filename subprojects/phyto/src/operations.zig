@@ -59,7 +59,7 @@ pub const Operations = struct {
         d.as(gtk.Window).setModal(1);
         d.as(gtk.Window).setDefaultSize(460, -1);
         d.as(gtk.Widget).addCssClass("phyto-root");
-        d.as(gtk.Widget).addCssClass(if (self.owner.options.native) "native" else if (self.owner.options.light) "light" else "dark");
+        d.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
         d.getContentArea().as(gtk.Widget).addCssClass("dialog-body");
         return d;
     }

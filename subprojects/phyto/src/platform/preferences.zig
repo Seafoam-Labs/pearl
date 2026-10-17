@@ -6,10 +6,12 @@ const gio = u.gio;
 const glib = u.glib;
 pub const Sort = enum { name, size, type, modified };
 pub const ViewMode = enum { grid, list };
+pub const Theme = enum { follow_pearl, native_gtk, light, dark };
 pub const Preferences = struct {
     key: *glib.KeyFile,
     path: [:0]u8,
     references: usize = 1,
+    theme: Theme = .follow_pearl,
     thumbnails: bool = true,
     preview_details: bool = true,
     thumbnail_limit: usize = 50 * 1024 * 1024,
@@ -31,6 +33,10 @@ pub const Preferences = struct {
         const key = glib.KeyFile.new();
         _ = key.loadFromFile(path, .{}, null);
         p.* = .{ .key = key, .path = path };
+        if (key.getString("Appearance", "theme", null)) |s| {
+            defer glib.free(s);
+            p.theme = std.meta.stringToEnum(Theme, std.mem.span(s)) orelse .follow_pearl;
+        }
         if (key.hasKey("Previews", "thumbnails", null) != 0) p.thumbnails = key.getBoolean("Previews", "thumbnails", null) != 0;
         if (key.hasKey("Previews", "details", null) != 0) p.preview_details = key.getBoolean("Previews", "details", null) != 0;
         if (key.hasKey("Previews", "max-mib", null) != 0) p.thumbnail_limit = @as(usize, @intCast(std.math.clamp(key.getInteger("Previews", "max-mib", null), 1, 50))) * 1024 * 1024;
@@ -59,6 +65,7 @@ pub const Preferences = struct {
         shared = null;
     }
     pub fn save(self: *Preferences) void {
+        self.key.setString("Appearance", "theme", @tagName(self.theme));
         self.key.setBoolean("Previews", "thumbnails", @intFromBool(self.thumbnails));
         self.key.setBoolean("Previews", "details", @intFromBool(self.preview_details));
         self.key.setInteger("Previews", "max-mib", @intCast(self.thumbnail_limit / (1024 * 1024)));

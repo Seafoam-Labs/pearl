@@ -1,0 +1,5 @@
+{
+  "checks": [],
+  "status": "failed",
+  "error": "Build the T00 Aqueous test binary first, or pass --aqueous: /home/caro/Projects/pearl/.cache/aqueous-activity-production/bin/aqueous"
+}

@@ -3,6 +3,16 @@ pub fn build(b: *std.Build) void {
     const bindings = b.dependency("gobject", .{});
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const scanner = @import("wayland").Scanner.create(b, .{ .wayland_xml = b.path("../../bindings/protocols/wayland.xml"), .wayland_protocols = b.path("../../bindings/protocols") });
+    scanner.addCustomProtocol(b.path("../../bindings/protocols/aqueous-shell-v1.xml"));
+    scanner.addCustomProtocol(b.path("../../bindings/protocols/ext-workspace-v1.xml"));
+    scanner.generate("aqueous_shell_manager_v1", 2);
+    const native = b.createModule(.{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
+    // Shared read-only appearance boundary with the parent tree, identical to Dome's and Phyto's.
+    const appearance = b.createModule(.{ .root_source_file = b.path("../../src/appearance_client.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| appearance.addImport(name, bindings.module(name));
+    appearance.addImport("wayland", native);
+    for ([_][]const u8{ "gtk4", "wayland-client", "libpng" }) |name| appearance.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     const git_variant = b.option(bool, "git-variant", "Use the Git application identity") orelse false;
     const command = if (git_variant) "coral-git" else "coral";
     const options = b.addOptions();
@@ -14,10 +24,13 @@ pub fn build(b: *std.Build) void {
     m.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
     m.addOptions("build_options", options);
     m.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    m.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
+    m.addImport("appearance_client", appearance);
     // Shared by path with the parent tree so every executable renders identical
     // log lines and redacts untrusted text the same way.
     const logging = b.createModule(.{ .root_source_file = b.path("../../src/core/logging.zig"), .target = target, .optimize = optimize });
-    const diagnostics = b.createModule(.{ .root_source_file = b.path("../../src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize });
+    const diagnostics = b.createModule(.{ .root_source_file = b.path("../../src/diagnostics_bridge.zig"), .target = target, .optimize = optimize });
+    diagnostics.addImport("appearance_client", appearance);
     m.addImport("logging", logging);
     m.addImport("diagnostics", diagnostics);
     m.addImport("previews", previewModule(b, bindings, target, optimize, b.path("../../src/files/preview/root.zig"), m.import_table.get("build_options").?, diagnostics));
@@ -46,7 +59,15 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| tm.linkSystemLibrary(lib, .{ .use_pkg_config = .force });
     tm.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
     const tests = b.addTest(.{ .root_module = tm });
-    b.step("test", "Test file format, revisions, Unicode tokenization and real GIO saves").dependOn(&b.addRunArtifact(tests).step);
+    const test_step = b.step("test", "Test file format, revisions, Unicode tokenization and real GIO saves");
+    test_step.dependOn(&b.addRunArtifact(tests).step);
+    const appearance_module = b.createModule(.{ .root_source_file = b.path("src/appearance.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| appearance_module.addImport(name, bindings.module(name));
+    appearance_module.addImport("appearance_client", appearance);
+    appearance_module.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
+    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| appearance_module.linkSystemLibrary(lib, .{ .use_pkg_config = .force });
+    const appearance_tests = b.addTest(.{ .root_module = appearance_module });
+    test_step.dependOn(&b.addRunArtifact(appearance_tests).step);
     const io = b.addOptions();
     io.addOption(bool, "test_hooks", true);
     io.addOption(bool, "git_variant", false);
@@ -56,6 +77,8 @@ pub fn build(b: *std.Build) void {
     im.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
     im.addOptions("build_options", io);
     im.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    im.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
+    im.addImport("appearance_client", appearance);
     im.addImport("logging", logging);
     im.addImport("diagnostics", diagnostics);
     im.addImport("previews", previewModule(b, bindings, target, optimize, b.path("../../src/files/preview/root.zig"), im.import_table.get("build_options").?, diagnostics));

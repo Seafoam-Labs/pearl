@@ -1,0 +1,16 @@
+/* Colors resolved from Pearl's committed semantic palette at runtime; layout
+ * stays in style.css. Tokens mirror Pearl src/theme/theme.zig. */
+window.coral.$scope { background: $surface$; color: $text$; --window-bg-color: $surface$; --window-fg-color: $text$; }
+.coral.$scope headerbar, .coral.$scope .status { background: $container$; }
+.coral.$scope .status label { color: $secondary$; }
+.coral.$scope .notice { background: $high$; }
+.coral.$scope .search, .coral.$scope notebook > header { background: $low$; }
+.coral.$scope notebook > header tab:checked { background: $container$; border-bottom-color: $primary$; box-shadow: inset 0 -2px $primary$; }
+.coral.$scope .suggested-action { background: $primary$; color: $on_primary$; }
+.coral.$scope button { background: $high$; background-image: none; color: $text$; border-color: alpha($outline$, 0.25); }
+.coral.$scope button:hover { background: mix($high$, $text$, 0.08); }
+.coral.$scope button.flat { background: transparent; border-color: transparent; }
+.coral.$scope notebook > header tab { color: $secondary$; }
+.coral.$scope notebook > header tab:checked { color: $text$; }
+.coral.$scope entry { background: $container$; color: $text$; border-color: $outline$; }
+.coral.$scope spinbutton, .coral.$scope combobox button, .coral.$scope checkbutton { color: $text$; }
