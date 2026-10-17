@@ -1710,16 +1710,17 @@ pub const Manager = struct {
             }
         }
         var rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
-        if (self.pane == .wallpapers or self.pane == .resources or self.pane == .tray) {
-            if (o.bar) |surface| if (surface.bar) |bar| if (bar.pane_anchor) |anchor| {
-                rect = policy.followAnchor(rect, o.bounds, o.usable, .{
-                    .x = anchor.x,
-                    .y = anchor.y,
-                    .width = anchor.width,
-                    .height = anchor.height,
-                }, o.reservations.bar_edge);
-            };
-        }
+        // Any pane opened from a bar widget sits under that widget, whatever
+        // island it lives in; centered panes (launcher, capture) and panes
+        // opened elsewhere keep their placement.
+        if (!centered) if (o.bar) |surface| if (surface.bar) |bar| if (bar.pane_anchor) |anchor| {
+            rect = policy.followAnchor(rect, o.bounds, o.usable, .{
+                .x = anchor.x,
+                .y = anchor.y,
+                .width = anchor.width,
+                .height = anchor.height,
+            }, o.reservations.bar_edge);
+        };
         if (self.popup_rect) |previous| if (std.meta.eql(previous, rect)) return;
         self.popup_rect = rect;
         const fixed = object.ext.cast(gtk.Fixed, s.window.getChild().?).?;
@@ -1754,6 +1755,11 @@ pub const Manager = struct {
             self.settings_page = null;
             self.popup_rect = null;
             if (s.output.bar.?.autohide) |controller| controller.holdPopup(false);
+            // A recorded anchor belongs to the opening click only; a later
+            // keyboard or CLI popup must fall back to edge placement.
+            if (s.output.bar) |surface| if (surface.bar) |bar| {
+                bar.pane_anchor = null;
+            };
             if (self.layout) |*layout| layout.cancel();
             s.destroy();
             self.positionNotifications();
