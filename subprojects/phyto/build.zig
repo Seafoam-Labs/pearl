@@ -5,17 +5,30 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const git_variant = b.option(bool, "git-variant", "Use the Git runtime preview helper") orelse false;
     const bindings = b.dependency("gobject", .{});
+    const scanner = @import("wayland").Scanner.create(b, .{ .wayland_xml = b.path("../../bindings/protocols/wayland.xml"), .wayland_protocols = b.path("../../bindings/protocols") });
+    scanner.addCustomProtocol(b.path("../../bindings/protocols/aqueous-shell-v1.xml"));
+    scanner.addCustomProtocol(b.path("../../bindings/protocols/ext-workspace-v1.xml"));
+    scanner.generate("aqueous_shell_manager_v1", 2);
+    const native = b.createModule(.{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
+    // Shared read-only appearance boundary with the parent tree, identical to Dome's.
+    const appearance = b.createModule(.{ .root_source_file = b.path("../../src/appearance_client.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| appearance.addImport(name, bindings.module(name));
+    appearance.addImport("wayland", native);
+    for ([_][]const u8{ "gtk4", "wayland-client", "libpng" }) |name| appearance.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     const options = b.addOptions();
     options.addOption(bool, "test_hooks", b.option(bool, "test-hooks", "Enable test-only state inspection") orelse false);
     const module = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| module.addImport(name, bindings.module(name));
     module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    module.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
+    module.addImport("appearance_client", appearance);
     module.addOptions("build_options", options);
     module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
     // Shared by path with the parent tree so every executable renders identical
     // log lines and redacts untrusted text the same way.
     const logging = b.createModule(.{ .root_source_file = b.path("../../src/core/logging.zig"), .target = target, .optimize = optimize });
-    const diagnostics = b.createModule(.{ .root_source_file = b.path("../../src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize });
+    const diagnostics = b.createModule(.{ .root_source_file = b.path("../../src/diagnostics_bridge.zig"), .target = target, .optimize = optimize });
+    diagnostics.addImport("appearance_client", appearance);
     module.addImport("logging", logging);
     module.addImport("diagnostics", diagnostics);
     module.addImport("previews", previewModule(b, bindings, target, optimize, b.path("../../src/files/preview/root.zig"), module.import_table.get("build_options").?, diagnostics));
@@ -42,9 +55,18 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| network_module.addImport(name, bindings.module(name));
     const network_tests = b.addTest(.{ .root_module = network_module });
     test_step.dependOn(&b.addRunArtifact(network_tests).step);
+    const appearance_module = b.createModule(.{ .root_source_file = b.path("src/appearance.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| appearance_module.addImport(name, bindings.module(name));
+    appearance_module.addImport("appearance_client", appearance);
+    appearance_module.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
+    appearance_module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    const appearance_tests = b.addTest(.{ .root_module = appearance_module });
+    test_step.dependOn(&b.addRunArtifact(appearance_tests).step);
     const test_module = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| test_module.addImport(name, bindings.module(name));
     test_module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
+    test_module.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
+    test_module.addImport("appearance_client", appearance);
     const test_options = b.addOptions();
     test_options.addOption(bool, "test_hooks", true);
     test_module.addOptions("build_options", test_options);
@@ -62,6 +84,9 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| menus.addArgs(args);
     b.step("test-context-menus", "Exercise native context menus and batch operations").dependOn(&menus.step);
     b.step("integration", "Exercise native GTK in a private Aqueous session and capture evidence").dependOn(&integration.step);
+    const themes = b.addSystemCommand(&.{ "python3", "tests/themes.py", "--binary" });
+    themes.addArtifactArg(test_exe);
+    b.step("integration-themes", "Verify live committed Pearl appearance in a private session").dependOn(&themes.step);
     const networks = b.addSystemCommand(&.{ "python3", "tests/network_native.py", "--binary" });
     networks.addArtifactArg(test_exe);
     if (b.args) |args| networks.addArgs(args);

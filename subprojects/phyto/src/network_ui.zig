@@ -173,7 +173,7 @@ pub const UI = struct {
         d.as(gtk.Window).setModal(1);
         d.as(gtk.Window).setDefaultSize(@min(520, self.owner.width - 24), -1);
         d.as(gtk.Widget).addCssClass("phyto-root");
-        d.as(gtk.Widget).addCssClass(if (self.owner.options.native) "native" else if (self.owner.options.light) "light" else "dark");
+        d.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
         d.getContentArea().as(gtk.Widget).addCssClass("dialog-body");
         const e = a.create(Editor) catch unreachable;
         const err = u.label("", "error");

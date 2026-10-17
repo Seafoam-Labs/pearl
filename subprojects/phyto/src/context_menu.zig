@@ -705,7 +705,7 @@ pub const Menu = struct {
         d.as(gtk.Window).setTransientFor(self.owner.window);
         d.as(gtk.Window).setModal(1);
         d.as(gtk.Widget).addCssClass("phyto-root");
-        d.as(gtk.Widget).addCssClass(if (self.owner.options.native) "native" else if (self.owner.options.light) "light" else "dark");
+        d.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
         d.as(gtk.Widget).insertActionGroup("win", object.ext.cast(gtk.ApplicationWindow, self.owner.window).?.as(gio.ActionGroup));
         const body = d.getContentArea();
         body.as(gtk.Widget).addCssClass("dialog-body");

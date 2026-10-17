@@ -19,8 +19,9 @@ zig build -Doptimize=ReleaseSafe
 
 Within this Pearl checkout, the existing dependency cache can be reused with
 `ZIG_GLOBAL_CACHE_DIR=/home/zoey/Pearl/.cache/zig` before the build command.
-`zig build run -- PATH_OR_URI` also launches it. `--compact`, `--native-theme`,
-`--width=N` and `--height=N` are available, as are `--log-level LEVEL` and
+`zig build run -- PATH_OR_URI` also launches it. `--follow-pearl`, `--light`,
+`--dark`, `--native-theme`, `--compact`, `--width=N` and `--height=N` are
+available, as are `--log-level LEVEL` and
 `--log-scopes LIST`: diagnostics share Pearl's log handler and land wherever
 stderr goes, see [logging](../../docs/LOGGING.md). The compositor can override
 initial window size. Build installation stages a desktop entry and icon under
@@ -63,7 +64,10 @@ application identity so release and Git installs can coexist.
 - Persisted view and hidden-file defaults, bookmarks, pinning/favorites, sorting
   and menu preferences. Archive,
   bulk rename and user-installed script/sharing actions have provider adapters.
-- Pearl stock dark/light colors, compact density and optional native GTK theme.
+- Live Pearl appearance: the committed palette, variant, font and GTK theme
+  mode are followed through the shared appearance boundary, with manual
+  light/dark and native GTK modes as overrides (Appearance submenu, persisted).
+  Without Pearl, Phyto keeps its own dark palette. Compact density is separate.
   System GTK animation preferences remain respected; Phyto adds no animation loop.
 - Native icon labels/tooltips, keyboard focus and adaptive Places navigation.
 
@@ -117,6 +121,7 @@ launched by double-click.
 ```sh
 zig build test
 zig build integration -Doptimize=ReleaseSafe
+zig build integration-themes -Doptimize=ReleaseSafe
 zig build test-context-menus -Doptimize=ReleaseSafe
 zig build test-network -Doptimize=ReleaseSafe
 zig build test-previews -Doptimize=ReleaseSafe
@@ -129,13 +134,14 @@ its own display and D-Bus with disposable home/config/data directories. The app
 itself has no such test dependencies. `integration` builds a separate instrumented
 binary; the normal build contains no F12 test inspection shortcut.
 
-Recursive search, drag/drop, replacement/merge, localization,
-FileManager1 and live Pearl appearance integration remain future work. Optional
+Recursive search, drag/drop, replacement/merge, localization and
+FileManager1 remain future work. Optional
 Trash/network/admin support requires the relevant GIO/GVfs backends; file-roller
 provides archive actions. Preferences live in
 `$XDG_CONFIG_HOME/phyto/preferences.ini` (normally `~/.config/phyto/preferences.ini`).
 The `[View]` keys `mode=grid|list` and `show-hidden=true|false` store the browsing
-defaults. Changes are saved immediately; a failed save displays a message while
+defaults; `[Appearance] theme=follow_pearl|light|dark|native_gtk` stores the
+appearance mode, Follow Pearl by default. Changes are saved immediately; a failed save displays a message while
 keeping the current settings usable. Optional actions are described in
 [PROVIDERS.md](docs/PROVIDERS.md). Full Nemo extension ABI compatibility is not
 claimed. See the implementation report for operation limits and manual release

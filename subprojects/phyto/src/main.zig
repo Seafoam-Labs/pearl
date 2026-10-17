@@ -83,12 +83,12 @@ pub fn main(init: std.process.Init) void {
             },
         }
         if (std.mem.eql(u8, arg, "--help")) {
-            glib.print("Phyto — native Pearl file explorer\nUsage: phyto [--light] [--compact] [--native-theme] [--width=N] [--height=N]\n             [--log-level LEVEL] [--log-scopes LIST] [PATH_OR_URI]\n\nCtrl+L location, Ctrl+F filter, Ctrl+T new tab, F3 split panes, F6 switch pane.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
+            glib.print("Phyto — native Pearl file explorer\nUsage: phyto [--follow-pearl|--light|--dark|--native-theme] [--compact] [--width=N] [--height=N]\n             [--log-level LEVEL] [--log-scopes LIST] [PATH_OR_URI]\n\nCtrl+L location, Ctrl+F filter, Ctrl+T new tab, F3 split panes, F6 switch pane.\nFollow Pearl is the first-run default; without Pearl it uses Phyto's own dark palette.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         } else if (std.mem.eql(u8, arg, "--version")) {
             glib.print("Phyto 0.1.1 (Zig 0.16.0 / GTK4)\n");
             return;
-        } else if (std.mem.eql(u8, arg, "--light")) options.light = true else if (std.mem.eql(u8, arg, "--compact")) options.compact = true else if (std.mem.eql(u8, arg, "--native-theme")) options.native = true else if (std.mem.startsWith(u8, arg, "--width=")) {
+        } else if (std.mem.eql(u8, arg, "--follow-pearl")) options.theme = .follow_pearl else if (std.mem.eql(u8, arg, "--light")) options.theme = .light else if (std.mem.eql(u8, arg, "--dark")) options.theme = .dark else if (std.mem.eql(u8, arg, "--compact")) options.compact = true else if (std.mem.eql(u8, arg, "--native-theme")) options.theme = .native_gtk else if (std.mem.startsWith(u8, arg, "--width=")) {
             options.width = std.fmt.parseInt(c_int, arg[8..], 10) catch 1180;
             options.width = std.math.clamp(options.width, 390, 3840);
         } else if (std.mem.startsWith(u8, arg, "--height=")) {
@@ -111,6 +111,8 @@ pub fn main(init: std.process.Init) void {
     @import("previews").scheduler.changed = @import("preview.zig").schedule;
     const code = app.as(gio.Application).run(1, &argv);
     for (windows.items) |window| window.destroy();
+    @import("appearance.zig").current().deinit();
+    if (prefs) |preferences| preferences.release();
     if (@import("platform/network_mounts.zig").shared) |network| network.deinit();
     windows.deinit(u.a);
     @import("preview.zig").shutdown();
@@ -122,10 +124,40 @@ pub fn main(init: std.process.Init) void {
     if (code != 0) std.process.exit(@intCast(code));
 }
 var provider: ?*gtk.CssProvider = null;
-fn startup(_: *gio.Application, _: ?*anyopaque) callconv(.c) void {
+var prefs: ?*@import("platform/preferences.zig").Preferences = null;
+var theme_action: ?*gio.SimpleAction = null;
+var appearance_context: u8 = 0;
+fn startup(app: *gio.Application, _: ?*anyopaque) callconv(.c) void {
     const css = gtk.CssProvider.new();
     provider = css;
     const source = @embedFile("style");
     css.loadFromString(source);
     gtk.StyleContext.addProviderForDisplay(gdk.Display.getDefault().?, css.as(gtk.StyleProvider), gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+    prefs = @import("platform/preferences.zig").Preferences.acquire();
+    const appearance = @import("appearance.zig");
+    appearance.init(@ptrCast(&appearance_context), appearanceChanged);
+    appearance.current().setMode(prefs.?.theme);
+    const action = gio.SimpleAction.newStateful("theme", glib.VariantType.new("s"), glib.Variant.newString(@tagName(prefs.?.theme)));
+    theme_action = action;
+    _ = gio.SimpleAction.signals.activate.connect(action, ?*anyopaque, themeActivated, null, .{});
+    app.as(gio.ActionMap).addAction(action.as(gio.Action));
+}
+fn themeActivated(_: *gio.SimpleAction, parameter: ?*glib.Variant, _: ?*anyopaque) callconv(.c) void {
+    const value = parameter orelse return;
+    const mode = std.meta.stringToEnum(@import("platform/preferences.zig").Theme, std.mem.span(value.getString(null))) orelse return;
+    const preferences = prefs orelse return;
+    if (preferences.theme == mode) return;
+    preferences.theme = mode;
+    preferences.save();
+    @import("appearance.zig").current().setMode(mode);
+    syncThemeAction();
+}
+pub fn syncThemeAction() void {
+    if (theme_action) |action| if (prefs) |preferences| action.setState(glib.Variant.newString(@tagName(preferences.theme)));
+}
+fn appearanceChanged(_: *anyopaque) void {
+    for (windows.items) |window| {
+        if (window.closed) continue;
+        window.applyTheme();
+    }
 }

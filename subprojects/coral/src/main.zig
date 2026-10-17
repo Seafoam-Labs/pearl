@@ -50,14 +50,14 @@ pub fn main(init: std.process.Init) void {
             },
         }
         if (std.mem.eql(u8, arg, "--help")) {
-            c.g_print("Coral 0.1.1 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
+            c.g_print("Coral 0.1.1 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--follow-pearl|--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\nFollow Pearl is the first-run default; without Pearl it uses Coral's own dark palette.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         }
         if (std.mem.eql(u8, arg, "--version")) {
             c.g_print("Coral 0.1.1\n");
             return;
         }
-        if (std.mem.eql(u8, arg, "--light")) settings.theme = 1 else if (std.mem.eql(u8, arg, "--dark")) settings.theme = 0 else if (std.mem.eql(u8, arg, "--native-theme")) settings.theme = 2 else if (std.mem.startsWith(u8, arg, "--width=")) width = std.math.clamp(std.fmt.parseInt(c_int, arg[8..], 10) catch 1000, 390, 3840) else if (std.mem.startsWith(u8, arg, "--height=")) height = std.math.clamp(std.fmt.parseInt(c_int, arg[9..], 10) catch 740, 400, 2160) else if (std.mem.startsWith(u8, arg, "--")) {
+        if (std.mem.eql(u8, arg, "--follow-pearl")) settings.theme = 3 else if (std.mem.eql(u8, arg, "--light")) settings.theme = 1 else if (std.mem.eql(u8, arg, "--dark")) settings.theme = 0 else if (std.mem.eql(u8, arg, "--native-theme")) settings.theme = 2 else if (std.mem.startsWith(u8, arg, "--width=")) width = std.math.clamp(std.fmt.parseInt(c_int, arg[8..], 10) catch 1000, 390, 3840) else if (std.mem.startsWith(u8, arg, "--height=")) height = std.math.clamp(std.fmt.parseInt(c_int, arg[9..], 10) catch 740, 400, 2160) else if (std.mem.startsWith(u8, arg, "--")) {
             log.err("Unknown option: {f}", .{diagnostics.safe(arg)});
             std.process.exit(2);
         } else paths.append(u.a, arg) catch unreachable;
@@ -75,6 +75,13 @@ pub fn main(init: std.process.Init) void {
         defer u.a.free(directory_z);
         c.gtk_source_style_scheme_manager_append_search_path(c.gtk_source_style_scheme_manager_get_default(), directory_z);
     }
+    // Generated Follow Pearl editor schemes land here; see appearance.ensureScheme.
+    const cache_styles = u.fmt("{s}/coral/styles", .{std.mem.span(c.g_get_user_cache_dir())});
+    defer u.a.free(cache_styles);
+    _ = c.g_mkdir_with_parents(cache_styles, 0o700);
+    const cache_z = u.z(cache_styles);
+    defer u.a.free(cache_z);
+    c.gtk_source_style_scheme_manager_append_search_path(c.gtk_source_style_scheme_manager_get_default(), cache_z);
     const application = c.gtk_application_new(if (build_options.git_variant) "org.aqueous.Coral.Git" else "org.aqueous.Coral", c.G_APPLICATION_NON_UNIQUE).?;
     defer c.g_object_unref(application);
     u.connect(application, "activate", &activate, null);

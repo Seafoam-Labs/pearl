@@ -1,0 +1,23 @@
+/* Colors resolved from Pearl's committed semantic palette at runtime; layout
+ * stays in style.css. Tokens mirror Pearl src/theme/theme.zig. */
+.phyto-root.$scope { font-family: Inter, sans-serif; font-size: 14px; color: $text$; background: $surface$; }
+.phyto-root.$scope headerbar, .phyto-root.$scope .details, .phyto-root.$scope .segmented, .phyto-root.$scope .tabs { background: $container$; color: $text$; }
+.phyto-root.$scope .sidebar, .phyto-root.$scope .pane, .phyto-root.$scope gridview, .phyto-root.$scope columnview, .phyto-root.$scope columnview header { background: $low$; color: $text$; }
+.phyto-root.$scope .secondary, .phyto-root.$scope .section-label, .phyto-root.$scope .status { color: $secondary$; }
+.phyto-root.$scope button { background: transparent; color: $text$; border-color: transparent; }
+.phyto-root.$scope button:hover { background: alpha($text$, 0.08); }
+.phyto-root.$scope button:active { background: alpha($text$, 0.12); }
+.phyto-root.$scope .breadcrumb, .phyto-root.$scope .details-art, .phyto-root.$scope .tonal { background: $high$; }
+.phyto-root.$scope .selected, .phyto-root.$scope gridview > child:selected, .phyto-root.$scope columnview row:selected { background: $primary_container$; color: $on_container$; }
+.phyto-root.$scope .selected-tab { background: $low$; border-bottom-color: $primary$; }
+.phyto-root.$scope .active-pane { border-color: $primary$; }
+.phyto-root.$scope .file-card image, .phyto-root.$scope .file-name image, .phyto-root.$scope .details-art image, .phyto-root.$scope .brand image { color: $primary$; }
+.phyto-root.$scope entry, .phyto-root.$scope searchentry { background: $container$; color: $text$; border: 1px solid $outline$; border-radius: 12px; }
+.phyto-root.$scope popover > contents { background: $container$; color: $text$; border-radius: 12px; }
+.phyto-root.$scope .suggested-action, .phyto-root.$scope progress { background: $primary$; color: $on_primary$; }
+.phyto-root.$scope .error { color: $error_color$; }
+.phyto-root.$scope button:focus-visible, .phyto-root.$scope entry:focus-within { outline-color: $primary$; }
+.phyto-root.$scope .browser, .phyto-root.$scope .toolbar { background: $surface$; color: $text$; }
+.phyto-root.$scope popover.context-menu modelbutton:hover { background: alpha($text$, 0.08); }
+.phyto-root.$scope .preview-slot textview, .phyto-root.$scope .preview-slot textview text { background: $container$; color: $text$; }
+.phyto-root.$scope .preview-slot textview text selection { background: $primary_container$; color: $text$; }

@@ -10,7 +10,7 @@ const Tab = @import("tab.zig").Tab;
 const model = @import("core/model.zig");
 const Operations = @import("operations.zig").Operations;
 
-pub const Options = struct { light: bool = false, compact: bool = false, native: bool = false, width: c_int = 1180, height: c_int = 760 };
+pub const Options = struct { theme: ?@import("platform/preferences.zig").Theme = null, compact: bool = false, width: c_int = 1180, height: c_int = 760 };
 const Pane = struct { host: *gtk.Box, tabs_row: *gtk.Box, stack: *gtk.Stack, tabs: std.ArrayList(*Tab) = .empty, selected: usize = 0 };
 const Command = @import("actions.zig").Command;
 const Action = struct { owner: *Window, command: Command };
@@ -208,6 +208,11 @@ pub const Window = struct {
         browser.append(status.as(gtk.Widget));
         self.* = .{ .app = app, .window = win, .root = root, .sidebar = sidebar, .sidebar_content = sidebar_box, .popup_content = popup_places, .places_button = places_button, .places_popover = popover, .location_button = location, .path = path, .search = search, .search_row = search_row, .search_scope = search_scope, .navigation = navigation, .details = details, .details_body = details_body, .status = status, .pane_switch = pane_switch, .grid_button = grid_button, .list_button = list_button, .back_button = back, .forward_button = forward, .up_button = up, .home_button = home_button, .details_button = details_button, .split_button = split_button, .jobs_button = jobs_button, .paned = paned, .panes = panes, .options = opts, .home = gio.File.newForPath(glib.getHomeDir()), .width = opts.width };
         self.preferences = @import("platform/preferences.zig").Preferences.acquire();
+        if (opts.theme) |mode| if (self.preferences.theme != mode) {
+            self.preferences.theme = mode;
+            @import("appearance.zig").current().setMode(mode);
+            @import("main.zig").syncThemeAction();
+        };
         self.operations = Operations.init(self);
         self.network_ui = .{ .owner = self };
         self.background_cancel = gio.Cancellable.new();
@@ -245,7 +250,11 @@ pub const Window = struct {
         self.connect(list_button, .list);
         self.connect(details_button, .details);
         const menu = gio.Menu.new();
-        inline for (.{ .{ "Add connection…", "network_add" }, .{ "Saved network connections", "network" }, .{ "New tab", "new_tab" }, .{ "Close tab", "close_tab" }, .{ "New window", "new_window" }, .{ "Split panes", "split" }, .{ "New folder…", "new_folder" }, .{ "Rename…", "rename" }, .{ "Cut", "cut" }, .{ "Copy", "copy" }, .{ "Paste", "paste" }, .{ "Undo", "undo" }, .{ "Redo", "redo" }, .{ "File view options…", "menu_settings" }, .{ "Move to Trash…", "trash" }, .{ "File operations", "operations" }, .{ "Properties", "properties" }, .{ "Preview", "preview" }, .{ "Show / hide hidden files", "hidden" }, .{ "Refresh", "refresh" }, .{ "Light / dark appearance", "light" }, .{ "Compact density", "compact" }, .{ "Use system GTK theme", "native" } }) |entry| menu.append(entry[0], "win." ++ entry[1]);
+        inline for (.{ .{ "Add connection…", "network_add" }, .{ "Saved network connections", "network" }, .{ "New tab", "new_tab" }, .{ "Close tab", "close_tab" }, .{ "New window", "new_window" }, .{ "Split panes", "split" }, .{ "New folder…", "new_folder" }, .{ "Rename…", "rename" }, .{ "Cut", "cut" }, .{ "Copy", "copy" }, .{ "Paste", "paste" }, .{ "Undo", "undo" }, .{ "Redo", "redo" }, .{ "File view options…", "menu_settings" }, .{ "Move to Trash…", "trash" }, .{ "File operations", "operations" }, .{ "Properties", "properties" }, .{ "Preview", "preview" }, .{ "Show / hide hidden files", "hidden" }, .{ "Refresh", "refresh" }, .{ "Compact density", "compact" } }) |entry| menu.append(entry[0], "win." ++ entry[1]);
+        const themes = gio.Menu.new();
+        inline for (.{ .{ "Follow Pearl", "follow_pearl" }, .{ "Light", "light" }, .{ "Dark", "dark" }, .{ "System GTK theme", "native_gtk" } }) |entry| themes.append(entry[0], "app.theme::" ++ entry[1]);
+        menu.appendSubmenu("Appearance", themes.as(gio.MenuModel));
+        themes.unref();
         menu_button.setMenuModel(menu.as(gio.MenuModel));
         menu.unref();
         self.fillPlaces(sidebar_box);
@@ -839,9 +848,9 @@ pub const Window = struct {
         self.layout();
         return 0;
     }
-    fn applyTheme(self: *Window) void {
+    pub fn applyTheme(self: *Window) void {
         for ([_][*:0]const u8{ "dark", "light", "native", "compact" }) |class| self.window.as(gtk.Widget).removeCssClass(class);
-        self.window.as(gtk.Widget).addCssClass(if (self.options.native) "native" else if (self.options.light) "light" else "dark");
+        self.window.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
         if (self.options.compact) self.window.as(gtk.Widget).addCssClass("compact");
     }
     fn pathEntered(entry: *gtk.Entry, self: *Window) callconv(.c) void {
@@ -962,19 +971,13 @@ pub const Window = struct {
             .new_window => {
                 const f = gio.File.newForUri(t.uri);
                 defer f.unref();
-                @import("main.zig").newWindow(self.app, f, self.options);
-            },
-            .light => {
-                self.options.native = false;
-                self.options.light = !self.options.light;
-                self.applyTheme();
+                // A startup flag must not re-override windows opened after a menu choice.
+                var opts = self.options;
+                opts.theme = null;
+                @import("main.zig").newWindow(self.app, f, opts);
             },
             .compact => {
                 self.options.compact = !self.options.compact;
-                self.applyTheme();
-            },
-            .native => {
-                self.options.native = !self.options.native;
                 self.applyTheme();
             },
             .operations => self.operations.present(),
@@ -1217,6 +1220,13 @@ pub const Window = struct {
             .hidden = t.hidden,
             .view_child = std.mem.span(t.views.getVisibleChildName() orelse "none"),
             .preferences_save_error = self.preferences.save_error,
+            .theme_mode = @import("appearance.zig").modeTag(),
+            .theme_subscribed = @import("appearance.zig").subscribed(),
+            .theme_revision = @import("appearance.zig").revision(),
+            .theme_native = @import("appearance.zig").isNative(),
+            .theme_class = @import("appearance.zig").themeClass(),
+            .theme_accent = @import("appearance.zig").accent(),
+            .theme_foreground = @import("appearance.zig").foreground(),
             .split = self.split,
             .active = self.active,
             .tabs = .{ self.panes[0].tabs.items.len, self.panes[1].tabs.items.len },
@@ -1254,7 +1264,7 @@ pub const Window = struct {
         const dialog = gtk.Dialog.new();
         self.message_dialog = dialog;
         dialog.as(gtk.Widget).addCssClass("phyto-root");
-        dialog.as(gtk.Widget).addCssClass(if (self.options.native) "native" else if (self.options.light) "light" else "dark");
+        dialog.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
         dialog.as(gtk.Window).setTitle(title);
         dialog.as(gtk.Window).setTransientFor(self.window);
         dialog.as(gtk.Window).setModal(1);

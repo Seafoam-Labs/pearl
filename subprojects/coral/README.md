@@ -41,7 +41,7 @@ languages. No dictionaries were installed on the development host; verification
 uses an isolated test dictionary. Missing dictionaries leave editing usable and
 show **Dictionary unavailable**. Choose an available language in Preferences.
 
-Options: `--light`, `--dark`, `--native-theme`, `--width=N`, `--height=N`,
+Options: `--follow-pearl`, `--light`, `--dark`, `--native-theme`, `--width=N`, `--height=N`,
 `--log-level LEVEL`, `--log-scopes LIST`, `--help`, `--version`, followed by
 local filenames or local file URIs. Diagnostics share Pearl's log handler and
 land wherever stderr goes; see [logging](../../docs/LOGGING.md).
@@ -63,7 +63,11 @@ land wherever stderr goes; see [logging](../../docs/LOGGING.md).
   underlines, up to five suggestions, undoable correction, document-local ignore,
   personal dictionary additions, and installed-language selection. Source code
   defaults to spelling off; Preferences can override the current document.
-- Pearl dark/light and native GTK appearance, narrow-window adaptation, keyboard
+- Live Pearl appearance (Follow Pearl, the default): committed palette, variant,
+  font and GTK theme mode reach the chrome through the shared appearance
+  boundary, and the editor buffer follows through a generated GtkSourceView
+  scheme under `$XDG_CACHE_HOME/coral/styles`. Pearl dark/light and native GTK
+  remain as manual choices, narrow-window adaptation, keyboard
   operation, accessible control labels, and persisted preferences.
 - Explicit large-file mode above 10 MiB disables automatic spelling and syntax
   highlighting. Reads stop at a 128 MiB safety limit.

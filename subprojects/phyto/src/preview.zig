@@ -238,7 +238,7 @@ pub const Quick = struct {
         window.setDestroyWithParent(1);
         window.setDefaultSize(760, 560);
         window.as(gtk.Widget).addCssClass("phyto-root");
-        window.as(gtk.Widget).addCssClass(if (owner.options.native) "native" else if (owner.options.light) "light" else "dark");
+        window.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
         const body = u.box(.vertical, 12, "preview-body");
         window.setChild(body.as(gtk.Widget));
         const name = file.getBasename() orelse glib.strdup("File preview");
