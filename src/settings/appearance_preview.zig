@@ -88,7 +88,9 @@ pub const View = struct {
         const signature = @import("editor_protocol.zig").digest(bytes);
         if (self.signature) |old| if (std.mem.eql(u8, &old, &signature)) return;
         self.signature = signature;
-        self.palette(if (p.theme.mode == .static) (if (p.theme.variant == .light) theme.light else theme.dark) else null, p.theme.mode == .gtk);
+        // Dynamic and community palettes come from the render pipeline; resetting
+        // them here would swap the preview back to defaults on every draft edit.
+        if (p.theme.mode == .static) self.palette(if (p.theme.variant == .light) theme.light else theme.dark, false) else if (p.theme.mode == .gtk) self.palette(null, true);
         clear(self.bar);
         clear(self.dock);
         position(self.bar, p.bar.edge);

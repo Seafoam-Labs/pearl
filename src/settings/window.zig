@@ -1244,7 +1244,6 @@ pub const Window = struct {
                 try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "appearance.section.{s}", .{name}), .focused = focus == section.expander.as(gtk.Widget), .enabled = section.expander.as(gtk.Widget).isSensitive() != 0, .selected = section.expander.getExpanded() != 0, .text = std.mem.span(section.summary.getText()), .bounds = self.bounds(section.expander.getLabelWidget().?) });
             }
             try controls.append(alloc, .{ .field = "appearance.preview", .focused = false, .text = std.mem.span(view.desktop_preview.status.getText()), .bounds = self.bounds(view.desktop_preview.root.as(gtk.Widget)) });
-            try controls.append(alloc, .{ .field = "appearance.preview-colors", .focused = focus == view.preview_colors.as(gtk.Widget), .enabled = view.preview_colors.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(view.preview_colors.as(gtk.Widget)) });
             for ([_]*gtk.Widget{ view.desktop_enabled.as(gtk.Widget), view.desktop_hidden.as(gtk.Widget), view.desktop_output.as(gtk.Widget), view.desktop_size.as(gtk.Widget), view.desktop_arrangement.as(gtk.Widget) }, [_][]const u8{ "desktop_enabled", "desktop_hidden", "desktop_output", "desktop_size", "desktop_arrangement" }) |widget, name| {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .bounds = self.bounds(widget), .enabled = widget.isSensitive() != 0 });
             }
