@@ -145,6 +145,15 @@ pub fn pairAction(key: []const u8, caption: []const u8) Pair {
     if (std.mem.eql(u8, key, "default")) return .register_only;
     return .skip;
 }
+/// Aqueous announces its own configuration and rule reloads through notify-send.
+/// In a Pearl session those reloads are Pearl's own writes — theme border sync,
+/// Settings Apply, wallpaper-driven palettes — and the Aqueous page reports
+/// their status inline, so the announcements carry nothing a user can act on.
+/// Failures say "rejected", not "reloaded", and stay visible.
+pub fn compositorReloadAnnouncement(r: Record) bool {
+    if (!std.ascii.eqlIgnoreCase(r.app.slice(), "Aqueous")) return false;
+    return std.ascii.indexOfIgnoreCase(r.summary.slice(), "reloaded") != null;
+}
 
 test "action captions that read as blank are dropped, readable ones are not" {
     const t = std.testing;
@@ -176,6 +185,34 @@ test "an unreadable caption hides a pair but the reserved key still registers" {
     for (cases) |case| {
         try t.expectEqual(case.want, pairAction(case.key, sanitize(160, case.raw).slice()));
     }
+}
+
+test "Aqueous reload announcements are compositor noise, everything else is not" {
+    const t = std.testing;
+    var r: Record = .{};
+    r.app.set("Aqueous");
+    r.summary.set("Aqueous configuration reloaded");
+    try t.expect(compositorReloadAnnouncement(r));
+    r.summary.set("Aqueous rules reloaded");
+    try t.expect(compositorReloadAnnouncement(r));
+    r.summary.set("AQUEOUS CONFIGURATION RELOADED");
+    try t.expect(compositorReloadAnnouncement(r));
+    // A rejected reload is a failure the user can act on, not an announcement.
+    r.summary.set("Configuration reload rejected: layout.toml");
+    try t.expect(!compositorReloadAnnouncement(r));
+    r.summary.set("Aqueous shell client limit exceeded");
+    try t.expect(!compositorReloadAnnouncement(r));
+    r.summary.set("");
+    try t.expect(!compositorReloadAnnouncement(r));
+    // The sender identity is part of the match: a relayed or spoofed caption
+    // from another application keeps its normal treatment.
+    r.summary.set("Aqueous configuration reloaded");
+    r.app.set("notify-send");
+    try t.expect(!compositorReloadAnnouncement(r));
+    r.app.set("AqueousX");
+    try t.expect(!compositorReloadAnnouncement(r));
+    r.app.set("aqueous");
+    try t.expect(compositorReloadAnnouncement(r));
 }
 
 test "replacement, sender isolation, ID wrap, DND and bounded history" {

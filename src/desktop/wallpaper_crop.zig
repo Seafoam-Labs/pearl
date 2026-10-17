@@ -25,7 +25,7 @@ pub const Request = struct {
 /// The manager's handle on the one editor it owns.
 pub const Owner = struct {
     context: *anyopaque,
-    closed: *const fn (*anyopaque) void,
+    closed: *const fn (*anyopaque, *gtk.Window) void,
 };
 
 const Box = struct { x: f64, y: f64, width: f64, height: f64 };
@@ -362,7 +362,8 @@ pub const Window = struct {
         self.image.unref();
         a.free(self.path);
         const owner = self.owner;
+        const parent = self.parent;
         a.destroy(self);
-        if (owner) |o| o.closed(o.context);
+        if (owner) |o| o.closed(o.context, parent);
     }
 };

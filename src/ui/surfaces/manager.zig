@@ -347,9 +347,16 @@ pub const Manager = struct {
     fn closeCropFor(self: *Manager, window: *gtk.Window) void {
         if (self.crop) |editor| if (editor.parentIs(window)) self.closeCrop();
     }
-    fn cropClosed(context: *anyopaque) void {
+    fn cropClosed(context: *anyopaque, parent: *gtk.Window) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.crop = null;
+        // The editor held activation while it was open; the surface that opened
+        // it has to wait for a fresh focus grant before a loss reads as a
+        // dismissal, exactly like a chooser remapping its parent.
+        if (self.popup) |popup| if (popup.window == parent) {
+            popup.popup_had_focus = false;
+            popup.popup_had_seat_focus = false;
+        };
     }
     /// Double-clicking the background crops the wallpaper filling that output.
     fn wallpaperPressed(_: *gtk.GestureClick, presses: c_int, _: f64, _: f64, s: *Surface) callconv(.c) void {
@@ -993,13 +1000,17 @@ pub const Manager = struct {
     fn sync(self: *Manager) !void {
         if (self.popup) |popup| {
             const picker_open = if (popup.settings) |view| view.wallpaper_picker != null else false;
+            // The crop editor is a layer-shell window of its own, so while it is
+            // open it holds the activation the popup would otherwise keep; that
+            // is the editor working, not the popup being dismissed.
+            const crop_open = if (self.crop) |editor| editor.parentIs(popup.window) else false;
             var seat_focus_lost = false;
             if (self.client.model.focus(null)) |focus| {
                 if (focus.seat.focus_kind == .layer_surface) {
                     popup.popup_had_seat_focus = true;
                 } else seat_focus_lost = popup.popup_had_seat_focus;
             } else |_| {}
-            if (!picker_open and (seat_focus_lost or (popup.popup_had_focus and popup.window.isActive() == 0))) {
+            if (!picker_open and !crop_open and (seat_focus_lost or (popup.popup_had_focus and popup.window.isActive() == 0))) {
                 log.debug("event=popup-close-reason reason=focus-lost", .{});
                 self.hidePopup();
             }
