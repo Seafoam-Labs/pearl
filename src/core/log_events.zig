@@ -17,6 +17,7 @@ pub const events: []const Event = &.{
     .{ .name = "app-index-ready", .scopes = &.{.desktop} },
     .{ .name = "appearance", .scopes = &.{.gallery} },
     .{ .name = "appearance-rejected", .scopes = &.{.config} },
+    .{ .name = "appearance-render-failed", .scopes = &.{.config} },
     .{ .name = "application-launch", .scopes = &.{.desktop} },
     .{ .name = "aqueous-availability", .scopes = &.{.pearl} },
     .{ .name = "aqueous-disconnected", .scopes = &.{.pearl} },
