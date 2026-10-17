@@ -181,18 +181,19 @@ pub const Window = struct {
         const footer = w.column(8);
         footer.as(gtk.Widget).addCssClass("settings-footer");
         const footer_text = w.label("", "pearl-secondary");
-        footer_text.setMaxWidthChars(38);
+        footer_text.setMaxWidthChars(64);
         const actions = w.row(8);
         actions.as(gtk.Widget).setHalign(.end);
-        const discard = w.wrappingButton(if (german) "Verwerfen" else "Discard");
-        const save = w.wrappingButton(if (german) "Anwenden und speichern" else "Apply & save");
+        // Single-line labels and centred valign: the footer grows when a draft
+        // badge appears, and stretched or wrapping buttons turn into pills.
+        const review_button = gtk.Button.newWithLabel("Review drafts");
+        const discard = gtk.Button.newWithLabel(if (german) "Verwerfen" else "Discard");
+        const save = gtk.Button.newWithLabel(if (german) "Anwenden und speichern" else "Apply & save");
         save.as(gtk.Widget).addCssClass("pearl-primary");
-        const merge_button = w.wrappingButton(if (german) "Änderungen zusammenführen" else "Merge changes");
-        if (!fixture) {
-            discard.as(gtk.Widget).setSizeRequest(88, -1);
-            save.as(gtk.Widget).setSizeRequest(116, -1);
-            merge_button.as(gtk.Widget).setSizeRequest(116, -1);
-        }
+        const merge_button = gtk.Button.newWithLabel(if (german) "Änderungen zusammenführen" else "Merge changes");
+        for ([_]*gtk.Button{ review_button, discard, save, merge_button }) |button| button.as(gtk.Widget).setValign(.center);
+        review_button.as(gtk.Widget).setVisible(0);
+        actions.append(review_button.as(gtk.Widget));
         actions.append(merge_button.as(gtk.Widget));
         merge_button.as(gtk.Widget).setVisible(0);
         actions.append(discard.as(gtk.Widget));
@@ -205,9 +206,6 @@ pub const Window = struct {
         footer_labels.append(footer_text.as(gtk.Widget));
         footer.append(footer_labels.as(gtk.Widget));
         footer.append(actions.as(gtk.Widget));
-        const review_button = gtk.Button.newWithLabel("Review drafts");
-        review_button.as(gtk.Widget).setVisible(0);
-        footer_labels.append(review_button.as(gtk.Widget));
         const aqueous_footer = w.column(6);
         aqueous_footer.as(gtk.Widget).setVisible(0);
         footer.append(aqueous_footer.as(gtk.Widget));

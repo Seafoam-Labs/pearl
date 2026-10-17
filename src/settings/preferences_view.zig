@@ -21,14 +21,19 @@ pub const Section = struct {
         const expander = gtk.Expander.new(null);
         expander.as(gtk.Widget).addCssClass("settings-card");
         expander.as(gtk.Widget).addCssClass("appearance-section");
+        expander.as(gtk.Widget).addCssClass("settings-section");
+        w.tagExpanderArrow(expander, "settings-section-arrow");
         const heading = w.column(5);
-        heading.as(gtk.Widget).addCssClass("appearance-section-heading");
+        heading.as(gtk.Widget).addCssClass("settings-section-heading");
         heading.append(w.label(title, "pearl-section-title").as(gtk.Widget));
         const summary = w.label(description, "pearl-secondary");
         heading.append(summary.as(gtk.Widget));
         expander.setLabelWidget(heading.as(gtk.Widget));
         w.name(expander.as(gtk.Widget), title);
         const body = w.column(8);
+        // A collapsed expander drops its body from the child list, so body
+        // rules must key on a class, never on child position.
+        body.as(gtk.Widget).addCssClass("appearance-section-body");
         expander.setChild(body.as(gtk.Widget));
         host.append(expander.as(gtk.Widget));
         return .{ .expander = expander, .body = body, .summary = summary };

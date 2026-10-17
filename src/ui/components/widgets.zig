@@ -28,6 +28,15 @@ pub fn wrappingButton(text: [*:0]const u8) *gtk.Button {
 pub fn name(widget: *gtk.Widget, text: [*:0]const u8) void {
     widget.as(gtk.Accessible).updateProperty(.label, text, @as(c_int, -1));
 }
+/// The expander's arrow is an internal widget that no stylesheet selector
+/// reaches in this GTK build: type selectors on `expander` never match, and
+/// the icon node takes no positional rule. Tag it so CSS can style it.
+pub fn tagExpanderArrow(expander: *gtk.Expander, css_class: [*:0]const u8) void {
+    const title = expander.as(gtk.Widget).getFirstChild() orelse return;
+    const inner = title.getFirstChild() orelse return;
+    const arrow = inner.getFirstChild() orelse return;
+    arrow.addCssClass(css_class);
+}
 pub fn icon(symbol: [*:0]const u8) *gtk.Image {
     const image = gtk.Image.newFromIconName(symbol);
     image.setPixelSize(20);

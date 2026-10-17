@@ -12,8 +12,10 @@ pub const Section = struct {
         const expander = gtk.Expander.new(null);
         expander.as(gtk.Widget).addCssClass("settings-card");
         expander.as(gtk.Widget).addCssClass("assistant-section");
+        expander.as(gtk.Widget).addCssClass("settings-section");
+        w.tagExpanderArrow(expander, "settings-section-arrow");
         const heading = w.column(5);
-        heading.as(gtk.Widget).addCssClass("assistant-section-heading");
+        heading.as(gtk.Widget).addCssClass("settings-section-heading");
         heading.append(w.label(title, "pearl-section-title").as(gtk.Widget));
         const summary = w.label(description, "pearl-secondary");
         heading.append(summary.as(gtk.Widget));
