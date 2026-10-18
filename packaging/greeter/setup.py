@@ -67,6 +67,8 @@ class Setup:
         previous = self.target('display-manager.service')
         already_selected = bool(previous and Path(previous).name == UNIT)
         ly_units = self.enabled_ly_units()
+        # The appearance sync socket is independent of display-manager choice.
+        self.systemctl('enable', 'pearl-greeter-sync.socket')
         if already_selected and not ly_units:
             print('Pearl Greeter is already selected.')
             return
@@ -108,6 +110,7 @@ class Setup:
     def restore_state(self, state, restore_config=True):
         # Offline unit-file operations only: never stop a running login session.
         self.systemctl('disable', UNIT)
+        self.systemctl('disable', 'pearl-greeter-sync.socket')
         if state['previous_enabled']:
             self.systemctl('enable', state['previous_unit'])
         if state.get('ly_units'):

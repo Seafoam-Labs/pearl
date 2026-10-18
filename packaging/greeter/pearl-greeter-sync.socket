@@ -1,0 +1,10 @@
+[Unit]
+Description=Pearl Greeter appearance sync socket
+
+[Socket]
+ListenStream=/run/pearl/greeter-sync.sock
+SocketMode=0666
+Accept=yes
+
+[Install]
+WantedBy=sockets.target

@@ -280,7 +280,25 @@ effect the next time the greeter starts.
 
 The action is implemented in Zig in both frontends and the packaged
 `pearl-greeter-sync` helper. Settings reads and decodes the user's image before
-authorization, resizes it to fit 3840×2160, and sends PNG bytes. The helper writes
+authorization, resizes it to fit 3840×2160, and sends PNG bytes. **Choose image
+and sync…** in the same section picks any PNG/JPEG instead of the desktop
+background and runs the identical privileged sync with it; when colors derive
+from a wallpaper, the picked image also seeds the palette.
+
+Transport: the client prefers the socket-activated root service
+(`pearl-greeter-sync.socket`, `/run/pearl/greeter-sync.sock`). Each connection
+runs `pearl-greeter-sync --service` as root; it identifies the caller with
+`SO_PEERCRED`, resolves that uid's display session through logind, and calls
+polkit `CheckAuthorization` with that session as the explicit subject — so the
+Pearl shell's registered authentication agent prompts even when the client
+process lives outside a logind session scope (user-service deployments where
+pkexec's implicit subject has no session and can never prompt). Only after
+authorization does the service read the request and apply it. When the socket
+is absent (older installs) the client falls back to `pkexec
+/usr/lib/pearl/pearl-greeter-sync --apply`, which works where the caller's
+process is inside a login session scope.
+
+The helper writes
 root-owned assets under `/etc/pearl/greeter-assets` and atomically updates only the
 appearance fields in `/etc/pearl/greeter.json`. Session choices, UWSM, authentication
 and other login settings are preserved. Solid color, gradient, cover and contain

@@ -12,6 +12,8 @@ const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
 pub const View = struct {
     button: *gtk.Button,
+    choose: *gtk.Button,
+    picker: ?*gtk.FileChooserNative = null,
     status: *gtk.Label,
     context: *anyopaque,
     get: *const fn (*anyopaque, std.mem.Allocator) anyerror!model.Preferences,
@@ -28,15 +30,21 @@ pub const View = struct {
         button.as(gtk.Widget).setHalign(.start);
         w.name(button.as(gtk.Widget), if (german) "Mit Greeter synchronisieren" else "Sync to greeter");
         box.append(button.as(gtk.Widget));
+        const choose = w.wrappingButton(if (german) "Bild auswählen und synchronisieren…" else "Choose image and sync…");
+        choose.as(gtk.Widget).setHalign(.start);
+        w.name(choose.as(gtk.Widget), if (german) "Bild auswählen und synchronisieren" else "Choose image and sync");
+        box.append(choose.as(gtk.Widget));
         const status = w.label(if (german) "Kopiert Hintergrund und Design. Erfordert Administrator-Authentifizierung." else "Copies this background and theme. Administrator authentication is required.", "pearl-secondary");
         status.setWrap(1);
         box.append(status.as(gtk.Widget));
-        self.* = .{ .button = button, .status = status, .context = context, .get = get, .german = german };
+        self.* = .{ .button = button, .choose = choose, .status = status, .context = context, .get = get, .german = german };
         if (glib.fileTest(helper(), .{ .is_executable = true }) == 0) {
             button.as(gtk.Widget).setSensitive(0);
+            choose.as(gtk.Widget).setSensitive(0);
             status.setText(if (german) "Pearl Greeter installieren, um das Erscheinungsbild zu synchronisieren." else "Install Pearl Greeter to sync its appearance.");
         }
         _ = gtk.Button.signals.clicked.connect(button, *View, clicked, self, .{});
+        _ = gtk.Button.signals.clicked.connect(choose, *View, chooseClicked, self, .{});
         return self;
     }
     pub fn destroy(self: *View) void {
@@ -44,10 +52,47 @@ pub const View = struct {
         a.destroy(self);
     }
     fn clicked(_: *gtk.Button, self: *View) callconv(.c) void {
+        self.start(null);
+    }
+    fn chooseClicked(_: *gtk.Button, self: *View) callconv(.c) void {
+        if (self.job != null or self.picker != null) return;
+        const root = self.choose.as(gtk.Widget).getRoot() orelse return;
+        const parent = object.ext.cast(gtk.Window, root) orelse return;
+        const picker = gtk.FileChooserNative.new(if (self.german) "Hintergrund für den Anmeldebildschirm" else "Login screen background", parent, .open, if (self.german) "Wählen" else "Choose", if (self.german) "Abbrechen" else "Cancel");
+        const filter = gtk.FileFilter.new();
+        filter.addMimeType("image/png");
+        filter.addMimeType("image/jpeg");
+        filter.setName(if (self.german) "Bilder" else "Images");
+        picker.as(gtk.FileChooser).setFilter(filter);
+        self.picker = picker;
+        _ = gtk.NativeDialog.signals.response.connect(picker.as(gtk.NativeDialog), *View, picked, self, .{});
+        picker.as(gtk.NativeDialog).show();
+    }
+    fn picked(_: *gtk.NativeDialog, response: c_int, self: *View) callconv(.c) void {
+        const picker = self.picker orelse return;
+        self.picker = null;
+        defer {
+            picker.as(gtk.NativeDialog).destroy();
+            picker.unref();
+        }
+        if (response != @intFromEnum(gtk.ResponseType.accept)) return;
+        const file = picker.as(gtk.FileChooser).getFile() orelse return;
+        defer file.unref();
+        const path = file.getPath() orelse return;
+        defer glib.free(path);
+        self.start(std.mem.span(path));
+    }
+    fn start(self: *View, override: ?[]const u8) void {
         if (self.job != null) return;
         const job = a.create(Job) catch return;
         job.* = .{ .owner = self, .arena = .init(a), .cancel = gio.Cancellable.new() };
         const alloc = job.arena.allocator();
+        if (override) |path| {
+            job.override = alloc.dupeZ(u8, path) catch {
+                job.destroy();
+                return;
+            };
+        }
         job.prefs = self.get(self.context, alloc) catch {
             self.status.setText(if (self.german) "Bitte zuerst die ungültigen Einstellungen korrigieren." else "Correct the invalid appearance settings before syncing.");
             job.destroy();
@@ -71,13 +116,14 @@ pub const View = struct {
                     job.prefs.theme.gtk_name = alloc.dupe(u8, std.mem.span(value)) catch "";
                 }
             }
-            if (glib.getenv("GTK_THEME")) |override| {
-                job.prefs.theme.gtk_name = alloc.dupe(u8, std.mem.span(override)) catch "";
+            if (glib.getenv("GTK_THEME")) |theme_override| {
+                job.prefs.theme.gtk_name = alloc.dupe(u8, std.mem.span(theme_override)) catch "";
                 job.gtk_dark = false; // The override includes its own optional variant.
             }
         }
         self.job = job;
         self.button.as(gtk.Widget).setSensitive(0);
+        self.choose.as(gtk.Widget).setSensitive(0);
         self.status.setText(if (self.german) "Erscheinungsbild wird synchronisiert…" else "Syncing appearance…");
         job.timer = glib.timeoutAdd(180000, Job.timedOut, job);
         const task = gio.Task.new(null, job.cancel, Job.completed, job);
@@ -91,6 +137,47 @@ pub const View = struct {
 fn helper() [*:0]const u8 {
     if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_GREETER_SYNC")) |value| return value;
     return "/usr/lib/pearl/pearl-greeter-sync";
+}
+const socket_path = "/run/pearl/greeter-sync.sock";
+const SocketResult = enum { ok, denied, failed, system_theme };
+const SocketAddress = extern struct { family: u16, path: [108]u8 };
+/// null means no service socket: the caller falls back to pkexec.
+fn socketSync(input: [:0]u8) ?SocketResult {
+    const fd = std.c.socket(std.os.linux.AF.UNIX, std.os.linux.SOCK.STREAM, 0);
+    if (fd < 0) return null;
+    defer _ = std.c.close(fd);
+    var addr = SocketAddress{ .family = std.os.linux.AF.UNIX, .path = undefined };
+    @memset(&addr.path, 0);
+    @memcpy(addr.path[0..socket_path.len], socket_path);
+    const rc = std.c.connect(fd, @ptrCast(&addr), @sizeOf(SocketAddress));
+    if (rc < 0) return null;
+    var offset: usize = 0;
+    while (offset < input.len) {
+        const n = std.c.write(fd, input.ptr + offset, input.len - offset);
+        if (n < 0) {
+            if (std.posix.errno(n) == .INTR) continue;
+            return .failed;
+        }
+        offset += @intCast(n);
+    }
+    var line: [256]u8 = undefined;
+    var used: usize = 0;
+    while (used < line.len) {
+        var one: [1]u8 = undefined;
+        const n = std.c.read(fd, &one, 1);
+        if (n < 0) {
+            if (std.posix.errno(n) == .INTR) continue;
+            return .failed;
+        }
+        if (n == 0 or one[0] == '\n') break;
+        line[used] = one[0];
+        used += 1;
+    }
+    const text = std.mem.trim(u8, line[0..used], " \r");
+    if (std.mem.eql(u8, text, "ok")) return .ok;
+    if (std.mem.eql(u8, text, "denied")) return .denied;
+    if (std.mem.eql(u8, text, "SystemThemeRequired")) return .system_theme;
+    return .failed;
 }
 fn readWallpaper(alloc: std.mem.Allocator, path: []const u8) ![]u8 {
     const z = try alloc.dupeZ(u8, path);
@@ -106,6 +193,7 @@ const Job = struct {
     arena: std.heap.ArenaAllocator,
     cancel: *gio.Cancellable,
     prefs: model.Preferences = .{},
+    override: ?[:0]u8 = null,
     timer: c_uint = 0,
     err: ?anyerror = null,
     denied: bool = false,
@@ -148,11 +236,12 @@ const Job = struct {
             source.theme.seed = prefs.matugen.colors.seed;
         }
         const palette_wanted = request.theme != .gtk and prefs.matugen.enabled and (!follow or prefs.theme.mode == .dynamic);
-        const wants_image = prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain;
+        const wants_image = self.override != null or prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain;
+        const wallpaper_path: []const u8 = self.override orelse prefs.wallpaper.path;
         var wallpaper_bytes: ?[]u8 = null;
         defer if (wallpaper_bytes) |bytes| a.free(bytes);
         if (wants_image or (palette_wanted and source.theme.source == .wallpaper)) {
-            wallpaper_bytes = readWallpaper(alloc, prefs.wallpaper.path) catch |err| blk: {
+            wallpaper_bytes = readWallpaper(alloc, wallpaper_path) catch |err| blk: {
                 if (wants_image) return err;
                 break :blk null;
             };
@@ -197,9 +286,26 @@ const Job = struct {
         if (self.cancel.isCancelled() != 0) return error.Cancelled;
         const json = try std.json.Stringify.valueAlloc(alloc, request, .{});
         const input = try alloc.dupeZ(u8, json);
+        const test_bypass = @import("build_options").test_hooks and glib.getenv("PEARL_TEST_GREETER_SYNC") != null;
+        // Prefer the socket-activated root service: it authorizes against the
+        // caller's login session, which pkexec cannot resolve when Pearl runs
+        // outside a logind session scope.
+        if (!test_bypass) {
+            if (socketSync(input)) |result| {
+                switch (result) {
+                    .ok => return,
+                    .denied => {
+                        self.denied = true;
+                        return;
+                    },
+                    .system_theme => return error.SystemThemeRequired,
+                    .failed => return error.SyncFailed,
+                }
+            }
+        }
         var args = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", helper(), "--apply" };
         var start: usize = 0;
-        if (@import("build_options").test_hooks and glib.getenv("PEARL_TEST_GREETER_SYNC") != null) start = 1;
+        if (test_bypass) start = 1;
         const process = gio.Subprocess.newv(@ptrCast(args[start..].ptr), .{ .stdin_pipe = true, .stdout_silence = true, .stderr_pipe = true }, null) orelse return error.HelperUnavailable;
         defer process.unref();
         var stderr: [*:0]u8 = undefined;
@@ -225,6 +331,7 @@ const Job = struct {
         if (self.owner) |owner| {
             owner.job = null;
             owner.button.as(gtk.Widget).setSensitive(1);
+            owner.choose.as(gtk.Widget).setSensitive(1);
             const message: [:0]const u8 = if (self.denied)
                 (if (owner.german) "Synchronisierung nicht autorisiert." else "Sync cancelled or not authorized.")
             else if (self.err) |err| switch (err) {
