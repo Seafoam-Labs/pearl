@@ -92,6 +92,15 @@ fn helper() [*:0]const u8 {
     if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_GREETER_SYNC")) |value| return value;
     return "/usr/lib/pearl/pearl-greeter-sync";
 }
+fn readWallpaper(alloc: std.mem.Allocator, path: []const u8) ![]u8 {
+    const z = try alloc.dupeZ(u8, path);
+    const fd = std.c.open(z, .{ .ACCMODE = .RDONLY, .NONBLOCK = true, .CLOEXEC = true }, @as(c_uint, 0));
+    if (fd < 0) return error.ImageUnavailable;
+    defer _ = std.c.close(fd);
+    var stat: std.os.linux.Statx = undefined;
+    if (std.os.linux.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .TYPE = true }, &stat) != 0 or !std.c.S.ISREG(stat.mode)) return error.InvalidImage;
+    return writer.read(fd, writer.max_image);
+}
 const Job = struct {
     owner: ?*View,
     arena: std.heap.ArenaAllocator,
@@ -132,15 +141,24 @@ const Job = struct {
         if (request.gtk_theme) |name| {
             if (self.gtk_dark) request.gtk_theme = try std.fmt.allocPrint(alloc, "{s}:dark", .{name});
         }
-        if (prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain) {
-            const path = try alloc.dupeZ(u8, prefs.wallpaper.path);
-            const fd = std.c.open(path, .{ .ACCMODE = .RDONLY, .NONBLOCK = true, .CLOEXEC = true }, @as(c_uint, 0));
-            if (fd < 0) return error.ImageUnavailable;
-            defer _ = std.c.close(fd);
-            var stat: std.os.linux.Statx = undefined;
-            if (std.os.linux.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .TYPE = true }, &stat) != 0 or !std.c.S.ISREG(stat.mode)) return error.InvalidImage;
-            const bytes = try writer.read(fd, writer.max_image);
-            defer a.free(bytes);
+        const follow = prefs.matugen.colors.source == .follow_pearl;
+        var source = prefs;
+        if (!follow) {
+            source.theme.source = if (prefs.matugen.colors.source == .seed) .seed else .wallpaper;
+            source.theme.seed = prefs.matugen.colors.seed;
+        }
+        const palette_wanted = request.theme != .gtk and prefs.matugen.enabled and (!follow or prefs.theme.mode == .dynamic);
+        const wants_image = prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain;
+        var wallpaper_bytes: ?[]u8 = null;
+        defer if (wallpaper_bytes) |bytes| a.free(bytes);
+        if (wants_image or (palette_wanted and source.theme.source == .wallpaper)) {
+            wallpaper_bytes = readWallpaper(alloc, prefs.wallpaper.path) catch |err| blk: {
+                if (wants_image) return err;
+                break :blk null;
+            };
+        }
+        if (wants_image) {
+            const bytes = wallpaper_bytes orelse return error.ImageUnavailable;
             if (!@import("../services/artwork.zig").dimensionsWithin(bytes, 16384, 64 * 1024 * 1024)) return error.InvalidImage;
             const storage = glib.Bytes.new(bytes.ptr, bytes.len);
             defer storage.unref();
@@ -155,6 +173,26 @@ const Job = struct {
             if (png_len > writer.max_image) return error.TooLarge;
             const encoded = try alloc.alloc(u8, std.base64.standard.Encoder.calcSize(png_len));
             request.image = std.base64.standard.Encoder.encode(encoded, png[0..png_len]);
+        }
+        if (palette_wanted) {
+            // Reuse the shell's matugen cache; the greeter never runs matugen.
+            const cache = try std.fmt.allocPrintSentinel(alloc, "{s}/pearl/matugen", .{std.mem.span(glib.getUserCacheDir())}, 0);
+            @import("../config/io.zig").mkdir(cache) catch {};
+            var hit = false;
+            if (@import("../theme/generator.zig").full(alloc, source, wallpaper_bytes, cache, self.cancel, &hit)) |render| {
+                const theme_mod = @import("../theme/theme.zig");
+                // Ship only JSON the greeter can expand for both variants.
+                if (theme_mod.matugenPalette(alloc, render.json, "dark")) |dark| {
+                    if (theme_mod.validate(dark)) |_| {
+                        if (theme_mod.matugenPalette(alloc, render.json, "light")) |light| {
+                            if (theme_mod.validate(light)) |_| {
+                                const encoded = try alloc.alloc(u8, std.base64.standard.Encoder.calcSize(render.json.len));
+                                request.palette = std.base64.standard.Encoder.encode(encoded, render.json);
+                            } else |_| {}
+                        } else |_| {}
+                    } else |_| {}
+                } else |_| {}
+            } else |_| {}
         }
         if (self.cancel.isCancelled() != 0) return error.Cancelled;
         const json = try std.json.Stringify.valueAlloc(alloc, request, .{});

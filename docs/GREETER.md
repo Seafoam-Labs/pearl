@@ -288,7 +288,12 @@ background modes are supported; returning to solid or gradient clears the old
 wallpaper reference.
 
 GTK themes must be installed system-wide; personal theme directories are not
-copied. Dynamic themes use the selected static Material light/dark variant.
+copied. When dynamic colors are enabled, the sync also ships the shell's matugen
+palette: the helper stores it as `greeter-assets/palette.json`, and the greeter
+expands its stylesheet from it after validating both variants' contrast, falling
+back to the stock Material palettes when the sidecar is absent or invalid. A sync
+without dynamic colors retires a published palette. The greeter never runs matugen
+and never rotates wallpapers: the synced image is static until the next sync.
 The button is disabled when the greeter helper is absent. The greeter package
 includes the helper, polkit dependency and authorization policy.
 

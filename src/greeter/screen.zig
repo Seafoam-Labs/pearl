@@ -917,6 +917,21 @@ const Screen = struct {
         self.tick_source = glib.timeoutAddSeconds(if (now) |n| @intCast(60 - n.getSecond()) else 60, tick, self);
     }
 };
+/// Palette published by the privileged appearance sync next to greeter.json.
+/// Absent, stale or low-contrast input keeps the stock Material palettes.
+fn paletteCss(alloc: std.mem.Allocator) ?[:0]u8 {
+    const theme_mod = @import("../theme/theme.zig");
+    const dir = std.fs.path.dirname(cfg.path()) orelse return null;
+    const path = std.fmt.allocPrintSentinel(alloc, "{s}/greeter-assets/palette.json", .{dir}, 0) catch return null;
+    defer alloc.free(path);
+    const json = trusted.read(alloc, path, 131072) catch return null;
+    defer alloc.free(json);
+    const dark = theme_mod.matugenPalette(alloc, json, "dark") catch return null;
+    theme_mod.validate(dark) catch return null;
+    const light = theme_mod.matugenPalette(alloc, json, "light") catch return null;
+    theme_mod.validate(light) catch return null;
+    return theme_mod.cssPalettes(alloc, @embedFile("greeter_style"), dark, light) catch null;
+}
 pub fn run() !void {
     const parsed = try cfg.load(a);
     const config = parsed.value;
@@ -953,10 +968,12 @@ pub fn run() !void {
     };
     const provider = gtk.CssProvider.new();
     if (config.theme != .gtk) {
-        const style = try @import("../theme/theme.zig").css(a, @embedFile("greeter_style"));
+        const custom = paletteCss(a);
+        const style = custom orelse try @import("../theme/theme.zig").css(a, @embedFile("greeter_style"));
         defer a.free(style);
         provider.loadFromString(style);
         gtk.StyleContext.addProviderForDisplay(display, provider.as(gtk.StyleProvider), 600);
+        if (options.test_hooks) log.info("event=greeter-palette custom={}", .{custom != null});
     }
     const sizing = gtk.CssProvider.new();
     const background_css = if (config.wallpaper_color) |color| try std.fmt.allocPrintSentinel(a, ".pearl-lock.pearl-wallpaper {{ background: {s}; background-image: none; }}", .{color}, 0) else try a.dupeZ(u8, "");

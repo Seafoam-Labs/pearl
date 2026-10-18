@@ -3,16 +3,19 @@ const std = @import("std");
 const glib = @import("glib2");
 const cfg = @import("config.zig");
 const trusted = @import("trusted.zig");
+const theme = @import("../theme/theme.zig");
 const a = std.heap.c_allocator;
 extern "c" fn flock(c_int, c_int) c_int;
 pub const max_image = 16 * 1024 * 1024;
 pub const max_request = 23 * 1024 * 1024;
+pub const max_palette = 131072;
 pub const Request = struct {
     theme: @FieldType(cfg.Config, "theme"),
     gtk_theme: ?[]const u8 = null,
     wallpaper_fit: @FieldType(cfg.Config, "wallpaper_fit") = .cover,
     wallpaper_color: ?[]const u8 = null,
     image: ?[]const u8 = null,
+    palette: ?[]const u8 = null,
 };
 pub fn read(fd: c_int, limit: usize) ![]u8 {
     var bytes: std.ArrayList(u8) = .empty;
@@ -61,6 +64,18 @@ pub fn apply(directory: []const u8, bytes: []const u8) !void {
         try std.base64.standard.Decoder.decode(image.?, encoded);
         if (!std.mem.startsWith(u8, image.?, "\x89PNG\r\n\x1a\n") or !@import("../services/artwork.zig").dimensions(image.?)) return error.InvalidImage;
     }
+    var palette: ?[]u8 = null;
+    defer if (palette) |data| a.free(data);
+    if (request.palette) |encoded| {
+        const length = try std.base64.standard.Decoder.calcSizeForSlice(encoded);
+        if (length > max_palette) return error.TooLarge;
+        palette = try a.alloc(u8, length);
+        try std.base64.standard.Decoder.decode(palette.?, encoded);
+        // The greeter expands both variants; reject anything it would drop.
+        for ([_][]const u8{ "dark", "light" }) |variant| {
+            try theme.validate(try theme.matugenPalette(a, palette.?, variant));
+        }
+    }
     const dir = try trusted.open(directory, true);
     defer _ = std.c.close(dir);
     const lock = std.c.openat(dir, ".greeter-appearance.lock", .{ .ACCMODE = .RDWR, .CREAT = true, .NOFOLLOW = true, .CLOEXEC = true }, @as(c_uint, 0o600));
@@ -82,12 +97,14 @@ pub fn apply(directory: []const u8, bytes: []const u8) !void {
     try map.put(alloc, "gtk_theme", if (request.gtk_theme) |name| .{ .string = name } else .null);
     try map.put(alloc, "wallpaper_fit", .{ .string = @tagName(request.wallpaper_fit) });
     try map.put(alloc, "wallpaper_color", if (request.wallpaper_color) |color| .{ .string = color } else .null);
+    const assets_path = try std.fmt.allocPrint(a, "{s}/greeter-assets", .{directory});
+    defer a.free(assets_path);
+    if (image != null or palette != null) {
+        if (std.c.mkdirat(dir, "greeter-assets", 0o755) != 0 and std.posix.errno(-1) != .EXIST) return error.WriteFailed;
+    }
     var image_path: ?[]u8 = null;
     defer if (image_path) |value| a.free(value);
     if (image) |data| {
-        const assets_path = try std.fmt.allocPrint(a, "{s}/greeter-assets", .{directory});
-        defer a.free(assets_path);
-        if (std.c.mkdirat(dir, "greeter-assets", 0o755) != 0 and std.posix.errno(-1) != .EXIST) return error.WriteFailed;
         const assets = try trusted.open(assets_path, true);
         defer _ = std.c.close(assets);
         var digest: [32]u8 = undefined;
@@ -98,6 +115,15 @@ pub fn apply(directory: []const u8, bytes: []const u8) !void {
         try atomicWrite(assets, name, data);
         image_path = try std.fmt.allocPrint(a, "{s}/{s}", .{ assets_path, name });
     }
+    if (palette) |data| {
+        const assets = try trusted.open(assets_path, true);
+        defer _ = std.c.close(assets);
+        try atomicWrite(assets, "palette.json", data);
+    } else if (trusted.open(assets_path, true)) |assets| {
+        // A sync without dynamic colors retires a previously published palette.
+        defer _ = std.c.close(assets);
+        _ = std.c.unlinkat(assets, "palette.json", 0);
+    } else |_| {}
     try map.put(alloc, "wallpaper", if (image_path) |value| .{ .string = value } else .null);
     const updated = try std.json.Stringify.valueAlloc(a, document.value, .{ .whitespace = .indent_2 });
     defer a.free(updated);
