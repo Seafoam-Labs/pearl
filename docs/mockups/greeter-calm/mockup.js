@@ -10,6 +10,7 @@ const sessionOptions = [...$('sessions').querySelectorAll('[role=option]')];
 function status(text, error = false) {
   $('status').textContent = text;
   $('status').classList.toggle('error', error);
+  $('status').style.opacity = text ? '1' : '0';
 }
 function closeMenus() {
   for (const [menu, button] of [[ $('accounts'), $('title-menu') ], [ $('sessions'), $('session-chip') ]]) {

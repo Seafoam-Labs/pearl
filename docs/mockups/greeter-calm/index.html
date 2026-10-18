@@ -29,6 +29,7 @@
       <div class="clock">10:41</div>
     </div>
     <div class="login-column">
+      <div class="float-slot" aria-hidden="true"></div>
       <form id="login" class="card" autocomplete="off">
         <span class="avatar" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="6"/><path d="M5 27c0-7 4.5-10.5 11-10.5S27 20 27 27v1H5z"/></svg></span>
         <h1 id="title-plain" class="title">zoey</h1>
@@ -55,10 +56,12 @@
         <label id="username-field" class="field" hidden><span class="field-label">Username</span><input id="username" class="input" type="text" placeholder="Username" autocapitalize="none" spellcheck="false" maxlength="256"></label>
         <label class="field"><span id="password-label" class="field-label" hidden>Password</span><input id="password" class="input" type="password" placeholder="Password" autocomplete="off" aria-label="Password" aria-describedby="status caps"></label>
         <p id="caps" class="caps" hidden>Caps Lock is on</p>
-        <p id="status" class="status" role="status" aria-live="polite"></p>
         <button id="submit" class="primary" type="submit">Sign in</button>
-        <button id="cancel" class="cancel" type="button" hidden>Cancel authentication</button>
       </form>
+      <div class="float-slot float-zone">
+        <p id="status" class="status float-status" role="status" aria-live="polite"></p>
+        <button id="cancel" class="cancel float-cancel" type="button" hidden>Cancel authentication</button>
+      </div>
     </div>
 
     <div class="cluster">
@@ -89,7 +92,7 @@
 
   <section class="sheet">
     <h2>Card states</h2>
-    <p class="sheet-note">The center column holds only identity, the secret, and the action; the status line exists only when there is something to say — errors, prompts, transient notices — so the card stays tight at rest. Choosers appear only when there is a choice; the refresh control lives inside the session menu.</p>
+    <p class="sheet-note">The center column holds only identity, the secret, and the action, and never changes size: status and cancel float in a reserved invisible slot below the card, fading in only when there is something to say. Choosers appear only when there is a choice; the refresh control lives inside the session menu.</p>
     <div class="states">
       <figure class="state">
         <div class="card mini">
@@ -128,11 +131,13 @@
           <h1 class="title">zoey</h1>
           <p class="caption">Pearl (Aqueous) · Wayland</p>
           <div class="field"><span class="field-label">Verification code</span><input class="input" type="text" placeholder="Verification code" tabindex="-1"></div>
-          <p class="status">Enter the verification code from your authenticator.</p>
           <button class="primary" type="button" tabindex="-1">Continue</button>
-          <button class="cancel" type="button" tabindex="-1">Cancel authentication</button>
         </div>
-        <figcaption>Mid-attempt: a prompt label appears above the entry; cancel exists only while busy.</figcaption>
+        <div class="float-slot float-zone mini-zone">
+          <p class="status float-status shown">Enter the verification code from your authenticator.</p>
+          <button class="cancel float-cancel" type="button" tabindex="-1">Cancel authentication</button>
+        </div>
+        <figcaption>Mid-attempt: a prompt label appears above the entry; status and cancel float below the card while busy.</figcaption>
       </figure>
     </div>
   </section>

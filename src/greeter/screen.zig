@@ -92,6 +92,7 @@ const Screen = struct {
     auth_error: bool = false,
     service_error: bool = false,
     selection_error: bool = false,
+    auto_cancel: bool = false,
     high_contrast: bool = false,
     reduced_motion: bool = true,
     status: u8 = 1,
@@ -104,8 +105,8 @@ const Screen = struct {
     fn setMessage(self: *Screen, text: [*:0]const u8) void {
         if (!std.mem.eql(u8, std.mem.span(self.message.getText()), std.mem.span(text))) self.message.as(gtk.Accessible).announce(text, .medium);
         self.message.setText(text);
-        // The status line exists only while it has something to say.
-        self.message.as(gtk.Widget).setVisible(@intFromBool(std.mem.span(text).len > 0));
+        // The float slot keeps its size; only the ink fades in and out.
+        self.message.as(gtk.Widget).setOpacity(if (std.mem.span(text).len > 0) 1 else 0);
     }
     fn passiveMessage(self: *Screen) void {
         const text = self.client.history.latest() orelse return;
@@ -160,6 +161,7 @@ const Screen = struct {
         if (options.test_hooks) log.info("event=greeter-state state={s}", .{@tagName(c.state)});
         switch (c.state) {
             .idle => {
+                self.auto_cancel = false;
                 self.setMessage(if (self.client.timed_out) "Authentication timed out. Try again." else if (self.selection_error) "The selected desktop changed. Refresh and choose it again." else if (self.auth_error) "Authentication failed. Try again." else if (self.service_error) "Login service rejected the request. Try again later." else "");
                 if (self.confirmed_power) self.performPower();
             },
@@ -183,7 +185,7 @@ const Screen = struct {
                     }
                 }
             },
-            .cancelling => self.setMessage("Cancelling authentication…"),
+            .cancelling => if (!self.auto_cancel) self.setMessage("Cancelling authentication…"),
             .authenticated => {
                 self.setMessage("Checking selected desktop…");
                 self.refresh(.start);
@@ -199,6 +201,9 @@ const Screen = struct {
                 self.auth_error = self.client.response.authentication_error;
                 self.service_error = !self.auth_error;
                 self.setMessage(if (self.client.response.authentication_error) "Authentication failed. Try again." else "Login service rejected the request.");
+                // Recovery cancel: keep the failure message on screen instead
+                // of flashing a cancelling state the user never initiated.
+                self.auto_cancel = true;
                 self.client.cancel() catch self.loop.quit();
             },
             .unavailable => {
@@ -235,8 +240,11 @@ const Screen = struct {
         self.entry_label.as(gtk.Widget).setVisible(@intFromBool(secret));
         self.password_hint.as(gtk.Widget).setVisible(@intFromBool(c.state == .idle and !self.config.password_first));
         w.name(self.entry.as(gtk.Widget), if (secret) self.client.response.z() else "Password");
-        self.button.setLabel(if (secret) "Continue" else "Sign in");
-        self.button.as(gtk.Widget).setVisible(@intFromBool(c.state == .idle or secret));
+        self.button.setLabel(if (secret) "Continue" else if (c.state == .idle) "Sign in" else "Signing in…");
+        // The primary action stays put through an attempt; only passive
+        // prompt exchanges (which the suites assert on) hide it.
+        const passive_busy = c.state == .authenticating and (c.kind == .info or c.kind == .@"error") and self.client.history.latest() != null;
+        self.button.as(gtk.Widget).setVisible(@intFromBool(c.state == .idle or secret or c.state == .connecting or c.state == .cancelling or c.state == .failed or (c.state == .authenticating and !passive_busy)));
         self.updateReadiness();
         self.cancel_button.as(gtk.Widget).setVisible(@intFromBool(c.state != .idle or self.job != null));
         self.cancel_button.as(gtk.Widget).setSensitive(@intFromBool((c.state != .idle or self.job != null) and c.state != .cancelling and !c.start_submitted));
@@ -955,9 +963,9 @@ pub fn run() !void {
     defer a.free(background_css);
     // The greeter's spacing rhythm and drop shadows. Box spacing is zero;
     // every gap is an explicit margin so hidden rows collapse cleanly.
-    const greeter_css = ".pearl-greeter .pearl-greeter-clockbox {margin-top:56px;} " ++
-        ".pearl-greeter .pearl-lock-date {font-size:1.2em; font-weight:600; margin-bottom:6px; text-shadow:0 1px 14px rgb(0 0 0 / 30%);} " ++
-        ".pearl-greeter .pearl-lock-clock {font-size:4.9em; font-weight:700; letter-spacing:-0.02em; text-shadow:0 2px 22px rgb(0 0 0 / 28%);} " ++
+    const greeter_css = ".pearl-greeter .pearl-greeter-clockbox {margin-top:72px;} " ++
+        ".pearl-greeter .pearl-lock-date {font-size:1.3em; font-weight:600; margin-bottom:6px; text-shadow:0 1px 14px rgb(0 0 0 / 30%);} " ++
+        ".pearl-greeter .pearl-lock-clock {font-size:5.4em; font-weight:700; letter-spacing:-0.02em; text-shadow:0 2px 22px rgb(0 0 0 / 28%);} " ++
         ".pearl-greeter .pearl-greeter-clockbox.pearl-large {font-size:1.33em;} " ++
         ".pearl-greeter .pearl-lock-card {box-shadow:0 16px 52px rgb(0 0 0 / 10%);} " ++
         ".pearl-greeter .pearl-cluster {box-shadow:0 10px 30px rgb(0 0 0 / 30%);} " ++
@@ -969,8 +977,12 @@ pub fn run() !void {
         ".pearl-greeter .pearl-hint {margin-top:8px;} " ++
         ".pearl-greeter .pearl-caps {margin-top:-4px; margin-bottom:14px;} " ++
         ".pearl-greeter .pearl-status {margin-bottom:20px;} " ++
-        ".pearl-greeter .pearl-cancel {margin-top:14px;} " ++
-        ".pearl-greeter.pearl-lock-small .pearl-greeter-clockbox {margin-top:28px;} " ++
+        ".pearl-greeter .pearl-float-slot {min-height:64px;} " ++
+        ".pearl-greeter .pearl-float-status {color:#fff; text-shadow:0 1px 10px rgb(0 0 0 / 45%); transition:opacity 150ms linear;} " ++
+        ".pearl-greeter.pearl-light .pearl-float-status {color:#241d33; text-shadow:0 1px 10px rgb(255 255 255 / 55%);} " ++
+        ".pearl-greeter .pearl-float-cancel {background:rgb(0 0 0 / 35%); color:#fff; border-radius:999px; padding:8px 18px;} " ++
+        ".pearl-greeter.pearl-light .pearl-float-cancel {background:rgb(255 255 255 / 55%); color:#241d33;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-greeter-clockbox {margin-top:36px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-lock-clock {font-size:3em;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-lock-card {padding:22px 24px 24px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-avatar-circle {margin-bottom:12px;} " ++
@@ -979,13 +991,13 @@ pub fn run() !void {
         ".pearl-greeter.pearl-lock-small .pearl-field {margin-bottom:16px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-field-label {margin-bottom:8px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-status {margin-bottom:14px;} " ++
-        ".pearl-greeter.pearl-lock-small .pearl-cancel {margin-top:10px;}";
+        ".pearl-greeter.pearl-lock-small .pearl-float-slot {min-height:58px;}";
     const css = try std.fmt.allocPrintSentinel(a, "{s} .pearl-root {{font-size:{d}px;}} .pearl-greeter-form {{margin: 24px;}} .pearl-lock-card button, .pearl-lock-card entry {{min-height:26px; padding:8px 12px;}} .pearl-lock-card {{padding:30px 32px 32px;}} .pearl-lock-small .pearl-greeter-form {{margin-top:24px;}} .pearl-lock .pearl-large {{font-size:24px;}} .pearl-native .pearl-lock-card {{background:@theme_bg_color; color:@theme_fg_color;}} .pearl-lock dropdown {{min-width:0;}} .pearl-reduced * {{transition:none; animation:none;}} {s} {s}", .{ presentation.css, config.font_size, background_css, greeter_css }, 0);
     defer a.free(css);
     sizing.loadFromString(css);
     gtk.StyleContext.addProviderForDisplay(display, sizing.as(gtk.StyleProvider), 601);
     const contrast_style = gtk.CssProvider.new();
-    contrast_style.loadFromString(".pearl-greeter-contrast, .pearl-greeter-contrast .pearl-greeter-form, .pearl-greeter-contrast .pearl-lock-card {background: #000; background-image: none; color: #fff;} .pearl-greeter-contrast label {color: #fff; opacity: 1;} .pearl-greeter-contrast button, .pearl-greeter-contrast entry, .pearl-greeter-contrast check {background: #000; background-image: none; color: #fff; border: 2px solid #fff; box-shadow: none;} .pearl-greeter-contrast .pearl-cluster {background: #000; border-color: #fff;} .pearl-greeter-contrast .pearl-cluster button:checked {background: #fff; color: #000;} .pearl-greeter-contrast :focus-visible {outline: 3px solid #ffff00; outline-offset: 3px;} .pearl-greeter-contrast :disabled {border-style: dashed; opacity: 0.7;} .pearl-greeter-contrast .pearl-lock-card, .pearl-greeter-contrast .pearl-cluster {box-shadow: none;} .pearl-greeter-contrast .pearl-lock-clock, .pearl-greeter-contrast .pearl-lock-date {text-shadow: none;}");
+    contrast_style.loadFromString(".pearl-greeter-contrast, .pearl-greeter-contrast .pearl-greeter-form, .pearl-greeter-contrast .pearl-lock-card {background: #000; background-image: none; color: #fff;} .pearl-greeter-contrast label {color: #fff; opacity: 1;} .pearl-greeter-contrast button, .pearl-greeter-contrast entry, .pearl-greeter-contrast check {background: #000; background-image: none; color: #fff; border: 2px solid #fff; box-shadow: none;} .pearl-greeter-contrast .pearl-cluster {background: #000; border-color: #fff;} .pearl-greeter-contrast .pearl-cluster button:checked {background: #fff; color: #000;} .pearl-greeter-contrast :focus-visible {outline: 3px solid #ffff00; outline-offset: 3px;} .pearl-greeter-contrast :disabled {border-style: dashed; opacity: 0.7;} .pearl-greeter-contrast .pearl-lock-card, .pearl-greeter-contrast .pearl-cluster {box-shadow: none;} .pearl-greeter-contrast .pearl-lock-clock, .pearl-greeter-contrast .pearl-lock-date {text-shadow: none;} .pearl-greeter-contrast .pearl-float-status {text-shadow: none;}");
     gtk.StyleContext.addProviderForDisplay(display, contrast_style.as(gtk.StyleProvider), 602);
     const column = w.column(16);
     _ = column.as(object.Object).refSink();
@@ -1008,6 +1020,11 @@ pub fn run() !void {
     panel.setSpacing(0);
     panel.as(gtk.Widget).addCssClass("pearl-lock-card");
     panel.as(gtk.Widget).setSizeRequest(220, -1);
+    // Invisible twin slots above and below the card: the float zone keeps a
+    // constant height, so the card stays centered and never resizes mid-attempt.
+    const float_top = w.column(0);
+    float_top.as(gtk.Widget).addCssClass("pearl-float-slot");
+    column.append(float_top.as(gtk.Widget));
     column.append(panel.as(gtk.Widget));
     const avatar = gtk.Image.newFromIconName("avatar-default-symbolic");
     avatar.setPixelSize(28);
@@ -1080,9 +1097,9 @@ pub fn run() !void {
     caps.as(gtk.Widget).setVisible(0);
     panel.append(caps.as(gtk.Widget));
     const message = w.label("Loading installed desktops…", "pearl-secondary");
-    message.as(gtk.Widget).addCssClass("pearl-status");
-    message.setMaxWidthChars(36);
-    panel.append(message.as(gtk.Widget));
+    message.as(gtk.Widget).addCssClass("pearl-float-status");
+    message.setXalign(0.5);
+    message.setMaxWidthChars(44);
     if (config.fingerprint_hint) {
         const hint = w.label("Fingerprint login is available when configured", "pearl-secondary");
         hint.as(gtk.Widget).addCssClass("pearl-status");
@@ -1094,8 +1111,13 @@ pub fn run() !void {
     button.as(gtk.Widget).addCssClass("pearl-primary");
     panel.append(button.as(gtk.Widget));
     const cancel = gtk.Button.newWithLabel("Cancel authentication");
-    cancel.as(gtk.Widget).addCssClass("pearl-cancel");
-    panel.append(cancel.as(gtk.Widget));
+    cancel.as(gtk.Widget).addCssClass("pearl-float-cancel");
+    cancel.as(gtk.Widget).setHalign(.center);
+    const floatbox = w.column(6);
+    floatbox.as(gtk.Widget).addCssClass("pearl-float-slot");
+    floatbox.append(message.as(gtk.Widget));
+    floatbox.append(cancel.as(gtk.Widget));
+    column.append(floatbox.as(gtk.Widget));
     const cluster = w.row(2);
     _ = cluster.as(object.Object).refSink();
     cluster.as(gtk.Widget).addCssClass("pearl-cluster");

@@ -3,9 +3,9 @@
 .review-bar{padding:16px 24px;display:flex;gap:16px;justify-content:space-between;align-items:center;background:#15131a;border-bottom:1px solid #39333f;color:#e6e0e9;font-size:13px}.review-bar strong{display:block;font-size:16px;letter-spacing:.02em}.review-caption{color:#bdb6c8}.review-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.review-controls label{display:flex;align-items:center;gap:7px}.review-controls select,.review-controls button{font-size:12px;background:#2b2733;border:1px solid #514959;border-radius:8px;padding:7px 10px;color:#e6e0e9}
 .desktop{position:relative;height:clamp(600px,calc(100vh - 81px),880px);display:flex;align-items:center;justify-content:center;padding:28px 20px 34px;background:linear-gradient(125deg,var(--bg-start) 0%,#2d2245 48%,var(--bg-end) 100%);overflow:hidden}
 .login-column{width:360px;max-width:100%}
-.clockblock{position:absolute;top:clamp(28px,6%,56px);left:0;right:0;text-align:center;pointer-events:none}
-.date{margin:0 0 6px;font-size:19px;font-weight:600;text-shadow:0 1px 14px rgb(0 0 0 / 30%)}
-.clock{font-size:78px;font-weight:700;line-height:1.05;letter-spacing:-2px;text-shadow:0 2px 22px rgb(0 0 0 / 28%)}
+.clockblock{position:absolute;top:clamp(36px,7%,72px);left:0;right:0;text-align:center;pointer-events:none}
+.date{margin:0 0 6px;font-size:21px;font-weight:600;text-shadow:0 1px 14px rgb(0 0 0 / 30%)}
+.clock{font-size:86px;font-weight:700;line-height:1.05;letter-spacing:-2px;text-shadow:0 2px 22px rgb(0 0 0 / 28%)}
 .card{background:var(--surface);padding:30px 32px 32px;border-radius:28px;border:1px solid rgb(255 255 255 / 4%);box-shadow:0 16px 52px rgb(0 0 0 / 10%)}
 .avatar{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 18px;border-radius:50%;background:var(--avatar-bg);color:var(--avatar-fg)}.avatar svg{width:28px;height:28px;fill:currentColor;stroke:none}
 .title{font-size:26px;font-weight:600;letter-spacing:-.5px;line-height:1.25;margin:0 0 10px;text-align:center;color:var(--text)}
@@ -23,11 +23,23 @@
 .input{width:100%;min-width:0;height:48px;background:var(--field);border:1px solid transparent;border-radius:999px;padding:0 18px;font-size:15px}
 .input::placeholder{color:var(--muted);opacity:.7}
 .caps{color:var(--error);font-size:13px;margin:-4px 0 14px;text-align:center}
-.status{font-size:14px;color:var(--muted);margin:0 0 20px;text-align:center}
-.status:empty{display:none}
+.status{font-size:14px;color:var(--muted);margin:0;text-align:center}
 .status.error{color:var(--error)}
+.float-slot{min-height:64px}
+.float-zone{display:flex;flex-direction:column;align-items:center;gap:6px}
+.float-status{opacity:0;transition:opacity .15s linear;color:#fff;text-shadow:0 1px 10px rgb(0 0 0 / 45%)}
+.float-status.shown{opacity:1}
+.light .float-status{color:#241d33;text-shadow:0 1px 10px rgb(255 255 255 / 55%)}
 .primary{width:100%;min-height:46px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:500}
-.cancel{width:100%;min-height:38px;border-radius:999px;background:transparent;color:var(--muted);margin-top:14px;font-size:13px}.cancel:hover{background:var(--field);color:var(--text)}
+.float-cancel{width:auto;min-height:38px;border-radius:999px;background:rgb(0 0 0 / 35%);color:#fff;padding:8px 18px;font-size:13px}
+.float-cancel:hover{background:rgb(0 0 0 / 50%);color:#fff}
+.light .float-cancel{background:rgb(255 255 255 / 55%);color:#241d33}
+.light .float-cancel:hover{background:rgb(255 255 255 / 70%);color:#241d33}
+.mini-zone{min-height:56px}
+.mini-zone .status{font-size:12.5px}
+.mini-zone .float-cancel{min-height:32px;font-size:12px;padding:6px 14px}
+.contrast .float-status{text-shadow:none;color:#fff}
+.contrast .float-cancel{background:#000;border:2px solid #fff}
 .cluster{position:absolute;right:28px;bottom:24px;display:flex;align-items:center;gap:2px;padding:6px;background:var(--cluster-bg);border:1px solid var(--cluster-border);border-radius:999px;box-shadow:0 10px 30px rgb(0 0 0 / 30%);backdrop-filter:blur(14px)}
 .icon{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:transparent;color:var(--muted)}
 .icon:hover{background:var(--field);color:var(--text)}
@@ -47,7 +59,7 @@
 .states{display:flex;gap:22px;flex-wrap:wrap}
 .state{margin:0;width:300px}
 .state figcaption{margin-top:12px;font-size:12px;color:#bdb6c8}
-.card.mini{padding:24px 24px 26px}.card.mini .title{font-size:21px}.card.mini .avatar{width:46px;height:46px;margin-bottom:14px}.card.mini .avatar svg{width:23px;height:23px}.card.mini .caption{margin-bottom:16px}.card.mini .field{margin-bottom:20px}.card.mini .input{height:42px;font-size:14px}.card.mini .primary{min-height:40px}.card.mini .status{font-size:12.5px;margin-bottom:16px}.card.mini .title-button,.card.mini .chip-button{font-size:inherit}.card.mini .chip-button{margin-bottom:16px;padding:6px 18px;font-size:12px}.card.mini .chip-button svg,.card.mini .title-button svg{width:16px;height:16px}.card.mini .cancel{min-height:32px;font-size:12px}
+.card.mini{padding:24px 24px 26px}.card.mini .title{font-size:21px}.card.mini .avatar{width:46px;height:46px;margin-bottom:14px}.card.mini .avatar svg{width:23px;height:23px}.card.mini .caption{margin-bottom:16px}.card.mini .field{margin-bottom:20px}.card.mini .input{height:42px;font-size:14px}.card.mini .primary{min-height:40px}.card.mini .title-button,.card.mini .chip-button{font-size:inherit}.card.mini .chip-button{margin-bottom:16px;padding:6px 18px;font-size:12px}.card.mini .chip-button svg,.card.mini .title-button svg{width:16px;height:16px}
 .cluster-showcase{display:flex;gap:60px;align-items:flex-end;flex-wrap:wrap;padding:170px 4px 40px}
 .cluster.static{position:relative;width:max-content}
 .cluster.static.open-demo .popover{display:block}
@@ -68,5 +80,5 @@ body.large .login-column{width:430px}
 body.large .input{font-size:18px}
 body.large .status,body.large .caption{font-size:16px}
 body.large .title{font-size:30px}
-body.large .clock{font-size:104px}
+body.large .clock{font-size:114px}
 @media(max-width:850px){.review-bar{align-items:flex-start;flex-direction:column}.desktop{height:auto;min-height:calc(100vh - 125px)}.cluster{position:static;margin:26px auto 0;width:max-content}.desktop{flex-direction:column}}
