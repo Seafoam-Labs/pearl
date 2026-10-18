@@ -3,6 +3,7 @@
   "theme": "material_dark",
   "font_size": 16,
   "reduced_motion": true,
+  "high_contrast": false,
   "default_session": "wayland:aqueous.desktop",
   "roots": [
     {"path": "/usr/local/share/wayland-sessions", "type": "wayland"},

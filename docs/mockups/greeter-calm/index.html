@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pearl greeter calm layout mockup</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mockup.js" defer></script>
+</head>
+<body>
+  <header class="review-bar">
+    <div><strong>Pearl greeter</strong><span class="review-caption">Calm layout concept · identity card + corner accessibility &amp; power · footer removed · sample accounts only</span></div>
+    <div class="review-controls">
+      <label>Preview <select id="preview">
+        <option value="ready">One account · one session</option>
+        <option value="choices">Several accounts · sessions</option>
+        <option value="manual">Other user</option>
+        <option value="prompt">Additional authentication</option>
+        <option value="error">Incorrect password</option>
+      </select></label>
+      <label>Theme <select id="theme"><option value="dark">Dark</option><option value="light">Light</option></select></label>
+      <button id="reset" type="button">Reset</button>
+    </div>
+  </header>
+
+  <main class="desktop">
+    <div class="login-column">
+      <div class="clock" aria-hidden="true">10:41</div>
+      <p class="date">Tuesday, October 6</p>
+      <form id="login" class="card" autocomplete="off">
+        <span class="avatar" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="6"/><path d="M5 27c0-7 4.5-10.5 11-10.5S27 20 27 27v1H5z"/></svg></span>
+        <h1 id="title-plain" class="title">zoey</h1>
+        <button id="title-menu" class="title title-button" type="button" hidden aria-haspopup="listbox" aria-expanded="false" aria-controls="accounts">
+          <span id="account-value">zoey</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+        </button>
+        <ul id="accounts" class="menu" role="listbox" aria-label="Account" tabindex="-1" hidden>
+          <li role="option" data-user="zoey" aria-selected="true"><span><strong>zoey</strong><small>Local account</small></span><span class="check" aria-hidden="true">✓</span></li>
+          <li role="option" data-user="alex" aria-selected="false"><span><strong>alex</strong><small>Local account</small></span><span class="check" aria-hidden="true">✓</span></li>
+          <li role="option" data-user="other" aria-selected="false"><span><strong>Other user…</strong><small>Enter a username</small></span><span class="check" aria-hidden="true">✓</span></li>
+        </ul>
+        <p id="session-caption" class="caption">Pearl (Aqueous) · Wayland</p>
+        <button id="session-chip" class="chip-button" type="button" hidden aria-haspopup="listbox" aria-expanded="false" aria-controls="sessions">
+          <span id="session-value">Pearl (Aqueous) · Wayland</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+        </button>
+        <ul id="sessions" class="menu" role="listbox" aria-label="Desktop session" tabindex="-1" hidden>
+          <li role="option" data-session="Pearl (Aqueous) · Wayland" aria-selected="true"><span><strong>Pearl (Aqueous) · Wayland</strong></span><span class="check" aria-hidden="true">✓</span></li>
+          <li role="option" data-session="GNOME · Wayland" aria-selected="false"><span><strong>GNOME · Wayland</strong></span><span class="check" aria-hidden="true">✓</span></li>
+          <li role="option" data-session="Plasma · Wayland" aria-selected="false"><span><strong>Plasma · Wayland</strong></span><span class="check" aria-hidden="true">✓</span></li>
+          <li class="menu-action" id="refresh" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M20 12a8 8 0 1 0-2 5M20 7l-3-3"/></svg><span>Refresh desktops</span></li>
+        </ul>
+        <label id="username-field" class="field" hidden><span class="field-label">Username</span><input id="username" class="input" type="text" placeholder="Username" autocapitalize="none" spellcheck="false" maxlength="256"></label>
+        <label class="field"><span id="password-label" class="field-label" hidden>Password</span><input id="password" class="input" type="password" placeholder="Password" autocomplete="off" aria-label="Password" aria-describedby="status caps"></label>
+        <p id="caps" class="caps" hidden>Caps Lock is on</p>
+        <p id="status" class="status" role="status" aria-live="polite">Enter your password to sign in.</p>
+        <button id="submit" class="primary" type="submit">Sign in</button>
+        <button id="cancel" class="cancel" type="button" hidden>Cancel authentication</button>
+      </form>
+    </div>
+
+    <div class="cluster">
+      <button id="larger" class="icon" type="button" title="Larger text" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18 8 6l5 12M5.2 13.5h5.6"/><path d="m14.5 18 3-7 3 7M15.8 15.7h3.4"/></svg>
+      </button>
+      <button id="contrast" class="icon" type="button" title="High contrast" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path class="fill" d="M12 4a8 8 0 0 1 0 16z"/></svg>
+      </button>
+      <button id="power" class="icon" type="button" title="Restart or power off" aria-haspopup="menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v8"/><path d="M8.2 6.8a7.5 7.5 0 1 0 7.6 0"/></svg>
+      </button>
+      <div id="power-pop" class="popover" hidden>
+        <div id="power-menu">
+          <button class="pop-item" type="button" data-action="reboot">Restart</button>
+          <button class="pop-item destructive" type="button" data-action="off">Power off</button>
+        </div>
+        <div id="power-confirm" hidden>
+          <p id="power-confirm-text">Restart this machine?</p>
+          <div class="pop-row">
+            <button id="power-yes" class="pop-item strong" type="button">Confirm</button>
+            <button id="power-no" class="pop-item" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <section class="sheet">
+    <h2>Card states</h2>
+    <p class="sheet-note">The center column holds only identity, the secret, the action, and one reserved status line. Choosers appear only when there is a choice; the refresh control lives inside the session menu.</p>
+    <div class="states">
+      <figure class="state">
+        <div class="card mini">
+          <span class="avatar" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="6"/><path d="M5 27c0-7 4.5-10.5 11-10.5S27 20 27 27v1H5z"/></svg></span>
+          <h1 class="title">zoey</h1>
+          <p class="caption">Pearl (Aqueous) · Wayland</p>
+          <div class="field"><input class="input" type="password" placeholder="Password" tabindex="-1"></div>
+          <p class="status">Enter your password to sign in.</p>
+          <button class="primary" type="button" tabindex="-1">Sign in</button>
+        </div>
+        <figcaption>One account, one session: nothing to choose, nothing shown.</figcaption>
+      </figure>
+      <figure class="state">
+        <div class="card mini">
+          <span class="avatar" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="6"/><path d="M5 27c0-7 4.5-10.5 11-10.5S27 20 27 27v1H5z"/></svg></span>
+          <button class="title title-button" type="button" tabindex="-1">zoey<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+          <button class="chip-button" type="button" tabindex="-1">Pearl (Aqueous) · Wayland<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+          <div class="field"><input class="input" type="password" placeholder="Password" tabindex="-1"></div>
+          <p class="status">Enter your password to sign in.</p>
+          <button class="primary" type="button" tabindex="-1">Sign in</button>
+        </div>
+        <figcaption>Choices present: the title becomes the account menu, the caption becomes the session chip.</figcaption>
+      </figure>
+      <figure class="state">
+        <div class="card mini">
+          <span class="avatar" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="6"/><path d="M5 27c0-7 4.5-10.5 11-10.5S27 20 27 27v1H5z"/></svg></span>
+          <h1 class="title">Other user</h1>
+          <p class="caption">Pearl (Aqueous) · Wayland</p>
+          <div class="field"><span class="field-label">Username</span><input class="input" type="text" placeholder="Username" tabindex="-1"></div>
+          <div class="field"><input class="input" type="password" placeholder="Password" tabindex="-1"></div>
+          <p class="status">Enter your username and password.</p>
+          <button class="primary" type="button" tabindex="-1">Sign in</button>
+        </div>
+        <figcaption>Manual entry: the username field appears only for “Other user…”.</figcaption>
+      </figure>
+      <figure class="state">
+        <div class="card mini">
+          <span class="avatar" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="6"/><path d="M5 27c0-7 4.5-10.5 11-10.5S27 20 27 27v1H5z"/></svg></span>
+          <h1 class="title">zoey</h1>
+          <p class="caption">Pearl (Aqueous) · Wayland</p>
+          <div class="field"><span class="field-label">Verification code</span><input class="input" type="text" placeholder="Verification code" tabindex="-1"></div>
+          <p class="status">Enter the verification code from your authenticator.</p>
+          <button class="primary" type="button" tabindex="-1">Continue</button>
+          <button class="cancel" type="button" tabindex="-1">Cancel authentication</button>
+        </div>
+        <figcaption>Mid-attempt: a prompt label appears above the entry; cancel exists only while busy.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>Corner controls</h2>
+    <p class="sheet-note">Larger text and high contrast return as two icon toggles beside the power icon; restart and power off keep the two-step popover confirm. The Orca launcher joins only when <code>screen_reader</code> is configured. Everything else the old footer held becomes an admin config key, or nothing at all — see the table below.</p>
+    <div class="cluster-showcase">
+      <figure class="cluster-demo">
+        <div class="cluster static">
+          <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18 8 6l5 12M5.2 13.5h5.6"/><path d="m14.5 18 3-7 3 7M15.8 15.7h3.4"/></svg></span>
+          <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path class="fill" d="M12 4a8 8 0 0 1 0 16z"/></svg></span>
+          <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v8"/><path d="M8.2 6.8a7.5 7.5 0 1 0 7.6 0"/></svg></span>
+        </div>
+        <figcaption>Default: larger text, high contrast, and power pinned to a layer-shell corner.</figcaption>
+      </figure>
+      <figure class="cluster-demo">
+        <div class="cluster static">
+          <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18 8 6l5 12M5.2 13.5h5.6"/><path d="m14.5 18 3-7 3 7M15.8 15.7h3.4"/></svg></span>
+          <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path class="fill" d="M12 4a8 8 0 0 1 0 16z"/></svg></span>
+          <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.5"/><path d="M4.5 10c5 1.8 10 1.8 15 0M12 11v4l-3.5 5M12 15l3.5 5"/></svg></span>
+          <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v8"/><path d="M8.2 6.8a7.5 7.5 0 1 0 7.6 0"/></svg></span>
+        </div>
+        <figcaption>With <code>screen_reader: true</code>: the Orca launcher joins them.</figcaption>
+      </figure>
+      <figure class="cluster-demo">
+        <div class="cluster static open-demo">
+          <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18 8 6l5 12M5.2 13.5h5.6"/><path d="m14.5 18 3-7 3 7M15.8 15.7h3.4"/></svg></span>
+          <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path class="fill" d="M12 4a8 8 0 0 1 0 16z"/></svg></span>
+          <span class="icon active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v8"/><path d="M8.2 6.8a7.5 7.5 0 1 0 7.6 0"/></svg></span>
+          <div class="popover shown">
+            <div>
+              <button class="pop-item" type="button" tabindex="-1">Restart</button>
+              <button class="pop-item destructive" type="button" tabindex="-1">Power off</button>
+            </div>
+          </div>
+        </div>
+        <figcaption>The popover confirms before acting; Escape or clicking away cancels.</figcaption>
+      </figure>
+    </div>
+    <table class="legend">
+      <thead><tr><th>Removed from the footer</th><th>Replaced by</th></tr></thead>
+      <tbody>
+        <tr><td>Larger text button</td><td>Corner icon toggle; admin <code>font_size</code> still sets the base size</td></tr>
+        <tr><td>Move login card button</td><td>Admin <code>preferred_output</code> / <code>preferred_output_edid</code></td></tr>
+        <tr><td>High contrast checkbox</td><td>Corner icon toggle; proposed admin <code>high_contrast</code> key sets its initial state</td></tr>
+        <tr><td>Reduced motion checkbox</td><td>Admin <code>reduced_motion</code></td></tr>
+        <tr><td>Keyboard layout label</td><td>Nothing — it was read-only; switching was unavailable</td></tr>
+        <tr><td>Restart / Power off row + confirm buttons</td><td>Corner power icon → popover → confirm</td></tr>
+        <tr><td>Screen reader button</td><td>Corner icon, only when <code>screen_reader: true</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+</body>
+</html>

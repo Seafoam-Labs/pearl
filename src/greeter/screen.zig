@@ -45,7 +45,6 @@ const Screen = struct {
     panel: *gtk.Box,
     username: *gtk.Entry,
     username_field: *gtk.Box,
-    account_field: *gtk.Box,
     entry: *gtk.Entry,
     entry_label: *gtk.Label,
     password_hint: *gtk.Label,
@@ -60,9 +59,17 @@ const Screen = struct {
     off_button: *gtk.Button,
     confirm: *gtk.Button,
     cancel_power: *gtk.Button,
-    layout_label: *gtk.Label,
     clock: *gtk.Label,
     date: *gtk.Label,
+    title_label: *gtk.Label,
+    session_caption: *gtk.Label,
+    cluster: *gtk.Box,
+    larger_toggle: *gtk.ToggleButton,
+    contrast_toggle: *gtk.ToggleButton,
+    power_button: *gtk.Button,
+    power_pop: *gtk.Popover,
+    power_menu_box: *gtk.Box,
+    power_confirm_box: *gtk.Box,
     job_generation: u64 = 0,
     selected_explicitly: bool = false,
     account_count: usize = 0,
@@ -206,6 +213,8 @@ const Screen = struct {
         const c = &self.client.controller;
         const idle = c.state == .idle and self.job == null and self.pending_power == null and !self.power.pending and !self.power.completed;
         const secret = c.needsInput();
+        self.updateSessionVisibility();
+        self.updateSessionCaption();
         self.username.as(gtk.Editable).setEditable(@intFromBool(idle));
         self.chooser.as(gtk.Widget).setSensitive(@intFromBool(idle and self.config.force_session == null));
         self.account_chooser.as(gtk.Widget).setSensitive(@intFromBool(idle));
@@ -253,6 +262,31 @@ const Screen = struct {
                 std.debug.assert(@intFromPtr(fail) == 0);
             };
         }
+    }
+    fn updateSessionVisibility(self: *Screen) void {
+        const entries: usize = if (self.catalog) |*value| value.entries.items.len else 0;
+        const choices = entries > 1 and self.config.force_session == null;
+        self.chooser.as(gtk.Widget).setVisible(@intFromBool(choices));
+        self.refresh_button.as(gtk.Widget).setVisible(@intFromBool(choices));
+        self.session_caption.as(gtk.Widget).setVisible(@intFromBool(!choices));
+    }
+    fn updateSessionCaption(self: *Screen) void {
+        const model = self.chooser.getModel() orelse {
+            self.session_caption.setText("");
+            return;
+        };
+        const index = self.chooser.getSelected();
+        if (index == gtk.INVALID_LIST_POSITION) {
+            self.session_caption.setText("");
+            return;
+        }
+        const item = model.getObject(index) orelse {
+            self.session_caption.setText("");
+            return;
+        };
+        defer item.unref();
+        const value = object.ext.cast(gtk.StringObject, item) orelse return;
+        self.session_caption.setText(value.getString());
     }
     fn selected(_: *object.Object, _: *object.ParamSpec, self: *Screen) callconv(.c) void {
         if (self.selecting or self.client.controller.state != .idle or self.job != null) return;
@@ -432,6 +466,8 @@ const Screen = struct {
         self.clear();
         self.pending_power = restarting;
         self.confirm.setLabel(if (restarting) "Confirm restart" else "Confirm power off");
+        self.power_menu_box.as(gtk.Widget).setVisible(0);
+        self.power_confirm_box.as(gtk.Widget).setVisible(1);
         self.update();
     }
     fn confirmed(_: *gtk.Button, self: *Screen) callconv(.c) void {
@@ -442,17 +478,26 @@ const Screen = struct {
     fn cancelPower(_: *gtk.Button, self: *Screen) callconv(.c) void {
         self.pending_power = null;
         self.confirmed_power = false;
+        self.power_confirm_box.as(gtk.Widget).setVisible(0);
+        self.power_menu_box.as(gtk.Widget).setVisible(1);
         self.update();
     }
     fn performPower(self: *Screen) void {
         const action = self.pending_power orelse return;
+        self.power_pop.popdown();
         self.pending_power = null;
         self.confirmed_power = false;
         self.power.request(action) catch self.setMessage("Power action was denied or is unavailable.");
         self.update();
     }
-    fn larger(_: *gtk.Button, self: *Screen) callconv(.c) void {
-        if (self.column.as(gtk.Widget).hasCssClass("pearl-large") != 0) self.column.as(gtk.Widget).removeCssClass("pearl-large") else self.column.as(gtk.Widget).addCssClass("pearl-large");
+    fn powerOpened(_: *gtk.Button, self: *Screen) callconv(.c) void {
+        if (self.client.controller.start_submitted or self.job != null) return;
+        self.power_menu_box.as(gtk.Widget).setVisible(1);
+        self.power_confirm_box.as(gtk.Widget).setVisible(0);
+        self.power_pop.popup();
+    }
+    fn largerToggled(button: *gtk.ToggleButton, self: *Screen) callconv(.c) void {
+        if (button.getActive() != 0) self.column.as(gtk.Widget).addCssClass("pearl-large") else self.column.as(gtk.Widget).removeCssClass("pearl-large");
     }
     fn reader(_: *gtk.Button, self: *Screen) callconv(.c) void {
         if (!self.config.screen_reader or self.reader_process != null) return;
@@ -640,8 +685,8 @@ const Screen = struct {
             defer a.free(previous_z);
             self.username.as(gtk.Editable).setText(previous_z);
         }
-        self.account_field.as(gtk.Widget).setVisible(@intFromBool(job.account_list.len > 0));
         self.account_chooser.as(gtk.Widget).setVisible(@intFromBool(job.account_list.len > 0));
+        self.title_label.as(gtk.Widget).setVisible(@intFromBool(job.account_list.len == 0));
         if (self.catalog) |*old| old.deinit();
         self.catalog = next;
         self.selecting = false;
@@ -658,16 +703,10 @@ const Screen = struct {
         self.focusAccount();
         if (options.test_hooks) log.info("event=greeter-ready sessions={d}", .{self.catalog.?.entries.items.len});
     }
-    fn contrastChanged(button: *gtk.CheckButton, self: *Screen) callconv(.c) void {
+    fn contrastToggled(button: *gtk.ToggleButton, self: *Screen) callconv(.c) void {
         self.high_contrast = button.getActive() != 0;
         for (self.views) |slot| if (slot) |v| self.accessibilityStyle(v.window);
         if (options.test_hooks) log.info("event=greeter-contrast enabled={}", .{self.high_contrast});
-    }
-    fn motionChanged(button: *gtk.CheckButton, self: *Screen) callconv(.c) void {
-        self.reduced_motion = button.getActive() != 0;
-        if (gtk.Settings.getDefault()) |settings| settings.as(object.Object).set("gtk-enable-animations", @as(c_int, @intFromBool(!self.reduced_motion)), "gtk-cursor-blink", @as(c_int, @intFromBool(!self.reduced_motion)), @as(?[*:0]const u8, null));
-        for (self.views) |slot| if (slot) |v| self.accessibilityStyle(v.window);
-        if (options.test_hooks) log.info("event=greeter-reduced-motion enabled={}", .{self.reduced_motion});
     }
     fn accessibilityStyle(self: *Screen, window: *gtk.Window) void {
         const widget = window.as(gtk.Widget);
@@ -678,21 +717,6 @@ const Screen = struct {
         const active = self.keyboard.?.getCapsLockState() != 0;
         self.caps.as(gtk.Widget).setVisible(@intFromBool(active));
         self.caps.as(gtk.Accessible).announce(if (active) "Caps Lock is on" else "Caps Lock is off", .medium);
-        // GTK reports the actual active layout label; selection awaits compositor input integration.
-        if (self.keyboard.?.getActiveLayoutIndex() >= 0) {
-            const label = self.keyboard.?.getLayoutNames();
-            if (label) |names| {
-                defer glib.strfreev(@ptrCast(names));
-                const index: usize = @intCast(self.keyboard.?.getActiveLayoutIndex());
-                var n: usize = 0;
-                while (n < 64 and @intFromPtr(names[n]) != 0) : (n += 1) {
-                    if (n == index) {
-                        self.layout_label.setText(names[n]);
-                        break;
-                    }
-                }
-            }
-        }
     }
     fn monitorChanged(_: *object.Object, _: *object.ParamSpec, self: *Screen) callconv(.c) void {
         self.scheduleMonitors();
@@ -799,6 +823,7 @@ const Screen = struct {
         viewport.setChild(self.column.as(gtk.Widget));
         scroll.setChild(viewport.as(gtk.Widget));
         overlay.addOverlay(scroll.as(gtk.Widget));
+        overlay.addOverlay(self.cluster.as(gtk.Widget));
         v.scroll = scroll;
         v.active = true;
         if (options.test_hooks) log.info("event=greeter-active-output connector={s}", .{if (v.monitor.getConnector()) |name| std.mem.span(name) else "unknown"});
@@ -816,28 +841,9 @@ const Screen = struct {
             overlay.removeOverlay(scroll.as(gtk.Widget));
             v.scroll = null;
         }
+        if (self.cluster.as(gtk.Widget).getParent()) |parent| object.ext.cast(gtk.Overlay, parent).?.removeOverlay(self.cluster.as(gtk.Widget));
         v.active = false;
         layer.setKeyboardMode(v.window, .none);
-    }
-    fn move(_: *gtk.Button, self: *Screen) callconv(.c) void {
-        var current: ?usize = null;
-        var target: ?usize = null;
-        for (self.views, 0..) |slot, i| if (slot) |v| {
-            if (v.active) current = i;
-        };
-        const old = current orelse return;
-        for (1..65) |offset| {
-            const i = (old + offset) % 64;
-            if (i != old and self.views[i] != null) {
-                target = i;
-                break;
-            }
-        }
-        const next = target orelse return;
-        self.detach(&self.views[old].?);
-        self.attach(&self.views[next].?);
-        self.resize(&self.views[old].?);
-        self.resize(&self.views[next].?);
     }
     fn createView(self: *Screen, slot: *?View, monitor: *gdk.Monitor, active: bool) void {
         const window = gtk.Window.new();
@@ -918,6 +924,7 @@ pub fn run() !void {
     if (config.screen_reader) _ = glib.setenv("GTK_A11Y", "atspi", 1);
     gtk.init();
     const display = gdk.Display.getDefault() orelse return error.NoDisplay;
+    gtk.IconTheme.getForDisplay(display).addResourcePath("/org/aqueous/Pearl/icons");
     if (layer.isSupported() == 0) return error.LayerShellRequired;
     if (config.reduced_motion) if (gtk.Settings.getDefault()) |settings| {
         settings.as(object.Object).set("gtk-enable-animations", @as(c_int, 0), "gtk-cursor-blink", @as(c_int, 0), @as(?[*:0]const u8, null));
@@ -932,12 +939,12 @@ pub fn run() !void {
     const sizing = gtk.CssProvider.new();
     const background_css = if (config.wallpaper_color) |color| try std.fmt.allocPrintSentinel(a, ".pearl-lock.pearl-wallpaper {{ background: {s}; background-image: none; }}", .{color}, 0) else try a.dupeZ(u8, "");
     defer a.free(background_css);
-    const css = try std.fmt.allocPrintSentinel(a, "{s} .pearl-root {{font-size:{d}px;}} .pearl-greeter-form {{margin: 24px;}} .pearl-lock-card button, .pearl-lock-card entry {{min-height:26px; padding:8px 12px;}} .pearl-lock-card {{padding:20px;}} .pearl-greeter-form > box > button {{min-height:26px;}} .pearl-lock-small .pearl-greeter-form {{margin-top:24px;}} .pearl-lock .pearl-large {{font-size:24px;}} .pearl-native .pearl-lock-card {{background:@theme_bg_color; color:@theme_fg_color;}} .pearl-lock dropdown {{min-width:0;}} .pearl-reduced * {{transition:none; animation:none;}} {s}", .{ presentation.css, config.font_size, background_css }, 0);
+    const css = try std.fmt.allocPrintSentinel(a, "{s} .pearl-root {{font-size:{d}px;}} .pearl-greeter-form {{margin: 24px;}} .pearl-lock-card button, .pearl-lock-card entry {{min-height:26px; padding:8px 12px;}} .pearl-lock-card {{padding:20px;}} .pearl-lock-small .pearl-greeter-form {{margin-top:24px;}} .pearl-lock .pearl-large {{font-size:24px;}} .pearl-native .pearl-lock-card {{background:@theme_bg_color; color:@theme_fg_color;}} .pearl-lock dropdown {{min-width:0;}} .pearl-reduced * {{transition:none; animation:none;}} {s}", .{ presentation.css, config.font_size, background_css }, 0);
     defer a.free(css);
     sizing.loadFromString(css);
     gtk.StyleContext.addProviderForDisplay(display, sizing.as(gtk.StyleProvider), 601);
     const contrast_style = gtk.CssProvider.new();
-    contrast_style.loadFromString(".pearl-greeter-contrast, .pearl-greeter-contrast .pearl-greeter-form, .pearl-greeter-contrast .pearl-lock-card {background: #000; background-image: none; color: #fff;} .pearl-greeter-contrast label {color: #fff; opacity: 1;} .pearl-greeter-contrast button, .pearl-greeter-contrast entry, .pearl-greeter-contrast check {background: #000; background-image: none; color: #fff; border: 2px solid #fff; box-shadow: none;} .pearl-greeter-contrast :focus-visible {outline: 3px solid #ffff00; outline-offset: 3px;} .pearl-greeter-contrast :disabled {border-style: dashed; opacity: 0.7;}");
+    contrast_style.loadFromString(".pearl-greeter-contrast, .pearl-greeter-contrast .pearl-greeter-form, .pearl-greeter-contrast .pearl-lock-card {background: #000; background-image: none; color: #fff;} .pearl-greeter-contrast label {color: #fff; opacity: 1;} .pearl-greeter-contrast button, .pearl-greeter-contrast entry, .pearl-greeter-contrast check {background: #000; background-image: none; color: #fff; border: 2px solid #fff; box-shadow: none;} .pearl-greeter-contrast .pearl-cluster {background: #000; border-color: #fff;} .pearl-greeter-contrast .pearl-cluster button:checked {background: #fff; color: #000;} .pearl-greeter-contrast :focus-visible {outline: 3px solid #ffff00; outline-offset: 3px;} .pearl-greeter-contrast :disabled {border-style: dashed; opacity: 0.7;}");
     gtk.StyleContext.addProviderForDisplay(display, contrast_style.as(gtk.StyleProvider), 602);
     const column = w.column(16);
     _ = column.as(object.Object).refSink();
@@ -957,18 +964,46 @@ pub fn run() !void {
     panel.as(gtk.Widget).setSizeRequest(220, -1);
     column.append(panel.as(gtk.Widget));
     const avatar = gtk.Image.newFromIconName("avatar-default-symbolic");
-    avatar.setPixelSize(32);
+    avatar.setPixelSize(28);
+    avatar.as(gtk.Widget).addCssClass("pearl-avatar-circle");
+    avatar.as(gtk.Widget).setHalign(.center);
     panel.append(avatar.as(gtk.Widget));
-    const title = w.label("Sign in to your desktop", "pearl-title");
-    title.setXalign(0.5);
-    panel.append(title.as(gtk.Widget));
+    const title_label = w.label("Other user", "pearl-title");
+    title_label.setXalign(0.5);
+    panel.append(title_label.as(gtk.Widget));
     const account = gtk.DropDown.new(null, null);
     w.name(account.as(gtk.Widget), "Account");
-    const account_field = w.column(4);
-    account_field.append(w.label("User", "pearl-secondary").as(gtk.Widget));
-    account_field.append(account.as(gtk.Widget));
-    panel.append(account_field.as(gtk.Widget));
+    const account_button_factory = gtk.SignalListItemFactory.new();
+    _ = gtk.SignalListItemFactory.signals.setup.connect(account_button_factory, ?*anyopaque, accountButtonSetup, null, .{});
+    _ = gtk.SignalListItemFactory.signals.bind.connect(account_button_factory, ?*anyopaque, accountBind, null, .{});
+    const account_row_factory = gtk.SignalListItemFactory.new();
+    _ = gtk.SignalListItemFactory.signals.setup.connect(account_row_factory, ?*anyopaque, accountRowSetup, null, .{});
+    _ = gtk.SignalListItemFactory.signals.bind.connect(account_row_factory, ?*anyopaque, accountBind, null, .{});
+    account.setFactory(account_button_factory.as(gtk.ListItemFactory));
+    account.setListFactory(account_row_factory.as(gtk.ListItemFactory));
+    account_button_factory.unref();
+    account_row_factory.unref();
+    account.as(gtk.Widget).addCssClass("pearl-account-menu");
     account.as(gtk.Widget).setVisible(0);
+    panel.append(account.as(gtk.Widget));
+    const session_caption = w.label("", "pearl-session-caption");
+    session_caption.setXalign(0.5);
+    panel.append(session_caption.as(gtk.Widget));
+    const chooser = gtk.DropDown.new(null, null);
+    const factory = gtk.SignalListItemFactory.new();
+    _ = gtk.SignalListItemFactory.signals.setup.connect(factory, ?*anyopaque, sessionSetup, null, .{});
+    _ = gtk.SignalListItemFactory.signals.bind.connect(factory, ?*anyopaque, sessionBind, null, .{});
+    chooser.setFactory(factory.as(gtk.ListItemFactory));
+    chooser.setListFactory(factory.as(gtk.ListItemFactory));
+    factory.unref();
+    w.name(chooser.as(gtk.Widget), "Desktop session");
+    chooser.as(gtk.Widget).addCssClass("pearl-session-chip");
+    const refresh = w.iconButton("view-refresh-symbolic", "Refresh desktops");
+    const session_row = w.row(8);
+    session_row.append(chooser.as(gtk.Widget));
+    chooser.as(gtk.Widget).setHexpand(1);
+    session_row.append(refresh.as(gtk.Widget));
+    panel.append(session_row.as(gtk.Widget));
     const username = gtk.Entry.new();
     username.setMaxLength(257);
     username.setPlaceholderText("Username");
@@ -990,68 +1025,80 @@ pub fn run() !void {
     const caps = w.label("Caps Lock is on", "pearl-secondary");
     caps.as(gtk.Widget).setVisible(0);
     panel.append(caps.as(gtk.Widget));
-    const chooser = gtk.DropDown.new(null, null);
-    const factory = gtk.SignalListItemFactory.new();
-    _ = gtk.SignalListItemFactory.signals.setup.connect(factory, ?*anyopaque, sessionSetup, null, .{});
-    _ = gtk.SignalListItemFactory.signals.bind.connect(factory, ?*anyopaque, sessionBind, null, .{});
-    chooser.setFactory(factory.as(gtk.ListItemFactory));
-    chooser.setListFactory(factory.as(gtk.ListItemFactory));
-    factory.unref();
-    w.name(chooser.as(gtk.Widget), "Desktop session");
-    const refresh = w.iconButton("view-refresh-symbolic", "Refresh desktops");
-    const session_row = w.row(8);
-    session_row.append(chooser.as(gtk.Widget));
-    chooser.as(gtk.Widget).setHexpand(1);
-    session_row.append(refresh.as(gtk.Widget));
-    const session_field = w.column(4);
-    session_field.append(w.label("Desktop session", "pearl-secondary").as(gtk.Widget));
-    session_field.append(session_row.as(gtk.Widget));
-    panel.append(session_field.as(gtk.Widget));
     const message = w.label("Loading installed desktops…", "pearl-secondary");
     message.setMaxWidthChars(36);
     panel.append(message.as(gtk.Widget));
+    if (config.fingerprint_hint) {
+        const hint = w.label("Fingerprint login is available when configured", "pearl-secondary");
+        hint.setWrap(1);
+        hint.setMaxWidthChars(36);
+        panel.append(hint.as(gtk.Widget));
+    }
     const button = gtk.Button.newWithLabel("Sign in");
     button.as(gtk.Widget).addCssClass("pearl-primary");
     panel.append(button.as(gtk.Widget));
     const cancel = gtk.Button.newWithLabel("Cancel authentication");
     panel.append(cancel.as(gtk.Widget));
-    const footer = w.column(8);
-    if (config.fingerprint_hint) {
-        const hint = w.label("Fingerprint login is available when configured", "pearl-secondary");
-        hint.setWrap(1);
-        hint.setMaxWidthChars(36);
-        footer.append(hint.as(gtk.Widget));
-    }
-    const controls = w.row(8);
-    footer.append(controls.as(gtk.Widget));
-    column.append(footer.as(gtk.Widget));
-    const layout_label = w.label("Keyboard layout", "pearl-secondary");
-    footer.append(layout_label.as(gtk.Widget));
-    layout_label.as(gtk.Widget).setTooltipText("Keyboard layout switching is currently unavailable.");
-    const bigger = gtk.Button.newWithLabel("Larger text");
-    controls.append(bigger.as(gtk.Widget));
-    const reader = gtk.Button.newWithLabel("Screen reader");
+    const cluster = w.row(2);
+    _ = cluster.as(object.Object).refSink();
+    cluster.as(gtk.Widget).addCssClass("pearl-cluster");
+    cluster.as(gtk.Widget).setHalign(.end);
+    cluster.as(gtk.Widget).setValign(.end);
+    cluster.as(gtk.Widget).setMarginEnd(24);
+    cluster.as(gtk.Widget).setMarginBottom(24);
+    const larger_toggle = gtk.ToggleButton.new();
+    larger_toggle.as(gtk.Button).setChild(w.icon("pearl-text-size-symbolic").as(gtk.Widget));
+    larger_toggle.as(gtk.Widget).addCssClass("pearl-icon");
+    larger_toggle.as(gtk.Widget).setTooltipText("Larger text");
+    w.name(larger_toggle.as(gtk.Widget), "Larger text");
+    cluster.append(larger_toggle.as(gtk.Widget));
+    const contrast_toggle = gtk.ToggleButton.new();
+    contrast_toggle.as(gtk.Button).setChild(w.icon("pearl-high-contrast-symbolic").as(gtk.Widget));
+    contrast_toggle.as(gtk.Widget).addCssClass("pearl-icon");
+    contrast_toggle.as(gtk.Widget).setTooltipText("High contrast");
+    w.name(contrast_toggle.as(gtk.Widget), "High contrast");
+    cluster.append(contrast_toggle.as(gtk.Widget));
+    const reader = gtk.Button.new();
+    reader.setChild(w.icon("pearl-screen-reader-symbolic").as(gtk.Widget));
+    reader.as(gtk.Widget).addCssClass("pearl-icon");
+    reader.as(gtk.Widget).setTooltipText("Screen reader");
+    w.name(reader.as(gtk.Widget), "Screen reader");
     reader.as(gtk.Widget).setVisible(@intFromBool(config.screen_reader));
-    controls.append(reader.as(gtk.Widget));
-    const move = gtk.Button.newWithLabel("Move login card");
-    controls.append(move.as(gtk.Widget));
-    const contrast = gtk.CheckButton.newWithLabel("High contrast");
-    const motion = gtk.CheckButton.newWithLabel("Reduced motion");
-    motion.setActive(@intFromBool(config.reduced_motion));
-    footer.append(contrast.as(gtk.Widget));
-    footer.append(motion.as(gtk.Widget));
-    const power_row = w.row(8);
-    footer.append(power_row.as(gtk.Widget));
+    cluster.append(reader.as(gtk.Widget));
+    const power_button = gtk.Button.new();
+    power_button.setChild(w.icon("pearl-power-symbolic").as(gtk.Widget));
+    power_button.as(gtk.Widget).addCssClass("pearl-icon");
+    power_button.as(gtk.Widget).setTooltipText("Restart or power off");
+    w.name(power_button.as(gtk.Widget), "Restart or power off");
+    power_button.as(gtk.Widget).setVisible(@intFromBool(config.power));
+    cluster.append(power_button.as(gtk.Widget));
+    const power_pop = gtk.Popover.new();
+    power_pop.as(gtk.Widget).setParent(power_button.as(gtk.Widget));
+    power_pop.setHasArrow(0);
+    power_pop.setPosition(.top);
+    const power_menu_box = w.column(4);
+    power_menu_box.as(gtk.Widget).setSizeRequest(168, -1);
     const reboot = gtk.Button.newWithLabel("Restart");
+    reboot.as(gtk.Widget).addCssClass("pearl-menu-item");
     const off = gtk.Button.newWithLabel("Power off");
-    power_row.append(reboot.as(gtk.Widget));
-    power_row.append(off.as(gtk.Widget));
-    power_row.as(gtk.Widget).setVisible(@intFromBool(config.power));
+    off.as(gtk.Widget).addCssClass("pearl-menu-item");
+    off.as(gtk.Widget).addCssClass("pearl-destructive");
+    power_menu_box.append(reboot.as(gtk.Widget));
+    power_menu_box.append(off.as(gtk.Widget));
+    const power_confirm_box = w.row(6);
     const confirm = gtk.Button.newWithLabel("Confirm");
-    const cancel_power = gtk.Button.newWithLabel("Cancel power action");
-    footer.append(confirm.as(gtk.Widget));
-    footer.append(cancel_power.as(gtk.Widget));
-    var self: Screen = .{ .config = config, .loop = glib.MainLoop.new(null, 0), .display = display, .column = column, .panel = panel, .username = username, .username_field = username_field, .account_field = account_field, .entry = entry, .entry_label = entry_label, .password_hint = password_hint, .chooser = chooser, .account_chooser = account, .message = message, .caps = caps, .button = button, .cancel_button = cancel, .refresh_button = refresh, .reboot_button = reboot, .off_button = off, .confirm = confirm, .cancel_power = cancel_power, .layout_label = layout_label, .clock = clock, .date = date };
+    confirm.as(gtk.Widget).addCssClass("pearl-primary");
+    confirm.as(gtk.Widget).setHexpand(1);
+    const cancel_power = gtk.Button.newWithLabel("Cancel");
+    cancel_power.as(gtk.Widget).setHexpand(1);
+    power_confirm_box.append(confirm.as(gtk.Widget));
+    power_confirm_box.append(cancel_power.as(gtk.Widget));
+    power_confirm_box.as(gtk.Widget).setVisible(0);
+    const power_content = w.column(6);
+    power_content.append(power_menu_box.as(gtk.Widget));
+    power_content.append(power_confirm_box.as(gtk.Widget));
+    power_pop.setChild(power_content.as(gtk.Widget));
+    var self: Screen = .{ .config = config, .loop = glib.MainLoop.new(null, 0), .display = display, .column = column, .panel = panel, .username = username, .username_field = username_field, .entry = entry, .entry_label = entry_label, .password_hint = password_hint, .chooser = chooser, .account_chooser = account, .message = message, .caps = caps, .button = button, .cancel_button = cancel, .refresh_button = refresh, .reboot_button = reboot, .off_button = off, .confirm = confirm, .cancel_power = cancel_power, .clock = clock, .date = date, .title_label = title_label, .session_caption = session_caption, .cluster = cluster, .larger_toggle = larger_toggle, .contrast_toggle = contrast_toggle, .power_button = power_button, .power_pop = power_pop, .power_menu_box = power_menu_box, .power_confirm_box = power_confirm_box };
     self.reduced_motion = config.reduced_motion;
     self.client = .{ .path = std.mem.span(socket), .context = &self, .changed = Screen.changed, .timeout_ms = @as(c_uint, config.auth_timeout_seconds) * 1000 };
     self.client.init();
@@ -1068,11 +1115,11 @@ pub fn run() !void {
     _ = gtk.Button.signals.clicked.connect(off, *Screen, Screen.off, &self, .{});
     _ = gtk.Button.signals.clicked.connect(confirm, *Screen, Screen.confirmed, &self, .{});
     _ = gtk.Button.signals.clicked.connect(cancel_power, *Screen, Screen.cancelPower, &self, .{});
-    _ = gtk.Button.signals.clicked.connect(bigger, *Screen, Screen.larger, &self, .{});
+    _ = gtk.ToggleButton.signals.toggled.connect(larger_toggle, *Screen, Screen.largerToggled, &self, .{});
+    _ = gtk.ToggleButton.signals.toggled.connect(contrast_toggle, *Screen, Screen.contrastToggled, &self, .{});
     _ = gtk.Button.signals.clicked.connect(reader, *Screen, Screen.reader, &self, .{});
-    _ = gtk.Button.signals.clicked.connect(move, *Screen, Screen.move, &self, .{});
-    _ = gtk.CheckButton.signals.toggled.connect(contrast, *Screen, Screen.contrastChanged, &self, .{});
-    _ = gtk.CheckButton.signals.toggled.connect(motion, *Screen, Screen.motionChanged, &self, .{});
+    _ = gtk.Button.signals.clicked.connect(power_button, *Screen, Screen.powerOpened, &self, .{});
+    if (config.high_contrast) contrast_toggle.setActive(@intFromBool(config.high_contrast));
     _ = object.Object.signals.notify.connect(chooser.as(object.Object), *Screen, Screen.selected, &self, .{ .detail = "selected" });
     _ = object.Object.signals.notify.connect(account.as(object.Object), *Screen, Screen.selectedAccount, &self, .{ .detail = "selected" });
     if (display.getDefaultSeat()) |seat| if (seat.getKeyboard()) |keyboard| {
@@ -1105,6 +1152,25 @@ fn sessionSetup(_: *gtk.SignalListItemFactory, item: *object.Object, _: ?*anyopa
     row.setChild(label.as(gtk.Widget));
 }
 fn sessionBind(_: *gtk.SignalListItemFactory, item: *object.Object, _: ?*anyopaque) callconv(.c) void {
+    const row = object.ext.cast(gtk.ListItem, item).?;
+    const value = object.ext.cast(gtk.StringObject, row.getItem().?).?;
+    object.ext.cast(gtk.Label, row.getChild().?).?.setText(value.getString());
+}
+fn accountButtonSetup(_: *gtk.SignalListItemFactory, item: *object.Object, _: ?*anyopaque) callconv(.c) void {
+    const row = object.ext.cast(gtk.ListItem, item).?;
+    const label = gtk.Label.new(null);
+    label.setXalign(0.5);
+    label.setEllipsize(.end);
+    row.setChild(label.as(gtk.Widget));
+}
+fn accountRowSetup(_: *gtk.SignalListItemFactory, item: *object.Object, _: ?*anyopaque) callconv(.c) void {
+    const row = object.ext.cast(gtk.ListItem, item).?;
+    const label = gtk.Label.new(null);
+    label.setXalign(0);
+    label.setEllipsize(.end);
+    row.setChild(label.as(gtk.Widget));
+}
+fn accountBind(_: *gtk.SignalListItemFactory, item: *object.Object, _: ?*anyopaque) callconv(.c) void {
     const row = object.ext.cast(gtk.ListItem, item).?;
     const value = object.ext.cast(gtk.StringObject, row.getItem().?).?;
     object.ext.cast(gtk.Label, row.getChild().?).?.setText(value.getString());

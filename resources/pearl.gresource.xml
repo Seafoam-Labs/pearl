@@ -39,5 +39,9 @@
     <file>icons/scalable/actions/pearl-system-shutdown-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-microphone-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-utilities-system-monitor-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-text-size-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-high-contrast-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-power-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-screen-reader-symbolic.svg</file>
   </gresource>
 </gresources>

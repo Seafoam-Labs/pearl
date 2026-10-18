@@ -14,6 +14,7 @@ pub const Config = struct {
     wallpaper_color: ?[]const u8 = null,
     font_size: u8 = 16,
     reduced_motion: bool = true,
+    high_contrast: bool = false,
     preferred_output: ?[]const u8 = null,
     preferred_output_edid: ?[]const u8 = null,
     default_session: ?[]const u8 = null,

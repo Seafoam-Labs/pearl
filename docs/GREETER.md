@@ -138,7 +138,7 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `wallpaper` | Optional administrator-owned PNG/JPEG; at most 16 MiB input; current shared decoder restricts dimensions to 4096 per axis and 8 Mi pixels |
 | `wallpaper_fit` | `cover` (default) or `contain` |
 | `wallpaper_color` | Optional `#RRGGBB` solid background, also visible around a contained image; null retains the theme gradient |
-| `font_size`, `reduced_motion` | 12–32 px base font and animation policy; larger-text button remains available |
+| `font_size`, `reduced_motion`, `high_contrast` | 12–32 px base font, animation policy, and the startup state of the corner high-contrast toggle |
 | `preferred_output` | Connector preference for initial card placement; output changes never authorize authentication |
 | `preferred_output_edid` | Monitor identity hash, taking precedence over `preferred_output`; accepts 64 hex digits with an optional `sha256:` prefix |
 | `roots` | Ordered session directories, each with `path` and `type` (`wayland` or `x11`); earlier entries mask later entries with the same ID |
@@ -259,14 +259,16 @@ VM cases. Likewise, installed desktop metadata is not a compatibility certificat
 Unsupported Terminal/Path requirements and malformed Exec forms are rejected;
 desktop-specific wrapper requirements need pinned validation before deployment.
 
-The footer offers larger text, high contrast and reduced motion for the current
-greeter session. Reduced motion also disables GTK cursor/widget animation,
-keeping the idle login screen quiet on software rendering. The screen displays
-the actual GTK keyboard layout. Changing layouts is gated on
-a supported compositor input integration. Orca launching is optional; private AT-SPI access,
+A corner cluster pinned to the interactive output offers larger text, high
+contrast and, when configured, the Orca launcher beside the power control.
+Larger text and high contrast apply to the current greeter session;
+`high_contrast` seeds the toggle at startup. Reduced motion is
+administrator-owned and also disables GTK cursor/widget animation,
+keeping the idle login screen quiet on software rendering. The power popover
+honors logind capability and requires confirmation. It never asks
+for interactive privilege escalation or installs permissive polkit rules.
+Orca launching is optional; private AT-SPI access,
 speech and credential privacy still need explicit real accessibility acceptance.
-Power controls honor logind capability and require confirmation. They never ask
-for interactive privilege escalation or install permissive polkit rules.
 
 ## Sync appearance from Settings
 
