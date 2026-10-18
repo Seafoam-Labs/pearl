@@ -61,6 +61,7 @@ const Screen = struct {
     cancel_power: *gtk.Button,
     clock: *gtk.Label,
     date: *gtk.Label,
+    clockbox: *gtk.Box,
     title_label: *gtk.Label,
     session_caption: *gtk.Label,
     cluster: *gtk.Box,
@@ -103,6 +104,8 @@ const Screen = struct {
     fn setMessage(self: *Screen, text: [*:0]const u8) void {
         if (!std.mem.eql(u8, std.mem.span(self.message.getText()), std.mem.span(text))) self.message.as(gtk.Accessible).announce(text, .medium);
         self.message.setText(text);
+        // The status line exists only while it has something to say.
+        self.message.as(gtk.Widget).setVisible(@intFromBool(std.mem.span(text).len > 0));
     }
     fn passiveMessage(self: *Screen) void {
         const text = self.client.history.latest() orelse return;
@@ -124,7 +127,7 @@ const Screen = struct {
     fn readyMessage(self: *Screen) void {
         const user = std.mem.span(self.username.as(gtk.Editable).getText());
         if (user.len == 0) {
-            self.setMessage("Enter your username to sign in.");
+            self.setMessage("");
         } else if (!@import("protocol.zig").validText(user, 256)) {
             self.setMessage("Enter a username (maximum 256 UTF-8 bytes).");
         } else if (self.selected_id[0] == 0) {
@@ -132,7 +135,7 @@ const Screen = struct {
         } else if (!@import("protocol.zig").validText(std.mem.span(self.entry.as(gtk.Editable).getText()), 4096)) {
             self.setMessage("Password is too long (maximum 4096 UTF-8 bytes).");
         } else {
-            self.setMessage(if (self.config.password_first) "Enter your password and sign in." else "Choose your account and desktop.");
+            self.setMessage("");
         }
     }
     fn updateReadiness(self: *Screen) void {
@@ -157,7 +160,7 @@ const Screen = struct {
         if (options.test_hooks) log.info("event=greeter-state state={s}", .{@tagName(c.state)});
         switch (c.state) {
             .idle => {
-                self.setMessage(if (self.client.timed_out) "Authentication timed out. Try again." else if (self.selection_error) "The selected desktop changed. Refresh and choose it again." else if (self.auth_error) "Authentication failed. Try again." else if (self.service_error) "Login service rejected the request. Try again later." else if (self.config.password_first) "Enter your password to sign in." else "Choose your account and desktop.");
+                self.setMessage(if (self.client.timed_out) "Authentication timed out. Try again." else if (self.selection_error) "The selected desktop changed. Refresh and choose it again." else if (self.auth_error) "Authentication failed. Try again." else if (self.service_error) "Login service rejected the request. Try again later." else "");
                 if (self.confirmed_power) self.performPower();
             },
             .connecting => self.setMessage("Authenticating…"),
@@ -497,7 +500,13 @@ const Screen = struct {
         self.power_pop.popup();
     }
     fn largerToggled(button: *gtk.ToggleButton, self: *Screen) callconv(.c) void {
-        if (button.getActive() != 0) self.column.as(gtk.Widget).addCssClass("pearl-large") else self.column.as(gtk.Widget).removeCssClass("pearl-large");
+        if (button.getActive() != 0) {
+            self.column.as(gtk.Widget).addCssClass("pearl-large");
+            self.clockbox.as(gtk.Widget).addCssClass("pearl-large");
+        } else {
+            self.column.as(gtk.Widget).removeCssClass("pearl-large");
+            self.clockbox.as(gtk.Widget).removeCssClass("pearl-large");
+        }
     }
     fn reader(_: *gtk.Button, self: *Screen) callconv(.c) void {
         if (!self.config.screen_reader or self.reader_process != null) return;
@@ -808,10 +817,6 @@ const Screen = struct {
         }
         const compact = geometry.f_width < 500 or geometry.f_height < 850;
         if (compact) v.window.as(gtk.Widget).addCssClass("pearl-lock-small") else v.window.as(gtk.Widget).removeCssClass("pearl-lock-small");
-        if (v.active) {
-            self.panel.setSpacing(if (compact) 8 else 12);
-            self.column.setSpacing(if (compact) 10 else 16);
-        }
     }
     fn attach(self: *Screen, v: *View) void {
         // The column retains an explicit ref while moving between outputs.
@@ -823,6 +828,7 @@ const Screen = struct {
         viewport.setChild(self.column.as(gtk.Widget));
         scroll.setChild(viewport.as(gtk.Widget));
         overlay.addOverlay(scroll.as(gtk.Widget));
+        overlay.addOverlay(self.clockbox.as(gtk.Widget));
         overlay.addOverlay(self.cluster.as(gtk.Widget));
         v.scroll = scroll;
         v.active = true;
@@ -842,6 +848,7 @@ const Screen = struct {
             v.scroll = null;
         }
         if (self.cluster.as(gtk.Widget).getParent()) |parent| object.ext.cast(gtk.Overlay, parent).?.removeOverlay(self.cluster.as(gtk.Widget));
+        if (self.clockbox.as(gtk.Widget).getParent()) |parent| object.ext.cast(gtk.Overlay, parent).?.removeOverlay(self.clockbox.as(gtk.Widget));
         v.active = false;
         layer.setKeyboardMode(v.window, .none);
     }
@@ -850,7 +857,7 @@ const Screen = struct {
         window.ref();
         monitor.ref();
         window.setTitle("Pearl · Sign in");
-        for ([_][*:0]const u8{ "pearl-root", "pearl-lock", "pearl-wallpaper", "background" }) |class| window.as(gtk.Widget).addCssClass(class);
+        for ([_][*:0]const u8{ "pearl-root", "pearl-lock", "pearl-wallpaper", "background", "pearl-greeter" }) |class| window.as(gtk.Widget).addCssClass(class);
         window.as(gtk.Widget).addCssClass(if (self.config.theme == .material_light) "pearl-light" else if (self.config.theme == .gtk) "pearl-native" else "pearl-dark");
         self.accessibilityStyle(window);
         layer.initForWindow(window);
@@ -868,14 +875,14 @@ const Screen = struct {
         overlay.setChild(picture.as(gtk.Widget));
         const clock = w.label("", "pearl-lock-clock");
         const date = w.label("", "pearl-lock-date");
-        const backdrop = w.column(12);
+        const backdrop = w.column(0);
+        backdrop.as(gtk.Widget).addCssClass("pearl-greeter-clockbox");
         backdrop.as(gtk.Widget).setHalign(.center);
         backdrop.as(gtk.Widget).setValign(.start);
-        backdrop.as(gtk.Widget).setMarginTop(32);
         clock.setXalign(0.5);
         date.setXalign(0.5);
-        backdrop.append(clock.as(gtk.Widget));
         backdrop.append(date.as(gtk.Widget));
+        backdrop.append(clock.as(gtk.Widget));
         overlay.addOverlay(backdrop.as(gtk.Widget));
         presentation.updateClock(clock, date);
         slot.* = .{ .window = window, .monitor = monitor, .picture = picture, .clock = clock, .date = date, .active = false, .monitor_signal = object.Object.signals.notify.connect(monitor.as(object.Object), *Screen, monitorChanged, self, .{}) };
@@ -924,6 +931,11 @@ pub fn run() !void {
     if (config.screen_reader) _ = glib.setenv("GTK_A11Y", "atspi", 1);
     gtk.init();
     const display = gdk.Display.getDefault() orelse return error.NoDisplay;
+    const raw = @embedFile("pearl_resources");
+    const bytes = glib.Bytes.newStatic(raw.ptr, raw.len);
+    defer bytes.unref();
+    const resource = gio.Resource.newFromData(bytes, null) orelse return error.Resources;
+    gio.resourcesRegister(resource);
     gtk.IconTheme.getForDisplay(display).addResourcePath("/org/aqueous/Pearl/icons");
     if (layer.isSupported() == 0) return error.LayerShellRequired;
     if (config.reduced_motion) if (gtk.Settings.getDefault()) |settings| {
@@ -939,12 +951,39 @@ pub fn run() !void {
     const sizing = gtk.CssProvider.new();
     const background_css = if (config.wallpaper_color) |color| try std.fmt.allocPrintSentinel(a, ".pearl-lock.pearl-wallpaper {{ background: {s}; background-image: none; }}", .{color}, 0) else try a.dupeZ(u8, "");
     defer a.free(background_css);
-    const css = try std.fmt.allocPrintSentinel(a, "{s} .pearl-root {{font-size:{d}px;}} .pearl-greeter-form {{margin: 24px;}} .pearl-lock-card button, .pearl-lock-card entry {{min-height:26px; padding:8px 12px;}} .pearl-lock-card {{padding:20px;}} .pearl-lock-small .pearl-greeter-form {{margin-top:24px;}} .pearl-lock .pearl-large {{font-size:24px;}} .pearl-native .pearl-lock-card {{background:@theme_bg_color; color:@theme_fg_color;}} .pearl-lock dropdown {{min-width:0;}} .pearl-reduced * {{transition:none; animation:none;}} {s}", .{ presentation.css, config.font_size, background_css }, 0);
+    // The greeter's spacing rhythm and drop shadows. Box spacing is zero;
+    // every gap is an explicit margin so hidden rows collapse cleanly.
+    const greeter_css = ".pearl-greeter .pearl-greeter-clockbox {margin-top:56px;} " ++
+        ".pearl-greeter .pearl-lock-date {font-size:1.2em; font-weight:600; margin-bottom:6px; text-shadow:0 1px 14px rgb(0 0 0 / 30%);} " ++
+        ".pearl-greeter .pearl-lock-clock {font-size:4.9em; font-weight:700; letter-spacing:-0.02em; text-shadow:0 2px 22px rgb(0 0 0 / 28%);} " ++
+        ".pearl-greeter .pearl-greeter-clockbox.pearl-large {font-size:1.33em;} " ++
+        ".pearl-greeter .pearl-lock-card {box-shadow:0 16px 52px rgb(0 0 0 / 10%);} " ++
+        ".pearl-greeter .pearl-cluster {box-shadow:0 10px 30px rgb(0 0 0 / 30%);} " ++
+        ".pearl-greeter .pearl-avatar-circle {margin-bottom:18px;} " ++
+        ".pearl-greeter .pearl-title, .pearl-greeter dropdown.pearl-account-menu {margin-bottom:10px;} " ++
+        ".pearl-greeter .pearl-session-caption, .pearl-greeter .pearl-session-row {margin-bottom:24px;} " ++
+        ".pearl-greeter .pearl-field {margin-bottom:20px;} " ++
+        ".pearl-greeter .pearl-field-label {margin-bottom:11px;} " ++
+        ".pearl-greeter .pearl-hint {margin-top:8px;} " ++
+        ".pearl-greeter .pearl-caps {margin-top:-4px; margin-bottom:14px;} " ++
+        ".pearl-greeter .pearl-status {margin-bottom:20px;} " ++
+        ".pearl-greeter .pearl-cancel {margin-top:14px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-greeter-clockbox {margin-top:28px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-lock-clock {font-size:3em;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-lock-card {padding:22px 24px 24px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-avatar-circle {margin-bottom:12px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-title, .pearl-greeter.pearl-lock-small dropdown.pearl-account-menu {margin-bottom:8px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-session-caption, .pearl-greeter.pearl-lock-small .pearl-session-row {margin-bottom:16px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-field {margin-bottom:14px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-field-label {margin-bottom:8px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-status {margin-bottom:14px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-cancel {margin-top:10px;}";
+    const css = try std.fmt.allocPrintSentinel(a, "{s} .pearl-root {{font-size:{d}px;}} .pearl-greeter-form {{margin: 24px;}} .pearl-lock-card button, .pearl-lock-card entry {{min-height:26px; padding:8px 12px;}} .pearl-lock-card {{padding:30px 32px 32px;}} .pearl-lock-small .pearl-greeter-form {{margin-top:24px;}} .pearl-lock .pearl-large {{font-size:24px;}} .pearl-native .pearl-lock-card {{background:@theme_bg_color; color:@theme_fg_color;}} .pearl-lock dropdown {{min-width:0;}} .pearl-reduced * {{transition:none; animation:none;}} {s} {s}", .{ presentation.css, config.font_size, background_css, greeter_css }, 0);
     defer a.free(css);
     sizing.loadFromString(css);
     gtk.StyleContext.addProviderForDisplay(display, sizing.as(gtk.StyleProvider), 601);
     const contrast_style = gtk.CssProvider.new();
-    contrast_style.loadFromString(".pearl-greeter-contrast, .pearl-greeter-contrast .pearl-greeter-form, .pearl-greeter-contrast .pearl-lock-card {background: #000; background-image: none; color: #fff;} .pearl-greeter-contrast label {color: #fff; opacity: 1;} .pearl-greeter-contrast button, .pearl-greeter-contrast entry, .pearl-greeter-contrast check {background: #000; background-image: none; color: #fff; border: 2px solid #fff; box-shadow: none;} .pearl-greeter-contrast .pearl-cluster {background: #000; border-color: #fff;} .pearl-greeter-contrast .pearl-cluster button:checked {background: #fff; color: #000;} .pearl-greeter-contrast :focus-visible {outline: 3px solid #ffff00; outline-offset: 3px;} .pearl-greeter-contrast :disabled {border-style: dashed; opacity: 0.7;}");
+    contrast_style.loadFromString(".pearl-greeter-contrast, .pearl-greeter-contrast .pearl-greeter-form, .pearl-greeter-contrast .pearl-lock-card {background: #000; background-image: none; color: #fff;} .pearl-greeter-contrast label {color: #fff; opacity: 1;} .pearl-greeter-contrast button, .pearl-greeter-contrast entry, .pearl-greeter-contrast check {background: #000; background-image: none; color: #fff; border: 2px solid #fff; box-shadow: none;} .pearl-greeter-contrast .pearl-cluster {background: #000; border-color: #fff;} .pearl-greeter-contrast .pearl-cluster button:checked {background: #fff; color: #000;} .pearl-greeter-contrast :focus-visible {outline: 3px solid #ffff00; outline-offset: 3px;} .pearl-greeter-contrast :disabled {border-style: dashed; opacity: 0.7;} .pearl-greeter-contrast .pearl-lock-card, .pearl-greeter-contrast .pearl-cluster {box-shadow: none;} .pearl-greeter-contrast .pearl-lock-clock, .pearl-greeter-contrast .pearl-lock-date {text-shadow: none;}");
     gtk.StyleContext.addProviderForDisplay(display, contrast_style.as(gtk.StyleProvider), 602);
     const column = w.column(16);
     _ = column.as(object.Object).refSink();
@@ -955,11 +994,16 @@ pub fn run() !void {
     const date = w.label("", "pearl-lock-date");
     clock.setXalign(0.5);
     date.setXalign(0.5);
-    column.append(clock.as(gtk.Widget));
-    column.append(date.as(gtk.Widget));
+    const clockbox = w.column(0);
+    _ = clockbox.as(object.Object).refSink();
+    clockbox.as(gtk.Widget).addCssClass("pearl-greeter-clockbox");
+    clockbox.as(gtk.Widget).setHalign(.center);
+    clockbox.as(gtk.Widget).setValign(.start);
+    clockbox.append(date.as(gtk.Widget));
+    clockbox.append(clock.as(gtk.Widget));
     presentation.updateClock(clock, date);
     const panel = w.card();
-    panel.setSpacing(12);
+    panel.setSpacing(0);
     panel.as(gtk.Widget).addCssClass("pearl-lock-card");
     panel.as(gtk.Widget).setSizeRequest(220, -1);
     column.append(panel.as(gtk.Widget));
@@ -1000,6 +1044,7 @@ pub fn run() !void {
     chooser.as(gtk.Widget).addCssClass("pearl-session-chip");
     const refresh = w.iconButton("view-refresh-symbolic", "Refresh desktops");
     const session_row = w.row(8);
+    session_row.as(gtk.Widget).addCssClass("pearl-session-row");
     session_row.append(chooser.as(gtk.Widget));
     chooser.as(gtk.Widget).setHexpand(1);
     session_row.append(refresh.as(gtk.Widget));
@@ -1008,28 +1053,37 @@ pub fn run() !void {
     username.setMaxLength(257);
     username.setPlaceholderText("Username");
     w.name(username.as(gtk.Widget), "Username");
-    const username_field = w.column(4);
-    username_field.append(w.label("Username", "pearl-secondary").as(gtk.Widget));
+    const username_field = w.column(0);
+    username_field.as(gtk.Widget).addCssClass("pearl-field");
+    const username_label = w.label("Username", "pearl-secondary");
+    username_label.as(gtk.Widget).addCssClass("pearl-field-label");
+    username_field.append(username_label.as(gtk.Widget));
     username_field.append(username.as(gtk.Widget));
     panel.append(username_field.as(gtk.Widget));
-    const entry_field = w.column(4);
+    const entry_field = w.column(0);
+    entry_field.as(gtk.Widget).addCssClass("pearl-field");
     const entry_label = w.label("Password", "pearl-secondary");
+    entry_label.as(gtk.Widget).addCssClass("pearl-field-label");
     entry_label.setWrap(1);
     entry_label.setMaxWidthChars(36);
     entry_field.append(entry_label.as(gtk.Widget));
     const entry = presentation.secureEntry(4097);
     entry_field.append(entry.as(gtk.Widget));
     const password_hint = w.label("Available when requested", "pearl-secondary");
+    password_hint.as(gtk.Widget).addCssClass("pearl-hint");
     entry_field.append(password_hint.as(gtk.Widget));
     panel.append(entry_field.as(gtk.Widget));
     const caps = w.label("Caps Lock is on", "pearl-secondary");
+    caps.as(gtk.Widget).addCssClass("pearl-caps");
     caps.as(gtk.Widget).setVisible(0);
     panel.append(caps.as(gtk.Widget));
     const message = w.label("Loading installed desktops…", "pearl-secondary");
+    message.as(gtk.Widget).addCssClass("pearl-status");
     message.setMaxWidthChars(36);
     panel.append(message.as(gtk.Widget));
     if (config.fingerprint_hint) {
         const hint = w.label("Fingerprint login is available when configured", "pearl-secondary");
+        hint.as(gtk.Widget).addCssClass("pearl-status");
         hint.setWrap(1);
         hint.setMaxWidthChars(36);
         panel.append(hint.as(gtk.Widget));
@@ -1038,6 +1092,7 @@ pub fn run() !void {
     button.as(gtk.Widget).addCssClass("pearl-primary");
     panel.append(button.as(gtk.Widget));
     const cancel = gtk.Button.newWithLabel("Cancel authentication");
+    cancel.as(gtk.Widget).addCssClass("pearl-cancel");
     panel.append(cancel.as(gtk.Widget));
     const cluster = w.row(2);
     _ = cluster.as(object.Object).refSink();
@@ -1098,7 +1153,7 @@ pub fn run() !void {
     power_content.append(power_menu_box.as(gtk.Widget));
     power_content.append(power_confirm_box.as(gtk.Widget));
     power_pop.setChild(power_content.as(gtk.Widget));
-    var self: Screen = .{ .config = config, .loop = glib.MainLoop.new(null, 0), .display = display, .column = column, .panel = panel, .username = username, .username_field = username_field, .entry = entry, .entry_label = entry_label, .password_hint = password_hint, .chooser = chooser, .account_chooser = account, .message = message, .caps = caps, .button = button, .cancel_button = cancel, .refresh_button = refresh, .reboot_button = reboot, .off_button = off, .confirm = confirm, .cancel_power = cancel_power, .clock = clock, .date = date, .title_label = title_label, .session_caption = session_caption, .cluster = cluster, .larger_toggle = larger_toggle, .contrast_toggle = contrast_toggle, .power_button = power_button, .power_pop = power_pop, .power_menu_box = power_menu_box, .power_confirm_box = power_confirm_box };
+    var self: Screen = .{ .config = config, .loop = glib.MainLoop.new(null, 0), .display = display, .column = column, .panel = panel, .username = username, .username_field = username_field, .entry = entry, .entry_label = entry_label, .password_hint = password_hint, .chooser = chooser, .account_chooser = account, .message = message, .caps = caps, .button = button, .cancel_button = cancel, .refresh_button = refresh, .reboot_button = reboot, .off_button = off, .confirm = confirm, .cancel_power = cancel_power, .clock = clock, .date = date, .clockbox = clockbox, .title_label = title_label, .session_caption = session_caption, .cluster = cluster, .larger_toggle = larger_toggle, .contrast_toggle = contrast_toggle, .power_button = power_button, .power_pop = power_pop, .power_menu_box = power_menu_box, .power_confirm_box = power_confirm_box };
     self.reduced_motion = config.reduced_motion;
     self.client = .{ .path = std.mem.span(socket), .context = &self, .changed = Screen.changed, .timeout_ms = @as(c_uint, config.auth_timeout_seconds) * 1000 };
     self.client.init();

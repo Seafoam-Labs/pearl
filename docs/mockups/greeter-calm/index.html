@@ -24,9 +24,11 @@
   </header>
 
   <main class="desktop">
-    <div class="login-column">
-      <div class="clock" aria-hidden="true">10:41</div>
+    <div class="clockblock" aria-hidden="true">
       <p class="date">Tuesday, October 6</p>
+      <div class="clock">10:41</div>
+    </div>
+    <div class="login-column">
       <form id="login" class="card" autocomplete="off">
         <span class="avatar" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="6"/><path d="M5 27c0-7 4.5-10.5 11-10.5S27 20 27 27v1H5z"/></svg></span>
         <h1 id="title-plain" class="title">zoey</h1>
@@ -53,7 +55,7 @@
         <label id="username-field" class="field" hidden><span class="field-label">Username</span><input id="username" class="input" type="text" placeholder="Username" autocapitalize="none" spellcheck="false" maxlength="256"></label>
         <label class="field"><span id="password-label" class="field-label" hidden>Password</span><input id="password" class="input" type="password" placeholder="Password" autocomplete="off" aria-label="Password" aria-describedby="status caps"></label>
         <p id="caps" class="caps" hidden>Caps Lock is on</p>
-        <p id="status" class="status" role="status" aria-live="polite">Enter your password to sign in.</p>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
         <button id="submit" class="primary" type="submit">Sign in</button>
         <button id="cancel" class="cancel" type="button" hidden>Cancel authentication</button>
       </form>
@@ -87,7 +89,7 @@
 
   <section class="sheet">
     <h2>Card states</h2>
-    <p class="sheet-note">The center column holds only identity, the secret, the action, and one reserved status line. Choosers appear only when there is a choice; the refresh control lives inside the session menu.</p>
+    <p class="sheet-note">The center column holds only identity, the secret, and the action; the status line exists only when there is something to say — errors, prompts, transient notices — so the card stays tight at rest. Choosers appear only when there is a choice; the refresh control lives inside the session menu.</p>
     <div class="states">
       <figure class="state">
         <div class="card mini">
@@ -95,7 +97,6 @@
           <h1 class="title">zoey</h1>
           <p class="caption">Pearl (Aqueous) · Wayland</p>
           <div class="field"><input class="input" type="password" placeholder="Password" tabindex="-1"></div>
-          <p class="status">Enter your password to sign in.</p>
           <button class="primary" type="button" tabindex="-1">Sign in</button>
         </div>
         <figcaption>One account, one session: nothing to choose, nothing shown.</figcaption>
@@ -106,7 +107,6 @@
           <button class="title title-button" type="button" tabindex="-1">zoey<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
           <button class="chip-button" type="button" tabindex="-1">Pearl (Aqueous) · Wayland<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
           <div class="field"><input class="input" type="password" placeholder="Password" tabindex="-1"></div>
-          <p class="status">Enter your password to sign in.</p>
           <button class="primary" type="button" tabindex="-1">Sign in</button>
         </div>
         <figcaption>Choices present: the title becomes the account menu, the caption becomes the session chip.</figcaption>
@@ -118,7 +118,6 @@
           <p class="caption">Pearl (Aqueous) · Wayland</p>
           <div class="field"><span class="field-label">Username</span><input class="input" type="text" placeholder="Username" tabindex="-1"></div>
           <div class="field"><input class="input" type="password" placeholder="Password" tabindex="-1"></div>
-          <p class="status">Enter your username and password.</p>
           <button class="primary" type="button" tabindex="-1">Sign in</button>
         </div>
         <figcaption>Manual entry: the username field appears only for “Other user…”.</figcaption>

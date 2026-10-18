@@ -65,8 +65,7 @@ function render() {
   for (const id of ['title-menu', 'session-chip']) $(id).disabled = mode === 'prompt';
   if (mode === 'error') status('Authentication failed. Try again.', true);
   else if (mode === 'prompt') status('Enter the verification code from your authenticator.');
-  else if (manual) status('Enter your username and password.');
-  else status('Enter your password to sign in.');
+  else status('');
 }
 function chooseUser(next) {
   user = next;
