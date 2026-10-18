@@ -6,7 +6,7 @@
 .clockblock{position:absolute;top:clamp(36px,7%,72px);left:0;right:0;text-align:center;pointer-events:none}
 .date{margin:0 0 6px;font-size:21px;font-weight:600;text-shadow:0 1px 14px rgb(0 0 0 / 30%)}
 .clock{font-size:86px;font-weight:700;line-height:1.05;letter-spacing:-2px;text-shadow:0 2px 22px rgb(0 0 0 / 28%)}
-.card{background:var(--surface);padding:30px 32px 32px;border-radius:28px;border:1px solid rgb(255 255 255 / 4%);box-shadow:0 16px 52px rgb(0 0 0 / 10%)}
+.card{background:rgb(33 31 38 / .86);backdrop-filter:blur(14px);padding:30px 32px 32px;border-radius:28px;border:1px solid rgb(255 255 255 / 4%);box-shadow:0 16px 52px rgb(0 0 0 / 10%)}
 .avatar{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 18px;border-radius:50%;background:var(--avatar-bg);color:var(--avatar-fg)}.avatar svg{width:28px;height:28px;fill:currentColor;stroke:none}
 .title{font-size:26px;font-weight:600;letter-spacing:-.5px;line-height:1.25;margin:0 0 10px;text-align:center;color:var(--text)}
 .title-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:transparent;border-radius:12px;padding:2px 6px}.title-button:hover{background:var(--field)}.title-button svg{width:20px;height:20px;flex:none}
@@ -71,10 +71,13 @@
 .legend th{color:#bdb6c8;font-weight:600;font-size:12px}
 .legend td:first-child{color:var(--accent)}
 body.light{color-scheme:light;--surface:#fffbff;--field:#ece6f0;--popup:#f7f2fa;--text:#211f26;--muted:#49454f;--accent:#6750a4;--on-accent:#fff;--error:#b3261e;--avatar-bg:#eaddff;--avatar-fg:#4f378b;--bg-start:#e8e1f3;--bg-end:#c9b8e8;--cluster-bg:rgb(255 255 255 / .82);--cluster-border:rgb(0 0 0 / 8%)}
+.light .card{background:rgb(255 251 255 / .86)}
 .light .desktop{background:linear-gradient(125deg,var(--bg-start),#ded1ed,var(--bg-end))}
 .light .icon:hover{background:var(--field)}
 body.contrast{--surface:#000;--field:#111;--popup:#111;--text:#fff;--muted:#fff;--accent:#e0cdff;--outline:#fff;--avatar-bg:#000;--avatar-fg:#fff;--cluster-bg:#000;--cluster-border:#fff}
 .contrast .input{border-color:#fff}
+.contrast .card{background:#000;backdrop-filter:none}
+.contrast .cluster{backdrop-filter:none}
 .contrast .card,.contrast .cluster{box-shadow:none}
 body.large .login-column{width:430px}
 body.large .input{font-size:18px}

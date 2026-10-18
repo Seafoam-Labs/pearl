@@ -973,7 +973,7 @@ pub fn run() !void {
         defer a.free(style);
         provider.loadFromString(style);
         gtk.StyleContext.addProviderForDisplay(display, provider.as(gtk.StyleProvider), 600);
-        if (options.test_hooks) log.info("event=greeter-palette custom={}", .{custom != null});
+        log.info("event=greeter-palette custom={}", .{custom != null});
     }
     const sizing = gtk.CssProvider.new();
     const background_css = if (config.wallpaper_color) |color| try std.fmt.allocPrintSentinel(a, ".pearl-lock.pearl-wallpaper {{ background: {s}; background-image: none; }}", .{color}, 0) else try a.dupeZ(u8, "");
@@ -1014,7 +1014,7 @@ pub fn run() !void {
     sizing.loadFromString(css);
     gtk.StyleContext.addProviderForDisplay(display, sizing.as(gtk.StyleProvider), 601);
     const contrast_style = gtk.CssProvider.new();
-    contrast_style.loadFromString(".pearl-greeter-contrast, .pearl-greeter-contrast .pearl-greeter-form, .pearl-greeter-contrast .pearl-lock-card {background: #000; background-image: none; color: #fff;} .pearl-greeter-contrast label {color: #fff; opacity: 1;} .pearl-greeter-contrast button, .pearl-greeter-contrast entry, .pearl-greeter-contrast check {background: #000; background-image: none; color: #fff; border: 2px solid #fff; box-shadow: none;} .pearl-greeter-contrast .pearl-cluster {background: #000; border-color: #fff;} .pearl-greeter-contrast .pearl-cluster button:checked {background: #fff; color: #000;} .pearl-greeter-contrast :focus-visible {outline: 3px solid #ffff00; outline-offset: 3px;} .pearl-greeter-contrast :disabled {border-style: dashed; opacity: 0.7;} .pearl-greeter-contrast .pearl-lock-card, .pearl-greeter-contrast .pearl-cluster {box-shadow: none;} .pearl-greeter-contrast .pearl-lock-clock, .pearl-greeter-contrast .pearl-lock-date {text-shadow: none;} .pearl-greeter-contrast .pearl-float-status {text-shadow: none;}");
+    contrast_style.loadFromString(".pearl-greeter-contrast, .pearl-greeter-contrast .pearl-greeter-form, .pearl-greeter-contrast .pearl-lock-card {background: #000; background-image: none; color: #fff;} .pearl-greeter-contrast label {color: #fff; opacity: 1;} .pearl-greeter-contrast button, .pearl-greeter-contrast entry, .pearl-greeter-contrast check {background: #000; background-image: none; color: #fff; border: 2px solid #fff; box-shadow: none;} .pearl-greeter-contrast .pearl-cluster {background: #000; border-color: #fff;} .pearl-greeter-contrast .pearl-cluster button:checked {background: #fff; color: #000;} .pearl-greeter-contrast :focus-visible {outline: 3px solid #ffff00; outline-offset: 3px;} .pearl-greeter-contrast :disabled {border-style: dashed; opacity: 0.7;} .pearl-greeter-contrast .pearl-lock-card, .pearl-greeter-contrast .pearl-cluster {box-shadow: none; backdrop-filter: none;} .pearl-greeter-contrast .pearl-lock-clock, .pearl-greeter-contrast .pearl-lock-date {text-shadow: none;} .pearl-greeter-contrast .pearl-float-status {text-shadow: none;}");
     gtk.StyleContext.addProviderForDisplay(display, contrast_style.as(gtk.StyleProvider), 602);
     const column = w.column(16);
     _ = column.as(object.Object).refSink();
