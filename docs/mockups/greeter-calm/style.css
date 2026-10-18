@@ -10,15 +10,15 @@
 .avatar{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 18px;border-radius:50%;background:var(--avatar-bg);color:var(--avatar-fg)}.avatar svg{width:28px;height:28px;fill:currentColor;stroke:none}
 .title{font-size:26px;font-weight:600;letter-spacing:-.5px;line-height:1.25;margin:0 0 10px;text-align:center;color:var(--text)}
 .title-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:transparent;border-radius:12px;padding:2px 6px}.title-button:hover{background:var(--field)}.title-button svg{width:20px;height:20px;flex:none}
-.caption{margin:0 0 24px;text-align:center;font-size:13px;color:var(--muted)}
-.chip-button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin:0 0 24px;background:var(--field);border-radius:999px;padding:7px 18px;font-size:13px;color:var(--muted)}.chip-button:hover{background:var(--popup)}.chip-button svg{width:16px;height:16px;flex:none}
+.caption{margin:0 0 20px;text-align:center;font-size:13px;color:var(--muted)}
+.chip-button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin:0 0 20px;background:var(--field);border-radius:999px;padding:7px 18px;font-size:13px;color:var(--muted)}.chip-button:hover{background:var(--popup)}.chip-button svg{width:16px;height:16px;flex:none}
 .menu{position:relative;z-index:10;list-style:none;padding:6px;margin:8px 0 18px;background:var(--popup);border:1px solid var(--outline);border-radius:17px;box-shadow:0 12px 30px rgb(0 0 0 / 35%)}
 .menu li[role=option]{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:8px 14px;border-radius:11px;cursor:pointer}
 .menu li[role=option].active{background:rgb(207 189 254 / 15%)}
 .menu strong{font-size:15px;font-weight:500}.menu small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
 .check{color:var(--accent);visibility:hidden}.menu [aria-selected=true] .check{visibility:visible}
 .menu-action{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:11px;cursor:pointer;color:var(--muted);font-size:13px;border-top:1px solid rgb(255 255 255 / 8%);margin-top:6px}.menu-action:hover{background:var(--field);color:var(--text)}.menu-action svg{width:16px;height:16px}
-.field{display:block;margin-bottom:20px;min-width:0}
+.field{display:block;margin-bottom:24px;min-width:0}
 .field-label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin:0 0 11px 4px}
 .input{width:100%;min-width:0;height:48px;background:var(--field);border:1px solid transparent;border-radius:999px;padding:0 18px;font-size:15px}
 .input::placeholder{color:var(--muted);opacity:.7}
@@ -47,7 +47,7 @@
 .states{display:flex;gap:22px;flex-wrap:wrap}
 .state{margin:0;width:300px}
 .state figcaption{margin-top:12px;font-size:12px;color:#bdb6c8}
-.card.mini{padding:24px 24px 26px}.card.mini .title{font-size:21px}.card.mini .avatar{width:46px;height:46px;margin-bottom:14px}.card.mini .avatar svg{width:23px;height:23px}.card.mini .caption{margin-bottom:18px}.card.mini .input{height:42px;font-size:14px}.card.mini .primary{min-height:40px}.card.mini .status{font-size:12.5px;margin-bottom:16px}.card.mini .title-button,.card.mini .chip-button{font-size:inherit}.card.mini .chip-button{margin-bottom:18px;padding:6px 18px;font-size:12px}.card.mini .chip-button svg,.card.mini .title-button svg{width:16px;height:16px}.card.mini .cancel{min-height:32px;font-size:12px}
+.card.mini{padding:24px 24px 26px}.card.mini .title{font-size:21px}.card.mini .avatar{width:46px;height:46px;margin-bottom:14px}.card.mini .avatar svg{width:23px;height:23px}.card.mini .caption{margin-bottom:16px}.card.mini .field{margin-bottom:20px}.card.mini .input{height:42px;font-size:14px}.card.mini .primary{min-height:40px}.card.mini .status{font-size:12.5px;margin-bottom:16px}.card.mini .title-button,.card.mini .chip-button{font-size:inherit}.card.mini .chip-button{margin-bottom:16px;padding:6px 18px;font-size:12px}.card.mini .chip-button svg,.card.mini .title-button svg{width:16px;height:16px}.card.mini .cancel{min-height:32px;font-size:12px}
 .cluster-showcase{display:flex;gap:60px;align-items:flex-end;flex-wrap:wrap;padding:170px 4px 40px}
 .cluster.static{position:relative;width:max-content}
 .cluster.static.open-demo .popover{display:block}

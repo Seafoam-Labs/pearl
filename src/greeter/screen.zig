@@ -231,6 +231,8 @@ const Screen = struct {
         self.entry.setInputPurpose(if (visible_response) .free_form else .password);
         self.entry.setPlaceholderText(if (visible_response) "Response" else "Password");
         self.entry_label.setText(if (secret) self.client.response.z() else "Password");
+        // The placeholder carries the name at rest; the label exists for prompts.
+        self.entry_label.as(gtk.Widget).setVisible(@intFromBool(secret));
         self.password_hint.as(gtk.Widget).setVisible(@intFromBool(c.state == .idle and !self.config.password_first));
         w.name(self.entry.as(gtk.Widget), if (secret) self.client.response.z() else "Password");
         self.button.setLabel(if (secret) "Continue" else "Sign in");
@@ -961,8 +963,8 @@ pub fn run() !void {
         ".pearl-greeter .pearl-cluster {box-shadow:0 10px 30px rgb(0 0 0 / 30%);} " ++
         ".pearl-greeter .pearl-avatar-circle {margin-bottom:18px;} " ++
         ".pearl-greeter .pearl-title, .pearl-greeter dropdown.pearl-account-menu {margin-bottom:10px;} " ++
-        ".pearl-greeter .pearl-session-caption, .pearl-greeter .pearl-session-row {margin-bottom:24px;} " ++
-        ".pearl-greeter .pearl-field {margin-bottom:20px;} " ++
+        ".pearl-greeter .pearl-session-caption, .pearl-greeter .pearl-session-row {margin-bottom:20px;} " ++
+        ".pearl-greeter .pearl-field {margin-bottom:24px;} " ++
         ".pearl-greeter .pearl-field-label {margin-bottom:11px;} " ++
         ".pearl-greeter .pearl-hint {margin-top:8px;} " ++
         ".pearl-greeter .pearl-caps {margin-top:-4px; margin-bottom:14px;} " ++
@@ -973,8 +975,8 @@ pub fn run() !void {
         ".pearl-greeter.pearl-lock-small .pearl-lock-card {padding:22px 24px 24px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-avatar-circle {margin-bottom:12px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-title, .pearl-greeter.pearl-lock-small dropdown.pearl-account-menu {margin-bottom:8px;} " ++
-        ".pearl-greeter.pearl-lock-small .pearl-session-caption, .pearl-greeter.pearl-lock-small .pearl-session-row {margin-bottom:16px;} " ++
-        ".pearl-greeter.pearl-lock-small .pearl-field {margin-bottom:14px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-session-caption, .pearl-greeter.pearl-lock-small .pearl-session-row {margin-bottom:14px;} " ++
+        ".pearl-greeter.pearl-lock-small .pearl-field {margin-bottom:16px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-field-label {margin-bottom:8px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-status {margin-bottom:14px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-cancel {margin-top:10px;}";
