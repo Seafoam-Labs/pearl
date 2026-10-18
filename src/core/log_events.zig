@@ -49,7 +49,6 @@ pub const events: []const Event = &.{
     .{ .name = "greeter-host-started", .scopes = &.{.greeter} },
     .{ .name = "greeter-outputs", .scopes = &.{.greeter} },
     .{ .name = "greeter-ready", .scopes = &.{.greeter} },
-    .{ .name = "greeter-reduced-motion", .scopes = &.{.greeter} },
     .{ .name = "greeter-selection", .scopes = &.{.greeter} },
     .{ .name = "greeter-state", .scopes = &.{.greeter} },
     .{ .name = "greeter-timeout", .scopes = &.{.greeter} },
