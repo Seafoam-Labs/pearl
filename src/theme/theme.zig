@@ -52,9 +52,15 @@ pub const motion_ms = 150;
 /// Expand a scoped stylesheet for both palettes. Only background colors carry
 /// state-layer alpha; foreground text and entire widget subtrees stay opaque.
 pub fn css(allocator: std.mem.Allocator, template: []const u8) ![:0]u8 {
+    return cssPalettes(allocator, template, dark, light);
+}
+
+/// Expand a scoped stylesheet for caller-supplied palettes, e.g. ones derived
+/// from a wallpaper by matugen instead of the stock Material pair.
+pub fn cssPalettes(allocator: std.mem.Allocator, template: []const u8, dark_palette: Palette, light_palette: Palette) ![:0]u8 {
     var result: std.ArrayList(u8) = .empty;
     defer result.deinit(allocator);
-    inline for (.{ .{ "pearl-dark", dark }, .{ "pearl-light", light } }) |pair| {
+    inline for (.{ .{ "pearl-dark", dark_palette }, .{ "pearl-light", light_palette } }) |pair| {
         const sheet = try scopedCss(allocator, template, pair[0], pair[1]);
         defer allocator.free(sheet);
         try result.appendSlice(allocator, sheet);

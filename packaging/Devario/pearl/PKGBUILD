@@ -1,8 +1,8 @@
-# Devario Core: build the v0.2.8 Pearl release tag.
+# Devario Core: build the v0.2.9 Pearl release tag.
 # One build produces the independently installable shell and login greeter.
 pkgbase=pearl
 pkgname=(pearl pearl-greeter)
-pkgver=0.2.8
+pkgver=0.2.9
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
@@ -45,7 +45,7 @@ sha256sums=('SKIP'
             'd9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9'
             '3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe'
             '3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160'
-            'ce3742dfdec11e76a06413a0b30a411e191dea4eb640a208eab98e2450d46340')
+            '562532959fa4274ab7b37a5d36894bfb0a4f161fd002a418ea8d46114c3a9b1f')
 
 prepare() {
     cd "$srcdir/pearl-$pkgver"
@@ -90,6 +90,7 @@ check() {
 
 package_pearl() {
     depends=("${_shell_depends[@]}")
+    conflicts=('pearl-git')
     # Capability required by the session dispatcher; bundled in the shell.
     provides=('pearl-capture-picker=1')
     optdepends=('pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported'

@@ -26,6 +26,8 @@ class GreeterInstall(unittest.TestCase):
         units = self.root/'usr/lib/systemd/system'
         units.mkdir(parents=True)
         (units/'pearl-greeter.service').write_text((ROOT/'packaging/greeter/pearl-greeter.service').read_text())
+        (units/'pearl-greeter-sync.socket').write_text((ROOT/'packaging/greeter/pearl-greeter-sync.socket').read_text())
+        (units/'pearl-greeter-sync@.service').write_text((ROOT/'packaging/greeter/pearl-greeter-sync@.service').read_text())
         (units/'old.service').write_text('[Service]\nExecStart=/usr/bin/true\n[Install]\nAlias=display-manager.service\nWantedBy=graphical.target\n')
         (units/'ly@.service').write_text('[Service]\nExecStart=/usr/bin/true\n[Install]\nAlias=autovt@.service\nWantedBy=multi-user.target\nDefaultInstance=tty2\n')
         (units/'ly.service').write_text('[Service]\nExecStart=/usr/bin/true\n[Install]\nWantedBy=multi-user.target\n')
@@ -286,7 +288,10 @@ class GreeterInstall(unittest.TestCase):
         subprocess.run(['python3', str(ROOT/'packaging/greeter/stage.py'), '--system-package', '--dest', str(payload)], check=True, capture_output=True)
         required = ('etc/pearl/greeter.json', 'usr/share/pearl-greeter/greetd.toml',
                     'usr/lib/sysusers.d/pearl-greeter.conf', 'usr/lib/tmpfiles.d/pearl-greeter.conf',
-                    'usr/lib/systemd/system/pearl-greeter.service', 'usr/lib/pearl/pearl-greeter-setup',
+                    'usr/lib/systemd/system/pearl-greeter.service',
+                    'usr/lib/systemd/system/pearl-greeter-sync.socket',
+                    'usr/lib/systemd/system/pearl-greeter-sync@.service',
+                    'usr/lib/pearl/pearl-greeter-setup',
                     'usr/lib/pearl/pearl-greeter-host', 'usr/lib/pearl/pearl-greeter-init',
                     'usr/lib/pearl/pearl-greeter-session', 'usr/bin/pearl-greeter')
         for name in required:

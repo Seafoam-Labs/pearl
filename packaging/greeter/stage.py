@@ -40,6 +40,8 @@ def main():
         # replaces it using this template, avoiding a pacman ownership conflict.
         files['usr/share/pearl-greeter/greetd.toml']=(ROOT/'packaging/greeter/greetd.toml',0o644)
         files['usr/lib/systemd/system/pearl-greeter.service']=(ROOT/'packaging/greeter/pearl-greeter.service',0o644)
+        files['usr/lib/systemd/system/pearl-greeter-sync.socket']=(ROOT/'packaging/greeter/pearl-greeter-sync.socket',0o644)
+        files['usr/lib/systemd/system/pearl-greeter-sync@.service']=(ROOT/'packaging/greeter/pearl-greeter-sync@.service',0o644)
         files['usr/lib/sysusers.d/pearl-greeter.conf']=(ROOT/'packaging/greeter/pearl-greeter.sysusers',0o644)
         files['usr/lib/tmpfiles.d/pearl-greeter.conf']=(ROOT/'packaging/greeter/pearl-greeter.tmpfiles',0o644)
         files['usr/lib/pearl/pearl-greeter-setup']=(ROOT/'packaging/greeter/setup.py',0o755)

@@ -47,6 +47,11 @@ post_upgrade() {
     # Keep disabled services and later display-manager choices unchanged.
     _provision_pearl_greeter || return 1
     _install_greetd_config || return 1
+    # The appearance sync socket only auto-enables on fresh installs; upgrades
+    # need it activated or syncs fall back to pkexec (which cannot prompt when
+    # Pearl runs outside a logind session scope).
+    systemctl enable --now pearl-greeter-sync.socket 2>/dev/null ||
+        echo '==> Activate appearance sync later: sudo systemctl enable --now pearl-greeter-sync.socket'
     echo '==> Pearl Greeter updated; original greetd config remains in /etc/greetd/config.toml.bak.'
     echo '    Password entry is now enabled before Sign in by default.'
     echo '    If your preserved /etc/pearl/greeter.json has password_first: false, set it to true for one-action password login.'

@@ -13,6 +13,7 @@ pub const Controller = struct {
     exchanges: usize = 0,
     kind: p.Prompt = .info,
     start_submitted: bool = false,
+    cancel_after_failure: bool = false,
     pub fn needsInput(self: *const Controller) bool {
         return self.state == .prompt and (self.kind == .secret or self.kind == .visible);
     }
@@ -31,6 +32,7 @@ pub const Controller = struct {
         self.connection +%= 1;
         self.exchanges = 0;
         self.start_submitted = false;
+        self.cancel_after_failure = false;
         self.state = .connecting;
     }
     pub fn connected(self: *Controller) !void {
@@ -46,6 +48,7 @@ pub const Controller = struct {
     }
     pub fn cancel(self: *Controller) !void {
         if (self.start_submitted or self.state == .idle or self.state == .handoff or self.state == .unavailable or self.state == .cancelling) return error.CannotCancel;
+        self.cancel_after_failure = self.state == .failed;
         self.attempt +%= 1;
         self.connection +%= 1;
         self.prompt_generation +%= 1;
@@ -63,11 +66,17 @@ pub const Controller = struct {
         const pending = self.pending orelse return error.UnsolicitedResponse;
         self.pending = null;
         if (response.kind == .@"error") {
-            self.state = if (pending == .cancel or pending == .start) .unavailable else .failed;
+            if (pending == .cancel) {
+                // A daemon whose conversation already ended in an auth error
+                // has nothing left to cancel and rejects cancel_session; that
+                // is a clean retry state, not a lost login service.
+                self.state = if (self.cancel_after_failure) .idle else .unavailable;
+            } else self.state = if (pending == .start) .unavailable else .failed;
             return;
         }
         if (pending == .cancel) {
             if (response.kind != .success) return error.UnexpectedResponse;
+            self.cancel_after_failure = false;
             self.state = .idle;
             return;
         }
@@ -138,6 +147,28 @@ test "stale replies cannot authorize changed selection and start never replays" 
     try std.testing.expectEqual(State.handoff, c.state);
     try std.testing.expectError(error.UnauthorizedStart, c.start());
     try std.testing.expectError(error.Busy, c.begin());
+}
+test "cancel rejected after an auth failure recovers to idle" {
+    var c: Controller = .{};
+    try c.begin();
+    try c.connected();
+    try c.receive(c.connection, .{ .kind = .auth_message, .prompt = .secret });
+    try c.answer(c.prompt_generation, false);
+    try c.receive(c.connection, .{ .kind = .@"error", .authentication_error = true });
+    try std.testing.expectEqual(State.failed, c.state);
+    try c.cancel();
+    try c.receive(c.connection, .{ .kind = .@"error" });
+    try std.testing.expectEqual(State.idle, c.state);
+    try c.begin();
+    try std.testing.expectEqual(State.connecting, c.state);
+    // A rejected cancel mid-conversation still means the daemon generation
+    // is ambiguous: never retry in it.
+    var d: Controller = .{};
+    try d.begin();
+    try d.connected();
+    try d.cancel();
+    try d.receive(d.connection, .{ .kind = .@"error" });
+    try std.testing.expectEqual(State.unavailable, d.state);
 }
 test "only one matching response per prompt including null acknowledgements" {
     var c: Controller = .{};

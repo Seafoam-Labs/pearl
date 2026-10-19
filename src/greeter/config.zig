@@ -12,8 +12,10 @@ pub const Config = struct {
     wallpaper: ?[]const u8 = null,
     wallpaper_fit: enum { cover, contain } = .cover,
     wallpaper_color: ?[]const u8 = null,
+    surface_opacity: ?u8 = null,
     font_size: u8 = 16,
     reduced_motion: bool = true,
+    high_contrast: bool = false,
     preferred_output: ?[]const u8 = null,
     preferred_output_edid: ?[]const u8 = null,
     default_session: ?[]const u8 = null,
@@ -39,6 +41,7 @@ pub const Config = struct {
             for (color[1..]) |c| if (!std.ascii.isHex(c)) return error.InvalidBackgroundColor;
         }
         if (self.version != 1 or self.font_size < 12 or self.font_size > 32 or self.auth_timeout_seconds < 30 or self.auth_timeout_seconds > 300 or self.roots.len > 16 or self.roots.len == 0 or self.allow.len > 256 or self.deny.len > 256) return error.InvalidConfig;
+        if (self.surface_opacity) |value| if (value > 100) return error.InvalidConfig;
         for (self.roots) |root| if (root.path.len == 0 or root.path[0] != '/' or !p.validText(root.path, 4096)) return error.InvalidRoot;
         for ([_]?[]const u8{ self.gtk_theme, self.wallpaper, self.preferred_output, self.default_session, self.force_session }) |value| if (value) |v| if (!p.validText(v, 4096)) return error.InvalidConfig;
         for (self.allow) |id| if (!validId(id)) return error.InvalidSessionId;

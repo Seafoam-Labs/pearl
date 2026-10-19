@@ -138,7 +138,8 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `wallpaper` | Optional administrator-owned PNG/JPEG; at most 16 MiB input; current shared decoder restricts dimensions to 4096 per axis and 8 Mi pixels |
 | `wallpaper_fit` | `cover` (default) or `contain` |
 | `wallpaper_color` | Optional `#RRGGBB` solid background, also visible around a contained image; null retains the theme gradient |
-| `font_size`, `reduced_motion` | 12–32 px base font and animation policy; larger-text button remains available |
+| `surface_opacity` | Optional 0–100 percent synced from the bar's custom background opacity; applied to the card and cluster frost; null keeps the greeter defaults |
+| `font_size`, `reduced_motion`, `high_contrast` | 12–32 px base font, animation policy, and the startup state of the corner high-contrast toggle |
 | `preferred_output` | Connector preference for initial card placement; output changes never authorize authentication |
 | `preferred_output_edid` | Monitor identity hash, taking precedence over `preferred_output`; accepts 64 hex digits with an optional `sha256:` prefix |
 | `roots` | Ordered session directories, each with `path` and `type` (`wayland` or `x11`); earlier entries mask later entries with the same ID |
@@ -259,14 +260,16 @@ VM cases. Likewise, installed desktop metadata is not a compatibility certificat
 Unsupported Terminal/Path requirements and malformed Exec forms are rejected;
 desktop-specific wrapper requirements need pinned validation before deployment.
 
-The footer offers larger text, high contrast and reduced motion for the current
-greeter session. Reduced motion also disables GTK cursor/widget animation,
-keeping the idle login screen quiet on software rendering. The screen displays
-the actual GTK keyboard layout. Changing layouts is gated on
-a supported compositor input integration. Orca launching is optional; private AT-SPI access,
+A corner cluster pinned to the interactive output offers larger text, high
+contrast and, when configured, the Orca launcher beside the power control.
+Larger text and high contrast apply to the current greeter session;
+`high_contrast` seeds the toggle at startup. Reduced motion is
+administrator-owned and also disables GTK cursor/widget animation,
+keeping the idle login screen quiet on software rendering. The power popover
+honors logind capability and requires confirmation. It never asks
+for interactive privilege escalation or installs permissive polkit rules.
+Orca launching is optional; private AT-SPI access,
 speech and credential privacy still need explicit real accessibility acceptance.
-Power controls honor logind capability and require confirmation. They never ask
-for interactive privilege escalation or install permissive polkit rules.
 
 ## Sync appearance from Settings
 
@@ -278,7 +281,27 @@ effect the next time the greeter starts.
 
 The action is implemented in Zig in both frontends and the packaged
 `pearl-greeter-sync` helper. Settings reads and decodes the user's image before
-authorization, resizes it to fit 3840×2160, and sends PNG bytes. The helper writes
+authorization, resizes it to fit 3840×2160, and sends PNG bytes. **Choose image
+and sync…** in the same section picks any PNG/JPEG instead of the desktop
+background and runs the identical privileged sync with it; when colors derive
+from a wallpaper, the picked image also seeds the palette.
+
+Transport: the client prefers the socket-activated root service
+(`pearl-greeter-sync.socket`, `/run/pearl/greeter-sync.sock`). Each connection
+runs `pearl-greeter-sync --service` as root; it identifies the caller with
+`SO_PEERCRED`, resolves that uid's display session through logind, and calls
+polkit `CheckAuthorization` with that session as the explicit subject — so the
+Pearl shell's registered authentication agent prompts even when the client
+process lives outside a logind session scope (user-service deployments where
+pkexec's implicit subject has no session and can never prompt). Only after
+authorization does the service read the request and apply it. When the socket
+is absent (older installs) the client falls back to `pkexec
+/usr/lib/pearl/pearl-greeter-sync --apply`, which works where the caller's
+process is inside a login session scope. A custom bar background opacity rides
+along as `surface_opacity`; automatic opacity leaves the greeter's default
+frost untouched.
+
+The helper writes
 root-owned assets under `/etc/pearl/greeter-assets` and atomically updates only the
 appearance fields in `/etc/pearl/greeter.json`. Session choices, UWSM, authentication
 and other login settings are preserved. Solid color, gradient, cover and contain
@@ -286,7 +309,12 @@ background modes are supported; returning to solid or gradient clears the old
 wallpaper reference.
 
 GTK themes must be installed system-wide; personal theme directories are not
-copied. Dynamic themes use the selected static Material light/dark variant.
+copied. When dynamic colors are enabled, the sync also ships the shell's matugen
+palette: the helper stores it as `greeter-assets/palette.json`, and the greeter
+expands its stylesheet from it after validating both variants' contrast, falling
+back to the stock Material palettes when the sidecar is absent or invalid. A sync
+without dynamic colors retires a published palette. The greeter never runs matugen
+and never rotates wallpapers: the synced image is static until the next sync.
 The button is disabled when the greeter helper is absent. The greeter package
 includes the helper, polkit dependency and authorization policy.
 

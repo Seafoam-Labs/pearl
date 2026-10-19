@@ -1,0 +1,14 @@
+[Unit]
+Description=Pearl Greeter appearance sync connection %i
+
+[Service]
+Type=oneshot
+# The polkit prompt waits on a human; never let the start timeout kill it.
+TimeoutStartSec=600
+ExecStart=/usr/lib/pearl/pearl-greeter-sync --service
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+ProtectSystem=strict
+ReadWritePaths=/etc/pearl
+PrivateTmp=yes

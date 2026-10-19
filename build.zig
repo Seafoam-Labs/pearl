@@ -266,6 +266,7 @@ pub fn build(b: *std.Build) void {
             const gm = greeterModule(b, bindings, target, optimize, b.fmt("src/{s}_main.zig", .{component}), instrumented);
             gm.addImport("wayland", native);
             gm.addImport("gdkwayland4", bindings.module("gdkwayland4"));
+            gm.addAnonymousImport("pearl_resources", .{ .root_source_file = resources });
             gm.linkSystemLibrary("wayland-client", .{});
             gm.strip = release and !instrumented;
             const name = std.mem.replaceOwned(u8, b.allocator, component, "_", "-") catch @panic("OOM");

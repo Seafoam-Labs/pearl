@@ -164,7 +164,7 @@ def main():
                     continue
                 thread.start()
                 if mode in ('switch', 'other', 'remembered-switch'):
-                    key('discard-on-user-change'); back(); key('-k', 'space')
+                    key('discard-on-user-change'); back(); back(); back(); key('-k', 'space')
                     snapshot('login-' + mode + '-menu')
                     key('-k', 'Down', *(['-k', 'Down'] if mode == 'other' else []), '-k', 'Return')
                     child.expect('selected=' + ('2 manual=true' if mode == 'other' else '1 manual=false'))
@@ -178,13 +178,13 @@ def main():
                     wait_for(lambda: [line for line in child.lines if 'event=greeter-selection' in line][-1].endswith('desktop=wayland:other.desktop'))
                     snapshot('login-' + mode)
                 if mode == 'remembered-override':
-                    key('-k', 'Tab', '-k', 'space', '-k', 'End', '-k', 'Return')
-                    back()
+                    back(); back(); key('-k', 'space', '-k', 'End', '-k', 'Return')
+                    back(); back()
                     assert [line for line in child.lines if 'event=greeter-selection' in line][-1].endswith('desktop=wayland:pearl.desktop')
                 if mode == 'refresh-user':
                     # Explicit selection belongs to the old account. Removing it
                     # during refresh must apply the replacement user's preference.
-                    key('-k', 'Tab', '-k', 'space', '-k', 'Home', '-k', 'Return')
+                    back(); back(); key('-k', 'space', '-k', 'Home', '-k', 'Return')
                     key('-k', 'space', '-k', 'End', '-k', 'Return')
                     passwd.write_text('another-user:x:1002:1002::/home/another:/bin/sh\n')
                     key('-k', 'Tab', '-k', 'space')
@@ -192,17 +192,17 @@ def main():
                     assert [line for line in child.lines if 'event=greeter-selection' in line][-1].endswith('desktop=wayland:other.desktop')
                     passwd.write_text('fixture-user:x:1001:1001::/home/fixture:/bin/sh\nanother-user:x:1002:1002::/home/another:/bin/sh\n')
                 if mode == 'refresh':
-                    key('discard-on-refresh', '-k', 'Tab', '-k', 'Tab', '-k', 'space')
+                    key('discard-on-refresh'); back(); key('-k', 'space')
                     wait_for(lambda: sum('event=greeter-ready' in line for line in child.lines) == 2)
                 if mode == 'desktop-change':
                     # Choose a different desktop after typing; the password must survive.
-                    key('fixture-secret', '-k', 'Tab', '-k', 'space', '-k', 'Home', '-k', 'Return')
-                    back()
+                    key('fixture-secret'); back(); back(); key('-k', 'space', '-k', 'Home', '-k', 'Return')
+                    back(); back()
                 if mode == 'password': snapshot('login-initial')
                 if mode not in ('blank', 'desktop-change'): key('fixture-secret')
                 # One Enter creates the session and later supplies the first secret answer.
                 if mode == 'button':
-                    key('-k', 'Tab', '-k', 'Tab', '-k', 'Tab', '-k', 'space')
+                    key('-k', 'Tab', '-k', 'space')
                 else:
                     key('-k', 'Return')
                 assert passive_ready.wait(5), (mode, errors, child.lines[-12:])

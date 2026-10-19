@@ -119,13 +119,9 @@ def main():
                 child.expect('event=greeter-account count=0 selected=0 manual=true')
             if theme=='contrast':
                 # Sign in is disabled until the manual username is valid.
-                key(*(['-k','Tab']*5),'-k','space')
+                key(*(['-k','Tab']*2),'-k','space')
                 child.expect('event=greeter-contrast enabled=true')
-                key('-k','Tab','-k','space')
-                child.expect('event=greeter-reduced-motion enabled=false')
-                key('-k','space')
-                child.expect('event=greeter-reduced-motion enabled=true')
-                for _ in range(6):key('-M','shift','-k','ISO_Left_Tab','-m','shift')
+                for _ in range(2):key('-M','shift','-k','ISO_Left_Tab','-m','shift')
             if theme=='material_dark':
                 time.sleep(2); before=metrics(child.proc.pid);host_before=metrics(session.compositor.proc.pid);time.sleep(args.idle_seconds);after=metrics(child.proc.pid);host_after=metrics(session.compositor.proc.pid)
                 report['compositor_idle']={'pss_bytes':host_after['pss_bytes'],'cpu_ticks':host_after['cpu_ticks']-host_before['cpu_ticks'],'interval_seconds':args.idle_seconds}
