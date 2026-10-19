@@ -2,13 +2,21 @@
 //! scheduling-profiles.json, and the /etc/default/scx file that applies them.
 //! Pure data; the privileged helper writes the file and drives systemd.
 const std = @import("std");
-const m = @import("sched_ext_model.zig");
 
 pub const file_name = "scheduling-profiles.json";
 pub const env_path = "/etc/default/scx";
 pub const max_profiles = 8;
 pub const max_bytes = 16384;
 pub const max_args = 32;
+/// The kernel's sched_ext state, from /sys/kernel/sched_ext/state.
+pub const Kernel = enum { unavailable, disabled, enabled, unknown };
+
+/// Scheduler binaries are named scx_<name>.
+pub fn validName(name: []const u8) bool {
+    if (name.len <= 4 or name.len > 100 or !std.mem.startsWith(u8, name, "scx_")) return false;
+    for (name[4..]) |c| if (!std.ascii.isAlphanumeric(c) and c != '_') return false;
+    return true;
+}
 
 pub const Profile = struct {
     id: []const u8,
@@ -72,7 +80,7 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Config {
             has_stop = true;
         } else {
             const sched = try text(item, "sched") orelse return error.InvalidProfiles;
-            if (!m.validName(sched)) return error.InvalidProfiles;
+            if (!validName(sched)) return error.InvalidProfiles;
             profile.sched = sched;
             if (item.object.get("args")) |args| {
                 if (args != .array or args.array.items.len > max_args) return error.InvalidProfiles;
@@ -160,7 +168,7 @@ pub const Status = struct {
     profile: ?usize = null,
 };
 
-pub fn status(config: Config, env: Env, unit: Unit, kernel: m.Kernel) Status {
+pub fn status(config: Config, env: Env, unit: Unit, kernel: Kernel) Status {
     if (kernel == .unavailable or unit == .missing) return .{};
     const selected: ?usize = if (env.profile) |id| config.find(id) else null;
     const profile = if (selected) |i| config.profiles[i] else null;

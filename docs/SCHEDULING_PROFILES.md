@@ -25,8 +25,10 @@ profile id and reads the command line from the system profile file, so users
 can choose among the configured profiles but cannot run other commands. The
 polkit action `org.aqueous.Pearl.Scheduling` allows this without a password for
 active local sessions. The helper also clears `SCX_SCHEDULER_OVERRIDE` and
-`SCX_FLAGS_OVERRIDE` from the systemd manager and stops `scx_loader.service`, so
-no other mechanism replaces the selected profile.
+`SCX_FLAGS_OVERRIDE` from the systemd manager so nothing else replaces the
+selected profile. For now it also stops `scx_loader.service`, in case an older
+setup still has it running; Pearl no longer uses scx_loader, and this step will
+be dropped in a future release.
 
 Hand edits to `/etc/default/scx` are replaced the next time a profile is
 selected. A scheduler started some other way is shown as **Custom**.
@@ -78,7 +80,7 @@ profile again restarts it.
 
 ## Settings
 
-When a profile file is installed, the scheduler page in Settings lists the same
-profiles, with their descriptions, in place of the scx_loader scheduler editor.
+The System page in Settings lists the same profiles, with their descriptions.
+Without a profile file it says that no profiles are installed.
 It uses the same service and helper as the bar widget, so a change made in
 either place appears in the other.

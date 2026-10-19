@@ -28,15 +28,6 @@ pub fn load(a: std.mem.Allocator) !?Loaded {
     return null;
 }
 
-/// Profiles replace the scx_loader editor; a broken file still counts, so
-/// the two never run side by side.
-pub fn installed() bool {
-    var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
-    defer arena.deinit();
-    const loaded = load(arena.allocator()) catch return true;
-    return loaded != null;
-}
-
 pub fn readEnv(a: std.mem.Allocator) !p.Env {
     const file = try io.read(a, p.env_path, 4096, null);
     return if (file.missing) .{} else p.parseEnv(file.bytes);

@@ -25,9 +25,11 @@ pub fn main(init: std.process.Init) !void {
     if (profile.sched) |sched| if (!installed(alloc, sched)) fail("scheduler {s} is not installed", .{sched});
 
     write(try p.render(alloc, profile)) catch |err| fail("cannot write {s}: {s}", .{ p.env_path, @errorName(err) });
-    // Pearl owns scheduler selection: runtime overrides and scx_loader would
-    // otherwise replace or conflict with the selected profile.
+    // Pearl owns scheduler selection: runtime overrides would otherwise
+    // replace the selected profile.
     _ = run(&.{ "/usr/bin/systemctl", "unset-environment", "SCX_SCHEDULER_OVERRIDE", "SCX_FLAGS_OVERRIDE" });
+    // Pearl no longer uses scx_loader, but older setups may still run it and
+    // fight scx.service. Transitional; drop this in a future release.
     _ = run(&.{ "/usr/bin/systemctl", "stop", "scx_loader.service" });
     _ = quiet(&.{ "/usr/bin/systemctl", "reset-failed", "scx.service" });
     if (profile.stop) {

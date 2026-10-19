@@ -114,17 +114,8 @@ including edits arriving through other frontends or Advanced.
 
 ## Scheduler ownership
 
-The shell owns the sched-ext adapter; Settings never executes scxctl itself.
-System page entry acquires a bounded service lease. Runtime reads poll every
-three seconds while at least one lease exists; full discovery runs on entry,
-explicit refresh, recovery, and periodically while observed. Before a mutation,
-full discovery and runtime status are read again. A changed catalog rejects the
-operation before dispatch so the user can review updated mode arguments.
-
-One subprocess job runs at a time, with output limits, cancellation, and command
-deadlines. Releasing a lease cancels its pending mutation; releasing the final
-lease also stops polling and cancels remaining observation. Lock/session loss
-revokes leases. An already accepted loader request cannot be rolled back by
-cancelling scxctl; the next view reconciles actual state. Page departure, Settings
-exit, and shell shutdown never stop an applied scheduler. Stale callbacks cannot
-re-enable controls after revocation or dereference a destroyed service.
+The shell and Settings each run a scheduler service that watches `scx.service`
+over systemd's D-Bus API; neither takes a lease. Both change the scheduler only
+through `pearl-scheduling-helper`, so a profile chosen in either place shows in
+the other. Page departure, Settings exit and shell shutdown never stop an
+applied scheduler. See [CPU scheduler profiles](SCHEDULING_PROFILES.md).

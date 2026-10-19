@@ -91,7 +91,7 @@ pub const View = struct {
         const profile: ?p.Profile = if (service.config) |c| if (service.status.profile) |i| c.profiles[i] else null else null;
         const name = if (profile) |value| value.label else "";
         self.status.setText(if (service.problem) |problem| problem else switch (service.status.kind) {
-            .unavailable => if (service.kernel == .unavailable) self.t("This kernel does not support sched_ext schedulers.", "Dieser Kernel unterstützt keine sched_ext-Scheduler.") else if (service.unit_state == .missing) self.t("scx.service is not installed.", "scx.service ist nicht installiert.") else self.t("Checking the scheduler...", "Scheduler wird geprüft..."),
+            .unavailable => if (service.config == null) self.t("No scheduler profiles are installed.", "Es sind keine Scheduler-Profile installiert.") else if (service.kernel == .unavailable) self.t("This kernel does not support sched_ext schedulers.", "Dieser Kernel unterstützt keine sched_ext-Scheduler.") else if (service.unit_state == .missing) self.t("scx.service is not installed.", "scx.service ist nicht installiert.") else self.t("Checking the scheduler...", "Scheduler wird geprüft..."),
             .off => std.fmt.bufPrintZ(&buffer, "{s} - {s}", .{ name, self.t("kernel scheduler (EEVDF)", "Kernel-Scheduler (EEVDF)") }) catch "",
             .running => std.fmt.bufPrintZ(&buffer, "{s} - {s} {s}", .{ name, service.env.sched, service.env.flags }) catch "",
             .starting => std.fmt.bufPrintZ(&buffer, "{s} {s}...", .{ self.t("Starting", "Starte"), name }) catch "",

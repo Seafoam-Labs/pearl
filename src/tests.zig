@@ -2,7 +2,6 @@ test {
     _ = @import("desktop/icons/model.zig");
     _ = @import("desktop/icons/state.zig");
     _ = @import("desktop/icons/layout.zig");
-    _ = @import("services/sched_ext_model.zig");
     _ = @import("services/sched_profiles.zig");
     _ = @import("desktop/calculator.zig");
     _ = @import("services/notification_filter_policy.zig");

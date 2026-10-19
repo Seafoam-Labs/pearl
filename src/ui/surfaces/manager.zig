@@ -155,7 +155,6 @@ pub const Manager = struct {
     lifecycle: @import("../../services/lifecycle.zig").Lifecycle = undefined,
     auth: @import("../../services/polkit.zig").Agent = undefined,
     night_light: @import("../../services/night_light.zig").NightLight = undefined,
-    sched_ext: @import("../../services/sched_ext.zig").Service = undefined,
     scheduling: @import("../../services/scheduling.zig").Service = undefined,
     power: @import("../../services/power.zig").Power = undefined,
     network: @import("../../services/network.zig").Network = undefined,
@@ -233,8 +232,7 @@ pub const Manager = struct {
         self.desktop_directory.?.changed = desktopChanged;
         self.audio = .{ .context = self, .changed = audioChanged };
         self.night_light = .{ .display = self.display, .context = self, .changed = nightLightChanged };
-        self.sched_ext = .{ .app = self.app.as(gio.Application), .context = self, .changed = schedExtChanged };
-        self.scheduling = .{ .app = self.app.as(gio.Application), .context = self, .changed = schedExtChanged };
+        self.scheduling = .{ .app = self.app.as(gio.Application), .context = self, .changed = schedulingChanged };
         self.power = .{ .app = self.app.as(gio.Application), .context = self, .changed = powerChanged };
         if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_BACKLIGHT")) |root| self.power.backlight_root.set(std.mem.span(root));
         self.network = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
@@ -310,7 +308,6 @@ pub const Manager = struct {
             self.lifecycle.stop();
             self.auth.stop();
             self.night_light.stop();
-            self.sched_ext.stop();
             self.scheduling.stop();
             self.power.stop();
             self.network.stop();
@@ -724,7 +721,7 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.servicesChanged();
     }
-    fn schedExtChanged(context: *anyopaque) void {
+    fn schedulingChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.servicesChanged();
     }
@@ -1606,13 +1603,11 @@ pub const Manager = struct {
         self.network.interest.enabled = allowed;
         self.bluetooth.interest.enabled = allowed;
         self.power.interest.enabled = allowed;
-        self.sched_ext.interest.enabled = allowed;
         self.scheduling.enabled = allowed;
         if (allowed) return;
         if (self.network.interest.count() != 0) self.network.revokeViews();
         if (self.bluetooth.interest.count() != 0) self.bluetooth.revokeViews();
         if (self.power.interest.count() != 0) self.power.revokeViews();
-        if (self.sched_ext.interest.count() != 0) self.sched_ext.revokeViews();
     }
     fn openSettings(self: *Manager, target: navigation.Target, activation: ?[]const u8) !void {
         if (self.client.availability != .ready) return error.Unavailable;

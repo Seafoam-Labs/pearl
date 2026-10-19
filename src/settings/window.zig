@@ -45,7 +45,6 @@ pub const Window = struct {
     aqueous_view: ?*@import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor) = null,
     aqueous_footer: *gtk.Box,
     review_button: *gtk.Button,
-    sched_ext_view: ?*@import("sched_ext_view.zig").View = null,
     /// Scheduler profiles share the bar flyout's service and helper.
     scheduler_service: ?*@import("../services/scheduling.zig").Service = null,
     scheduler_view: ?*@import("scheduler_view.zig").View = null,
@@ -275,15 +274,11 @@ pub const Window = struct {
         if (!fixture) {
             const body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(nav.Route.system)].body).?;
             while (body.as(gtk.Widget).getFirstChild()) |child| body.remove(child);
-            // Scheduler profiles own the scheduler through scx.service; the
-            // scx_loader editor would conflict with them.
-            if (@import("../services/sched_profiles_store.zig").installed()) {
-                const service = try a.create(@import("../services/scheduling.zig").Service);
-                service.* = .{ .app = app.as(gio.Application), .context = self, .changed = schedulerChanged, .enabled = true, .notify = false };
-                self.scheduler_service = service;
-                service.start();
-                self.scheduler_view = try @import("scheduler_view.zig").View.create(body, service, german);
-            } else self.sched_ext_view = try @import("sched_ext_view.zig").View.create(body, editor, german);
+            const service = try a.create(@import("../services/scheduling.zig").Service);
+            service.* = .{ .app = app.as(gio.Application), .context = self, .changed = schedulerChanged, .enabled = true, .notify = false };
+            self.scheduler_service = service;
+            service.start();
+            self.scheduler_view = try @import("scheduler_view.zig").View.create(body, service, german);
         }
         if (!fixture) for ([_]nav.Route{ .overview, .network, .bluetooth, .sound, .power, .notifications, .session }) |route| {
             const body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(route)].body).?;
@@ -356,7 +351,6 @@ pub const Window = struct {
             view.destroy();
         }
         if (self.notification_filters) |view| view.destroy();
-        if (self.sched_ext_view) |view| view.destroy();
         if (self.scheduler_view) |view| view.destroy();
         self.scheduler_view = null;
         if (self.scheduler_service) |service| {
@@ -846,7 +840,6 @@ pub const Window = struct {
         self.saved_button.as(gtk.Widget).setVisible(@intFromBool(self.target.page == .advanced));
         self.saved_button.as(gtk.Widget).setSensitive(@intFromBool(editor.ready and editor.current != null));
         if (self.notification_filters) |view| view.update();
-        if (self.sched_ext_view) |view| view.update();
         if (self.plugins_view) |view| view.update();
         if (self.preferences_view) |view| view.update();
         if (self.assistant_view) |view| view.update();
@@ -1230,23 +1223,6 @@ pub const Window = struct {
                 try controls.append(alloc, .{ .field = "assistant." ++ name, .focused = if (focus) |f| f == widget else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
             }
         };
-        if (self.sched_ext_view) |view| if (self.target.page == .system) {
-            for ([_]*gtk.Widget{ view.scheduler.as(gtk.Widget), view.mode.as(gtk.Widget), view.apply.as(gtk.Widget), view.stop.as(gtk.Widget), view.refresh.as(gtk.Widget) }, [_][]const u8{ "sched-ext/scheduler", "sched-ext/mode", "sched-ext/apply", "sched-ext/stop", "sched-ext/refresh" }) |widget, name| {
-                try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .visible = widget.getMapped() != 0, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
-            }
-            for (view.mode_buttons, std.enums.values(@import("../services/sched_ext_model.zig").Mode)) |button, mode_value| {
-                const widget = button.as(gtk.Widget);
-                try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "sched-ext/mode/{s}", .{@tagName(mode_value)}), .focused = focus == widget, .visible = widget.getMapped() != 0, .enabled = widget.isSensitive() != 0, .selected = button.getActive() != 0, .bounds = self.bounds(widget) });
-            }
-            inline for (.{ "details_section", "boot_section" }) |name| {
-                const section = @field(view, name);
-                try controls.append(alloc, .{ .field = "sched-ext/" ++ name, .focused = focus == section.expander.as(gtk.Widget), .visible = section.expander.as(gtk.Widget).getMapped() != 0, .enabled = section.expander.as(gtk.Widget).isSensitive() != 0, .selected = section.expander.getExpanded() != 0, .text = std.mem.span(section.summary.getText()), .bounds = self.bounds(section.expander.getLabelWidget().?) });
-            }
-            inline for (.{ "badge", "observation", "selection", "mode_note", "arguments", "missing", "boot", "summary", "feedback", "stop_feedback" }) |name| {
-                const label = @field(view, name);
-                try controls.append(alloc, .{ .field = "sched-ext/" ++ name, .focused = false, .visible = label.as(gtk.Widget).getMapped() != 0, .text = std.mem.span(label.getText()), .bounds = self.bounds(label.as(gtk.Widget)) });
-            }
-        };
         if (self.preferences_view) |view| {
             const widgets = [_]*gtk.Widget{ view.mode.widget(), view.variant.as(gtk.Widget), view.source.as(gtk.Widget), view.entries[0].as(gtk.Widget), view.entries[1].as(gtk.Widget), view.entries[2].as(gtk.Widget), view.entries[3].as(gtk.Widget), view.entries[4].as(gtk.Widget), view.font_size.as(gtk.Widget), view.fit.as(gtk.Widget), view.density.as(gtk.Widget), view.motion.as(gtk.Widget), view.choose.as(gtk.Widget), view.greeter_sync.button.as(gtk.Widget), view.raw_view.as(gtk.Widget), self.save.as(gtk.Widget), self.discard.as(gtk.Widget), self.merge_button.as(gtk.Widget) };
             for (widgets, [_][]const u8{ "mode", "variant", "source", "gtk_name", "seed", "wallpaper", "color", "font", "font_size", "fit", "density", "motion", "choose", "greeter_sync", "raw", "apply", "discard", "merge" }) |widget, name| {
@@ -1391,7 +1367,7 @@ pub const Window = struct {
                 bar_groups[i] = std.mem.span(label.getText());
             };
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .plugins = plugins_state, .assistant_state = if (self.assistant_view) |view| view.diagnostic() else null, .sched_ext = if (self.sched_ext_view) |view| .{ .scheduler = view.selected.slice(), .mode = @tagName(view.selected_mode), .current = std.mem.span(view.current.getText()), .summary = std.mem.span(view.summary.getText()), .feedback = std.mem.span(view.feedback.getText()) } else null, .window_rules = if (self.aqueous_view) |view| if (view.rules_view) |rules| try rules.diagnostic(alloc) else null else null, .notification_filters = if (self.notification_filters) |view| try view.diagnostic(alloc) else null, .launcher_icon_picker = if (self.preference_pages[0]) |view| if (view.bar) |bar| bar.picker != null else false else false, .bar_groups = bar_groups, .links = links, .controls = controls.items, .editor = editor_state, .theme_busy = self.editor.theme_busy, .theme_status = if (self.preferences_view) |view| std.mem.span(view.themes.status.getText()) else "", .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_focus = if (self.aqueous_view) |view| view.sharedFocus() else "", .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .plugins = plugins_state, .assistant_state = if (self.assistant_view) |view| view.diagnostic() else null, .window_rules = if (self.aqueous_view) |view| if (view.rules_view) |rules| try rules.diagnostic(alloc) else null else null, .notification_filters = if (self.notification_filters) |view| try view.diagnostic(alloc) else null, .launcher_icon_picker = if (self.preference_pages[0]) |view| if (view.bar) |bar| bar.picker != null else false else false, .bar_groups = bar_groups, .links = links, .controls = controls.items, .editor = editor_state, .theme_busy = self.editor.theme_busy, .theme_status = if (self.preferences_view) |view| std.mem.span(view.themes.status.getText()) else "", .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_focus = if (self.aqueous_view) |view| view.sharedFocus() else "", .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
     }
 };
 fn schedulerChanged(context: *anyopaque) void {
