@@ -470,6 +470,12 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(ctl);
     b.step("build-ctl", "Stage the Pearl command-line client").dependOn(&b.addInstallArtifact(ctl, .{}).step);
 
+    // Root helper for scheduling profiles; packaging installs it in lib/pearl.
+    const scheduling_helper_module = b.createModule(.{ .root_source_file = b.path("src/scheduling_helper_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| scheduling_helper_module.addImport(name, bindings.module(name));
+    scheduling_helper_module.strip = release;
+    b.installArtifact(b.addExecutable(.{ .name = "pearl-scheduling-helper", .root_module = scheduling_helper_module }));
+
     if (wasm_plugins) {
         const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugins.py", "--pearl", b.getInstallPath(.bin, "pearl"), "--ctl", b.getInstallPath(.bin, "pearlctl"), "--settings" });
         check.addArtifactArg(settings_test_app);

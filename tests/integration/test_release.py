@@ -27,6 +27,7 @@ def main():
         with tempfile.TemporaryDirectory(prefix='pearl-release-') as temp:
             root=Path(temp);stage=root/'stage';binaries=root/'bin';binaries.mkdir()
             for source,name in ((a.pearl,'pearl'),(a.ctl,'pearlctl'),(a.locker,'pearl-lock'),(a.settings,'pearl-settings'),(a.themes,'pearl-themes'),(a.agent,'pearl-agent')):shutil.copy2(source,binaries/name)
+            (binaries/'pearl-scheduling-helper').write_bytes(b'#!/bin/sh\n')
             run(['bash',ROOT/'packaging/install.sh'],env=dict(os.environ,DESTDIR=str(stage),PEARL_BINARY_DIR=str(binaries)))
             installed=stage/'usr/bin';pearl=installed/'pearl';control=installed/'pearlctl'
             assert sorted(x.name for x in installed.iterdir())==['pearl','pearl-agent','pearl-lock','pearl-settings','pearl-themes','pearlctl']
@@ -40,6 +41,9 @@ def main():
                 assert (stage/'usr/share'/resource).is_file()
             assert 'Exec=pearl-settings\n' in (stage/'usr/share/applications/org.aqueous.Pearl.Settings.desktop').read_text()
             assert (stage/'usr/share/pearl/release.json').is_file()
+            assert (stage/'usr/share/pearl/scheduling-profiles.json').read_bytes()==(ROOT/'packaging/scheduling/scheduling-profiles.json').read_bytes()
+            assert (stage/'usr/lib/pearl/pearl-scheduling-helper').stat().st_mode&0o7777==0o755
+            assert '/usr/lib/pearl/pearl-scheduling-helper' in (stage/'usr/share/polkit-1/actions/org.aqueous.Pearl.Scheduling.policy').read_text()
             assert not list(stage.rglob('*.wants'))
             unit=(stage/'usr/lib/systemd/user/pearl.service').read_text()
             for field in ('KillMode=process','PartOf=graphical-session.target','Requisite=graphical-session.target','ConditionEnvironment=AQUEOUS_SOCKET','ConditionEnvironment=!AQUEOUS_NESTED=1','ExecCondition=/usr/bin/pearl --check-environment','SyslogIdentifier=pearl'):assert field in unit

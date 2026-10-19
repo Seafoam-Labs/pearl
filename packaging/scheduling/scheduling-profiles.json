@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "profiles": [
+    { "id": "default",    "label": "Default",     "action": "stop",
+      "description": "The kernel's built-in scheduler (EEVDF), for everyday use." },
+    { "id": "desktop",    "label": "Desktop",     "sched": "scx_cosmos", "args": [],
+      "description": "Foreground apps stay responsive under any condition." },
+    { "id": "latency",    "label": "Low latency", "sched": "scx_eevdf", "args": ["--slice-us", "1600", "--disable-cgroups"],
+      "description": "Fastest response for interactive work, audio and multimedia." },
+    { "id": "gaming",     "label": "Gaming",      "sched": "scx_cake", "args": [],
+      "description": "Smooth fps and low input latency for games." },
+    { "id": "server",     "label": "Server",      "sched": "scx_eevdf", "args": ["--slice-us", "4000", "--no-preempt-short", "--no-hrtick", "--disable-cgroups"],
+      "description": "Gets the most work done for builds, rendering and other long-running jobs; less responsive." },
+    { "id": "powersave",  "label": "Power saver", "sched": "scx_lavd", "args": ["--powersave"],
+      "description": "Favors battery life over responsiveness." }
+  ]
+}

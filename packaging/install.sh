@@ -51,6 +51,15 @@ install -Dm644 "$source_root/packaging/applications/org.aqueous.Pearl.Agent.desk
 install -Dm644 "$source_root/packaging/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg" "$destination$prefix/share/icons/hicolor/scalable/apps/org.aqueous.Pearl.Settings.svg"
 install -Dm644 "$source_root/packaging/metainfo/org.aqueous.Pearl.Settings.metainfo.xml" "$destination$prefix/share/metainfo/org.aqueous.Pearl.Settings.metainfo.xml"
 install -Dm644 "$source_root/packaging/release.json" "$destination$prefix/share/pearl/release.json"
+install -Dm644 "$source_root/packaging/scheduling/scheduling-profiles.json" "$destination$prefix/share/pearl/scheduling-profiles.json"
+# Scheduling profiles: a root helper behind its own polkit action. The git
+# variant gets its own helper path and action so both packages can coexist.
+scheduling_component=pearl scheduling_action=org.aqueous.Pearl.Scheduling
+if [[ ${PEARL_VARIANT:-stable} == git ]]; then scheduling_component=pearl-git scheduling_action=org.aqueous.Pearl.Git.Scheduling; fi
+install -Dm755 "$binaries/pearl-scheduling-helper" "$destination$prefix/lib/$scheduling_component/pearl-scheduling-helper"
+install -Dm644 "$source_root/packaging/polkit/org.aqueous.Pearl.Scheduling.policy" "$destination$prefix/share/polkit-1/actions/$scheduling_action.policy"
+sed -i -e "s|/usr/lib/pearl/|/usr/lib/$scheduling_component/|" -e "s|\"org.aqueous.Pearl.Scheduling\"|\"$scheduling_action\"|" \
+    "$destination$prefix/share/polkit-1/actions/$scheduling_action.policy"
 for document in "$source_root"/docs/*.md "$source_root/README.md"; do
     install -Dm644 "$document" "$destination$prefix/share/doc/pearl/$(basename "$document")"
 done
