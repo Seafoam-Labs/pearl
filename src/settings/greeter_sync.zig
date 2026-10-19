@@ -299,7 +299,10 @@ const Job = struct {
                         return;
                     },
                     .system_theme => return error.SystemThemeRequired,
-                    .failed => return error.SyncFailed,
+                    // A broken or mismatched service (rolling upgrade with an
+                    // old helper behind the socket) must not block the pkexec
+                    // path that worked before the socket existed.
+                    .failed => {},
                 }
             }
         }

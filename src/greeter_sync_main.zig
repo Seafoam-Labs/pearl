@@ -45,12 +45,12 @@ const Caller = struct {
         var waited: c_uint = 0;
         while (self.peer.connection() == null and waited < 5000) : (waited += 100) self.spin(100);
     }
-    fn call(self: *Caller, path: [:0]const u8, iface: [:0]const u8, method: [:0]const u8, params: ?*glib.Variant, signature: [:0]const u8) ?*glib.Variant {
+    fn call(self: *Caller, path: [:0]const u8, iface: [:0]const u8, method: [:0]const u8, params: ?*glib.Variant, signature: [:0]const u8, timeout_ms: c_int) ?*glib.Variant {
         if (self.peer.connection() == null) return null;
         self.result = null;
         self.err = null;
-        self.peer.call(1, path, iface, method, params, signature, 20000, done) catch return null;
-        self.spin(25000);
+        self.peer.call(1, path, iface, method, params, signature, timeout_ms, done) catch return null;
+        self.spin(@intCast(timeout_ms + 5000));
         if (self.err != null) return null;
         return self.result;
     }
@@ -59,22 +59,9 @@ const Caller = struct {
     }
 };
 
-/// The caller's processes usually live outside any logind session scope, so
-/// resolve the uid's display session the same way the shell's fallback does.
-fn displaySession(caller: *Caller, uid: u32, buffer: *[128]u8) ?[:0]u8 {
-    const user = caller.call("/org/freedesktop/login1", "org.freedesktop.login1.Manager", "GetUser", db.tuple(&.{glib.Variant.newUint32(uid)}), "(o)") orelse return null;
-    defer user.unref();
-    const user_path = user.getChildValue(0);
-    defer user_path.unref();
-    const display = caller.call(std.mem.span(user_path.getString(null)), "org.freedesktop.DBus.Properties", "Get", db.tuple(&.{ db.str("org.freedesktop.login1.User"), db.str("Display") }), "(v)") orelse return null;
-    defer display.unref();
-    const inner = display.getChildValue(0);
-    defer inner.unref();
-    const pair = inner.getVariant();
-    defer pair.unref();
-    const session_path = pair.getChildValue(1);
-    defer session_path.unref();
-    const id = caller.call(std.mem.span(session_path.getString(null)), "org.freedesktop.DBus.Properties", "Get", db.tuple(&.{ db.str("org.freedesktop.login1.Session"), db.str("Id") }), "(v)") orelse return null;
+/// Read the Id of a login1 session object path.
+fn sessionIdFromPath(caller: *Caller, path: [:0]const u8, buffer: *[128]u8) ?[:0]u8 {
+    const id = caller.call(path, "org.freedesktop.DBus.Properties", "Get", db.tuple(&.{ db.str("org.freedesktop.login1.Session"), db.str("Id") }), "(v)", 20000) orelse return null;
     defer id.unref();
     const id_inner = id.getChildValue(0);
     defer id_inner.unref();
@@ -87,13 +74,41 @@ fn displaySession(caller: *Caller, uid: u32, buffer: *[128]u8) ?[:0]u8 {
     return buffer[0..text.len :0];
 }
 
+/// The subject must match the session the shell's polkit agent registered for.
+/// Session-scoped deployments (where pkexec works) put the caller inside that
+/// session; sessionless ones (user-service deployments) fall back to the uid's
+/// display session, mirroring the shell's own resolution order.
+fn displaySession(caller: *Caller, uid: u32, peer_pid: u32, buffer: *[128]u8) ?[:0]u8 {
+    if (caller.call("/org/freedesktop/login1", "org.freedesktop.login1.Manager", "GetSessionByPID", db.tuple(&.{glib.Variant.newUint32(peer_pid)}), "(o)", 20000)) |sess| {
+        defer sess.unref();
+        const sess_path = sess.getChildValue(0);
+        defer sess_path.unref();
+        if (sessionIdFromPath(caller, std.mem.span(sess_path.getString(null)), buffer)) |id| return id;
+    }
+    const user = caller.call("/org/freedesktop/login1", "org.freedesktop.login1.Manager", "GetUser", db.tuple(&.{glib.Variant.newUint32(uid)}), "(o)", 20000) orelse return null;
+    defer user.unref();
+    const user_path = user.getChildValue(0);
+    defer user_path.unref();
+    const display = caller.call(std.mem.span(user_path.getString(null)), "org.freedesktop.DBus.Properties", "Get", db.tuple(&.{ db.str("org.freedesktop.login1.User"), db.str("Display") }), "(v)", 20000) orelse return null;
+    defer display.unref();
+    const inner = display.getChildValue(0);
+    defer inner.unref();
+    const pair = inner.getVariant();
+    defer pair.unref();
+    const session_path = pair.getChildValue(1);
+    defer session_path.unref();
+    return sessionIdFromPath(caller, std.mem.span(session_path.getString(null)), buffer);
+}
+
 /// Explicit-subject authorization: the Pearl shell registers its prompt agent
 /// for the login session, so naming that session works even when neither the
 /// client nor this service lives inside a session cgroup.
 fn authorized(caller: *Caller, session: [:0]const u8) bool {
     const subject = db.tuple(&.{ db.str("unix-session"), db.array("{sv}", &.{db.entry("session-id", db.str(session))}) });
     const params = db.tuple(&.{ subject, db.str(action_id), db.array("{sv}", &.{}), glib.Variant.newUint32(1), db.str("") });
-    const reply = caller.call("/org/freedesktop/PolicyKit1/Authority", "org.freedesktop.PolicyKit1.Authority", "CheckAuthorization", params, "(bb)") orelse return false;
+    // A human reads the agent prompt and types an admin password: give the
+    // authority call minutes, not seconds.
+    const reply = caller.call("/org/freedesktop/PolicyKit1/Authority", "org.freedesktop.PolicyKit1.Authority", "CheckAuthorization", params, "(bb)", 300000) orelse return false;
     defer reply.unref();
     const granted = reply.getChildValue(0);
     defer granted.unref();
@@ -122,9 +137,10 @@ fn service() u8 {
     var buffer: [128]u8 = undefined;
     var login: Caller = undefined;
     login.init(app, loop, "org.freedesktop.login1", "/org/freedesktop/login1");
-    const session = displaySession(&login, cred.uid, &buffer);
+    const session = displaySession(&login, cred.uid, cred.pid, &buffer);
     login.deinit();
     const resolved = session orelse {
+        log.err("service: no display session for peer uid {d}", .{cred.uid});
         say("NoSession\n");
         return 1;
     };
@@ -133,15 +149,18 @@ fn service() u8 {
     const ok = authorized(&polkit, resolved);
     polkit.deinit();
     if (!ok) {
+        log.err("service: polkit authorization denied or unavailable for session {s}", .{resolved});
         say("denied\n");
         return 1;
     }
     const bytes = sync.read(0, sync.max_request) catch {
+        log.err("service: could not read the sync request", .{});
         say("ReadFailed\n");
         return 1;
     };
     defer std.heap.c_allocator.free(bytes);
     sync.apply("/etc/pearl", bytes) catch |err| {
+        log.err("service: apply failed: {s}", .{@errorName(err)});
         var line: [128]u8 = undefined;
         const text = std.fmt.bufPrint(&line, "{s}\n", .{@errorName(err)}) catch "ApplyFailed\n";
         say(text);
