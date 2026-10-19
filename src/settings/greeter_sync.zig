@@ -232,18 +232,15 @@ const Job = struct {
         if (request.gtk_theme) |name| {
             if (self.gtk_dark) request.gtk_theme = try std.fmt.allocPrint(alloc, "{s}:dark", .{name});
         }
-        const follow = prefs.matugen.colors.source == .follow_pearl;
-        var source = prefs;
-        if (!follow) {
-            source.theme.source = if (prefs.matugen.colors.source == .seed) .seed else .wallpaper;
-            source.theme.seed = prefs.matugen.colors.seed;
-        }
-        const palette_wanted = request.theme != .gtk and prefs.matugen.enabled and (!follow or prefs.theme.mode == .dynamic);
+        // Mirror the shell's own palette gate: dynamic mode derives the desktop
+        // colors from wallpaper/seed regardless of the matugen application
+        // toggle, which only gates per-app theming.
+        const palette_wanted = request.theme != .gtk and prefs.theme.mode == .dynamic;
         const wants_image = self.override != null or prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain;
         const wallpaper_path: []const u8 = self.override orelse prefs.wallpaper.path;
         var wallpaper_bytes: ?[]u8 = null;
         defer if (wallpaper_bytes) |bytes| a.free(bytes);
-        if (wants_image or (palette_wanted and source.theme.source == .wallpaper)) {
+        if (wants_image or (palette_wanted and prefs.theme.source == .wallpaper)) {
             wallpaper_bytes = readWallpaper(alloc, wallpaper_path) catch |err| blk: {
                 if (wants_image) return err;
                 break :blk null;
@@ -271,7 +268,7 @@ const Job = struct {
             const cache = try std.fmt.allocPrintSentinel(alloc, "{s}/pearl/matugen", .{std.mem.span(glib.getUserCacheDir())}, 0);
             @import("../config/io.zig").mkdir(cache) catch {};
             var hit = false;
-            if (@import("../theme/generator.zig").full(alloc, source, wallpaper_bytes, cache, self.cancel, &hit)) |render| {
+            if (@import("../theme/generator.zig").full(alloc, prefs, wallpaper_bytes, cache, self.cancel, &hit)) |render| {
                 const theme_mod = @import("../theme/theme.zig");
                 // Ship only JSON the greeter can expand for both variants.
                 if (theme_mod.matugenPalette(alloc, render.json, "dark")) |dark| {
@@ -289,7 +286,7 @@ const Job = struct {
                 log.warn("event=greeter-palette-skip reason={s}", .{@errorName(err)});
             }
         } else {
-            log.info("event=greeter-palette-skip reason={s}", .{if (request.theme == .gtk) "gtk-theme" else if (!prefs.matugen.enabled) "matugen-disabled" else "static-follow"});
+            log.info("event=greeter-palette-skip reason={s}", .{if (request.theme == .gtk) "gtk-theme" else "static-mode"});
         }
         if (self.cancel.isCancelled() != 0) return error.Cancelled;
         const json = try std.json.Stringify.valueAlloc(alloc, request, .{});
