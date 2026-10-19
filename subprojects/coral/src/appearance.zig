@@ -28,6 +28,7 @@ pub const Appearance = struct {
     snapshot_gtk: bool = false,
     variant: enum { dark, light } = .dark,
     palette: client.theme.Palette = client.theme.dark,
+    owns_palette: bool = false,
     revision: ?u64 = null,
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
@@ -50,15 +51,18 @@ pub const Appearance = struct {
         try client.theme.validate(snapshot.palette);
         const name = try u.a.dupeZ(u8, snapshot.gtk_name);
         const font = try u.a.dupe(u8, snapshot.font);
+        const palette = dupePalette(u.a, snapshot.palette);
         if (self.gtk_name.len > 0) u.a.free(self.gtk_name);
         if (self.font.len > 0) u.a.free(self.font);
+        if (self.owns_palette) freePalette(u.a, self.palette);
         self.gtk_name = name;
         self.font = font;
+        self.palette = palette;
+        self.owns_palette = true;
         self.font_size = snapshot.font_size;
         self.reduced_motion = snapshot.reduced_motion;
         self.snapshot_gtk = snapshot.mode == .gtk;
         self.variant = if (snapshot.variant == .light) .light else .dark;
-        self.palette = snapshot.palette;
         self.revision = snapshot.revision;
         self.paint();
         self.changed(self.context);
@@ -177,6 +181,9 @@ pub const Appearance = struct {
         if (self.font.len > 0) u.a.free(self.font);
         self.gtk_name = "";
         self.font = "";
+        if (self.owns_palette) freePalette(u.a, self.palette);
+        self.palette = client.theme.dark;
+        self.owns_palette = false;
         self.font_size = 14;
         self.reduced_motion = false;
         self.snapshot_gtk = false;
@@ -188,6 +195,17 @@ pub const Appearance = struct {
         self.mode = null;
     }
 };
+
+fn dupePalette(alloc: std.mem.Allocator, p: client.theme.Palette) client.theme.Palette {
+    var result: client.theme.Palette = undefined;
+    inline for (@typeInfo(client.theme.Palette).@"struct".fields) |field| {
+        @field(result, field.name) = alloc.dupe(u8, @field(p, field.name)) catch unreachable;
+    }
+    return result;
+}
+fn freePalette(alloc: std.mem.Allocator, p: client.theme.Palette) void {
+    inline for (@typeInfo(client.theme.Palette).@"struct".fields) |field| alloc.free(@field(p, field.name));
+}
 
 test "committed palette, font and motion render into the coral sheet" {
     const a = std.testing.allocator;
