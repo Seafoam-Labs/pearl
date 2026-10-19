@@ -274,7 +274,8 @@ pub const Backend = struct {
                             .network => peer.scope.network == null,
                             .bluetooth => peer.scope.bluetooth == null,
                             .power => peer.scope.power == null,
-                            .system => peer.scope.sched_ext == null,
+                            // Scheduler profiles take no lease; see Live.enter.
+                            .system => peer.scope.sched_ext == null and !@import("../services/sched_profiles_store.zig").installed(),
                             .overview => !peer.scope.media,
                             else => false,
                         };

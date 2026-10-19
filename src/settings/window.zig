@@ -46,6 +46,9 @@ pub const Window = struct {
     aqueous_footer: *gtk.Box,
     review_button: *gtk.Button,
     sched_ext_view: ?*@import("sched_ext_view.zig").View = null,
+    /// Scheduler profiles share the bar flyout's service and helper.
+    scheduler_service: ?*@import("../services/scheduling.zig").Service = null,
+    scheduler_view: ?*@import("scheduler_view.zig").View = null,
     plugins_view: ?*@import("plugins_view.zig").View = null,
     notification_filters: ?*@import("notification_filters_view.zig").View = null,
     preferences_view: ?*@import("preferences_view.zig").View = null,
@@ -272,12 +275,14 @@ pub const Window = struct {
         if (!fixture) {
             const body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(nav.Route.system)].body).?;
             while (body.as(gtk.Widget).getFirstChild()) |child| body.remove(child);
-            // Scheduling profiles own the scheduler through scx.service; the
+            // Scheduler profiles own the scheduler through scx.service; the
             // scx_loader editor would conflict with them.
-            if (schedulingProfilesInstalled()) {
-                const notice = w.label(if (german) "Der Scheduler wird über Scheduler-Profile verwaltet. Füge das Scheduler-Widget unter Leiste & Dock zur Leiste hinzu und wähle dort ein Profil." else "The scheduler is managed by scheduler profiles. Add the Scheduler widget to the bar in Bar & dock, then choose a profile from it.", "pearl-secondary");
-                notice.setWrap(1);
-                body.append(notice.as(gtk.Widget));
+            if (@import("../services/sched_profiles_store.zig").installed()) {
+                const service = try a.create(@import("../services/scheduling.zig").Service);
+                service.* = .{ .app = app.as(gio.Application), .context = self, .changed = schedulerChanged, .enabled = true, .notify = false };
+                self.scheduler_service = service;
+                service.start();
+                self.scheduler_view = try @import("scheduler_view.zig").View.create(body, service, german);
             } else self.sched_ext_view = try @import("sched_ext_view.zig").View.create(body, editor, german);
         }
         if (!fixture) for ([_]nav.Route{ .overview, .network, .bluetooth, .sound, .power, .notifications, .session }) |route| {
@@ -352,6 +357,13 @@ pub const Window = struct {
         }
         if (self.notification_filters) |view| view.destroy();
         if (self.sched_ext_view) |view| view.destroy();
+        if (self.scheduler_view) |view| view.destroy();
+        self.scheduler_view = null;
+        if (self.scheduler_service) |service| {
+            service.stop();
+            a.destroy(service);
+        }
+        self.scheduler_service = null;
         if (self.plugins_view) |view| view.destroy();
         for (self.live_pages) |page| if (page) |view| view.destroy();
         for (self.preference_pages) |page| if (page) |view| view.destroy();
@@ -851,7 +863,7 @@ pub const Window = struct {
         self.save.as(gtk.Widget).setSensitive(@intFromBool(available and dirty and (if (editor.local != null) editor.local_valid else editor.state.valid) and !editor.state.conflict and !editor.recovery));
         self.discard.as(gtk.Widget).setSensitive(@intFromBool(available and dirty));
         self.merge_button.as(gtk.Widget).setSensitive(@intFromBool(available));
-        self.footer_text.setText(if (editor.recovery) self.t("Local changes need review. Merge them or discard only the local copy.", "Lokale Änderungen müssen geprüft werden. Zusammenführen oder nur die lokale Kopie verwerfen.") else if (editor.local != null) self.t("Pearl preferences · Retaining draft…", "Pearl-Einstellungen · Entwurf wird behalten…") else if (editor.state.busy) self.t("Pearl preferences · Preparing settings…", "Pearl-Einstellungen · Einstellungen werden vorbereitet…") else if (self.target.page == .system) self.t("Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.", "Scheduler und Modus wählen, dann Scheduler anwenden. Startvorgaben bleiben unverändert.") else if (!preference_page) (if (dirty) self.t("Service controls take effect immediately. Pearl preference draft retained.", "Dienstregler wirken sofort. Der Pearl-Einstellungsentwurf bleibt behalten.") else self.t("Changes on this page take effect immediately.", "Änderungen auf dieser Seite wirken sofort.")) else if (self.target.page == .notifications) self.t("Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.", "Anwenden speichert alle Pearl-Einstellungen. Filter gelten für neue Benachrichtigungen; Nicht stören und Verlauf wirken sofort.") else if (self.target.page == .session) self.t("Apply saves Pearl preferences. Session actions take effect immediately.", "Anwenden speichert Pearl-Einstellungen. Sitzungsaktionen wirken sofort.") else if (editor.state.dirty) self.t("Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.", "Pearl-Einstellungen · Entwurf in dieser Sitzung behalten. Anwenden speichert alle Pearl-Änderungen.") else self.t("Pearl preferences · All changes are applied explicitly.", "Pearl-Einstellungen · Änderungen werden ausdrücklich angewendet."));
+        self.footer_text.setText(if (editor.recovery) self.t("Local changes need review. Merge them or discard only the local copy.", "Lokale Änderungen müssen geprüft werden. Zusammenführen oder nur die lokale Kopie verwerfen.") else if (editor.local != null) self.t("Pearl preferences · Retaining draft…", "Pearl-Einstellungen · Entwurf wird behalten…") else if (editor.state.busy) self.t("Pearl preferences · Preparing settings…", "Pearl-Einstellungen · Einstellungen werden vorbereitet…") else if (self.target.page == .system and self.scheduler_view != null) self.t("A profile applies immediately and stays selected after a restart.", "Ein Profil wirkt sofort und bleibt nach einem Neustart ausgewählt.") else if (self.target.page == .system) self.t("Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.", "Scheduler und Modus wählen, dann Scheduler anwenden. Startvorgaben bleiben unverändert.") else if (!preference_page) (if (dirty) self.t("Service controls take effect immediately. Pearl preference draft retained.", "Dienstregler wirken sofort. Der Pearl-Einstellungsentwurf bleibt behalten.") else self.t("Changes on this page take effect immediately.", "Änderungen auf dieser Seite wirken sofort.")) else if (self.target.page == .notifications) self.t("Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.", "Anwenden speichert alle Pearl-Einstellungen. Filter gelten für neue Benachrichtigungen; Nicht stören und Verlauf wirken sofort.") else if (self.target.page == .session) self.t("Apply saves Pearl preferences. Session actions take effect immediately.", "Anwenden speichert Pearl-Einstellungen. Sitzungsaktionen wirken sofort.") else if (editor.state.dirty) self.t("Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.", "Pearl-Einstellungen · Entwurf in dieser Sitzung behalten. Anwenden speichert alle Pearl-Änderungen.") else self.t("Pearl preferences · All changes are applied explicitly.", "Pearl-Einstellungen · Änderungen werden ausdrücklich angewendet."));
         if (!self.connected) return;
         const status_text: [:0]const u8 = if (!editor.ready) self.t("Loading Pearl preferences…", "Pearl-Einstellungen werden geladen…") else if (editor.uncertain_operation) self.t("The connection ended during an operation. Review the current settings before applying again.", "Die Verbindung endete während eines Vorgangs. Prüfe die Einstellungen vor erneutem Anwenden.") else if (editor.recovery or editor.state.conflict) self.t("Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict.", "Einstellungen wurden anderswo geändert. Deine Änderungen bleiben erhalten. Zusammenführen oder den Konflikt unter Erweitert prüfen.") else if (editor.error_code.len > 0) self.errorMessage(editor.error_code.slice()) else if (!editor.state.valid) self.t("The draft is invalid. Correct the fields or review the JSON in Advanced before applying.", "Der Entwurf ist ungültig. Korrigiere die Felder oder das JSON unter Erweitert vor dem Anwenden.") else if (editor.export_error.len > 0) self.t("Preferences were saved. An export needs attention; your changes remain applied.", "Einstellungen gespeichert. Ein Export benötigt Aufmerksamkeit; die Änderungen bleiben angewendet.") else "";
         self.status.setText(status_text);
@@ -1382,9 +1394,7 @@ pub const Window = struct {
         return std.json.Stringify.valueAlloc(alloc, .{ .plugins = plugins_state, .assistant_state = if (self.assistant_view) |view| view.diagnostic() else null, .sched_ext = if (self.sched_ext_view) |view| .{ .scheduler = view.selected.slice(), .mode = @tagName(view.selected_mode), .current = std.mem.span(view.current.getText()), .summary = std.mem.span(view.summary.getText()), .feedback = std.mem.span(view.feedback.getText()) } else null, .window_rules = if (self.aqueous_view) |view| if (view.rules_view) |rules| try rules.diagnostic(alloc) else null else null, .notification_filters = if (self.notification_filters) |view| try view.diagnostic(alloc) else null, .launcher_icon_picker = if (self.preference_pages[0]) |view| if (view.bar) |bar| bar.picker != null else false else false, .bar_groups = bar_groups, .links = links, .controls = controls.items, .editor = editor_state, .theme_busy = self.editor.theme_busy, .theme_status = if (self.preferences_view) |view| std.mem.span(view.themes.status.getText()) else "", .service_prompt = if (self.live_pages[@intFromEnum(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_focus = if (self.aqueous_view) |view| view.sharedFocus() else "", .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
     }
 };
-fn schedulingProfilesInstalled() bool {
-    var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
-    defer arena.deinit();
-    const loaded = @import("../services/sched_profiles_store.zig").load(arena.allocator()) catch return true;
-    return loaded != null;
+fn schedulerChanged(context: *anyopaque) void {
+    const self: *Window = @ptrCast(@alignCast(context));
+    if (self.scheduler_view) |view| view.update();
 }

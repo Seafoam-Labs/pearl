@@ -18,6 +18,8 @@ pub const Service = struct {
     changed: *const fn (*anyopaque) void,
     /// Changes are allowed only while the session is unlocked and ready.
     enabled: bool = false,
+    /// Only the shell reports failures, so Settings does not duplicate them.
+    notify: bool = true,
     running: bool = false,
     cancel: ?*gio.Cancellable = null,
     manager: ?*gio.DBusProxy = null,
@@ -237,6 +239,7 @@ pub const Service = struct {
     }
 
     fn notifyFailure(self: *Service) void {
+        if (!self.notify) return;
         const config = self.config orelse return;
         const label = config.profiles[self.status.profile orelse return].label;
         var body: [256]u8 = undefined;

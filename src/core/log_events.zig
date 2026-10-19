@@ -104,7 +104,7 @@ pub const events: []const Event = &.{
     .{ .name = "sample-activated", .scopes = &.{.gallery} },
     .{ .name = "sample-workspace", .scopes = &.{.gallery} },
     .{ .name = "sched-profile-failed", .scopes = &.{.services} },
-    .{ .name = "sched-profile-select", .scopes = &.{ .desktop, .services } },
+    .{ .name = "sched-profile-select", .scopes = &.{ .desktop, .services, .settings } },
     .{ .name = "sched-profile-systemd", .scopes = &.{.services} },
     .{ .name = "search", .scopes = &.{.gallery} },
     .{ .name = "services-focus", .scopes = &.{.desktop} },

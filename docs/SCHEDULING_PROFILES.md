@@ -78,5 +78,7 @@ profile again restarts it.
 
 ## Settings
 
-When a profile file is installed, the scheduler page in Settings shows a short
-notice instead of the scx_loader scheduler editor, so the two cannot conflict.
+When a profile file is installed, the scheduler page in Settings lists the same
+profiles, with their descriptions, in place of the scx_loader scheduler editor.
+It uses the same service and helper as the bar widget, so a change made in
+either place appears in the other.

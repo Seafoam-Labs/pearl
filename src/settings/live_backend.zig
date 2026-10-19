@@ -1,5 +1,6 @@
 //! Borrowed live-service adapters. Leases and confirmations belong to a peer.
 const std = @import("std");
+const profiles_store = @import("../services/sched_profiles_store.zig");
 const glib = @import("glib2");
 const p = @import("editor_protocol.zig");
 const ui = @import("live_protocol.zig");
@@ -52,7 +53,9 @@ pub const Live = struct {
             .network => next.network = try self.network.acquireView(),
             .bluetooth => next.bluetooth = try self.bluetooth.acquireView(),
             .power => next.power = try self.power.acquireView(),
-            .system => if (self.sched_ext) |service| {
+            // Scheduler profiles have their own service in Settings; the
+            // scx_loader view would poll scxctl and wake scx_loader.
+            .system => if (self.sched_ext) |service| if (!profiles_store.installed()) {
                 next.sched_ext = try service.acquireView();
             },
             else => {},
@@ -286,6 +289,7 @@ pub const Live = struct {
     }
     pub fn page(self: *Live, alloc: std.mem.Allocator, scope: *Scope, route: nav.Route, _: u64, offset: usize) !ui.Page {
         if (route == .system) {
+            if (profiles_store.installed()) return .{ .summary = "Scheduler profiles", .rows = &.{}, .offset = p.num(0) };
             const service = self.sched_ext orelse return .{ .summary = "Scheduler service unavailable", .rows = &.{}, .offset = p.num(0) };
             return .{ .summary = service.state.summary, .pending = service.job != null, .rows = &.{}, .offset = p.num(0), .sched_ext = try service.snapshot(alloc) };
         }
