@@ -7,13 +7,14 @@ const object = @import("gobject2");
 const Client = @import("../aqueous/client.zig").Client;
 const workspace_policy = @import("workspace_policy.zig");
 const policy = @import("policy.zig");
+const sched_profiles = @import("../services/sched_profiles.zig");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
 const clocks = @import("clock_policy.zig");
 const Clock = @import("clock_view.zig").View;
 const Running = @import("running_apps.zig");
-pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers, resources };
+pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers, resources, scheduling };
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
@@ -42,6 +43,8 @@ pub const Bar = struct {
     bluetooth_label: ?*gtk.Label = null,
     audio_label: ?*gtk.Label = null,
     battery_label: ?*gtk.Label = null,
+    scheduling_service: *@import("../services/scheduling.zig").Service,
+    scheduler_label: ?*gtk.Label = null,
     client: *Client,
     output: []const u8,
     context: *anyopaque,
@@ -65,9 +68,9 @@ pub const Bar = struct {
     running_apps_per_window: bool = false,
     length: i32 = 1280,
     thickness: i32 = 48,
-    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager, tasks: *const @import("task_model.zig").Snapshot, app_index: *@import("apps.zig").Index) !*Bar {
+    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager, tasks: *const @import("task_model.zig").Snapshot, app_index: *@import("apps.zig").Index, scheduling: *@import("../services/scheduling.zig").Service) !*Bar {
         const self = try a.create(Bar);
-        self.* = .{ .host = host, .tasks = tasks, .app_index = app_index, .plugins = plugins, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
+        self.* = .{ .scheduling_service = scheduling, .host = host, .tasks = tasks, .app_index = app_index, .plugins = plugins, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
         self.groups = .{ try a.dupeZ(u8, "launcher,workspaces,title"), try a.dupeZ(u8, "clock"), try a.dupeZ(u8, (policy.Groups{}).right) };
         try self.build();
         return self;
@@ -119,6 +122,7 @@ pub const Bar = struct {
         self.battery_label = null;
         self.network_label = null;
         self.bluetooth_label = null;
+        self.scheduler_label = null;
         self.workspace_hash = null;
     }
     pub fn configure(self: *Bar, groups: policy.Groups, definitions: []const clocks.Definition) !void {
@@ -314,8 +318,8 @@ pub const Bar = struct {
                     .wallpaper => (try self.makeButton(.{ .pane = .wallpapers }, "pearl-image-symbolic", tr("Wallpaper", "Hintergrundbild"), false)).as(gtk.Widget),
                     .control => (try self.makeButton(.{ .settings = .overview }, "pearl-emblem-system-symbolic", tr("Open settings Overview", "Einstellungsübersicht öffnen"), false)).as(gtk.Widget),
                     .clock => unreachable,
-                    .audio, .battery, .network, .bluetooth => blk: {
-                        const button = try self.makeButton(.{ .settings = switch (item) {
+                    .audio, .battery, .network, .bluetooth, .scheduler => blk: {
+                        const button = try self.makeButton(if (item == .scheduler) .{ .pane = .scheduling } else .{ .settings = switch (item) {
                             .audio => .sound,
                             .battery => .power,
                             .network => .network,
@@ -328,6 +332,7 @@ pub const Bar = struct {
                             .battery => "pearl-battery-symbolic",
                             .network => "pearl-network-wireless-symbolic",
                             .bluetooth => "pearl-bluetooth-active-symbolic",
+                            .scheduler => "pearl-scheduler-symbolic",
                             else => unreachable,
                         }).as(gtk.Widget));
                         const label = gtk.Label.new("");
@@ -342,6 +347,7 @@ pub const Bar = struct {
                             .battery => self.battery_label = label,
                             .network => self.network_label = label,
                             .bluetooth => self.bluetooth_label = label,
+                            .scheduler => self.scheduler_label = label,
                             else => unreachable,
                         }
                         button.setChild(content.as(gtk.Widget));
@@ -517,6 +523,30 @@ pub const Bar = struct {
             widget.setVisible(@intFromBool(self.power_service.battery_present));
             var detail: [128]u8 = undefined;
             serviceName(widget, tr("Open Power controls", "Energiesteuerung öffnen"), std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ std.mem.span(label.getText()), if (self.power_service.battery_state == 1) tr("Charging", "Wird geladen") else tr("Battery", "Akku") }) catch "");
+        }
+        if (self.scheduler_label) |label| {
+            const service = self.scheduling_service;
+            const profile: ?sched_profiles.Profile = if (service.config) |config| if (service.status.profile) |i| config.profiles[i] else null else null;
+            const name = if (profile) |value| value.label else "";
+            label.setText(switch (service.status.kind) {
+                .running, .off => std.fmt.bufPrintZ(&service_buffer, "{s}", .{if (profile) |value| value.label else tr("Default", "Standard")}) catch "",
+                .starting => "...",
+                .failed => tr("Failed", "Fehler"),
+                .custom => tr("Custom", "Eigene"),
+                .unavailable => "-",
+            });
+            const widget = self.widgets[@intFromEnum(policy.Item.scheduler)].?;
+            // Hidden without profiles, sched_ext support or scx.service.
+            widget.setVisible(@intFromBool(service.configured() and service.status.kind != .unavailable));
+            var detail: [256]u8 = undefined;
+            serviceName(widget, tr("Open CPU scheduler profiles", "CPU-Scheduler-Profile öffnen"), switch (service.status.kind) {
+                .running => std.fmt.bufPrintZ(&detail, "{s} - {s} {s}", .{ name, service.env.sched, service.env.flags }) catch "",
+                .failed => std.fmt.bufPrintZ(&detail, "{s} {s}", .{ name, tr("stopped unexpectedly", "unerwartet beendet") }) catch "",
+                .off => std.fmt.bufPrintZ(&detail, "{s} - {s}", .{ name, tr("kernel scheduler (EEVDF)", "Kernel-Scheduler (EEVDF)") }) catch "",
+                .starting => tr("Starting the scheduler...", "Scheduler wird gestartet..."),
+                .custom => tr("A scheduler configured outside these profiles", "Ein Scheduler außerhalb dieser Profile"),
+                .unavailable => tr("Scheduler profiles unavailable", "Scheduler-Profile nicht verfügbar"),
+            });
         }
         if (self.network_label) |label| {
             const n = self.network_service;

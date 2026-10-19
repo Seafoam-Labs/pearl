@@ -58,6 +58,7 @@ const Surface = struct {
     control: ?*Panels.Control = null,
     calendar: ?*@import("../../desktop/calendar.zig").View = null,
     wallpapers: ?*@import("../../desktop/wallpapers.zig").View = null,
+    scheduling: ?*@import("../../desktop/scheduling.zig").View = null,
     resources: ?*@import("../../desktop/resource_view.zig").Detail = null,
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
     media: ?*@import("../../desktop/media.zig").View = null,
@@ -92,6 +93,7 @@ const Surface = struct {
         if (self.control) |control| control.destroy();
         if (self.calendar) |view| view.destroy();
         if (self.wallpapers) |view| view.destroy();
+        if (self.scheduling) |view| view.destroy();
         if (self.resources) |view| view.destroy();
         if (self.measure_clock) |clock| {
             if (object.signalHandlerIsConnected(clock.as(object.Object), self.measure_signal) != 0) object.signalHandlerDisconnect(clock.as(object.Object), self.measure_signal);
@@ -154,6 +156,7 @@ pub const Manager = struct {
     auth: @import("../../services/polkit.zig").Agent = undefined,
     night_light: @import("../../services/night_light.zig").NightLight = undefined,
     sched_ext: @import("../../services/sched_ext.zig").Service = undefined,
+    scheduling: @import("../../services/scheduling.zig").Service = undefined,
     power: @import("../../services/power.zig").Power = undefined,
     network: @import("../../services/network.zig").Network = undefined,
     bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
@@ -231,6 +234,7 @@ pub const Manager = struct {
         self.audio = .{ .context = self, .changed = audioChanged };
         self.night_light = .{ .display = self.display, .context = self, .changed = nightLightChanged };
         self.sched_ext = .{ .app = self.app.as(gio.Application), .context = self, .changed = schedExtChanged };
+        self.scheduling = .{ .app = self.app.as(gio.Application), .context = self, .changed = schedExtChanged };
         self.power = .{ .app = self.app.as(gio.Application), .context = self, .changed = powerChanged };
         if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_BACKLIGHT")) |root| self.power.backlight_root.set(std.mem.span(root));
         self.network = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
@@ -253,6 +257,7 @@ pub const Manager = struct {
         self.auth.start();
         try self.lifecycle.start();
         self.power.start();
+        self.scheduling.start();
         self.power.useSession(self.lifecycle.sessionObjectPath());
         self.network.start();
         self.bluetooth.start();
@@ -306,6 +311,7 @@ pub const Manager = struct {
             self.auth.stop();
             self.night_light.stop();
             self.sched_ext.stop();
+            self.scheduling.stop();
             self.power.stop();
             self.network.stop();
             self.bluetooth.stop();
@@ -1196,6 +1202,7 @@ pub const Manager = struct {
             if (popup.running_apps) |view| try view.update();
             if (popup.launcher) |launcher| launcher.refresh();
             if (popup.clipboard_capture) |view| view.update();
+            if (popup.scheduling) |view| view.update();
             if (popup.control) |panel| panel.update();
             if (popup.notifications) |view| view.update();
             if (popup.media) |view| view.update();
@@ -1204,7 +1211,8 @@ pub const Manager = struct {
                 view.setBar(if (bar) |b| b.tray else null);
                 view.update();
             }
-            if (self.pane == .tray) self.positionPopup();
+            // A longer status line, such as a failure reason, can add a line.
+            if (self.pane == .tray or self.pane == .scheduling) self.positionPopup();
             if (popup.control != null and self.layout_stamp != self.workspaceStamp(popup.output)) {
                 self.layout.?.cancel();
                 self.queryLayout(popup.output, null) catch {};
@@ -1281,6 +1289,7 @@ pub const Manager = struct {
             if (s.control) |panel_control| panel_control.destroy();
             if (s.calendar) |view| view.destroy();
             if (s.wallpapers) |view| view.destroy();
+            if (s.scheduling) |view| view.destroy();
             if (s.resources) |view| view.destroy();
             if (s.notifications) |view| view.destroy();
             if (s.media) |view| view.destroy();
@@ -1329,7 +1338,7 @@ pub const Manager = struct {
             .bar => {
                 panel_widget.addCssClass("pearl-bar-panel");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, 4);
-                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index);
+                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index, &self.scheduling);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -1397,6 +1406,7 @@ pub const Manager = struct {
                         s.tray.?.update();
                     },
                     .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested, dismissSurface),
+                    .scheduling => s.scheduling = try @import("../../desktop/scheduling.zig").View.create(panel, &self.scheduling),
                     .control => {
                         s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, controlTask, settingsNavigate, self.settings_page.?, window, .{ .audio = &self.audio, .power = &self.power, .night_light = &self.night_light, .network = &self.network, .bluetooth = &self.bluetooth, .lifecycle = &self.lifecycle, .auth = &self.auth });
                     },
@@ -1597,6 +1607,7 @@ pub const Manager = struct {
         self.bluetooth.interest.enabled = allowed;
         self.power.interest.enabled = allowed;
         self.sched_ext.interest.enabled = allowed;
+        self.scheduling.enabled = allowed;
         if (allowed) return;
         if (self.network.interest.count() != 0) self.network.revokeViews();
         if (self.bluetooth.interest.count() != 0) self.bluetooth.revokeViews();
@@ -1708,6 +1719,12 @@ pub const Manager = struct {
                 width = @min(@max(size.width + 16, 48), width);
                 height = @min(@max(size.height + 16, 48), height);
             }
+        }
+        if (self.pane == .scheduling) {
+            // The scheduler card hugs its content; its text wraps to the pane width.
+            var natural: c_int = 0;
+            s.panel.measure(.vertical, width, null, &natural, null, null);
+            if (natural > 0) height = @min(natural, height);
         }
         var rect = if (centered) policy.popup(o.bounds, o.usable, width, height) else policy.anchored(o.bounds, barPlacementBounds(o), width, height, o.reservations.bar_edge, self.pane != .calendar);
         // Any pane opened from a bar widget sits under that widget, whatever

@@ -2,7 +2,7 @@
 const std = @import("std");
 const Window = @import("../aqueous/entities.zig").Window;
 pub const Layout = enum { tile, monocle, grid, rows, dwindle, @"reverse-dwindle", scrolling, float, @"game-mode", composable };
-pub const Item = enum { window_switcher, running_apps, clipboard, launcher, workspaces, title, clock, keyboard, overview, control, audio, battery, network, bluetooth, resources, notifications, media, tray, wallpaper };
+pub const Item = enum { window_switcher, running_apps, clipboard, launcher, workspaces, title, clock, keyboard, overview, control, audio, battery, network, bluetooth, resources, notifications, media, tray, wallpaper, scheduler };
 pub const Groups = struct {
     left: []const u8 = "launcher,workspaces,title",
     center: []const u8 = "clock",
