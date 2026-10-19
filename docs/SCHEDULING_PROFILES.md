@@ -70,13 +70,25 @@ A file holds one to eight profiles. If it has no `stop` profile, Pearl adds
 **Default** first, so returning to the kernel's scheduler is always possible.
 The shipped profiles have their own **Default** for this.
 
+## Status
+
+A profile shows as running only once the kernel reports its own scheduler
+attached in `/sys/kernel/sched_ext/root/ops`; any other scheduler shows as
+**Custom**. The bar widget's icon carries a dot: green while the profile is
+running, amber while it starts, red when it has failed. The flyout and Settings
+show the scheduler, the version it reports and when it started, for example
+"Running - scx_cosmos 1.1.7 - since 13:41".
+
 ## Failures
 
 Pearl watches `scx.service` through systemd's D-Bus API. If the selected
 scheduler stops while it should be running, because it crashed, the kernel
 ejected it, or systemd's restart limit was reached, Pearl sends a notification
-and shows the profile as stopped. It does not retry on its own; choosing a
-profile again restarts it.
+and shows the profile as stopped, with the reason. The reason is the sched_ext
+exit message or the scheduler's last error from the unit's journal, such as
+"runnable task stall ... on CPU 6". When the journal cannot be read, systemd's
+exit status is used instead, such as "killed by SIGKILL repeatedly". Pearl does
+not retry on its own; choosing a profile again restarts it.
 
 ## Settings
 

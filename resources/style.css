@@ -240,3 +240,7 @@
 .pearl-root.$scope .pearl-desktop-band { background: alpha($primary$, 0.2); border: 1px solid $primary$; }
 .pearl-root.$scope .pearl-desktop-status { background: $surface$; color: $text$; border-radius: 12px; padding: 12px; }
 .pearl-root.$scope .pearl-desktop-grid:focus .pearl-desktop-cursor { outline: 2px solid $primary$; outline-offset: -2px; }
+.pearl-root.$scope .pearl-status-dot { min-width: 7px; min-height: 7px; border-radius: 999px; }
+.pearl-root.$scope .pearl-status-ok { background: #4caf50; }
+.pearl-root.$scope .pearl-status-pending { background: #e0a030; }
+.pearl-root.$scope .pearl-status-failed { background: $error_color$; }

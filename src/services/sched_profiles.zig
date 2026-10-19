@@ -168,17 +168,77 @@ pub const Status = struct {
     profile: ?usize = null,
 };
 
-pub fn status(config: Config, env: Env, unit: Unit, kernel: Kernel) Status {
+/// sched_ext names an attached scheduler <name>_<version>_<target>, where
+/// <name> is the binary name without its scx_ prefix.
+pub fn opsMatches(sched: []const u8, ops: []const u8) bool {
+    const name = if (std.mem.startsWith(u8, sched, "scx_")) sched[4..] else sched;
+    return name.len > 0 and std.mem.startsWith(u8, ops, name) and (ops.len == name.len or ops[name.len] == '_');
+}
+
+/// The version an attached scheduler reports in its ops name, if any.
+pub fn opsVersion(sched: []const u8, ops: []const u8) ?[]const u8 {
+    if (!opsMatches(sched, ops)) return null;
+    const name_len = if (std.mem.startsWith(u8, sched, "scx_")) sched.len - 4 else sched.len;
+    if (ops.len <= name_len + 1) return null;
+    const rest = ops[name_len + 1 ..];
+    const version = rest[0 .. std.mem.indexOfScalar(u8, rest, '_') orelse rest.len];
+    return if (version.len > 0 and std.ascii.isDigit(version[0])) version else null;
+}
+
+/// Why a scheduler stopped, from its scx.service log: the sched_ext exit
+/// message, else the scheduler's last error.
+pub fn exitReason(log: []const u8) ?[]const u8 {
+    var exit: ?[]const u8 = null;
+    var failure: ?[]const u8 = null;
+    var lines = std.mem.splitScalar(u8, log, '\n');
+    while (lines.next()) |raw| {
+        const line = std.mem.trim(u8, raw, " \t\r");
+        if (std.mem.lastIndexOf(u8, line, "EXIT: ")) |i| {
+            exit = std.mem.trim(u8, line[i + 6 ..], " ");
+        } else if (std.mem.startsWith(u8, line, "Error: ")) {
+            failure = std.mem.trim(u8, line[7..], " ");
+        }
+    }
+    const reason = exit orelse failure orelse return null;
+    return if (reason.len > 0) reason else null;
+}
+
+/// How systemd saw the main process end, for when the log is not readable.
+/// code is the CLD_* value systemd reports in ExecMainCode.
+pub fn processReason(buffer: []u8, result: []const u8, code: i32, status_code: i32) ?[]const u8 {
+    const again = if (std.mem.eql(u8, result, "start-limit-hit")) " repeatedly" else "";
+    const signal: []const u8 = switch (status_code) {
+        6 => "SIGABRT",
+        9 => "SIGKILL",
+        11 => "SIGSEGV",
+        15 => "SIGTERM",
+        else => "",
+    };
+    return switch (code) {
+        1 => if (status_code != 0) std.fmt.bufPrint(buffer, "exited with status {d}{s}", .{ status_code, again }) catch null else std.fmt.bufPrint(buffer, "exited{s}", .{again}) catch null,
+        2, 3 => if (signal.len > 0) std.fmt.bufPrint(buffer, "{s} {s}{s}", .{ if (code == 2) "killed by" else "crashed with", signal, again }) catch null else std.fmt.bufPrint(buffer, "{s} signal {d}{s}", .{ if (code == 2) "killed by" else "crashed with", status_code, again }) catch null,
+        else => if (again.len > 0) "restarted too often" else null,
+    };
+}
+
+/// ops is the attached scheduler's name from /sys/kernel/sched_ext/root/ops.
+/// switching is true while a profile chosen moments ago is still taking over:
+/// /etc/default/scx was written after the running instance started, so the
+/// previous scheduler may still be attached or the unit briefly inactive.
+pub fn status(config: Config, env: Env, unit: Unit, kernel: Kernel, ops: []const u8, switching: bool) Status {
     if (kernel == .unavailable or unit == .missing) return .{};
     const selected: ?usize = if (env.profile) |id| config.find(id) else null;
     const profile = if (selected) |i| config.profiles[i] else null;
     const scheduler = if (profile) |p| !p.stop and matches(p, env) else false;
+    const stopping = if (profile) |p| p.stop else false;
+    const settling: Status = .{ .kind = .starting, .profile = selected };
     return switch (unit) {
-        .active => if (scheduler) .{ .kind = if (kernel == .enabled) .running else .starting, .profile = selected } else .{ .kind = .custom },
-        .activating, .deactivating => if (scheduler) .{ .kind = .starting, .profile = selected } else .{ .kind = .custom },
+        // Running means the kernel reports the profile's own scheduler attached.
+        .active => if (scheduler) (if (kernel != .enabled or ops.len == 0) settling else if (opsMatches(profile.?.sched.?, ops)) .{ .kind = .running, .profile = selected } else if (switching) settling else .{ .kind = .custom }) else if (stopping and switching) settling else .{ .kind = .custom },
+        .activating, .deactivating => if (scheduler or (stopping and switching)) settling else .{ .kind = .custom },
         // A selected scheduler that is no longer running has failed, whether
         // systemd marked the unit failed or the scheduler exited cleanly.
-        .failed, .inactive, .unknown => if (scheduler) .{ .kind = .failed, .profile = selected } else if (kernel == .enabled) .{ .kind = .custom } else .{ .kind = .off, .profile = if (profile != null and profile.?.stop) selected else firstStop(config) },
+        .failed, .inactive, .unknown => if (scheduler) (if (switching and unit != .failed) settling else .{ .kind = .failed, .profile = selected }) else if (kernel == .enabled) (if (stopping and switching) settling else .{ .kind = .custom }) else .{ .kind = .off, .profile = if (stopping) selected else firstStop(config) },
         .missing => unreachable,
     };
 }
@@ -226,22 +286,62 @@ test "the environment file round-trips and attributes the running scheduler" {
     try t.expectEqualStrings("-s 700 -m performance -w", env.flags);
     try t.expect(matches(latency, env));
     try t.expect(!matches(config.profiles[1], env));
-    try t.expectEqual(Status{ .kind = .running, .profile = 2 }, status(config, env, .active, .enabled));
-    try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .activating, .disabled));
-    try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .failed, .disabled));
-    try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .inactive, .disabled));
+    try t.expectEqual(Status{ .kind = .running, .profile = 2 }, status(config, env, .active, .enabled, "cosmos_1.1.7_x86_64_unknown_linux_gnu", false));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .activating, .disabled, "", false));
+    try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .failed, .disabled, "", false));
+    try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .inactive, .disabled, "", false));
     // A hand-edited file or another loader is not attributed to a profile.
     var edited = env;
     edited.flags = "-s 700";
-    try t.expectEqual(Status{ .kind = .custom }, status(config, edited, .active, .enabled));
-    try t.expectEqual(Status{ .kind = .custom }, status(config, .{}, .inactive, .enabled));
+    try t.expectEqual(Status{ .kind = .custom }, status(config, edited, .active, .enabled, "", false));
+    try t.expectEqual(Status{ .kind = .custom }, status(config, .{}, .inactive, .enabled, "", false));
     const off = parseEnv(try render(a, config.profiles[0]));
-    try t.expectEqual(Status{ .kind = .off, .profile = 0 }, status(config, off, .inactive, .disabled));
-    try t.expectEqual(Status{ .kind = .off, .profile = 0 }, status(config, .{}, .inactive, .disabled));
-    try t.expectEqual(Status{}, status(config, env, .missing, .disabled));
+    try t.expectEqual(Status{ .kind = .off, .profile = 0 }, status(config, off, .inactive, .disabled, "", false));
+    try t.expectEqual(Status{ .kind = .off, .profile = 0 }, status(config, .{}, .inactive, .disabled, "", false));
+    try t.expectEqual(Status{}, status(config, env, .missing, .disabled, "", false));
     // A file whose own profile turns scx off is shown as that profile.
     const own = try parse(a, "{\"version\":2,\"profiles\":[{\"id\":\"latency\",\"label\":\"Low latency\",\"sched\":\"scx_cosmos\"},{\"id\":\"balanced\",\"label\":\"Balanced\",\"action\":\"stop\"}]}");
     try t.expectEqual(@as(usize, 2), own.profiles.len);
-    try t.expectEqual(Status{ .kind = .off, .profile = 1 }, status(own, .{}, .inactive, .disabled));
-    try t.expectEqual(Status{}, status(config, env, .active, .unavailable));
+    try t.expectEqual(Status{ .kind = .off, .profile = 1 }, status(own, .{}, .inactive, .disabled, "", false));
+    try t.expectEqual(Status{}, status(config, env, .active, .unavailable, "", false));
+    // Only the profile's own scheduler counts as running.
+    try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .active, .enabled, "", false));
+    try t.expectEqual(Status{ .kind = .custom }, status(config, env, .active, .enabled, "lavd_1.0.20_x86_64_unknown_linux_gnu", false));
+    // While a profile chosen moments ago takes over, the previous scheduler
+    // is still attached or the unit is briefly down; neither is custom or failed.
+    const lavd = "lavd_1.0.20_x86_64_unknown_linux_gnu";
+    try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .active, .enabled, lavd, true));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .inactive, .disabled, "", true));
+    try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .failed, .disabled, "", true));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(config, off, .active, .enabled, lavd, true));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(config, off, .deactivating, .enabled, lavd, true));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(config, off, .inactive, .enabled, lavd, true));
+    try t.expectEqual(Status{ .kind = .off, .profile = 0 }, status(config, off, .inactive, .disabled, "", true));
+    // A scheduler started after the file was written is not ours.
+    try t.expectEqual(Status{ .kind = .custom }, status(config, off, .active, .enabled, lavd, false));
+}
+
+test "attached schedulers and exit reasons are read from kernel and log text" {
+    try t.expect(opsMatches("scx_cosmos", "cosmos_1.1.7_x86_64_unknown_linux_gnu"));
+    try t.expect(opsMatches("scx_eevdf", "eevdf"));
+    try t.expect(!opsMatches("scx_cosmos", "cosmosx_1.0"));
+    try t.expect(!opsMatches("scx_lavd", "cosmos_1.1.7"));
+    try t.expectEqualStrings("1.1.7", opsVersion("scx_cosmos", "cosmos_1.1.7_x86_64_unknown_linux_gnu").?);
+    try t.expect(opsVersion("scx_eevdf", "eevdf") == null);
+    const log =
+        \\13:41:25 [INFO] scheduler options: scx_cosmos
+        \\EXIT: unregistered from user space
+        \\13:50:00 [INFO] scheduler options: scx_cosmos
+        \\Error: EXIT: runnable task stall (khugepaged[77] failed to run for 5.631s) on CPU 6
+        \\scx.service: Main process exited, code=exited, status=1/FAILURE
+    ;
+    try t.expectEqualStrings("runnable task stall (khugepaged[77] failed to run for 5.631s) on CPU 6", exitReason(log).?);
+    try t.expectEqualStrings("Failed to open BPF object", exitReason("Error: Failed to open BPF object\n").?);
+    try t.expect(exitReason("13:41:25 [INFO] scheduler options: scx_cosmos\n") == null);
+    var buffer: [64]u8 = undefined;
+    try t.expectEqualStrings("killed by SIGKILL", processReason(&buffer, "signal", 2, 9).?);
+    try t.expectEqualStrings("crashed with signal 7", processReason(&buffer, "core-dump", 3, 7).?);
+    try t.expectEqualStrings("exited with status 1", processReason(&buffer, "exit-code", 1, 1).?);
+    try t.expectEqualStrings("killed by SIGKILL repeatedly", processReason(&buffer, "start-limit-hit", 2, 9).?);
+    try t.expectEqualStrings("restarted too often", processReason(&buffer, "start-limit-hit", 0, 0).?);
 }

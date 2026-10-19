@@ -83,15 +83,7 @@ pub const View = struct {
         var buffer: [512]u8 = undefined;
         const config = service.config;
         const profile: ?p.Profile = if (config) |c| if (service.status.profile) |i| c.profiles[i] else null else null;
-        const name = if (profile) |value| value.label else "";
-        self.status.setText(if (service.problem) |problem| problem else switch (service.status.kind) {
-            .unavailable => if (service.kernel == .unavailable) tr("This kernel does not support sched_ext schedulers.", "Dieser Kernel unterstützt keine sched_ext-Scheduler.") else if (service.unit_state == .missing) tr("scx.service is not installed.", "scx.service ist nicht installiert.") else tr("Checking the scheduler...", "Scheduler wird geprüft..."),
-            .off => std.fmt.bufPrintZ(&buffer, "{s} - {s}", .{ if (profile) |value| value.label else "", tr("kernel scheduler (EEVDF)", "Kernel-Scheduler (EEVDF)") }) catch "",
-            .running => std.fmt.bufPrintZ(&buffer, "{s} - {s}", .{ name, service.env.sched }) catch "",
-            .starting => std.fmt.bufPrintZ(&buffer, "{s} {s}...", .{ tr("Starting", "Starte"), name }) catch "",
-            .failed => std.fmt.bufPrintZ(&buffer, "{s} {s}", .{ name, tr("stopped unexpectedly; the kernel's default scheduler is running.", "wurde unerwartet beendet; der Standard-Scheduler des Kernels läuft.") }) catch "",
-            .custom => tr("Custom - a scheduler configured outside these profiles is running.", "Benutzerdefiniert - ein Scheduler außerhalb dieser Profile läuft."),
-        });
+        self.status.setText(service.describe(&buffer, std.mem.eql(u8, tr("en", "de"), "de")));
         self.description.setText(if (profile) |value| if (service.status.kind == .running or service.status.kind == .off) std.fmt.bufPrintZ(&buffer, "{s}", .{value.description}) catch "" else "" else "");
         self.description.as(gtk.Widget).setVisible(@intFromBool(self.description.getText()[0] != 0));
         const usable = service.enabled and service.applying == null and service.status.kind != .unavailable;

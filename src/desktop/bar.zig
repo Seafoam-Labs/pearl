@@ -45,6 +45,8 @@ pub const Bar = struct {
     battery_label: ?*gtk.Label = null,
     scheduling_service: *@import("../services/scheduling.zig").Service,
     scheduler_label: ?*gtk.Label = null,
+    /// Dot on the scheduler icon: running, starting or failed.
+    scheduler_dot: ?*gtk.Widget = null,
     client: *Client,
     output: []const u8,
     context: *anyopaque,
@@ -123,6 +125,7 @@ pub const Bar = struct {
         self.network_label = null;
         self.bluetooth_label = null;
         self.scheduler_label = null;
+        self.scheduler_dot = null;
         self.workspace_hash = null;
     }
     pub fn configure(self: *Bar, groups: policy.Groups, definitions: []const clocks.Definition) !void {
@@ -327,14 +330,27 @@ pub const Bar = struct {
                             else => unreachable,
                         } }, null, "", false);
                         const content = gtk.Box.new(if (self.vertical) .vertical else .horizontal, if (self.vertical) 0 else 4);
-                        content.append(w.icon(switch (item) {
+                        const symbol = w.icon(switch (item) {
                             .audio => "pearl-audio-volume-high-symbolic",
                             .battery => "pearl-battery-symbolic",
                             .network => "pearl-network-wireless-symbolic",
                             .bluetooth => "pearl-bluetooth-active-symbolic",
                             .scheduler => "pearl-scheduler-symbolic",
                             else => unreachable,
-                        }).as(gtk.Widget));
+                        }).as(gtk.Widget);
+                        if (item == .scheduler) {
+                            const overlay = gtk.Overlay.new();
+                            overlay.setChild(symbol);
+                            const dot = gtk.Box.new(.horizontal, 0).as(gtk.Widget);
+                            dot.addCssClass("pearl-status-dot");
+                            dot.setHalign(.end);
+                            dot.setValign(.end);
+                            dot.setCanTarget(0);
+                            dot.setVisible(0);
+                            overlay.addOverlay(dot);
+                            self.scheduler_dot = dot;
+                            content.append(overlay.as(gtk.Widget));
+                        } else content.append(symbol);
                         const label = gtk.Label.new("");
                         if (self.vertical) {
                             label.setEllipsize(.end);
@@ -538,15 +554,19 @@ pub const Bar = struct {
             const widget = self.widgets[@intFromEnum(policy.Item.scheduler)].?;
             // Hidden without profiles, sched_ext support or scx.service.
             widget.setVisible(@intFromBool(service.configured() and service.status.kind != .unavailable));
-            var detail: [256]u8 = undefined;
-            serviceName(widget, tr("Open CPU scheduler profiles", "CPU-Scheduler-Profile öffnen"), switch (service.status.kind) {
-                .running => std.fmt.bufPrintZ(&detail, "{s} - {s} {s}", .{ name, service.env.sched, service.env.flags }) catch "",
-                .failed => std.fmt.bufPrintZ(&detail, "{s} {s}", .{ name, tr("stopped unexpectedly", "unerwartet beendet") }) catch "",
-                .off => std.fmt.bufPrintZ(&detail, "{s} - {s}", .{ name, tr("kernel scheduler (EEVDF)", "Kernel-Scheduler (EEVDF)") }) catch "",
-                .starting => tr("Starting the scheduler...", "Scheduler wird gestartet..."),
-                .custom => tr("A scheduler configured outside these profiles", "Ein Scheduler außerhalb dieser Profile"),
-                .unavailable => tr("Scheduler profiles unavailable", "Scheduler-Profile nicht verfügbar"),
-            });
+            var detail: [512]u8 = undefined;
+            serviceName(widget, tr("Open CPU scheduler profiles", "CPU-Scheduler-Profile öffnen"), if (service.status.kind == .running) std.fmt.bufPrintZ(&detail, "{s} - {s}", .{ name, service.describe(&service_buffer, std.mem.eql(u8, tr("en", "de"), "de")) }) catch "" else service.describe(&detail, std.mem.eql(u8, tr("en", "de"), "de")));
+            if (self.scheduler_dot) |dot| {
+                const state: ?[:0]const u8 = switch (service.status.kind) {
+                    .running => "pearl-status-ok",
+                    .starting => "pearl-status-pending",
+                    .failed => "pearl-status-failed",
+                    else => null,
+                };
+                for ([_][:0]const u8{ "pearl-status-ok", "pearl-status-pending", "pearl-status-failed" }) |class| dot.removeCssClass(class);
+                if (state) |class| dot.addCssClass(class);
+                dot.setVisible(@intFromBool(state != null));
+            }
         }
         if (self.network_label) |label| {
             const n = self.network_service;
