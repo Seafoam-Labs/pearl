@@ -277,11 +277,16 @@ const Job = struct {
                             if (theme_mod.validate(light)) |_| {
                                 const encoded = try alloc.alloc(u8, std.base64.standard.Encoder.calcSize(render.json.len));
                                 request.palette = std.base64.standard.Encoder.encode(encoded, render.json);
-                            } else |_| {}
-                        } else |_| {}
-                    } else |_| {}
-                } else |_| {}
-            } else |_| {}
+                                log.info("event=greeter-palette-sent bytes={d}", .{render.json.len});
+                            } else |_| log.warn("event=greeter-palette-skip reason=light-contrast", .{});
+                        } else |_| log.warn("event=greeter-palette-skip reason=light-parse", .{});
+                    } else |_| log.warn("event=greeter-palette-skip reason=dark-contrast", .{});
+                } else |_| log.warn("event=greeter-palette-skip reason=dark-parse", .{});
+            } else |err| {
+                log.warn("event=greeter-palette-skip reason={s}", .{@errorName(err)});
+            }
+        } else {
+            log.info("event=greeter-palette-skip reason={s}", .{if (request.theme == .gtk) "gtk-theme" else if (!prefs.matugen.enabled) "matugen-disabled" else "static-follow"});
         }
         if (self.cancel.isCancelled() != 0) return error.Cancelled;
         const json = try std.json.Stringify.valueAlloc(alloc, request, .{});
