@@ -14,6 +14,7 @@ pub const Request = struct {
     gtk_theme: ?[]const u8 = null,
     wallpaper_fit: @FieldType(cfg.Config, "wallpaper_fit") = .cover,
     wallpaper_color: ?[]const u8 = null,
+    surface_opacity: ?u8 = null,
     image: ?[]const u8 = null,
     palette: ?[]const u8 = null,
 };
@@ -38,7 +39,7 @@ pub fn apply(directory: []const u8, bytes: []const u8) !void {
     const parsed = try std.json.parseFromSlice(Request, a, bytes, .{ .duplicate_field_behavior = .@"error" });
     defer parsed.deinit();
     const request = parsed.value;
-    const appearance: cfg.Config = .{ .theme = request.theme, .gtk_theme = request.gtk_theme, .wallpaper_fit = request.wallpaper_fit, .wallpaper_color = request.wallpaper_color };
+    const appearance: cfg.Config = .{ .theme = request.theme, .gtk_theme = request.gtk_theme, .wallpaper_fit = request.wallpaper_fit, .wallpaper_color = request.wallpaper_color, .surface_opacity = request.surface_opacity };
     try appearance.validate();
     if (request.gtk_theme) |name| {
         if (name.len == 0 or name.len > 96) return error.InvalidTheme;
@@ -97,6 +98,7 @@ pub fn apply(directory: []const u8, bytes: []const u8) !void {
     try map.put(alloc, "gtk_theme", if (request.gtk_theme) |name| .{ .string = name } else .null);
     try map.put(alloc, "wallpaper_fit", .{ .string = @tagName(request.wallpaper_fit) });
     try map.put(alloc, "wallpaper_color", if (request.wallpaper_color) |color| .{ .string = color } else .null);
+    try map.put(alloc, "surface_opacity", if (request.surface_opacity) |value| .{ .integer = value } else .null);
     const assets_path = try std.fmt.allocPrint(a, "{s}/greeter-assets", .{directory});
     defer a.free(assets_path);
     if (image != null or palette != null) {

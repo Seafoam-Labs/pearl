@@ -917,9 +917,10 @@ const Screen = struct {
         self.tick_source = glib.timeoutAddSeconds(if (now) |n| @intCast(60 - n.getSecond()) else 60, tick, self);
     }
 };
+const PaletteCss = struct { css: [:0]u8, dark: @import("../theme/theme.zig").Palette, light: @import("../theme/theme.zig").Palette };
 /// Palette published by the privileged appearance sync next to greeter.json.
 /// Absent, stale or low-contrast input keeps the stock Material palettes.
-fn paletteCss(alloc: std.mem.Allocator) ?[:0]u8 {
+fn paletteCss(alloc: std.mem.Allocator) ?PaletteCss {
     const theme_mod = @import("../theme/theme.zig");
     const dir = std.fs.path.dirname(cfg.path()) orelse return null;
     const path = std.fmt.allocPrintSentinel(alloc, "{s}/greeter-assets/palette.json", .{dir}, 0) catch return null;
@@ -930,7 +931,8 @@ fn paletteCss(alloc: std.mem.Allocator) ?[:0]u8 {
     theme_mod.validate(dark) catch return null;
     const light = theme_mod.matugenPalette(alloc, json, "light") catch return null;
     theme_mod.validate(light) catch return null;
-    return theme_mod.cssPalettes(alloc, @embedFile("greeter_style"), dark, light) catch null;
+    const css = theme_mod.cssPalettes(alloc, @embedFile("greeter_style"), dark, light) catch return null;
+    return .{ .css = css, .dark = dark, .light = light };
 }
 pub fn run() !void {
     const parsed = try cfg.load(a);
@@ -967,10 +969,13 @@ pub fn run() !void {
         settings.as(object.Object).set("gtk-enable-animations", @as(c_int, 0), "gtk-cursor-blink", @as(c_int, 0), @as(?[*:0]const u8, null));
     };
     const provider = gtk.CssProvider.new();
+    const theme_mod = @import("../theme/theme.zig");
+    var palettes: struct { dark: theme_mod.Palette, light: theme_mod.Palette } = .{ .dark = theme_mod.dark, .light = theme_mod.light };
     if (config.theme != .gtk) {
         const custom = paletteCss(a);
-        const style = custom orelse try @import("../theme/theme.zig").css(a, @embedFile("greeter_style"));
+        const style = if (custom) |c| c.css else try theme_mod.css(a, @embedFile("greeter_style"));
         defer a.free(style);
+        if (custom) |c| palettes = .{ .dark = c.dark, .light = c.light };
         provider.loadFromString(style);
         gtk.StyleContext.addProviderForDisplay(display, provider.as(gtk.StyleProvider), 600);
         log.info("event=greeter-palette custom={}", .{custom != null});
@@ -978,6 +983,9 @@ pub fn run() !void {
     const sizing = gtk.CssProvider.new();
     const background_css = if (config.wallpaper_color) |color| try std.fmt.allocPrintSentinel(a, ".pearl-lock.pearl-wallpaper {{ background: {s}; background-image: none; }}", .{color}, 0) else try a.dupeZ(u8, "");
     defer a.free(background_css);
+    // A synced custom bar opacity retints the frost alpha over the wallpaper.
+    const opacity_css = if (config.surface_opacity) |percent| try std.fmt.allocPrintSentinel(a, ".pearl-greeter.pearl-dark .pearl-lock-card, .pearl-greeter.pearl-dark .pearl-cluster {{background: alpha({s}, {d:.2});}} .pearl-greeter.pearl-light .pearl-lock-card, .pearl-greeter.pearl-light .pearl-cluster {{background: alpha({s}, {d:.2});}}", .{ palettes.dark.container, @as(f32, @floatFromInt(percent)) / 100, palettes.light.container, @as(f32, @floatFromInt(percent)) / 100 }, 0) else try a.dupeZ(u8, "");
+    defer a.free(opacity_css);
     // The greeter's spacing rhythm and drop shadows. Box spacing is zero;
     // every gap is an explicit margin so hidden rows collapse cleanly.
     const greeter_css = ".pearl-greeter .pearl-greeter-clockbox {margin-top:72px;} " ++
@@ -1009,7 +1017,7 @@ pub fn run() !void {
         ".pearl-greeter.pearl-lock-small .pearl-field-label {margin-bottom:8px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-status {margin-bottom:14px;} " ++
         ".pearl-greeter.pearl-lock-small .pearl-float-slot {min-height:58px;}";
-    const css = try std.fmt.allocPrintSentinel(a, "{s} .pearl-root {{font-size:{d}px;}} .pearl-greeter-form {{margin: 24px;}} .pearl-lock-card button, .pearl-lock-card entry {{min-height:26px; padding:8px 12px;}} .pearl-lock-card {{padding:30px 32px 32px;}} .pearl-lock-small .pearl-greeter-form {{margin-top:24px;}} .pearl-lock .pearl-large {{font-size:24px;}} .pearl-native .pearl-lock-card {{background:@theme_bg_color; color:@theme_fg_color;}} .pearl-lock dropdown {{min-width:0;}} .pearl-reduced * {{transition:none; animation:none;}} {s} {s}", .{ presentation.css, config.font_size, background_css, greeter_css }, 0);
+    const css = try std.fmt.allocPrintSentinel(a, "{s} .pearl-root {{font-size:{d}px;}} .pearl-greeter-form {{margin: 24px;}} .pearl-lock-card button, .pearl-lock-card entry {{min-height:26px; padding:8px 12px;}} .pearl-lock-card {{padding:30px 32px 32px;}} .pearl-lock-small .pearl-greeter-form {{margin-top:24px;}} .pearl-lock .pearl-large {{font-size:24px;}} .pearl-native .pearl-lock-card {{background:@theme_bg_color; color:@theme_fg_color;}} .pearl-lock dropdown {{min-width:0;}} .pearl-reduced * {{transition:none; animation:none;}} {s} {s} {s}", .{ presentation.css, config.font_size, background_css, greeter_css, opacity_css }, 0);
     defer a.free(css);
     sizing.loadFromString(css);
     gtk.StyleContext.addProviderForDisplay(display, sizing.as(gtk.StyleProvider), 601);

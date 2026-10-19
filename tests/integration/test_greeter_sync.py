@@ -55,12 +55,15 @@ def main():
         palette_file = directory/'greeter-assets'/'palette.json'
         assert palette_file.read_bytes() == palette_json
         assert palette_file.stat().st_mode & 0o777 == 0o644
+        synced = run(dict(solid, surface_opacity=10))
+        assert synced['surface_opacity'] == 10
         flat = {'colors': {role: {'dark': {'color': '#777777'}, 'light': {'color': '#777777'}} for role in roles}}
         for invalid in (dict(solid, command='must-not-run'), dict(solid, wallpaper='/etc/shadow'),
                         dict(solid, gtk_theme='../bad'), dict(solid, wallpaper_color='red; color:white'),
                         dict(solid, image='invalid'), dict(solid, image=base64.b64encode(b'not an image').decode()),
                         dict(solid, palette=base64.b64encode(b'{"colors":{}}').decode()),
-                        dict(solid, palette=base64.b64encode(json.dumps(flat).encode()).decode())):
+                        dict(solid, palette=base64.b64encode(json.dumps(flat).encode()).decode()),
+                        dict(solid, surface_opacity=101)):
             before = config.read_bytes()
             palette_before = palette_file.read_bytes() if palette_file.exists() else None
             run(invalid, ok=False)
@@ -68,6 +71,7 @@ def main():
             assert (palette_file.read_bytes() if palette_file.exists() else None) == palette_before
         cleared = run(dict(theme='material_light', gtk_theme=None, wallpaper_color=None, image=None))
         assert cleared['wallpaper'] is None and cleared['gtk_theme'] is None and cleared['wallpaper_color'] is None
+        assert cleared['surface_opacity'] is None
         assert not palette_file.exists()
         # Refuse a substituted config file, preserving the target.
         target = directory/'target'

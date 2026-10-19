@@ -138,6 +138,7 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `wallpaper` | Optional administrator-owned PNG/JPEG; at most 16 MiB input; current shared decoder restricts dimensions to 4096 per axis and 8 Mi pixels |
 | `wallpaper_fit` | `cover` (default) or `contain` |
 | `wallpaper_color` | Optional `#RRGGBB` solid background, also visible around a contained image; null retains the theme gradient |
+| `surface_opacity` | Optional 0–100 percent synced from the bar's custom background opacity; applied to the card and cluster frost; null keeps the greeter defaults |
 | `font_size`, `reduced_motion`, `high_contrast` | 12–32 px base font, animation policy, and the startup state of the corner high-contrast toggle |
 | `preferred_output` | Connector preference for initial card placement; output changes never authorize authentication |
 | `preferred_output_edid` | Monitor identity hash, taking precedence over `preferred_output`; accepts 64 hex digits with an optional `sha256:` prefix |
@@ -296,7 +297,9 @@ pkexec's implicit subject has no session and can never prompt). Only after
 authorization does the service read the request and apply it. When the socket
 is absent (older installs) the client falls back to `pkexec
 /usr/lib/pearl/pearl-greeter-sync --apply`, which works where the caller's
-process is inside a login session scope.
+process is inside a login session scope. A custom bar background opacity rides
+along as `surface_opacity`; automatic opacity leaves the greeter's default
+frost untouched.
 
 The helper writes
 root-owned assets under `/etc/pearl/greeter-assets` and atomically updates only the

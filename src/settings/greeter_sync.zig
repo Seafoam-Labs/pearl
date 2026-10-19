@@ -226,6 +226,9 @@ const Job = struct {
             .wallpaper_fit = if (prefs.wallpaper.mode == .contain) .contain else .cover,
             .wallpaper_color = if (prefs.wallpaper.mode == .gradient) null else prefs.wallpaper.color,
         };
+        // The greeter's frost matches the bar's custom opacity; automatic stays
+        // theme-owned on both sides.
+        request.surface_opacity = if (prefs.bar.background_opacity.mode == .custom) prefs.bar.background_opacity.percent else null;
         if (request.gtk_theme) |name| {
             if (self.gtk_dark) request.gtk_theme = try std.fmt.allocPrint(alloc, "{s}:dark", .{name});
         }
