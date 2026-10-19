@@ -3,7 +3,7 @@
 # for the next boot, without restarting the running display manager.
 pkgbase=pearl-git
 pkgname=(pearl-git pearl-greeter-git)
-pkgver=0.2.8.r233.gfecc966
+pkgver=0.2.9
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
@@ -107,7 +107,7 @@ check() {
 package_pearl-git() {
     depends=("${_shell_depends[@]}")
     # Required by the Aqueous session dispatcher.
-    provides=('pearl-capture-picker-git=1')
+    provides=("pearl=$epoch:$pkgver-$pkgrel" 'pearl-capture-picker=1')
     optdepends=('pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported'
                 'llama-cpp: system runtime for launcher assistant setup'
                 'shelly: assistant runtime installation on Devario'

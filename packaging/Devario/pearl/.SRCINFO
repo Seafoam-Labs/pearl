@@ -1,6 +1,6 @@
-pkgbase = pearl-git
+pkgbase = pearl
 	pkgdesc = GTK desktop shell exclusively for Aqueous (release candidate)
-	pkgver = 0.2.8.r10.g0ffcda6
+	pkgver = 0.2.9
 	pkgrel = 1
 	epoch = 1
 	url = https://github.com/Seafoam-Labs/pearl
@@ -37,7 +37,7 @@ pkgbase = pearl-git
 	makedepends = cairo>=1.18.4
 	options = !strip
 	options = !debug
-	source = pearl-git::git+https://github.com/Seafoam-Labs/pearl.git#branch=greeter-update
+	source = pearl-0.2.9::git+https://github.com/Seafoam-Labs/pearl.git#tag=v0.2.9
 	source = https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.2/wasmtime-v48.0.2-x86_64-linux-c-api.tar.xz
 	source = https://github.com/bytecodealliance/wit-bindgen/releases/download/v0.62.0/wit-bindgen-0.62.0-x86_64-linux.tar.gz
 	source = https://github.com/bytecodealliance/wasm-tools/releases/download/v1.259.0/wasm-tools-1.259.0-x86_64-linux.tar.gz
@@ -48,8 +48,8 @@ pkgbase = pearl-git
 	sha256sums = 3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160
 	sha256sums = 562532959fa4274ab7b37a5d36894bfb0a4f161fd002a418ea8d46114c3a9b1f
 
-pkgname = pearl-git
-	conflicts = pearl
+pkgname = pearl
+	conflicts = pearl-git
 	depends = libcups
 	depends = curl
 	depends = libarchive
@@ -77,6 +77,7 @@ pkgname = pearl-git
 	depends = systemd>=261.3
 	depends = aqueous>0.7
 	depends = uwsm>=0.26.7
+	provides = pearl-capture-picker=1
 	optdepends = pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported
 	optdepends = llama-cpp: system runtime for launcher assistant setup
 	optdepends = shelly: assistant runtime installation on Devario
@@ -96,12 +97,10 @@ pkgname = pearl-git
 	optdepends = bluez>=5.87: Bluetooth controls
 	optdepends = upower>=1.91.4: battery status
 	optdepends = power-profiles-daemon>=0.30: power profiles
-	provides = pearl=1:0.2.8.r10.g0ffcda6-1
-	provides = pearl-capture-picker=1
 	backup = etc/pam.d/pearl
 	backup = etc/pearl/portal-policy.conf
 
-pkgname = pearl-greeter-git
+pkgname = pearl-greeter
 	pkgdesc = GTK greetd login screen hosted by ordinary Aqueous
 	install = pearl-greeter.install
 	depends = greetd>=0.10.3
@@ -116,9 +115,8 @@ pkgname = pearl-greeter-git
 	depends = glibc>=2.44
 	depends = systemd>=261.3
 	depends = python>=3.14
+	conflicts = pearl-greeter-git
 	optdepends = accountsservice: account names and avatars
 	optdepends = orca: optional screen reader
 	optdepends = xorg-xinit: optional X11 session launching
-	conflicts = pearl-greeter
-	provides = pearl-greeter=1:0.2.8.r10.g0ffcda6-1
 	backup = etc/pearl/greeter.json
