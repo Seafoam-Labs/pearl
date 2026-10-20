@@ -77,7 +77,8 @@ SaveSecrets explicitly reports that Pearl does not store credentials. Cancel and
 DeleteSecrets have defined replies. Rejected credentials open a fresh masked
 entry instead of reusing the previous password.
 
-GTK PasswordEntry uses its password buffer and has the peek icon disabled. The
+GTK PasswordEntry uses its password buffer. Its peek icon is GTK's press-and-hold
+reveal, so the secret is masked again on release rather than left on screen. The
 entry clears on submit, cancel, prompt replacement, popup destruction, daemon
 loss and session locking. Pearl's short-lived validation copy is explicitly wiped.
 GTK and GDBus manage their own transient memory; this is not a guarantee that every

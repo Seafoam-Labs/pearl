@@ -352,7 +352,7 @@ pub const View = struct {
         content.append(self.prompt_message.?.as(gtk.Widget));
         if (data.secret) {
             const entry = gtk.PasswordEntry.new();
-            entry.setShowPeekIcon(0);
+            entry.setShowPeekIcon(1);
             self.secret = entry;
             _ = gtk.PasswordEntry.signals.activate.connect(entry, *View, passwordActivated, self, .{});
             w.name(entry.as(gtk.Widget), "Password, PIN or passkey");

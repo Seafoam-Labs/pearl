@@ -108,7 +108,7 @@ pub const View = struct {
         const title = w.label("", null);
         box.append(title.as(gtk.Widget));
         const entry = gtk.PasswordEntry.new();
-        entry.setShowPeekIcon(0);
+        entry.setShowPeekIcon(1);
         w.name(entry.as(gtk.Widget), if (network) "Wi-Fi password" else "Bluetooth PIN or passkey");
         box.append(entry.as(gtk.Widget));
         self.remember(entry.as(object.Object), gtk.PasswordEntry.signals.activate.connect(entry, *View, entryActivated, self, .{}), false);
