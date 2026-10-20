@@ -1,7 +1,7 @@
 //! Private, same-executable PAM conversation framing. No secrets in argv/logs.
 const std = @import("std");
 pub const Packet = extern struct {
-    kind: u32 = 0, // PAM message style, 100=result (value=status), 101=response
+    kind: u32 = 0, // PAM message style, 100=result (value=status), 101=response, 102=start failure
     value: u32 = 0,
     length: u32 = 0,
     bytes: [1024]u8 = @splat(0),
@@ -17,7 +17,7 @@ pub const Packet = extern struct {
     pub fn valid(self: *const Packet) bool {
         const shape = switch (self.kind) {
             1...4, 101 => self.value == 0,
-            100 => self.length == 0,
+            100, 102 => self.length == 0,
             else => false,
         };
         return shape and self.length < self.bytes.len and self.bytes[self.length] == 0 and

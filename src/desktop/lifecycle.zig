@@ -1,5 +1,6 @@
 const std = @import("std");
 const gtk = @import("gtk4");
+const glib = @import("glib2");
 const object = @import("gobject2");
 const w = @import("../ui/components/widgets.zig");
 const Lifecycle = @import("../services/lifecycle.zig").Lifecycle;
@@ -56,6 +57,10 @@ pub const View = struct {
     pub fn update(self: *View) void {
         self.power_actions.update();
         const s = self.service;
+        // Adopting the confirmation here (rather than from the click handler)
+        // keeps destroy() able to cancel a confirmation the pane showed, even
+        // though clicks now run after the emission that may close the pane.
+        if (s.pending != null) self.confirmation = s.confirmation;
         var buffer: [768]u8 = undefined;
         const text = if (s.pending) |action| std.fmt.bufPrintZ(&buffer, "Confirm {s}? This confirmation expires after 20 seconds.", .{@tagName(action)}) catch "Confirm session action?" else if (s.err) |err| std.fmt.bufPrintZ(&buffer, "{s}", .{err}) catch "Session action failed" else if (self.auth.err) |err| std.fmt.bufPrintZ(&buffer, "{s}", .{err}) catch "Authentication unavailable" else if (s.gate.requesting) "Acquiring native session lock…" else "Pearl lock · Automatic idle follows your AC/battery policy";
         self.label.setText(text);
@@ -69,23 +74,35 @@ pub const View = struct {
     }
     fn clicked(_: *gtk.Button, row: *Row) callconv(.c) void {
         const s = row.view.service;
-        const command = switch (row.index) {
-            0 => "lock",
-            1 => "suspend",
-            2 => "hibernate",
-            3 => "logout",
-            4 => if (s.idle_held) "uninhibit" else "inhibit",
-            5 => "confirm",
-            else => "cancel",
+        // A lifecycle action can synchronously destroy this popup from inside
+        // the button's own emission: requesting the lock inhibits the bar, and
+        // the manager's reaction closes and frees the pane. Running the action
+        // from an idle keeps every widget alive until the emission returns, so
+        // the lock trigger can never be lost to a freed view.
+        const p = a.create(Pending) catch return;
+        p.* = .{
+            .service = s,
+            .command = switch (row.index) {
+                0 => "lock",
+                1 => "suspend",
+                2 => "hibernate",
+                3 => "logout",
+                4 => if (s.idle_held) "uninhibit" else "inhibit",
+                5 => "confirm",
+                else => "cancel",
+            },
+            .confirmation = if (row.index == 5) s.confirmation else null,
         };
-        s.act(command, if (row.index == 5) s.confirmation else null) catch {
-            s.err = "Session action unavailable.";
-            row.view.update();
-            return;
+        _ = glib.idleAdd(run, p);
+    }
+    const Pending = struct { service: *Lifecycle, command: [:0]const u8, confirmation: ?u64 };
+    fn run(data: ?*anyopaque) callconv(.c) c_int {
+        const p: *Pending = @ptrCast(@alignCast(data.?));
+        defer a.destroy(p);
+        p.service.act(p.command, p.confirmation) catch {
+            p.service.err = "Session action unavailable.";
         };
-        if (row.index == 1 or row.index == 2 or row.index == 3) {
-            if (s.pending != null) row.view.confirmation = s.confirmation;
-        }
-        row.view.update();
+        p.service.changed(p.service.context);
+        return 0;
     }
 };

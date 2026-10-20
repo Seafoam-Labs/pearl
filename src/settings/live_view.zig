@@ -240,7 +240,10 @@ pub const View = struct {
     }
     fn issue(binding: *Binding) void {
         const self = binding.view;
-        if (self.filling) return;
+        // Refilling rebuilds widgets, so value-reading controls could sample a
+        // stale one; buttons carry static params and must never be dropped, or
+        // a Lock click vanishes with the pane rebuilding around it.
+        if (self.filling and binding.spec.kind != .button) return;
         var scratch = std.heap.ArenaAllocator.init(a);
         defer scratch.deinit();
         const alloc = scratch.allocator();
