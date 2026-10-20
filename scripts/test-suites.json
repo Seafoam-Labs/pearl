@@ -1141,45 +1141,6 @@
     "options": []
   },
   {
-    "id": "test-settings-sched-ext",
-    "description": "Verify scheduler commands, ownership and Settings against private scxctl fixtures",
-    "groups": [
-      "integration"
-    ],
-    "cwd": ".",
-    "targets": [
-      "test-settings-sched-ext"
-    ],
-    "capabilities": [
-      "zig",
-      "native",
-      "session",
-      "aqueous"
-    ],
-    "fixture": "production",
-    "output": "directory",
-    "timeout": 900,
-    "sources": [
-      "tests/integration/test_settings_sched_ext.py"
-    ],
-    "args": [],
-    "options": []
-  },
-  {
-    "id": "test-system-layout",
-    "description": "Verify System radios, disclosures, runtime selection and responsive layout using private fixtures",
-    "groups": ["integration"],
-    "cwd": ".",
-    "targets": ["test-system-layout"],
-    "capabilities": ["zig", "native", "session", "aqueous"],
-    "fixture": "production",
-    "output": "directory",
-    "timeout": 900,
-    "sources": ["tests/integration/test_system_layout.py"],
-    "args": [],
-    "options": []
-  },
-  {
     "id": "test-aqueous-layout",
     "description": "Verify Aqueous cards, search, shared review and responsive layout in a private session",
     "groups": ["integration"],

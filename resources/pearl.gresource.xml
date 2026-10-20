@@ -43,5 +43,6 @@
     <file>icons/scalable/actions/pearl-high-contrast-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-power-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-screen-reader-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-scheduler-symbolic.svg</file>
   </gresource>
 </gresources>

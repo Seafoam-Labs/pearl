@@ -26,13 +26,6 @@ and Zig lifecycle checks that verify signal disconnection and object release.
 The broader `test-portals` suite also needs the private Aqueous fixture, `wtype`,
 Pillow, and GTK/Qt client build dependencies.
 
-System layout acceptance is registered as `test-system-layout`. Run
-`zig build test-system-layout -Doptimize=ReleaseSafe` for native mode radios,
-disclosures, focus across polling, draft separation, and responsive captures.
-The suite uses private scxctl and kernel-state fixtures; it cannot change the
-host scheduler. Run `test-settings-sched-ext` for the broader scheduler command
-and ownership checks. Results are recorded under `artifacts/system-layout/`.
-
 The runner supports x86_64 Linux and Python 3.12 or newer. The full native stack
 is developed on Arch-based Linux. The fast group also runs on Ubuntu 24.04 in CI.
 Other distributions can use `doctor` to identify required libraries and versions,

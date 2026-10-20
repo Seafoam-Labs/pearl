@@ -26,6 +26,7 @@ pub fn metadata(item: policy.Item) Metadata {
         .tray => .{ .name = "System tray", .description = "Background application icons", .icon = "pearl-view-grid-symbolic" },
         .clipboard => .{ .name = "Clipboard", .description = "Recent copied items", .icon = "pearl-edit-copy-symbolic" },
         .wallpaper => .{ .name = "Wallpaper", .description = "Browse a folder and set the wallpaper", .icon = "pearl-image-symbolic" },
+        .scheduler => .{ .name = "CPU Scheduler", .description = "CPU scheduler profile (sched_ext)", .icon = "pearl-scheduler-symbolic" },
     };
 }
 pub fn groupLabel(group: Group, edge: prefs.Edge) [:0]const u8 {
