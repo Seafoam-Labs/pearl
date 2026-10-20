@@ -16,8 +16,7 @@ full production scope beyond those representative controls.
 
 ## Design references
 
-Use the implemented [System](../artifacts/system-layout/README.md),
-[Assistant](../artifacts/assistant-layout/README.md), and
+Use the implemented [Assistant](../artifacts/assistant-layout/README.md) and
 [Appearance](../artifacts/appearance-redesign/README.md) pages and
 [`settings-layout.css`](../resources/settings-layout.css) as the reference.
 Reuse the existing navigation icons, selection treatment, typography and theme

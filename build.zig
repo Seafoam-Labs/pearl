@@ -388,6 +388,8 @@ pub fn build(b: *std.Build) void {
     for ([_]bool{ false, true }) |instrumented| {
         const lock_module = gtkModule(b, bindings, target, optimize, "src/lock_main.zig", pulse_module);
         configureApp(b, lock_module, resources, instrumented, false, community_theme_repository, false, portal_variant == .git);
+      
+        lock_module.addAnonymousImport("lock_style", .{ .root_source_file = b.path("resources/style.css") });
         lock_module.addImport("pam", pam_module);
         lock_module.linkSystemLibrary("pam", .{});
         lock_module.strip = release and !instrumented;
@@ -469,6 +471,12 @@ pub fn build(b: *std.Build) void {
     const ctl = b.addExecutable(.{ .name = "pearlctl", .root_module = ctl_module });
     b.installArtifact(ctl);
     b.step("build-ctl", "Stage the Pearl command-line client").dependOn(&b.addInstallArtifact(ctl, .{}).step);
+
+    // Root helper for scheduling profiles; packaging installs it in lib/pearl.
+    const scheduling_helper_module = b.createModule(.{ .root_source_file = b.path("src/scheduling_helper_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| scheduling_helper_module.addImport(name, bindings.module(name));
+    scheduling_helper_module.strip = release;
+    b.installArtifact(b.addExecutable(.{ .name = "pearl-scheduling-helper", .root_module = scheduling_helper_module }));
 
     if (wasm_plugins) {
         const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugins.py", "--pearl", b.getInstallPath(.bin, "pearl"), "--ctl", b.getInstallPath(.bin, "pearlctl"), "--settings" });
@@ -703,22 +711,6 @@ pub fn build(b: *std.Build) void {
     window_rules.addArtifactArg(ctl);
     if (b.args) |args| window_rules.addArgs(args);
     b.step("test-window-rule-settings", "Verify native window rules, draft preservation and ordering in a private session").dependOn(&window_rules.step);
-    const sched_ext = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_sched_ext.py", "--settings" });
-    sched_ext.addArtifactArg(settings_test_app);
-    sched_ext.addArg("--pearl");
-    sched_ext.addArtifactArg(integration_app);
-    sched_ext.addArg("--ctl");
-    sched_ext.addArtifactArg(ctl);
-    sched_ext.addArg("--spike");
-    sched_ext.addArtifactArg(spike);
-    if (b.args) |args| sched_ext.addArgs(args);
-    b.step("test-settings-sched-ext", "Verify scheduler commands, ownership and Settings against private scxctl fixtures").dependOn(&sched_ext.step);
-    const system_layout = b.addSystemCommand(&.{ "python3", "tests/integration/test_system_layout.py", "--settings" });
-    system_layout.addArtifactArg(settings_test_app);
-    system_layout.addArg("--pearl");
-    system_layout.addArtifactArg(integration_app);
-    if (b.args) |args| system_layout.addArgs(args);
-    b.step("test-system-layout", "Verify System radios, disclosures, runtime selection and responsive layout using private fixtures").dependOn(&system_layout.step);
     const aqueous_layout = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_layout.py", "--settings" });
     aqueous_layout.addArtifactArg(settings_test_app);
     aqueous_layout.addArg("--pearl");

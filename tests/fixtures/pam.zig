@@ -27,6 +27,10 @@ export fn pam_sm_authenticate(handle: ?*pam.pam_handle_t, _: c_int, argc: c_int,
     var item: ?*const anyopaque = null;
     if (pam.pam_get_item(handle, pam.PAM_CONV, &item) != pam.PAM_SUCCESS or item == null) return pam.PAM_SYSTEM_ERR;
     const conv: *const pam.pam_conv = @ptrCast(@alignCast(item.?));
+    if (std.mem.eql(u8, mode, "wrongpass")) {
+        if (!message(conv, pam.PAM_PROMPT_ECHO_OFF, "Fixture password:", null)) return pam.PAM_CONV_ERR;
+        return pam.PAM_AUTH_ERR;
+    }
     if (std.mem.startsWith(u8, mode, "fingerprint")) {
         if (std.mem.eql(u8, mode, "fingerprint-input-status")) {
             if (!message(conv, pam.PAM_PROMPT_ECHO_OFF, "Fixture password:", "fixture-secret")) return pam.PAM_AUTH_ERR;
