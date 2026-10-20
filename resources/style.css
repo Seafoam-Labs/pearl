@@ -167,8 +167,8 @@
 .pearl-root.$scope .pearl-page-title { font-size: 1.25em; font-weight: 700; letter-spacing: -0.3px; }
 .pearl-root.$scope .pearl-quick-card { padding: 16px 18px; }
 .pearl-root.$scope button.pearl-quick-tile { border-radius: 16px; padding: 12px 14px; font-weight: 600; }
-.pearl-root.$scope .pearl-tab-strip { background: $low$; border-radius: 999px; padding: 4px; }
-.pearl-root.$scope .pearl-tab-strip button.pearl-tab { background: transparent; color: $secondary$; border-radius: 999px; padding: 7px 10px; font-weight: 600; }
+.pearl-root.$scope .pearl-tab-strip { background: $low$; border-radius: 16px; padding: 4px; }
+.pearl-root.$scope .pearl-tab-strip button.pearl-tab { background: transparent; color: $secondary$; border-radius: 12px; padding: 7px 10px; font-weight: 600; }
 .pearl-root.$scope .pearl-tab-strip button.pearl-tab:hover { background: alpha($outline$, 0.12); color: $text$; }
 .pearl-root.$scope .pearl-tab-strip button.pearl-tab:checked { background: $primary$; color: $on_primary$; }
 .pearl-root.$scope .pearl-tab-strip button.pearl-tab:checked:hover { background: mix($primary$, $on_primary$, 0.08); }

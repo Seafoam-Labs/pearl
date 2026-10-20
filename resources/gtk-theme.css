@@ -39,8 +39,8 @@
 .pearl-root.pearl-gtk .pearl-page-title { font-size: 1.25em; font-weight: 700; }
 .pearl-root.pearl-gtk .pearl-quick-card { padding: 16px 18px; }
 .pearl-root.pearl-gtk button.pearl-quick-tile { border-radius: 16px; padding: 12px 14px; }
-.pearl-root.pearl-gtk .pearl-tab-strip { padding: 4px; border-radius: 999px; }
-.pearl-root.pearl-gtk .pearl-tab-strip button.pearl-tab { border-radius: 999px; padding: 7px 10px; }
+.pearl-root.pearl-gtk .pearl-tab-strip { padding: 4px; border-radius: 16px; }
+.pearl-root.pearl-gtk .pearl-tab-strip button.pearl-tab { border-radius: 12px; padding: 7px 10px; }
 .pearl-root.pearl-gtk.pearl-compact .pearl-user-chip { padding: 4px 12px 4px 4px; }
 .pearl-root.pearl-gtk.pearl-compact .pearl-user-chip .pearl-avatar { padding: 6px; }
 .pearl-root.pearl-gtk.pearl-compact .pearl-quick-card { padding: 12px 14px; }
