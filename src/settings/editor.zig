@@ -183,12 +183,20 @@ pub const Editor = struct {
     }
     pub fn liveAction(self: *Editor, op: @import("client.zig").Operation, params: std.json.Value) !void {
         if (!self.online or !self.ready or self.suspended or self.state.locked) return error.Unavailable;
-        if (self.live_command != null) return error.Busy;
-        var available = false;
-        for (self.live_receipts) |slot| {
-            if (slot == null) available = true;
+        // Session actions are fire-and-forget user intent: write them straight
+        // out instead of queueing them in the single live-command slot, where a
+        // busy pipeline rejects them or a pane teardown (clearLiveCommand)
+        // discards them before the wake loop ever writes them — which is how a
+        // clicked Lock used to vanish together with the pane around it.
+        const immediate = op == .@"lifecycle.action";
+        if (!immediate) {
+            if (self.live_command != null) return error.Busy;
+            var available = false;
+            for (self.live_receipts) |slot| {
+                if (slot == null) available = true;
+            }
+            if (!available) return error.Busy;
         }
-        if (!available) return error.Busy;
         var memory: [32768]u8 = undefined;
         defer std.crypto.secureZero(u8, &memory);
         var arena = std.heap.FixedBufferAllocator.init(&memory);
@@ -198,6 +206,10 @@ pub const Editor = struct {
         try value.object.put(alloc, "view", .{ .string = try std.fmt.allocPrint(alloc, "{d}", .{self.view}) });
         const operation = try nonce();
         try value.object.put(alloc, "operation", .{ .string = &operation });
+        if (immediate) {
+            try self.client.request(op, value);
+            return;
+        }
         self.live_command = .{ .op = op, .payload = try std.json.Stringify.valueAlloc(a, value, .{}) };
         self.wake();
     }

@@ -45,11 +45,15 @@ pub fn main() void {
         if (!std.mem.startsWith(u8, std.mem.span(dir), "/tmp/pearl-dev-")) return;
         status = pam.pam_start_confdir("pearl", user.*.pw_name, &conv, dir, &handle);
     } else status = pam.pam_start("pearl", user.*.pw_name, &conv, &handle);
-    if (status == pam.PAM_SUCCESS) {
+    const started = status == pam.PAM_SUCCESS;
+    if (started) {
         status = pam.pam_authenticate(handle, pam.PAM_DISALLOW_NULL_AUTHTOK);
         if (status == pam.PAM_SUCCESS) status = pam.pam_acct_mgmt(handle, 0);
         _ = pam.pam_end(handle, status);
     }
-    var result: wire.Packet = .{ .kind = 100, .value = @intCast(status) };
+    // 102 separates "PAM never started" (missing or broken stack: an
+    // infrastructure fault, manual retry) from an authentication result
+    // (a credential miss, which the lock re-arms by itself).
+    var result: wire.Packet = .{ .kind = if (started) 100 else 102, .value = @intCast(status) };
     _ = wire.write(1, &result);
 }

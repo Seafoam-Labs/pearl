@@ -105,10 +105,13 @@ def main():
                 wait_for(lambda: not locked())
 
             def failed(child):
-                wait_for(lambda: ui(child).get("acquired") == "true" and
-                         ui(child).get("auth") == "false")
+                # A missed credential re-arms in the same beat, so its auth=false
+                # ui line is superseded at once; the failure event is the anchor.
+                wait_for(lambda: any("event=lock-auth-failed" in line for line in child.lines) or
+                         (ui(child).get("acquired") == "true" and ui(child).get("auth") == "false"))
                 assert locked() and child.proc.poll() is None
-                wait_for(lambda: not children(child.proc.pid))
+                if not any("event=lock-auth-failed" in line for line in child.lines):
+                    wait_for(lambda: not children(child.proc.pid))
 
             # Large text and differing logical sizes exercise scrollable lock surfaces.
             preferences = Path(session.env["XDG_CONFIG_HOME"]) / "pearl/preferences.json"
@@ -210,6 +213,20 @@ def main():
                     wait_for(lambda: not locked())
                 checks[mode + "-preserves-lock-authority"] = True
             stack()
+
+            stack("wrongpass")
+            child = start("wrong-password")
+            waiting(child, False)
+            key("not-the-secret", "-k", "Return")
+            child.expect("event=lock-auth-failed")
+            # The entry re-arms by itself: a fresh prompt, no manual retry key.
+            waiting(child, False)
+            checks["wrong-password-rearms-without-manual-retry"] = True
+            key("-k", "Escape")
+            wait_for(lambda: ui(child).get("auth") == "false")
+            stack()
+            key("-k", "Return")
+            unlock(child)
 
             child = start("output-soak")
             waiting(child, True)

@@ -68,10 +68,13 @@ pub const events: []const Event = &.{
     .{ .name = "launcher-results", .scopes = &.{.desktop} },
     .{ .name = "lifecycle-failed", .scopes = &.{.services} },
     .{ .name = "lock-acquired", .scopes = &.{.lock} },
+    .{ .name = "lock-auth-failed", .scopes = &.{.lock} },
+    .{ .name = "lock-boot", .scopes = &.{.lock} },
     .{ .name = "lock-caps", .scopes = &.{.lock} },
     .{ .name = "lock-clock", .scopes = &.{.lock} },
     .{ .name = "lock-monitor", .scopes = &.{.lock} },
     .{ .name = "lock-output-limit", .scopes = &.{.lock} },
+    .{ .name = "lock-power", .scopes = &.{.lock} },
     .{ .name = "lock-released", .scopes = &.{.lock} },
     .{ .name = "lock-ui", .scopes = &.{.lock} },
     .{ .name = "logind-session-unavailable", .scopes = &.{.services} },
@@ -184,13 +187,38 @@ fn declaresScope(event: Event, scopes: std.EnumSet(logging.Scope)) bool {
 /// same journal stream as the shell's, so their names are declared here too.
 const roots = [_][]const u8{ "src", "subprojects/coral/src", "subprojects/dome/src", "subprojects/phyto/src" };
 
+/// Test binaries may be invoked from any working directory (zig cache, IDE
+/// runners), so locate the repository root from the executable's own path.
+fn repoRoot(io: std.Io, alloc: std.mem.Allocator) ![]const u8 {
+    var buf: [std.fs.max_path_bytes]u8 = undefined;
+    const n = try std.Io.Dir.readLinkAbsolute(io, "/proc/self/exe", &buf);
+    var path: []const u8 = buf[0..n];
+    while (true) {
+        const dir = std.fs.path.dirname(path) orelse return error.RepoRootNotFound;
+        if (hasFile(io, alloc, dir, "src/core/log_events.zig")) return try alloc.dupe(u8, dir);
+        if (std.mem.eql(u8, dir, path)) return error.RepoRootNotFound;
+        path = dir;
+    }
+}
+fn hasFile(io: std.Io, alloc: std.mem.Allocator, dir: []const u8, rel: []const u8) bool {
+    const path = std.fs.path.join(alloc, &.{ dir, rel }) catch return false;
+    defer alloc.free(path);
+    const file = std.Io.Dir.openFileAbsolute(io, path, .{}) catch return false;
+    file.close(io);
+    return true;
+}
+
 test "catalog matches the literal event names in the tree" {
     var threaded: std.Io.Threaded = .init_single_threaded;
     const io = threaded.io();
     const t = std.testing;
+    const root_abs = try repoRoot(io, t.allocator);
+    defer t.allocator.free(root_abs);
     var seen = [_]bool{false} ** events.len;
     for (roots) |root| {
-        var dir = try std.Io.Dir.cwd().openDir(io, root, .{ .iterate = true });
+        const joined = try std.fs.path.join(t.allocator, &.{ root_abs, root });
+        defer t.allocator.free(joined);
+        var dir = try std.Io.Dir.cwd().openDir(io, joined, .{ .iterate = true });
         defer dir.close(io);
         var walker = try dir.walk(t.allocator);
         defer walker.deinit();

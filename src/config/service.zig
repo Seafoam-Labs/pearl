@@ -11,6 +11,7 @@ const model = @import("preferences.zig");
 const crop = @import("crop_policy.zig");
 const io = @import("io.zig");
 const theme = @import("../theme/theme.zig");
+const published = @import("published_appearance.zig");
 const qt = @import("../theme/qt.zig");
 const qt_integration = @import("qt_integration.zig");
 const generator = @import("../theme/generator.zig");
@@ -1023,6 +1024,9 @@ pub const Service = struct {
                 self.removeLive();
                 self.application_status = .{ .desired_revision = self.revision, .desired_generation = j.generation, .busy = self.integration_allowed and !j.recovered, .watcher_error = self.watcher_error };
                 self.live = j;
+                // The lock reads this at startup so its first frame matches the
+                // palette the shell is showing; best-effort by design.
+                published.write(j.palette);
                 self.wallpaper_watch.bind(j.watch_path) catch |err| {
                     self.watcher_error = @errorName(err);
                 };
