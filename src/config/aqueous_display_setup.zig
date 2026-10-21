@@ -148,6 +148,9 @@ pub fn modeText(a: A, mode: m.Value) ![]const u8 {
     return std.fmt.allocPrint(a, "{d:.0}x{d:.0}@{d:.3}", .{ num(m.get(mode, "width"), 1920), num(m.get(mode, "height"), 1080), hz });
 }
 pub fn stage(a: A, base: m.Value, bytes: []const u8, output: m.Value, key: []const u8, v: m.Value) ![]u8 {
+    return stageField(a, base, bytes, output, key, v, false);
+}
+fn stageField(a: A, base: m.Value, bytes: []const u8, output: m.Value, key: []const u8, v: m.Value, explicit: bool) ![]u8 {
     if (connector(output).len == 0) return error.DisplayUnavailable;
     var req = try m.request(a, base, bytes, "");
     _ = req.object.swapRemove("backup_dir");
@@ -191,7 +194,7 @@ pub fn stage(a: A, base: m.Value, bytes: []const u8, output: m.Value, key: []con
     const same = m.equal(v, baseline) or ((v == .float or v == .integer) and (baseline == .float or baseline == .integer) and num(v, 0) == num(baseline, 0));
     if (v == .null) {
         if (d != .null) try unset.array.append(.{ .string = key });
-    } else if (!same) try set.object.put(a, key, v);
+    } else if (explicit or !same) try set.object.put(a, key, v);
     if (d == .null) try set.object.put(a, "name", .{ .string = connector(output) });
     try op.object.put(a, "set", set);
     _ = op.object.swapRemove("unset");
@@ -215,6 +218,40 @@ pub fn stage(a: A, base: m.Value, bytes: []const u8, output: m.Value, key: []con
     try mutations.check(base, req);
     return std.json.Stringify.valueAlloc(a, req, .{ .whitespace = .indent_2 });
 }
+/// Capture the displayed candidate, including outputs still placed automatically.
+pub const ArrangementHead = struct { output: m.Value, rect: Rect, enabled: bool };
+
+/// Publish all positions together. Exact-coordinate edits retain their origin;
+/// graphical arrangements and primary changes anchor the primary at (0, 0).
+pub fn stageArrangement(a: A, base: m.Value, bytes: []const u8, heads: []const ArrangementHead, anchor_primary: bool) ![]u8 {
+    const draft = try m.parse(a, bytes, m.max_request);
+    var anchor: ?Rect = null;
+    for (heads) |head| {
+        if (!head.enabled or m.str(value(base, draft, head.output, "mirror_of")).len != 0) continue;
+        if (anchor == null) anchor = head.rect;
+        if (m.equal(value(base, draft, head.output, "primary"), .{ .bool = true })) {
+            anchor = head.rect;
+            break;
+        }
+    }
+    const origin = if (anchor_primary) anchor orelse Rect{} else Rect{};
+    var next = try a.dupe(u8, bytes);
+    errdefer a.free(next);
+    for (heads) |head| {
+        if (!head.enabled or m.str(value(base, draft, head.output, "mirror_of")).len != 0) continue;
+        var position: m.Value = .{ .array = .init(a) };
+        for ([_]f64{ @round(head.rect.x) - @round(origin.x), @round(head.rect.y) - @round(origin.y) }) |coordinate| {
+            if (!std.math.isFinite(coordinate) or coordinate < -2147483648 or coordinate > 2147483647) return error.InvalidDisplayPosition;
+            try position.array.append(.{ .integer = @intFromFloat(coordinate) });
+        }
+        // Even an unchanged automatic head must acquire an explicit position.
+        const updated = try stageField(a, base, next, head.output, "position", position, true);
+        a.free(next);
+        next = updated;
+    }
+    return next;
+}
+
 /// Build the complete primary transfer before publishing any part of the draft.
 pub fn stagePrimary(a: A, base: m.Value, bytes: []const u8, output: m.Value) ![]u8 {
     var next = try a.dupe(u8, bytes);
@@ -395,4 +432,60 @@ test "primary transfer clears competing declarations and preserves other display
     try std.testing.expect(m.equal(value(base, draft, heads[1], "primary"), .{ .bool = false }));
     try std.testing.expect(m.equal(value(base, draft, heads[1], "scale"), .{ .float = 1.5 }));
     try std.testing.expectEqual(@as(usize, 1), changeCount(draft));
+}
+
+test "arrangements pin unchanged automatic heads and anchor the primary, including negative origins" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const base = try m.parse(a,
+        \\{"generation":"1111111111111111","capabilities":["display_declaration_mutations_v1"],"display_source_ids":{"outputs":"display-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"display_declarations":[],"display_observation":{"outputs":[
+        \\{"connector":"HDMI-A-1","primary":true,"actual":{"x":0,"y":0,"enabled":true,"scale":2,"mode":{"width":3840,"height":2160}},"configured":{}},
+        \\{"connector":"DP-1","primary":false,"actual":{"x":1920,"y":0,"enabled":true,"scale":2,"mode":{"width":3840,"height":2160}},"configured":{}},
+        \\{"connector":"DP-2","actual":{"enabled":false},"configured":{}},
+        \\{"connector":"DP-3","actual":{"enabled":true,"mirror_of":"DP-1"},"configured":{}}
+        \\]}}
+    , 4096);
+    const outs = outputs(base);
+    var heads = [_]ArrangementHead{
+        .{ .output = outs[0], .rect = geometry(base, .null, outs[0]), .enabled = true },
+        .{ .output = outs[1], .rect = geometry(base, .null, outs[1]), .enabled = true },
+        .{ .output = outs[2], .rect = .{}, .enabled = false },
+        .{ .output = outs[3], .rect = .{}, .enabled = true },
+    };
+    const empty = try @import("aqueous_draft.zig").empty(a, base);
+    const hdr = try stage(a, base, empty, outs[0], "hdr", .{ .bool = true });
+    // Move the primary past its neighbour. The primary stays at zero and the
+    // untouched automatic head receives an explicit negative position.
+    heads[0].rect.x = 3840;
+    var bytes = try stageArrangement(a, base, hdr, &heads, true);
+    var draft = try m.parse(a, bytes, m.max_request);
+    try std.testing.expectEqual(@as(f64, 0), num(value(base, draft, outs[0], "x"), -1));
+    try std.testing.expectEqual(@as(f64, -1920), num(value(base, draft, outs[1], "x"), -1));
+    try std.testing.expect(m.equal(value(base, draft, outs[0], "hdr"), .{ .bool = true }));
+    var ops = m.list(m.get(m.get(draft, "display_declaration_changes"), "operations"));
+    try std.testing.expectEqual(@as(usize, 2), ops.len);
+    for (ops) |op| try std.testing.expectEqual(@as(usize, 2), m.list(m.get(m.get(op, "set"), "position")).len);
+    // Repeated swaps retain explicit positions even when back at the baseline.
+    heads[0].rect.x = 0;
+    heads[1].rect.x = 1920;
+    bytes = try stageArrangement(a, base, bytes, &heads, true);
+    draft = try m.parse(a, bytes, m.max_request);
+    ops = m.list(m.get(m.get(draft, "display_declaration_changes"), "operations"));
+    try std.testing.expectEqual(@as(usize, 2), ops.len);
+    for (ops) |op| try std.testing.expectEqual(@as(usize, 2), m.list(m.get(m.get(op, "set"), "position")).len);
+    // Selecting the right-hand head as primary rebases both axes consistently.
+    heads[1].rect.y = 120;
+    bytes = try stagePrimary(a, base, bytes, outs[1]);
+    bytes = try stageArrangement(a, base, bytes, &heads, true);
+    draft = try m.parse(a, bytes, m.max_request);
+    try std.testing.expectEqual(@as(f64, -1920), num(value(base, draft, outs[0], "x"), 1));
+    try std.testing.expectEqual(@as(f64, -120), num(value(base, draft, outs[0], "y"), 1));
+    try std.testing.expectEqual(@as(f64, 0), num(value(base, draft, outs[1], "x"), 1));
+    try std.testing.expectEqual(@as(f64, 0), num(value(base, draft, outs[1], "y"), 1));
+    // Exact coordinates preserve the caller's origin rather than normalizing.
+    bytes = try stageArrangement(a, base, bytes, &heads, false);
+    draft = try m.parse(a, bytes, m.max_request);
+    try std.testing.expectEqual(@as(f64, 1920), num(value(base, draft, outs[1], "x"), 1));
+    try std.testing.expectEqual(@as(f64, 120), num(value(base, draft, outs[1], "y"), 1));
 }

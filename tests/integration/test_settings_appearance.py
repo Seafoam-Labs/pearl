@@ -4,7 +4,6 @@ import argparse
 import copy
 import hashlib
 import json
-import subprocess
 import time
 import uuid
 from pathlib import Path
@@ -12,6 +11,7 @@ from PIL import Image
 from test_settings_app import (ROOT, APP_ID, PrivateSession, IPC, wait_for, ctl, capture,
                                clean, request, probe, windows, click_widget, keys, resize)
 from pearl_session import fixture_prefix, fixture_source
+from wayland_test_input import configure_output, pointer_move, pointer_scroll, press_keys, type_text as send_text
 from settings_editor import EditorPeer
 
 
@@ -29,7 +29,7 @@ def control(s, ipc, field):
     return next(c['bounds'] for c in probe(s, ipc)['controls'] if c['field'] == field)
 
 
-def click(s, ipc, field):
+def click(s, ipc, field, fraction_x=.5):
     # Use the real disclosure headers before scrolling to their child controls.
     # Section toggles are presentation state and never write the shared draft.
     section = None
@@ -60,27 +60,21 @@ def click(s, ipc, field):
             if rect['y'] >= body['y'] and rect['y'] + rect['height'] <= body['y'] + body['height']:
                 break
             win = windows(ipc)[0]['geometry']
-            s.run(['wlrctl','pointer','move','-100000','-100000'])
-            s.run(['wlrctl','pointer','move',str(round(win['x']+body['x']+body['width']/2)),str(round(win['y']+body['y']+body['height']/2))])
+            pointer_move(s, win['x'] + body['x'] + body['width']/2, win['y'] + body['y'] + body['height']/2)
             # Small viewports can oscillate past a partly clipped control with a
             # fixed wheel step. Reduce the final scroll to the missing distance.
             below = rect['y'] > body['y']
             distance = rect['y'] + rect['height'] - body['y'] - body['height'] if below else body['y'] - rect['y']
             step = min(120, max(10, distance + 5))
-            s.run(['wlrctl','pointer','scroll',str(step if below else -step),'0'])
+            pointer_scroll(s, step if below else -step)
             time.sleep(.1)
         else:
             raise AssertionError(('control not reachable', field, rect, body))
-    click_widget(s, ipc, control(s, ipc, field))
+    click_widget(s, ipc, control(s, ipc, field), fraction_x=fraction_x)
 
 
 def type_text(s, text):
-    # Full Advanced documents generate thousands of real input events. Keep a
-    # bounded timeout without treating the session's 10-second command limit as
-    # an editing deadline, especially while native test builds share the CPU.
-    subprocess.run(['wtype', '-s', '100', '-M', 'ctrl', 'a', '-m', 'ctrl', text, '-s', '50'],
-                   env=s.env, cwd=s.base, capture_output=True, text=True, check=True,
-                   timeout=30 if len(text) > 512 else 10)
+    send_text(s, text, select_all=True)
 
 
 def raw(s, ipc, text):
@@ -108,13 +102,13 @@ def main():
     try:
         with PrivateSession(args.output/'session', tool_prefix=fixture_prefix()) as s:
             s.env['GSETTINGS_BACKEND'] = 'memory'
-            mode = s.base/'generator-mode'; mode.write_text('pass')
+            generator_mode = s.base/'generator-mode'; generator_mode.write_text('pass')
             calls = s.base/'generator-calls'; calls.write_text('')
             s.env.update(PATH=str(ROOT/'tests/fixtures/theme')+':'+s.env['PATH'],
-                         PEARL_TEST_GENERATOR_MODE=str(mode), PEARL_TEST_GENERATOR_LOG=str(calls))
+                         PEARL_TEST_GENERATOR_MODE=str(generator_mode), PEARL_TEST_GENERATOR_LOG=str(calls))
             ipc = IPC(s)
             output = next(iter(ipc.outputs().values()))
-            s.run(['wlr-randr', '--output', output['name'], '--custom-mode', '1600x1100@60Hz'])
+            configure_output(s, output['name'], mode='1600x1100@60')
             rules = Path(s.env['XDG_CONFIG_HOME'])/'aqueous/rules.toml'
             resize(s, rules, 1040, 760)
             # Keep this legacy draft/generator fixture independent of new-user
@@ -252,7 +246,9 @@ def main():
             assert not peer.state()['dirty'] and path.read_bytes() == before
             image = s.base/'wallpaper with spaces.png'; Image.new('RGB',(1400,800),(64,105,155)).save(image)
             click(s, ipc, 'choose'); wait_for(lambda: probe(s, ipc)['editor']['picker'])
-            s.run(['wtype','-s','200','-M','ctrl','l','-m','ctrl',str(image),'-k','Return'])
+            press_keys(s, 'l', modifiers=('ctrl',))
+            send_text(s, str(image))
+            press_keys(s, 'Return')
             wait_for(lambda: peer.state()['dirty'])
             wait_for(lambda: probe(s, ipc)['editor']['preview'], 15)
             assert json.loads(peer.document())['wallpaper']['path'] == str(image)
@@ -321,7 +317,7 @@ def main():
             # Slow dynamic preparation allows a second editor to retain a newer
             # serial with the same text. Apply may clear only the captured serial.
             slow = copy.deepcopy(expected); slow['theme'].update(mode='dynamic', source='seed', seed='#a12378')
-            mode.write_text('slow'); peer.keep(json.dumps(slow))
+            generator_mode.write_text('slow'); peer.keep(json.dumps(slow))
             operation = peer.action('apply', wait=False); assert operation['state'] == 'pending', operation
             second = copy.deepcopy(slow); second['font_size'] = 20
             other.keep(json.dumps(second)); other.keep(json.dumps(slow))
@@ -329,7 +325,7 @@ def main():
             wait_for(lambda: not peer.state()['busy'], 25)
             assert peer.state()['dirty'] and peer.state()['draft_revision'] == newest
             assert json.loads(path.read_text()) == slow
-            mode.write_text('pass'); peer.action('discard'); expected = slow
+            generator_mode.write_text('pass'); peer.action('discard'); expected = slow
             passed('in-flight-apply-cannot-clear-newer-equal-text-draft')
 
             # Native lock denies all mutations, releases transfers and hides the

@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
 from pearl_session import fixture_prefix, fixture_source
+from wayland_test_input import configure_output, pointer_move, pointer_click, pointer_scroll, press_keys
 from test_surfaces import IPC, ctl, status, capture, clean
 APP_ID = 'org.aqueous.Pearl.Settings'
 
@@ -35,21 +36,18 @@ def probe(s, ipc):
 def windows(ipc): return [w for w in ipc.state() if w['kind'] == 'window' and w.get('app_id') == APP_ID]
 
 
-def click_widget(s, ipc, rect):
+def click_widget(s, ipc, rect, fraction_x=.5):
     assert rect and rect['width'] > 0, rect
     win = windows(ipc)[0]['geometry']
-    x = win['x'] + rect['x'] + rect['width']/2
+    x = win['x'] + rect['x'] + rect['width'] * fraction_x
     y = win['y'] + rect['y'] + rect['height']/2
-    s.run(['wlrctl', 'pointer', 'move', '-100000', '-100000'])
-    s.run(['wlrctl', 'pointer', 'move', str(round(x)), str(round(y))])
-    s.run(['wlrctl', 'pointer', 'click'])
+    pointer_move(s, x, y)
+    pointer_click(s)
     time.sleep(.15)
 
 
 def keys(s, *names):
-    cmd = ['wtype', '-s', '80']
-    for name in names: cmd += ['-k', name, '-s', '80']
-    s.run(cmd)
+    press_keys(s, *names)
 
 
 def choose_navigation(s, ipc, page, section=None, pointer=True):
@@ -68,11 +66,10 @@ def choose_navigation(s, ipc, page, section=None, pointer=True):
             if rect['y'] >= viewport['y'] and rect['y'] + rect['height'] <= viewport['y'] + viewport['height']:
                 break
             win = windows(ipc)[0]['geometry']
-            s.run(['wlrctl', 'pointer', 'move', '-100000', '-100000'])
-            s.run(['wlrctl', 'pointer', 'move', str(round(win['x'] + viewport['x'] + viewport['width']/2)), str(round(win['y'] + viewport['y'] + viewport['height']/2))])
+            pointer_move(s, win['x'] + viewport['x'] + viewport['width']/2, win['y'] + viewport['y'] + viewport['height']/2)
             below = rect['y'] > viewport['y']
             distance = rect['y'] + rect['height'] - viewport['y'] - viewport['height'] if below else viewport['y'] - rect['y']
-            s.run(['wlrctl', 'pointer', 'scroll', str(min(180, max(10, distance + 5)) * (1 if below else -1)), '0'])
+            pointer_scroll(s, min(180, max(10, distance + 5)) * (1 if below else -1))
             time.sleep(.1)
         else:
             raise AssertionError(('navigation row unreachable', row, viewport))
@@ -125,7 +122,7 @@ def main():
         with PrivateSession(args.output / 'session', tool_prefix=fixture_prefix()) as s:
             ipc = IPC(s)
             output = next(iter(ipc.outputs().values()))
-            s.run(['wlr-randr', '--output', output['name'], '--custom-mode', '1600x1100@60Hz'])
+            configure_output(s, output['name'], mode='1600x1100@60')
             rules = Path(s.env['XDG_CONFIG_HOME']) / 'aqueous/rules.toml'
             rules.write_text('[[window]]\napp_id = "' + APP_ID + '"\nfloating = true\nwidth = 1040\nheight = 760\n')
             time.sleep(.25)
@@ -201,9 +198,8 @@ def main():
             launcher.expect('event=launcher-ready')
             launch_window = wait_for(lambda: next((w for w in ipc.state() if w['kind'] == 'window' and w.get('app_id') == 'org.pearl.SettingsLauncherFixture'), None))
             geo = launch_window['geometry']
-            s.run(['wlrctl', 'pointer', 'move', '-100000', '-100000'])
-            s.run(['wlrctl', 'pointer', 'move', str(geo['x'] + geo['width']//2), str(geo['y'] + geo['height']//2)])
-            s.run(['wlrctl', 'pointer', 'click'])
+            pointer_move(s, geo['x'] + geo['width']/2, geo['y'] + geo['height']/2)
+            pointer_click(s)
             launcher.expect('event=settings-launched')
             wait_for(lambda: probe(s, ipc)['activation_contexts'] > 0)
             wait_for(lambda: not windows(ipc)[0]['minimized'])
@@ -253,7 +249,7 @@ def main():
             assert probe(s, ipc)['focus'] == 'body'
             # Scroll each viewport with real input; fixed chrome never moves.
             click_widget(s, ipc, probe(s, ipc)['body_bounds'])
-            s.run(['wlrctl', 'pointer', 'scroll', '300', '0']); time.sleep(.3)
+            pointer_scroll(s, 300); time.sleep(.3)
             before = probe(s, ipc)
             assert before['scroll'] > 0, before
             click_widget(s, ipc, next(link['bounds'] for link in before['links'] if link['page'] == 'sound'))
@@ -339,7 +335,7 @@ def main():
             wait_for(lambda: probe(s, ipc)['editor']['ready'])
             ipc.call('command', action='window.activate', fields=dict(id=windows(ipc)[0]['id']))
             # Give the newly created virtual keyboard time to deliver its enter.
-            s.run(['wtype', '-s', '200', '-M', 'ctrl', '-k', 'w', '-m', 'ctrl'])
+            press_keys(s, 'w', modifiers=('ctrl',))
             clean(normal); assert pearl.proc.poll() is None
             wait_for(lambda: not endpoint(s, ipc).exists())
             checks['ctrl-w-closes-only-frontend-and-removes-instance-endpoint'] = True

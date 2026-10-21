@@ -204,7 +204,7 @@ def check_registry(python_only=False):
             if code:
                 errors.append(f'{cwd}: cannot inspect build targets: {output}')
                 continue
-            discovered = set(re.findall(r'^  ((?:test(?:-[\w-]+)?)|integration|benchmark)\s', output, re.M))
+            discovered = set(re.findall(r'^  ((?:test|integration|benchmark)(?:-[\w-]+)?)\s', output, re.M))
             registered = {t for s in entries.values() if s['cwd'] == cwd for t in s['targets']}
             for target in sorted(discovered - registered):
                 errors.append(f'Unregistered Zig target: {cwd}: {target}')

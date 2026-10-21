@@ -111,6 +111,14 @@ explained exclusions for historical scripts, helpers, and manual measurements.
 Missing prerequisites for a selected suite produce a blocked result and a nonzero
 exit code. Optional groups are not silently skipped when selected.
 
+The extended suites `test-agent-launcher`, `test-agent-benchmark`, and
+`test-agent-benchmark-settings` require an existing managed model. Set
+`PEARL_TEST_AGENT_MODEL=/absolute/path/to/LFM2.5-350M-Q4_K_M.gguf` before
+running them. The runner checks that the file exists and passes it as `--model`;
+the harness verifies the managed model during execution. Preparation does not
+download inference models. Manual model compatibility and SMB/SFTP qualification
+scripts appear with their required inputs in `list --json` exclusions.
+
 ```sh
 python3 scripts/test.py list --group integration
 python3 scripts/test.py run --suite test-settings-app
@@ -123,6 +131,32 @@ python3 scripts/test.py run --group integration --jobs 2 --fail-fast
 build outputs. A checkout lock prevents concurrent preparation/execution in the
 same tree. Use separate checkouts for independent jobs. Direct Zig commands remain
 available, but do not run them concurrently with the runner in the same checkout.
+
+The `test-settings-displays`, `test-settings-app`, and `test-settings-appearance`
+suites use Aqueous's private output service for display setup and Wayland virtual
+input protocols for real pointer and keyboard events. They do not require
+`wlr-randr`, `wlrctl`, or `wtype`. Screenshot capture still requires `grim` and
+Pillow. Input connects only to the private test session's sockets.
+
+```sh
+python3 scripts/test.py doctor --suite test-settings-displays
+python3 scripts/test.py run --suite test-settings-displays
+```
+
+For a locally built Aqueous candidate, use the direct target after installing
+`tests/runner-requirements.txt` in a virtual environment. The prefix must contain
+matching `aqueous`, `aqueousctl`, and `aqueous-config` binaries and their runtime
+libraries:
+
+```sh
+PEARL_TEST_AQUEOUS_PREFIX=/path/to/aqueous-build \
+PEARL_TEST_AQUEOUS_SOURCE=/path/to/Aqueous \
+zig build test-settings-displays -- --output /tmp/pearl-display-tests
+```
+
+The display suite records `verification.json` and screenshots and tests primary
+origin `(0,0)`, preserved relative positions, drag and keyboard edits, preview
+rollback, and confirmed saves in a private headless desktop.
 
 ## Existing fixtures and offline use
 

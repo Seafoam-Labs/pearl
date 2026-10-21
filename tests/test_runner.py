@@ -1,6 +1,7 @@
 """Behavioral contracts for the self-service runner; no native desktop required."""
 import argparse
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -68,6 +69,41 @@ class CatalogTests(unittest.TestCase):
         args.offline = True
         command = cli.suite_commands(catalog()['test'], Environment(args), Path('/tmp/evidence'))[-1]
         self.assertIn('--system', command)
+
+    def test_registry_checks_named_integration_targets(self):
+        entries = catalog()
+
+        def listing(command, env, cwd):
+            relative = str(cwd.relative_to(ROOT))
+            targets = {t for s in entries.values() if s['cwd'] == relative for t in s['targets']}
+            if relative == 'subprojects/phyto':
+                targets.add('integration-unregistered')
+            return 0, '\n'.join('  ' + target + '  Test target' for target in sorted(targets))
+
+        with patch.object(cli, 'capture', side_effect=listing), patch('sys.stderr', new_callable=io.StringIO) as errors:
+            self.assertEqual(cli.check_registry(), 1)
+        self.assertEqual(errors.getvalue().splitlines(),
+                         ['Unregistered Zig target: subprojects/phyto: integration-unregistered'])
+
+    def test_agent_model_prerequisite_and_command(self):
+        names = ('test-agent-launcher', 'test-agent-benchmark', 'test-agent-benchmark-settings')
+        with tempfile.TemporaryDirectory() as temp:
+            model = Path(temp) / 'model with spaces.gguf'
+            with patch.dict(os.environ, {'PEARL_TEST_AGENT_MODEL': str(model)}):
+                env = Environment(arguments())
+            # Isolate the model prerequisite from installed native dependencies.
+            suite = dict(catalog()[names[0]], capabilities=['agent-model'], fixture=None)
+            self.assertTrue(any('PEARL_TEST_AGENT_MODEL' in issue for issue in env.check(suite)['issues']))
+            model.write_bytes(b'fixture')
+            self.assertFalse(any('PEARL_TEST_AGENT_MODEL' in issue for issue in env.check(suite)['issues']))
+            for name in names:
+                selected = catalog()[name]
+                self.assertIn('agent-model', selected['capabilities'])
+                command = cli.suite_commands(selected, env, Path(temp) / 'evidence')[-1]
+                self.assertEqual(command[command.index('--model') + 1], str(model))
+            with patch.dict(os.environ, {'PEARL_TEST_AGENT_MODEL': ''}):
+                env = Environment(arguments())
+            self.assertTrue(any('PEARL_TEST_AGENT_MODEL' in issue for issue in env.check(suite)['issues']))
 
 
 class ProcessTests(unittest.TestCase):
@@ -178,6 +214,18 @@ class EvidenceTests(unittest.TestCase):
         env.version = 'wrong'
         result = env.check(catalog()['test'])
         self.assertTrue(any('disagree' in s for s in result['issues']))
+
+    def test_native_input_suites_run_without_external_input_tools(self):
+        missing = {'wlr-randr', 'wlrctl', 'wtype'}
+        env = Environment(arguments())
+        with patch('test_environment.shutil.which', side_effect=lambda name, **_: None if name in missing else '/usr/bin/' + name):
+            for name in ('test-settings-app', 'test-settings-appearance', 'test-settings-displays'):
+                issues = env.check(catalog()[name])['issues']
+                self.assertFalse(any('Missing executable ' + tool in issue for tool in missing for issue in issues), issues)
+            # Suites that still invoke the external tools must retain that gate.
+            issues = env.check(catalog()['test-surfaces'])['issues']
+            for tool in missing:
+                self.assertTrue(any('Missing executable ' + tool in issue for issue in issues), issues)
 
     def test_fingerprint_tracks_dirty_tests_and_ignores_cache(self):
         with tempfile.TemporaryDirectory() as temp:
