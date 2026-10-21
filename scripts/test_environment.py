@@ -73,6 +73,8 @@ class Environment:
         self.version = (root / '.zigversion').read_text().strip()
         self.downloads = json.loads((root / 'scripts/test-downloads.json').read_text())
         self.env = dict(os.environ)
+        model = self.env.get('PEARL_TEST_AGENT_MODEL')
+        self.agent_model = Path(model).expanduser().resolve() if model else None
         self.env['ZIG_GLOBAL_CACHE_DIR'] = str(root / '.cache/zig')
         self.env['PYTHONUNBUFFERED'] = '1'
         # Honor the interpreter that launches the runner, including a caller's venv.
@@ -96,7 +98,8 @@ class Environment:
         return dict(root=str(self.root), python=self.python, zig=self.zig,
                     prefix=str(prefix), source=str(prefix / 'source'),
                     wasmtime=str(self.cache / 'tools/wasmtime'),
-                    examples=str(self.cache / 'plugin-examples'))
+                    examples=str(self.cache / 'plugin-examples'),
+                    agent_model=str(self.agent_model) if self.agent_model else '')
 
     def suite_env(self, suite):
         env = dict(self.env)
@@ -130,6 +133,8 @@ class Environment:
         if preparing and suite.get('fixture'):
             caps.add('aqueous-build')
         issues, versions = [], {}
+        if 'agent-model' in caps and (self.agent_model is None or not self.agent_model.is_file()):
+            issues.append('Set PEARL_TEST_AGENT_MODEL to an existing LFM2.5-350M-Q4_K_M.gguf file; the runner does not download inference models.')
         if platform.system() != 'Linux' or platform.machine() not in ('x86_64', 'AMD64'):
             issues.append('The native runner currently supports x86_64 Linux.')
         if sys.version_info < (3, 12):
@@ -146,6 +151,9 @@ class Environment:
                 issues.append(f'Zig {self.version} required; detected {found}. Run prepare for this selection.')
         for cap in sorted(caps):
             for tool in TOOLS.get(cap, []):
+                # These suites use private outputd and virtual input protocols.
+                if 'native-input' in caps and tool in ('wlr-randr', 'wlrctl', 'wtype'):
+                    continue
                 if not shutil.which(tool, path=self.env['PATH']):
                     issues.append(f'Missing executable {tool} ({cap}).')
             for expression in PACKAGES.get(cap, []):

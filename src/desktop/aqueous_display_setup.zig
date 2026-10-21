@@ -85,11 +85,22 @@ pub fn For(comptime View: type) type {
                 f.view.syncRequest();
                 f.draft = try m.parse(f.alloc(), bytes, m.max_request);
             }
-            fn position(f: *Form, r: model.Rect) !void {
-                var v: m.Value = .{ .array = .init(f.alloc()) };
-                try v.array.append(.{ .integer = @intFromFloat(std.math.clamp(@round(r.x), -2147483648, 2147483647)) });
-                try v.array.append(.{ .integer = @intFromFloat(std.math.clamp(@round(r.y), -2147483648, 2147483647)) });
-                try f.stage("position", v);
+            fn arrangement(f: *Form) ![]model.ArrangementHead {
+                const heads = try f.alloc().alloc(model.ArrangementHead, f.heads.len);
+                for (heads, f.heads) |*head, current| head.* = .{ .output = current.output, .rect = current.rect, .enabled = current.enabled };
+                return heads;
+            }
+            fn publish(f: *Form, bytes: []const u8) !void {
+                try f.view.client.keepDraft(bytes);
+                f.view.syncRequest();
+                f.draft = try m.parse(f.alloc(), bytes, m.max_request);
+            }
+            fn position(f: *Form, r: model.Rect, anchor_primary: bool) !void {
+                if (f.loading or f.view.client.job != null or f.view.client.conflict()) return;
+                const heads = try f.arrangement();
+                heads[f.selected].rect = r;
+                const bytes = try model.stageArrangement(f.alloc(), f.base, f.view.client.draft orelse try f.view.client.emptyDraft(f.alloc()), heads, anchor_primary);
+                try f.publish(bytes);
             }
             fn choose(f: *Form, i: usize) void {
                 if (i >= f.heads.len) return;
@@ -605,10 +616,9 @@ pub fn For(comptime View: type) type {
                 },
                 .primary => {
                     if (f.view.client.job != null or f.view.client.conflict()) return;
-                    const bytes = try model.stagePrimary(f.alloc(), f.base, f.view.client.draft orelse try f.view.client.emptyDraft(f.alloc()), f.output());
-                    try f.view.client.keepDraft(bytes);
-                    f.view.syncRequest();
-                    f.draft = try m.parse(f.alloc(), bytes, m.max_request);
+                    const primary = try model.stagePrimary(f.alloc(), f.base, f.view.client.draft orelse try f.view.client.emptyDraft(f.alloc()), f.output());
+                    const bytes = try model.stageArrangement(f.alloc(), f.base, primary, try f.arrangement(), true);
+                    try f.publish(bytes);
                 },
                 .scale => try f.stage("scale", .{ .float = f.scales[@min(f.scales.len - 1, f.scale.getSelected())] / 100 }),
                 .transform => try f.stage("transform", .{ .string = ([_][]const u8{ "normal", "90", "180", "270", "flipped", "flipped-90", "flipped-180", "flipped-270" })[@min(7, f.transform.getSelected())] }),
@@ -629,7 +639,7 @@ pub fn For(comptime View: type) type {
                     var r = f.heads[f.selected].rect;
                     r.x = f.x.getValue();
                     r.y = f.y.getValue();
-                    try f.position(r);
+                    try f.position(r, false);
                 },
                 .side, .relative => if (f.side.getSelected() < 4) try place(f, 1),
                 .mirror => {
@@ -646,7 +656,7 @@ pub fn For(comptime View: type) type {
             if ((b.key == .scale or b.key == .transform or b.key == .resolution or b.key == .refresh) and old_side < 4 and other_index != f.selected and alignment != null) {
                 var rect = model.geometry(f.base, f.draft, f.output());
                 rect.place(other_rect, old_side, alignment.?);
-                try f.position(rect);
+                try f.position(rect, true);
             }
         }
         fn place(f: *Form, alignment: usize) !void {
@@ -654,7 +664,7 @@ pub fn For(comptime View: type) type {
             if (other == f.selected) return error.SelectAnotherDisplay;
             var r = f.heads[f.selected].rect;
             r.place(f.heads[other].rect, @min(3, f.side.getSelected()), alignment);
-            try f.position(r);
+            try f.position(r, true);
         }
         fn aligned(_: *gtk.Button, c: *Choice) callconv(.c) void {
             place(c.form, c.index) catch |err| c.form.view.fail(err);
@@ -666,20 +676,22 @@ pub fn For(comptime View: type) type {
             f.sync();
         }
         fn arrange(_: *gtk.Button, f: *Form) callconv(.c) void {
-            const selected = f.selected;
-            var x: f64 = 0;
-            for (f.heads, 0..) |h, i| {
-                if (!h.enabled) continue;
-                f.selected = i;
-                var r = h.rect;
-                r.x = x;
-                r.y = 0;
-                f.stage("mirror_of", .{ .string = "" }) catch |e| f.view.fail(e);
-                f.position(r) catch |e| f.view.fail(e);
-                x += r.width;
-            }
-            f.selected = selected;
+            arrangeHeads(f) catch |e| f.view.fail(e);
             f.sync();
+        }
+        fn arrangeHeads(f: *Form) !void {
+            if (f.loading or f.view.client.job != null or f.view.client.conflict()) return;
+            const heads = try f.arrangement();
+            var bytes: []const u8 = f.view.client.draft orelse try f.view.client.emptyDraft(f.alloc());
+            var x: f64 = 0;
+            for (heads) |*head| {
+                if (!head.enabled) continue;
+                head.rect.x = x;
+                head.rect.y = 0;
+                bytes = try model.stage(f.alloc(), f.base, bytes, head.output, "mirror_of", .{ .string = "" });
+                x += head.rect.width;
+            }
+            try f.publish(try model.stageArrangement(f.alloc(), f.base, bytes, heads, true));
         }
         fn rounded(cr: *cairo.Context, x: f64, y: f64, width: f64, height: f64) void {
             const r = @min(6, @min(width, height) / 2);
@@ -794,7 +806,7 @@ pub fn For(comptime View: type) type {
             for (f.heads, 0..) |h, i| {
                 if (i != f.selected and h.enabled) r.snap(h.rect, 18 / f.ratio);
             }
-            f.position(r) catch |e| f.view.fail(e);
+            f.position(r, true) catch |e| f.view.fail(e);
             f.sync();
         }
         fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, mods: gdk.ModifierType, f: *Form) callconv(.c) c_int {
@@ -808,7 +820,7 @@ pub fn For(comptime View: type) type {
                 gdk.KEY_Down => r.y += step,
                 else => return 0,
             }
-            f.position(r) catch |e| f.view.fail(e);
+            f.position(r, true) catch |e| f.view.fail(e);
             f.sync();
             return 1;
         }

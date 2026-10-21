@@ -1,47 +1,12 @@
 #!/usr/bin/env python3
 """Native Displays setup against private Aqueous outputs; never touches the user's session."""
-import argparse, json, time, socket, struct
+import argparse, json, time
 from pathlib import Path
 from test_settings_app import ROOT, APP_ID, PrivateSession, IPC, wait_for, probe, windows, capture, click_widget, keys, request, status
 from pearl_session import fixture_prefix, fixture_source
+from wayland_test_input import configure_output, pointer_drag as drag_pointer
 from test_settings_appearance import ready, click, control, type_text
 from test_settings_services import Peer, aq_ready, navigate
-
-
-def drag_pointer(s, dx, dy):
-    """Send a real held-button drag via the private compositor's virtual pointer."""
-    with socket.socket(socket.AF_UNIX) as wire:
-        wire.settimeout(5); wire.connect(str(s.display_path))
-        def send(obj, opcode, payload=b''):
-            wire.sendall(struct.pack('=II', obj, ((len(payload)+8)<<16)|opcode)+payload)
-        def ints(*values): return struct.pack('='+'I'*len(values), *values)
-        def string(text):
-            data=text.encode()+b'\0'
-            return ints(len(data))+data+b'\0'*((-len(data))%4)
-        pending=b''; manager=None
-        def sync(callback):
-            nonlocal pending, manager
-            send(1,0,ints(callback))
-            while True:
-                while len(pending)<8: pending+=wire.recv(65536)
-                obj, header=struct.unpack('=II',pending[:8]); length=header>>16; opcode=header&65535
-                while len(pending)<length: pending+=wire.recv(65536)
-                data=pending[8:length]; pending=pending[length:]
-                if obj==1 and opcode==0: raise AssertionError(('Wayland error',data))
-                if obj==2 and opcode==0:
-                    name,n=struct.unpack('=II',data[:8]); interface=data[8:8+n-1].decode()
-                    if interface=='zwlr_virtual_pointer_manager_v1': manager=name
-                if obj==callback: return
-        send(1,1,ints(2)); sync(3); assert manager is not None
-        send(2,0,ints(manager)+string('zwlr_virtual_pointer_manager_v1')+ints(1,4))
-        send(4,0,ints(0,5)); sync(6)
-        stamp=lambda:int(time.monotonic()*1000)&0xffffffff
-        send(5,2,ints(stamp(),0x110,1)); send(5,4); time.sleep(.1)
-        for _ in range(5):
-            send(5,0,struct.pack('=Iii',stamp(),round(dx*256/5),round(dy*256/5)))
-            send(5,4); time.sleep(.05)
-        send(5,2,ints(stamp(),0x110,0)); send(5,4); sync(7)
-        send(5,8); send(4,1)
 
 
 def main():
@@ -58,7 +23,7 @@ def main():
         s.env['GSETTINGS_BACKEND'] = 'memory'; ipc = IPC(s)
         wm = Path(s.env['AQUEOUS_CONFIG']); wm.write_text(wm.read_text().replace('"floating"', '"stacking"'))
         output = next(iter(ipc.outputs().values())); connector = output['name']
-        s.run(['wlr-randr', '--output', connector, '--custom-mode', '1600x1100@60Hz'])
+        configure_output(s, connector, mode='1600x1100@60')
         rules = Path(s.env['XDG_CONFIG_HOME'])/'aqueous/rules.toml'
         def size(width, height):
             rules.write_text(f'[[window]]\napp_id="{APP_ID}"\nfloating=true\nwidth={width}\nheight={height}\n')
@@ -77,7 +42,8 @@ def main():
         checks['unsupported-hdr-checkbox-disabled'] = True
         click(s, ipc, 'display.select.1')
         click(s, ipc, 'display.exact'); time.sleep(.3)
-        click(s, ipc, 'display.x'); type_text(s, '1750'); keys(s, 'Tab')
+        # Click the editable text, avoiding the spin button's decrement arrow.
+        click(s, ipc, 'display.x', fraction_x=.15); type_text(s, '1750'); keys(s, 'Tab')
         wait_for(lambda: probe(s, ipc)['aqueous']['display_changes'] > 0)
         aq_ready(s, ipc, peer)
         draft = peer.aq_document('draft'); ops = draft['display_declaration_changes']['operations']
@@ -86,7 +52,8 @@ def main():
         click(s, ipc, 'display.primary'); aq_ready(s, ipc, peer)
         assert not next(c for c in probe(s, ipc)['controls'] if c['field'] == 'display.primary')['enabled']
         primary_ops = peer.aq_document('draft')['display_declaration_changes']['operations']
-        assert any(op.get('set', {}).get('primary') is True and op.get('set', {}).get('position', [0])[0] == 1750 for op in primary_ops), primary_ops
+        assert any(op.get('set', {}).get('primary') is True and op.get('set', {}).get('position') == [0, 0] for op in primary_ops), primary_ops
+        assert any(op.get('set', {}).get('position') == [-1750, 0] for op in primary_ops), primary_ops
         click(s, ipc, 'display.select.0')
         assert next(c for c in probe(s, ipc)['controls'] if c['field'] == 'display.primary')['enabled']
         click(s, ipc, 'display.primary'); aq_ready(s, ipc, peer)
@@ -95,7 +62,7 @@ def main():
         assert any(op.get('set', {}).get('position', [0])[0] == 1750 and op.get('set', {}).get('primary') is not True for op in primary_ops), primary_ops
         click(s, ipc, 'display.select.1')
         assert next(c for c in probe(s, ipc)['controls'] if c['field'] == 'display.primary')['enabled']
-        checks['primary-button-transfers-selection-and-preserves-position'] = True
+        checks['primary-button-anchors-origin-and-preserves-relative-position'] = True
         navigate(s, ipc, 'aqueous', 'appearance'); navigate(s, ipc, 'aqueous', 'displays')
         assert probe(s, ipc)['aqueous']['display_changes'] > 0
         assert 'display.x' in {c['field'] for c in probe(s, ipc)['controls']}
@@ -116,6 +83,9 @@ def main():
         click(s, ipc, 'display.arrange'); aq_ready(s, ipc, peer)
         assert not probe(s, ipc)['aqueous']['display_blocked']
         checks['side-by-side-produces-non-overlapping-draft'] = True
+        arranged = peer.aq_document('draft')['display_declaration_changes']['operations']
+        assert sum('position' in op.get('set', {}) for op in arranged) == len(ipc.outputs()), arranged
+        checks['arrangement-pins-every-enabled-display'] = True
         # A canvas key edit must update the selected screen's canonical position.
         click(s, ipc, 'display.arrangement')
         drag_pointer(s, 0, 40); aq_ready(s, ipc, peer)
@@ -169,6 +139,9 @@ def main():
         checks['narrow-selected-editor-reachable'] = True
         peer.close(); app.stop(); shell.stop()
         report['status'] = 'passed'
+    except BaseException:
+        report['status'] = 'failed'
+        raise
     finally:
         (args.output/'verification.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report, indent=2))

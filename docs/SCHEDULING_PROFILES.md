@@ -60,7 +60,7 @@ file, because profiles run as root.
 | --- | --- |
 | `version` | Must be `2`. |
 | `id` | Lowercase letters, digits and `-`, at most 32 characters; unique. |
-| `label` | Button text, at most 64 characters. |
+| `label` | Profile name shown in the list, at most 64 characters. |
 | `description` | Optional, at most 256 characters; shown in tooltips and for the active profile. |
 | `sched` | Scheduler binary name starting with `scx_`, found in `/usr/bin` or `/usr/local/bin`. |
 | `args` | Optional list of arguments, one per element. Each may contain only letters, digits and `-_.=,:+/%@`, with no spaces. |
@@ -74,21 +74,38 @@ The shipped profiles have their own **Default** for this.
 
 A profile shows as running only once the kernel reports its own scheduler
 attached in `/sys/kernel/sched_ext/root/ops`; any other scheduler shows as
-**Custom**. The bar widget's icon carries a dot: green while the profile is
-running, amber while it starts, red when it has failed. The flyout and Settings
-show the scheduler, the version it reports and when it started, for example
-"Running - scx_cosmos 1.1.7 - since 13:41".
+**Custom**. Pearl follows the unit through systemd's D-Bus signals and
+sched_ext through the kernel's uevents (`SUBSYSTEM=sched_ext`, sent whenever a
+scheduler attaches or detaches), so it does not poll. A scheduler attached
+outside the profiles is noticed at once, even while Default is selected;
+Default then stays selected and the status names the other scheduler. Only if
+the uevent socket cannot be opened does Pearl fall back to rechecking every 3
+seconds. The bar widget's icon carries a dot: green while the profile
+is running, amber while it starts or another scheduler runs, red after a
+failure. The flyout and Settings show the scheduler, the version it reports
+and when it started, for example "Running - scx_cosmos 1.1.7 - since 13:41".
 
 ## Failures
 
-Pearl watches `scx.service` through systemd's D-Bus API. If the selected
-scheduler stops while it should be running, because it crashed, the kernel
-ejected it, or systemd's restart limit was reached, Pearl sends a notification
-and shows the profile as stopped, with the reason. The reason is the sched_ext
-exit message or the scheduler's last error from the unit's journal, such as
-"runnable task stall ... on CPU 6". When the journal cannot be read, systemd's
-exit status is used instead, such as "killed by SIGKILL repeatedly". Pearl does
-not retry on its own; choosing a profile again restarts it.
+Pearl watches `scx.service` through systemd's D-Bus API. Any failure of the
+selected profile switches back to Default:
+
+- the scheduler stops, because it crashed, the kernel ejected it (for example
+  after a runnable task stall) or systemd's restart limit was reached;
+- systemd restarts it after such an exit, which Pearl notices from the unit's
+  `NRestarts` count even when the restart succeeds;
+- it is still not attached 10 seconds after the unit became active;
+- the helper cannot start it.
+
+Pearl then sends a notification, and the flyout and Settings say what
+happened until another profile is chosen, for example "Desktop stopped:
+runnable task stall ... on CPU 6. Switched back to Default." The reason is the
+sched_ext exit message or the scheduler's last error from the unit's journal
+since the profile was selected, read a second after the failure so the exit
+message has arrived. When the journal cannot be read, systemd's exit status is
+used instead, such as "killed by SIGKILL repeatedly". Only the shell falls
+back, so Settings does not repeat it. A failure while nobody is logged in is
+handled at the next login if the unit is still failed.
 
 ## Settings
 

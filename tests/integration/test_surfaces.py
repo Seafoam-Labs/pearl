@@ -14,6 +14,7 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
+from wayland_test_input import pointer_move, pointer_click
 from PIL import Image, ImageChops, ImageStat
 from background_effect_trace import BackgroundEffects
 
@@ -93,12 +94,9 @@ def eventually_status(session, binary, predicate):
 
 
 def click(session, x, y, outputs):
-    left = min(o['bounds']['x'] for o in outputs.values())
-    top = min(o['bounds']['y'] for o in outputs.values())
-    session.run(['wlrctl', 'pointer', 'move', '-100000', '-100000'])
-    session.run(['wlrctl', 'pointer', 'move', str(x-left), str(y-top)])
+    pointer_move(session, x, y)
     time.sleep(.1)
-    session.run(['wlrctl', 'pointer', 'click'])
+    pointer_click(session)
     time.sleep(.15)
 
 

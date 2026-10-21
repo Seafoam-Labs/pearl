@@ -86,6 +86,7 @@ pub fn build(b: *std.Build) void {
     b.step("integration", "Exercise native GTK in a private Aqueous session and capture evidence").dependOn(&integration.step);
     const themes = b.addSystemCommand(&.{ "python3", "tests/themes.py", "--binary" });
     themes.addArtifactArg(test_exe);
+    if (b.args) |args| themes.addArgs(args);
     b.step("integration-themes", "Verify live committed Pearl appearance in a private session").dependOn(&themes.step);
     const networks = b.addSystemCommand(&.{ "python3", "tests/network_native.py", "--binary" });
     networks.addArtifactArg(test_exe);
