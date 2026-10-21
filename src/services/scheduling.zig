@@ -1,9 +1,11 @@
 //! Scheduling profiles applied through scx.service. Pearl watches the unit over
-//! systemd's D-Bus API, so state changes arrive without polling, and changes it
-//! only through pearl-scheduling-helper.
+//! systemd's D-Bus API and sched_ext through the kernel's uevents, so state
+//! changes arrive without polling, and changes it only through
+//! pearl-scheduling-helper.
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
+const unix = @import("glibunix2");
 const object = @import("gobject2");
 const p = @import("sched_profiles.zig");
 const store = @import("sched_profiles_store.zig");
@@ -11,6 +13,11 @@ const Kernel = p.Kernel;
 const log = std.log.scoped(.services);
 const a = std.heap.c_allocator;
 const systemd = "org.freedesktop.systemd1";
+/// How long a profile counts as still taking over after it was selected.
+const switch_window = 15 * std.time.us_per_s;
+/// A scheduler that has not attached this long after its unit became active
+/// is not going to.
+const attach_timeout = 10 * std.time.us_per_s;
 
 pub const Service = struct {
     app: *gio.Application,
@@ -71,14 +78,16 @@ pub const Service = struct {
     applying_buffer: [32]u8 = undefined,
     err: ?[:0]const u8 = null,
     err_buffer: [512]u8 = undefined,
-    /// Rechecks while a scheduler attaches; the kernel side has no signal.
-    settle_source: c_uint = 0,
-    settle_attempts: u8 = 0,
+    /// Rechecks once the switching window closes or the attach deadline
+    /// passes, the only changes that raise no event.
+    recheck_source: c_uint = 0,
     /// A failure is acted on once its exit message has reached the journal.
     failure_source: c_uint = 0,
     notified: bool = false,
-    /// Rechecks sched_ext, which has no change signal, for schedulers
-    /// attached outside the profiles.
+    /// The kernel's uevent socket, for schedulers attaching and detaching.
+    events_fd: i32 = -1,
+    events_source: c_uint = 0,
+    /// Rechecks sched_ext periodically only when uevents are unavailable.
     poll_source: c_uint = 0,
 
     pub const Notice = enum { none, stopped, start_failed };
@@ -86,18 +95,25 @@ pub const Service = struct {
     pub fn start(self: *Service) void {
         self.running = true;
         self.cancel = gio.Cancellable.new();
+        if (!self.watchEvents()) {
+            log.warn("event=sched-profile-systemd result=uevents-unavailable", .{});
+            self.poll_source = glib.timeoutAddSeconds(3, poll, self);
+        }
         self.refresh();
-        self.poll_source = glib.timeoutAddSeconds(3, poll, self);
         self.app.hold();
         gio.DBusProxy.newForBus(.system, .{ .do_not_load_properties = true }, null, systemd, "/org/freedesktop/systemd1", systemd ++ ".Manager", self.cancel, managerReady, self);
     }
 
     pub fn stop(self: *Service) void {
         self.running = false;
-        if (self.settle_source != 0) _ = glib.Source.remove(self.settle_source);
+        if (self.recheck_source != 0) _ = glib.Source.remove(self.recheck_source);
+        if (self.events_source != 0) _ = glib.Source.remove(self.events_source);
+        if (self.events_fd >= 0) _ = std.os.linux.close(self.events_fd);
+        self.recheck_source = 0;
+        self.events_source = 0;
+        self.events_fd = -1;
         if (self.failure_source != 0) _ = glib.Source.remove(self.failure_source);
         if (self.poll_source != 0) _ = glib.Source.remove(self.poll_source);
-        self.settle_source = 0;
         self.failure_source = 0;
         self.poll_source = 0;
         if (self.cancel) |cancel| {
@@ -183,17 +199,14 @@ pub const Service = struct {
     /// A profile was chosen in the last few seconds and the running instance
     /// predates it, so the previous scheduler may still be on its way out.
     fn switching(self: *const Service) bool {
-        var stat: std.os.linux.Statx = std.mem.zeroes(std.os.linux.Statx);
-        if (std.os.linux.statx(std.os.linux.AT.FDCWD, p.env_path, 0, .{ .MTIME = true }, &stat) != 0) return false;
-        const written: i64 = stat.mtime.sec * std.time.us_per_s + @divTrunc(stat.mtime.nsec, std.time.ns_per_us);
-        const now = glib.getRealTime();
-        return written > @as(i64, @intCast(self.active_since)) and now - written < 15 * std.time.us_per_s;
+        const written = envWritten() orelse return false;
+        return written > @as(i64, @intCast(self.active_since)) and glib.getRealTime() - written < switch_window;
     }
 
     /// The unit has been active longer than a scheduler needs to attach.
     fn stuck(self: *const Service) bool {
         if (self.unit_state != .active or self.active_since == 0) return false;
-        return glib.getRealTime() - @as(i64, @intCast(self.active_since)) > 10 * std.time.us_per_s;
+        return glib.getRealTime() - @as(i64, @intCast(self.active_since)) > attach_timeout;
     }
 
     /// "since 10:28", with the date when it started on another day.
@@ -236,7 +249,7 @@ pub const Service = struct {
             self.notice = .none;
         };
         if (self.fallback_pending and self.enabled and self.applying == null) self.fallBack();
-        if (self.status.kind == .starting) self.settle() else self.settle_attempts = 0;
+        self.scheduleRecheck();
         self.changed(self.context);
     }
 
@@ -251,7 +264,7 @@ pub const Service = struct {
         if (self.failed == null and profile.len <= self.failed_buffer.len and p.crashed(self.status, count, if (self.restarts != null) previous else null)) {
             @memcpy(self.failed_buffer[0..profile.len], profile);
             self.failed = self.failed_buffer[0..profile.len];
-            self.failed_since = envWritten() orelse 0;
+            self.failed_since = if (envWritten()) |written| @divTrunc(written, std.time.us_per_s) else 0;
             self.notified = false;
             self.reason = null;
         }
@@ -376,18 +389,71 @@ pub const Service = struct {
         return p.processReason(buffer, std.mem.span(result.getString(null)), code.getInt32(), status.getInt32());
     }
 
-    fn settle(self: *Service) void {
-        // Long enough to outlast the switching window below.
-        if (self.settle_source != 0 or !self.running or self.settle_attempts >= 40) return;
-        self.settle_attempts += 1;
-        self.settle_source = glib.timeoutAdd(500, settled, self);
+    /// While a profile is starting, recheck once when the switching window
+    /// closes or the attach deadline passes. Everything else that can change
+    /// the status arrives as a systemd or kernel event.
+    fn scheduleRecheck(self: *Service) void {
+        if (self.recheck_source != 0) _ = glib.Source.remove(self.recheck_source);
+        self.recheck_source = 0;
+        if (!self.running or self.status.kind != .starting) return;
+        const now = glib.getRealTime();
+        var deadline: i64 = std.math.maxInt(i64);
+        if (envWritten()) |written| if (written + switch_window > now) {
+            deadline = written + switch_window;
+        };
+        if (self.unit_state == .active and self.active_since > 0) {
+            const attach = @as(i64, @intCast(self.active_since)) + attach_timeout;
+            if (attach > now) deadline = @min(deadline, attach);
+        }
+        if (deadline == std.math.maxInt(i64)) return;
+        // A little past the deadline, so the comparison has flipped.
+        self.recheck_source = glib.timeoutAdd(@intCast(@divTrunc(deadline - now, std.time.us_per_ms) + 50), rechecked, self);
     }
 
-    fn settled(data: ?*anyopaque) callconv(.c) c_int {
+    fn rechecked(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Service = @ptrCast(@alignCast(data.?));
-        self.settle_source = 0;
+        self.recheck_source = 0;
         self.refresh();
         return 0;
+    }
+
+    /// Listen to the kernel's uevents, which report every sched_ext attach
+    /// and detach. Any user may receive them.
+    fn watchEvents(self: *Service) bool {
+        const linux = std.os.linux;
+        const socket = linux.socket(linux.AF.NETLINK, linux.SOCK.DGRAM | linux.SOCK.CLOEXEC | linux.SOCK.NONBLOCK, linux.NETLINK.KOBJECT_UEVENT);
+        if (linux.errno(socket) != .SUCCESS) return false;
+        const fd: i32 = @intCast(socket);
+        // Group 1 carries the kernel's own events, before udev handles them.
+        var address: linux.sockaddr.nl = .{ .pid = 0, .groups = 1 };
+        if (linux.errno(linux.bind(fd, @ptrCast(&address), @sizeOf(linux.sockaddr.nl))) != .SUCCESS) {
+            _ = linux.close(fd);
+            return false;
+        }
+        self.events_fd = fd;
+        self.events_source = unix.fdAdd(fd, .{ .in = true }, eventsReady, self);
+        return true;
+    }
+
+    fn eventsReady(fd: c_int, _: glib.IOCondition, data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        const linux = std.os.linux;
+        var relevant = false;
+        var buffer: [8192]u8 = undefined;
+        while (true) {
+            const n = linux.recvfrom(fd, &buffer, buffer.len, 0, null, null);
+            switch (linux.errno(n)) {
+                .SUCCESS => if (p.schedExtEvent(buffer[0..n])) {
+                    relevant = true;
+                },
+                // Events were dropped, so one of them may have mattered.
+                .NOBUFS => relevant = true,
+                .INTR => {},
+                else => break,
+            }
+        }
+        if (relevant) self.refresh();
+        return 1;
     }
 
     pub fn apply(self: *Service, id: []const u8) !void {
@@ -563,11 +629,11 @@ pub const Service = struct {
     }
 };
 
-/// When a profile was last selected, in seconds since the epoch.
+/// When a profile was last selected, in microseconds since the epoch.
 fn envWritten() ?i64 {
     var stat: std.os.linux.Statx = std.mem.zeroes(std.os.linux.Statx);
     if (std.os.linux.statx(std.os.linux.AT.FDCWD, p.env_path, 0, .{ .MTIME = true }, &stat) != 0) return null;
-    return stat.mtime.sec;
+    return stat.mtime.sec * std.time.us_per_s + @divTrunc(stat.mtime.nsec, std.time.ns_per_us);
 }
 
 fn kernelState() Kernel {

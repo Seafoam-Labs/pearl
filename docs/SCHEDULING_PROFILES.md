@@ -74,10 +74,13 @@ The shipped profiles have their own **Default** for this.
 
 A profile shows as running only once the kernel reports its own scheduler
 attached in `/sys/kernel/sched_ext/root/ops`; any other scheduler shows as
-**Custom**. Pearl rechecks sched_ext every 3 seconds, since it has no change
-signal, so a scheduler attached outside the profiles is noticed even while
-Default is selected; Default then stays selected and the status names the
-other scheduler. The bar widget's icon carries a dot: green while the profile
+**Custom**. Pearl follows the unit through systemd's D-Bus signals and
+sched_ext through the kernel's uevents (`SUBSYSTEM=sched_ext`, sent whenever a
+scheduler attaches or detaches), so it does not poll. A scheduler attached
+outside the profiles is noticed at once, even while Default is selected;
+Default then stays selected and the status names the other scheduler. Only if
+the uevent socket cannot be opened does Pearl fall back to rechecking every 3
+seconds. The bar widget's icon carries a dot: green while the profile
 is running, amber while it starts or another scheduler runs, red after a
 failure. The flyout and Settings show the scheduler, the version it reports
 and when it started, for example "Running - scx_cosmos 1.1.7 - since 13:41".

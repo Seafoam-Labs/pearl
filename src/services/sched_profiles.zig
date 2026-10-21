@@ -291,6 +291,16 @@ pub fn foreign(config: Config, ops: []const u8) bool {
     return true;
 }
 
+/// Whether a kernel uevent concerns sched_ext. A message is an
+/// "action@devpath" header followed by NUL-separated KEY=value fields;
+/// sched_ext reports each scheduler attaching and detaching this way.
+pub fn schedExtEvent(message: []const u8) bool {
+    var fields = std.mem.splitScalar(u8, message, 0);
+    _ = fields.next();
+    while (fields.next()) |field| if (std.mem.eql(u8, field, "SUBSYSTEM=sched_ext")) return true;
+    return false;
+}
+
 /// The selected scheduler has failed since it was chosen: it is no longer
 /// running, or systemd restarted it after it exited. previous is the restart
 /// count seen last time, null before the first observation.
@@ -395,6 +405,15 @@ test "the environment file round-trips and attributes the running scheduler" {
     // A scheduler that never attaches has failed, unless it was just chosen.
     try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .active, .disabled, "", false, true));
     try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .active, .disabled, "", true, true));
+}
+
+test "only sched_ext uevents are relevant" {
+    try t.expect(schedExtEvent("add@/kernel/sched_ext/root\x00ACTION=add\x00DEVPATH=/kernel/sched_ext/root\x00SUBSYSTEM=sched_ext\x00SCXOPS=cake_1.2.2_x86_64_unknown_linux_gnu\x00SEQNUM=5181\x00"));
+    try t.expect(schedExtEvent("remove@/kernel/sched_ext/root\x00ACTION=remove\x00SUBSYSTEM=sched_ext"));
+    try t.expect(!schedExtEvent("change@/devices/LNXSYSTM:00/ACPI0003:00/power_supply/AC\x00ACTION=change\x00SUBSYSTEM=power_supply\x00"));
+    // The header alone does not count, nor a value that merely mentions it.
+    try t.expect(!schedExtEvent("add@/SUBSYSTEM=sched_ext"));
+    try t.expect(!schedExtEvent("add@/x\x00DEVPATH=/SUBSYSTEM=sched_ext\x00"));
 }
 
 test "a restart counts as a crash of the selected scheduler" {
