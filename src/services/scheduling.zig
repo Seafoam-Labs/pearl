@@ -130,6 +130,11 @@ pub const Service = struct {
             }
         }.pick;
         if (self.problem) |problem| return problem;
+        // The profile being applied, before systemd reports any change.
+        if (self.applying) |id| if (self.config) |config| if (config.find(id)) |i| {
+            const target = config.profiles[i];
+            return if (target.stop) t(german, "Stopping the scheduler...", "Scheduler wird beendet...") else std.fmt.bufPrintZ(buffer, "{s} {s}...", .{ t(german, "Starting", "Starte"), target.label }) catch "";
+        };
         const profile: ?p.Profile = if (self.config) |c| if (self.status.profile) |i| c.profiles[i] else null else null;
         const name = if (profile) |value| value.label else "";
         return switch (self.status.kind) {

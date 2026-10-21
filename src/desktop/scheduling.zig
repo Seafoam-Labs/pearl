@@ -19,7 +19,8 @@ pub const View = struct {
     /// Ids of the buttons, in order, for the profiles shown when the card opened.
     ids: []const []const u8 = &.{},
     status: *gtk.Label,
-    message: *gtk.Label,
+    /// What went wrong, under the status: a fallback to Default or an error.
+    note: *gtk.Label,
     buttons: []*gtk.Button = &.{},
     checks: []*gtk.Image = &.{},
     choices: []Choice = &.{},
@@ -33,7 +34,7 @@ pub const View = struct {
         if (!service.configured()) return error.NoProfiles;
         const self = try a.create(View);
         errdefer a.destroy(self);
-        self.* = .{ .service = service, .status = undefined, .message = undefined };
+        self.* = .{ .service = service, .status = undefined, .note = undefined };
         errdefer self.arena.deinit();
         const alloc = self.arena.allocator();
         const card = w.card();
@@ -42,7 +43,9 @@ pub const View = struct {
         self.status = w.label("", null);
         self.status.setWrap(1);
         card.append(self.status.as(gtk.Widget));
-        // Status first, then the profiles, then text about the selection.
+        self.note = w.label("", "pearl-secondary");
+        card.append(self.note.as(gtk.Widget));
+        // Everything about the state goes above the profiles.
         if (service.config) |config| {
             const ids = try alloc.alloc([]const u8, config.profiles.len);
             self.buttons = try alloc.alloc(*gtk.Button, config.profiles.len);
@@ -73,9 +76,6 @@ pub const View = struct {
             }
             self.ids = ids;
         }
-        self.message = w.label("", "pearl-secondary");
-        self.message.setWrap(1);
-        card.append(self.message.as(gtk.Widget));
         self.update();
         return self;
     }
@@ -101,9 +101,9 @@ pub const View = struct {
             check.as(gtk.Widget).setOpacity(if (current) 1 else 0);
             button.as(gtk.Widget).setSensitive(@intFromBool(usable));
         }
-        var message: [600]u8 = undefined;
-        self.message.setText(if (service.applying != null) tr("Applying profile...", "Profil wird angewendet...") else if (service.err) |err| std.fmt.bufPrintZ(&message, "{s}", .{err}) catch "" else service.describeNotice(&message, std.mem.eql(u8, tr("en", "de"), "de")));
-        self.message.as(gtk.Widget).setVisible(@intFromBool(self.message.getText()[0] != 0));
+        var note: [600]u8 = undefined;
+        self.note.setText(if (service.applying != null) "" else if (service.err) |err| std.fmt.bufPrintZ(&note, "{s}", .{err}) catch "" else service.describeNotice(&note, std.mem.eql(u8, tr("en", "de"), "de")));
+        self.note.as(gtk.Widget).setVisible(@intFromBool(self.note.getText()[0] != 0));
     }
 
     fn clicked(_: *gtk.Button, choice: *Choice) callconv(.c) void {
@@ -113,8 +113,8 @@ pub const View = struct {
         if (choice.view.checks[choice.index].as(gtk.Widget).getOpacity() > 0) return;
         self.service.apply(id) catch |err| {
             log.warn("event=sched-profile-select profile={s} result={s}", .{ id, @errorName(err) });
-            self.message.setText(if (err == error.Busy) tr("Another profile is being applied.", "Ein anderes Profil wird gerade angewendet.") else tr("This profile cannot be applied right now.", "Dieses Profil kann gerade nicht angewendet werden."));
-            self.message.as(gtk.Widget).setVisible(1);
+            self.note.setText(if (err == error.Busy) tr("Another profile is being applied.", "Ein anderes Profil wird gerade angewendet.") else tr("This profile cannot be applied right now.", "Dieses Profil kann gerade nicht angewendet werden."));
+            self.note.as(gtk.Widget).setVisible(1);
             return;
         };
         self.update();
