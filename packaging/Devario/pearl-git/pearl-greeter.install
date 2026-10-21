@@ -25,6 +25,20 @@ _provision_pearl_greeter() {
     systemd-tmpfiles --create /usr/lib/tmpfiles.d/pearl-greeter.conf || return 1
 }
 
+# The appearance sync socket must be live on every install and upgrade, not only
+# fresh ones: users coming from packages without the socket, or whose socket
+# never started, would otherwise silently fall back to pkexec, which cannot
+# prompt when Pearl runs outside a logind session scope. Activate only when it
+# is missing so an already running socket is never disturbed.
+_enable_greeter_sync() {
+    if systemctl is-enabled --quiet pearl-greeter-sync.socket &&
+        systemctl is-active --quiet pearl-greeter-sync.socket; then
+        return 0
+    fi
+    systemctl enable --now pearl-greeter-sync.socket 2>/dev/null ||
+        echo '==> Activate appearance sync later: sudo systemctl enable --now pearl-greeter-sync.socket'
+}
+
 _install_greetd_config() {
     local root=${1:-/}
     local config="${root%/}/etc/greetd/config.toml"
@@ -37,6 +51,7 @@ post_install() {
     _provision_pearl_greeter || return 1
     _install_greetd_config || return 1
     /usr/lib/pearl/pearl-greeter-setup enable || return 1
+    _enable_greeter_sync
     echo '==> Pearl Greeter is selected for the next boot. The running session was not restarted.'
     echo '    Configuration: /etc/pearl/greeter.json and /etc/greetd/config.toml'
     echo '    Restore the previous boot setup: sudo /usr/lib/pearl/pearl-greeter-setup restore'
@@ -47,11 +62,7 @@ post_upgrade() {
     # Keep disabled services and later display-manager choices unchanged.
     _provision_pearl_greeter || return 1
     _install_greetd_config || return 1
-    # The appearance sync socket only auto-enables on fresh installs; upgrades
-    # need it activated or syncs fall back to pkexec (which cannot prompt when
-    # Pearl runs outside a logind session scope).
-    systemctl enable --now pearl-greeter-sync.socket 2>/dev/null ||
-        echo '==> Activate appearance sync later: sudo systemctl enable --now pearl-greeter-sync.socket'
+    _enable_greeter_sync
     echo '==> Pearl Greeter updated; original greetd config remains in /etc/greetd/config.toml.bak.'
     echo '    Password entry is now enabled before Sign in by default.'
     echo '    If your preserved /etc/pearl/greeter.json has password_first: false, set it to true for one-action password login.'
