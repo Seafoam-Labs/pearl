@@ -557,9 +557,11 @@ pub const Bar = struct {
             var detail: [512]u8 = undefined;
             serviceName(widget, tr("Open CPU scheduler profiles", "CPU-Scheduler-Profile öffnen"), if (service.status.kind == .running) std.fmt.bufPrintZ(&detail, "{s} - {s}", .{ name, service.describe(&service_buffer, std.mem.eql(u8, tr("en", "de"), "de")) }) catch "" else service.describe(&detail, std.mem.eql(u8, tr("en", "de"), "de")));
             if (self.scheduler_dot) |dot| {
-                const state: ?[:0]const u8 = switch (service.status.kind) {
+                // Red after a fallback to Default, until a profile is chosen;
+                // amber while starting or a scheduler outside the profiles runs.
+                const state: ?[:0]const u8 = if (service.applying != null) "pearl-status-pending" else if (service.notice != .none) "pearl-status-failed" else switch (service.status.kind) {
                     .running => "pearl-status-ok",
-                    .starting => "pearl-status-pending",
+                    .starting, .custom => "pearl-status-pending",
                     .failed => "pearl-status-failed",
                     else => null,
                 };

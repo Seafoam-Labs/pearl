@@ -88,12 +88,13 @@ pub const View = struct {
         self.description.as(gtk.Widget).setVisible(@intFromBool(self.description.getText()[0] != 0));
         const usable = service.enabled and service.applying == null and service.status.kind != .unavailable;
         for (self.buttons, self.ids) |button, id| {
-            const current = if (profile) |value| std.mem.eql(u8, value.id, id) and (service.status.kind == .running or service.status.kind == .off) else false;
+            // Default stays selected while a scheduler outside the profiles runs.
+            const current = if (profile) |value| std.mem.eql(u8, value.id, id) and (service.status.kind == .running or service.status.kind == .off or service.status.kind == .custom) else false;
             if (current) button.as(gtk.Widget).addCssClass("pearl-selected") else button.as(gtk.Widget).removeCssClass("pearl-selected");
             button.as(gtk.Widget).setSensitive(@intFromBool(usable and !current));
         }
         var message: [600]u8 = undefined;
-        self.message.setText(if (service.applying != null) tr("Applying profile...", "Profil wird angewendet...") else if (service.err) |err| std.fmt.bufPrintZ(&message, "{s}", .{err}) catch "" else "");
+        self.message.setText(if (service.applying != null) tr("Applying profile...", "Profil wird angewendet...") else if (service.err) |err| std.fmt.bufPrintZ(&message, "{s}", .{err}) catch "" else service.describeNotice(&message, std.mem.eql(u8, tr("en", "de"), "de")));
         self.message.as(gtk.Widget).setVisible(@intFromBool(self.message.getText()[0] != 0));
     }
 
