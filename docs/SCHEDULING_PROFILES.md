@@ -60,7 +60,7 @@ file, because profiles run as root.
 | --- | --- |
 | `version` | Must be `2`. |
 | `id` | Lowercase letters, digits and `-`, at most 32 characters; unique. |
-| `label` | Button text, at most 64 characters. |
+| `label` | Profile name shown in the list, at most 64 characters. |
 | `description` | Optional, at most 256 characters; shown in tooltips and for the active profile. |
 | `sched` | Scheduler binary name starting with `scx_`, found in `/usr/bin` or `/usr/local/bin`. |
 | `args` | Optional list of arguments, one per element. Each may contain only letters, digits and `-_.=,:+/%@`, with no spaces. |
