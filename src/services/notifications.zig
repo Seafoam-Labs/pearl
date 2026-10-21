@@ -7,6 +7,9 @@ const pixbuf = @import("gdkpixbuf2");
 const icon_image = @import("notification_image.zig");
 pub const policy = @import("notification_policy.zig");
 const name = "org.freedesktop.Notifications";
+/// Owner marker for shell-raised records. A real sender is always a unique
+/// `:1.N` name or a well-known bus name, so this can never collide.
+const local_owner = "pearl";
 const path = "/org/freedesktop/Notifications";
 pub const Notifications = struct {
     bus: *transport.Bus,
@@ -75,10 +78,29 @@ pub const Notifications = struct {
     pub fn close(self: *Notifications, id: u32, reason: u32) bool {
         const r = self.model.find(id) orelse return false;
         const owner = r.owner;
+        // Read before close(): retiring a transient record clears it in place.
+        const local = r.local;
         if (!self.model.close(id)) return false;
-        self.bus.emit(owner.z(), path, name, "NotificationClosed", db.tuple(&.{ glib.Variant.newUint32(id), glib.Variant.newUint32(reason) }));
+        if (!local) self.bus.emit(owner.z(), path, name, "NotificationClosed", db.tuple(&.{ glib.Variant.newUint32(id), glib.Variant.newUint32(reason) }));
         self.update();
         return true;
+    }
+    /// Shell-originated warning. There is no sending peer, so the record is marked
+    /// local and no protocol signal is emitted on its behalf. A zero timeout keeps
+    /// it listed until dismissed or replaced; its toast still expires normally.
+    pub fn warn(self: *Notifications, summary: []const u8, body: []const u8, symbol: []const u8, urgent: bool, replaces: u32) ?u32 {
+        if (!self.available) return null;
+        var r: policy.Record = .{};
+        r.local = true;
+        r.owner.set(local_owner);
+        r.app.set("Pearl");
+        r.summary = policy.sanitize(256, summary);
+        r.body = policy.sanitize(2048, body);
+        r.icon = policy.sanitize(160, symbol);
+        r.urgency = if (urgent) 2 else 1;
+        const record = self.model.add(r, replaces, 0, glib.getMonotonicTime()) catch return null;
+        self.update();
+        return record.id;
     }
     pub fn invoke(self: *Notifications, id: u32, key: []const u8) !void {
         if (!self.available or self.model.locked) return error.Unavailable;

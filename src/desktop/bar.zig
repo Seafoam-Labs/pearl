@@ -10,6 +10,8 @@ const policy = @import("policy.zig");
 const sched_profiles = @import("../services/sched_profiles.zig");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
+const chargeState = @import("text.zig").chargeState;
+const presentation = @import("../services/power_presentation.zig");
 const a = std.heap.c_allocator;
 const clocks = @import("clock_policy.zig");
 const Clock = @import("clock_view.zig").View;
@@ -43,6 +45,8 @@ pub const Bar = struct {
     bluetooth_label: ?*gtk.Label = null,
     audio_label: ?*gtk.Label = null,
     battery_label: ?*gtk.Label = null,
+    /// Swapped between level and charging glyphs as the charge state changes.
+    battery_icon: ?*gtk.Image = null,
     scheduling_service: *@import("../services/scheduling.zig").Service,
     scheduler_label: ?*gtk.Label = null,
     /// Dot on the scheduler icon: running, starting or failed.
@@ -122,6 +126,7 @@ pub const Bar = struct {
         self.keyboard = null;
         self.audio_label = null;
         self.battery_label = null;
+        self.battery_icon = null;
         self.network_label = null;
         self.bluetooth_label = null;
         self.scheduler_label = null;
@@ -330,14 +335,16 @@ pub const Bar = struct {
                             else => unreachable,
                         } }, null, "", false);
                         const content = gtk.Box.new(if (self.vertical) .vertical else .horizontal, if (self.vertical) 0 else 4);
-                        const symbol = w.icon(switch (item) {
+                        const glyph = w.icon(switch (item) {
                             .audio => "pearl-audio-volume-high-symbolic",
                             .battery => "pearl-battery-symbolic",
                             .network => "pearl-network-wireless-symbolic",
                             .bluetooth => "pearl-bluetooth-active-symbolic",
                             .scheduler => "pearl-scheduler-symbolic",
                             else => unreachable,
-                        }).as(gtk.Widget);
+                        });
+                        if (item == .battery) self.battery_icon = glyph;
+                        const symbol = glyph.as(gtk.Widget);
                         if (item == .scheduler) {
                             const overlay = gtk.Overlay.new();
                             overlay.setChild(symbol);
@@ -534,11 +541,17 @@ pub const Bar = struct {
             serviceName(widget, tr("Open Sound controls", "Klangsteuerung öffnen"), if (device) |d| std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ d.label.slice(), std.mem.span(label.getText()) }) catch d.label.z() else tr("Audio unavailable", "Audio nicht verfügbar"));
         }
         if (self.battery_label) |label| {
-            label.setText(std.fmt.bufPrintZ(&service_buffer, "{d:.0}%", .{self.power_service.percentage}) catch "");
+            const power = self.power_service;
+            // An unmeasured charge is shown as absent, never as a fabricated 0%.
+            const percent = if (power.percentage_valid) power.percentage else null;
+            label.setText(if (percent) |n| std.fmt.bufPrintZ(&service_buffer, "{d:.0}%", .{n}) catch "—" else "—");
+            if (self.battery_icon) |glyph| glyph.setFromIconName(presentation.icon(power.battery_state, percent));
             const widget = self.widgets[@intFromEnum(policy.Item.battery)].?;
-            widget.setVisible(@intFromBool(self.power_service.battery_present));
-            var detail: [128]u8 = undefined;
-            serviceName(widget, tr("Open Power controls", "Energiesteuerung öffnen"), std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ std.mem.span(label.getText()), if (self.power_service.battery_state == 1) tr("Charging", "Wird geladen") else tr("Battery", "Akku") }) catch "");
+            // Sticky presence: a transient UPower loss keeps the indicator, and a
+            // machine that never reported a battery still never grows one.
+            widget.setVisible(@intFromBool(power.battery_observed));
+            var detail: [192]u8 = undefined;
+            serviceName(widget, tr("Open Power controls", "Energiesteuerung öffnen"), std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ std.mem.span(label.getText()), chargeState(power.battery_state) }) catch "");
         }
         if (self.scheduler_label) |label| {
             const service = self.scheduling_service;

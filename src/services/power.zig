@@ -38,6 +38,11 @@ pub const Power = struct {
     retry_source: c_uint = 0,
     battery_present: bool = false,
     battery_available: bool = false,
+    /// Last presence confirmed while DisplayDevice was reachable, so a transient
+    /// service loss keeps showing the indicator. False until something is observed,
+    /// which keeps a machine with no battery from ever growing one.
+    battery_observed: bool = false,
+    alarm: presentation.Alarm = .{},
     percentage_valid: bool = false,
     health: ?f64 = null,
     history: presentation.History = .{},
@@ -296,6 +301,10 @@ pub const Power = struct {
             defer v.unref();
             self.battery_present = self.battery_present and v.getUint32() == 2;
         }
+        // Presence is only ever confirmed by an available DisplayDevice. A UPower
+        // restart, reactivation, or bus drop leaves the last confirmed answer in
+        // place instead of collapsing it to "no battery" and hiding the indicator.
+        if (self.battery_available) self.battery_observed = self.battery_present;
         if (self.prop(.battery, "NativePath", "s")) |v| {
             defer v.unref();
             const identity = std.mem.span(v.getString(null));
@@ -337,6 +346,9 @@ pub const Power = struct {
             defer v.unref();
             self.time_to_full = @max(0, v.getInt64());
         }
+        // Only a reachable DisplayDevice can confirm charge state. An outage must
+        // neither warn nor silently clear an in-progress low-battery episode.
+        if (self.battery_available) self.alarm.update(self.battery_present and self.on_battery and self.battery_state == 2, if (self.percentage_valid) self.percentage else null);
         self.session_active = self.boolean(.session, "Active");
         self.profiles = .{ false, false, false };
         self.profile = .{};
@@ -371,6 +383,13 @@ pub const Power = struct {
         if (self.saver_threshold == threshold) return;
         self.saver_threshold = threshold;
         self.updateSaver();
+    }
+    /// Drains the low-battery level crossed since the last drain, if any.
+    pub fn takeAlarm(self: *Power) ?presentation.Alarm.Level {
+        return self.alarm.take();
+    }
+    pub fn plugged(self: *Power) bool {
+        return presentation.Charge.of(self.battery_state).plugged();
     }
     fn updateSaver(self: *Power) void {
         var current: ?u8 = null;

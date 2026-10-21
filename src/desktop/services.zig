@@ -6,6 +6,8 @@ const Audio = @import("../services/audio.zig");
 const Power = @import("../services/power.zig").Power;
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
+const chargeState = @import("text.zig").chargeState;
+const presentation = @import("../services/power_presentation.zig");
 const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const focus_state = @import("focus_state.zig");
@@ -154,6 +156,7 @@ pub const PowerView = struct {
     owner: @import("../services/view_ownership.zig").Owner,
     power: *Power,
     power_status: *gtk.Label,
+    battery_icon: *gtk.Image,
     profile_status: *gtk.Label,
     brightness_label: *gtk.Label,
     error_label: *gtk.Label,
@@ -169,7 +172,7 @@ pub const PowerView = struct {
         const owner = try power.acquireView();
         errdefer power.releaseView(owner);
         const self = try a.create(PowerView);
-        self.* = .{ .owner = owner, .power = power, .power_status = undefined, .profile_status = undefined, .brightness_label = undefined, .error_label = undefined, .brightness = undefined, .profiles = undefined, .actions = undefined };
+        self.* = .{ .owner = owner, .power = power, .power_status = undefined, .battery_icon = undefined, .profile_status = undefined, .brightness_label = undefined, .error_label = undefined, .brightness = undefined, .profiles = undefined, .actions = undefined };
         errdefer {
             for (self.connections.items) |c| object.signalHandlerDisconnect(c.object, c.id);
             self.connections.deinit(a);
@@ -184,6 +187,7 @@ pub const PowerView = struct {
         const battery_icon = w.icon("pearl-battery-symbolic");
         battery_icon.as(gtk.Widget).addCssClass("pearl-state-icon");
         state_row.append(battery_icon.as(gtk.Widget));
+        self.battery_icon = battery_icon;
         self.power_status = w.label("", "pearl-secondary");
         self.power_status.setWrap(1);
         state_row.append(self.power_status.as(gtk.Widget));
@@ -237,7 +241,16 @@ pub const PowerView = struct {
         defer self.updating = false;
         var buffer: [1024]u8 = undefined;
         const power = self.power;
-        const battery = if (power.battery_present) std.fmt.bufPrintZ(&buffer, "{d:.0}% · {s}", .{ power.percentage, if (power.battery_state == 1) tr("Charging", "Lädt") else if (power.battery_state == 2) tr("On battery", "Akkubetrieb") else if (power.battery_state == 4) tr("Fully charged", "Vollständig geladen") else tr("Battery", "Akku") }) catch "Battery" else tr("No battery reported", "Kein Akku gemeldet");
+        const percent = if (power.percentage_valid) power.percentage else null;
+        self.battery_icon.setFromIconName(presentation.icon(power.battery_state, percent));
+        // Sticky presence, and an unmeasured charge is named as unavailable rather
+        // than printed as 0%. A service outage is reported separately via err.
+        const battery = if (!power.battery_observed)
+            tr("No battery reported", "Kein Akku gemeldet")
+        else if (percent) |n|
+            std.fmt.bufPrintZ(&buffer, "{d:.0}% · {s}", .{ n, chargeState(power.battery_state) }) catch chargeState(power.battery_state)
+        else
+            std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ tr("Charge unavailable", "Ladestand unbekannt"), chargeState(power.battery_state) }) catch "Battery";
         self.power_status.setText(battery);
         self.brightness_label.setText(if (power.backlight.maximum == 0) tr("Brightness unavailable · no supported backlight", "Helligkeit nicht verfügbar · keine unterstützte Hintergrundbeleuchtung") else std.fmt.bufPrintZ(&buffer, "{s} · {s}{s}", .{ tr("Brightness", "Helligkeit"), power.backlight.name.slice(), if (power.brightness_pending or power.brightness_wanted != null) tr(" · Applying…", " · Wird angewendet…") else "" }) catch "Brightness");
         self.brightness_label.setWrap(1);
