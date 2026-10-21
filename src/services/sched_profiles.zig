@@ -269,15 +269,26 @@ pub fn status(config: Config, env: Env, unit: Unit, kernel: Kernel, ops: []const
     // Another scheduler is attached. Default stays selected, so it can be
     // reported as running outside the profiles.
     const custom: Status = .{ .kind = .custom, .profile = if (stopping) selected else null };
+    // A scheduler no profile runs cannot be one of ours on its way out, so it
+    // is reported at once instead of waiting out the switch.
+    const leaving = switching and !foreign(config, ops);
     return switch (unit) {
         // Running means the kernel reports the profile's own scheduler attached.
-        .active => if (scheduler) (if (kernel != .enabled or ops.len == 0) (if (stuck and !switching) failed else settling) else if (opsMatches(profile.?.sched.?, ops)) .{ .kind = .running, .profile = selected } else if (switching) settling else custom) else if (stopping and switching) settling else custom,
-        .activating, .deactivating => if (scheduler or (stopping and switching)) settling else custom,
+        .active => if (scheduler) (if (kernel != .enabled or ops.len == 0) (if (stuck and !switching) failed else settling) else if (opsMatches(profile.?.sched.?, ops)) .{ .kind = .running, .profile = selected } else if (leaving) settling else custom) else if (stopping and leaving) settling else custom,
+        .activating, .deactivating => if (scheduler or (stopping and leaving)) settling else custom,
         // A selected scheduler that is no longer running has failed, whether
         // systemd marked the unit failed or the scheduler exited cleanly.
-        .failed, .inactive, .unknown => if (scheduler) (if (switching and unit != .failed) settling else failed) else if (kernel == .enabled) (if (stopping and switching) settling else custom) else .{ .kind = .off, .profile = if (stopping) selected else firstStop(config) },
+        .failed, .inactive, .unknown => if (scheduler) (if (switching and unit != .failed) settling else failed) else if (kernel == .enabled) (if (stopping and leaving) settling else custom) else .{ .kind = .off, .profile = if (stopping) selected else firstStop(config) },
         .missing => unreachable,
     };
+}
+
+/// A scheduler is attached that none of the profiles runs, for example one
+/// started by hand.
+pub fn foreign(config: Config, ops: []const u8) bool {
+    if (ops.len == 0) return false;
+    for (config.profiles) |profile| if (profile.sched) |sched| if (opsMatches(sched, ops)) return false;
+    return true;
 }
 
 /// The selected scheduler has failed since it was chosen: it is no longer
@@ -355,20 +366,32 @@ test "the environment file round-trips and attributes the running scheduler" {
     // Only the profile's own scheduler counts as running.
     try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .active, .enabled, "", false, false));
     try t.expectEqual(Status{ .kind = .custom }, status(config, env, .active, .enabled, "lavd_1.0.20_x86_64_unknown_linux_gnu", false, false));
-    // While a profile chosen moments ago takes over, the previous scheduler
-    // is still attached or the unit is briefly down; neither is custom or failed.
+    // While a profile chosen moments ago takes over, the previous profile's
+    // scheduler is still attached or the unit is briefly down; neither is
+    // custom or failed.
+    const mixed = try parse(a, "{\"version\":2,\"profiles\":[{\"id\":\"latency\",\"label\":\"Low latency\",\"sched\":\"scx_cosmos\",\"args\":[\"-s\",\"700\",\"-m\",\"performance\",\"-w\"]},{\"id\":\"gaming\",\"label\":\"Gaming\",\"sched\":\"scx_lavd\"}]}");
     const lavd = "lavd_1.0.20_x86_64_unknown_linux_gnu";
-    try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .active, .enabled, lavd, true, false));
-    try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .inactive, .disabled, "", true, false));
-    try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .failed, .disabled, "", true, false));
-    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(config, off, .active, .enabled, lavd, true, false));
-    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(config, off, .deactivating, .enabled, lavd, true, false));
-    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(config, off, .inactive, .enabled, lavd, true, false));
-    try t.expectEqual(Status{ .kind = .off, .profile = 0 }, status(config, off, .inactive, .disabled, "", true, false));
-    // A scheduler started after the file was written is not ours.
-    try t.expectEqual(Status{ .kind = .custom, .profile = 0 }, status(config, off, .active, .enabled, lavd, false, false));
-    // So is one attached while Default is selected and scx.service is off.
-    try t.expectEqual(Status{ .kind = .custom, .profile = 0 }, status(config, off, .inactive, .enabled, lavd, false, false));
+    const mixed_off = parseEnv(try render(a, mixed.profiles[0]));
+    try t.expect(!foreign(mixed, lavd));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 1 }, status(mixed, env, .active, .enabled, lavd, true, false));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 1 }, status(mixed, env, .inactive, .disabled, "", true, false));
+    try t.expectEqual(Status{ .kind = .failed, .profile = 1 }, status(mixed, env, .failed, .disabled, "", true, false));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(mixed, mixed_off, .active, .enabled, lavd, true, false));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(mixed, mixed_off, .deactivating, .enabled, lavd, true, false));
+    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(mixed, mixed_off, .inactive, .enabled, lavd, true, false));
+    try t.expectEqual(Status{ .kind = .off, .profile = 0 }, status(mixed, mixed_off, .inactive, .disabled, "", true, false));
+    // Once the switch is over, a scheduler still attached is not ours.
+    try t.expectEqual(Status{ .kind = .custom, .profile = 0 }, status(mixed, mixed_off, .active, .enabled, lavd, false, false));
+    try t.expectEqual(Status{ .kind = .custom, .profile = 0 }, status(mixed, mixed_off, .inactive, .enabled, lavd, false, false));
+    // A scheduler started by hand is reported at once, even right after a
+    // switch, since no profile could have left it behind; Default stays
+    // selected.
+    const rburst = "rburst_0.1.0_x86_64_unknown_linux_gnu";
+    try t.expect(foreign(mixed, rburst));
+    try t.expect(!foreign(mixed, ""));
+    try t.expectEqual(Status{ .kind = .custom, .profile = 0 }, status(mixed, mixed_off, .inactive, .enabled, rburst, true, false));
+    try t.expectEqual(Status{ .kind = .custom, .profile = 0 }, status(mixed, mixed_off, .active, .enabled, rburst, true, false));
+    try t.expectEqual(Status{ .kind = .custom }, status(mixed, env, .active, .enabled, rburst, true, false));
     // A scheduler that never attaches has failed, unless it was just chosen.
     try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .active, .disabled, "", false, true));
     try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .active, .disabled, "", true, true));
