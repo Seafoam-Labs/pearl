@@ -179,6 +179,18 @@ class EvidenceTests(unittest.TestCase):
         result = env.check(catalog()['test'])
         self.assertTrue(any('disagree' in s for s in result['issues']))
 
+    def test_native_input_suites_run_without_external_input_tools(self):
+        missing = {'wlr-randr', 'wlrctl', 'wtype'}
+        env = Environment(arguments())
+        with patch('test_environment.shutil.which', side_effect=lambda name, **_: None if name in missing else '/usr/bin/' + name):
+            for name in ('test-settings-app', 'test-settings-appearance', 'test-settings-displays'):
+                issues = env.check(catalog()[name])['issues']
+                self.assertFalse(any('Missing executable ' + tool in issue for tool in missing for issue in issues), issues)
+            # Suites that still invoke the external tools must retain that gate.
+            issues = env.check(catalog()['test-surfaces'])['issues']
+            for tool in missing:
+                self.assertTrue(any('Missing executable ' + tool in issue for issue in issues), issues)
+
     def test_fingerprint_tracks_dirty_tests_and_ignores_cache(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -124,6 +124,32 @@ build outputs. A checkout lock prevents concurrent preparation/execution in the
 same tree. Use separate checkouts for independent jobs. Direct Zig commands remain
 available, but do not run them concurrently with the runner in the same checkout.
 
+The `test-settings-displays`, `test-settings-app`, and `test-settings-appearance`
+suites use Aqueous's private output service for display setup and Wayland virtual
+input protocols for real pointer and keyboard events. They do not require
+`wlr-randr`, `wlrctl`, or `wtype`. Screenshot capture still requires `grim` and
+Pillow. Input connects only to the private test session's sockets.
+
+```sh
+python3 scripts/test.py doctor --suite test-settings-displays
+python3 scripts/test.py run --suite test-settings-displays
+```
+
+For a locally built Aqueous candidate, use the direct target after installing
+`tests/runner-requirements.txt` in a virtual environment. The prefix must contain
+matching `aqueous`, `aqueousctl`, and `aqueous-config` binaries and their runtime
+libraries:
+
+```sh
+PEARL_TEST_AQUEOUS_PREFIX=/path/to/aqueous-build \
+PEARL_TEST_AQUEOUS_SOURCE=/path/to/Aqueous \
+zig build test-settings-displays -- --output /tmp/pearl-display-tests
+```
+
+The display suite records `verification.json` and screenshots and tests primary
+origin `(0,0)`, preserved relative positions, drag and keyboard edits, preview
+rollback, and confirmed saves in a private headless desktop.
+
 ## Existing fixtures and offline use
 
 An existing Aqueous Git checkout can supply the pinned source without being

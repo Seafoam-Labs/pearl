@@ -702,7 +702,8 @@
       "zig",
       "native",
       "session",
-      "aqueous"
+      "aqueous",
+      "native-input"
     ],
     "fixture": "production",
     "output": "directory",
@@ -727,7 +728,8 @@
       "zig",
       "native",
       "session",
-      "aqueous"
+      "aqueous",
+      "native-input"
     ],
     "fixture": "production",
     "output": "directory",
@@ -803,7 +805,8 @@
       "zig",
       "native",
       "session",
-      "aqueous"
+      "aqueous",
+      "native-input"
     ],
     "fixture": "production",
     "output": "directory",

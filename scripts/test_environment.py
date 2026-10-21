@@ -146,6 +146,9 @@ class Environment:
                 issues.append(f'Zig {self.version} required; detected {found}. Run prepare for this selection.')
         for cap in sorted(caps):
             for tool in TOOLS.get(cap, []):
+                # These suites use private outputd and virtual input protocols.
+                if 'native-input' in caps and tool in ('wlr-randr', 'wlrctl', 'wtype'):
+                    continue
                 if not shutil.which(tool, path=self.env['PATH']):
                     issues.append(f'Missing executable {tool} ({cap}).')
             for expression in PACKAGES.get(cap, []):
