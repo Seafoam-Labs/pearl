@@ -29,10 +29,19 @@ const Groups = @import("../../desktop/policy.zig").Groups;
 const slideshow_policy = @import("../../config/slideshow_policy.zig");
 const Crop = @import("../../desktop/wallpaper_crop.zig");
 const tr = @import("../../desktop/text.zig").tr;
+const power_presentation = @import("../../services/power_presentation.zig");
 const log = std.log.scoped(.ui);
 const a = std.heap.c_allocator;
 const Rect = policy.Rect;
 const Edge = policy.Edge;
+
+/// Format strings are comptime, so the locale selects between two literals
+/// rather than a runtime string reaching bufPrint.
+fn fmtLocalized(buffer: []u8, comptime en: []const u8, comptime de: []const u8, args: anytype) [:0]const u8 {
+    const locale = glib.getLanguageNames()[0];
+    const german = @import("../i18n.zig").fromLocale(std.mem.span(locale)) == .de;
+    return (if (german) std.fmt.bufPrintZ(buffer, de, args) else std.fmt.bufPrintZ(buffer, en, args)) catch "";
+}
 const Switcher = @import("../../desktop/window_switcher.zig");
 const Kind = enum { switcher, wallpaper, bar, popup, osd, frame, notification };
 const Surface = struct {
@@ -182,6 +191,9 @@ pub const Manager = struct {
     osd_pending: ?Osd.Content = null,
     osd_pending_output: ?*Output = null,
     osd_flush: c_uint = 0,
+    /// The shell-raised low-battery notification, replaced as the level escalates
+    /// and retired once power returns so a stale warning cannot outlive its cause.
+    battery_warning: u32 = 0,
     index: Apps.Index = undefined,
     desktop_directory: ?*DesktopDirectory.Store = null,
     tasks: @import("../../desktop/task_apps.zig").Store = .{},
@@ -792,6 +804,43 @@ pub const Manager = struct {
         // The complete-snapshot observer owns brightness feedback; a failed write
         // changes no sysfs file, so it only ever produces the error text above.
         if (event == .applied and self.power.feedback != .brightness) self.queueOsd("Power service accepted the change");
+        self.batteryAlarm();
+    }
+    /// Low-battery warnings reach both surfaces on purpose: the notification
+    /// persists and stays readable on the lock screen, while the OSD catches an
+    /// unlocked desktop. Only a level actually crossed produces anything.
+    fn batteryAlarm(self: *Manager) void {
+        const level = self.power.takeAlarm();
+        if (self.battery_warning != 0 and self.power.plugged()) {
+            _ = self.session_services.notifications.close(self.battery_warning, 3);
+            self.battery_warning = 0;
+        }
+        const crossed = level orelse return;
+        const critical = crossed == .critical;
+        const summary = switch (crossed) {
+            .low => tr("Low battery", "Niedriger Akkustand"),
+            .very_low => tr("Battery very low", "Akkustand sehr niedrig"),
+            .critical => tr("Critical battery level", "Kritischer Akkustand"),
+        };
+        const percent = if (self.power.percentage_valid) self.power.percentage else null;
+        // An absent estimate stays absent; it is never reported as zero time left.
+        const minutes = @divTrunc(self.power.time_to_empty, 60);
+        var buffer: [512]u8 = undefined;
+        const charge: [:0]const u8 = if (percent) |n|
+            (if (minutes > 0) fmtLocalized(&buffer, "{d:.0}% remaining · about {d} h {d} min left", "Noch {d:.0}% · etwa {d} Std. {d} Min.", .{ n, @divTrunc(self.power.time_to_empty, 3600), @mod(minutes, 60) }) else fmtLocalized(&buffer, "{d:.0}% charge remaining", "Noch {d:.0}% Ladung", .{n}))
+        else if (minutes > 0)
+            fmtLocalized(&buffer, "About {d} h {d} min left", "Noch etwa {d} Std. {d} Min.", .{ @divTrunc(self.power.time_to_empty, 3600), minutes })
+        else
+            "";
+        const advice: [:0]const u8 = if (critical) tr("Connect power now to avoid losing unsaved work.", "Jetzt Strom anschließen, um keine Änderungen zu verlieren.") else "";
+        var detail: [1024]u8 = undefined;
+        const text: [:0]const u8 = if (charge.len != 0 and advice.len != 0)
+            fmtLocalized(&detail, "{s} {s}", "{s} {s}", .{ charge, advice })
+        else if (charge.len != 0) charge else if (advice.len != 0) advice else tr("Charge is running low.", "Der Ladestand ist niedrig.");
+        const notifications = &self.session_services.notifications;
+        self.battery_warning = notifications.warn(summary, text, power_presentation.icon(self.power.battery_state, percent), critical, self.battery_warning) orelse self.battery_warning;
+        var osd: [256]u8 = undefined;
+        self.queueOsd(if (percent) |n| fmtLocalized(&osd, "{s} · {d:.0}%", "{s} · {d:.0}%", .{ summary, n }) else summary);
     }
     fn validBrightness(self: *Manager, brightness: *const Osd.Brightness) bool {
         if (!self.power.brightnessAvailable()) return false;

@@ -11,6 +11,9 @@ pub const Record = struct {
     owner: Text(256) = .{},
     desktop_entry: Text(256) = .{},
     history_only: bool = false,
+    /// Raised by the shell itself. There is no D-Bus peer behind it, so no
+    /// NotificationClosed or ActionInvoked signal may be emitted for it.
+    local: bool = false,
     app: Text(160) = .{},
     summary: Text(256) = .{},
     body: Text(2048) = .{},

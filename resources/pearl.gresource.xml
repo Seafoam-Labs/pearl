@@ -28,6 +28,12 @@
     <file>icons/scalable/actions/pearl-window-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-window-switcher-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-battery-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-battery-empty-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-battery-quarter-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-battery-half-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-battery-three-quarters-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-battery-full-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-battery-charging-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-media-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-notifications-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-edit-copy-symbolic.svg</file>
