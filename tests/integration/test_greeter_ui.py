@@ -52,11 +52,11 @@ def main():
         empty_passwd=session.base/'empty-passwd';empty_passwd.write_text('')
         report['screenshots']=[]
         def key(*keys):session.run(['wtype','-s','120',*keys,'-s','120'])
-        for theme in ('material_dark','material_light','gtk','solid','contain','contrast','small','stale','fingerprint','fingerprint_cancel','accounts-switch','accounts-other','accounts-empty','accounts-disabled'):
+        for theme in ('material_dark','material_light','gtk','solid','contain','contrast','small','stale','fingerprint','fingerprint_cancel','accounts-switch','accounts-other','accounts-empty','accounts-disabled','power'):
             accounts_enabled=theme not in ('contrast','accounts-disabled')
             known_accounts=accounts_enabled and theme!='accounts-empty'
             expected_user='another-user' if theme=='accounts-switch' else 'fixture-user'
-            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':accounts_enabled,'password_first':False,'power':False,'remember_session':theme=='material_light','fingerprint_hint':theme=='fingerprint','font_size':24 if theme=='fingerprint' else 16,'wallpaper':str(wallpaper) if theme in ('material_light','contain') else None,'wallpaper_fit':'contain' if theme=='contain' else 'cover','wallpaper_color':'#123456' if theme in ('solid','contain') else None}))
+            config.write_text(json.dumps({'theme':theme if theme in ('material_dark','material_light','gtk') else 'material_dark','roots':[{'path':str(root),'type':'wayland'}],'default_session':'wayland:pearl.desktop','accounts':accounts_enabled,'password_first':False,'power':theme=='power','remember_session':theme=='material_light','fingerprint_hint':theme=='fingerprint','font_size':24 if theme=='fingerprint' else 16,'wallpaper':str(wallpaper) if theme in ('material_light','contain') else None,'wallpaper_fit':'contain' if theme=='contain' else 'cover','wallpaper_color':'#123456' if theme in ('solid','contain') else None}))
             if theme=='small':session.run(['wlr-randr','--output',primary,'--scale','2'])
             server=socket.socket(socket.AF_UNIX);path=str(session.base/f'greetd-{theme}.sock');server.bind(path);server.listen();server.settimeout(args.idle_seconds+30)
             errors=[];requests=[];info_ack=threading.Event();allow_success=threading.Event();scan_ready=threading.Event();continue_scan=threading.Event()
@@ -100,7 +100,7 @@ def main():
                         send(conn,{'type':'success'})
                 except Exception as e:errors.append(e)
             thread=threading.Thread(target=daemon,daemon=True);thread.start()
-            child=session.child('greeter-'+theme,[args.greeter.resolve()],GREETD_SOCK=path,PEARL_TEST_GREETER_CONFIG=str(config),PEARL_TEST_GREETER_STATE=str(session.base/'selections.json'),PEARL_TEST_GREETER_PASSWD=str(empty_passwd if theme=='accounts-empty' else passwd),GTK_A11Y='test',G_DEBUG='fatal-warnings')
+            child=session.child('greeter-'+theme,[args.greeter.resolve()],GREETD_SOCK=path,PEARL_TEST_GREETER_CONFIG=str(config),PEARL_TEST_GREETER_STATE=str(session.base/'selections.json'),PEARL_TEST_GREETER_PASSWD=str(empty_passwd if theme=='accounts-empty' else passwd),GTK_A11Y='test',G_DEBUG='fatal-warnings',**({'PEARL_TEST_GREETER_POWER':'1'} if theme=='power' else {}))
             child.expect('event=greeter-ready')
             if known_accounts:
                 child.expect('event=greeter-account count=2 selected=0 manual=false')
@@ -129,8 +129,11 @@ def main():
                 assert after['pss_bytes']<=150*1024*1024
                 assert (after['cpu_ticks']-before['cpu_ticks'])/os.sysconf('SC_CLK_TCK')/args.idle_seconds<.005,report['idle']
             if theme=='material_light':
-                session.run(['wlr-randr','--output',secondary,'--off']);session.run(['wlr-randr','--output',secondary,'--on'])
-                time.sleep(.3);capture(session,'greeter-wallpaper-hotplug',secondary)
+                session.run(['wlr-randr','--output',secondary,'--off'])
+                wait_for(lambda: secondary not in ipc.outputs())
+                session.run(['wlr-randr','--output',secondary,'--on'])
+                wait_for(lambda: secondary in ipc.outputs())
+                capture(session,'greeter-wallpaper-hotplug',secondary)
                 from PIL import Image
                 assert Image.open(session.output/'greeter-wallpaper-hotplug.png').convert('RGB').getpixel((0,0))==(28,26,34)
             time.sleep(.3);capture(session,'greeter-'+theme,primary)
@@ -141,6 +144,19 @@ def main():
                     pixels=screenshot.convert('RGB')
                     assert pixels.getpixel((0,0))==(18,52,86)
                     if theme=='contain':assert pixels.getpixel((pixels.width//2,0))==(28,26,34)
+            if theme=='power':
+                # The cluster hosts restart/power off inline, mirroring the lock
+                # (a lock surface cannot map a popup). Never activate Confirm:
+                # logind would act on this machine.
+                capture(session,'greeter-power-cluster',primary)
+                report['screenshots'].append('session/greeter-power-cluster.png')
+                key(*(['-k','Tab']*6),'-k','space')
+                child.expect('event=greeter-power asking=reboot')
+                capture(session,'greeter-power-confirm',primary)
+                report['screenshots'].append('session/greeter-power-confirm.png')
+                key('-k','Escape')
+                child.expect('event=greeter-power asking=none')
+                report['checks'].append('power cluster confirms inline and escape backs out')
             if known_accounts and theme!='accounts-other':
                 # Account -> desktop -> refresh -> Sign in. No username typing.
                 key('-k','Tab','-k','Tab','-k','Tab','-k','Return')
@@ -159,10 +175,11 @@ def main():
             if theme=='material_dark':
                 # Secondary monitor changes cannot create another prompt controller.
                 key('discard-on-output-loss')
-                session.run(['wlr-randr','--output',primary,'--off']);time.sleep(.3)
+                session.run(['wlr-randr','--output',primary,'--off'])
+                wait_for(lambda: primary not in ipc.outputs())
                 # The card moves to the remaining monitor and clears the unsent response.
                 session.run(['wlr-randr','--output',primary,'--on'])
-                time.sleep(.3)
+                wait_for(lambda: primary in ipc.outputs())
                 capture(session,'greeter-secret-prompt',primary)
             if theme!='fingerprint':
                 if known_accounts:

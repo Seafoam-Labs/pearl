@@ -63,6 +63,10 @@ def main():
             session.env["PEARL_TEST_PAM_DIR"] = str(pam_dir)
             session.env["GTK_A11Y"] = "test"
             session.env["G_DEBUG"] = "fatal-warnings"
+            # The fixture session is not a logind session, so advertise the power
+            # capabilities; the locker still has no bus connection, so a request
+            # can never reach logind.
+            session.env["PEARL_TEST_LOCK_POWER"] = "1"
             ipc = IPC(session)
             outputs = list(ipc.outputs().values())
             primary, secondary = outputs[0]["name"], outputs[1]["name"]
@@ -226,6 +230,23 @@ def main():
             wait_for(lambda: ui(child).get("auth") == "false")
             stack()
             key("-k", "Return")
+            unlock(child)
+
+            # A lock surface cannot map a popup, so restart and power off live in
+            # the corner cluster and confirm inline. Never activate Confirm here:
+            # logind is the real one and would act on this machine.
+            child = start("power-cluster")
+            waiting(child, True)
+            assert ui(child).get("asking") == "none"
+            capture(session, "lock-power-cluster", primary)
+            key(*(["-k", "Tab"] * 3), "-k", "space")
+            wait_for(lambda: ui(child).get("asking") == "reboot")
+            assert locked() and child.proc.poll() is None
+            capture(session, "lock-power-confirm", primary)
+            key("-k", "Escape")
+            wait_for(lambda: ui(child).get("asking") == "none")
+            assert not any("event=lock-power" in line for line in child.lines)
+            checks["power-cluster-confirms-inline-and-escape-backs-out"] = True
             unlock(child)
 
             child = start("output-soak")

@@ -67,8 +67,7 @@ const Screen = struct {
     cluster: *gtk.Box,
     larger_toggle: *gtk.ToggleButton,
     contrast_toggle: *gtk.ToggleButton,
-    power_button: *gtk.Button,
-    power_pop: *gtk.Popover,
+    power_prompt: *gtk.Label,
     power_menu_box: *gtk.Box,
     power_confirm_box: *gtk.Box,
     job_generation: u64 = 0,
@@ -248,10 +247,18 @@ const Screen = struct {
         self.updateReadiness();
         self.cancel_button.as(gtk.Widget).setVisible(@intFromBool(c.state != .idle or self.job != null));
         self.cancel_button.as(gtk.Widget).setSensitive(@intFromBool((c.state != .idle or self.job != null) and c.state != .cancelling and !c.start_submitted));
-        self.reboot_button.as(gtk.Widget).setSensitive(@intFromBool(self.power.reboot and !c.start_submitted and self.pending_power == null));
-        self.off_button.as(gtk.Widget).setSensitive(@intFromBool(self.power.off and !c.start_submitted and self.pending_power == null));
-        self.confirm.as(gtk.Widget).setVisible(@intFromBool(self.pending_power != null));
-        self.cancel_power.as(gtk.Widget).setVisible(@intFromBool(self.pending_power != null));
+        // The cluster hosts the power menu inline, mirroring the lock's two
+        // rows: the greeter's popover worked, but both surfaces must read the
+        // same, and a lock surface cannot map a popup at all.
+        const asking = self.pending_power != null;
+        if (self.pending_power) |restarting| {
+            self.power_prompt.setText(if (restarting) "Restart?" else "Power off?");
+            if (restarting) self.confirm.as(gtk.Widget).removeCssClass("pearl-destructive") else self.confirm.as(gtk.Widget).addCssClass("pearl-destructive");
+        }
+        self.reboot_button.as(gtk.Widget).setSensitive(@intFromBool(self.power.reboot and !c.start_submitted and !asking));
+        self.off_button.as(gtk.Widget).setSensitive(@intFromBool(self.power.off and !c.start_submitted and !asking));
+        self.power_menu_box.as(gtk.Widget).setVisible(@intFromBool(self.config.power and !asking));
+        self.power_confirm_box.as(gtk.Widget).setVisible(@intFromBool(asking));
         if (options.test_hooks) {
             std.debug.assert(object.ext.cast(gtk.PasswordEntryBuffer, self.entry.getBuffer()) != null);
             if (idle) {
@@ -349,6 +356,12 @@ const Screen = struct {
         const user = std.mem.span(self.username.as(gtk.Editable).getText());
         const manual = self.username_field.as(gtk.Widget).getVisible() != 0;
         _ = (if (manual and (user.len == 0 or !self.config.password_first)) self.username.as(gtk.Widget) else if (self.config.password_first) self.entry.as(gtk.Widget) else self.account_chooser.as(gtk.Widget)).grabFocus();
+    }
+    /// Where focus belongs once a power confirm row has closed: the live prompt
+    /// if one is up, otherwise the idle policy's target.
+    fn focusIdle(self: *Screen) void {
+        const c = &self.client.controller;
+        if (c.needsInput()) _ = self.entry.as(gtk.Widget).grabFocus() else self.focusAccount();
     }
     fn selectPreferredSession(self: *Screen) void {
         const catalog = if (self.catalog) |*value| value else return;
@@ -452,7 +465,9 @@ const Screen = struct {
             if (self.pending_power != null) {
                 self.pending_power = null;
                 self.confirmed_power = false;
+                if (options.test_hooks) log.info("event=greeter-power asking=none", .{});
                 self.update();
+                self.focusIdle();
             } else self.cancelAttempt();
             return 1;
         }
@@ -478,10 +493,12 @@ const Screen = struct {
         if (self.client.controller.start_submitted or self.job != null) return;
         self.clear();
         self.pending_power = restarting;
-        self.confirm.setLabel(if (restarting) "Confirm restart" else "Confirm power off");
-        self.power_menu_box.as(gtk.Widget).setVisible(0);
-        self.power_confirm_box.as(gtk.Widget).setVisible(1);
         self.update();
+        if (options.test_hooks) log.info("event=greeter-power asking={s}", .{if (restarting) "reboot" else "off"});
+        // The icon row the focus sat on just vanished, and the card's inputs are
+        // insensitive while asking: park focus on Cancel, the safe default for a
+        // destructive two-step, so a typed space can never confirm the action.
+        _ = self.cancel_power.as(gtk.Widget).grabFocus();
     }
     fn confirmed(_: *gtk.Button, self: *Screen) callconv(.c) void {
         if (self.pending_power == null) return;
@@ -491,23 +508,16 @@ const Screen = struct {
     fn cancelPower(_: *gtk.Button, self: *Screen) callconv(.c) void {
         self.pending_power = null;
         self.confirmed_power = false;
-        self.power_confirm_box.as(gtk.Widget).setVisible(0);
-        self.power_menu_box.as(gtk.Widget).setVisible(1);
+        if (options.test_hooks) log.info("event=greeter-power asking=none", .{});
         self.update();
+        self.focusIdle();
     }
     fn performPower(self: *Screen) void {
         const action = self.pending_power orelse return;
-        self.power_pop.popdown();
         self.pending_power = null;
         self.confirmed_power = false;
         self.power.request(action) catch self.setMessage("Power action was denied or is unavailable.");
         self.update();
-    }
-    fn powerOpened(_: *gtk.Button, self: *Screen) callconv(.c) void {
-        if (self.client.controller.start_submitted or self.job != null) return;
-        self.power_menu_box.as(gtk.Widget).setVisible(1);
-        self.power_confirm_box.as(gtk.Widget).setVisible(0);
-        self.power_pop.popup();
     }
     fn largerToggled(button: *gtk.ToggleButton, self: *Screen) callconv(.c) void {
         if (button.getActive() != 0) {
@@ -1169,40 +1179,30 @@ pub fn run() !void {
     w.name(reader.as(gtk.Widget), "Screen reader");
     reader.as(gtk.Widget).setVisible(@intFromBool(config.screen_reader));
     cluster.append(reader.as(gtk.Widget));
-    const power_button = gtk.Button.new();
-    power_button.setChild(w.icon("pearl-power-symbolic").as(gtk.Widget));
-    power_button.as(gtk.Widget).addCssClass("pearl-icon");
-    power_button.as(gtk.Widget).setTooltipText("Restart or power off");
-    w.name(power_button.as(gtk.Widget), "Restart or power off");
-    power_button.as(gtk.Widget).setVisible(@intFromBool(config.power));
-    cluster.append(power_button.as(gtk.Widget));
-    const power_pop = gtk.Popover.new();
-    power_pop.as(gtk.Widget).setParent(power_button.as(gtk.Widget));
-    power_pop.setHasArrow(0);
-    power_pop.setPosition(.top);
-    const power_menu_box = w.column(4);
-    power_menu_box.as(gtk.Widget).setSizeRequest(168, -1);
-    const reboot = gtk.Button.newWithLabel("Restart");
-    reboot.as(gtk.Widget).addCssClass("pearl-menu-item");
-    const off = gtk.Button.newWithLabel("Power off");
-    off.as(gtk.Widget).addCssClass("pearl-menu-item");
-    off.as(gtk.Widget).addCssClass("pearl-destructive");
+    // Inline power rows, identical to the lock's corner cluster: the greeter's
+    // popover used to work here, but the two surfaces must read the same and a
+    // lock surface cannot map a popup at all.
+    const power_menu_box = w.row(2);
+    const reboot = w.iconButton("pearl-system-reboot-symbolic", "Restart");
+    const off = w.iconButton("pearl-system-shutdown-symbolic", "Power off");
     power_menu_box.append(reboot.as(gtk.Widget));
     power_menu_box.append(off.as(gtk.Widget));
+    power_menu_box.as(gtk.Widget).setVisible(@intFromBool(config.power));
+    cluster.append(power_menu_box.as(gtk.Widget));
     const power_confirm_box = w.row(6);
+    const power_prompt = gtk.Label.new("Restart?");
+    power_prompt.as(gtk.Widget).addCssClass("pearl-secondary");
+    power_prompt.as(gtk.Widget).setMarginStart(10);
+    power_prompt.as(gtk.Widget).setMarginEnd(4);
+    power_confirm_box.append(power_prompt.as(gtk.Widget));
     const confirm = gtk.Button.newWithLabel("Confirm");
     confirm.as(gtk.Widget).addCssClass("pearl-primary");
-    confirm.as(gtk.Widget).setHexpand(1);
     const cancel_power = gtk.Button.newWithLabel("Cancel");
-    cancel_power.as(gtk.Widget).setHexpand(1);
     power_confirm_box.append(confirm.as(gtk.Widget));
     power_confirm_box.append(cancel_power.as(gtk.Widget));
     power_confirm_box.as(gtk.Widget).setVisible(0);
-    const power_content = w.column(6);
-    power_content.append(power_menu_box.as(gtk.Widget));
-    power_content.append(power_confirm_box.as(gtk.Widget));
-    power_pop.setChild(power_content.as(gtk.Widget));
-    var self: Screen = .{ .config = config, .loop = glib.MainLoop.new(null, 0), .display = display, .column = column, .panel = panel, .username = username, .username_field = username_field, .entry = entry, .entry_label = entry_label, .password_hint = password_hint, .chooser = chooser, .account_chooser = account, .message = message, .caps = caps, .button = button, .cancel_button = cancel, .refresh_button = refresh, .reboot_button = reboot, .off_button = off, .confirm = confirm, .cancel_power = cancel_power, .clock = clock, .date = date, .clockbox = clockbox, .title_label = title_label, .session_caption = session_caption, .cluster = cluster, .larger_toggle = larger_toggle, .contrast_toggle = contrast_toggle, .power_button = power_button, .power_pop = power_pop, .power_menu_box = power_menu_box, .power_confirm_box = power_confirm_box };
+    cluster.append(power_confirm_box.as(gtk.Widget));
+    var self: Screen = .{ .config = config, .loop = glib.MainLoop.new(null, 0), .display = display, .column = column, .panel = panel, .username = username, .username_field = username_field, .entry = entry, .entry_label = entry_label, .password_hint = password_hint, .chooser = chooser, .account_chooser = account, .message = message, .caps = caps, .button = button, .cancel_button = cancel, .refresh_button = refresh, .reboot_button = reboot, .off_button = off, .confirm = confirm, .cancel_power = cancel_power, .clock = clock, .date = date, .clockbox = clockbox, .title_label = title_label, .session_caption = session_caption, .cluster = cluster, .larger_toggle = larger_toggle, .contrast_toggle = contrast_toggle, .power_prompt = power_prompt, .power_menu_box = power_menu_box, .power_confirm_box = power_confirm_box };
     self.reduced_motion = config.reduced_motion;
     self.client = .{ .path = std.mem.span(socket), .context = &self, .changed = Screen.changed, .timeout_ms = @as(c_uint, config.auth_timeout_seconds) * 1000 };
     self.client.init();
@@ -1222,7 +1222,6 @@ pub fn run() !void {
     _ = gtk.ToggleButton.signals.toggled.connect(larger_toggle, *Screen, Screen.largerToggled, &self, .{});
     _ = gtk.ToggleButton.signals.toggled.connect(contrast_toggle, *Screen, Screen.contrastToggled, &self, .{});
     _ = gtk.Button.signals.clicked.connect(reader, *Screen, Screen.reader, &self, .{});
-    _ = gtk.Button.signals.clicked.connect(power_button, *Screen, Screen.powerOpened, &self, .{});
     if (config.high_contrast) contrast_toggle.setActive(@intFromBool(config.high_contrast));
     _ = object.Object.signals.notify.connect(chooser.as(object.Object), *Screen, Screen.selected, &self, .{ .detail = "selected" });
     _ = object.Object.signals.notify.connect(account.as(object.Object), *Screen, Screen.selectedAccount, &self, .{ .detail = "selected" });

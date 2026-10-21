@@ -3,6 +3,7 @@ const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
 const object = @import("gobject2");
+const options = @import("build_options");
 pub const Power = struct {
     bus: ?*gio.DBusConnection = null,
     reboot: bool = false,
@@ -13,6 +14,16 @@ pub const Power = struct {
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
     pub fn init(self: *Power) void {
+        // A private fixture session is not a logind session, so every capability
+        // resolves to "no" and the cluster is inert there. Advertise them on
+        // request, but stay off the bus: request() must keep failing so a suite
+        // can never reboot or power off the machine it runs on.
+        if (options.test_hooks and glib.getenv("PEARL_TEST_GREETER_POWER") != null) {
+            self.reboot = true;
+            self.off = true;
+            self.changed(self.context);
+            return;
+        }
         gio.busGet(.system, null, connected, self);
     }
     fn connected(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {

@@ -212,8 +212,9 @@ def main():
                 if mode == 'password':
                     # A pending password survives moving the single card between outputs.
                     session.run(['wlr-randr', '--output', primary, '--off'])
+                    wait_for(lambda: primary not in ipc.outputs())
                     session.run(['wlr-randr', '--output', primary, '--on'])
-                    time.sleep(.2)
+                    wait_for(lambda: primary in ipc.outputs())
                 if mode in ('cancel', 'timeout'):
                     if mode == 'cancel': key('-k', 'Escape')
                     continue_auth.set()
