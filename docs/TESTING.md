@@ -111,6 +111,14 @@ explained exclusions for historical scripts, helpers, and manual measurements.
 Missing prerequisites for a selected suite produce a blocked result and a nonzero
 exit code. Optional groups are not silently skipped when selected.
 
+The extended suites `test-agent-launcher`, `test-agent-benchmark`, and
+`test-agent-benchmark-settings` require an existing managed model. Set
+`PEARL_TEST_AGENT_MODEL=/absolute/path/to/LFM2.5-350M-Q4_K_M.gguf` before
+running them. The runner checks that the file exists and passes it as `--model`;
+the harness verifies the managed model during execution. Preparation does not
+download inference models. Manual model compatibility and SMB/SFTP qualification
+scripts appear with their required inputs in `list --json` exclusions.
+
 ```sh
 python3 scripts/test.py list --group integration
 python3 scripts/test.py run --suite test-settings-app

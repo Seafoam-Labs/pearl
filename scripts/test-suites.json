@@ -2629,5 +2629,417 @@
     ],
     "args": [],
     "options": []
+  },
+  {
+    "id": "test-agent",
+    "description": "Test assistant policy, tools, providers and native extraction",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-agent"
+    ],
+    "capabilities": [
+      "zig",
+      "native"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-capture-picker",
+    "description": "Test capture source parsing and byte preservation",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-capture-picker"
+    ],
+    "capabilities": [
+      "zig"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-file-chooser-state",
+    "description": "Test private chooser preference persistence",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-file-chooser-state"
+    ],
+    "capabilities": [
+      "zig",
+      "glib"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-file-previews",
+    "description": "Test shared thumbnail policy and helper protocol",
+    "groups": [
+      "native"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-file-previews"
+    ],
+    "capabilities": [
+      "zig"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-portals",
+    "description": "Run portal contracts, shared chooser, print worker and staging checks in isolated sessions",
+    "groups": [
+      "extended"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-portals"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "none",
+    "timeout": 1800,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-appearance-redesign",
+    "description": "Verify Appearance disclosures, preview isolation and responsive native controls",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-appearance-redesign"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_appearance_redesign.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-assistant-layout",
+    "description": "Verify Assistant disclosures, draft controls and responsive presentation",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-assistant-layout"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_assistant_layout.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-agent-model-settings",
+    "description": "Verify model choices and resource settings through the native Settings draft",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-agent-model-settings"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_agent_model_settings.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-network-ui",
+    "description": "Verify native Network views, grouping, radio state and responsive layouts on private services",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-network-ui"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_network_ui.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-plugins-layout",
+    "description": "Verify native plugin reviews, pagination and responsive layout in a private session",
+    "groups": [
+      "plugins"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-plugins-layout"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "plugins"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_plugins_layout.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-agent-launcher",
+    "description": "Verify launcher handoff and Settings controls with private search fixtures",
+    "groups": [
+      "extended"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-agent-launcher"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "agent-model"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "tests/integration/test_agent_launcher.py"
+    ],
+    "args": [
+      "--model",
+      "{agent_model}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-agent-benchmark-settings",
+    "description": "Verify native benchmark comparison and draft adoption",
+    "groups": [
+      "extended"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-agent-benchmark-settings"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "agent-model"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "tests/integration/test_agent_benchmark_settings.py"
+    ],
+    "args": [
+      "--model",
+      "{agent_model}"
+    ],
+    "options": []
+  },
+  {
+    "id": "test-agent-benchmark",
+    "description": "Verify local benchmark lifecycle, failures and persistence with an existing managed model",
+    "groups": [
+      "extended"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-agent-benchmark"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "agent-model"
+    ],
+    "fixture": null,
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "tests/integration/test_agent_benchmark.py"
+    ],
+    "args": [
+      "--model",
+      "{agent_model}"
+    ],
+    "options": []
+  },
+  {
+    "id": "phyto:integration-themes",
+    "description": "Verify live committed Pearl appearance in a private session",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/phyto",
+    "targets": [
+      "integration-themes"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/phyto/tests/themes.py"
+    ],
+    "args": [],
+    "options": [],
+    "before": [
+      [
+        "{zig}",
+        "build",
+        "--build-file",
+        "{root}/build.zig",
+        "build-shell",
+        "-Doptimize=ReleaseSafe"
+      ]
+    ]
+  },
+  {
+    "id": "dome:integration-themes",
+    "description": "Verify live committed Pearl appearance in a private session",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/dome",
+    "targets": [
+      "integration-themes"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/dome/tests/themes.py"
+    ],
+    "args": [],
+    "options": [],
+    "before": [
+      [
+        "{zig}",
+        "build",
+        "--build-file",
+        "{root}/build.zig",
+        "build-shell",
+        "-Doptimize=ReleaseSafe"
+      ]
+    ]
+  },
+  {
+    "id": "phyto:test-network",
+    "description": "Test saved connections and real GVfs mounts in an isolated session",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/phyto",
+    "targets": [
+      "test-network"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "gvfs"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/phyto/tests/network_native.py"
+    ],
+    "args": [],
+    "options": []
   }
 ]
