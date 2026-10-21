@@ -1,4 +1,5 @@
-//! The scheduling flyout opened from the bar widget. Each button applies an
+//! The scheduling flyout opened from the bar widget: a list of profiles with
+//! their descriptions, the selected one checked. Each row applies an
 //! administrator-defined scx.service command line from the profile file.
 const std = @import("std");
 const gtk = @import("gtk4");
@@ -18,9 +19,10 @@ pub const View = struct {
     /// Ids of the buttons, in order, for the profiles shown when the card opened.
     ids: []const []const u8 = &.{},
     status: *gtk.Label,
-    description: *gtk.Label,
-    message: *gtk.Label,
+    /// What went wrong, under the status: a fallback to Default or an error.
+    note: *gtk.Label,
     buttons: []*gtk.Button = &.{},
+    checks: []*gtk.Image = &.{},
     choices: []Choice = &.{},
     connections: std.ArrayList(Connection) = .empty,
     const Choice = struct { view: *View, index: usize };
@@ -32,7 +34,7 @@ pub const View = struct {
         if (!service.configured()) return error.NoProfiles;
         const self = try a.create(View);
         errdefer a.destroy(self);
-        self.* = .{ .service = service, .status = undefined, .description = undefined, .message = undefined };
+        self.* = .{ .service = service, .status = undefined, .note = undefined };
         errdefer self.arena.deinit();
         const alloc = self.arena.allocator();
         const card = w.card();
@@ -41,32 +43,39 @@ pub const View = struct {
         self.status = w.label("", null);
         self.status.setWrap(1);
         card.append(self.status.as(gtk.Widget));
-        // Status first, then the choices, then text about the selection.
-        self.description = w.label("", "pearl-secondary");
-        self.description.setWrap(1);
+        self.note = w.label("", "pearl-secondary");
+        card.append(self.note.as(gtk.Widget));
+        // Everything about the state goes above the profiles.
         if (service.config) |config| {
             const ids = try alloc.alloc([]const u8, config.profiles.len);
             self.buttons = try alloc.alloc(*gtk.Button, config.profiles.len);
+            self.checks = try alloc.alloc(*gtk.Image, config.profiles.len);
             self.choices = try alloc.alloc(Choice, config.profiles.len);
-            const box = w.flow(3);
-            card.append(box.as(gtk.Widget));
-            for (config.profiles, ids, self.buttons, self.choices, 0..) |profile, *id, *button, *choice, i| {
+            const list = w.column(2);
+            card.append(list.as(gtk.Widget));
+            for (config.profiles, ids, self.buttons, self.checks, self.choices, 0..) |profile, *id, *button, *check, *choice, i| {
                 id.* = try alloc.dupe(u8, profile.id);
-                button.* = w.wrappingButton(try alloc.dupeZ(u8, profile.label));
-                button.*.as(gtk.Widget).setHexpand(1);
-                button.*.as(gtk.Widget).addCssClass("pearl-pill");
-                if (profile.description.len > 0) button.*.as(gtk.Widget).setTooltipText(try alloc.dupeZ(u8, profile.description));
+                const labels = w.column(2);
+                labels.append(w.label(try alloc.dupeZ(u8, profile.label), "pearl-sched-name").as(gtk.Widget));
+                if (profile.description.len > 0) labels.append(w.label(try alloc.dupeZ(u8, profile.description), "pearl-secondary").as(gtk.Widget));
+                check.* = w.icon("pearl-emblem-ok-symbolic");
+                check.*.setPixelSize(16);
+                check.*.as(gtk.Widget).setValign(.center);
+                const line = w.row(12);
+                line.append(labels.as(gtk.Widget));
+                line.append(check.*.as(gtk.Widget));
+                button.* = gtk.Button.new();
+                button.*.setChild(line.as(gtk.Widget));
+                button.*.as(gtk.Widget).addCssClass("pearl-menu-item");
+                button.*.as(gtk.Widget).addCssClass("pearl-sched-row");
+                w.name(button.*.as(gtk.Widget), try alloc.dupeZ(u8, profile.label));
                 focus_state.tag(button.*.as(gtk.Widget), "sched-profile:{s}", .{profile.id});
                 choice.* = .{ .view = self, .index = i };
-                box.append(button.*.as(gtk.Widget));
+                list.append(button.*.as(gtk.Widget));
                 try self.connections.append(a, .{ .object = button.*.as(object.Object), .id = gtk.Button.signals.clicked.connect(button.*, *Choice, clicked, choice, .{}) });
             }
             self.ids = ids;
         }
-        card.append(self.description.as(gtk.Widget));
-        self.message = w.label("", "pearl-secondary");
-        self.message.setWrap(1);
-        card.append(self.message.as(gtk.Widget));
         self.update();
         return self;
     }
@@ -84,26 +93,28 @@ pub const View = struct {
         const config = service.config;
         const profile: ?p.Profile = if (config) |c| if (service.status.profile) |i| c.profiles[i] else null else null;
         self.status.setText(service.describe(&buffer, std.mem.eql(u8, tr("en", "de"), "de")));
-        self.description.setText(if (profile) |value| if (service.status.kind == .running or service.status.kind == .off) std.fmt.bufPrintZ(&buffer, "{s}", .{value.description}) catch "" else "" else "");
-        self.description.as(gtk.Widget).setVisible(@intFromBool(self.description.getText()[0] != 0));
         const usable = service.enabled and service.applying == null and service.status.kind != .unavailable;
-        for (self.buttons, self.ids) |button, id| {
-            const current = if (profile) |value| std.mem.eql(u8, value.id, id) and (service.status.kind == .running or service.status.kind == .off) else false;
-            if (current) button.as(gtk.Widget).addCssClass("pearl-selected") else button.as(gtk.Widget).removeCssClass("pearl-selected");
-            button.as(gtk.Widget).setSensitive(@intFromBool(usable and !current));
+        for (self.buttons, self.checks, self.ids) |button, check, id| {
+            // Default stays selected while a scheduler outside the profiles runs.
+            const current = if (profile) |value| std.mem.eql(u8, value.id, id) and (service.status.kind == .running or service.status.kind == .off or service.status.kind == .custom) else false;
+            if (current) button.as(gtk.Widget).addCssClass("pearl-sched-current") else button.as(gtk.Widget).removeCssClass("pearl-sched-current");
+            check.as(gtk.Widget).setOpacity(if (current) 1 else 0);
+            button.as(gtk.Widget).setSensitive(@intFromBool(usable));
         }
-        var message: [600]u8 = undefined;
-        self.message.setText(if (service.applying != null) tr("Applying profile...", "Profil wird angewendet...") else if (service.err) |err| std.fmt.bufPrintZ(&message, "{s}", .{err}) catch "" else "");
-        self.message.as(gtk.Widget).setVisible(@intFromBool(self.message.getText()[0] != 0));
+        var note: [600]u8 = undefined;
+        self.note.setText(if (service.applying != null) "" else if (service.err) |err| std.fmt.bufPrintZ(&note, "{s}", .{err}) catch "" else service.describeNotice(&note, std.mem.eql(u8, tr("en", "de"), "de")));
+        self.note.as(gtk.Widget).setVisible(@intFromBool(self.note.getText()[0] != 0));
     }
 
     fn clicked(_: *gtk.Button, choice: *Choice) callconv(.c) void {
         const self = choice.view;
         const id = self.ids[choice.index];
+        // Choosing the profile already in effect does not restart it.
+        if (choice.view.checks[choice.index].as(gtk.Widget).getOpacity() > 0) return;
         self.service.apply(id) catch |err| {
             log.warn("event=sched-profile-select profile={s} result={s}", .{ id, @errorName(err) });
-            self.message.setText(if (err == error.Busy) tr("Another profile is being applied.", "Ein anderes Profil wird gerade angewendet.") else tr("This profile cannot be applied right now.", "Dieses Profil kann gerade nicht angewendet werden."));
-            self.message.as(gtk.Widget).setVisible(1);
+            self.note.setText(if (err == error.Busy) tr("Another profile is being applied.", "Ein anderes Profil wird gerade angewendet.") else tr("This profile cannot be applied right now.", "Dieses Profil kann gerade nicht angewendet werden."));
+            self.note.as(gtk.Widget).setVisible(1);
             return;
         };
         self.update();
