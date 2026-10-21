@@ -278,7 +278,9 @@ pub fn status(config: Config, env: Env, unit: Unit, kernel: Kernel, ops: []const
         .activating, .deactivating => if (scheduler or (stopping and leaving)) settling else custom,
         // A selected scheduler that is no longer running has failed, whether
         // systemd marked the unit failed or the scheduler exited cleanly.
-        .failed, .inactive, .unknown => if (scheduler) (if (switching and unit != .failed) settling else failed) else if (kernel == .enabled) (if (stopping and leaving) settling else custom) else .{ .kind = .off, .profile = if (stopping) selected else firstStop(config) },
+        // With the unit down, an attached scheduler is not ours: schedulers
+        // unregister before their process exits.
+        .failed, .inactive, .unknown => if (scheduler) (if (switching and unit != .failed) settling else failed) else if (kernel == .enabled) custom else .{ .kind = .off, .profile = if (stopping) selected else firstStop(config) },
         .missing => unreachable,
     };
 }
@@ -388,7 +390,10 @@ test "the environment file round-trips and attributes the running scheduler" {
     try t.expectEqual(Status{ .kind = .failed, .profile = 1 }, status(mixed, env, .failed, .disabled, "", true, false));
     try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(mixed, mixed_off, .active, .enabled, lavd, true, false));
     try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(mixed, mixed_off, .deactivating, .enabled, lavd, true, false));
-    try t.expectEqual(Status{ .kind = .starting, .profile = 0 }, status(mixed, mixed_off, .inactive, .enabled, lavd, true, false));
+    // Once the unit is down, even a profile's own scheduler attached by hand
+    // is reported at once.
+    try t.expectEqual(Status{ .kind = .custom, .profile = 0 }, status(mixed, mixed_off, .inactive, .enabled, lavd, true, false));
+    try t.expectEqual(Status{ .kind = .custom, .profile = 0 }, status(mixed, mixed_off, .failed, .enabled, lavd, true, false));
     try t.expectEqual(Status{ .kind = .off, .profile = 0 }, status(mixed, mixed_off, .inactive, .disabled, "", true, false));
     // Once the switch is over, a scheduler still attached is not ours.
     try t.expectEqual(Status{ .kind = .custom, .profile = 0 }, status(mixed, mixed_off, .active, .enabled, lavd, false, false));
