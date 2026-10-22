@@ -194,6 +194,18 @@ def main():
             assert any(r['event']=='authentication' and r['outcome']=='cancelled' for r in records())
             command(begin=True,unsupported=True);wait(lambda v:not v['authentication']['pending'])
             checks['authority-identities-cancellation-and-unsupported-identity']=True
+            # The prompt must spawn on the output the seat is on — where the
+            # focused window lives — not on whatever output the compositor
+            # defaults an unplaced layer surface to. Pre-fix there is no
+            # monitor= field at all, so a regression fails the wait below.
+            seat=next(e for e in ipc.state() if e['kind']=='seat')
+            expected=next(o for o in ipc.outputs().values() if o['id']==seat['output'])['name']
+            command(begin=True);wait(lambda v:v['authentication']['pending'])
+            key('-k','Tab')
+            wait_for(lambda: any('event=activity-auth-presented monitor='+expected in line for line in pearl.lines))
+            time.sleep(.3);capture(s,'polkit-focused-output',expected)
+            command(cancel=True);wait(lambda v:not v['authentication']['pending'])
+            checks['polkit-prompt-spawns-on-the-focused-output']=True
             command(begin=True);wait(lambda v:v['authentication']['pending'])
             command(restart='org.freedesktop.PolicyKit1');wait(lambda v:v['authentication']['registered'] and not v['authentication']['pending'])
             command(begin=True);wait(lambda v:v['authentication']['pending']);key('-k','Escape');wait(lambda v:not v['authentication']['pending'])

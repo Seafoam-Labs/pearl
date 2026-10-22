@@ -263,7 +263,7 @@ pub const Manager = struct {
         self.night_light.configure(self.preferences.prefs().night_light);
         self.audio.start();
         self.lifecycle = .{ .app = self.app.as(gio.Application), .display = self.display, .client = self.client, .context = self, .changed = lifecycleChanged, .request_logout = logoutRequested, .activity_broker = self.activity, .power = &self.power };
-        self.auth = .{ .app = self.app.as(gio.Application), .context = self, .changed = authChanged, .activity_broker = self.activity };
+        self.auth = .{ .app = self.app.as(gio.Application), .context = self, .changed = authChanged, .activity_broker = self.activity, .focused_monitor = authMonitor };
         self.auth.start();
         try self.lifecycle.start();
         self.power.start();
@@ -556,6 +556,16 @@ pub const Manager = struct {
         self.auth.setSession(self.lifecycle.session_id.slice(), self.lifecycle.gate.available and self.lifecycle.gate.active and !self.lifecycle.gate.locked and !self.lifecycle.gate.requesting and !self.lifecycle.gate.preparing);
         self.power.useSession(self.lifecycle.sessionObjectPath());
         self.schedule();
+    }
+    /// The authentication prompt is a layer surface; without an explicit monitor
+    /// the compositor parks it on the first output, away from the user. Hand it
+    /// the monitor that currently holds seat focus.
+    fn authMonitor(context: *anyopaque) ?*gdk.Monitor {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        const focus = self.client.model.focus(null) catch return null;
+        const wanted = focus.output orelse return null;
+        for (self.outputs.items) |o| if (std.mem.eql(u8, wanted.id, o.id)) return o.monitor;
+        return null;
     }
     fn authChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));

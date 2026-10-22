@@ -5,6 +5,7 @@ const log = std.log.scoped(.services);
 const gio = db.gio;
 const glib = db.glib;
 const gtk = @import("gtk4");
+const gdk = @import("gdk4");
 const object = @import("gobject2");
 const polkit = @import("polkit1");
 const agent = @import("polkitagent1");
@@ -40,6 +41,9 @@ pub const Agent = struct {
     app: *gio.Application,
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
+    /// Resolves the monitor holding seat focus so the prompt spawns where the
+    /// user is looking; null leaves the compositor's default placement.
+    focused_monitor: ?*const fn (*anyopaque) ?*gdk.Monitor = null,
     peer: db.Peer = undefined,
     session_id: db.Text(128) = .{},
     allowed: bool = false,
@@ -338,8 +342,15 @@ pub const Agent = struct {
             return;
         }
         if (self.window) |window| {
+            // A layer surface without a monitor lands on the compositor's first
+            // output, away from the user; spawn the prompt where seat focus is.
+            const monitor = if (self.focused_monitor) |resolve| resolve(self.context) else null;
+            if (monitor) |target| layer.setMonitor(window, target);
             window.present();
-            if (@import("build_options").test_hooks) log.info("event=activity-auth-presented", .{});
+            if (@import("build_options").test_hooks) {
+                const connector: []const u8 = if (monitor) |target| (if (target.getConnector()) |name| std.mem.span(name) else "unknown") else "none";
+                log.info("event=activity-auth-presented monitor={s}", .{connector});
+            }
             self.setState(.choosing);
             if (self.identity_count == 1) {
                 self.startConversation();
