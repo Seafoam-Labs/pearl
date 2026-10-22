@@ -51,6 +51,7 @@ pub const events: []const Event = &.{
     .{ .name = "greeter-palette", .scopes = &.{.greeter} },
     .{ .name = "greeter-palette-sent", .scopes = &.{.settings} },
     .{ .name = "greeter-palette-skip", .scopes = &.{.settings} },
+    .{ .name = "greeter-power", .scopes = &.{.greeter} },
     .{ .name = "greeter-ready", .scopes = &.{.greeter} },
     .{ .name = "greeter-selection", .scopes = &.{.greeter} },
     .{ .name = "greeter-state", .scopes = &.{.greeter} },
