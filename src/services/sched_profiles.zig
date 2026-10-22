@@ -279,8 +279,9 @@ pub fn status(config: Config, env: Env, unit: Unit, kernel: Kernel, ops: []const
         // A selected scheduler that is no longer running has failed, whether
         // systemd marked the unit failed or the scheduler exited cleanly.
         // With the unit down, an attached scheduler is not ours: schedulers
-        // unregister before their process exits.
-        .failed, .inactive, .unknown => if (scheduler) (if (switching and unit != .failed) settling else failed) else if (kernel == .enabled) custom else .{ .kind = .off, .profile = if (stopping) selected else firstStop(config) },
+        // unregister before their process exits. Until systemd has reported
+        // the unit, nothing has failed yet.
+        .failed, .inactive, .unknown => if (scheduler) (if (unit == .unknown or (switching and unit != .failed)) settling else failed) else if (kernel == .enabled) custom else .{ .kind = .off, .profile = if (stopping) selected else firstStop(config) },
         .missing => unreachable,
     };
 }
@@ -361,6 +362,8 @@ test "the environment file round-trips and attributes the running scheduler" {
     try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .activating, .disabled, "", false, false));
     try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .failed, .disabled, "", false, false));
     try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .inactive, .disabled, "", false, false));
+    // Before systemd reports the unit, the selected scheduler has not failed.
+    try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .unknown, .enabled, "cosmos_1.1.7_x86_64_unknown_linux_gnu", false, false));
     // A hand-edited file or another loader is not attributed to a profile.
     var edited = env;
     edited.flags = "-s 700";
