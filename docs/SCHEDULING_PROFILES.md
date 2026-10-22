@@ -94,8 +94,13 @@ selected profile switches back to Default:
   after a runnable task stall) or systemd's restart limit was reached;
 - systemd restarts it after such an exit, which Pearl notices from the unit's
   `NRestarts` count even when the restart succeeds;
-- it is still not attached 10 seconds after the unit became active;
+- it is still not attached 10 seconds after the unit became active, or after
+  it detached while the unit stayed active;
 - the helper cannot start it.
+
+A scheduler that detaches and attaches again within its own process is not a
+failure. Schedulers do that when a CPU goes offline or online, since the
+kernel unregisters a scheduler that does not handle CPU hotplug itself.
 
 Pearl then sends a notification, and the flyout and Settings say what
 happened until another profile is chosen, for example "Desktop stopped:

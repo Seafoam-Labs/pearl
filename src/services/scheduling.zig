@@ -15,8 +15,8 @@ const a = std.heap.c_allocator;
 const systemd = "org.freedesktop.systemd1";
 /// How long a profile counts as still taking over after it was selected.
 const switch_window = 15 * std.time.us_per_s;
-/// A scheduler that has not attached this long after its unit became active
-/// is not going to.
+/// A scheduler that has not attached this long after its unit became active,
+/// or after it detached while the unit stayed active, is not going to.
 const attach_timeout = 10 * std.time.us_per_s;
 
 pub const Service = struct {
@@ -52,6 +52,10 @@ pub const Service = struct {
     /// When the unit last became active, in microseconds since the epoch; 0
     /// when unknown.
     active_since: u64 = 0,
+    /// When the scheduler last detached while its unit stayed active, in
+    /// microseconds since the epoch. A scheduler does that to restart itself,
+    /// for example when a CPU goes offline, so it gets time to attach again.
+    detached_since: i64 = 0,
     /// systemd's restart count for the unit, as last seen.
     restarts: ?u32 = null,
     /// The profile whose scheduler failed, until another profile is selected.
@@ -203,10 +207,16 @@ pub const Service = struct {
         return written > @as(i64, @intCast(self.active_since)) and glib.getRealTime() - written < switch_window;
     }
 
-    /// The unit has been active longer than a scheduler needs to attach.
+    /// When the scheduler started waiting to attach: when the unit became
+    /// active, or later when the scheduler detached to restart itself.
+    fn waitingSince(self: *const Service) i64 {
+        return @max(@as(i64, @intCast(self.active_since)), self.detached_since);
+    }
+
+    /// The scheduler has been waiting longer than it needs to attach.
     fn stuck(self: *const Service) bool {
         if (self.unit_state != .active or self.active_since == 0) return false;
-        return glib.getRealTime() - @as(i64, @intCast(self.active_since)) > attach_timeout;
+        return glib.getRealTime() - self.waitingSince() > attach_timeout;
     }
 
     /// "since 10:28", with the date when it started on another day.
@@ -239,7 +249,9 @@ pub const Service = struct {
             self.problem = std.fmt.allocPrintSentinel(alloc, "Scheduler profiles could not be read ({s}).", .{@errorName(err)}, 0) catch "Scheduler profiles could not be read.";
         }
         self.env = store.readEnv(alloc) catch .{};
+        const previous = self.kernel;
         self.kernel = kernelState();
+        if (previous == .enabled and self.kernel != .enabled and self.unit_state == .active) self.detached_since = glib.getRealTime();
         self.ops = readOps(&self.ops_buffer);
         self.status = if (self.config) |config| p.status(config, self.env, self.unit_state, self.kernel, self.ops, self.switching(), self.stuck()) else .{};
         self.track();
@@ -402,7 +414,7 @@ pub const Service = struct {
             deadline = written + switch_window;
         };
         if (self.unit_state == .active and self.active_since > 0) {
-            const attach = @as(i64, @intCast(self.active_since)) + attach_timeout;
+            const attach = self.waitingSince() + attach_timeout;
             if (attach > now) deadline = @min(deadline, attach);
         }
         if (deadline == std.math.maxInt(i64)) return;
