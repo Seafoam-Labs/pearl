@@ -62,8 +62,10 @@ def client():
         code, value = response(request('CreateSession',GLib.Variant('(a{sv})',({'handle_token':GLib.Variant('s','request_'+uuid.uuid4().hex),'session_handle_token':GLib.Variant('s','capture_'+uuid.uuid4().hex)},))))
         assert code == 0, value
         return value['session_handle']
-    def select(session):
+    def start(session):
         pidfile.unlink(missing_ok=True)
+        return request('Start',GLib.Variant('(osa{sv})',(session,'',{'handle_token':GLib.Variant('s','request_'+uuid.uuid4().hex)})))
+    def select(session):
         return request('SelectSources',GLib.Variant('(oa{sv})',(session,{'handle_token':GLib.Variant('s','request_'+uuid.uuid4().hex),'types':GLib.Variant('u',1),'cursor_mode':GLib.Variant('u',1)})))
     def close(session):
         try: call('org.freedesktop.portal.Session','Close',path=session)
@@ -78,45 +80,52 @@ def client():
     for index in (0,1):
         control.write_text(str(index)); session = create()
         code, result = response(select(session)); assert code == 0, result
-        assert pidfile.exists(), 'Pearl picker was not invoked'
-        code, result = response(request('Start',GLib.Variant('(osa{sv})',(session,'',{}))))
+        code, result = response(start(session))
+        assert pidfile.exists(), 'Pearl picker was not invoked at Start'
         assert code == 0 and len(result['streams']) == 1, result
         node, properties = result['streams'][0]
-        reply, fds = bus.call_with_unix_fd_list_sync(destination,base,'org.freedesktop.portal.ScreenCast','OpenPipeWireRemote',GLib.Variant('(oa{sv})',(session,{})),None,0,5000,None,None)
-        fd = fds.get(reply.unpack()[0])
-        target = Path(os.environ['CAPTURE_RESULTS']) / f'source-{index}.png'
-        target.unlink(missing_ok=True)
-        try:
-            consumer = subprocess.Popen(['gst-launch-1.0','-q','pipewiresrc',f'fd={fd}',f'path={node}','num-buffers=1','!','videoconvert','!','video/x-raw,format=RGB','!','pngenc','snapshot=true','!','filesink',f'location={target}'],pass_fds=(fd,),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        # Reconnect a consumer to exercise pause/resume on the same capture.
+        for attempt in range(2):
+            reply, fds = bus.call_with_unix_fd_list_sync(destination,base,'org.freedesktop.portal.ScreenCast','OpenPipeWireRemote',GLib.Variant('(oa{sv})',(session,{})),None,0,5000,None,None)
+            fd = fds.get(reply.unpack()[0])
+            target = Path(os.environ['CAPTURE_RESULTS']) / f'source-{index}-{attempt}.png'
+            target.unlink(missing_ok=True)
             try:
-                def ports(flag):
-                    return subprocess.check_output(['pw-link',flag],text=True).splitlines()
-                outputs = pump(lambda: ports('-o'))
-                inputs = pump(lambda: ports('-i'))
-                assert len(outputs) == len(inputs) == 1, (outputs,inputs)
-                subprocess.run(['pw-link',outputs[0],inputs[0]],check=True)
-                out, err = consumer.communicate(timeout=12)
-                assert consumer.returncode == 0 and target.stat().st_size > 0, err
-                from PIL import Image
-                with Image.open(target) as frame:
-                    red,green,blue=frame.convert('RGB').getpixel((frame.width//2,frame.height//2))
+                consumer = subprocess.Popen(['gst-launch-1.0','-q','pipewiresrc',f'fd={fd}',f'path={node}','num-buffers=1','!','videoconvert','!','video/x-raw,format=RGB','!','pngenc','snapshot=true','!','filesink',f'location={target}'],pass_fds=(fd,),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                try:
+                    def ports(flag):
+                        assert consumer.poll() is None, consumer.communicate()
+                        return subprocess.check_output(['pw-link',flag],text=True).splitlines()
+                    outputs = pump(lambda: ports('-o'))
+                    inputs = pump(lambda: ports('-i'))
+                    assert len(outputs) == len(inputs) == 1, (outputs,inputs)
+                    subprocess.run(['pw-link',outputs[0],inputs[0]],check=True)
+                    out, err = consumer.communicate(timeout=12)
+                    assert consumer.returncode == 0 and target.stat().st_size > 0, err
+                    gi.require_version('GdkPixbuf', '2.0')
+                    from gi.repository import GdkPixbuf
+                    frame = GdkPixbuf.Pixbuf.new_from_file(str(target))
+                    offset = (frame.get_height()//2)*frame.get_rowstride() + (frame.get_width()//2)*frame.get_n_channels()
+                    red,green,blue = frame.get_pixels()[offset:offset+3]
                     assert (red>180 and blue<80) if index==0 else (blue>180 and red<80), (index,red,green,blue)
-            finally:
-                if consumer.poll() is None: consumer.kill()
-                consumer.wait()
+                finally:
+                    if consumer.poll() is None: consumer.kill()
+                    consumer.wait()
 
-        finally: os.close(fd)
+            finally: os.close(fd)
         close(session)
-        print('PASS public ScreenCast source',index,'PipeWire frame',properties,flush=True)
+        print('PASS public ScreenCast source',index,'PipeWire frames before/after consumer reconnect',properties,flush=True)
     for mode,expected in [('legacy',0),('failed',1)]:
         control.write_text(mode); session=create()
-        code,value=response(select(session));assert code==expected,(mode,code,value)
+        code,value=response(select(session));assert code==0,(mode,code,value)
+        code,value=response(start(session));assert code==expected,(mode,code,value)
         close(session)
     print('PASS custom chooser without trailing newline and failed chooser rejection',flush=True)
     control.write_text('cancel'); session = create()
-    code, result = response(select(session)); assert code == 1 and not result, (code,result)
+    assert response(select(session))[0] == 0
+    code, result = response(start(session)); assert code == 1 and not result, (code,result)
     close(session)
-    control.write_text('hold'); session = create(); handle = select(session)
+    control.write_text('hold'); session = create(); assert response(select(session))[0] == 0; handle = start(session)
     pump(pidfile.exists); pid = int(pidfile.read_text())
     time.sleep(.4)
     try:
@@ -129,28 +138,30 @@ def client():
     pump(lambda: dead(pid))
     close(session)
     print('PASS public Request.Close terminates open Pearl picker without creating a stream',flush=True)
-    # A session close while SelectSources is pending must also release its UI.
-    session = create(); handle = select(session)
+    # A session close while Start is pending must also release its UI.
+    session = create(); assert response(select(session))[0] == 0; handle = start(session)
     pump(pidfile.exists); pid = int(pidfile.read_text()); time.sleep(.3)
     close(session); pump(lambda: dead(pid))
     print('PASS session closure terminates pending picker',flush=True)
-    session = create(); select(session)
+    session = create(); assert response(select(session))[0] == 0; start(session)
     pump(pidfile.exists); pid = int(pidfile.read_text()); time.sleep(.3)
     os.kill(int(os.environ['FRONTEND_PID']),signal.SIGKILL)
     pump(lambda: dead(pid))
     print('PASS frontend owner loss terminates pending picker',flush=True)
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--client',action='store_true');parser.add_argument('--paint');parser.add_argument('--backend',type=Path);args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--client',action='store_true');parser.add_argument('--paint');parser.add_argument('--backend',type=Path);parser.add_argument('--picker',type=Path,default=ROOT/'zig-out/capture-test/bin/pearl-capture-picker');parser.add_argument('--gst-plugin-path',type=Path);parser.add_argument('--output',type=Path,default=ROOT/'artifacts/capture-picker/portal');args=parser.parse_args()
     if args.paint: return paint(args.paint)
     if args.client: return client()
     if args.backend is None: parser.error('--backend must point to the rebuilt Aqueous capture backend')
-    with PrivateSession(ROOT/'artifacts/capture-picker/portal',tool_prefix=fixture_prefix()) as session:
+    with PrivateSession(args.output,tool_prefix=fixture_prefix()) as session:
+        if args.gst_plugin_path:
+            session.env['GST_PLUGIN_PATH'] = str(args.gst_plugin_path.resolve())
         for connector in ['HEADLESS-1','HEADLESS-2']:
             fixture=session.child(connector,[sys.executable,__file__,'--paint',connector])
             fixture.expect('PAINT READY')
         control=session.base/'choice'; pidfile=session.base/'picker.pid'; chooser=session.base/'chooser'
-        chooser.write_text('#!/bin/sh\necho $$ > '+shlex.quote(str(pidfile))+'\nmode=$(cat '+shlex.quote(str(control))+')\ncase "$mode" in\n legacy) head -n 1 | tr -d "\\n"; exit 0;;\n failed) head -n 1; exit 2;;\n cancel) export PEARL_CAPTURE_TEST_ACTION=cancel;;\n hold) ;;\n *) export PEARL_CAPTURE_TEST_SELECT="$mode" PEARL_CAPTURE_TEST_ACTION=share;;\nesac\nexec '+shlex.quote(str(ROOT/'zig-out/capture-test/bin/pearl-capture-picker'))+'\n')
+        chooser.write_text('#!/bin/sh\necho $$ > '+shlex.quote(str(pidfile))+'\nmode=$(cat '+shlex.quote(str(control))+')\ncase "$mode" in\n legacy) head -n 1 | tr -d "\\n"; exit 0;;\n failed) head -n 1; exit 2;;\n cancel) export PEARL_CAPTURE_TEST_ACTION=cancel;;\n hold) ;;\n *) export PEARL_CAPTURE_TEST_SELECT="$mode" PEARL_CAPTURE_TEST_ACTION=share;;\nesac\nexec '+shlex.quote(str(args.picker.resolve()))+'\n')
         chooser.chmod(0o755)
         config=session.base/'capture.conf';config.write_text('[screencast]\nchooser_type=dmenu\nchooser_cmd='+str(chooser)+'\n')
         pw=session.base/'pipewire.conf';pw.write_text('''context.properties = { core.daemon = true core.name = pipewire-0 }
