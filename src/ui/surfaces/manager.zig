@@ -1455,7 +1455,7 @@ pub const Manager = struct {
                         s.tray.?.update();
                     },
                     .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested, dismissSurface),
-                    .scheduling => s.scheduling = try @import("../../desktop/scheduling.zig").View.create(panel, &self.scheduling),
+                    .scheduling => s.scheduling = try @import("../../desktop/scheduling.zig").View.create(panel, &self.scheduling, s, editSchedulingProfiles),
                     .control => {
                         s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, controlTask, settingsNavigate, self.settings_page.?, window, .{ .audio = &self.audio, .power = &self.power, .night_light = &self.night_light, .network = &self.network, .bluetooth = &self.bluetooth, .lifecycle = &self.lifecycle, .auth = &self.auth });
                     },
@@ -2506,7 +2506,8 @@ fn barAction(context: *anyopaque, event: Bar.Event) void {
     const self = s.manager;
     switch (event) {
         .running_apps => |task| runningAction(s, task),
-        .settings => |page| self.settingsAction(s.output.id, page, .toggle) catch {},
+        // Pages without a control center card open in Settings.
+        .settings => |page| if (page.isCompact()) self.settingsAction(s.output.id, page, .toggle) catch {} else self.openSettings(.{ .page = page }, null) catch |err| log.warn("event=open-settings page={s} result={s}", .{ page.id(), @errorName(err) }),
         .pane => |pane| {
             if (pane == .control) {
                 self.settingsAction(s.output.id, .overview, .toggle) catch {};
@@ -2565,6 +2566,10 @@ fn dismiss(context: *anyopaque) void {
     const self: *Manager = @ptrCast(@alignCast(context));
     log.debug("event=popup-close-reason reason=dismiss", .{});
     self.hidePopup();
+}
+fn editSchedulingProfiles(context: *anyopaque) void {
+    const s: *Surface = @ptrCast(@alignCast(context));
+    barAction(s, .{ .settings = .system });
 }
 fn dismissSurface(context: *anyopaque) void {
     const s: *Surface = @ptrCast(@alignCast(context));

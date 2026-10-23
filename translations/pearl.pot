@@ -59,11 +59,11 @@ msgstr ""
 msgid ", minimized"
 msgstr ""
 
-#: src/desktop/bar.zig:565
+#: src/desktop/bar.zig:573
 msgid "-"
 msgstr ""
 
-#: src/desktop/bar.zig:562
+#: src/desktop/bar.zig:570
 msgid "..."
 msgstr ""
 
@@ -442,7 +442,7 @@ msgstr ""
 msgid "Another notification service is active."
 msgstr ""
 
-#: src/desktop/scheduling.zig:116 src/settings/scheduler_view.zig:263
+#: src/desktop/scheduling.zig:133 src/settings/scheduler_view.zig:263
 msgid "Another profile is being applied."
 msgstr ""
 
@@ -651,7 +651,7 @@ msgstr ""
 msgid "At home in your bar. Or out on your desktop."
 msgstr ""
 
-#: src/desktop/bar.zig:541 src/desktop/services.zig:115
+#: src/desktop/bar.zig:549 src/desktop/services.zig:115
 msgid "Audio unavailable"
 msgstr ""
 
@@ -889,11 +889,11 @@ msgstr ""
 msgid "Bluetooth PIN or passkey"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "Bluetooth off"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "Bluetooth on"
 msgstr ""
 
@@ -901,7 +901,7 @@ msgstr ""
 msgid "Bluetooth pairing"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "Bluetooth unavailable"
 msgstr ""
 
@@ -1027,7 +1027,7 @@ msgstr ""
 msgid "CONNECTIONS"
 msgstr ""
 
-#: src/desktop/scheduling.zig:42 src/settings/scheduler_view.zig:64
+#: src/desktop/scheduling.zig:45 src/settings/scheduler_view.zig:64
 msgid "CPU Scheduler"
 msgstr ""
 
@@ -1550,7 +1550,7 @@ msgstr ""
 msgid "Connect to"
 msgstr ""
 
-#: src/ui/i18n.zig:18 src/desktop/bar.zig:594 src/ui/components/network.zig:298 src/ui/components/network.zig:488
+#: src/ui/i18n.zig:18 src/desktop/bar.zig:602 src/ui/components/network.zig:298 src/ui/components/network.zig:488
 msgid "Connected"
 msgstr ""
 
@@ -1578,7 +1578,7 @@ msgstr ""
 msgid "Connecting to your Pearl session…"
 msgstr ""
 
-#: src/desktop/bar.zig:594 src/ui/components/network.zig:298 src/ui/components/network.zig:494
+#: src/desktop/bar.zig:602 src/ui/components/network.zig:298 src/ui/components/network.zig:494
 msgid "Connecting…"
 msgstr ""
 
@@ -1793,7 +1793,7 @@ msgctxt "aqueous.desktop.cursor.theme.label"
 msgid "Cursor theme"
 msgstr ""
 
-#: src/desktop/bar.zig:564 src/settings/power_view.zig:200 src/settings/scheduler_view.zig:166
+#: src/desktop/bar.zig:572 src/settings/power_view.zig:200 src/settings/scheduler_view.zig:166
 msgid "Custom"
 msgstr ""
 
@@ -1845,15 +1845,15 @@ msgstr ""
 msgid "Cycle windows"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "Cycle windows across all workspaces and displays"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "Cycle windows on this workspace"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
@@ -1886,7 +1886,7 @@ msgstr ""
 msgid "December"
 msgstr ""
 
-#: src/desktop/bar.zig:561 src/services/scheduling.zig:217
+#: src/desktop/bar.zig:569 src/services/scheduling.zig:217
 msgid "Default"
 msgstr ""
 
@@ -1943,7 +1943,7 @@ msgstr ""
 msgid "Design review"
 msgstr ""
 
-#: src/desktop/bar.zig:613 src/desktop/bar.zig:614
+#: src/desktop/bar.zig:621 src/desktop/bar.zig:622
 msgid "Desktop"
 msgstr ""
 
@@ -2325,6 +2325,10 @@ msgstr ""
 msgid "Edit profiles"
 msgstr ""
 
+#: src/desktop/scheduling.zig:84
+msgid "Edit profiles..."
+msgstr ""
+
 #: src/settings/window_rules_view.zig:153
 msgid "Edit rule"
 msgstr ""
@@ -2500,7 +2504,7 @@ msgstr ""
 msgid "Fade"
 msgstr ""
 
-#: src/desktop/bar.zig:563
+#: src/desktop/bar.zig:571
 msgid "Failed"
 msgstr ""
 
@@ -3204,7 +3208,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2576
+#: src/ui/surfaces/manager.zig:2581
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3684,7 +3688,7 @@ msgstr ""
 msgid "Mute"
 msgstr ""
 
-#: src/desktop/bar.zig:538 src/ui/surfaces/osd.zig:19 src/ui/surfaces/osd.zig:81
+#: src/desktop/bar.zig:546 src/ui/surfaces/osd.zig:19 src/ui/surfaces/osd.zig:81
 msgid "Muted"
 msgstr ""
 
@@ -3738,7 +3742,7 @@ msgstr ""
 msgid "Network settings"
 msgstr ""
 
-#: src/desktop/bar.zig:594
+#: src/desktop/bar.zig:602
 msgid "Network unavailable"
 msgstr ""
 
@@ -3882,11 +3886,11 @@ msgstr ""
 msgid "No open applications"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "No open windows"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "No open windows on this workspace"
 msgstr ""
 
@@ -3984,7 +3988,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: src/ui/i18n.zig:22 src/desktop/bar.zig:592 src/settings/editor.zig:818 src/settings/power_view.zig:123 src/settings/preferences_view.zig:475
+#: src/ui/i18n.zig:22 src/desktop/bar.zig:600 src/settings/editor.zig:818 src/settings/power_view.zig:123 src/settings/preferences_view.zig:475
 msgid "Off"
 msgstr ""
 
@@ -4000,7 +4004,7 @@ msgstr ""
 msgid "Offline · showing cached repository metadata"
 msgstr ""
 
-#: src/ui/i18n.zig:23 src/desktop/bar.zig:592 src/settings/preferences_view.zig:475
+#: src/ui/i18n.zig:23 src/desktop/bar.zig:600 src/settings/preferences_view.zig:475
 msgid "On"
 msgstr ""
 
@@ -4041,7 +4045,7 @@ msgstr ""
 msgid "One taskbar button per window"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "Only window on this workspace"
 msgstr ""
 
@@ -4067,11 +4071,11 @@ msgstr ""
 msgid "Open Advanced"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "Open Bluetooth controls"
 msgstr ""
 
-#: src/desktop/bar.zig:571
+#: src/desktop/bar.zig:579
 msgid "Open CPU scheduler profiles"
 msgstr ""
 
@@ -4079,11 +4083,11 @@ msgstr ""
 msgid "Open Desktop folder"
 msgstr ""
 
-#: src/desktop/bar.zig:594
+#: src/desktop/bar.zig:602
 msgid "Open Network controls"
 msgstr ""
 
-#: src/desktop/bar.zig:554
+#: src/desktop/bar.zig:562
 msgid "Open Power controls"
 msgstr ""
 
@@ -4091,7 +4095,7 @@ msgstr ""
 msgid "Open Qt appearance settings…"
 msgstr ""
 
-#: src/desktop/bar.zig:541
+#: src/desktop/bar.zig:549
 msgid "Open Sound controls"
 msgstr ""
 
@@ -6422,7 +6426,7 @@ msgstr ""
 msgid "Switch dark / light"
 msgstr ""
 
-#: src/desktop/bar.zig:381
+#: src/desktop/bar.zig:389
 msgid "Switch keyboard layout"
 msgstr ""
 
@@ -6723,7 +6727,7 @@ msgstr ""
 msgid "This power mode is unavailable"
 msgstr ""
 
-#: src/desktop/scheduling.zig:116 src/settings/scheduler_view.zig:263
+#: src/desktop/scheduling.zig:133 src/settings/scheduler_view.zig:263
 msgid "This profile cannot be applied right now."
 msgstr ""
 
@@ -7217,7 +7221,7 @@ msgstr ""
 msgid "When a notification matches"
 msgstr ""
 
-#: src/ui/i18n.zig:17 src/desktop/bar.zig:592 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
+#: src/ui/i18n.zig:17 src/desktop/bar.zig:600 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
 msgid "Wi-Fi"
 msgstr ""
 
@@ -7229,11 +7233,11 @@ msgstr ""
 msgid "Wi-Fi is turned off. Turn it on to find nearby networks."
 msgstr ""
 
-#: src/desktop/bar.zig:594
+#: src/desktop/bar.zig:602
 msgid "Wi-Fi off"
 msgstr ""
 
-#: src/desktop/bar.zig:594
+#: src/desktop/bar.zig:602
 msgid "Wi-Fi on"
 msgstr ""
 
@@ -7487,7 +7491,7 @@ msgctxt "aqueous.desktop.font.width.option"
 msgid "condensed"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "connected"
 msgstr ""
 
@@ -8743,7 +8747,7 @@ msgstr ""
 msgid "×"
 msgstr ""
 
-#: src/desktop/bar.zig:538 src/desktop/bar.zig:547 src/desktop/bar.zig:592 src/desktop/bar.zig:602 src/desktop/clock_view.zig:69 src/desktop/resource_view.zig:275
+#: src/desktop/bar.zig:546 src/desktop/bar.zig:555 src/desktop/bar.zig:600 src/desktop/bar.zig:610 src/desktop/clock_view.zig:69 src/desktop/resource_view.zig:275
 msgid "—"
 msgstr ""
 
@@ -8755,7 +8759,7 @@ msgstr ""
 msgid "•••"
 msgstr ""
 
-#: src/desktop/bar.zig:592
+#: src/desktop/bar.zig:600
 msgid "…"
 msgstr ""
 

@@ -55,7 +55,8 @@ file with `pearl-scheduling-helper profiles reset`, so the shipped profiles
 are used again. Both change what any user may run as root, so their polkit
 action, `org.aqueous.Pearl.Scheduling.Profiles`, asks for an administrator
 password (kept for a few minutes). Choosing a profile, edited or not, still
-needs none.
+needs none. Right-clicking the bar widget, or **Edit profiles...** at the end
+of its flyout, opens this page.
 
 Editing the command of the selected profile applies it again, and deleting it
 applies Default. The shell and Settings watch the administrator's file, so
