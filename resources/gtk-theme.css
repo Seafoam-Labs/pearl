@@ -1,6 +1,11 @@
 /* Layout only. Colors, typography, controls and state rendering come from GTK. */
 .pearl-root.pearl-gtk.pearl-shell:not(.pearl-wallpaper) { background: transparent; }
 .pearl-root.pearl-gtk .pearl-surface-panel { border-radius: 14px; }
+/* Attached bars sit flush in the screen edge: square on the edge side, rounded inside. */
+.pearl-root.pearl-gtk .pearl-bar-attached.pearl-bar-top, .pearl-root.pearl-gtk .pearl-bar-attached.pearl-bar-top .pearl-island { border-radius: 0 0 14px 14px; }
+.pearl-root.pearl-gtk .pearl-bar-attached.pearl-bar-bottom, .pearl-root.pearl-gtk .pearl-bar-attached.pearl-bar-bottom .pearl-island { border-radius: 14px 14px 0 0; }
+.pearl-root.pearl-gtk .pearl-bar-attached.pearl-bar-left, .pearl-root.pearl-gtk .pearl-bar-attached.pearl-bar-left .pearl-island { border-radius: 0 14px 14px 0; }
+.pearl-root.pearl-gtk .pearl-bar-attached.pearl-bar-right, .pearl-root.pearl-gtk .pearl-bar-attached.pearl-bar-right .pearl-island { border-radius: 14px 0 0 14px; }
 .pearl-root.pearl-gtk .pearl-popup-panel { padding: 20px; }
 .pearl-root.pearl-gtk .pearl-osd-panel { padding: 14px; }
 .pearl-root.pearl-gtk .pearl-volume-value { font-weight: 600; font-variant-numeric: tabular-nums; }

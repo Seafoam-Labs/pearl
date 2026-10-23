@@ -1167,6 +1167,8 @@ pub const Manager = struct {
                 try o.reservations.bar(pref.edge, pref.size);
                 o.bar.?.edge = pref.edge;
                 sizeEdge(o.bar.?, pref.edge, pref.size);
+                if (pref.attached) o.bar.?.panel.addCssClass("pearl-bar-attached") else o.bar.?.panel.removeCssClass("pearl-bar-attached");
+                inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(o.bar.?.panel, if (pref.attached) 0 else 4);
                 try o.bar.?.bar.?.launcher_icon.want(pref.launcher_icon, false);
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
                 o.bar.?.bar.?.running_apps_per_window = pref.running_apps_per_window;
@@ -1386,7 +1388,9 @@ pub const Manager = struct {
             },
             .bar => {
                 panel_widget.addCssClass("pearl-bar-panel");
-                inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, 4);
+                const bar_pref = self.preferences.prefs().forOutput(output.connector);
+                if (bar_pref.attached) panel_widget.addCssClass("pearl-bar-attached");
+                inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, if (bar_pref.attached) 0 else 4);
                 s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index, &self.scheduling);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
@@ -2435,6 +2439,10 @@ fn opposite(edge: Edge) Edge {
 }
 fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     anchors(s.window, edge);
+    // Per-edge class lets CSS square only the attached bar's screen-side corners.
+    for ([_]struct { e: Edge, c: [:0]const u8 }{ .{ .e = .top, .c = "pearl-bar-top" }, .{ .e = .bottom, .c = "pearl-bar-bottom" }, .{ .e = .left, .c = "pearl-bar-left" }, .{ .e = .right, .c = "pearl-bar-right" } }) |tag| {
+        if (tag.e == edge) s.panel.addCssClass(tag.c) else s.panel.removeCssClass(tag.c);
+    }
     const horizontal = edge == .top or edge == .bottom;
     if (s.bar) |bar| {
         bar.thickness = size;

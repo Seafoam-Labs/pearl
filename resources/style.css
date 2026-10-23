@@ -81,6 +81,11 @@
 
 /* T06 desktop composition: primary bar controls survive compact output widths. */
 .pearl-root.$scope.pearl-shell .pearl-bar-panel { padding: 0 6px; }
+/* Attached bars sit flush in the screen edge: square on the edge side, rounded inside. */
+.pearl-root.$scope.pearl-shell .pearl-bar-attached.pearl-bar-top, .pearl-root.$scope .pearl-bar-attached.pearl-bar-top .pearl-island { border-radius: 0 0 14px 14px; }
+.pearl-root.$scope.pearl-shell .pearl-bar-attached.pearl-bar-bottom, .pearl-root.$scope .pearl-bar-attached.pearl-bar-bottom .pearl-island { border-radius: 14px 14px 0 0; }
+.pearl-root.$scope.pearl-shell .pearl-bar-attached.pearl-bar-left, .pearl-root.$scope .pearl-bar-attached.pearl-bar-left .pearl-island { border-radius: 0 14px 14px 0; }
+.pearl-root.$scope.pearl-shell .pearl-bar-attached.pearl-bar-right, .pearl-root.$scope .pearl-bar-attached.pearl-bar-right .pearl-island { border-radius: 14px 0 0 14px; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel label.pearl-bar-item { color: $text$; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-icon { padding: 2px 8px; min-width: 24px; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button.pearl-workspace { padding: 2px 8px; min-width: 16px; color: $secondary$; }
