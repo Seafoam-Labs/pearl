@@ -369,6 +369,14 @@ pub const Bar = struct {
                         if (item == .battery) self.battery_icon = glyph;
                         const symbol = glyph.as(gtk.Widget);
                         if (item == .scheduler) {
+                            // Right-click opens the profiles in Settings.
+                            const edit = try a.create(Button);
+                            edit.* = .{ .owner = self, .event = .{ .settings = .system } };
+                            try self.handlers.append(a, edit);
+                            const secondary = gtk.GestureClick.new();
+                            secondary.as(gtk.GestureSingle).setButton(3);
+                            _ = gtk.GestureClick.signals.pressed.connect(secondary, *Button, secondaryClicked, edit, .{});
+                            button.as(gtk.Widget).addController(secondary.as(gtk.EventController));
                             const overlay = gtk.Overlay.new();
                             overlay.setChild(symbol);
                             const dot = gtk.Box.new(.horizontal, 0).as(gtk.Widget);
@@ -822,6 +830,10 @@ pub const Bar = struct {
         var clock_reports: std.ArrayList(ClockReport) = .empty;
         for (self.clock_views.items) |view| try clock_reports.append(alloc, .{ .reference = view.reference, .timezone = view.definition.timezone, .time = std.mem.span(view.label.getText()), .detail = std.mem.span(view.button.as(gtk.Widget).getTooltipText() orelse ""), .available = view.zone != null });
         return std.json.Stringify.valueAlloc(alloc, .{ .items = items.items, .clocks = clock_reports.items, .background_opacity = self.background_opacity, .background_color = self.background_color, .keyboard_mode = keyboard_mode, .launcher_icon = self.launcher_icon.selection, .launcher_icon_loading = self.launcher_icon.job != null, .launcher_icon_failed = self.launcher_icon.failed, .workspace_mode = self.workspace_mode, .workspace_ids = workspace_ids.items }, .{});
+    }
+    fn secondaryClicked(gesture: *gtk.GestureClick, _: c_int, _: f64, _: f64, data: *Button) callconv(.c) void {
+        _ = gesture.as(gtk.Gesture).setState(.claimed);
+        data.owner.action(data.owner.context, data.event);
     }
     fn clicked(button: *gtk.Button, data: *Button) callconv(.c) void {
         // Settings widgets carry a navigation route instead of a pane tag but

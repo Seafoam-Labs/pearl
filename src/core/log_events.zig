@@ -86,6 +86,7 @@ pub const events: []const Event = &.{
     .{ .name = "network-failed", .scopes = &.{.services} },
     .{ .name = "night-light-failed", .scopes = &.{.services} },
     .{ .name = "notification-filter-config", .scopes = &.{.ui} },
+    .{ .name = "open-settings", .scopes = &.{.ui} },
     .{ .name = "operation-finished", .scopes = &.{.platform} },
     .{ .name = "output-mapped", .scopes = &.{.ui} },
     .{ .name = "pearlctl-failed", .scopes = &.{.cli} },
