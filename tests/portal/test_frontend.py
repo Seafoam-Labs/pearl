@@ -62,6 +62,38 @@ def client():
             assert results['uris'] == [(source.parent / name).as_uri()], results
     assert source.read_text() == 'Original content'
     assert not (source.parent / 'new document.txt').exists()
+    # Steam's Add Drive uses OpenFile with directory=true and an empty folder hint.
+    # Accept the displayed location directly to verify default/restored navigation.
+    drive = source.parent / 'Steam library'
+    drive.mkdir()
+    folder_cases = [
+        ('omitted', None, source.parent, False),
+        ('empty', b'', source.parent, False),
+        ('nul', b'\0', source.parent, False),
+        ('absolute', os.fsencode(drive) + b'\0', drive, False),
+        ('remembered_empty', b'', drive, False),
+        ('remembered_nul', b'\0', drive, False),
+        ('cancel_empty', b'', None, True),
+        ('cancel_nul', b'\0', None, True),
+    ]
+    for label, folder, expected, cancel in folder_cases:
+        options = {'directory': GLib.Variant('b', True)}
+        if folder is not None:
+            options['current_folder'] = GLib.Variant('ay', folder)
+        handle = call('org.freedesktop.portal.FileChooser', 'OpenFile',
+                      GLib.Variant('(ssa{sv})', ('', 'Add Drive regression', options))).unpack()[0]
+        time.sleep(.5)
+        while GLib.MainContext.default().pending():
+            GLib.MainContext.default().iteration(False)
+        assert handle not in responses, (label, responses.get(handle))
+        keys = ['-k', 'Escape'] if cancel else ['-M', 'ctrl', '-k', 'Return', '-m', 'ctrl']
+        subprocess.run(['wtype', '-s', '100', *keys], check=True)
+        pump(lambda: handle in responses)
+        response, results = responses.pop(handle)
+        assert response == (1 if cancel else 0), (label, response, results)
+        if not cancel:
+            assert results['uris'] == [expected.as_uri()], (label, results)
+    print('PASS Add Drive folder hints, default/remembered locations, selection and cancellation')
     # Exercise the real document service on this bus; no fake document proxy.
     with source.open('rb') as stream:
         fds = Gio.UnixFDList.new()

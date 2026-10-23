@@ -74,6 +74,45 @@ def client(binary):
         expect_error(lambda:call('org.freedesktop.impl.portal.Settings','Read',GLib.Variant('(ss)',('unknown','key'))),'NotFound')
         expect_error(lambda:call('org.freedesktop.DBus.Properties','Set',GLib.Variant('(ssv)',('org.freedesktop.impl.portal.Lockdown','disable-printing',GLib.Variant('b',False)))),'AccessDenied')
         print('PASS trusted frontend boundary, typed appearance, namespace filtering and policy ownership',flush=True)
+        folder_cases = [
+            ('omitted', None, False),
+            ('empty', b'', False),
+            ('nul', b'\0', False),
+            ('absolute', os.fsencode(os.environ['HOME']) + b'\0', False),
+            ('relative', b'relative\0', True),
+            ('unterminated', b'/tmp', True),
+            ('embedded_nul', b'/tmp\0extra\0', True),
+            ('nul_with_payload', b'\0extra\0', True),
+            ('double_nul', b'\0\0', True),
+            ('oversized', b'/' + b'x' * 4095 + b'\0', True),
+        ]
+        for method in ('OpenFile', 'SaveFile', 'SaveFiles'):
+            for label, folder, rejected in folder_cases:
+                options = {'directory': GLib.Variant('b', True)} if method == 'OpenFile' else {}
+                if method == 'SaveFiles':
+                    options['files'] = GLib.Variant('aay', [b'new.txt\0'])
+                if folder is not None:
+                    options['current_folder'] = GLib.Variant('ay', folder)
+                handle = path + '/request/test/folder_' + method + '_' + label
+                result = request('FileChooser', method, GLib.Variant('(osssa{sv})',
+                    (handle, 'org.example.Test', '', 'Folder hint test', options)))
+                if not rejected:
+                    time.sleep(.3)
+                    call('org.freedesktop.impl.portal.Request', 'Close', object_path=handle)
+                pump_until(lambda: result)
+                assert not isinstance(result[0], GLib.Error), (method, label, result)
+                assert result[0].unpack() == (2 if rejected else 1, {}), (method, label, result[0])
+        # The empty-folder exception must not relax the shared current_file parser.
+        for i, current_file in enumerate((b'', b'\0', b'relative\0', b'/tmp', b'/tmp\0extra\0')):
+            handle = path + '/request/test/current_file_' + str(i)
+            result = request('FileChooser', 'SaveFile', GLib.Variant('(osssa{sv})',
+                (handle, 'org.example.Test', '', 'Invalid file hint',
+                 {'current_folder': GLib.Variant('ay', b'\0'),
+                  'current_file': GLib.Variant('ay', current_file)})))
+            pump_until(lambda: result)
+            assert not isinstance(result[0], GLib.Error), result
+            assert result[0].unpack() == (2, {}), result[0]
+        print('PASS empty folder hints across open/save/batch and strict nonempty/file path validation', flush=True)
         cases=[
             ('FileChooser','OpenFile','(osssa{sv})',('org.example.Test','','Select files',{})),
             ('FileChooser','SaveFile','(osssa{sv})',('org.example.Test','','Save files',{})),

@@ -18,6 +18,12 @@ pub fn bytes_path(value: ?*ffi.GVariant, path: [*c][*c]u8) callconv(.c) ffi.gboo
     return 1;
 }
 
+fn empty_folder(value: ?*ffi.GVariant) bool {
+    var n: ffi.gsize = 0;
+    const bytes: [*c]const u8 = @ptrCast(ffi.g_variant_get_fixed_array(value, &n, 1));
+    return n == 0 or (n == 1 and bytes[0] == 0);
+}
+
 pub fn make_filter(value: ?*ffi.GVariant) callconv(.c) ?*ffi.GtkFileFilter {
     var name: [*c]const u8 = undefined;
     var rules: ?*ffi.GVariant = undefined;
@@ -168,7 +174,9 @@ pub fn portal_files(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void {
     }
     const folder: ?*ffi.GVariant = portal_option(r.*.options, "current_folder", "ay");
     defer if (folder != null) ffi.g_variant_unref(@ptrCast(folder));
-    if (folder != null) {
+    // current_folder is only a hint. Steam sends an empty path for Add Drive;
+    // leave the chooser's default/restored location intact in that case.
+    if (folder != null and !empty_folder(folder)) {
         var path: [*c]u8 = null;
         defer if (path != null) ffi.g_free(@ptrCast(path));
         if (!(bytes_path(folder, &path) != 0)) {
