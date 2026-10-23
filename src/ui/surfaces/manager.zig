@@ -1268,7 +1268,7 @@ pub const Manager = struct {
                 view.update();
             }
             // A longer status line, such as a failure reason, can add a line.
-            if (self.pane == .tray or self.pane == .scheduling) self.positionPopup();
+            if (self.pane == .tray or self.pane == .scheduling or self.pane == .media) self.positionPopup();
             if (popup.control != null and self.layout_stamp != self.workspaceStamp(popup.output)) {
                 self.layout.?.cancel();
                 self.queryLayout(popup.output, null) catch {};
@@ -1449,6 +1449,8 @@ pub const Manager = struct {
                     .media => {
                         const scroll = gtk.ScrolledWindow.new();
                         scroll.setPolicy(.never, .automatic);
+                        // Report the content height so positionPopup can hug it.
+                        scroll.setPropagateNaturalHeight(1);
                         scroll.as(gtk.Widget).setVexpand(1);
                         const content = gtk.Box.new(.vertical, 12);
                         scroll.setChild(content.as(gtk.Widget));
@@ -1774,8 +1776,9 @@ pub const Manager = struct {
                 height = @min(@max(size.height + 16, 48), height);
             }
         }
-        if (self.pane == .scheduling) {
-            // The scheduler card hugs its content; its text wraps to the pane width.
+        if (self.pane == .scheduling or self.pane == .media or self.pane == .calendar) {
+            // These cards hug their content instead of reserving the full pane;
+            // scrolled panes scroll once their content exceeds the max height.
             var natural: c_int = 0;
             s.panel.measure(.vertical, width, null, &natural, null, null);
             if (natural > 0) height = @min(natural, height);

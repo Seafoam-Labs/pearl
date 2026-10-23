@@ -466,7 +466,6 @@ pub const View = struct {
         };
         if (focused == self.apply_button.as(gtk.Widget)) name = "settings-apply";
         if (focused == self.wallpaper_button.as(gtk.Widget)) name = "settings-wallpaper-choose";
-        if (focused == self.greeter_sync.button.as(gtk.Widget)) name = "settings-greeter-sync";
         if (focused == self.merge_button.as(gtk.Widget)) name = "settings-merge";
         const prior = std.mem.sliceTo(&self.last_probe, 0);
         if (!std.mem.eql(u8, prior, name)) {

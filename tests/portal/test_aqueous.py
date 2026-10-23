@@ -33,7 +33,7 @@ def main():
         assert 'xdg-desktop-portal-gtk' not in session, session
         pearl = packages['aqueous-shell-pearl' + suffix]['depends']
         assert 'pearl' + suffix in pearl, pearl
-        assert 'pearl-capture-picker' + suffix + '>=1' in pearl, pearl
+        assert 'pearl-capture-picker>=1' in pearl, pearl
         assert 'xdg-desktop-portal-pearl' + suffix not in pearl, pearl
         assert any(p.startswith('xdg-desktop-portal-aqueous' + suffix + '=') for p in pearl)
         assert 'xdg-desktop-portal-gtk' not in pearl

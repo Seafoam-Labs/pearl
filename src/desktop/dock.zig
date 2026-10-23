@@ -17,6 +17,8 @@ const placement = @import("../ui/surfaces/policy.zig");
 const w = @import("../ui/components/widgets.zig");
 const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
+const fade_ms: f64 = 180;
+const fade_step_ms: c_uint = 16;
 const identity = @import("app_identity.zig");
 const TaskApps = @import("task_apps.zig");
 const Picker = @import("launcher_picker.zig");
@@ -49,6 +51,11 @@ pub const Dock = struct {
     fullscreen: bool = false,
     obstructed: bool = false,
     timer: c_uint = 0,
+    fade: c_uint = 0,
+    fade_start: i64 = 0,
+    fade_from: f64 = 1,
+    fade_to: f64 = 1,
+    shown: bool = false,
     destroying: bool = false,
     appearance: u64 = std.math.maxInt(u64),
     context: *anyopaque,
@@ -117,6 +124,7 @@ pub const Dock = struct {
     pub fn destroy(self: *Dock) void {
         self.destroying = true;
         if (self.timer != 0) _ = glib.Source.remove(self.timer);
+        self.stopFade();
         self.effects.deinit();
         self.clear();
         self.window.destroy();
@@ -242,7 +250,9 @@ pub const Dock = struct {
         const estimate: i32 = @intCast(@max(1, self.count) * (@as(usize, self.config.icon_size) + 36) + 12);
         const width = if (vertical) @as(i32, self.config.icon_size) + 40 else @min(length, estimate);
         const height = if (vertical) @min(length, estimate) else @as(i32, self.config.icon_size) + 40;
-        self.window.setDefaultSize(if (vertical) width else -1, if (vertical) -1 else height);
+        // Horizontal docks hug their content height; the forced estimate left
+        // dead space below the icons once the indicator got tighter.
+        self.window.setDefaultSize(if (vertical) width else -1, -1);
         for ([_]*gtk.Window{ self.window, self.sensor }) |win| {
             inline for (std.meta.tags(placement.Edge)) |edge| {
                 const native_edge: layer.Edge = switch (edge) {
@@ -257,7 +267,10 @@ pub const Dock = struct {
         }
         const actual_width = if (self.window.as(gtk.Widget).getWidth() > 0) self.window.as(gtk.Widget).getWidth() else width;
         const actual_height = if (self.window.as(gtk.Widget).getHeight() > 0) self.window.as(gtk.Widget).getHeight() else height;
-        self.sensor.setDefaultSize(if (vertical) 2 else actual_width, if (vertical) actual_height else 2);
+        // Fill the margin gap between the screen edge and the dock so the
+        // pointer never crosses dead space where both surfaces lose hover.
+        const strip = @max(2, @as(i32, self.config.margin));
+        self.sensor.setDefaultSize(if (vertical) strip else actual_width, if (vertical) actual_height else strip);
         self.rect = .{ .x = self.bounds.x + @divTrunc(self.bounds.width - actual_width, 2), .y = self.bounds.y + @divTrunc(self.bounds.height - actual_height, 2), .width = actual_width, .height = actual_height };
         switch (self.config.edge) {
             .top => self.rect.y = self.bounds.y + self.config.margin,
@@ -275,8 +288,51 @@ pub const Dock = struct {
         const shown = p.shown(self.reason);
         layer.setLayer(self.window, if (shown and self.fullscreen) .overlay else .top);
         layer.setKeyboardMode(self.window, if (shown and self.keyboard) .exclusive else .none);
-        self.window.as(gtk.Widget).setVisible(@intFromBool(shown));
+        if (self.shown != shown) {
+            self.shown = shown;
+            self.animate(shown);
+        }
         self.sensor.as(gtk.Widget).setVisible(@intFromBool(self.config.enabled and !self.locked and self.count != 0));
+    }
+    /// Fades the dock instead of popping it; autohide and intelligent animate,
+    /// and reduced motion keeps the instant switch.
+    fn animate(self: *Dock, show: bool) void {
+        const widget = self.window.as(gtk.Widget);
+        if (self.config.mode == .always or widget.hasCssClass("pearl-reduced-motion") != 0) {
+            self.stopFade();
+            widget.setOpacity(1);
+            widget.setVisible(@intFromBool(show));
+            return;
+        }
+        const was_visible = widget.getVisible() != 0;
+        self.fade_from = if (was_visible) widget.getOpacity() else 0;
+        self.fade_to = if (show) 1 else 0;
+        self.fade_start = @divTrunc(glib.getMonotonicTime(), 1000);
+        if (show) {
+            if (!was_visible) widget.setOpacity(0);
+            widget.setVisible(1);
+        }
+        if (self.fade == 0) self.fade = glib.timeoutAdd(fade_step_ms, fadeStep, self);
+    }
+    fn stopFade(self: *Dock) void {
+        if (self.fade != 0) _ = glib.Source.remove(self.fade);
+        self.fade = 0;
+    }
+    fn fadeStep(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Dock = @ptrCast(@alignCast(data.?));
+        self.fade = 0;
+        if (self.destroying) return 0;
+        const widget = self.window.as(gtk.Widget);
+        const elapsed = @divTrunc(glib.getMonotonicTime(), 1000) - self.fade_start;
+        const t = @min(1.0, @max(0.0, @as(f64, @floatFromInt(elapsed)) / fade_ms));
+        const eased = 1 - std.math.pow(f64, 1 - t, 3);
+        widget.setOpacity(self.fade_from + (self.fade_to - self.fade_from) * eased);
+        if (t >= 1.0) {
+            if (self.fade_to == 0) widget.setVisible(0);
+            return 0;
+        }
+        self.fade = glib.timeoutAdd(fade_step_ms, fadeStep, self);
+        return 0;
     }
     pub fn reveal(self: *Dock, value: bool) void {
         self.keyboard = value;
@@ -374,7 +430,9 @@ pub const Dock = struct {
             icon.setPixelSize(self.config.icon_size);
             content.append(icon.as(gtk.Widget));
             const indicator = if (group.windows.items.len > 1) try std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ if (focused) "●" else "•", group.windows.items.len }, 0) else if (focused) "●" else if (minimized) "◦" else if (group.windows.items.len > 0) "•" else "";
-            content.append(gtk.Label.new(indicator).as(gtk.Widget));
+            const indicator_label = gtk.Label.new(indicator);
+            indicator_label.as(gtk.Widget).addCssClass("pearl-dock-indicator");
+            content.append(indicator_label.as(gtk.Widget));
             primary.setChild(content.as(gtk.Widget));
             box.append(primary.as(gtk.Widget));
             const menu = gtk.Popover.new();

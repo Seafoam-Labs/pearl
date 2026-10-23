@@ -11,7 +11,6 @@ const w = @import("../ui/components/widgets.zig");
 const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
 pub const View = struct {
-    button: *gtk.Button,
     choose: *gtk.Button,
     picker: ?*gtk.FileChooserNative = null,
     status: *gtk.Label,
@@ -25,11 +24,6 @@ pub const View = struct {
         box.as(gtk.Widget).setMarginTop(12);
         box.as(gtk.Widget).setMarginBottom(12);
         host.append(box.as(gtk.Widget));
-        box.append(w.label(if (german) "Anmeldebildschirm" else "Login screen", "pearl-title").as(gtk.Widget));
-        const button = w.wrappingButton(if (german) "Mit Greeter synchronisieren" else "Sync to greeter");
-        button.as(gtk.Widget).setHalign(.start);
-        w.name(button.as(gtk.Widget), if (german) "Mit Greeter synchronisieren" else "Sync to greeter");
-        box.append(button.as(gtk.Widget));
         const choose = w.wrappingButton(if (german) "Bild auswählen und synchronisieren…" else "Choose image and sync…");
         choose.as(gtk.Widget).setHalign(.start);
         w.name(choose.as(gtk.Widget), if (german) "Bild auswählen und synchronisieren" else "Choose image and sync");
@@ -37,22 +31,17 @@ pub const View = struct {
         const status = w.label(if (german) "Kopiert Hintergrund und Design. Erfordert Administrator-Authentifizierung." else "Copies this background and theme. Administrator authentication is required.", "pearl-secondary");
         status.setWrap(1);
         box.append(status.as(gtk.Widget));
-        self.* = .{ .button = button, .choose = choose, .status = status, .context = context, .get = get, .german = german };
+        self.* = .{ .choose = choose, .status = status, .context = context, .get = get, .german = german };
         if (glib.fileTest(helper(), .{ .is_executable = true }) == 0) {
-            button.as(gtk.Widget).setSensitive(0);
             choose.as(gtk.Widget).setSensitive(0);
             status.setText(if (german) "Pearl Greeter installieren, um das Erscheinungsbild zu synchronisieren." else "Install Pearl Greeter to sync its appearance.");
         }
-        _ = gtk.Button.signals.clicked.connect(button, *View, clicked, self, .{});
         _ = gtk.Button.signals.clicked.connect(choose, *View, chooseClicked, self, .{});
         return self;
     }
     pub fn destroy(self: *View) void {
         if (self.job) |job| job.owner = null;
         a.destroy(self);
-    }
-    fn clicked(_: *gtk.Button, self: *View) callconv(.c) void {
-        self.start(null);
     }
     fn chooseClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         if (self.job != null or self.picker != null) return;
@@ -122,7 +111,6 @@ pub const View = struct {
             }
         }
         self.job = job;
-        self.button.as(gtk.Widget).setSensitive(0);
         self.choose.as(gtk.Widget).setSensitive(0);
         self.status.setText(if (self.german) "Erscheinungsbild wird synchronisiert…" else "Syncing appearance…");
         job.timer = glib.timeoutAdd(180000, Job.timedOut, job);
@@ -338,7 +326,6 @@ const Job = struct {
         defer self.destroy();
         if (self.owner) |owner| {
             owner.job = null;
-            owner.button.as(gtk.Widget).setSensitive(1);
             owner.choose.as(gtk.Widget).setSensitive(1);
             const message: [:0]const u8 = if (self.denied)
                 (if (owner.german) "Synchronisierung nicht autorisiert." else "Sync cancelled or not authorized.")
