@@ -84,7 +84,6 @@ pub const Window = struct {
     fixture_power: ?*@import("power_view.zig").View = null,
     narrow: bool = false,
     changing: bool = false,
-    german: bool,
     styled_revision: ?u64 = null,
     style_mode: []const u8 = "dark",
     appearance_updates: u64 = 0,
@@ -106,12 +105,10 @@ pub const Window = struct {
         header.setShowTitleButtons(1);
         header.setDecorationLayout("menu:minimize,maximize,close");
         const brand = w.row(10);
-        const pearl = w.label("●", "settings-pearl");
+        const pearl = w.label(@import("i18n").dtr("pearl", "●"), "settings-pearl");
         pearl.as(gtk.Widget).setHexpand(0);
         brand.append(pearl.as(gtk.Widget));
-        const locale = if (glib.getenv("LANG")) |v| std.mem.span(v) else "";
-        const german = std.mem.startsWith(u8, locale, "de");
-        const brand_name = w.label(if (german) "Pearl Einstellungen" else "Pearl Settings", "settings-brand");
+        const brand_name = w.label(@import("i18n").dtr("pearl", "Pearl Settings"), "settings-brand");
         brand_name.as(gtk.Widget).setHexpand(0);
         brand_name.setWrap(0);
         brand_name.setEllipsize(.end);
@@ -120,7 +117,7 @@ pub const Window = struct {
         header.packStart(brand.as(gtk.Widget));
         header.setTitleWidget(gtk.Box.new(.horizontal, 0).as(gtk.Widget));
         const sections = gtk.MenuButton.new();
-        sections.setLabel(if (german) "Bereiche" else "Sections");
+        sections.setLabel(@import("i18n").dtr("pearl", "Sections"));
         header.packEnd(sections.as(gtk.Widget));
         const popover = gtk.Popover.new();
         sections.setPopover(popover);
@@ -149,7 +146,7 @@ pub const Window = struct {
         heading.as(gtk.Accessible).updateProperty(.level, @as(c_int, 1), @as(c_int, -1));
         page_header.as(gtk.Widget).setFocusable(1);
         const subtitle = w.label("", "pearl-secondary");
-        const aqueous_context = w.label("Aqueous", "pearl-secondary");
+        const aqueous_context = w.label(@import("i18n").dtr("pearl", "Aqueous"), "pearl-secondary");
         page_header.append(aqueous_context.as(gtk.Widget));
         const heading_row = w.row(16);
         const display_count = w.label("", "pearl-secondary");
@@ -162,7 +159,7 @@ pub const Window = struct {
         heading_row.append(display_count.as(gtk.Widget));
         page_header.append(heading_row.as(gtk.Widget));
         page_header.append(subtitle.as(gtk.Widget));
-        const saved_button = w.wrappingButton(if (german) "Gespeichertes JSON anzeigen" else "View saved JSON");
+        const saved_button = w.wrappingButton(@import("i18n").dtr("pearl", "View saved JSON"));
         saved_button.as(gtk.Widget).setHalign(.start);
         saved_button.as(gtk.Widget).setVisible(0);
         page_header.append(saved_button.as(gtk.Widget));
@@ -170,7 +167,7 @@ pub const Window = struct {
         const status_box = w.row(12);
         status_box.as(gtk.Widget).addCssClass("settings-status");
         const status = w.label("", "pearl-secondary");
-        const retry_button = w.wrappingButton(if (german) "Erneut versuchen" else "Retry");
+        const retry_button = w.wrappingButton(@import("i18n").dtr("pearl", "Retry"));
         status_box.append(status.as(gtk.Widget));
         status_box.append(retry_button.as(gtk.Widget));
         main.append(status_box.as(gtk.Widget));
@@ -188,11 +185,11 @@ pub const Window = struct {
         actions.as(gtk.Widget).setHalign(.end);
         // Single-line labels and centred valign: the footer grows when a draft
         // badge appears, and stretched or wrapping buttons turn into pills.
-        const review_button = gtk.Button.newWithLabel("Review drafts");
-        const discard = gtk.Button.newWithLabel(if (german) "Verwerfen" else "Discard");
-        const save = gtk.Button.newWithLabel(if (german) "Anwenden und speichern" else "Apply & save");
+        const review_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Review drafts"));
+        const discard = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Discard"));
+        const save = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Apply & save"));
         save.as(gtk.Widget).addCssClass("pearl-primary");
-        const merge_button = gtk.Button.newWithLabel(if (german) "Änderungen zusammenführen" else "Merge changes");
+        const merge_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Merge changes"));
         for ([_]*gtk.Button{ review_button, discard, save, merge_button }) |button| button.as(gtk.Widget).setValign(.center);
         review_button.as(gtk.Widget).setVisible(0);
         actions.append(review_button.as(gtk.Widget));
@@ -201,7 +198,7 @@ pub const Window = struct {
         actions.append(discard.as(gtk.Widget));
         actions.append(save.as(gtk.Widget));
         const footer_labels = w.column(4);
-        const draft_badge = w.label(if (german) "Ungespeicherte Änderungen" else "Unsaved changes", "settings-draft-badge");
+        const draft_badge = w.label(@import("i18n").dtr("pearl", "Unsaved changes"), "settings-draft-badge");
         draft_badge.as(gtk.Widget).setVisible(0);
         footer_labels.as(gtk.Widget).setHexpand(1);
         footer_labels.append(draft_badge.as(gtk.Widget));
@@ -214,7 +211,7 @@ pub const Window = struct {
         main.append(footer.as(gtk.Widget));
         layout.append(main.as(gtk.Widget));
         root.append(layout.as(gtk.Widget));
-        win.setTitle(if (german) "Pearl Einstellungen" else "Pearl Settings");
+        win.setTitle(@import("i18n").dtr("pearl", "Pearl Settings"));
         win.setTitlebar(header.as(gtk.Widget));
         win.setChild(root.as(gtk.Widget));
         win.as(gtk.Widget).addCssClass("pearl-root");
@@ -230,7 +227,7 @@ pub const Window = struct {
             monitor.getGeometry(&rect);
             win.setDefaultSize(@min(1040, @max(240, rect.f_width - 32)), @min(760, @max(200, rect.f_height - 64)));
         }
-        self.* = .{ .aqueous = aqueous, .aqueous_footer = aqueous_footer, .review_button = review_button, .window = win, .root = root, .sidebar = sidebar, .sections = sections, .popover = popover, .popup_scroll = popup_scroll, .heading = heading, .heading_anchor = page_header.as(gtk.Widget), .subtitle = subtitle, .stack = stack, .footer = footer, .footer_text = footer_text, .save = save, .discard = discard, .merge_button = merge_button, .actions = actions, .draft_badge = draft_badge, .editor = editor, .saved_button = saved_button, .retry_button = retry_button, .status = status, .aqueous_context = aqueous_context, .display_count = display_count, .arena = .init(a), .context = context, .retry = retry, .close = close, .fixture = fixture, .narrow = true, .german = german, .css = gtk.CssProvider.new(), .native_css = gtk.CssProvider.new(), .font_css = gtk.CssProvider.new() };
+        self.* = .{ .aqueous = aqueous, .aqueous_footer = aqueous_footer, .review_button = review_button, .window = win, .root = root, .sidebar = sidebar, .sections = sections, .popover = popover, .popup_scroll = popup_scroll, .heading = heading, .heading_anchor = page_header.as(gtk.Widget), .subtitle = subtitle, .stack = stack, .footer = footer, .footer_text = footer_text, .save = save, .discard = discard, .merge_button = merge_button, .actions = actions, .draft_badge = draft_badge, .editor = editor, .saved_button = saved_button, .retry_button = retry_button, .status = status, .aqueous_context = aqueous_context, .display_count = display_count, .arena = .init(a), .context = context, .retry = retry, .close = close, .fixture = fixture, .narrow = true, .css = gtk.CssProvider.new(), .native_css = gtk.CssProvider.new(), .font_css = gtk.CssProvider.new() };
         errdefer self.destroy();
         const navbox = self.navigation(0);
         sidebar.setChild(navbox.as(gtk.Widget));
@@ -253,7 +250,7 @@ pub const Window = struct {
             const appearance_page = &self.pages[@intFromEnum(nav.Route.appearance)];
             const appearance_body = object.ext.cast(gtk.Box, appearance_page.body).?;
             while (appearance_body.as(gtk.Widget).getFirstChild()) |child| appearance_body.remove(child);
-            self.preferences_view = try @import("preferences_view.zig").View.create(win, appearance_body, editor, german);
+            self.preferences_view = try @import("preferences_view.zig").View.create(win, appearance_body, editor);
             const assistant_body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(nav.Route.assistant)].body).?;
             while (assistant_body.as(gtk.Widget).getFirstChild()) |child| assistant_body.remove(child);
             self.assistant_view = try @import("assistant_view.zig").View.create(assistant_body, editor);
@@ -278,7 +275,7 @@ pub const Window = struct {
             service.* = .{ .app = app.as(gio.Application), .context = self, .changed = schedulerChanged, .enabled = true, .notify = false };
             self.scheduler_service = service;
             service.start();
-            self.scheduler_view = try @import("scheduler_view.zig").View.create(body, service, german);
+            self.scheduler_view = try @import("scheduler_view.zig").View.create(body, service);
         }
         if (!fixture) for ([_]nav.Route{ .overview, .network, .bluetooth, .sound, .power, .notifications, .session }) |route| {
             const body = object.ext.cast(gtk.Box, self.pages[@intFromEnum(route)].body).?;
@@ -301,7 +298,7 @@ pub const Window = struct {
         if (!fixture) {
             const host = object.ext.cast(gtk.Box, self.pages[@intFromEnum(nav.Route.aqueous)].body).?;
             while (host.as(gtk.Widget).getFirstChild()) |child| host.remove(child);
-            self.aqueous_view = try @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).createIn(host, aqueous, win, aqueous_footer, self.german);
+            self.aqueous_view = try @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).createIn(host, aqueous, win, aqueous_footer);
             self.aqueous_view.?.rebuild_observer = .{ .context = self, .notify = aqueousRebuilt };
             self.aqueous_view.?.open_appearance = .{ .context = self, .notify = aqueousAppearanceRequested };
             self.aqueous_view.?.open_section = .{ .context = self, .notify = aqueousSectionRequested };
@@ -379,44 +376,25 @@ pub const Window = struct {
         self.arena.deinit();
         a.destroy(self);
     }
-    fn t(self: *Window, en: [:0]const u8, de: [:0]const u8) [:0]const u8 {
-        return if (self.german) de else en;
+    fn title(_: *Window, route: nav.Route) [:0]const u8 {
+        return @import("i18n").tr(route.title());
     }
-    fn title(self: *Window, route: nav.Route) [:0]const u8 {
-        if (!self.german) return route.title();
+    fn description(_: *Window, route: nav.Route) [:0]const u8 {
         return switch (route) {
-            .overview => "Übersicht",
-            .network => "Netzwerk",
-            .bluetooth => "Bluetooth",
-            .sound => "Klang",
-            .power => "Energie und Akku",
-            .appearance => "Erscheinungsbild",
-            .assistant => "Assistent",
-            .bar => "Leiste und Dock",
-            .notifications => "Benachrichtigungen",
-            .system => "System",
-            .session => "Sitzung und Sperre",
-            .aqueous => "Aqueous",
-            .advanced => "Erweitert",
-            .plugins => "Plugins",
-        };
-    }
-    fn description(self: *Window, route: nav.Route) [:0]const u8 {
-        return switch (route) {
-            .overview => self.t("Your desktop settings, together.", "Alle Desktop-Einstellungen an einem Ort."),
-            .appearance => self.t("Make Pearl feel at home on your desktop.", "Gestalte Pearl für deinen Desktop."),
-            .assistant => self.t("Optional local answers with your chosen search engines.", "Optionale lokale Antworten mit deinen Suchmaschinen."),
-            .network => self.t("Manage your connections and nearby networks.", "Verbindungen und Netzwerke verwalten."),
-            .bluetooth => self.t("Connect and manage your wireless devices.", "Drahtlose Geräte verbinden und verwalten."),
-            .sound => self.t("Choose where sound plays and how you are heard.", "Wiedergabe und Mikrofon einstellen."),
-            .power => self.t("Balance performance and battery life.", "Leistung und Akkulaufzeit einstellen."),
-            .bar => self.t("Arrange your desktop bar and dock.", "Desktop-Leiste und Dock anordnen."),
-            .notifications => self.t("Manage interruptions and notification history.", "Unterbrechungen und Benachrichtigungen verwalten."),
-            .system => self.t("Manage system performance and CPU scheduling.", "Systemleistung und CPU-Planung verwalten."),
-            .session => self.t("Automatic locking and sleep for your session.", "Automatische Sperre und Ruhemodus einstellen."),
-            .aqueous => self.t("Configure your compositor by section.", "Compositor nach Bereichen konfigurieren."),
-            .plugins => self.t("Manage installed plugins, permissions and placement.", "Installierte Plugins, Berechtigungen und Platzierung verwalten."),
-            .advanced => self.t("Review the complete Pearl preferences document.", "Alle Pearl-Einstellungen als Dokument anzeigen."),
+            .overview => @import("i18n").dtr("pearl", "Your desktop settings, together."),
+            .appearance => @import("i18n").dtr("pearl", "Make Pearl feel at home on your desktop."),
+            .assistant => @import("i18n").dtr("pearl", "Optional local answers with your chosen search engines."),
+            .network => @import("i18n").dtr("pearl", "Manage your connections and nearby networks."),
+            .bluetooth => @import("i18n").dtr("pearl", "Connect and manage your wireless devices."),
+            .sound => @import("i18n").dtr("pearl", "Choose where sound plays and how you are heard."),
+            .power => @import("i18n").dtr("pearl", "Balance performance and battery life."),
+            .bar => @import("i18n").dtr("pearl", "Arrange your desktop bar and dock."),
+            .notifications => @import("i18n").dtr("pearl", "Manage interruptions and notification history."),
+            .system => @import("i18n").dtr("pearl", "Manage system performance and CPU scheduling."),
+            .session => @import("i18n").dtr("pearl", "Automatic locking and sleep for your session."),
+            .aqueous => @import("i18n").dtr("pearl", "Configure your compositor by section."),
+            .plugins => @import("i18n").dtr("pearl", "Manage installed plugins, permissions and placement."),
+            .advanced => @import("i18n").dtr("pearl", "Review the complete Pearl preferences document."),
         };
     }
     fn icon(route: nav.Route) [:0]const u8 {
@@ -434,10 +412,9 @@ pub const Window = struct {
             .system, .advanced, .plugins => "pearl-emblem-system-symbolic",
         };
     }
-    fn sectionTitle(self: *Window, index: usize) [:0]const u8 {
-        const en = [_][:0]const u8{ "Appearance", "Layouts", "Input", "Shortcuts", "Rules", "Displays", "Advanced" };
-        const de = [_][:0]const u8{ "Erscheinungsbild", "Layouts", "Eingabe", "Tastenkürzel", "Regeln", "Bildschirme", "Erweitert" };
-        return if (self.german) de[index] else en[index];
+    fn sectionTitle(_: *Window, index: usize) [:0]const u8 {
+        const en = [_][:0]const u8{ @import("i18n").mark("Appearance"), @import("i18n").mark("Layouts"), @import("i18n").mark("Input"), @import("i18n").mark("Shortcuts"), @import("i18n").mark("Rules"), @import("i18n").mark("Displays"), @import("i18n").mark("Advanced") };
+        return @import("i18n").tr(en[index]);
     }
     fn navigationLink(self: *Window, box: *gtk.Box, index: usize, target: nav.Target) void {
         const button = gtk.ToggleButton.new();
@@ -462,14 +439,14 @@ pub const Window = struct {
     fn navigation(self: *Window, index: usize) *gtk.Box {
         const box = w.column(2);
         box.as(gtk.Widget).addCssClass("settings-nav");
-        w.name(box.as(gtk.Widget), self.t("Settings sections", "Einstellungsbereiche"));
+        w.name(box.as(gtk.Widget), @import("i18n").dtr("pearl", "Settings sections"));
         for (std.enums.values(nav.Route)) |route| {
             const group: ?[:0]const u8 = switch (route) {
-                .overview => self.t("GENERAL", "ALLGEMEIN"),
-                .network => self.t("CONNECTIONS", "VERBINDUNGEN"),
-                .sound => self.t("DEVICES", "GERÄTE"),
-                .appearance => self.t("DESKTOP", "DESKTOP"),
-                .system => self.t("SYSTEM", "SYSTEM"),
+                .overview => @import("i18n").dtr("pearl", "GENERAL"),
+                .network => @import("i18n").dtr("pearl", "CONNECTIONS"),
+                .sound => @import("i18n").dtr("pearl", "DEVICES"),
+                .appearance => @import("i18n").dtr("pearl", "DESKTOP"),
+                .system => @import("i18n").dtr("pearl", "SYSTEM"),
                 else => null,
             };
             if (group) |text| box.append(w.label(text, "settings-group").as(gtk.Widget));
@@ -550,8 +527,8 @@ pub const Window = struct {
         }
         const card_ = self.card(body);
         card_.append(w.icon(icon(route)).as(gtk.Widget));
-        card_.append(w.label(self.t("Waiting for settings", "Einstellungen werden erwartet"), "settings-row-title").as(gtk.Widget));
-        card_.append(w.label(self.t("This page needs a compatible Pearl session. Your settings will appear here when they are available.", "Dieser Bereich benötigt eine kompatible Pearl-Sitzung. Verfügbare Einstellungen werden hier angezeigt."), "pearl-secondary").as(gtk.Widget));
+        card_.append(w.label(@import("i18n").dtr("pearl", "Waiting for settings"), "settings-row-title").as(gtk.Widget));
+        card_.append(w.label(@import("i18n").dtr("pearl", "This page needs a compatible Pearl session. Your settings will appear here when they are available."), "pearl-secondary").as(gtk.Widget));
     }
     fn card(_: *Window, parent: *gtk.Box) *gtk.Box {
         const card_ = w.column(0);
@@ -587,7 +564,7 @@ pub const Window = struct {
         switch (route) {
             .appearance => {
                 const card_ = self.card(body);
-                self.sampleRow(card_, "Theme", "Choose how Pearl is styled", value("Material · static"));
+                self.sampleRow(card_, "Theme", @import("i18n").dtr("pearl", "Choose how Pearl is styled"), value("Material · static"));
                 self.sampleRow(card_, "Color variant", null, value("Dark"));
                 const colors = w.row(8);
                 for ([_][:0]const u8{ "lavender", "blue", "green", "pink" }) |name| {
@@ -597,53 +574,53 @@ pub const Window = struct {
                     w.name(b.as(gtk.Widget), name);
                     colors.append(b.as(gtk.Widget));
                 }
-                self.sampleRow(card_, "Accent color", "Used for selected controls and highlights", colors.as(gtk.Widget));
+                self.sampleRow(card_, "Accent color", @import("i18n").dtr("pearl", "Used for selected controls and highlights"), colors.as(gtk.Widget));
                 const wall = self.card(body);
                 const preview = w.column(0);
                 preview.as(gtk.Widget).addCssClass("settings-wallpaper");
                 preview.as(gtk.Widget).setSizeRequest(-1, 100);
                 wall.append(preview.as(gtk.Widget));
-                self.sampleRow(wall, "Wallpaper", "Lavender gradient", value("Choose image…"));
+                self.sampleRow(wall, "Wallpaper", @import("i18n").dtr("pearl", "Lavender gradient"), value("Choose image…"));
                 const fonts = self.card(body);
-                self.sampleRow(fonts, "Font size", "Pearl interface text", value("14 px"));
-                self.sampleRow(fonts, "Density", "Spacing between controls", value("Normal"));
-                self.sampleRow(fonts, "Reduced motion", "Keep transitions quiet", gtk.Switch.new().as(gtk.Widget));
+                self.sampleRow(fonts, "Font size", @import("i18n").dtr("pearl", "Pearl interface text"), value("14 px"));
+                self.sampleRow(fonts, "Density", @import("i18n").dtr("pearl", "Spacing between controls"), value("Normal"));
+                self.sampleRow(fonts, "Reduced motion", @import("i18n").dtr("pearl", "Keep transitions quiet"), gtk.Switch.new().as(gtk.Widget));
             },
             .sound => {
                 const output = self.card(body);
-                self.sampleRow(output, "Output", "Built-in speakers · Default device", value("Choose output"));
+                self.sampleRow(output, "Output", @import("i18n").dtr("pearl", "Built-in speakers · Default device"), value("Choose output"));
                 self.sampleRow(output, "Output volume", null, value("68%"));
                 const slider = gtk.Scale.newWithRange(.horizontal, 0, 100, 1);
                 slider.as(gtk.Range).setValue(68);
                 slider.setDrawValue(0);
                 output.append(slider.as(gtk.Widget));
                 const input = self.card(body);
-                self.sampleRow(input, "Input", "Built-in microphone · Default device", value("Choose input"));
+                self.sampleRow(input, "Input", @import("i18n").dtr("pearl", "Built-in microphone · Default device"), value("Choose input"));
                 self.sampleRow(input, "Input volume", null, value("52%"));
                 const apps = self.card(body);
-                self.sampleRow(apps, "Application sound", "Firefox", value("80%"));
-                self.sampleRow(apps, "Music", "Playing audio", value("64%"));
+                self.sampleRow(apps, "Application sound", @import("i18n").dtr("pearl", "Firefox"), value("80%"));
+                self.sampleRow(apps, "Music", @import("i18n").dtr("pearl", "Playing audio"), value("64%"));
             },
             .network => {
-                self.sampleRow(self.card(body), "Internet available", "Your device has internet access.", value("Connected"));
+                self.sampleRow(self.card(body), "Internet available", @import("i18n").dtr("pearl", "Your device has internet access."), value("Connected"));
                 const radio = gtk.Switch.new();
                 radio.setActive(1);
-                self.sampleRow(self.card(body), "Wi-Fi", "On · Wireless connections", radio.as(gtk.Widget));
-                self.sampleRow(self.card(body), "Home network", "Connected · Strong signal", value("Disconnect"));
+                self.sampleRow(self.card(body), "Wi-Fi", @import("i18n").dtr("pearl", "On · Wireless connections"), radio.as(gtk.Widget));
+                self.sampleRow(self.card(body), "Home network", @import("i18n").dtr("pearl", "Connected · Strong signal"), value("Disconnect"));
                 const nearby = self.card(body);
-                self.sampleRow(nearby, "Nearby networks", "Choose a network to connect", value("Refresh"));
-                self.sampleRow(nearby, "Studio", "Secured · Strong signal", value("Connect"));
-                self.sampleRow(nearby, "Guest", "Open network · Good signal", value("Connect"));
-                self.sampleRow(self.card(body), "Ethernet", "Disconnected · enp3s0", value("Set up…"));
-                self.sampleRow(self.card(body), "Saved networks", "View saved connections", value("View"));
-                self.sampleRow(self.card(body), "Advanced network settings", "VPN, hidden networks, IP & DNS", value("Network editor…"));
+                self.sampleRow(nearby, "Nearby networks", @import("i18n").dtr("pearl", "Choose a network to connect"), value("Refresh"));
+                self.sampleRow(nearby, "Studio", @import("i18n").dtr("pearl", "Secured · Strong signal"), value("Connect"));
+                self.sampleRow(nearby, "Guest", @import("i18n").dtr("pearl", "Open network · Good signal"), value("Connect"));
+                self.sampleRow(self.card(body), "Ethernet", @import("i18n").dtr("pearl", "Disconnected · enp3s0"), value("Set up…"));
+                self.sampleRow(self.card(body), "Saved networks", @import("i18n").dtr("pearl", "View saved connections"), value("View"));
+                self.sampleRow(self.card(body), "Advanced network settings", @import("i18n").dtr("pearl", "VPN, hidden networks, IP & DNS"), value("Network editor…"));
             },
             .bluetooth => {
-                self.sampleRow(self.card(body), "Bluetooth", "Built-in adapter · Available", gtk.Switch.new().as(gtk.Widget));
+                self.sampleRow(self.card(body), "Bluetooth", @import("i18n").dtr("pearl", "Built-in adapter · Available"), gtk.Switch.new().as(gtk.Widget));
                 const devices = self.card(body);
-                self.sampleRow(devices, "Studio headphones", "Connected · Trusted", value("Disconnect"));
-                self.sampleRow(devices, "Wireless keyboard", "Paired · Not connected", value("Connect"));
-                self.sampleRow(self.card(body), "Find nearby devices", "Discovery starts when you choose Find devices.", value("Find devices"));
+                self.sampleRow(devices, "Studio headphones", @import("i18n").dtr("pearl", "Connected · Trusted"), value("Disconnect"));
+                self.sampleRow(devices, "Wireless keyboard", @import("i18n").dtr("pearl", "Paired · Not connected"), value("Connect"));
+                self.sampleRow(self.card(body), "Find nearby devices", @import("i18n").dtr("pearl", "Discovery starts when you choose Find devices."), value("Find devices"));
             },
             .power => {
                 if (self.fixture) {
@@ -658,15 +635,15 @@ pub const Window = struct {
                     view.update(.{ .available = true, .battery_present = true, .percentage = 73, .state = 2, .estimate = 14400, .health = 92, .history = &.{ .{ .seconds = 0, .percent = 100 }, .{ .seconds = 60, .percent = 90 }, .{ .seconds = 120, .percent = 73 } }, .on_battery = true, .profile = "balanced", .profiles = .{ true, true, true }, .brightness = 63, .brightness_available = true, .display_power_available = true, .idle_available = true, .config = .{ .battery = .{ .lock_seconds = 120, .screen_off_seconds = 300, .suspend_seconds = 900, .dim = true }, .automatic_saver = 20 } }, &.{.{ .id = "session", .title = "Session actions", .controls = &controls }});
                     return;
                 }
-                self.sampleRow(self.card(body), "Battery", "Charging · About 35 minutes until full", value("82%"));
-                self.sampleRow(self.card(body), "Power mode", "Balance performance and energy use", value("Balanced"));
-                self.sampleRow(self.card(body), "Brightness", "Built-in display", value("72%"));
-                self.sampleRow(self.card(body), "Session & lock", "Automatic locking and sleep", value("Open settings"));
+                self.sampleRow(self.card(body), "Battery", @import("i18n").dtr("pearl", "Charging · About 35 minutes until full"), value("82%"));
+                self.sampleRow(self.card(body), "Power mode", @import("i18n").dtr("pearl", "Balance performance and energy use"), value("Balanced"));
+                self.sampleRow(self.card(body), "Brightness", @import("i18n").dtr("pearl", "Built-in display"), value("72%"));
+                self.sampleRow(self.card(body), "Session & lock", @import("i18n").dtr("pearl", "Automatic locking and sleep"), value("Open settings"));
             },
             else => {
                 const card_ = self.card(body);
                 card_.append(w.label(self.title(route), "settings-row-title").as(gtk.Widget));
-                card_.append(w.label("Page composition preview", "pearl-secondary").as(gtk.Widget));
+                card_.append(w.label(@import("i18n").dtr("pearl", "Page composition preview"), "pearl-secondary").as(gtk.Widget));
             },
         }
     }
@@ -713,9 +690,8 @@ pub const Window = struct {
         const context_title = std.fmt.allocPrintSentinel(a, "Aqueous / {s}", .{heading}, 0) catch unreachable;
         defer a.free(context_title);
         w.name(self.heading_anchor, if (target.page == .aqueous) context_title else heading);
-        const aqueous_en = [_][:0]const u8{ "Window borders, effects and desktop details.", "Arrange windows and shape your workspace.", "Make your keyboard and pointer feel right.", "Find actions and customize their shortcuts.", "Choose how matching windows behave.", "Make your screens match your workspace.", "Configuration status, sources and recovery." };
-        const aqueous_de = [_][:0]const u8{ "Fensterrahmen, Effekte und Desktop-Details.", "Fenster und Arbeitsflächen anordnen.", "Tastatur und Zeiger nach Wunsch einstellen.", "Aktionen finden und Tastenkürzel anpassen.", "Das Verhalten passender Fenster festlegen.", "Bildschirme an die Arbeitsfläche anpassen.", "Konfigurationsstatus, Quellen und Wiederherstellung." };
-        self.subtitle.setText(if (target.page == .aqueous) (if (self.german) aqueous_de[self.aqueous_section] else aqueous_en[self.aqueous_section]) else self.description(target.page));
+        const aqueous_en = [_][:0]const u8{ @import("i18n").mark("Window borders, effects and desktop details."), @import("i18n").mark("Arrange windows and shape your workspace."), @import("i18n").mark("Make your keyboard and pointer feel right."), @import("i18n").mark("Find actions and customize their shortcuts."), @import("i18n").mark("Choose how matching windows behave."), @import("i18n").mark("Make your screens match your workspace."), @import("i18n").mark("Configuration status, sources and recovery.") };
+        self.subtitle.setText(if (target.page == .aqueous) (@import("i18n").tr(aqueous_en[self.aqueous_section])) else self.description(target.page));
         self.stack.setVisibleChildName(target.page.id());
         const keep_open = self.keep_sections_open and !external and self.popover.as(gtk.Widget).getVisible() != 0;
         self.keep_sections_open = false;
@@ -734,7 +710,7 @@ pub const Window = struct {
         self.save.as(gtk.Widget).getParent().?.setVisible(@intFromBool(preference));
         self.save.as(gtk.Widget).setSensitive(0);
         self.discard.as(gtk.Widget).setSensitive(0);
-        self.footer_text.setText(if (self.fixture) (if (preference) self.t("Pearl preferences · Preview only", "Pearl-Einstellungen · Nur Vorschau") else self.t("Preview only · Sample devices", "Nur Vorschau · Beispielgeräte")) else self.t("Pearl preferences are managed by your session.", "Deine Sitzung verwaltet die Pearl-Einstellungen."));
+        self.footer_text.setText(if (self.fixture) (if (preference) @import("i18n").dtr("pearl", "Pearl preferences · Preview only") else @import("i18n").dtr("pearl", "Preview only · Sample devices")) else @import("i18n").dtr("pearl", "Pearl preferences are managed by your session."));
         self.heading.as(gtk.Accessible).announce(if (target.page == .aqueous) context_title else heading, .medium);
         if (!self.fixture) self.editingChanged();
         log.info("event=settings-page page={s}", .{target.page.id()});
@@ -825,7 +801,7 @@ pub const Window = struct {
         self.connected = connected;
         // Revisions belong to one backend incarnation, not the app lifetime.
         if (!connected) self.styled_revision = null;
-        self.status.setText(if (connected) self.t("Connected to Pearl.", "Mit Pearl verbunden.") else if (err == null) self.t("Connecting to your Pearl session…", "Verbindung mit deiner Pearl-Sitzung wird hergestellt…") else if (err.? == error.DisplayMismatch) self.t("Session mismatch. Open Settings from the matching Aqueous session.", "Sitzung stimmt nicht überein. Öffne die Einstellungen in der passenden Aqueous-Sitzung.") else if (err.? == error.Version) self.t("This Pearl session uses an incompatible Settings version.", "Diese Pearl-Sitzung verwendet eine inkompatible Einstellungsversion.") else self.t("Pearl session unavailable. Start Pearl, then choose Retry.", "Pearl-Sitzung nicht verfügbar. Starte Pearl und versuche es erneut."));
+        self.status.setText(if (connected) @import("i18n").dtr("pearl", "Connected to Pearl.") else if (err == null) @import("i18n").dtr("pearl", "Connecting to your Pearl session…") else if (err.? == error.DisplayMismatch) @import("i18n").dtr("pearl", "Session mismatch. Open Settings from the matching Aqueous session.") else if (err.? == error.Version) @import("i18n").dtr("pearl", "This Pearl session uses an incompatible Settings version.") else @import("i18n").dtr("pearl", "Pearl session unavailable. Start Pearl, then choose Retry."));
         self.status.as(gtk.Widget).getParent().?.setVisible(@intFromBool(!self.fixture));
         self.retry_button.as(gtk.Widget).setVisible(@intFromBool(!connected));
         if (connected and !self.fixture) self.editingChanged();
@@ -856,9 +832,9 @@ pub const Window = struct {
         self.save.as(gtk.Widget).setSensitive(@intFromBool(available and dirty and (if (editor.local != null) editor.local_valid else editor.state.valid) and !editor.state.conflict and !editor.recovery));
         self.discard.as(gtk.Widget).setSensitive(@intFromBool(available and dirty));
         self.merge_button.as(gtk.Widget).setSensitive(@intFromBool(available));
-        self.footer_text.setText(if (editor.recovery) self.t("Local changes need review. Merge them or discard only the local copy.", "Lokale Änderungen müssen geprüft werden. Zusammenführen oder nur die lokale Kopie verwerfen.") else if (editor.local != null) self.t("Pearl preferences · Retaining draft…", "Pearl-Einstellungen · Entwurf wird behalten…") else if (editor.state.busy) self.t("Pearl preferences · Preparing settings…", "Pearl-Einstellungen · Einstellungen werden vorbereitet…") else if (self.target.page == .system and self.scheduler_view != null) self.t("A profile applies immediately and stays selected after a restart.", "Ein Profil wirkt sofort und bleibt nach einem Neustart ausgewählt.") else if (self.target.page == .system) self.t("Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.", "Scheduler und Modus wählen, dann Scheduler anwenden. Startvorgaben bleiben unverändert.") else if (!preference_page) (if (dirty) self.t("Service controls take effect immediately. Pearl preference draft retained.", "Dienstregler wirken sofort. Der Pearl-Einstellungsentwurf bleibt behalten.") else self.t("Changes on this page take effect immediately.", "Änderungen auf dieser Seite wirken sofort.")) else if (self.target.page == .notifications) self.t("Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.", "Anwenden speichert alle Pearl-Einstellungen. Filter gelten für neue Benachrichtigungen; Nicht stören und Verlauf wirken sofort.") else if (self.target.page == .session) self.t("Apply saves Pearl preferences. Session actions take effect immediately.", "Anwenden speichert Pearl-Einstellungen. Sitzungsaktionen wirken sofort.") else if (editor.state.dirty) self.t("Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.", "Pearl-Einstellungen · Entwurf in dieser Sitzung behalten. Anwenden speichert alle Pearl-Änderungen.") else self.t("Pearl preferences · All changes are applied explicitly.", "Pearl-Einstellungen · Änderungen werden ausdrücklich angewendet."));
+        self.footer_text.setText(if (editor.recovery) @import("i18n").dtr("pearl", "Local changes need review. Merge them or discard only the local copy.") else if (editor.local != null) @import("i18n").dtr("pearl", "Pearl preferences · Retaining draft…") else if (editor.state.busy) @import("i18n").dtr("pearl", "Pearl preferences · Preparing settings…") else if (self.target.page == .system and self.scheduler_view != null) @import("i18n").dtr("pearl", "A profile applies immediately and stays selected after a restart.") else if (self.target.page == .system) @import("i18n").dtr("pearl", "Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.") else if (!preference_page) (if (dirty) @import("i18n").dtr("pearl", "Service controls take effect immediately. Pearl preference draft retained.") else @import("i18n").dtr("pearl", "Changes on this page take effect immediately.")) else if (self.target.page == .notifications) @import("i18n").dtr("pearl", "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.") else if (self.target.page == .session) @import("i18n").dtr("pearl", "Apply saves Pearl preferences. Session actions take effect immediately.") else if (editor.state.dirty) @import("i18n").dtr("pearl", "Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.") else @import("i18n").dtr("pearl", "Pearl preferences · All changes are applied explicitly."));
         if (!self.connected) return;
-        const status_text: [:0]const u8 = if (!editor.ready) self.t("Loading Pearl preferences…", "Pearl-Einstellungen werden geladen…") else if (editor.uncertain_operation) self.t("The connection ended during an operation. Review the current settings before applying again.", "Die Verbindung endete während eines Vorgangs. Prüfe die Einstellungen vor erneutem Anwenden.") else if (editor.recovery or editor.state.conflict) self.t("Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict.", "Einstellungen wurden anderswo geändert. Deine Änderungen bleiben erhalten. Zusammenführen oder den Konflikt unter Erweitert prüfen.") else if (editor.error_code.len > 0) self.errorMessage(editor.error_code.slice()) else if (!editor.state.valid) self.t("The draft is invalid. Correct the fields or review the JSON in Advanced before applying.", "Der Entwurf ist ungültig. Korrigiere die Felder oder das JSON unter Erweitert vor dem Anwenden.") else if (editor.export_error.len > 0) self.t("Preferences were saved. An export needs attention; your changes remain applied.", "Einstellungen gespeichert. Ein Export benötigt Aufmerksamkeit; die Änderungen bleiben angewendet.") else "";
+        const status_text: [:0]const u8 = if (!editor.ready) @import("i18n").dtr("pearl", "Loading Pearl preferences…") else if (editor.uncertain_operation) @import("i18n").dtr("pearl", "The connection ended during an operation. Review the current settings before applying again.") else if (editor.recovery or editor.state.conflict) @import("i18n").dtr("pearl", "Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict.") else if (editor.error_code.len > 0) self.errorMessage(editor.error_code.slice()) else if (!editor.state.valid) @import("i18n").dtr("pearl", "The draft is invalid. Correct the fields or review the JSON in Advanced before applying.") else if (editor.export_error.len > 0) @import("i18n").dtr("pearl", "Preferences were saved. An export needs attention; your changes remain applied.") else "";
         self.status.setText(status_text);
         self.status.as(gtk.Widget).getParent().?.setVisible(@intFromBool(status_text.len > 0));
         self.retry_button.as(gtk.Widget).setVisible(0);
@@ -868,7 +844,7 @@ pub const Window = struct {
         var display_text: [80]u8 = undefined;
         const connected_displays = @import("../config/aqueous_display_setup.zig").outputs(self.aqueous.value()).len;
         self.display_count.setWidthChars(if (self.narrow) 12 else 23);
-        self.display_count.setText(if (!self.aqueous.ready) "Loading displays…" else std.fmt.bufPrintZ(&display_text, "● {d} {s}{s}", .{ connected_displays, if (connected_displays == 1) @as([]const u8, "display") else "displays", if (self.narrow) @as([]const u8, "") else " connected" }) catch "Displays");
+        self.display_count.setText(if (!self.aqueous.ready) @import("i18n").dtr("pearl", "Loading displays…") else std.fmt.bufPrintZ(&display_text, "● {d} {s}{s}", .{ connected_displays, if (connected_displays == 1) @as([]const u8, "display") else "displays", if (self.narrow) @as([]const u8, "") else " connected" }) catch "Displays");
         if (self.fixture) return;
         if (self.pending_aqueous_selection) |selection| {
             if (!self.aqueous.online or self.aqueous.recovery or (!self.aqueous.dirty and self.aqueous.sending == null)) {
@@ -900,7 +876,7 @@ pub const Window = struct {
             const dialog = gtk.Dialog.new();
             _ = dialog.ref();
             self.saved_dialog = dialog;
-            dialog.as(gtk.Window).setTitle("Local Aqueous draft — recovery");
+            dialog.as(gtk.Window).setTitle(@import("i18n").dtr("pearl", "Local Aqueous draft — recovery"));
             dialog.as(gtk.Window).setTransientFor(self.window);
             dialog.as(gtk.Window).setModal(1);
             dialog.as(gtk.Window).setDefaultSize(600, 450);
@@ -912,7 +888,7 @@ pub const Window = struct {
             const scroll = gtk.ScrolledWindow.new();
             scroll.setChild(view.as(gtk.Widget));
             scroll.as(gtk.Widget).setVexpand(1);
-            dialog.getContentArea().append(w.label("This local copy has not been resubmitted. Copy it before discarding, or use Rebase to reconcile independent changes.", null).as(gtk.Widget));
+            dialog.getContentArea().append(w.label(@import("i18n").dtr("pearl", "This local copy has not been resubmitted. Copy it before discarding, or use Rebase to reconcile independent changes."), null).as(gtk.Widget));
             dialog.getContentArea().append(scroll.as(gtk.Widget));
             _ = dialog.addButton("Close", @intFromEnum(gtk.ResponseType.close));
             _ = gtk.Dialog.signals.response.connect(dialog, *Window, savedClosed, self, .{});
@@ -923,22 +899,22 @@ pub const Window = struct {
     }
     fn errorMessage(self: *Window, code: []const u8) [:0]const u8 {
         if (self.target.page == .power) {
-            if (std.mem.eql(u8, code, "LockBeforeSuspendRequired")) return self.t("Set an automatic lock time earlier than suspend in Session & lock. This change was not saved.", "Unter Sitzung und Sperre eine automatische Sperre vor der Bereitschaft festlegen. Die Änderung wurde nicht gespeichert.");
-            if (std.mem.eql(u8, code, "ScreenOffAfterSuspend")) return self.t("The screen must turn off before or at the suspend timeout. This change was not saved.", "Der Bildschirm muss spätestens bei Bereitschaft ausgehen. Die Änderung wurde nicht gespeichert.");
-            if (std.mem.eql(u8, code, "MergeConflict") or std.mem.eql(u8, code, "Conflict")) return self.t("Power settings changed in another editor. Review the retained draft in Advanced, then try again.", "Energieeinstellungen wurden anderswo geändert. Den behaltenen Entwurf unter Erweitert prüfen und erneut versuchen.");
-            if (std.mem.eql(u8, code, "Busy")) return self.t("Power settings are still saving. Wait for completion, then try again.", "Energieeinstellungen werden noch gespeichert. Danach erneut versuchen.");
+            if (std.mem.eql(u8, code, "LockBeforeSuspendRequired")) return @import("i18n").dtr("pearl", "Set an automatic lock time earlier than suspend in Session & lock. This change was not saved.");
+            if (std.mem.eql(u8, code, "ScreenOffAfterSuspend")) return @import("i18n").dtr("pearl", "The screen must turn off before or at the suspend timeout. This change was not saved.");
+            if (std.mem.eql(u8, code, "MergeConflict") or std.mem.eql(u8, code, "Conflict")) return @import("i18n").dtr("pearl", "Power settings changed in another editor. Review the retained draft in Advanced, then try again.");
+            if (std.mem.eql(u8, code, "Busy")) return @import("i18n").dtr("pearl", "Power settings are still saving. Wait for completion, then try again.");
         }
-        if (std.mem.eql(u8, code, "Busy")) return self.t("Pearl is busy. Your changes are retained; try again when the current work completes.", "Pearl ist beschäftigt. Änderungen bleiben erhalten; versuche es nach Abschluss erneut.");
-        if (std.mem.eql(u8, code, "NetworkEditorMissing")) return self.t("Install Network Connections (nm-connection-editor) to change advanced settings.", "Network Connections (nm-connection-editor) installieren, um erweiterte Einstellungen zu ändern.");
+        if (std.mem.eql(u8, code, "Busy")) return @import("i18n").dtr("pearl", "Pearl is busy. Your changes are retained; try again when the current work completes.");
+        if (std.mem.eql(u8, code, "NetworkEditorMissing")) return @import("i18n").dtr("pearl", "Install Network Connections (nm-connection-editor) to change advanced settings.");
         if (std.mem.eql(u8, code, "NetworkEditorLaunchFailed")) return "The network connection editor could not be opened. You can keep using this window.";
-        if (self.target.page == .system) return self.t("The scheduler action could not be completed. Review its status and refresh before retrying.", "Die Scheduler-Aktion konnte nicht abgeschlossen werden. Status prüfen und vor einem erneuten Versuch aktualisieren.");
+        if (self.target.page == .system) return @import("i18n").dtr("pearl", "The scheduler action could not be completed. Review its status and refresh before retrying.");
         if (self.target.page == .network or self.target.page == .bluetooth or self.target.page == .sound or self.target.page == .power or self.target.page == .notifications or self.target.page == .overview) return "The service action could not be completed. Check the status on this page and try again.";
 
-        if (std.mem.eql(u8, code, "DocumentTooLarge")) return self.t("The draft is limited to 64 KiB. The previous text is retained.", "Der Entwurf ist auf 64 KiB begrenzt. Der bisherige Text bleibt erhalten.");
-        if (std.mem.eql(u8, code, "MergeConflict")) return self.t("The same field changed in both versions. Review Advanced before resolving or discarding the draft.", "Dasselbe Feld wurde in beiden Versionen geändert. Prüfe Erweitert vor dem Auflösen oder Verwerfen.");
-        if (std.mem.eql(u8, code, "InvalidImage") or std.mem.eql(u8, code, "ImageDecodeFailed") or std.mem.eql(u8, code, "ImageRequired")) return self.t("The wallpaper image could not be used. Choose a readable PNG or JPEG, then apply again.", "Das Hintergrundbild konnte nicht verwendet werden. Wähle ein lesbares PNG oder JPEG und wende erneut an.");
-        if (std.mem.eql(u8, code, "SaveFailed")) return self.t("Preferences could not be saved. Your draft and working settings are retained.", "Einstellungen konnten nicht gespeichert werden. Entwurf und bisherige Einstellungen bleiben erhalten.");
-        return self.t("The change could not be completed. Your draft is retained. Review Advanced and try again.", "Die Änderung konnte nicht abgeschlossen werden. Der Entwurf bleibt erhalten. Prüfe Erweitert und versuche es erneut.");
+        if (std.mem.eql(u8, code, "DocumentTooLarge")) return @import("i18n").dtr("pearl", "The draft is limited to 64 KiB. The previous text is retained.");
+        if (std.mem.eql(u8, code, "MergeConflict")) return @import("i18n").dtr("pearl", "The same field changed in both versions. Review Advanced before resolving or discarding the draft.");
+        if (std.mem.eql(u8, code, "InvalidImage") or std.mem.eql(u8, code, "ImageDecodeFailed") or std.mem.eql(u8, code, "ImageRequired")) return @import("i18n").dtr("pearl", "The wallpaper image could not be used. Choose a readable PNG or JPEG, then apply again.");
+        if (std.mem.eql(u8, code, "SaveFailed")) return @import("i18n").dtr("pearl", "Preferences could not be saved. Your draft and working settings are retained.");
+        return @import("i18n").dtr("pearl", "The change could not be completed. Your draft is retained. Review Advanced and try again.");
     }
     fn applyClicked(_: *gtk.Button, self: *Window) callconv(.c) void {
         if (!self.fixture and self.target.page == .assistant) if (self.assistant_view) |view| {
@@ -961,7 +937,7 @@ pub const Window = struct {
         const dialog = gtk.Dialog.new();
         _ = dialog.ref();
         self.close_dialog = dialog;
-        dialog.as(gtk.Window).setTitle(self.t("Keep your changes", "Änderungen behalten"));
+        dialog.as(gtk.Window).setTitle(@import("i18n").dtr("pearl", "Keep your changes"));
         dialog.as(gtk.Window).setTransientFor(self.window);
         dialog.as(gtk.Window).setModal(1);
         dialog.as(gtk.Window).setDefaultSize(440, 220);
@@ -970,9 +946,9 @@ pub const Window = struct {
         box.as(gtk.Widget).setMarginEnd(20);
         box.as(gtk.Widget).setMarginTop(20);
         box.as(gtk.Widget).setMarginBottom(20);
-        box.append(w.label(self.t("Some changes have not reached Pearl. Keep this window open to recover them, or close and discard only those untransferred changes. Drafts already retained by Pearl remain in the session.", "Einige Änderungen haben Pearl noch nicht erreicht. Behalte das Fenster zur Wiederherstellung offen oder schließe es und verwirf nur die nicht übertragenen Änderungen. Bereits von Pearl behaltene Entwürfe bleiben in der Sitzung."), null).as(gtk.Widget));
-        _ = dialog.addButton(self.t("Keep open", "Offen halten"), @intFromEnum(gtk.ResponseType.cancel));
-        _ = dialog.addButton(self.t("Discard untransferred changes and close", "Nicht übertragene Änderungen verwerfen und schließen"), @intFromEnum(gtk.ResponseType.accept));
+        box.append(w.label(@import("i18n").dtr("pearl", "Some changes have not reached Pearl. Keep this window open to recover them, or close and discard only those untransferred changes. Drafts already retained by Pearl remain in the session."), null).as(gtk.Widget));
+        _ = dialog.addButton(@import("i18n").dtr("pearl", "Keep open"), @intFromEnum(gtk.ResponseType.cancel));
+        _ = dialog.addButton(@import("i18n").dtr("pearl", "Discard untransferred changes and close"), @intFromEnum(gtk.ResponseType.accept));
         dialog.setDefaultResponse(@intFromEnum(gtk.ResponseType.cancel));
         _ = gtk.Dialog.signals.response.connect(dialog, *Window, closeResponse, self, .{});
         dialog.as(gtk.Window).present();
@@ -1013,12 +989,12 @@ pub const Window = struct {
         const dialog = gtk.Dialog.new();
         _ = dialog.ref();
         self.saved_dialog = dialog;
-        dialog.as(gtk.Window).setTitle(self.t("Saved Pearl preferences", "Gespeicherte Pearl-Einstellungen"));
+        dialog.as(gtk.Window).setTitle(@import("i18n").dtr("pearl", "Saved Pearl preferences"));
         dialog.as(gtk.Window).setTransientFor(self.window);
         dialog.as(gtk.Window).setModal(1);
         dialog.as(gtk.Window).setDefaultSize(680, 520);
         const box = dialog.getContentArea();
-        box.append(w.label(self.t("Read-only saved settings. Your draft stays in Advanced. Copy values from here to resolve overlapping changes, or discard the draft to start from the saved settings.", "Gespeicherte Einstellungen, nur lesbar. Dein Entwurf bleibt unter Erweitert. Kopiere Werte zur Konfliktlösung oder verwirf den Entwurf, um mit den gespeicherten Einstellungen zu beginnen."), "pearl-secondary").as(gtk.Widget));
+        box.append(w.label(@import("i18n").dtr("pearl", "Read-only saved settings. Your draft stays in Advanced. Copy values from here to resolve overlapping changes, or discard the draft to start from the saved settings."), "pearl-secondary").as(gtk.Widget));
         const scroll = gtk.ScrolledWindow.new();
         scroll.setPolicy(.never, .automatic);
         scroll.as(gtk.Widget).setVexpand(1);
@@ -1033,7 +1009,7 @@ pub const Window = struct {
         view.getBuffer().setText(z, @intCast(z.len));
         scroll.setChild(view.as(gtk.Widget));
         box.append(scroll.as(gtk.Widget));
-        _ = dialog.addButton(self.t("Close", "Schließen"), @intFromEnum(gtk.ResponseType.close));
+        _ = dialog.addButton(@import("i18n").dtr("pearl", "Close"), @intFromEnum(gtk.ResponseType.close));
         _ = gtk.Dialog.signals.response.connect(dialog, *Window, savedClosed, self, .{});
         dialog.as(gtk.Window).present();
     }

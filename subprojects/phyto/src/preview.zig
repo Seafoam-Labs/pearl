@@ -170,7 +170,7 @@ pub const Slot = struct {
             if (self.entry) |e| {
                 if (e.state == .ready) self.apply(e);
             } else if (text and !service.eligible(info, true)) {
-                self.text.?.getBuffer().setText("No preview is available for this file type.", -1);
+                self.text.?.getBuffer().setText(@import("i18n").dtr("phyto", "No preview is available for this file type."), -1);
                 self.root.setVisibleChildName("text");
             }
         }
@@ -180,8 +180,8 @@ pub const Slot = struct {
             self.picture.setPaintable(texture.as(gdk.Paintable));
             if (self.caption) |caption| {
                 caption.setText(switch (e.provider) {
-                    .pdf => "First page",
-                    .video => "Video still",
+                    .pdf => @import("i18n").dtr("phyto", "First page"),
+                    .video => @import("i18n").dtr("phyto", "Video still"),
                     .builtin => "",
                 });
                 caption.as(gtk.Widget).setVisible(@intFromBool(e.provider != .builtin));
@@ -249,7 +249,7 @@ pub const Quick = struct {
         body.append(title.as(gtk.Widget));
         const slot = Slot.create(.quick);
         body.append(slot.root.as(gtk.Widget));
-        const open = gtk.Button.newWithLabel("Open");
+        const open = gtk.Button.newWithLabel(@import("i18n").dtr("phyto", "Open"));
         open.as(gtk.Widget).setHalign(.end);
         body.append(open.as(gtk.Widget));
         file.ref();
@@ -291,7 +291,7 @@ pub const Quick = struct {
             i.setAttributeObject("standard::file", f.as(u.object.Object));
             self.slot.set(i);
         } else {
-            self.slot.text.?.getBuffer().setText("File is unreadable or has been removed.", -1);
+            self.slot.text.?.getBuffer().setText(@import("i18n").dtr("phyto", "File is unreadable or has been removed."), -1);
             self.slot.root.setVisibleChildName("text");
         }
     }

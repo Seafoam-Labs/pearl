@@ -23,20 +23,20 @@ pub const Route = enum {
 
     pub fn title(self: Route) [:0]const u8 {
         return switch (self) {
-            .overview => "Overview",
-            .network => "Network",
-            .bluetooth => "Bluetooth",
-            .sound => "Sound",
-            .power => "Power & battery",
-            .appearance => "Appearance",
-            .assistant => "Assistant",
-            .bar => "Bar & dock",
-            .notifications => "Notifications",
-            .system => "System",
-            .session => "Session & lock",
-            .aqueous => "Aqueous",
-            .advanced => "Advanced",
-            .plugins => "Plugins",
+            .overview => @import("i18n").mark("Overview"),
+            .network => @import("i18n").mark("Network"),
+            .bluetooth => @import("i18n").mark("Bluetooth"),
+            .sound => @import("i18n").mark("Sound"),
+            .power => @import("i18n").mark("Power & battery"),
+            .appearance => @import("i18n").mark("Appearance"),
+            .assistant => @import("i18n").mark("Assistant"),
+            .bar => @import("i18n").mark("Bar & dock"),
+            .notifications => @import("i18n").mark("Notifications"),
+            .system => @import("i18n").mark("System"),
+            .session => @import("i18n").mark("Session & lock"),
+            .aqueous => @import("i18n").mark("Aqueous"),
+            .advanced => @import("i18n").mark("Advanced"),
+            .plugins => @import("i18n").mark("Plugins"),
         };
     }
 

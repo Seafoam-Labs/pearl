@@ -16,7 +16,6 @@ const a = std.heap.page_allocator;
 pub const Gallery = struct {
     window: *gtk.Window,
     builder: *gtk.Builder,
-    language: i18n.Language,
     bindings: [96]Binding = undefined,
     binding_count: usize = 0,
     connections: [64]Connection = undefined,
@@ -50,9 +49,9 @@ pub const Gallery = struct {
     pub fn widget(self: *Gallery, comptime T: type, name: [*:0]const u8) *T {
         return gobject.ext.cast(T, self.builder.getObject(name).?).?;
     }
-    fn tr(self: *Gallery, key: Key) [:0]const u8 {
+    fn tr(_: *Gallery, key: Key) [:0]const u8 {
         return switch (key) {
-            inline else => |k| i18n.text(self.language, @tagName(k)),
+            inline else => |k| i18n.text(@tagName(k)),
         };
     }
     fn bindText(self: *Gallery, widget_: *gtk.Widget, key: Key, kind: @FieldType(Binding, "kind")) void {
@@ -77,7 +76,7 @@ pub const Gallery = struct {
     }
     /// Must be called on a stable address; signal callbacks borrow this struct.
     pub fn init(self: *Gallery, window: *gtk.Window, builder: *gtk.Builder) !void {
-        self.* = .{ .window = window, .builder = builder, .language = initialLanguage() };
+        self.* = .{ .window = window, .builder = builder };
         errdefer self.deinit();
         window.as(gtk.Widget).getSettings().as(gobject.Object).get("gtk-enable-animations", &self.original_animations, @as(?[*:0]const u8, null));
         const host = self.widget(gtk.Box, "gallery_host");
@@ -93,14 +92,15 @@ pub const Gallery = struct {
         self.large.as(gtk.Widget).setName("text-large");
         self.motion.as(gtk.Widget).setName("motion-reduced");
         self.language_button.as(gtk.Widget).setName("language");
-        self.light.as(gtk.Widget).setTooltipText("Ctrl+L");
-        self.compact.as(gtk.Widget).setTooltipText("Ctrl+D");
-        self.large.as(gtk.Widget).setTooltipText("Ctrl+E");
-        self.motion.as(gtk.Widget).setTooltipText("Ctrl+R");
-        self.language_button.as(gtk.Widget).setTooltipText("Ctrl+G");
+        self.light.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Ctrl+L"));
+        self.compact.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Ctrl+D"));
+        self.large.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Ctrl+E"));
+        self.motion.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Ctrl+R"));
+        self.language_button.as(gtk.Widget).setTooltipText(@import("i18n").tr("Select the interface language in Settings, then start a new session."));
+        self.language_button.as(gtk.Widget).setSensitive(0);
         self.bindText(self.language_button.as(gtk.Widget), .language, .button);
         for ([_]*gtk.Widget{ self.light.as(gtk.Widget), self.compact.as(gtk.Widget), self.large.as(gtk.Widget), self.motion.as(gtk.Widget), self.language_button.as(gtk.Widget) }) |control| toolbar.insert(control, -1);
-        self.remember(self.language_button.as(gobject.Object), gtk.Button.signals.clicked.connect(self.language_button, *Gallery, languageChanged, self, .{}));
+        log.info("event=language value={s}", .{@import("i18n").effectiveLanguage()});
         host.append(toolbar.as(gtk.Widget));
 
         const panels = w.flow(2);
@@ -167,7 +167,7 @@ pub const Gallery = struct {
         self.search = gtk.SearchEntry.new();
         self.search.as(gtk.Widget).setName("search");
         self.search.setSearchDelay(0);
-        self.search.as(gtk.Widget).setTooltipText("Ctrl+F");
+        self.search.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Ctrl+F"));
         launcher.append(self.search.as(gtk.Widget));
         self.strings = gtk.StringList.new(null);
         const expression = gtk.PropertyExpression.new(gtk.StringObject.getGObjectType(), null, "string");
@@ -387,11 +387,6 @@ fn inspect(widget: *gtk.Widget, rows: *usize, clipped: *usize) void {
 fn appearanceChanged(_: *gtk.ToggleButton, self: *Gallery) callconv(.c) void {
     self.applyAppearance();
 }
-fn languageChanged(_: *gtk.Button, self: *Gallery) callconv(.c) void {
-    self.language = if (self.language == .en) .de else .en;
-    self.translate();
-    log.info("event=language value={s}", .{@tagName(self.language)});
-}
 fn tileChanged(_: *gtk.ToggleButton, self: *Gallery) callconv(.c) void {
     self.updateTiles();
     log.info("event=tile-changed", .{});
@@ -434,7 +429,6 @@ fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, modifiers: gdk
             'd', 'D' => self.compact.setActive(@intFromBool(self.compact.getActive() == 0)),
             'e', 'E' => self.large.setActive(@intFromBool(self.large.getActive() == 0)),
             'r', 'R' => self.motion.setActive(@intFromBool(self.motion.getActive() == 0)),
-            'g', 'G' => languageChanged(self.language_button, self),
             0xff50 => {
                 _ = self.light.as(gtk.Widget).grabFocus();
             }, // Ctrl+Home
@@ -472,11 +466,4 @@ fn idleEnd(data: ?*anyopaque) callconv(.c) c_int {
     const end = self.window.as(gtk.Widget).getFrameClock().?.getFrameCounter();
     log.info("event=idle-audit frames={d}", .{end - self.idle_frame});
     return 0;
-}
-
-fn initialLanguage() i18n.Language {
-    for ([_][*:0]const u8{ "LC_ALL", "LC_MESSAGES", "LANG" }) |key| {
-        if (glib.getenv(key)) |value| if (value[0] != 0) return i18n.fromLocale(std.mem.span(value));
-    }
-    return .en;
 }

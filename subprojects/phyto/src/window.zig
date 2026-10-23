@@ -75,7 +75,7 @@ pub const Window = struct {
     pub fn create(app: *gtk.Application, initial: *gio.File, opts: Options) *Window {
         const self = a.create(Window) catch @panic("Out of memory");
         const win = gtk.ApplicationWindow.new(app).as(gtk.Window);
-        win.setTitle("Phyto");
+        win.setTitle(@import("i18n").dtr("phyto", "Phyto"));
         win.setDefaultSize(opts.width, opts.height);
         win.setIconName("org.aqueous.Phyto");
         win.as(gtk.Widget).addCssClass("phyto-root");
@@ -84,9 +84,9 @@ pub const Window = struct {
         const header = gtk.HeaderBar.new();
         const brand = u.box(.horizontal, 10, "brand");
         brand.append(u.image("folder-symbolic", 20).as(gtk.Widget));
-        brand.append(u.label("Phyto", null).as(gtk.Widget));
+        brand.append(u.label(@import("i18n").dtr("phyto", "Phyto"), null).as(gtk.Widget));
         header.packStart(brand.as(gtk.Widget));
-        header.setTitleWidget(u.label("Files", "secondary").as(gtk.Widget));
+        header.setTitleWidget(u.label(@import("i18n").dtr("phyto", "Files"), "secondary").as(gtk.Widget));
         win.setTitlebar(header.as(gtk.Widget));
         const work = u.box(.horizontal, 0, null);
         work.as(gtk.Widget).setVexpand(1);
@@ -105,7 +105,7 @@ pub const Window = struct {
         const places_button = gtk.MenuButton.new();
         places_button.setIconName("sidebar-show-symbolic");
         places_button.as(gtk.Widget).addCssClass("icon-button");
-        places_button.as(gtk.Widget).setTooltipText("Places");
+        places_button.as(gtk.Widget).setTooltipText(@import("i18n").dtr("phyto", "Places"));
         u.name(places_button.as(gtk.Widget), "Places");
         const popover = gtk.Popover.new();
         const popup_places = u.box(.vertical, 2, "places");
@@ -116,16 +116,16 @@ pub const Window = struct {
         popover.setChild(popup_scroll.as(gtk.Widget));
         places_button.setPopover(popover);
         toolbar.append(places_button.as(gtk.Widget));
-        const back = u.iconButton("go-previous-symbolic", "Back · Alt+Left");
-        const forward = u.iconButton("go-next-symbolic", "Forward · Alt+Right");
-        const up = u.iconButton("go-up-symbolic", "Parent folder · Alt+Up");
-        const home_button = u.iconButton("user-home-symbolic", "Home");
+        const back = u.iconButton("go-previous-symbolic", @import("i18n").dtr("phyto", "Back · Alt+Left"));
+        const forward = u.iconButton("go-next-symbolic", @import("i18n").dtr("phyto", "Forward · Alt+Right"));
+        const up = u.iconButton("go-up-symbolic", @import("i18n").dtr("phyto", "Parent folder · Alt+Up"));
+        const home_button = u.iconButton("user-home-symbolic", @import("i18n").dtr("phyto", "Home"));
         for ([_]*gtk.Button{ back, forward, up, home_button }) |b| toolbar.append(b.as(gtk.Widget));
         const navigation = gtk.Stack.new();
         navigation.setHhomogeneous(0);
         navigation.setVhomogeneous(0);
         navigation.as(gtk.Widget).setHexpand(1);
-        const location = gtk.Button.newWithLabel("Home");
+        const location = gtk.Button.newWithLabel(@import("i18n").dtr("phyto", "Home"));
         location.as(gtk.Widget).addCssClass("breadcrumb");
         location.as(gtk.Widget).setHalign(.start);
         object.ext.cast(gtk.Label, location.getChild().?).?.setEllipsize(.middle);
@@ -135,37 +135,37 @@ pub const Window = struct {
         u.name(path.as(gtk.Widget), "Location path or URI");
         _ = navigation.addNamed(path.as(gtk.Widget), "entry");
         toolbar.append(navigation.as(gtk.Widget));
-        const search_button = u.iconButton("system-search-symbolic", "Search this folder · Ctrl+F");
+        const search_button = u.iconButton("system-search-symbolic", @import("i18n").dtr("phyto", "Search this folder · Ctrl+F"));
         toolbar.append(search_button.as(gtk.Widget));
-        const pane_switch = u.iconButton("go-next-symbolic", "Switch active pane · F6");
+        const pane_switch = u.iconButton("go-next-symbolic", @import("i18n").dtr("phyto", "Switch active pane · F6"));
         toolbar.append(pane_switch.as(gtk.Widget));
-        const jobs_button = u.iconButton("folder-download-symbolic", "File operations");
+        const jobs_button = u.iconButton("folder-download-symbolic", @import("i18n").dtr("phyto", "File operations"));
         toolbar.append(jobs_button.as(gtk.Widget));
-        const split_button = u.iconButton("view-dual-symbolic", "Split panes · F3");
+        const split_button = u.iconButton("view-dual-symbolic", @import("i18n").dtr("phyto", "Split panes · F3"));
         toolbar.append(split_button.as(gtk.Widget));
         const views = u.box(.horizontal, 0, "segmented");
-        const grid_button = u.iconButton("view-grid-symbolic", "Icon view · Ctrl+1");
-        const list_button = u.iconButton("view-list-symbolic", "Detailed list · Ctrl+2");
+        const grid_button = u.iconButton("view-grid-symbolic", @import("i18n").dtr("phyto", "Icon view · Ctrl+1"));
+        const list_button = u.iconButton("view-list-symbolic", @import("i18n").dtr("phyto", "Detailed list · Ctrl+2"));
         views.append(grid_button.as(gtk.Widget));
         views.append(list_button.as(gtk.Widget));
         toolbar.append(views.as(gtk.Widget));
-        const details_button = u.iconButton("sidebar-show-right-symbolic", "File details · Alt+Enter");
+        const details_button = u.iconButton("sidebar-show-right-symbolic", @import("i18n").dtr("phyto", "File details · Alt+Enter"));
         toolbar.append(details_button.as(gtk.Widget));
         const menu_button = gtk.MenuButton.new();
         menu_button.setIconName("open-menu-symbolic");
         menu_button.as(gtk.Widget).addCssClass("icon-button");
-        menu_button.as(gtk.Widget).setTooltipText("More options");
+        menu_button.as(gtk.Widget).setTooltipText(@import("i18n").dtr("phyto", "More options"));
         u.name(menu_button.as(gtk.Widget), "More options");
         toolbar.append(menu_button.as(gtk.Widget));
         const search_row = u.box(.horizontal, 12, "search-row");
         const search = gtk.SearchEntry.new();
         search.as(gtk.Widget).setHexpand(1);
-        search.setPlaceholderText("Search filenames in this folder…");
+        search.setPlaceholderText(@import("i18n").dtr("phyto", "Search filenames in this folder…"));
         u.name(search.as(gtk.Widget), "Search filenames in current folder");
         search_row.append(search.as(gtk.Widget));
-        const search_scope = u.label("Current folder", "secondary");
+        const search_scope = u.label(@import("i18n").dtr("phyto", "Current folder"), "secondary");
         search_row.append(search_scope.as(gtk.Widget));
-        const search_close = u.iconButton("window-close-symbolic", "Close search");
+        const search_close = u.iconButton("window-close-symbolic", @import("i18n").dtr("phyto", "Close search"));
         search_row.append(search_close.as(gtk.Widget));
         search_row.as(gtk.Widget).setVisible(0);
         browser.append(search_row.as(gtk.Widget));
@@ -203,7 +203,7 @@ pub const Window = struct {
         details.as(gtk.Widget).setSizeRequest(224, -1);
         details.as(gtk.Widget).addCssClass("details");
         content.append(details.as(gtk.Widget));
-        const status = u.label("Loading folder…", "status");
+        const status = u.label(@import("i18n").dtr("phyto", "Loading folder…"), "status");
         status.setEllipsize(.end);
         browser.append(status.as(gtk.Widget));
         self.* = .{ .app = app, .window = win, .root = root, .sidebar = sidebar, .sidebar_content = sidebar_box, .popup_content = popup_places, .places_button = places_button, .places_popover = popover, .location_button = location, .path = path, .search = search, .search_row = search_row, .search_scope = search_scope, .navigation = navigation, .details = details, .details_body = details_body, .status = status, .pane_switch = pane_switch, .grid_button = grid_button, .list_button = list_button, .back_button = back, .forward_button = forward, .up_button = up, .home_button = home_button, .details_button = details_button, .split_button = split_button, .jobs_button = jobs_button, .paned = paned, .panes = panes, .options = opts, .home = gio.File.newForPath(glib.getHomeDir()), .width = opts.width };
@@ -297,7 +297,7 @@ pub const Window = struct {
     pub fn addTab(self: *Window, pane: usize, file: *gio.File) void {
         const p = &self.panes[pane];
         if (p.tabs.items.len >= 32) {
-            self.message("Tab limit reached", "Close an unused tab before opening another.");
+            self.message(@import("i18n").dtr("phyto", "Tab limit reached"), "Close an unused tab before opening another.");
             return;
         }
         const tab = Tab.create(self, pane, file);
@@ -326,7 +326,7 @@ pub const Window = struct {
             b.as(gtk.Widget).addController(right.as(gtk.EventController));
             p.tabs_row.append(b.as(gtk.Widget));
         }
-        const add = u.iconButton("list-add-symbolic", "New tab · Ctrl+T");
+        const add = u.iconButton("list-add-symbolic", @import("i18n").dtr("phyto", "New tab · Ctrl+T"));
         _ = gtk.Button.signals.clicked.connect(add, *Tab, addTabClicked, p.tabs.items[p.selected], .{});
         p.tabs_row.append(add.as(gtk.Widget));
     }
@@ -377,8 +377,8 @@ pub const Window = struct {
         f.unref();
     }
     fn fillPlaces(self: *Window, container: *gtk.Box) void {
-        container.append(u.label("PLACES", "section-label").as(gtk.Widget));
-        self.place(container, "Home", "user-home-symbolic", self.home);
+        container.append(u.label(@import("i18n").dtr("phyto", "PLACES"), "section-label").as(gtk.Widget));
+        self.place(container, @import("i18n").dtr("phyto", "Home"), "user-home-symbolic", self.home);
         inline for (.{ .{ "Documents", "folder-documents-symbolic", glib.UserDirectory.directory_documents }, .{ "Downloads", "folder-download-symbolic", glib.UserDirectory.directory_download }, .{ "Pictures", "folder-pictures-symbolic", glib.UserDirectory.directory_pictures }, .{ "Music", "folder-music-symbolic", glib.UserDirectory.directory_music }, .{ "Videos", "folder-videos-symbolic", glib.UserDirectory.directory_videos } }) |entry| {
             const f = if (glib.getUserSpecialDir(entry[2])) |path| gio.File.newForPath(path) else self.home.getChild(entry[0]);
             defer f.unref();
@@ -386,14 +386,14 @@ pub const Window = struct {
         }
         const trash = gio.File.newForUri("trash:///");
         defer trash.unref();
-        self.place(container, "Trash", "user-trash-symbolic", trash);
-        container.append(u.label("LOCATIONS", "section-label").as(gtk.Widget));
+        self.place(container, @import("i18n").dtr("phyto", "Trash"), "user-trash-symbolic", trash);
+        container.append(u.label(@import("i18n").dtr("phyto", "LOCATIONS"), "section-label").as(gtk.Widget));
         const root = gio.File.newForPath("/");
         defer root.unref();
-        self.place(container, "File System", "drive-harddisk-symbolic", root);
+        self.place(container, @import("i18n").dtr("phyto", "File System"), "drive-harddisk-symbolic", root);
         const network = gio.File.newForUri(@import("network_ui.zig").overview_uri);
         defer network.unref();
-        self.place(container, "Network", "network-workgroup-symbolic", network);
+        self.place(container, @import("i18n").dtr("phyto", "Network"), "network-workgroup-symbolic", network);
         inline for (.{ .{ "bookmarks", "BOOKMARKS" }, .{ "favorites", "FAVORITES" } }) |group| {
             if (self.preferences.strings(group[0])) |values| {
                 defer glib.strfreev(values);
@@ -495,7 +495,7 @@ pub const Window = struct {
         u.clear(self.popup_content);
         self.fillPlaces(self.popup_content);
         self.queueUpdate();
-        if (self.preferences.save_error) self.message("Preferences were not saved", "The preferences file could not be written. Check the configuration directory permissions.");
+        if (self.preferences.save_error) self.message(@import("i18n").dtr("phyto", "Preferences were not saved"), "The preferences file could not be written. Check the configuration directory permissions.");
     }
     pub fn findTab(self: *Window, id: u64) ?*Tab {
         for (self.panes) |pane| for (pane.tabs.items) |tab| if (tab.id == id) return tab;
@@ -638,7 +638,7 @@ pub const Window = struct {
         if (tab.generation != request.generation) return;
         if (info) |i| {
             if (i.getFileType() == .directory) tab.navigate(file, true) else self.openFile(file, i);
-        } else self.message("Favorite is unavailable", if (err) |e| e.f_message orelse "The item could not be opened." else "The item could not be opened.");
+        } else self.message(@import("i18n").dtr("phyto", "Favorite is unavailable"), if (err) |e| e.f_message orelse "The item could not be opened." else "The item could not be opened.");
     }
     fn keyboardContext(self: *Window) void {
         var node = self.window.getFocus();
@@ -751,10 +751,10 @@ pub const Window = struct {
         u.clear(self.details_body);
         if (!visible) return;
         const top = u.box(.horizontal, 8, null);
-        const heading = u.label("File details", "secondary");
+        const heading = u.label(@import("i18n").dtr("phyto", "File details"), "secondary");
         heading.as(gtk.Widget).setHexpand(1);
         top.append(heading.as(gtk.Widget));
-        const close = u.iconButton("window-close-symbolic", "Close details");
+        const close = u.iconButton("window-close-symbolic", @import("i18n").dtr("phyto", "Close details"));
         self.connect(close, .details);
         top.append(close.as(gtk.Widget));
         self.details_body.append(top.as(gtk.Widget));
@@ -777,16 +777,16 @@ pub const Window = struct {
         self.details_body.append(name.as(gtk.Widget));
         const type_ = if (info.getContentType()) |t| gio.contentTypeGetDescription(t) else glib.strdup("File");
         defer glib.free(type_);
-        self.detail("Type", type_);
-        self.detail("Location", self.current().title);
+        self.detail(@import("i18n").dtr("phyto", "Type"), type_);
+        self.detail(@import("i18n").dtr("phyto", "Location"), self.current().title);
         const size = u.sizeText(info);
         defer glib.free(size);
-        self.detail("Size", size);
+        self.detail(@import("i18n").dtr("phyto", "Size"), size);
         const date = u.dateText(info);
         defer glib.free(date);
-        self.detail("Modified", date);
-        self.detail("Access", if (info.hasAttribute("access::can-write") == 0) "Not reported" else if (info.getAttributeBoolean("access::can-write") != 0) "You can read and write" else "Read only");
-        const properties = gtk.Button.newWithLabel("Properties");
+        self.detail(@import("i18n").dtr("phyto", "Modified"), date);
+        self.detail(@import("i18n").dtr("phyto", "Access"), if (info.hasAttribute("access::can-write") == 0) "Not reported" else if (info.getAttributeBoolean("access::can-write") != 0) "You can read and write" else "Read only");
+        const properties = gtk.Button.newWithLabel(@import("i18n").dtr("phyto", "Properties"));
         properties.as(gtk.Widget).addCssClass("tonal");
         self.connect(properties, .properties);
         self.details_body.append(properties.as(gtk.Widget));
@@ -1256,7 +1256,7 @@ pub const Window = struct {
     }
     fn saveViewPreferences(self: *Window) void {
         self.preferences.save();
-        if (self.preferences.save_error) self.message("Preferences were not saved", "The preferences file could not be written. Check the configuration directory permissions.");
+        if (self.preferences.save_error) self.message(@import("i18n").dtr("phyto", "Preferences were not saved"), "The preferences file could not be written. Check the configuration directory permissions.");
     }
     pub fn message(self: *Window, title: [*:0]const u8, text: [*:0]const u8) void {
         if (self.closed) return;
@@ -1291,7 +1291,7 @@ pub const Window = struct {
     }
     pub fn openFile(self: *Window, file: *gio.File, info: *gio.FileInfo) void {
         if (info.getAttributeBoolean("access::can-execute") != 0 or std.mem.endsWith(u8, std.mem.span(info.getName()), ".desktop")) {
-            self.message("Executable file", "Executable files are not launched by double-click. Open them deliberately using another application.");
+            self.message(@import("i18n").dtr("phyto", "Executable file"), "Executable files are not launched by double-click. Open them deliberately using another application.");
             return;
         }
         const uri = file.getUri();
@@ -1306,7 +1306,7 @@ pub const Window = struct {
         var err: ?*glib.Error = null;
         if (gio.AppInfo.launchDefaultForUriFinish(result, &err) == 0) if (err) |e| {
             defer e.free();
-            self.message("Could not open file", e.f_message orelse "Unknown I/O error");
+            self.message(@import("i18n").dtr("phyto", "Could not open file"), e.f_message orelse "Unknown I/O error");
         };
         self.app.as(gio.Application).release();
     }

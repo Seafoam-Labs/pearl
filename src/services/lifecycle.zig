@@ -514,6 +514,7 @@ pub const Lifecycle = struct {
         var pipe: [2]c_int = undefined;
         if (std.c.pipe2(&pipe, .{ .CLOEXEC = true, .NONBLOCK = true }) != 0) return error.PipeFailed;
         const launcher = gio.SubprocessLauncher.new(.{ .stdout_silence = true, .stderr_silence = true });
+        launcher.setenv("PEARL_SESSION_LANGUAGES", @import("i18n").sessionLanguages(), 1);
         defer launcher.unref();
         launcher.takeFd(pipe[1], 3);
         const argv = [_:null]?[*:0]const u8{ executable, "--ready-fd=3" };

@@ -165,7 +165,7 @@ pub fn parse(args: []const []const u8) !Options {
     r.display = "";
     return .{ .request = r };
 }
-pub const usage =
+pub const usage = @import("i18n").mark(
     \\Usage: pearlctl status | report | quit | lock
     \\       pearlctl assistant status|show|stop|clear|release|cancel
     \\       pearlctl night-light status|on|off|toggle|resume|retry
@@ -249,7 +249,7 @@ pub const usage =
     \\Any command also accepts --log-level error|warning|info|debug and
     \\--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).
     \\
-;
+);
 
 test "CLI rejects unknown options, duplicate flags and inappropriate fields" {
     const t = std.testing;

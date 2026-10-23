@@ -1,0 +1,104 @@
+# Pearl translation catalog
+# See translations/README.md for licensing and contribution requirements.
+msgid ""
+msgstr ""
+"Project-Id-Version: Pearl 1\n"
+"PO-Revision-Date: 2026-10-23 00:00+0000\n"
+"Last-Translator: Pearl contributors\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/capture/picker.zig:160
+msgid "Cancel"
+msgstr ""
+
+#: src/files/chooser.zig:396
+msgid "Choose a location stored on this computer."
+msgstr ""
+
+#: src/capture/picker.zig:130
+msgid "Choose the source you want to share."
+msgstr ""
+
+#: src/files/chooser.zig:795
+msgid "Could not create that folder. Check its name and permissions."
+msgstr ""
+
+#: src/files/chooser.zig:1083
+msgid "Filename"
+msgstr ""
+
+#: src/files/chooser.zig:825
+msgid "Folder name"
+msgstr ""
+
+#: src/files/chooser.zig:323
+msgid "Loading files…"
+msgstr ""
+
+#: src/files/chooser.zig:818
+msgid "New folder"
+msgstr ""
+
+#: src/files/chooser.zig:323
+msgid "No matching files in this folder."
+msgstr ""
+
+#: src/portal/file_chooser.zig:128
+msgid "Open"
+msgstr ""
+
+#: src/files/chooser.zig:1335
+msgid "Open files"
+msgstr ""
+
+#: src/files/chooser.zig:984
+msgid "Places"
+msgstr ""
+
+#: src/files/chooser.zig:1104 src/portal/file_chooser.zig:128
+msgid "Save"
+msgstr ""
+
+#: src/files/chooser.zig:1335
+msgid "Save document"
+msgstr ""
+
+#: src/files/chooser.zig:1104
+msgid "Select"
+msgstr ""
+
+#: src/capture/picker.zig:113 src/capture/picker.zig:126
+msgid "Share a source"
+msgstr ""
+
+#: src/capture/picker.zig:161
+msgid "Share source"
+msgstr ""
+
+#: src/files/chooser.zig:1016 src/files/chooser.zig:1019
+msgid "Sort by"
+msgstr ""
+
+#: src/files/chooser.zig:323
+msgid "This location is unavailable. Choose another location or retry."
+msgstr ""
+
+#: src/files/chooser.zig:1010
+msgid "View"
+msgstr ""
+
+#. Number of files selected in the file chooser.
+#: src/files/chooser.zig:328
+msgid "{count} file selected"
+msgid_plural "{count} files selected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/files/chooser.zig:387
+msgid "›"
+msgstr ""

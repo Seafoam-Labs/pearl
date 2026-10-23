@@ -57,8 +57,8 @@ pub const View = struct {
         @import("file_chooser").initPreviews();
         const self = try a.create(View);
         const header = w.row(8);
-        header.append(w.label(tr("Wallpaper", "Hintergrundbild"), "pearl-card-title").as(gtk.Widget));
-        const refresh = w.iconButton("pearl-view-refresh-symbolic", tr("Rescan folder", "Ordner neu einlesen"));
+        header.append(w.label(@import("i18n").dtr("pearl", "Wallpaper"), "pearl-card-title").as(gtk.Widget));
+        const refresh = w.iconButton("pearl-view-refresh-symbolic", @import("i18n").dtr("pearl", "Rescan folder"));
         header.append(refresh.as(gtk.Widget));
         host.append(header.as(gtk.Widget));
         const scroll = gtk.ScrolledWindow.new();
@@ -80,14 +80,14 @@ pub const View = struct {
         host.append(scroll.as(gtk.Widget));
         const footer = w.row(12);
         footer.as(gtk.Widget).setHalign(.center);
-        const previous = gtk.Button.newWithLabel("‹");
+        const previous = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "‹"));
         previous.as(gtk.Widget).addCssClass("pearl-icon");
-        w.name(previous.as(gtk.Widget), tr("Previous page", "Vorherige Seite"));
+        w.name(previous.as(gtk.Widget), @import("i18n").dtr("pearl", "Previous page"));
         const page_label = gtk.Label.new("");
         page_label.as(gtk.Widget).addCssClass("pearl-secondary");
-        const next = gtk.Button.newWithLabel("›");
+        const next = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "›"));
         next.as(gtk.Widget).addCssClass("pearl-icon");
-        w.name(next.as(gtk.Widget), tr("Next page", "Nächste Seite"));
+        w.name(next.as(gtk.Widget), @import("i18n").dtr("pearl", "Next page"));
         footer.append(previous.as(gtk.Widget));
         footer.append(page_label.as(gtk.Widget));
         footer.append(next.as(gtk.Widget));
@@ -178,10 +178,10 @@ pub const View = struct {
         self.names = if (folder.len == 0) &.{} else slideshow.listImages(alloc, folder) catch &.{};
         if (folder.len == 0) {
             self.status.as(gtk.Widget).setVisible(1);
-            self.status.setText(tr("Set a wallpaper folder in Settings → Appearance → Slideshow.", "Setze einen Hintergrundbild-Ordner unter Einstellungen → Erscheinungsbild → Diashow."));
+            self.status.setText(@import("i18n").dtr("pearl", "Set a wallpaper folder in Settings → Appearance → Slideshow."));
         } else if (self.names.len == 0) {
             self.status.as(gtk.Widget).setVisible(1);
-            self.status.setText(tr("No PNG or JPEG images in this folder.", "Keine PNG- oder JPEG-Bilder in diesem Ordner."));
+            self.status.setText(@import("i18n").dtr("pearl", "No PNG or JPEG images in this folder."));
         } else self.status.as(gtk.Widget).setVisible(0);
         const total = self.pages();
         if (self.page >= total) self.page = if (total == 0) 0 else total - 1;
@@ -262,13 +262,13 @@ pub const View = struct {
         if (prefs.wallpaper.mode != .cover and prefs.wallpaper.mode != .contain) prefs.wallpaper.mode = .cover;
         prefs.validate() catch {
             self.status.as(gtk.Widget).setVisible(1);
-            self.status.setText(tr("That selection is not a usable wallpaper.", "Diese Auswahl ist kein verwendbares Hintergrundbild."));
+            self.status.setText(@import("i18n").dtr("pearl", "That selection is not a usable wallpaper."));
             return;
         };
         const json = std.json.Stringify.valueAlloc(alloc, prefs, .{}) catch return;
         self.service.apply(json, self.service.revision) catch {
             self.status.as(gtk.Widget).setVisible(1);
-            self.status.setText(tr("Could not apply the wallpaper. Try again.", "Hintergrundbild konnte nicht angewendet werden. Bitte erneut versuchen."));
+            self.status.setText(@import("i18n").dtr("pearl", "Could not apply the wallpaper. Try again."));
         };
     }
     fn clicked(_: *gtk.Button, cell: *Cell) callconv(.c) void {

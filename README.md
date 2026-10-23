@@ -80,6 +80,8 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Audio and power](docs/SERVICES.md) and [audio/power visual evidence](artifacts/t07/comparison.html): service behavior, CLI, permissions and physical release checks.
 - [Surfaces and CLI](docs/SURFACES.md): output identity, reservations, popup/input policy, native blur and control v1.
 - [Components](docs/COMPONENTS.md) and [DMS visual comparison](artifacts/t03/comparison.html): gallery controls, keyboard behavior and captured differences.
+- [Translations and language packages](translations/README.md): build separate language packs, select an installed language, and contribute translations. German coverage is partial; English remains the base fallback.
+- [Translation implementation status and acceptance plan](docs/TRANSLATIONS_IMPLEMENTATION_PLAN.md): package contract, migration stages, and remaining locale, distribution, and accessibility acceptance.
 - [Generated bindings](bindings/README.md): full layer-shell/session-lock namespaces sharing Ghostty's GTK types, with no C bridge.
 - [Progress](docs/PROGRESS.md) and [visual references](artifacts/t00/REFERENCES.md).
 

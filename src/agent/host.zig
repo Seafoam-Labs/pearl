@@ -92,6 +92,7 @@ pub const Host = struct {
             if (parent_owned) _ = c.close(pair[0]);
         }
         const launcher = gio.SubprocessLauncher.new(.{ .stdout_silence = true, .stderr_silence = !@import("build_options").test_hooks });
+        launcher.setenv("PEARL_SESSION_LANGUAGES", @import("i18n").sessionLanguages(), 1);
         defer launcher.unref();
         launcher.takeFd(pair[1], 3);
         const argv = [_:null]?[*:0]const u8{ helper, "--shell-fd=3" };

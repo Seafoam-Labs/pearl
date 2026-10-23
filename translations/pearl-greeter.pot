@@ -1,0 +1,112 @@
+# Pearl translation catalog
+# See translations/README.md for licensing and contribution requirements.
+msgid ""
+msgstr ""
+"Project-Id-Version: Pearl 1\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/greeter/screen.zig:1074
+msgid "Account"
+msgstr ""
+
+#: src/greeter/screen.zig:1127
+msgid "Available when requested"
+msgstr ""
+
+#: src/greeter/screen.zig:1201
+msgid "Cancel"
+msgstr ""
+
+#: src/greeter/screen.zig:1149
+msgid "Cancel authentication"
+msgstr ""
+
+#: src/greeter/screen.zig:1131
+msgid "Caps Lock is on"
+msgstr ""
+
+#: src/greeter/screen.zig:1199
+msgid "Confirm"
+msgstr ""
+
+#: src/greeter/screen.zig:242
+msgid "Continue"
+msgstr ""
+
+#: src/greeter/screen.zig:1098
+msgid "Desktop session"
+msgstr ""
+
+#: src/greeter/screen.zig:1140
+msgid "Fingerprint login is available when configured"
+msgstr ""
+
+#: src/greeter/screen.zig:1173 src/greeter/screen.zig:1174
+msgid "High contrast"
+msgstr ""
+
+#: src/greeter/screen.zig:1167 src/greeter/screen.zig:1168
+msgid "Larger text"
+msgstr ""
+
+#: src/greeter/screen.zig:1135
+msgid "Loading installed desktops…"
+msgstr ""
+
+#: src/greeter/screen.zig:1070
+msgid "Other user"
+msgstr ""
+
+#: src/greeter/screen.zig:708
+msgid "Other user…"
+msgstr ""
+
+#: src/greeter/screen.zig:236 src/greeter/screen.zig:237 src/greeter/screen.zig:241 src/greeter/screen.zig:1120
+msgid "Password"
+msgstr ""
+
+#: src/greeter/screen.zig:879
+msgid "Pearl · Sign in"
+msgstr ""
+
+#: src/greeter/screen.zig:1188
+msgid "Power off"
+msgstr ""
+
+#: src/greeter/screen.zig:255
+msgid "Power off?"
+msgstr ""
+
+#: src/greeter/screen.zig:1100
+msgid "Refresh desktops"
+msgstr ""
+
+#: src/greeter/screen.zig:236
+msgid "Response"
+msgstr ""
+
+#: src/greeter/screen.zig:1187
+msgid "Restart"
+msgstr ""
+
+#: src/greeter/screen.zig:255 src/greeter/screen.zig:1194
+msgid "Restart?"
+msgstr ""
+
+#: src/greeter/screen.zig:1179 src/greeter/screen.zig:1180
+msgid "Screen reader"
+msgstr ""
+
+#: src/greeter/screen.zig:242 src/greeter/screen.zig:1146
+msgid "Sign in"
+msgstr ""
+
+#: src/greeter/screen.zig:242
+msgid "Signing in…"
+msgstr ""
+
+#: src/greeter/screen.zig:1109 src/greeter/screen.zig:1110 src/greeter/screen.zig:1113
+msgid "Username"
+msgstr ""

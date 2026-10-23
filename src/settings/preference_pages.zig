@@ -101,7 +101,7 @@ pub const View = struct {
             row.insert(widget, -1);
             card.append(row.as(gtk.Widget));
             if (std.mem.eql(u8, spec.path, "bar.mode")) {
-                const hint = w.label("Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority.", "pearl-secondary");
+                const hint = w.label(@import("i18n").dtr("pearl", "Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority."), "pearl-secondary");
                 hint.setWrap(1);
                 card.append(hint.as(gtk.Widget));
             }
@@ -111,18 +111,18 @@ pub const View = struct {
                 slider.setDrawValue(0);
                 slider.setDigits(0);
                 slider.as(gtk.Widget).setHexpand(1);
-                w.name(slider.as(gtk.Widget), "Background opacity slider (%)");
+                w.name(slider.as(gtk.Widget), @import("i18n").dtr("pearl", "Background opacity slider (%)"));
                 const slider_row = w.row(8);
                 slider_row.as(gtk.Widget).addCssClass("settings-form-row");
-                const transparent = w.label("Transparent", "pearl-secondary");
+                const transparent = w.label(@import("i18n").dtr("pearl", "Transparent"), "pearl-secondary");
                 transparent.as(gtk.Widget).setHexpand(0);
                 slider_row.append(transparent.as(gtk.Widget));
                 slider_row.append(slider.as(gtk.Widget));
-                const opaque_label = w.label("Opaque", "pearl-secondary");
+                const opaque_label = w.label(@import("i18n").dtr("pearl", "Opaque"), "pearl-secondary");
                 opaque_label.as(gtk.Widget).setHexpand(0);
                 slider_row.append(opaque_label.as(gtk.Widget));
                 card.append(slider_row.as(gtk.Widget));
-                const hint = w.label("Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable.", "pearl-secondary").as(gtk.Widget);
+                const hint = w.label(@import("i18n").dtr("pearl", "Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable."), "pearl-secondary").as(gtk.Widget);
                 hint.setMarginStart(20);
                 hint.setMarginEnd(20);
                 hint.setMarginBottom(16);

@@ -1,0 +1,11 @@
+Pearl translation contributors
+
+The initial German catalog preserves the translations previously maintained
+inline in Pearl's Zig sources. Attribution remains with the contributors
+recorded in the repository history; this migration does not relicense their work.
+
+New contributors should add their preferred attribution here and set the
+Last-Translator and Language-Team headers in the PO files they maintain.
+The initial migration has not received a new native-speaker review.
+
+See COPYING for the current project license status.

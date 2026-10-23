@@ -25,13 +25,13 @@ pub const View = struct {
         self.* = .{ .host = host, .service = notifications, .toast = toast };
         var content = host;
         if (!toast) {
-            host.append(w.label(tr("Notifications", "Benachrichtigungen"), "pearl-card-title").as(gtk.Widget));
+            host.append(w.label(@import("i18n").dtr("pearl", "Notifications"), "pearl-card-title").as(gtk.Widget));
             const controls = w.row(8);
             const dnd = gtk.Button.newWithLabel("");
             self.dnd = dnd;
             _ = gtk.Button.signals.clicked.connect(dnd, *View, toggleDnd, self, .{});
             controls.append(dnd.as(gtk.Widget));
-            const clear = gtk.Button.newWithLabel(tr("Clear history", "Verlauf löschen"));
+            const clear = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Clear history"));
             _ = gtk.Button.signals.clicked.connect(clear, *View, clearHistory, self, .{});
             controls.append(clear.as(gtk.Widget));
             host.append(controls.as(gtk.Widget));
@@ -73,7 +73,7 @@ pub const View = struct {
             box.as(gtk.Widget).addController(press.as(gtk.EventController));
             const buttons = w.flow(3);
             for (&row.actions, 0..) |*action, i| {
-                const button = gtk.Button.newWithLabel(if (i == 8) tr("Dismiss", "Schließen") else "");
+                const button = gtk.Button.newWithLabel(if (i == 8) @import("i18n").dtr("pearl", "Dismiss") else "");
                 action.* = .{ .view = self, .button = button, .dismiss = i == 8 };
                 _ = gtk.Button.signals.clicked.connect(button, *Action, clicked, action, .{});
                 buttons.insert(button.as(gtk.Widget), -1);
@@ -104,8 +104,8 @@ pub const View = struct {
     }
     pub fn update(self: *View) void {
         const model = &self.service.model;
-        if (self.dnd) |button| button.setLabel(if (model.dnd) tr("Do not disturb · On", "Nicht stören · An") else tr("Do not disturb · Off", "Nicht stören · Aus"));
-        if (self.empty) |label| label.setText(if (!self.service.available) tr("Another notification service is active.", "Ein anderer Benachrichtigungsdienst ist aktiv.") else "");
+        if (self.dnd) |button| button.setLabel(if (model.dnd) @import("i18n").dtr("pearl", "Do not disturb · On") else @import("i18n").dtr("pearl", "Do not disturb · Off"));
+        if (self.empty) |label| label.setText(if (!self.service.available) @import("i18n").dtr("pearl", "Another notification service is active.") else "");
         if (self.revision == model.serial) return;
         self.revision = model.serial;
         var records: [64]*service.policy.Record = undefined;
@@ -138,7 +138,7 @@ pub const View = struct {
             row.id = r.id;
             row.box.as(gtk.Widget).setCursorFromName(if (r.active and r.default_key.len != 0) "pointer" else null);
             if (self.service.imageFor(r.id)) |image| row.icon.setFromPixbuf(image) else row.icon.setFromIconName(if (r.icon.len > 0) r.icon.z() else "pearl-notifications-symbolic");
-            row.header.setText(if (r.app.len == 0) "Application" else r.app.z());
+            row.header.setText(if (r.app.len == 0) @import("i18n").dtr("pearl", "Application") else r.app.z());
             row.title.setText(r.summary.z());
             row.body.setText(r.body.z());
             row.body.as(gtk.Widget).setVisible(@intFromBool(r.body.len != 0));
@@ -154,7 +154,7 @@ pub const View = struct {
                 action.button.as(gtk.Widget).setSensitive(@intFromBool(r.active));
             }
         }
-        if (self.empty) |label| if (count == 0 and self.service.available) label.setText(tr("You're all caught up", "Alles erledigt"));
+        if (self.empty) |label| if (count == 0 and self.service.available) label.setText(@import("i18n").dtr("pearl", "You're all caught up"));
     }
     fn newer(_: void, l: *service.policy.Record, r: *service.policy.Record) bool {
         return l.serial > r.serial;

@@ -37,7 +37,6 @@ pub fn ViewFor(comptime ClientType: type) type {
         const Layout = layout.For(Self);
         const Monitor = struct { view: *Self, id: []const u8, name: []const u8, x: *gtk.SpinButton, y: *gtk.SpinButton, scale: *gtk.SpinButton, transform: *gtk.DropDown, mode: *gtk.Entry, mirror: *gtk.Entry };
 
-        german: bool = false,
         layout: layout.State = .{},
         open_appearance: ?struct { context: *anyopaque, notify: *const fn (*anyopaque) void } = null,
         open_section: ?struct { context: *anyopaque, notify: *const fn (*anyopaque, []const u8) void } = null,
@@ -101,47 +100,47 @@ pub fn ViewFor(comptime ClientType: type) type {
         root_signals: Signals = .{},
         form_signals: Signals = .{},
         pub fn create(host: *gtk.Box, client: *ClientType, window: *gtk.Window) !*Self {
-            return createIn(host, client, window, host, false);
+            return createIn(host, client, window, host);
         }
-        pub fn createIn(host: *gtk.Box, client: *ClientType, window: *gtk.Window, footer: *gtk.Box, german: bool) !*Self {
+        pub fn createIn(host: *gtk.Box, client: *ClientType, window: *gtk.Window, footer: *gtk.Box) !*Self {
             const self = try a.create(Self);
             if (!@hasDecl(ClientType, "standalone")) {
-                host.append(w.label("Aqueous settings", "pearl-title").as(gtk.Widget));
-                host.append(w.label("Layouts, windows, input and your desktop appearance", "pearl-secondary").as(gtk.Widget));
+                host.append(w.label(@import("i18n").dtr("pearl", "Aqueous settings"), "pearl-title").as(gtk.Widget));
+                host.append(w.label(@import("i18n").dtr("pearl", "Layouts, windows, input and your desktop appearance"), "pearl-secondary").as(gtk.Widget));
             }
             const content = w.column(12);
             content.as(gtk.Widget).setVexpand(1);
             host.append(content.as(gtk.Widget));
-            const message = w.label("Loading settings…", "pearl-secondary");
+            const message = w.label(@import("i18n").dtr("pearl", "Loading settings…"), "pearl-secondary");
             const footer_line = w.column(8);
             footer.append(footer_line.as(gtk.Widget));
             footer_line.append(message.as(gtk.Widget));
             const actions = w.flow(5);
             actions.setHomogeneous(0);
             footer_line.append(actions.as(gtk.Widget));
-            const refresh = gtk.Button.newWithLabel("Refresh");
+            const refresh = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Refresh"));
             actions.insert(refresh.as(gtk.Widget), -1);
-            const discard = gtk.Button.newWithLabel("Discard draft");
+            const discard = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Discard draft"));
             actions.insert(discard.as(gtk.Widget), -1);
-            const rebase = gtk.Button.newWithLabel("Rebase draft");
+            const rebase = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Rebase draft"));
             actions.insert(rebase.as(gtk.Widget), -1);
-            const validate = gtk.Button.newWithLabel("Validate");
+            const validate = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Validate"));
             actions.insert(validate.as(gtk.Widget), -1);
-            const apply = gtk.Button.newWithLabel("Apply & save");
+            const apply = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Apply & save"));
             actions.insert(apply.as(gtk.Widget), -1);
-            const issue = w.wrappingButton(if (german) "Problem prüfen" else "Review issue");
+            const issue = w.wrappingButton(@import("i18n").dtr("pearl", "Review issue"));
             actions.insert(issue.as(gtk.Widget), -1);
             apply.as(gtk.Widget).addCssClass("pearl-primary");
             const preview_actions = w.flow(3);
             preview_actions.setHomogeneous(0);
             footer.append(preview_actions.as(gtk.Widget));
-            const keep = gtk.Button.newWithLabel("Keep displays");
-            const revert = gtk.Button.newWithLabel("Revert displays");
-            const reload = gtk.Button.newWithLabel("Retry compositor reload");
+            const keep = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Keep displays"));
+            const revert = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Revert displays"));
+            const reload = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Retry compositor reload"));
             preview_actions.insert(reload.as(gtk.Widget), -1);
             preview_actions.insert(keep.as(gtk.Widget), -1);
             preview_actions.insert(revert.as(gtk.Widget), -1);
-            self.* = .{ .issue_button = issue, .german = german, .host = host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .footer_line = footer_line, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .preview_actions = preview_actions, .reload_button = reload, .window = window };
+            self.* = .{ .issue_button = issue, .host = host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .footer_line = footer_line, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .preview_actions = preview_actions, .reload_button = reload, .window = window };
             self.root_signals.add(refresh.as(object.Object), gtk.Button.signals.clicked.connect(refresh, *Self, refreshed, self, .{}));
             self.root_signals.add(issue.as(object.Object), gtk.Button.signals.clicked.connect(issue, *Self, issueClicked, self, .{}));
             self.root_signals.add(discard.as(object.Object), gtk.Button.signals.clicked.connect(discard, *Self, discarded, self, .{}));
@@ -182,9 +181,6 @@ pub fn ViewFor(comptime ClientType: type) type {
             while (self.host.as(gtk.Widget).getFirstChild()) |c| self.host.remove(c);
             self.arena.deinit();
             a.destroy(self);
-        }
-        pub fn t(self: *Self, en: [:0]const u8, de: [:0]const u8) [:0]const u8 {
-            return if (self.german) de else en;
         }
         pub fn z(self: *Self, text: []const u8) [:0]const u8 {
             return self.arena.allocator().dupeZ(u8, text) catch "";
@@ -265,24 +261,24 @@ pub fn ViewFor(comptime ClientType: type) type {
                 const box = self.page(notebook, title);
                 try Layout.render(self, box, snapshot, draft, category);
             }
-            const advanced = self.page(notebook, "Advanced");
+            const advanced = self.page(notebook, @import("i18n").dtr("pearl", "Advanced"));
             try Layout.status(self, advanced);
             const receipts = try Layout.group(self, advanced, .receipts);
             if (self.client.preview_report) |report| {
                 const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .preview = try m.parse(alloc, report, m.max_response) }, .{});
-                try self.inventory(receipts, try m.parse(alloc, wrapper, m.max_response), "preview", "Latest native preview and rollback status");
+                try self.inventory(receipts, try m.parse(alloc, wrapper, m.max_response), "preview", @import("i18n").dtr("pearl", "Latest native preview and rollback status"));
             }
             if (self.client.report) |report| {
                 const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .operation = try m.parse(alloc, report, m.max_response) }, .{});
-                try self.inventory(receipts, try m.parse(alloc, wrapper, m.max_response), "operation", "Latest operation receipt and recovery details");
+                try self.inventory(receipts, try m.parse(alloc, wrapper, m.max_response), "operation", @import("i18n").dtr("pearl", "Latest operation receipt and recovery details"));
             }
             if (self.client.review) |review| {
                 const wrapper = try std.json.Stringify.valueAlloc(alloc, .{ .review = try m.parse(alloc, review, m.max_response) }, .{});
-                try self.inventory(receipts, try m.parse(alloc, wrapper, m.max_response), "review", "Validated candidate effects");
+                try self.inventory(receipts, try m.parse(alloc, wrapper, m.max_response), "review", @import("i18n").dtr("pearl", "Validated candidate effects"));
             }
             const raw_host = try Layout.group(self, advanced, .raw);
-            raw_host.append(w.label("Raw edits are retained as you type, including invalid TOML. A file cannot have both raw and structured edits; resolve overlaps in the request below.", "pearl-secondary").as(gtk.Widget));
-            self.raw_file = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "wm", "layout", "input", "outputs", "rules", "appearance" }));
+            raw_host.append(w.label(@import("i18n").dtr("pearl", "Raw edits are retained as you type, including invalid TOML. A file cannot have both raw and structured edits; resolve overlaps in the request below."), "pearl-secondary").as(gtk.Widget));
+            self.raw_file = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ @import("i18n").dtr("pearl", "wm"), @import("i18n").dtr("pearl", "layout"), @import("i18n").dtr("pearl", "input"), @import("i18n").dtr("pearl", "outputs"), @import("i18n").dtr("pearl", "rules"), @import("i18n").dtr("pearl", "appearance") }));
             self.raw_file.?.setSelected(self.layout.raw_source);
             raw_host.append(self.raw_file.?.as(gtk.Widget));
             self.raw_buffer = textArea(raw_host, "Raw Aqueous TOML", 220);
@@ -293,7 +289,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.form_signals.add(self.raw_buffer.?.as(object.Object), gtk.TextBuffer.signals.changed.connect(self.raw_buffer.?, *Self, rawEdited, self, .{}));
             self.form_signals.add(self.raw_file.?.as(object.Object), object.Object.signals.notify.connect(self.raw_file.?.as(object.Object), *Self, rawSelected, self, .{ .detail = "selected" }));
             const request_host = try Layout.group(self, advanced, .request);
-            request_host.append(w.label("Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. System configuration stays read-only unless create_user_override is explicitly true.", "pearl-secondary").as(gtk.Widget));
+            request_host.append(w.label(@import("i18n").dtr("pearl", "Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. System configuration stays read-only unless create_user_override is explicitly true."), "pearl-secondary").as(gtk.Widget));
             self.request_buffer = textArea(request_host, "Aqueous draft request JSON", 280);
             try self.layout.controls.append(alloc, .{ .id = "aqueous.request", .widget = request_host.as(gtk.Widget).getLastChild().? });
             self.request_buffer.?.setText(self.z(self.client.draft orelse try self.client.emptyDraft(alloc)), -1);
@@ -323,10 +319,10 @@ pub fn ViewFor(comptime ClientType: type) type {
             const row = w.column(8);
             row.as(gtk.Widget).addCssClass("aqueous-field");
             box.append(row.as(gtk.Widget));
-            const label = w.label(self.z(m.str(m.get(field, "label"))), null);
+            const label = w.label(self.z(@import("i18n").aqueousField(m.str(m.get(field, "id")), .label, m.str(m.get(field, "label")))), null);
             label.as(gtk.Widget).addCssClass("settings-row-title");
             row.append(label.as(gtk.Widget));
-            row.as(gtk.Widget).setTooltipText(self.z(m.str(m.get(field, "description"))));
+            row.as(gtk.Widget).setTooltipText(self.z(@import("i18n").aqueousField(m.str(m.get(field, "id")), .description, m.str(m.get(field, "description")))));
             const editor = try alloc.create(Editor);
             editor.* = .{ .view = self, .field = field, .widget = undefined, .row = row, .group = group_id };
             const kind = m.str(m.get(field, "type"));
@@ -352,10 +348,10 @@ pub fn ViewFor(comptime ClientType: type) type {
                 const strings = try alloc.allocSentinel(?[*:0]const u8, opts.len + @intFromBool(!known), null);
                 var selected_index: c_uint = @intCast(opts.len);
                 for (opts, 0..) |option, i| {
-                    strings[i] = self.z(m.str(option));
+                    strings[i] = self.z(@import("i18n").aqueousOption(m.str(m.get(field, "id")), m.str(option)));
                     if (m.equal(option, value)) selected_index = @intCast(i);
                 }
-                if (!known) strings[opts.len] = self.z(try std.fmt.allocPrint(alloc, "{s}: {s}", .{ self.t("Preserved value", "Beibehaltener Wert"), try std.json.Stringify.valueAlloc(alloc, value, .{}) }));
+                if (!known) strings[opts.len] = self.z(try std.fmt.allocPrint(alloc, "{s}: {s}", .{ @import("i18n").dtr("pearl", "Preserved value"), try std.json.Stringify.valueAlloc(alloc, value, .{}) }));
                 const input = gtk.DropDown.newFromStrings(@ptrCast(strings.ptr));
                 @import("../settings/assistant_layout.zig").wrapChoice(input);
                 input.setSelected(selected_index);
@@ -379,13 +375,13 @@ pub fn ViewFor(comptime ClientType: type) type {
                 editor.widget = input.as(gtk.Widget);
                 self.form_signals.add(input.as(object.Object), gtk.Editable.signals.changed.connect(input.as(gtk.Editable), *Editor, edited, editor, .{}));
             }
-            w.name(editor.widget, self.z(m.str(m.get(field, "label"))));
+            w.name(editor.widget, self.z(@import("i18n").aqueousField(m.str(m.get(field, "id")), .label, m.str(m.get(field, "label")))));
             try self.editors.append(alloc, editor);
             if (std.mem.eql(u8, category, "keybinds") and std.mem.eql(u8, kind, "string_list")) {
                 const inputs = w.row(8);
                 editor.widget.setHexpand(1);
                 inputs.append(editor.widget);
-                const record_button = w.wrappingButton(self.t("Record shortcut", "Tastenkürzel aufnehmen"));
+                const record_button = w.wrappingButton(@import("i18n").dtr("pearl", "Record shortcut"));
                 inputs.append(record_button.as(gtk.Widget));
                 row.append(inputs.as(gtk.Widget));
                 editor.record = record_button;
@@ -417,7 +413,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             const scale = gtk.SpinButton.newWithRange(0.5, 3, 1.0 / 120.0);
             scale.setDigits(2);
             scale.setValue(number(m.get(value, "scale"), 1));
-            const transform = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "normal", "90", "180", "270", "flipped", "flipped-90", "flipped-180", "flipped-270" }));
+            const transform = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ @import("i18n").dtr("pearl", "normal"), @import("i18n").dtr("pearl", "90"), @import("i18n").dtr("pearl", "180"), @import("i18n").dtr("pearl", "270"), @import("i18n").dtr("pearl", "flipped"), @import("i18n").dtr("pearl", "flipped-90"), @import("i18n").dtr("pearl", "flipped-180"), @import("i18n").dtr("pearl", "flipped-270") }));
             const names = [_][]const u8{ "normal", "90", "180", "270", "flipped", "flipped-90", "flipped-180", "flipped-270" };
             for (names, 0..) |v, i| if (std.mem.eql(u8, v, m.str(m.get(value, "transform")))) {
                 transform.setSelected(@intCast(i));
@@ -425,7 +421,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             };
             const mode = gtk.Entry.new();
             mode.setMaxLength(64);
-            mode.setPlaceholderText("Current mode, or 1920x1080@60");
+            mode.setPlaceholderText(@import("i18n").dtr("pearl", "Current mode, or 1920x1080@60"));
             mode.as(gtk.Editable).setText(self.z(m.str(m.get(value, "mode"))));
             for ([_]*gtk.Widget{ x.as(gtk.Widget), y.as(gtk.Widget), scale.as(gtk.Widget), transform.as(gtk.Widget), mode.as(gtk.Widget) }, [_][*:0]const u8{ "Horizontal position", "Vertical position", "Scale", "Rotation", "Mode" }) |input, title| {
                 card.append(w.label(title, null).as(gtk.Widget));
@@ -435,9 +431,9 @@ pub fn ViewFor(comptime ClientType: type) type {
             const mirror = gtk.Entry.new();
             mirror.setMaxLength(128);
             mirror.as(gtk.Editable).setText(self.z(m.str(m.get(value, "mirror_of"))));
-            card.append(w.label("Mirror of (empty for independent)", null).as(gtk.Widget));
+            card.append(w.label(@import("i18n").dtr("pearl", "Mirror of (empty for independent)"), null).as(gtk.Widget));
             card.append(mirror.as(gtk.Widget));
-            w.name(mirror.as(gtk.Widget), "Mirror target connector");
+            w.name(mirror.as(gtk.Widget), @import("i18n").dtr("pearl", "Mirror target connector"));
             const displays = @import("aqueous_displays.zig");
             card.as(gtk.Widget).setSensitive(@intFromBool(displays.editable(self.client.baseValue(), name, "placement")));
             mirror.as(gtk.Widget).setSensitive(@intFromBool(displays.editable(self.client.baseValue(), name, "mirroring")));
@@ -571,13 +567,13 @@ pub fn ViewFor(comptime ClientType: type) type {
                 std.mem.sliceTo(&c.detail, 0),
             }) catch "Settings status unavailable";
             if (self.layout.status) |status| status.setText(text);
-            self.message.setText(if (self.rule_move_pending) self.t("Rule order changed. Review & apply or Discard before making other Aqueous edits.", "Regelreihenfolge geändert. Vor weiteren Änderungen prüfen und anwenden oder verwerfen.") else if (c.err != null or c.conflict() or c.unresolved) text else if (c.job != null or c.previewPhase() != 0) self.z(outcome) else if (c.draft != null) self.t("Unsaved Aqueous changes · Review includes every section.", "Ungespeicherte Aqueous-Änderungen · Die Prüfung umfasst alle Bereiche.") else self.t("All Aqueous settings saved", "Alle Aqueous-Einstellungen gespeichert"));
+            self.message.setText(if (self.rule_move_pending) @import("i18n").dtr("pearl", "Rule order changed. Review & apply or Discard before making other Aqueous edits.") else if (c.err != null or c.conflict() or c.unresolved) text else if (c.job != null or c.previewPhase() != 0) self.z(outcome) else if (c.draft != null) @import("i18n").dtr("pearl", "Unsaved Aqueous changes · Review includes every section.") else @import("i18n").dtr("pearl", "All Aqueous settings saved"));
             const simple = self.page_index == 5 and self.display_canvas != null;
             if (!simple and c.draft != null and c.err == null and !c.conflict() and !c.unresolved and c.job == null and !self.rule_move_pending) {
                 var arena = std.heap.ArenaAllocator.init(a);
                 defer arena.deinit();
                 const draft = m.parse(arena.allocator(), c.draft.?, m.max_request) catch .null;
-                self.message.setText(layout.map.footer(arena.allocator(), c.baseValue(), draft, self.german) catch self.t("Unsaved Aqueous changes", "Ungespeicherte Aqueous-Änderungen"));
+                self.message.setText(layout.map.footer(arena.allocator(), c.baseValue(), draft) catch @import("i18n").dtr("pearl", "Unsaved Aqueous changes"));
             }
             if (simple) self.footer_line.as(gtk.Widget).addCssClass("display-footer") else self.footer_line.as(gtk.Widget).removeCssClass("display-footer");
             self.footer_line.as(gtk.Orientable).setOrientation(if (simple and self.host.as(gtk.Widget).getWidth() >= 620) .horizontal else .vertical);
@@ -594,14 +590,14 @@ pub fn ViewFor(comptime ClientType: type) type {
                 button.as(gtk.Widget).getParent().?.setVisible(@intFromBool(recovery_actions));
             }
             self.draft_buttons[0].as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.draft != null));
-            self.draft_buttons[0].setLabel(self.t("Discard", "Verwerfen"));
-            self.buttons[2].setLabel(if (c.job != null) self.t("Checking settings…", "Einstellungen werden geprüft…") else if (simple) self.t("Apply changes", "Änderungen anwenden") else self.t("Review & apply", "Prüfen und anwenden"));
-            self.preview_buttons[0].setLabel(if (simple) "Keep changes" else "Keep displays");
-            self.preview_buttons[1].setLabel(if (simple) "Revert" else "Revert displays");
+            self.draft_buttons[0].setLabel(@import("i18n").dtr("pearl", "Discard"));
+            self.buttons[2].setLabel(if (c.job != null) @import("i18n").dtr("pearl", "Checking settings…") else if (simple) @import("i18n").dtr("pearl", "Apply changes") else @import("i18n").dtr("pearl", "Review & apply"));
+            self.preview_buttons[0].setLabel(if (simple) @import("i18n").dtr("pearl", "Keep changes") else @import("i18n").dtr("pearl", "Keep displays"));
+            self.preview_buttons[1].setLabel(if (simple) @import("i18n").dtr("pearl", "Revert") else @import("i18n").dtr("pearl", "Revert displays"));
             if (simple and (self.display_blocked or self.display_changes + self.display_other_changes == 0)) self.buttons[2].as(gtk.Widget).setSensitive(0);
             if (simple and c.previewPhase() == 0 and c.job == null and c.err == null and !c.conflict() and !c.unresolved) {
                 var message: [256]u8 = undefined;
-                self.message.setText(if (c.draft != null) (std.fmt.bufPrintZ(&message, "{d} unsaved display changes · {d} other Aqueous changes.\nApply to try this setup. Keep it only if everything looks right.", .{ self.display_changes, self.display_other_changes }) catch "Display settings") else "All display settings saved.\nChanges take effect only when you apply them.");
+                self.message.setText(if (c.draft != null) (std.fmt.bufPrintZ(&message, "{d} unsaved display changes · {d} other Aqueous changes.\nApply to try this setup. Keep it only if everything looks right.", .{ self.display_changes, self.display_other_changes }) catch "Display settings") else @import("i18n").dtr("pearl", "All display settings saved.\nChanges take effect only when you apply them."));
             }
             if (c.job == null and (c.err != null or c.unresolved or (c.outcome == .saved and c.draft == null))) {
                 const status = std.mem.span(self.message.getText());
@@ -634,20 +630,20 @@ pub fn ViewFor(comptime ClientType: type) type {
             if (self.preview_dialog == null) {
                 const dialog = gtk.Window.new();
                 self.styleDialog(dialog);
-                dialog.setTitle("Keep these display settings?");
+                dialog.setTitle(@import("i18n").dtr("pearl", "Keep these display settings?"));
                 dialog.setTransientFor(self.window);
                 dialog.setModal(1);
                 dialog.setDefaultSize(460, -1);
                 const content = w.column(18);
                 inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(content.as(gtk.Widget), 24);
-                content.append(w.label("Keep these display settings?", "pearl-title").as(gtk.Widget));
+                content.append(w.label(@import("i18n").dtr("pearl", "Keep these display settings?"), "pearl-title").as(gtk.Widget));
                 const message = w.label("", "pearl-secondary");
                 message.setMaxWidthChars(48);
                 content.append(message.as(gtk.Widget));
                 const actions = w.row(12);
                 actions.as(gtk.Widget).setHalign(.end);
-                const revert = gtk.Button.newWithLabel("Revert");
-                const keep = gtk.Button.newWithLabel("Keep changes");
+                const revert = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Revert"));
+                const keep = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Keep changes"));
                 keep.as(gtk.Widget).addCssClass("pearl-primary");
                 actions.append(revert.as(gtk.Widget));
                 actions.append(keep.as(gtk.Widget));
@@ -752,7 +748,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             const dialog = gtk.Dialog.new();
             const win = dialog.as(gtk.Window);
             self.styleDialog(win);
-            win.setTitle(if (discard) self.t("Discard all Aqueous changes?", "Alle Aqueous-Änderungen verwerfen?") else self.t("Review Aqueous changes", "Aqueous-Änderungen prüfen"));
+            win.setTitle(if (discard) @import("i18n").dtr("pearl", "Discard all Aqueous changes?") else @import("i18n").dtr("pearl", "Review Aqueous changes"));
             win.setTransientFor(self.window);
             win.setModal(1);
             win.setDefaultSize(@min(520, @max(300, self.window.as(gtk.Widget).getWidth() - 40)), 420);
@@ -766,13 +762,13 @@ pub fn ViewFor(comptime ClientType: type) type {
             scroller.setChild(content.as(gtk.Widget));
             dialog.getContentArea().append(scroller.as(gtk.Widget));
             inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(content.as(gtk.Widget), 20);
-            content.append(w.label(self.t("This action includes the complete Aqueous draft. Pearl preferences are separate.", "Diese Aktion umfasst den gesamten Aqueous-Entwurf. Pearl-Einstellungen bleiben getrennt."), null).as(gtk.Widget));
+            content.append(w.label(@import("i18n").dtr("pearl", "This action includes the complete Aqueous draft. Pearl preferences are separate."), null).as(gtk.Widget));
             const draft = m.parse(self.arena.allocator(), self.client.draft orelse "{}", m.max_request) catch .null;
-            const summary = layout.map.summary(self.arena.allocator(), self.client.baseValue(), draft, self.german) catch "Other Aqueous settings";
+            const summary = layout.map.summary(self.arena.allocator(), self.client.baseValue(), draft) catch "Other Aqueous settings";
             content.append(w.label(self.z(summary), "pearl-secondary").as(gtk.Widget));
-            content.append(w.label(self.t("Apply validates the candidate. Display effects require a protected preview before saving.", "Anwenden prüft den Entwurf. Bildschirmänderungen benötigen vor dem Speichern eine geschützte Vorschau."), "pearl-secondary").as(gtk.Widget));
-            const cancel = dialog.addButton(self.t("Cancel", "Abbrechen"), 0);
-            const accept = dialog.addButton(if (discard) self.t("Discard all Aqueous changes", "Alle Aqueous-Änderungen verwerfen") else self.t("Apply all Aqueous changes", "Alle Aqueous-Änderungen anwenden"), 1);
+            content.append(w.label(@import("i18n").dtr("pearl", "Apply validates the candidate. Display effects require a protected preview before saving."), "pearl-secondary").as(gtk.Widget));
+            const cancel = dialog.addButton(@import("i18n").dtr("pearl", "Cancel"), 0);
+            const accept = dialog.addButton(if (discard) @import("i18n").dtr("pearl", "Discard all Aqueous changes") else @import("i18n").dtr("pearl", "Apply all Aqueous changes"), 1);
             for ([_]*gtk.Widget{ cancel, accept }) |button| if (object.ext.cast(gtk.Button, button)) |b| if (b.getChild()) |child| if (object.ext.cast(gtk.Label, child)) |label| {
                 label.setWrap(1);
                 label.setWrapMode(.word_char);
@@ -866,7 +862,7 @@ pub fn ViewFor(comptime ClientType: type) type {
         }
         pub fn recordEntry(self: *Self, row: *gtk.Box, input: *gtk.Widget) !void {
             const editor = try self.arena.allocator().create(Editor);
-            const button = gtk.Button.newWithLabel("Record custom shortcut");
+            const button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Record custom shortcut"));
             if (@import("build_options").test_hooks) button.as(gtk.Widget).setName("Record custom shortcut");
             row.append(button.as(gtk.Widget));
             editor.* = .{ .view = self, .field = .null, .widget = input, .record = button };
@@ -962,7 +958,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             toplevel.inhibitSystemShortcuts(null);
             self.record_deadline = glib.getMonotonicTime() + 30000000;
             self.record_timer = glib.timeoutAdd(50, recordTick, self);
-            self.message.setText("Waiting for Aqueous to inhibit shortcuts… Escape cancels.");
+            self.message.setText(@import("i18n").dtr("pearl", "Waiting for Aqueous to inhibit shortcuts… Escape cancels."));
         }
         pub fn stopRecording(self: *Self) void {
             if (self.record_timer != 0) _ = glib.Source.remove(self.record_timer);
@@ -978,7 +974,7 @@ pub fn ViewFor(comptime ClientType: type) type {
                 log.info("event=shortcut-record-ended reason=deadline-or-unmapped", .{});
                 self.record_timer = 0;
                 self.stopRecording();
-                self.message.setText("Shortcut recording cancelled.");
+                self.message.setText(@import("i18n").dtr("pearl", "Shortcut recording cancelled."));
                 return 0;
             }
             var inhibited: c_int = 0;
@@ -987,12 +983,12 @@ pub fn ViewFor(comptime ClientType: type) type {
                 log.info("event=shortcut-record-ended reason=revoked", .{});
                 self.record_timer = 0;
                 self.stopRecording();
-                self.message.setText("Shortcut inhibition was revoked.");
+                self.message.setText(@import("i18n").dtr("pearl", "Shortcut inhibition was revoked."));
                 return 0;
             }
             if (inhibited != 0 and !self.client.recording) {
                 self.client.recording = true;
-                self.message.setText("Press a shortcut. Escape cancels; recording ends after 30 seconds.");
+                self.message.setText(@import("i18n").dtr("pearl", "Press a shortcut. Escape cancels; recording ends after 30 seconds."));
             }
             return 1;
         }
@@ -1000,7 +996,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             const editor = self.recording orelse return 0;
             if (key == 0xff1b) {
                 self.stopRecording();
-                self.message.setText("Shortcut recording cancelled.");
+                self.message.setText(@import("i18n").dtr("pearl", "Shortcut recording cancelled."));
                 return 1;
             }
             if (!self.client.recording) return 1;

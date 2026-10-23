@@ -17,24 +17,23 @@ pub const View = struct {
     context: *anyopaque,
     get: *const fn (*anyopaque, std.mem.Allocator) anyerror!model.Preferences,
     job: ?*Job = null,
-    german: bool,
-    pub fn create(host: *gtk.Box, context: *anyopaque, get: @FieldType(View, "get"), german: bool) !*View {
+    pub fn create(host: *gtk.Box, context: *anyopaque, get: @FieldType(View, "get")) !*View {
         const self = try a.create(View);
         const box = w.column(8);
         box.as(gtk.Widget).setMarginTop(12);
         box.as(gtk.Widget).setMarginBottom(12);
         host.append(box.as(gtk.Widget));
-        const choose = w.wrappingButton(if (german) "Bild auswählen und synchronisieren…" else "Choose image and sync…");
+        const choose = w.wrappingButton(@import("i18n").dtr("pearl", "Choose image and sync…"));
         choose.as(gtk.Widget).setHalign(.start);
-        w.name(choose.as(gtk.Widget), if (german) "Bild auswählen und synchronisieren" else "Choose image and sync");
+        w.name(choose.as(gtk.Widget), @import("i18n").dtr("pearl", "Choose image and sync"));
         box.append(choose.as(gtk.Widget));
-        const status = w.label(if (german) "Kopiert Hintergrund und Design. Erfordert Administrator-Authentifizierung." else "Copies this background and theme. Administrator authentication is required.", "pearl-secondary");
+        const status = w.label(@import("i18n").dtr("pearl", "Copies this background and theme. Administrator authentication is required."), "pearl-secondary");
         status.setWrap(1);
         box.append(status.as(gtk.Widget));
-        self.* = .{ .choose = choose, .status = status, .context = context, .get = get, .german = german };
+        self.* = .{ .choose = choose, .status = status, .context = context, .get = get };
         if (glib.fileTest(helper(), .{ .is_executable = true }) == 0) {
             choose.as(gtk.Widget).setSensitive(0);
-            status.setText(if (german) "Pearl Greeter installieren, um das Erscheinungsbild zu synchronisieren." else "Install Pearl Greeter to sync its appearance.");
+            status.setText(@import("i18n").dtr("pearl", "Install Pearl Greeter to sync its appearance."));
         }
         _ = gtk.Button.signals.clicked.connect(choose, *View, chooseClicked, self, .{});
         return self;
@@ -47,11 +46,11 @@ pub const View = struct {
         if (self.job != null or self.picker != null) return;
         const root = self.choose.as(gtk.Widget).getRoot() orelse return;
         const parent = object.ext.cast(gtk.Window, root) orelse return;
-        const picker = gtk.FileChooserNative.new(if (self.german) "Hintergrund für den Anmeldebildschirm" else "Login screen background", parent, .open, if (self.german) "Wählen" else "Choose", if (self.german) "Abbrechen" else "Cancel");
+        const picker = gtk.FileChooserNative.new(@import("i18n").dtr("pearl", "Login screen background"), parent, .open, @import("i18n").dtr("pearl", "Choose"), @import("i18n").dtr("pearl", "Cancel"));
         const filter = gtk.FileFilter.new();
         filter.addMimeType("image/png");
         filter.addMimeType("image/jpeg");
-        filter.setName(if (self.german) "Bilder" else "Images");
+        filter.setName(@import("i18n").dtr("pearl", "Images"));
         picker.as(gtk.FileChooser).setFilter(filter);
         self.picker = picker;
         _ = gtk.NativeDialog.signals.response.connect(picker.as(gtk.NativeDialog), *View, picked, self, .{});
@@ -83,12 +82,12 @@ pub const View = struct {
             };
         }
         job.prefs = self.get(self.context, alloc) catch {
-            self.status.setText(if (self.german) "Bitte zuerst die ungültigen Einstellungen korrigieren." else "Correct the invalid appearance settings before syncing.");
+            self.status.setText(@import("i18n").dtr("pearl", "Correct the invalid appearance settings before syncing."));
             job.destroy();
             return;
         };
         job.prefs.validate() catch {
-            self.status.setText(if (self.german) "Bitte zuerst die ungültigen Einstellungen korrigieren." else "Correct the invalid appearance settings before syncing.");
+            self.status.setText(@import("i18n").dtr("pearl", "Correct the invalid appearance settings before syncing."));
             job.destroy();
             return;
         };
@@ -112,7 +111,7 @@ pub const View = struct {
         }
         self.job = job;
         self.choose.as(gtk.Widget).setSensitive(0);
-        self.status.setText(if (self.german) "Erscheinungsbild wird synchronisiert…" else "Syncing appearance…");
+        self.status.setText(@import("i18n").dtr("pearl", "Syncing appearance…"));
         job.timer = glib.timeoutAdd(180000, Job.timedOut, job);
         const task = gio.Task.new(null, job.cancel, Job.completed, job);
         task.setCheckCancellable(0);
@@ -328,12 +327,12 @@ const Job = struct {
             owner.job = null;
             owner.choose.as(gtk.Widget).setSensitive(1);
             const message: [:0]const u8 = if (self.denied)
-                (if (owner.german) "Synchronisierung nicht autorisiert." else "Sync cancelled or not authorized.")
+                (@import("i18n").dtr("pearl", "Sync cancelled or not authorized."))
             else if (self.err) |err| switch (err) {
-                error.InvalidImage, error.ImageUnavailable, error.TooLarge => if (owner.german) "Ein lesbares PNG/JPEG wählen (max. 16 MiB und 64 Megapixel)." else "Choose a readable PNG/JPEG (up to 16 MiB and 64 megapixels).",
-                error.SystemThemeRequired => if (owner.german) "Das GTK-Design muss systemweit installiert sein." else "Install this GTK theme system-wide before syncing.",
-                else => if (owner.german) "Synchronisierung fehlgeschlagen. Greeter-Installation und Authentifizierung prüfen." else "Could not sync. Check that Pearl Greeter is installed and authentication completed.",
-            } else if (owner.german) "Synchronisiert. Wird beim nächsten Start des Anmeldebildschirms verwendet." else "Synced. The login screen will use this appearance next time it starts.";
+                error.InvalidImage, error.ImageUnavailable, error.TooLarge => @import("i18n").dtr("pearl", "Choose a readable PNG/JPEG (up to 16 MiB and 64 megapixels)."),
+                error.SystemThemeRequired => @import("i18n").dtr("pearl", "Install this GTK theme system-wide before syncing."),
+                else => @import("i18n").dtr("pearl", "Could not sync. Check that Pearl Greeter is installed and authentication completed."),
+            } else @import("i18n").dtr("pearl", "Synced. The login screen will use this appearance next time it starts.");
             owner.status.setText(message);
             log.info("event=greeter-appearance-sync success={}", .{self.err == null and !self.denied});
         }

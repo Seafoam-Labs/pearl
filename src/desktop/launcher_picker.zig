@@ -46,14 +46,14 @@ pub const View = struct {
         errdefer arena.deinit();
         const alloc = arena.allocator();
         const owned: Request = .{ .key = .{ .backend = request.key.backend, .identity = try alloc.dupe(u8, request.key.identity) }, .window_id = if (request.window_id) |id| try alloc.dupe(u8, id) else null, .source_pin = if (request.source_pin) |id| try alloc.dupe(u8, id) else null, .current_desktop = if (request.current_desktop) |id| try alloc.dupe(u8, id) else null };
-        host.append(widgets.label(tr("Use launcher", "Starter verwenden"), "pearl-title").as(gtk.Widget));
-        const description = widgets.label(try std.fmt.allocPrintSentinel(alloc, "{s}\n{s}{s}", .{ owned.key.identity, tr("Use this launcher for all windows of this application.", "Diesen Starter für alle Fenster dieser Anwendung verwenden."), if (owned.source_pin != null) tr(" Its dock pin will also be updated.", " Der Dock-Eintrag wird ebenfalls aktualisiert.") else "" }, 0), "pearl-secondary");
+        host.append(widgets.label(@import("i18n").dtr("pearl", "Use launcher"), "pearl-title").as(gtk.Widget));
+        const description = widgets.label(try std.fmt.allocPrintSentinel(alloc, "{s}\n{s}{s}", .{ owned.key.identity, @import("i18n").dtr("pearl", "Use this launcher for all windows of this application."), if (owned.source_pin != null) @import("i18n").dtr("pearl", " Its dock pin will also be updated.") else "" }, 0), "pearl-secondary");
         description.setWrap(1);
         description.setMaxWidthChars(48);
         host.append(description.as(gtk.Widget));
         const search = gtk.SearchEntry.new();
-        search.setPlaceholderText(tr("Search applications or desktop IDs", "Anwendungen oder Desktop-IDs suchen"));
-        widgets.name(search.as(gtk.Widget), "Launcher search");
+        search.setPlaceholderText(@import("i18n").dtr("pearl", "Search applications or desktop IDs"));
+        widgets.name(search.as(gtk.Widget), @import("i18n").dtr("pearl", "Launcher search"));
         host.append(search.as(gtk.Widget));
         const scroll = gtk.ScrolledWindow.new();
         scroll.setPolicy(.never, .automatic);
@@ -66,17 +66,17 @@ pub const View = struct {
         list.setActivateOnSingleClick(0);
         scroll.setChild(list.as(gtk.Widget));
         host.append(scroll.as(gtk.Widget));
-        const more = gtk.Button.newWithLabel(tr("Show more", "Mehr anzeigen"));
+        const more = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Show more"));
         host.append(more.as(gtk.Widget));
         const message = widgets.label("", "pearl-secondary");
         message.setWrap(1);
         message.setMaxWidthChars(48);
         host.append(message.as(gtk.Widget));
         const buttons = gtk.Box.new(.horizontal, 8);
-        const apply_button = gtk.Button.newWithLabel(tr("Use launcher", "Starter verwenden"));
-        widgets.name(apply_button.as(gtk.Widget), "Use selected launcher");
-        const reset_button = gtk.Button.newWithLabel(tr("Reset to automatic", "Automatische Zuordnung"));
-        widgets.name(reset_button.as(gtk.Widget), "Reset launcher to automatic");
+        const apply_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Use launcher"));
+        widgets.name(apply_button.as(gtk.Widget), @import("i18n").dtr("pearl", "Use selected launcher"));
+        const reset_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Reset to automatic"));
+        widgets.name(reset_button.as(gtk.Widget), @import("i18n").dtr("pearl", "Reset launcher to automatic"));
         buttons.append(apply_button.as(gtk.Widget));
         buttons.append(reset_button.as(gtk.Widget));
         host.append(buttons.as(gtk.Widget));
@@ -114,7 +114,7 @@ pub const View = struct {
     fn refresh(data: ?*anyopaque) callconv(.c) c_int {
         const self: *View = @ptrCast(@alignCast(data.?));
         self.idle = 0;
-        self.rebuild() catch self.message.setText(tr("Application list unavailable.", "Anwendungsliste nicht verfügbar."));
+        self.rebuild() catch self.message.setText(@import("i18n").dtr("pearl", "Application list unavailable."));
         return 0;
     }
     fn searchChanged(_: *gtk.SearchEntry, self: *View) callconv(.c) void {
@@ -188,7 +188,7 @@ pub const View = struct {
             if (self.preferences.completed_job >= job) {
                 self.pending = null;
                 if (self.preferences.completed_job == job and self.preferences.completed_error == null) return true;
-                self.message.setText(tr("Could not save the launcher choice. Try again.", "Starter-Auswahl konnte nicht gespeichert werden. Erneut versuchen."));
+                self.message.setText(@import("i18n").dtr("pearl", "Could not save the launcher choice. Try again."));
                 self.revision = self.preferences.revision;
             }
         }
@@ -206,7 +206,7 @@ pub const View = struct {
         self.commit(null) catch |err| self.failed(err);
     }
     fn failed(self: *View, err: anyerror) void {
-        self.message.setText(if (err == error.Conflict) tr("Preferences changed. Reopen the picker to review the current choice.", "Einstellungen geändert. Auswahl erneut öffnen und prüfen.") else tr("Launcher choice unavailable. Reopen the picker and try again.", "Starter-Auswahl nicht verfügbar. Erneut öffnen und versuchen."));
+        self.message.setText(if (err == error.Conflict) @import("i18n").dtr("pearl", "Preferences changed. Reopen the picker to review the current choice.") else @import("i18n").dtr("pearl", "Launcher choice unavailable. Reopen the picker and try again."));
     }
     fn commit(self: *View, desktop_id: ?[:0]const u8) !void {
         if (self.pending != null or self.client.availability != .ready) return error.Unavailable;
@@ -232,7 +232,7 @@ pub const View = struct {
         const json = try std.json.Stringify.valueAlloc(arena.allocator(), prefs, .{});
         try self.preferences.apply(json, self.revision);
         self.pending = self.preferences.jobs;
-        self.message.setText(tr("Saving launcher choice…", "Starter-Auswahl wird gespeichert…"));
+        self.message.setText(@import("i18n").dtr("pearl", "Saving launcher choice…"));
         self.sensitivity();
     }
     pub fn report(self: *View, alloc: std.mem.Allocator, root: *gtk.Widget) ![]const @import("running_apps.zig").ProbeRow {

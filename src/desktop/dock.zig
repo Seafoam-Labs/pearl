@@ -93,7 +93,7 @@ pub const Dock = struct {
         for ([_]*gtk.Window{ window, sensor }, 0..) |win, i| {
             win.setApplication(app);
             win.setDecorated(0);
-            win.setTitle(if (i == 0) "Pearl dock" else "Pearl dock reveal");
+            win.setTitle(if (i == 0) @import("i18n").dtr("pearl", "Pearl dock") else @import("i18n").dtr("pearl", "Pearl dock reveal"));
             win.as(gtk.Widget).addCssClass("pearl-root");
             win.as(gtk.Widget).addCssClass("pearl-shell");
             layer.initForWindow(win);
@@ -105,7 +105,7 @@ pub const Dock = struct {
         }
         scroll.as(gtk.Widget).addCssClass("pearl-surface-panel");
         panel.as(gtk.Widget).addCssClass("pearl-dock");
-        w.name(panel.as(gtk.Widget), "Applications dock");
+        w.name(panel.as(gtk.Widget), @import("i18n").dtr("pearl", "Applications dock"));
         self.* = .{ .client = client, .index = index, .tasks = tasks, .preferences = preferences, .output = output, .window = window, .sensor = sensor, .panel = panel, .scroll = scroll, .arena = .init(a), .context = context, .changed = changed };
         try self.effects.init(effects, window, scroll.as(gtk.Widget), true, .panel);
         self.effects.geometry_context = self;
@@ -488,8 +488,8 @@ pub const Dock = struct {
                     request = .{ .key = choice.key(), .current_desktop = id, .source_pin = if (group.pinned) id else null };
                 };
             }
-            const choose = gtk.Button.newWithLabel(@import("text.zig").tr("Use launcher…", "Starter verwenden…"));
-            w.name(choose.as(gtk.Widget), "Use launcher…");
+            const choose = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Use launcher…"));
+            w.name(choose.as(gtk.Widget), @import("i18n").dtr("pearl", "Use launcher…"));
             items.append(choose.as(gtk.Widget));
             if (request) |r| {
                 const cb = try alloc.create(Callback);
@@ -502,7 +502,7 @@ pub const Dock = struct {
                 _ = gtk.Button.signals.clicked.connect(choose, *Callback, clicked, cb, .{});
             } else {
                 choose.as(gtk.Widget).setSensitive(0);
-                choose.as(gtk.Widget).setTooltipText(@import("text.zig").tr("A unique application identity is needed. Existing choices can be removed in Settings.", "Eine eindeutige Anwendungskennung ist erforderlich. Vorhandene Zuordnungen können in den Einstellungen entfernt werden."));
+                choose.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "A unique application identity is needed. Existing choices can be removed in Settings."));
             }
             for (group.windows.items) |win| {
                 const title_text = win.title orelse "Untitled window";
@@ -532,7 +532,7 @@ pub const Dock = struct {
         const self = cb.dock;
         self.act(cb.*) catch |err| {
             log.err("event=dock-action error={s}", .{@errorName(err)});
-            self.window.as(gtk.Widget).setTooltipText("Action unavailable; the application or window may have changed.");
+            self.window.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Action unavailable; the application or window may have changed."));
         };
         self.reveal(false);
     }

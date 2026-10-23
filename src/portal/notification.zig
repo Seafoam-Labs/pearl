@@ -453,7 +453,7 @@ pub fn portal_notification(p: [*c]Portal, member: [*c]const u8, params: ?*ffi.GV
     defer ffi.g_free(display);
     const buttons = portal_option(values, "buttons", "aa{sv}");
     defer if (buttons != null) ffi.g_variant_unref(buttons);
-    if (action(n, &actions, "default", "Open", portal_string(values, "default-action", ""), default_target) == 0) return;
+    if (action(n, &actions, "default", @import("i18n").dtr("pearl", "Open"), portal_string(values, "default-action", ""), default_target) == 0) return;
     if (buttons != null) {
         if (ffi.g_variant_n_children(buttons) > 7) return;
         var i: c_uint = 0;

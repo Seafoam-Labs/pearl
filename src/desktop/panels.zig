@@ -94,24 +94,24 @@ pub const Control = struct {
         user_label.as(gtk.Widget).setHexpand(0);
         user_label.setWrap(0);
         chip.append(user_label.as(gtk.Widget));
-        w.name(chip.as(gtk.Widget), tr("Signed-in user", "Angemeldete Person"));
+        w.name(chip.as(gtk.Widget), @import("i18n").dtr("pearl", "Signed-in user"));
         header.append(chip.as(gtk.Widget));
         // Session and settings actions stay reachable on every page.
         const spacer = w.row(0);
         spacer.as(gtk.Widget).setHexpand(1);
         header.append(spacer.as(gtk.Widget));
         const installed = @import("../settings/launch.zig").available();
-        const handoff_message = w.label(if (installed) "" else tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert."), "pearl-secondary");
+        const handoff_message = w.label(if (installed) "" else @import("i18n").dtr("pearl", "Full settings is not installed."), "pearl-secondary");
         handoff_message.as(gtk.Widget).setHexpand(0);
         handoff_message.as(gtk.Widget).setVisible(@intFromBool(!installed));
         _ = handoff_message.as(object.Object).refSink();
         header.append(handoff_message.as(gtk.Widget));
         const session_actions = w.row(6);
         header.append(session_actions.as(gtk.Widget));
-        const logout = w.iconButton("pearl-system-log-out-symbolic", tr("Log out", "Abmelden"));
-        const reboot = w.iconButton("pearl-system-reboot-symbolic", tr("Restart…", "Neu starten…"));
-        const off = w.iconButton("pearl-system-shutdown-symbolic", tr("Power off…", "Ausschalten…"));
-        const settings_button = w.iconButton("pearl-emblem-system-symbolic", tr("Settings", "Einstellungen"));
+        const logout = w.iconButton("pearl-system-log-out-symbolic", @import("i18n").dtr("pearl", "Log out"));
+        const reboot = w.iconButton("pearl-system-reboot-symbolic", @import("i18n").dtr("pearl", "Restart…"));
+        const off = w.iconButton("pearl-system-shutdown-symbolic", @import("i18n").dtr("pearl", "Power off…"));
+        const settings_button = w.iconButton("pearl-emblem-system-symbolic", @import("i18n").dtr("pearl", "Settings"));
         settings_button.as(gtk.Widget).setSensitive(@intFromBool(installed));
         for ([_]*gtk.Button{ logout, reboot, off, settings_button }) |button| session_actions.append(button.as(gtk.Widget));
         const heading = w.label(title(initial), "pearl-page-title");
@@ -126,8 +126,8 @@ pub const Control = struct {
         heading_box.as(gtk.Widget).addCssClass("pearl-settings-heading");
         w.name(heading_box.as(gtk.Widget), title(initial));
         heading_box.append(heading.as(gtk.Widget));
-        const network_close = w.wrappingButton("×");
-        w.name(network_close.as(gtk.Widget), tr("Close Network controls", "Netzwerksteuerung schließen"));
+        const network_close = w.wrappingButton(@import("i18n").dtr("pearl", "×"));
+        w.name(network_close.as(gtk.Widget), @import("i18n").dtr("pearl", "Close Network controls"));
         network_close.as(gtk.Widget).setVisible(@intFromBool(initial == .network));
         heading_box.append(network_close.as(gtk.Widget));
         host.append(heading_box.as(gtk.Widget));
@@ -137,7 +137,7 @@ pub const Control = struct {
         stack.setTransitionType(.none);
         stack.as(gtk.Widget).setVexpand(1);
         host.append(stack.as(gtk.Widget));
-        const network_settings_button = w.wrappingButton(tr("Network settings", "Netzwerkeinstellungen"));
+        const network_settings_button = w.wrappingButton(@import("i18n").dtr("pearl", "Network settings"));
         const network_handoff = w.label("", "pearl-secondary");
         host.append(network_handoff.as(gtk.Widget));
         focus_state.tag(network_settings_button.as(gtk.Widget), "network-settings", .{});
@@ -218,20 +218,13 @@ pub const Control = struct {
         self.task(self.context, .close);
     }
     pub fn launchFailed(self: *Control, err: anyerror) void {
-        self.handoff_message.setText(if (err == error.SettingsNotInstalled) tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert.") else tr("Full settings could not be started. Try again after checking the installation.", "Die Einstellungen konnten nicht gestartet werden. Bitte die Installation prüfen."));
+        self.handoff_message.setText(if (err == error.SettingsNotInstalled) @import("i18n").dtr("pearl", "Full settings is not installed.") else @import("i18n").dtr("pearl", "Full settings could not be started. Try again after checking the installation."));
         self.handoff_message.as(gtk.Widget).setVisible(1);
         self.settings_button.as(gtk.Widget).setTooltipText(self.handoff_message.getText());
         self.update();
     }
     pub fn title(page: navigation.Route) [:0]const u8 {
-        return tr(page.title(), switch (page) {
-            .overview => "Übersicht",
-            .sound => "Klang",
-            .network => "Netzwerk",
-            .bluetooth => "Bluetooth",
-            .power => "Energie & Akku",
-            else => unreachable,
-        });
+        return @import("i18n").tr(page.title());
     }
     fn index(page: navigation.Route) usize {
         return std.mem.indexOfScalar(navigation.Route, &pages, page).?;
@@ -254,12 +247,12 @@ pub const Control = struct {
     fn composeOverview(self: *Control, body: *gtk.Box) !void {
         const quick = w.card();
         quick.as(gtk.Widget).addCssClass("pearl-quick-card");
-        const volume = w.slider(w.label(tr("Volume", "Lautstärke"), "pearl-secondary"), "pearl-audio-volume-high-symbolic", 0);
+        const volume = w.slider(w.label(@import("i18n").dtr("pearl", "Volume"), "pearl-secondary"), "pearl-audio-volume-high-symbolic", 0);
         self.volume_scale = volume.scale;
         focus_state.tag(volume.scale.as(gtk.Widget), "quick-volume", .{});
         _ = gtk.Range.signals.value_changed.connect(volume.scale.as(gtk.Range), *Control, volumeChanged, self, .{});
         quick.append(volume.box.as(gtk.Widget));
-        const brightness = w.slider(w.label(tr("Brightness", "Helligkeit"), "pearl-secondary"), "pearl-display-brightness-symbolic", 0);
+        const brightness = w.slider(w.label(@import("i18n").dtr("pearl", "Brightness"), "pearl-secondary"), "pearl-display-brightness-symbolic", 0);
         self.brightness_scale = brightness.scale;
         focus_state.tag(brightness.scale.as(gtk.Widget), "quick-brightness", .{});
         _ = gtk.Range.signals.value_changed.connect(brightness.scale.as(gtk.Range), *Control, brightnessChanged, self, .{});
@@ -268,17 +261,17 @@ pub const Control = struct {
         if (self.models.night_light != null) {
             const night = w.card();
             self.night_label = w.label("", "pearl-secondary");
-            const tile = w.tile("pearl-weather-clear-night-symbolic", w.label(tr("Night Light", "Nachtlicht"), null), self.night_label.?, false);
+            const tile = w.tile("pearl-weather-clear-night-symbolic", w.label(@import("i18n").dtr("pearl", "Night Light"), null), self.night_label.?, false);
             self.night_toggle = tile.button;
-            w.name(tile.button.as(gtk.Widget), tr("Toggle Night Light", "Nachtlicht umschalten"));
+            w.name(tile.button.as(gtk.Widget), @import("i18n").dtr("pearl", "Toggle Night Light"));
             focus_state.tag(tile.button.as(gtk.Widget), "night-tile", .{});
             _ = gtk.ToggleButton.signals.toggled.connect(tile.button, *Control, nightToggled, self, .{});
             night.append(tile.button.as(gtk.Widget));
             const row = w.row(8);
-            self.night_resume = w.wrappingButton(tr("Resume saved policy", "Gespeicherte Einstellungen fortsetzen"));
+            self.night_resume = w.wrappingButton(@import("i18n").dtr("pearl", "Resume saved policy"));
             _ = gtk.Button.signals.clicked.connect(self.night_resume.?, *Control, nightResumed, self, .{});
             row.append(self.night_resume.?.as(gtk.Widget));
-            const settings = w.wrappingButton(tr("Night Light settings", "Nachtlicht-Einstellungen"));
+            const settings = w.wrappingButton(@import("i18n").dtr("pearl", "Night Light settings"));
             settings.as(gtk.Widget).setSensitive(@intFromBool(@import("../settings/launch.zig").available()));
             _ = gtk.Button.signals.clicked.connect(settings, *Control, nightSettings, self, .{});
             row.append(settings.as(gtk.Widget));
@@ -287,7 +280,7 @@ pub const Control = struct {
         }
         const tasks = w.flow(2);
         body.append(tasks.as(gtk.Widget));
-        for ([_]Task{ .media, .overview, .settings, .aqueous_settings }, [_][:0]const u8{ tr("Media controls", "Mediensteuerung"), tr("Window overview", "Fensterübersicht"), tr("Pearl settings", "Pearl-Einstellungen"), tr("Aqueous settings", "Aqueous-Einstellungen") }, 0..) |task, label, i| {
+        for ([_]Task{ .media, .overview, .settings, .aqueous_settings }, [_][:0]const u8{ @import("i18n").dtr("pearl", "Media controls"), @import("i18n").dtr("pearl", "Window overview"), @import("i18n").dtr("pearl", "Pearl settings"), @import("i18n").dtr("pearl", "Aqueous settings") }, 0..) |task, label, i| {
             const button = w.wrappingButton(label);
             button.as(gtk.Widget).addCssClass("pearl-quick-tile");
             focus_state.tag(button.as(gtk.Widget), "task:{s}", .{@tagName(task)});
@@ -299,8 +292,8 @@ pub const Control = struct {
         const section = w.card();
         section.as(gtk.Widget).addCssClass("pearl-layout-card");
         const title_row = w.row(8);
-        title_row.append(w.label(tr("Workspace layout", "Anordnung der Arbeitsfläche"), "pearl-card-title").as(gtk.Widget));
-        const refresh = w.iconButton("pearl-view-refresh-symbolic", tr("Refresh layout", "Anordnung aktualisieren"));
+        title_row.append(w.label(@import("i18n").dtr("pearl", "Workspace layout"), "pearl-card-title").as(gtk.Widget));
+        const refresh = w.iconButton("pearl-view-refresh-symbolic", @import("i18n").dtr("pearl", "Refresh layout"));
         focus_state.tag(refresh.as(gtk.Widget), "layout-refresh", .{});
         _ = gtk.Button.signals.clicked.connect(refresh, *Control, refreshed, self, .{});
         title_row.append(refresh.as(gtk.Widget));
@@ -427,7 +420,7 @@ pub const Control = struct {
         self.leavePage();
         self.page = page;
         self.enterPage() catch |err| {
-            self.bodies[index(page)].append(w.label(tr("Unable to open this section. Choose another section to retry.", "Bereich kann nicht geöffnet werden. Bitte einen anderen Bereich wählen und erneut versuchen."), "pearl-secondary").as(gtk.Widget));
+            self.bodies[index(page)].append(w.label(@import("i18n").dtr("pearl", "Unable to open this section. Choose another section to retry."), "pearl-secondary").as(gtk.Widget));
             log.err("event=settings-page-failed page={s} error={s}", .{ page.id(), @errorName(err) });
         };
         self.stack.setVisibleChildName(page.id());
@@ -468,20 +461,20 @@ pub const Control = struct {
         self.settings_button.as(gtk.Widget).setSensitive(@intFromBool(installed and !blocked));
         self.network_settings_button.as(gtk.Widget).setVisible(@intFromBool(self.page == .network));
         self.network_settings_button.as(gtk.Widget).setSensitive(@intFromBool(installed and !blocked));
-        self.network_handoff.setText(if (blocked) tr("Finish or cancel this connection first.", "Diese Verbindung zuerst abschließen oder abbrechen.") else if (!installed) tr("Settings is not installed.", "Einstellungen ist nicht installiert.") else self.handoff_message.getText());
+        self.network_handoff.setText(if (blocked) @import("i18n").dtr("pearl", "Finish or cancel this connection first.") else if (!installed) @import("i18n").dtr("pearl", "Settings is not installed.") else self.handoff_message.getText());
         self.network_handoff.as(gtk.Widget).setVisible(@intFromBool(self.page == .network and (blocked or !installed or self.handoff_message.as(gtk.Widget).getVisible() != 0)));
-        self.network_settings_button.as(gtk.Widget).setTooltipText(if (blocked) tr("Finish or cancel this connection first.", "Diese Verbindung zuerst abschließen oder abbrechen.") else if (!installed) tr("Full settings is not installed.", "Die vollständigen Einstellungen sind nicht installiert.") else null);
+        self.network_settings_button.as(gtk.Widget).setTooltipText(if (blocked) @import("i18n").dtr("pearl", "Finish or cancel this connection first.") else if (!installed) @import("i18n").dtr("pearl", "Full settings is not installed.") else null);
         if (self.night_label) |label| {
             const night = self.models.night_light.?;
             label.setText(switch (night.state()) {
-                .active => tr("Night Light is active.", "Nachtlicht ist aktiv."),
-                .partial => tr("Night Light is active on some displays.", "Nachtlicht ist auf einigen Bildschirmen aktiv."),
-                .pending => tr("Applying warmer colors…", "Wärmere Farben werden angewendet…"),
-                .restoring => tr("Restoring display colors…", "Bildschirmfarben werden wiederhergestellt…"),
-                .failed => tr("Display colors could not be updated.", "Bildschirmfarben konnten nicht aktualisiert werden."),
-                .scheduled => tr("Waiting for the saved schedule.", "Warten auf den gespeicherten Zeitplan."),
-                .off => tr("Night Light is off.", "Nachtlicht ist aus."),
-                .unavailable => tr("Warming is unavailable on these displays.", "Nachtlicht ist auf diesen Bildschirmen nicht verfügbar."),
+                .active => @import("i18n").dtr("pearl", "Night Light is active."),
+                .partial => @import("i18n").dtr("pearl", "Night Light is active on some displays."),
+                .pending => @import("i18n").dtr("pearl", "Applying warmer colors…"),
+                .restoring => @import("i18n").dtr("pearl", "Restoring display colors…"),
+                .failed => @import("i18n").dtr("pearl", "Display colors could not be updated."),
+                .scheduled => @import("i18n").dtr("pearl", "Waiting for the saved schedule."),
+                .off => @import("i18n").dtr("pearl", "Night Light is off."),
+                .unavailable => @import("i18n").dtr("pearl", "Warming is unavailable on these displays."),
             });
             self.night_resume.?.as(gtk.Widget).setVisible(@intFromBool(night.model.override != null));
             if (self.night_toggle) |toggle| {
@@ -516,7 +509,7 @@ pub const Control = struct {
         const life = self.models.lifecycle;
         const logout_pending = life.pending != null and life.pending.? == .logout;
         self.logout_button.as(gtk.Widget).setSensitive(@intFromBool(life.gate.available and life.gate.active and !life.gate.locked and life.client.capabilities.commands));
-        self.logout_button.as(gtk.Widget).setTooltipText(if (logout_pending) tr("Confirm log out", "Abmelden bestätigen") else tr("Log out", "Abmelden"));
+        self.logout_button.as(gtk.Widget).setTooltipText(if (logout_pending) @import("i18n").dtr("pearl", "Confirm log out") else @import("i18n").dtr("pearl", "Log out"));
         if (logout_pending) self.logout_button.as(gtk.Widget).addCssClass("pearl-selected") else self.logout_button.as(gtk.Widget).removeCssClass("pearl-selected");
         const power = self.models.power;
         _ = self.power_confirm.valid(power.epoch(), glib.getMonotonicTime());
@@ -524,7 +517,7 @@ pub const Control = struct {
             const can_act = if (reboot) power.can_reboot else power.can_off;
             const armed = self.power_confirm.action != null and self.power_confirm.action.? == reboot;
             button.as(gtk.Widget).setSensitive(@intFromBool(can_act and !power.action_pending and !power.preparing));
-            button.as(gtk.Widget).setTooltipText(if (armed) (if (reboot) tr("Confirm restart", "Neustart bestätigen") else tr("Confirm power off", "Ausschalten bestätigen")) else if (can_act) (if (reboot) tr("Restart after confirmation", "Neustart nach Bestätigung") else tr("Power off after confirmation", "Ausschalten nach Bestätigung")) else (if (reboot) tr("Restart is unavailable or requires permission", "Neustart ist nicht verfügbar oder erfordert eine Berechtigung") else tr("Power off is unavailable or requires permission", "Ausschalten ist nicht verfügbar oder erfordert eine Berechtigung")));
+            button.as(gtk.Widget).setTooltipText(if (armed) (if (reboot) @import("i18n").dtr("pearl", "Confirm restart") else @import("i18n").dtr("pearl", "Confirm power off")) else if (can_act) (if (reboot) @import("i18n").dtr("pearl", "Restart after confirmation") else @import("i18n").dtr("pearl", "Power off after confirmation")) else (if (reboot) @import("i18n").dtr("pearl", "Restart is unavailable or requires permission") else @import("i18n").dtr("pearl", "Power off is unavailable or requires permission")));
             if (armed) button.as(gtk.Widget).addCssClass("pearl-selected") else button.as(gtk.Widget).removeCssClass("pearl-selected");
         }
         for (self.tabs, pages) |tab, page| tab.setActive(@intFromBool(page == self.page));
@@ -535,7 +528,7 @@ pub const Control = struct {
         const label = self.label orelse return;
         const layout = self.layout;
         var buffer: [100]u8 = undefined;
-        const text = if (layout.manager != null) tr("Waiting for Aqueous…", "Warten auf Aqueous…") else if (layout.global == null or layout.err != null) tr("Layout unavailable. Refresh to retry.", "Anordnung nicht verfügbar. Bitte aktualisieren.") else if (layout.value_len == 0) tr("Querying the active workspace", "Aktive Arbeitsfläche wird abgefragt") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ layout.value[0..layout.value_len], layout.workspace }) catch unreachable;
+        const text = if (layout.manager != null) @import("i18n").dtr("pearl", "Waiting for Aqueous…") else if (layout.global == null or layout.err != null) @import("i18n").dtr("pearl", "Layout unavailable. Refresh to retry.") else if (layout.value_len == 0) @import("i18n").dtr("pearl", "Querying the active workspace") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ layout.value[0..layout.value_len], layout.workspace }) catch unreachable;
         label.setText(text);
         for (self.buttons, native.names) |button, name| {
             button.as(gtk.Widget).setSensitive(@intFromBool(layout.manager == null and layout.global != null));

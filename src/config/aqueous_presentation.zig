@@ -41,50 +41,50 @@ pub const Group = enum {
     receipts,
 };
 pub const count = @typeInfo(Group).@"enum".fields.len;
-pub const Spec = struct { page: []const u8, en: [:0]const u8, de: [:0]const u8, detail_en: [:0]const u8, detail_de: [:0]const u8, collapsed: bool = true };
+pub const Spec = struct { page: []const u8, en: [:0]const u8, detail_en: [:0]const u8, collapsed: bool = true };
 pub fn spec(g: Group) Spec {
     return switch (g) {
-        .borders => .{ .page = "appearance", .en = "Window appearance", .de = "Fensterdarstellung", .detail_en = "Draft preview and window borders", .detail_de = "Entwurfsvorschau und Fensterrahmen", .collapsed = false },
-        .effects => .{ .page = "appearance", .en = "Window effects", .de = "Fenstereffekte", .detail_en = "Blur and transparency", .detail_de = "Unschärfe und Transparenz", .collapsed = false },
-        .effect_tuning => .{ .page = "appearance", .en = "Effect tuning", .de = "Effekte anpassen", .detail_en = "Borders, blur, opacity and transitions", .detail_de = "Rahmen, Unschärfe, Deckkraft und Übergänge" },
-        .typography => .{ .page = "appearance", .en = "Fonts and cursor", .de = "Schriften und Mauszeiger", .detail_en = "Desktop typography and synchronization", .detail_de = "Desktop-Schrift und Synchronisierung" },
-        .desktop => .{ .page = "appearance", .en = "Desktop behavior", .de = "Desktop-Verhalten", .detail_en = "Reserved space, fullscreen and bell", .detail_de = "Reservierter Platz, Vollbild und Signalton" },
+        .borders => .{ .page = "appearance", .en = @import("i18n").mark("Window appearance"), .detail_en = @import("i18n").mark("Draft preview and window borders"), .collapsed = false },
+        .effects => .{ .page = "appearance", .en = @import("i18n").mark("Window effects"), .detail_en = @import("i18n").mark("Blur and transparency"), .collapsed = false },
+        .effect_tuning => .{ .page = "appearance", .en = @import("i18n").mark("Effect tuning"), .detail_en = @import("i18n").mark("Borders, blur, opacity and transitions") },
+        .typography => .{ .page = "appearance", .en = @import("i18n").mark("Fonts and cursor"), .detail_en = @import("i18n").mark("Desktop typography and synchronization") },
+        .desktop => .{ .page = "appearance", .en = @import("i18n").mark("Desktop behavior"), .detail_en = @import("i18n").mark("Reserved space, fullscreen and bell") },
         .appearance_extra => extra("appearance"),
-        .layout => .{ .page = "layouts", .en = "Default layout", .de = "Standardanordnung", .detail_en = "Choose how windows share the workspace", .detail_de = "Fenster auf der Arbeitsfläche anordnen", .collapsed = false },
-        .spacing => .{ .page = "layouts", .en = "Spacing", .de = "Abstände", .detail_en = "Between windows and workspace edges", .detail_de = "Zwischen Fenstern und Arbeitsflächenrändern", .collapsed = false },
-        .layout_behavior => .{ .page = "layouts", .en = "Layout behavior", .de = "Anordnungsverhalten", .detail_en = "Master area, per-layout options and inheritance", .detail_de = "Hauptbereich, Anordnungsoptionen und Vererbung" },
-        .slots => .{ .page = "layouts", .en = "Layout shortcuts", .de = "Anordnungskürzel", .detail_en = "Four slots for quick switching", .detail_de = "Vier Plätze zum schnellen Wechseln" },
-        .snap => .{ .page = "layouts", .en = "Snap layouts", .de = "Einrastanordnungen", .detail_en = "Named layouts, default selection and ordered zones", .detail_de = "Benannte Anordnungen, Standard und geordnete Zonen" },
-        .legacy_zones => .{ .page = "layouts", .en = "Legacy snap zones", .de = "Bisherige Einrastzonen", .detail_en = "Normalized geometry and source inventory", .detail_de = "Normierte Geometrie und Quellenübersicht" },
+        .layout => .{ .page = "layouts", .en = @import("i18n").mark("Default layout"), .detail_en = @import("i18n").mark("Choose how windows share the workspace"), .collapsed = false },
+        .spacing => .{ .page = "layouts", .en = @import("i18n").mark("Spacing"), .detail_en = @import("i18n").mark("Between windows and workspace edges"), .collapsed = false },
+        .layout_behavior => .{ .page = "layouts", .en = @import("i18n").mark("Layout behavior"), .detail_en = @import("i18n").mark("Master area, per-layout options and inheritance") },
+        .slots => .{ .page = "layouts", .en = @import("i18n").mark("Layout shortcuts"), .detail_en = @import("i18n").mark("Four slots for quick switching") },
+        .snap => .{ .page = "layouts", .en = @import("i18n").mark("Snap layouts"), .detail_en = @import("i18n").mark("Named layouts, default selection and ordered zones") },
+        .legacy_zones => .{ .page = "layouts", .en = @import("i18n").mark("Legacy snap zones"), .detail_en = @import("i18n").mark("Normalized geometry and source inventory") },
         .layouts_extra => extra("layouts"),
-        .keyboard => .{ .page = "input", .en = "Keyboard", .de = "Tastatur", .detail_en = "Layout and key repeat", .detail_de = "Belegung und Tastenwiederholung", .collapsed = false },
-        .pointer => .{ .page = "input", .en = "Pointer and touchpad", .de = "Maus und Touchpad", .detail_en = "Independent scrolling and tapping preferences", .detail_de = "Unabhängige Einstellungen für Scrollen und Tippen", .collapsed = false },
-        .focus => .{ .page = "input", .en = "Focus behavior", .de = "Fokusverhalten", .detail_en = "Pointer focus, new windows and raising", .detail_de = "Zeigerfokus, neue Fenster und Anheben" },
-        .input_options => .{ .page = "input", .en = "More input options", .de = "Weitere Eingabeoptionen", .detail_en = "Acceleration, handedness and XKB options", .detail_de = "Beschleunigung, Händigkeit und XKB-Optionen" },
+        .keyboard => .{ .page = "input", .en = @import("i18n").mark("Keyboard"), .detail_en = @import("i18n").mark("Layout and key repeat"), .collapsed = false },
+        .pointer => .{ .page = "input", .en = @import("i18n").mark("Pointer and touchpad"), .detail_en = @import("i18n").mark("Independent scrolling and tapping preferences"), .collapsed = false },
+        .focus => .{ .page = "input", .en = @import("i18n").mark("Focus behavior"), .detail_en = @import("i18n").mark("Pointer focus, new windows and raising") },
+        .input_options => .{ .page = "input", .en = @import("i18n").mark("More input options"), .detail_en = @import("i18n").mark("Acceleration, handedness and XKB options") },
         .input_extra => extra("input"),
-        .shortcuts => .{ .page = "keybinds", .en = "Launch and session", .de = "Start und Sitzung", .detail_en = "Common actions and shortcuts", .detail_de = "Häufige Aktionen und Tastenkürzel", .collapsed = false },
-        .movement => .{ .page = "keybinds", .en = "Focus and movement", .de = "Fokus und Bewegung", .detail_en = "Windows, columns and viewport", .detail_de = "Fenster, Spalten und Ansichtsbereich" },
-        .workspaces => .{ .page = "keybinds", .en = "Workspaces and outputs", .de = "Arbeitsflächen und Ausgaben", .detail_en = "Switch workspaces and move windows", .detail_de = "Arbeitsflächen wechseln und Fenster verschieben" },
-        .window_actions => .{ .page = "keybinds", .en = "Window sizing and snapping", .de = "Fenstergröße und Einrasten", .detail_en = "Floating, resizing, stacking and snap actions", .detail_de = "Schwebende Fenster, Größen, Stapelung und Einrasten" },
-        .layout_keys => .{ .page = "keybinds", .en = "Layout selection", .de = "Anordnungsauswahl", .detail_en = "Primary, secondary, tertiary and quaternary", .detail_de = "Primär, sekundär, tertiär und quartär" },
-        .shortcut_options => .{ .page = "keybinds", .en = "Action commands", .de = "Aktionsbefehle", .detail_en = "Editing a command never executes it", .detail_de = "Bearbeiten führt keinen Befehl aus" },
-        .custom_shortcuts => .{ .page = "keybinds", .en = "Custom shortcuts", .de = "Eigene Tastenkürzel", .detail_en = "Add, edit, delete and record custom bindings", .detail_de = "Eigene Belegungen hinzufügen, bearbeiten, löschen und aufnehmen" },
+        .shortcuts => .{ .page = "keybinds", .en = @import("i18n").mark("Launch and session"), .detail_en = @import("i18n").mark("Common actions and shortcuts"), .collapsed = false },
+        .movement => .{ .page = "keybinds", .en = @import("i18n").mark("Focus and movement"), .detail_en = @import("i18n").mark("Windows, columns and viewport") },
+        .workspaces => .{ .page = "keybinds", .en = @import("i18n").mark("Workspaces and outputs"), .detail_en = @import("i18n").mark("Switch workspaces and move windows") },
+        .window_actions => .{ .page = "keybinds", .en = @import("i18n").mark("Window sizing and snapping"), .detail_en = @import("i18n").mark("Floating, resizing, stacking and snap actions") },
+        .layout_keys => .{ .page = "keybinds", .en = @import("i18n").mark("Layout selection"), .detail_en = @import("i18n").mark("Primary, secondary, tertiary and quaternary") },
+        .shortcut_options => .{ .page = "keybinds", .en = @import("i18n").mark("Action commands"), .detail_en = @import("i18n").mark("Editing a command never executes it") },
+        .custom_shortcuts => .{ .page = "keybinds", .en = @import("i18n").mark("Custom shortcuts"), .detail_en = @import("i18n").mark("Add, edit, delete and record custom bindings") },
         .keybinds_extra => extra("keybinds"),
-        .rules => .{ .page = "rules", .en = "Window rules", .de = "Fensterregeln", .detail_en = "Ordered conditions and effects", .detail_de = "Geordnete Bedingungen und Wirkungen", .collapsed = false },
-        .game => .{ .page = "rules", .en = "Game mode", .de = "Spielmodus", .detail_en = "Remainder layout, fallback and spacing", .detail_de = "Restanordnung, Rückfall und Abstände" },
-        .rule_sources => .{ .page = "rules", .en = "Saved rule inventory", .de = "Gespeicherte Regeln", .detail_en = "Source order and preserved settings", .detail_de = "Quellenreihenfolge und beibehaltene Einstellungen" },
+        .rules => .{ .page = "rules", .en = @import("i18n").mark("Window rules"), .detail_en = @import("i18n").mark("Ordered conditions and effects"), .collapsed = false },
+        .game => .{ .page = "rules", .en = @import("i18n").mark("Game mode"), .detail_en = @import("i18n").mark("Remainder layout, fallback and spacing") },
+        .rule_sources => .{ .page = "rules", .en = @import("i18n").mark("Saved rule inventory"), .detail_en = @import("i18n").mark("Source order and preserved settings") },
         .rules_extra => extra("rules"),
-        .display_policy => .{ .page = "displays", .en = "Display policy", .de = "Bildschirmrichtlinien", .detail_en = "Startup, reload, fallback and compatibility", .detail_de = "Start, Neuladen, Rückfall und Kompatibilität" },
-        .display_sources => .{ .page = "displays", .en = "Additional display configuration", .de = "Weitere Bildschirmkonfiguration", .detail_en = "Connected and offline output declarations", .detail_de = "Deklarationen verbundener und getrennter Ausgaben" },
+        .display_policy => .{ .page = "displays", .en = @import("i18n").mark("Display policy"), .detail_en = @import("i18n").mark("Startup, reload, fallback and compatibility") },
+        .display_sources => .{ .page = "displays", .en = @import("i18n").mark("Additional display configuration"), .detail_en = @import("i18n").mark("Connected and offline output declarations") },
         .displays_extra => extra("displays"),
-        .status => .{ .page = "advanced", .en = "Configuration status", .de = "Konfigurationsstatus", .detail_en = "Save, reload, synchronization and recovery", .detail_de = "Speichern, Neuladen, Synchronisierung und Wiederherstellung", .collapsed = false },
-        .raw => .{ .page = "advanced", .en = "Raw configuration", .de = "Konfigurationsquellen", .detail_en = "Six sources; raw edits own the complete file", .detail_de = "Sechs Quellen; Rohänderungen betreffen die ganze Datei" },
-        .request => .{ .page = "advanced", .en = "Full draft request", .de = "Vollständiger Entwurfsauftrag", .detail_en = "JSON and explicit user overrides", .detail_de = "JSON und explizite Benutzerüberschreibungen" },
-        .receipts => .{ .page = "advanced", .en = "Operation details", .de = "Vorgangsdetails", .detail_en = "Candidate effects, receipts and display rollback", .detail_de = "Auswirkungen, Belege und Bildschirmrücknahme" },
+        .status => .{ .page = "advanced", .en = @import("i18n").mark("Configuration status"), .detail_en = @import("i18n").mark("Save, reload, synchronization and recovery"), .collapsed = false },
+        .raw => .{ .page = "advanced", .en = @import("i18n").mark("Raw configuration"), .detail_en = @import("i18n").mark("Six sources; raw edits own the complete file") },
+        .request => .{ .page = "advanced", .en = @import("i18n").mark("Full draft request"), .detail_en = @import("i18n").mark("JSON and explicit user overrides") },
+        .receipts => .{ .page = "advanced", .en = @import("i18n").mark("Operation details"), .detail_en = @import("i18n").mark("Candidate effects, receipts and display rollback") },
     };
 }
 fn extra(page: []const u8) Spec {
-    return .{ .page = page, .en = "Additional settings", .de = "Zusätzliche Einstellungen", .detail_en = "Further fields supplied by this Aqueous helper", .detail_de = "Weitere Felder dieses Aqueous-Helfers" };
+    return .{ .page = page, .en = @import("i18n").mark("Additional settings"), .detail_en = @import("i18n").mark("Further fields supplied by this Aqueous helper") };
 }
 fn eq(a: []const u8, b: []const u8) bool {
     return std.mem.eql(u8, a, b);
@@ -145,8 +145,7 @@ pub fn draftValue(base: m.Value, draft: m.Value, id: []const u8) m.Value {
     return m.get(m.field(base, id) orelse .null, "value");
 }
 const pages = [_][]const u8{ "appearance", "layouts", "input", "keybinds", "rules", "displays", "advanced" };
-const page_en = [_][]const u8{ "Appearance", "Layouts", "Input", "Shortcuts", "Rules", "Displays", "Advanced" };
-const page_de = [_][]const u8{ "Darstellung", "Anordnungen", "Eingabe", "Tastenkürzel", "Regeln", "Bildschirme", "Erweitert" };
+const page_en = [_][:0]const u8{ @import("i18n").mark("Appearance"), @import("i18n").mark("Layouts"), @import("i18n").mark("Input"), @import("i18n").mark("Shortcuts"), @import("i18n").mark("Rules"), @import("i18n").mark("Displays"), @import("i18n").mark("Advanced") };
 const collections = [_][]const u8{ "display_declaration_changes", "monitor_changes", "raw_files", "custom_keybind_changes", "window_rule_changes", "snap_zone_changes", "snap_layouts", "default_snap_layout", "sync_typography", "sync_cursor", "normalize_stacking", "create_user_override" };
 const collection_pages = [_]usize{ 5, 5, 6, 3, 4, 1, 1, 1, 0, 0, 1, 6 };
 fn pageIndex(field: m.Value) usize {
@@ -160,7 +159,7 @@ fn changed(draft: m.Value, key: []const u8) bool {
     if (v == .array and v.array.items.len == 0 and !eq(key, "snap_layouts")) return false;
     return true;
 }
-pub fn footer(a: std.mem.Allocator, base: m.Value, draft: m.Value, german: bool) ![:0]const u8 {
+pub fn footer(a: std.mem.Allocator, base: m.Value, draft: m.Value) ![:0]const u8 {
     var affected: [7]bool = @splat(false);
     var edits: usize = 0;
     for (m.list(m.get(draft, "changes"))) |change| {
@@ -173,34 +172,34 @@ pub fn footer(a: std.mem.Allocator, base: m.Value, draft: m.Value, german: bool)
     };
     var out: std.Io.Writer.Allocating = .init(a);
     defer out.deinit();
-    if (german) try out.writer.print("{d} ungespeicherte Änderungen · ", .{edits}) else try out.writer.print("{d} unsaved changes · ", .{edits});
+    var buffer: [128]u8 = undefined;
+    try out.writer.writeAll(@import("i18n").fmt(&buffer, "{d} unsaved changes · ", .{edits}));
     var first = true;
     for (affected, 0..) |yes, i| if (yes) {
         if (!first) try out.writer.writeAll(", ");
-        try out.writer.writeAll(if (german) page_de[i] else page_en[i]);
+        try out.writer.writeAll(@import("i18n").tr(page_en[i]));
         first = false;
     };
-    if (first) try out.writer.writeAll(if (german) "Vollständigen Entwurf prüfen" else "Review the full request");
+    if (first) try out.writer.writeAll(@import("i18n").dtr("pearl", "Review the full request"));
     return a.dupeZ(u8, out.written());
 }
 /// Human review includes display operations too; source metadata is not an edit.
-pub fn summary(a: std.mem.Allocator, base: m.Value, draft: m.Value, german: bool) ![]const u8 {
+pub fn summary(a: std.mem.Allocator, base: m.Value, draft: m.Value) ![]const u8 {
     var out: std.Io.Writer.Allocating = .init(a);
     for (m.list(m.get(draft, "changes"))) |change| {
         const id = m.str(m.get(change, "id"));
         const f = m.field(base, id) orelse .null;
         const title = if (f == .null) id else m.str(m.get(f, "label"));
         const page = pageIndex(f);
-        try out.writer.print("• {s}: {s}\n  {s} → {s}\n", .{ if (german) page_de[page] else page_en[page], title, try std.json.Stringify.valueAlloc(a, m.get(f, "value"), .{}), try std.json.Stringify.valueAlloc(a, m.get(change, "value"), .{}) });
+        try out.writer.print("• {s}: {s}\n  {s} → {s}\n", .{ @import("i18n").tr(page_en[page]), title, try std.json.Stringify.valueAlloc(a, m.get(f, "value"), .{}), try std.json.Stringify.valueAlloc(a, m.get(change, "value"), .{}) });
     }
     const keys = [_][]const u8{ "display_declaration_changes", "monitor_changes", "raw_files", "custom_keybind_changes", "window_rule_changes", "snap_zone_changes", "snap_layouts", "default_snap_layout", "sync_typography", "sync_cursor", "normalize_stacking", "create_user_override" };
-    const en = [_][]const u8{ "Displays: declarations and profiles", "Displays: monitor settings", "Advanced: raw configuration files", "Shortcuts: custom bindings", "Rules: window rules", "Layouts: legacy snap zones", "Layouts: named snap layouts", "Layouts: default snap layout", "Appearance: font synchronization", "Appearance: cursor synchronization", "Layouts: normalize stacking aliases", "Advanced: create user override" };
-    const de = [_][]const u8{ "Bildschirme: Deklarationen und Profile", "Bildschirme: Monitoreinstellungen", "Erweitert: Konfigurationsdateien", "Tastenkürzel: eigene Belegungen", "Regeln: Fensterregeln", "Anordnungen: bisherige Einrastzonen", "Anordnungen: benannte Einrastanordnungen", "Anordnungen: Standard-Einrastanordnung", "Darstellung: Schriftsynchronisierung", "Darstellung: Zeigersynchronisierung", "Anordnungen: Stapelungsaliase vereinheitlichen", "Erweitert: Benutzerüberschreibung erstellen" };
+    const en = [_][:0]const u8{ @import("i18n").mark("Displays: declarations and profiles"), @import("i18n").mark("Displays: monitor settings"), @import("i18n").mark("Advanced: raw configuration files"), @import("i18n").mark("Shortcuts: custom bindings"), @import("i18n").mark("Rules: window rules"), @import("i18n").mark("Layouts: legacy snap zones"), @import("i18n").mark("Layouts: named snap layouts"), @import("i18n").mark("Layouts: default snap layout"), @import("i18n").mark("Appearance: font synchronization"), @import("i18n").mark("Appearance: cursor synchronization"), @import("i18n").mark("Layouts: normalize stacking aliases"), @import("i18n").mark("Advanced: create user override") };
     for (keys, 0..) |key, i| {
         if (!changed(draft, key)) continue;
-        try out.writer.print("• {s}\n", .{if (german) de[i] else en[i]});
+        try out.writer.print("• {s}\n", .{@import("i18n").tr(en[i])});
     }
-    if (out.written().len == 0) try out.writer.writeAll(if (german) "Vollständigen Entwurf in Erweitert prüfen." else "Review the complete draft in Advanced.");
+    if (out.written().len == 0) try out.writer.writeAll(@import("i18n").dtr("pearl", "Review the complete draft in Advanced."));
     return out.toOwnedSlice();
 }
 test "all pinned scalar fields have exactly one section and future fields remain reachable" {
@@ -226,9 +225,9 @@ test "all pinned scalar fields have exactly one section and future fields remain
     try std.testing.expectEqual(Group.layout_behavior, group(centering));
 }
 test "search uses id label or chord without rewriting field values" {
-    try std.testing.expect(matches("TERMINAL", "spawn_terminal", "Open terminal", "Super+Return"));
-    try std.testing.expect(matches("super+return", "spawn_terminal", "Open terminal", "Super+Return"));
-    try std.testing.expect(!matches("missing", "spawn_terminal", "Open terminal", "Super+Return"));
+    try std.testing.expect(matches("TERMINAL", "spawn_terminal", @import("i18n").dtr("pearl", "Open terminal"), "Super+Return"));
+    try std.testing.expect(matches("super+return", "spawn_terminal", @import("i18n").dtr("pearl", "Open terminal"), "Super+Return"));
+    try std.testing.expect(!matches("missing", "spawn_terminal", @import("i18n").dtr("pearl", "Open terminal"), "Super+Return"));
 }
 
 test "review includes values and collection deletion without counting empty operation lists" {
@@ -237,8 +236,8 @@ test "review includes values and collection deletion without counting empty oper
     const a = arena.allocator();
     const base = try m.parse(a, "{\"fields\":[{\"id\":\"input.repeat_rate\",\"category\":\"input\",\"label\":\"Repeat rate\",\"value\":25}]}", 1024);
     const draft = try m.parse(a, "{\"changes\":[{\"id\":\"input.repeat_rate\",\"value\":38}],\"monitor_changes\":[],\"raw_files\":{},\"snap_layouts\":[]}", 1024);
-    try std.testing.expectEqualStrings("2 unsaved changes · Layouts, Input", try footer(a, base, draft, false));
-    const review = try summary(a, base, draft, false);
+    try std.testing.expectEqualStrings("2 unsaved changes · Layouts, Input", try footer(a, base, draft));
+    const review = try summary(a, base, draft);
     try std.testing.expect(std.mem.indexOf(u8, review, "25 → 38") != null);
     try std.testing.expect(std.mem.indexOf(u8, review, "named snap layouts") != null);
     try std.testing.expect(std.mem.indexOf(u8, review, "monitor settings") == null);

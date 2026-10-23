@@ -73,13 +73,13 @@ pub fn For(comptime View: type) type {
                     for (m.list(m.get(existing, "entries"))) |local| if (std.mem.eql(u8, m.str(m.get(local, "key")), key)) {
                         row.append(w.label(view.z(try std.fmt.allocPrint(a, "Current local assignment: {s}", .{m.str(m.get(local, "raw"))})), "pearl-secondary").as(gtk.Widget));
                     };
-                    const action = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "Keep current / omitted", "Set explicit value", "Use inherited value" }));
+                    const action = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ @import("i18n").dtr("pearl", "Keep current / omitted"), @import("i18n").dtr("pearl", "Set explicit value"), @import("i18n").dtr("pearl", "Use inherited value") }));
                     named(action.as(gtk.Widget), view.z(try std.fmt.allocPrint(a, "{s} edit action", .{key})));
                     row.append(action.as(gtk.Widget));
                     var f: Field = .{ .key = key, .spec = spec, .action = action, .input = undefined };
                     const typ = m.str(m.get(spec, "type"));
                     const options = m.list(m.get(spec, "enum"));
-                    if (std.mem.eql(u8, typ, "boolean")) f.input = gtk.CheckButton.newWithLabel("Enabled").as(gtk.Widget) else if (options.len > 0) {
+                    if (std.mem.eql(u8, typ, "boolean")) f.input = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Enabled")).as(gtk.Widget) else if (options.len > 0) {
                         const names = try a.allocSentinel(?[*:0]const u8, options.len, null);
                         for (options, 0..) |option, i| names[i] = view.z(m.str(option));
                         f.input = gtk.DropDown.newFromStrings(@ptrCast(names.ptr)).as(gtk.Widget);
@@ -174,14 +174,14 @@ pub fn For(comptime View: type) type {
         };
         pub fn render(view: *View, box: *gtk.Box, snapshot: m.Value) !void {
             if (!@import("../config/aqueous_contract.zig").Capabilities.read(snapshot).display_mutations) {
-                box.append(w.label("Structured display editing requires aqueous-config with display_declaration_mutations_v1. Refresh after upgrading the helper.", "pearl-secondary").as(gtk.Widget));
+                box.append(w.label(@import("i18n").dtr("pearl", "Structured display editing requires aqueous-config with display_declaration_mutations_v1. Refresh after upgrading the helper."), "pearl-secondary").as(gtk.Widget));
                 return;
             }
             const a = view.arena.allocator();
             const card = w.card();
             box.append(card.as(gtk.Widget));
-            card.append(w.label("Display declarations and profiles", "pearl-title").as(gtk.Widget));
-            card.append(w.label("Stage explicit values or remove local overrides. Keep current leaves a field untouched. Aqueous validates the complete candidate; live apply depends on each output's preview support. Policy identify_by and rollback_seconds are compatibility settings; rollback_seconds does not change the confirmation timer.", "pearl-secondary").as(gtk.Widget));
+            card.append(w.label(@import("i18n").dtr("pearl", "Display declarations and profiles"), "pearl-title").as(gtk.Widget));
+            card.append(w.label(@import("i18n").dtr("pearl", "Stage explicit values or remove local overrides. Keep current leaves a field untouched. Aqueous validates the complete candidate; live apply depends on each output's preview support. Policy identify_by and rollback_seconds are compatibility settings; rollback_seconds does not change the confirmation timer."), "pearl-secondary").as(gtk.Widget));
             var targets: std.ArrayList(m.Value) = .empty;
             for (m.list(m.get(snapshot, "display_declarations"))) |d| try targets.append(a, d);
             const draft = try m.parse(a, view.client.draft orelse "{}", m.max_request);
@@ -221,7 +221,7 @@ pub fn For(comptime View: type) type {
                 refs[i + 1] = names[i + 3];
             }
             const form = try a.create(Form);
-            form.* = .{ .view = view, .snapshot = snapshot, .targets = items, .parent_targets = parent_items, .selector = gtk.DropDown.newFromStrings(@ptrCast(names.ptr)), .source = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "wm", "outputs" })), .parent = gtk.DropDown.newFromStrings(@ptrCast(parent_names.ptr)), .before = gtk.DropDown.newFromStrings(@ptrCast(refs.ptr)), .members = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "Delete profile members", "Move members to selected parent" })), .fields_box = w.column(8) };
+            form.* = .{ .view = view, .snapshot = snapshot, .targets = items, .parent_targets = parent_items, .selector = gtk.DropDown.newFromStrings(@ptrCast(names.ptr)), .source = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ @import("i18n").dtr("pearl", "wm"), @import("i18n").dtr("pearl", "outputs") })), .parent = gtk.DropDown.newFromStrings(@ptrCast(parent_names.ptr)), .before = gtk.DropDown.newFromStrings(@ptrCast(refs.ptr)), .members = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ @import("i18n").dtr("pearl", "Delete profile members"), @import("i18n").dtr("pearl", "Move members to selected parent") })), .fields_box = w.column(8) };
             form.source.setSelected(1);
             for ([_]*gtk.DropDown{ form.selector, form.source, form.parent, form.before, form.members }, [_][*:0]const u8{ "Display declaration", "Declaration source", "Destination parent profile", "Insert before declaration", "Profile deletion members" }) |input, label| {
                 card.append(w.label(label, null).as(gtk.Widget));

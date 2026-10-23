@@ -67,7 +67,7 @@ pub const View = struct {
         fixed.as(gtk.Widget).setFocusable(1);
         fixed.as(gtk.Widget).addCssClass("pearl-desktop-grid");
         fixed.as(gtk.Widget).setVexpand(1);
-        w.name(fixed.as(gtk.Widget), "Desktop files");
+        w.name(fixed.as(gtk.Widget), @import("i18n").dtr("pearl", "Desktop files"));
         scroll.setChild(fixed.as(gtk.Widget));
         root.append(scroll.as(gtk.Widget));
         const band = gtk.Box.new(.vertical, 0);
@@ -151,7 +151,7 @@ pub const View = struct {
         self.selection = .{ .bits = &.{} };
         const alloc = self.arena.allocator();
         const snapshot = self.store.snapshot orelse {
-            self.message("Loading Desktop…");
+            self.message(@import("i18n").dtr("pearl", "Loading Desktop…"));
             self.clearCells();
             return;
         };
@@ -177,7 +177,7 @@ pub const View = struct {
         var rows: usize = 1;
         for (self.slots) |slot| rows = @max(rows, slot / self.grid.columns + 1);
         self.fixed.as(gtk.Widget).setSizeRequest(self.width, @max(self.height - 36, @as(i32, @intCast(rows)) * self.grid.cell_height));
-        self.message(if (self.feedback[0] != 0) std.mem.span(@as([*:0]const u8, &self.feedback)) else if (self.store.save_error) "Could not save desktop positions. Changes remain in memory; try arranging again." else if (self.store.state.corrupt) "Saved positions could not be read. Automatic positions are shown; the old file will be kept for recovery." else snapshot.message);
+        self.message(if (self.feedback[0] != 0) std.mem.span(@as([*:0]const u8, &self.feedback)) else if (self.store.save_error) @import("i18n").dtr("pearl", "Could not save desktop positions. Changes remain in memory; try arranging again.") else if (self.store.state.corrupt) @import("i18n").dtr("pearl", "Saved positions could not be read. Automatic positions are shown; the old file will be kept for recovery.") else snapshot.message);
         self.render();
     }
     fn tryPut(map: *std.StringHashMap(void), key_: []const u8) void {
@@ -407,7 +407,7 @@ pub const View = struct {
             self.store.state.place(self.uris[other], self.grid.position(self.slots[index])) catch {};
         };
         self.store.state.place(self.uris[index], dest) catch {
-            self.message("Could not store position.");
+            self.message(@import("i18n").dtr("pearl", "Could not store position."));
             return;
         };
         self.store.persist();
@@ -447,20 +447,20 @@ pub const View = struct {
         menu.setChild(box.as(gtk.Widget));
         if (target) |i| {
             self.selection.focus = i;
-            self.add(box, "Open", .open);
-            self.add(box, "Rename…", .rename);
-            self.add(box, "Move to Trash", .trash);
+            self.add(box, @import("i18n").dtr("pearl", "Open"), .open);
+            self.add(box, @import("i18n").dtr("pearl", "Rename…"), .rename);
+            self.add(box, @import("i18n").dtr("pearl", "Move to Trash"), .trash);
             const item = self.store.snapshot.?.items.items[self.indices[i]];
-            if (item.launcher and item.digest != null) self.add(box, "Allow launching…", .approve);
+            if (item.launcher and item.digest != null) self.add(box, @import("i18n").dtr("pearl", "Allow launching…"), .approve);
         } else {
-            self.add(box, "New folder…", .mkdir);
-            self.add(box, "Add application shortcut…", .shortcut);
-            self.add(box, "Arrange by name", .arrange);
-            if (self.store.snapshot) |s| if (s.missing) self.add(box, "Create Desktop folder", .submit_mkdir);
+            self.add(box, @import("i18n").dtr("pearl", "New folder…"), .mkdir);
+            self.add(box, @import("i18n").dtr("pearl", "Add application shortcut…"), .shortcut);
+            self.add(box, @import("i18n").dtr("pearl", "Arrange by name"), .arrange);
+            if (self.store.snapshot) |s| if (s.missing) self.add(box, @import("i18n").dtr("pearl", "Create Desktop folder"), .submit_mkdir);
         }
-        self.add(box, "Open Desktop folder", .folder);
-        self.add(box, "Retry", .retry);
-        self.add(box, "Desktop settings…", .settings);
+        self.add(box, @import("i18n").dtr("pearl", "Open Desktop folder"), .folder);
+        self.add(box, @import("i18n").dtr("pearl", "Retry"), .retry);
+        self.add(box, @import("i18n").dtr("pearl", "Desktop settings…"), .settings);
         menu.popup();
     }
     fn form(self: *View, command: Command) void {
@@ -477,14 +477,14 @@ pub const View = struct {
             label.setWrap(1);
             label.setMaxWidthChars(40);
             box.append(label.as(gtk.Widget));
-            box.append(w.label("Allow this exact launcher to start applications?", null).as(gtk.Widget));
-            const button = gtk.Button.newWithLabel("Allow launching");
+            box.append(w.label(@import("i18n").dtr("pearl", "Allow this exact launcher to start applications?"), null).as(gtk.Widget));
+            const button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Allow launching"));
             box.append(button.as(gtk.Widget));
             _ = gtk.Button.signals.clicked.connect(button, *View, approveClicked, self, .{});
             _ = button.as(gtk.Widget).grabFocus();
         } else if (command == .shortcut) {
             const catalog = self.apps.catalog orelse {
-                self.message("Applications are still loading. Retry shortly.");
+                self.message(@import("i18n").dtr("pearl", "Applications are still loading. Retry shortly."));
                 return;
             };
             const strings = gtk.StringList.new(null);
@@ -498,14 +498,14 @@ pub const View = struct {
             self.menu_choice = gtk.DropDown.new(strings.as(gio.ListModel), null);
             self.menu_choice.?.setEnableSearch(1);
             box.append(self.menu_choice.?.as(gtk.Widget));
-            self.add(box, "Add shortcut", .submit_shortcut);
+            self.add(box, @import("i18n").dtr("pearl", "Add shortcut"), .submit_shortcut);
         } else {
             self.menu_entry = gtk.Entry.new();
             self.menu_entry.?.setMaxLength(255);
-            w.name(self.menu_entry.?.as(gtk.Widget), "Name");
+            w.name(self.menu_entry.?.as(gtk.Widget), @import("i18n").dtr("pearl", "Name"));
             if (command == .rename) self.menu_entry.?.as(gtk.Editable).setText(self.store.snapshot.?.items.items[self.indices[self.selection.focus]].info.getName());
             box.append(self.menu_entry.?.as(gtk.Widget));
-            self.add(box, if (command == .rename) "Rename" else "Create folder", if (command == .rename) .submit_rename else .submit_mkdir);
+            self.add(box, if (command == .rename) @import("i18n").dtr("pearl", "Rename") else @import("i18n").dtr("pearl", "Create folder"), if (command == .rename) .submit_rename else .submit_mkdir);
             _ = self.menu_entry.?.as(gtk.Widget).grabFocus();
         }
     }
@@ -559,7 +559,7 @@ pub const View = struct {
         if (item.launcher) {
             const digest = item.digest orelse {
                 self.closeMenu();
-                self.message("This launcher is invalid or a symbolic link. Open Desktop folder to inspect it.");
+                self.message(@import("i18n").dtr("pearl", "This launcher is invalid or a symbolic link. Open Desktop folder to inspect it."));
                 return;
             };
             if (!self.store.state.approved(item.uri, digest)) {
@@ -600,7 +600,7 @@ pub const View = struct {
         if (self.failures == 0 and self.successes == 0) self.feedback[0] = 0;
         const request = self.queue.orderedRemove(0);
         self.job = actions.Job.start(self.store.app, self.window.as(gtk.Widget).getDisplay(), request, self, finished) catch {
-            self.message("Could not start file operation.");
+            self.message(@import("i18n").dtr("pearl", "Could not start file operation."));
             return;
         };
     }
@@ -620,7 +620,7 @@ pub const View = struct {
         if (self.queue.items.len > 0) self.next() else {
             self.queue_arena.deinit();
             self.queue_arena = .init(a);
-            if (self.failures > 0 and self.successes > 0) self.message("Some desktop actions succeeded; others failed. Check the Desktop folder before retrying.");
+            if (self.failures > 0 and self.successes > 0) self.message(@import("i18n").dtr("pearl", "Some desktop actions succeeded; others failed. Check the Desktop folder before retrying."));
             self.failures = 0;
             self.successes = 0;
             self.store.schedule();

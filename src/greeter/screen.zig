@@ -233,13 +233,13 @@ const Screen = struct {
         self.entry.as(gtk.Editable).setEditable(@intFromBool(editable));
         self.entry.setVisibility(@intFromBool(visible_response));
         self.entry.setInputPurpose(if (visible_response) .free_form else .password);
-        self.entry.setPlaceholderText(if (visible_response) "Response" else "Password");
-        self.entry_label.setText(if (secret) self.client.response.z() else "Password");
+        self.entry.setPlaceholderText(if (visible_response) @import("i18n").dtr("pearl-greeter", "Response") else @import("i18n").dtr("pearl-greeter", "Password"));
+        self.entry_label.setText(if (secret) self.client.response.z() else @import("i18n").dtr("pearl-greeter", "Password"));
         // The placeholder carries the name at rest; the label exists for prompts.
         self.entry_label.as(gtk.Widget).setVisible(@intFromBool(secret));
         self.password_hint.as(gtk.Widget).setVisible(@intFromBool(c.state == .idle and !self.config.password_first));
-        w.name(self.entry.as(gtk.Widget), if (secret) self.client.response.z() else "Password");
-        self.button.setLabel(if (secret) "Continue" else if (c.state == .idle) "Sign in" else "Signing in…");
+        w.name(self.entry.as(gtk.Widget), if (secret) self.client.response.z() else @import("i18n").dtr("pearl-greeter", "Password"));
+        self.button.setLabel(if (secret) @import("i18n").dtr("pearl-greeter", "Continue") else if (c.state == .idle) @import("i18n").dtr("pearl-greeter", "Sign in") else @import("i18n").dtr("pearl-greeter", "Signing in…"));
         // The primary action stays put through an attempt; only passive
         // prompt exchanges (which the suites assert on) hide it.
         const passive_busy = c.state == .authenticating and (c.kind == .info or c.kind == .@"error") and self.client.history.latest() != null;
@@ -252,7 +252,7 @@ const Screen = struct {
         // same, and a lock surface cannot map a popup at all.
         const asking = self.pending_power != null;
         if (self.pending_power) |restarting| {
-            self.power_prompt.setText(if (restarting) "Restart?" else "Power off?");
+            self.power_prompt.setText(if (restarting) @import("i18n").dtr("pearl-greeter", "Restart?") else @import("i18n").dtr("pearl-greeter", "Power off?"));
             if (restarting) self.confirm.as(gtk.Widget).removeCssClass("pearl-destructive") else self.confirm.as(gtk.Widget).addCssClass("pearl-destructive");
         }
         self.reboot_button.as(gtk.Widget).setSensitive(@intFromBool(self.power.reboot and !c.start_submitted and !asking));
@@ -705,7 +705,7 @@ const Screen = struct {
             defer a.free(label);
             account_model.append(label);
         }
-        account_model.append("Other user…");
+        account_model.append(@import("i18n").dtr("pearl-greeter", "Other user…"));
         self.account_chooser.setModel(account_model.as(gio.ListModel));
         self.account_chooser.setSelected(account_index);
         self.applyAccount();
@@ -876,7 +876,7 @@ const Screen = struct {
         const window = gtk.Window.new();
         window.ref();
         monitor.ref();
-        window.setTitle("Pearl · Sign in");
+        window.setTitle(@import("i18n").dtr("pearl-greeter", "Pearl · Sign in"));
         for ([_][*:0]const u8{ "pearl-root", "pearl-lock", "pearl-wallpaper", "background", "pearl-greeter" }) |class| window.as(gtk.Widget).addCssClass(class);
         window.as(gtk.Widget).addCssClass(if (self.config.theme == .material_light) "pearl-light" else if (self.config.theme == .gtk) "pearl-native" else "pearl-dark");
         self.accessibilityStyle(window);
@@ -967,6 +967,7 @@ pub fn run() !void {
     }
     if (config.screen_reader) _ = glib.setenv("GTK_A11Y", "atspi", 1);
     gtk.init();
+    gtk.Widget.setDefaultDirection(if (@import("i18n").rtl()) .rtl else .ltr);
     const display = gdk.Display.getDefault() orelse return error.NoDisplay;
     const raw = @embedFile("pearl_resources");
     const bytes = glib.Bytes.newStatic(raw.ptr, raw.len);
@@ -1066,11 +1067,11 @@ pub fn run() !void {
     avatar.as(gtk.Widget).addCssClass("pearl-avatar-circle");
     avatar.as(gtk.Widget).setHalign(.center);
     panel.append(avatar.as(gtk.Widget));
-    const title_label = w.label("Other user", "pearl-title");
+    const title_label = w.label(@import("i18n").dtr("pearl-greeter", "Other user"), "pearl-title");
     title_label.setXalign(0.5);
     panel.append(title_label.as(gtk.Widget));
     const account = gtk.DropDown.new(null, null);
-    w.name(account.as(gtk.Widget), "Account");
+    w.name(account.as(gtk.Widget), @import("i18n").dtr("pearl-greeter", "Account"));
     const account_button_factory = gtk.SignalListItemFactory.new();
     _ = gtk.SignalListItemFactory.signals.setup.connect(account_button_factory, ?*anyopaque, accountButtonSetup, null, .{});
     _ = gtk.SignalListItemFactory.signals.bind.connect(account_button_factory, ?*anyopaque, accountBind, null, .{});
@@ -1094,9 +1095,9 @@ pub fn run() !void {
     chooser.setFactory(factory.as(gtk.ListItemFactory));
     chooser.setListFactory(factory.as(gtk.ListItemFactory));
     factory.unref();
-    w.name(chooser.as(gtk.Widget), "Desktop session");
+    w.name(chooser.as(gtk.Widget), @import("i18n").dtr("pearl-greeter", "Desktop session"));
     chooser.as(gtk.Widget).addCssClass("pearl-session-chip");
-    const refresh = w.iconButton("view-refresh-symbolic", "Refresh desktops");
+    const refresh = w.iconButton("view-refresh-symbolic", @import("i18n").dtr("pearl-greeter", "Refresh desktops"));
     const session_row = w.row(8);
     session_row.as(gtk.Widget).addCssClass("pearl-session-row");
     session_row.append(chooser.as(gtk.Widget));
@@ -1105,47 +1106,47 @@ pub fn run() !void {
     panel.append(session_row.as(gtk.Widget));
     const username = gtk.Entry.new();
     username.setMaxLength(257);
-    username.setPlaceholderText("Username");
-    w.name(username.as(gtk.Widget), "Username");
+    username.setPlaceholderText(@import("i18n").dtr("pearl-greeter", "Username"));
+    w.name(username.as(gtk.Widget), @import("i18n").dtr("pearl-greeter", "Username"));
     const username_field = w.column(0);
     username_field.as(gtk.Widget).addCssClass("pearl-field");
-    const username_label = w.label("Username", "pearl-secondary");
+    const username_label = w.label(@import("i18n").dtr("pearl-greeter", "Username"), "pearl-secondary");
     username_label.as(gtk.Widget).addCssClass("pearl-field-label");
     username_field.append(username_label.as(gtk.Widget));
     username_field.append(username.as(gtk.Widget));
     panel.append(username_field.as(gtk.Widget));
     const entry_field = w.column(0);
     entry_field.as(gtk.Widget).addCssClass("pearl-field");
-    const entry_label = w.label("Password", "pearl-secondary");
+    const entry_label = w.label(@import("i18n").dtr("pearl-greeter", "Password"), "pearl-secondary");
     entry_label.as(gtk.Widget).addCssClass("pearl-field-label");
     entry_label.setWrap(1);
     entry_label.setMaxWidthChars(36);
     entry_field.append(entry_label.as(gtk.Widget));
     const entry = presentation.secureEntry(4097);
     entry_field.append(entry.as(gtk.Widget));
-    const password_hint = w.label("Available when requested", "pearl-secondary");
+    const password_hint = w.label(@import("i18n").dtr("pearl-greeter", "Available when requested"), "pearl-secondary");
     password_hint.as(gtk.Widget).addCssClass("pearl-hint");
     entry_field.append(password_hint.as(gtk.Widget));
     panel.append(entry_field.as(gtk.Widget));
-    const caps = w.label("Caps Lock is on", "pearl-secondary");
+    const caps = w.label(@import("i18n").dtr("pearl-greeter", "Caps Lock is on"), "pearl-secondary");
     caps.as(gtk.Widget).addCssClass("pearl-caps");
     caps.as(gtk.Widget).setVisible(0);
     panel.append(caps.as(gtk.Widget));
-    const message = w.label("Loading installed desktops…", "pearl-secondary");
+    const message = w.label(@import("i18n").dtr("pearl-greeter", "Loading installed desktops…"), "pearl-secondary");
     message.as(gtk.Widget).addCssClass("pearl-float-status");
     message.setXalign(0.5);
     message.setMaxWidthChars(44);
     if (config.fingerprint_hint) {
-        const hint = w.label("Fingerprint login is available when configured", "pearl-secondary");
+        const hint = w.label(@import("i18n").dtr("pearl-greeter", "Fingerprint login is available when configured"), "pearl-secondary");
         hint.as(gtk.Widget).addCssClass("pearl-status");
         hint.setWrap(1);
         hint.setMaxWidthChars(36);
         panel.append(hint.as(gtk.Widget));
     }
-    const button = gtk.Button.newWithLabel("Sign in");
+    const button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-greeter", "Sign in"));
     button.as(gtk.Widget).addCssClass("pearl-primary");
     panel.append(button.as(gtk.Widget));
-    const cancel = gtk.Button.newWithLabel("Cancel authentication");
+    const cancel = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-greeter", "Cancel authentication"));
     cancel.as(gtk.Widget).addCssClass("pearl-float-cancel");
     cancel.as(gtk.Widget).setHalign(.center);
     const floatbox = w.column(6);
@@ -1163,41 +1164,41 @@ pub fn run() !void {
     const larger_toggle = gtk.ToggleButton.new();
     larger_toggle.as(gtk.Button).setChild(w.icon("pearl-text-size-symbolic").as(gtk.Widget));
     larger_toggle.as(gtk.Widget).addCssClass("pearl-icon");
-    larger_toggle.as(gtk.Widget).setTooltipText("Larger text");
-    w.name(larger_toggle.as(gtk.Widget), "Larger text");
+    larger_toggle.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl-greeter", "Larger text"));
+    w.name(larger_toggle.as(gtk.Widget), @import("i18n").dtr("pearl-greeter", "Larger text"));
     cluster.append(larger_toggle.as(gtk.Widget));
     const contrast_toggle = gtk.ToggleButton.new();
     contrast_toggle.as(gtk.Button).setChild(w.icon("pearl-high-contrast-symbolic").as(gtk.Widget));
     contrast_toggle.as(gtk.Widget).addCssClass("pearl-icon");
-    contrast_toggle.as(gtk.Widget).setTooltipText("High contrast");
-    w.name(contrast_toggle.as(gtk.Widget), "High contrast");
+    contrast_toggle.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl-greeter", "High contrast"));
+    w.name(contrast_toggle.as(gtk.Widget), @import("i18n").dtr("pearl-greeter", "High contrast"));
     cluster.append(contrast_toggle.as(gtk.Widget));
     const reader = gtk.Button.new();
     reader.setChild(w.icon("pearl-screen-reader-symbolic").as(gtk.Widget));
     reader.as(gtk.Widget).addCssClass("pearl-icon");
-    reader.as(gtk.Widget).setTooltipText("Screen reader");
-    w.name(reader.as(gtk.Widget), "Screen reader");
+    reader.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl-greeter", "Screen reader"));
+    w.name(reader.as(gtk.Widget), @import("i18n").dtr("pearl-greeter", "Screen reader"));
     reader.as(gtk.Widget).setVisible(@intFromBool(config.screen_reader));
     cluster.append(reader.as(gtk.Widget));
     // Inline power rows, identical to the lock's corner cluster: the greeter's
     // popover used to work here, but the two surfaces must read the same and a
     // lock surface cannot map a popup at all.
     const power_menu_box = w.row(2);
-    const reboot = w.iconButton("pearl-system-reboot-symbolic", "Restart");
-    const off = w.iconButton("pearl-system-shutdown-symbolic", "Power off");
+    const reboot = w.iconButton("pearl-system-reboot-symbolic", @import("i18n").dtr("pearl-greeter", "Restart"));
+    const off = w.iconButton("pearl-system-shutdown-symbolic", @import("i18n").dtr("pearl-greeter", "Power off"));
     power_menu_box.append(reboot.as(gtk.Widget));
     power_menu_box.append(off.as(gtk.Widget));
     power_menu_box.as(gtk.Widget).setVisible(@intFromBool(config.power));
     cluster.append(power_menu_box.as(gtk.Widget));
     const power_confirm_box = w.row(6);
-    const power_prompt = gtk.Label.new("Restart?");
+    const power_prompt = gtk.Label.new(@import("i18n").dtr("pearl-greeter", "Restart?"));
     power_prompt.as(gtk.Widget).addCssClass("pearl-secondary");
     power_prompt.as(gtk.Widget).setMarginStart(10);
     power_prompt.as(gtk.Widget).setMarginEnd(4);
     power_confirm_box.append(power_prompt.as(gtk.Widget));
-    const confirm = gtk.Button.newWithLabel("Confirm");
+    const confirm = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-greeter", "Confirm"));
     confirm.as(gtk.Widget).addCssClass("pearl-primary");
-    const cancel_power = gtk.Button.newWithLabel("Cancel");
+    const cancel_power = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-greeter", "Cancel"));
     power_confirm_box.append(confirm.as(gtk.Widget));
     power_confirm_box.append(cancel_power.as(gtk.Widget));
     power_confirm_box.as(gtk.Widget).setVisible(0);

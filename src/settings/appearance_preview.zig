@@ -15,9 +15,8 @@ pub const View = struct {
     caption: *gtk.Box,
     provider: *gtk.CssProvider,
     signature: ?[64]u8 = null,
-    german: bool,
 
-    pub fn create(host: *gtk.Box, german: bool) !*View {
+    pub fn create(host: *gtk.Box) !*View {
         const self = try a.create(View);
         const root = gtk.Overlay.new();
         root.as(gtk.Widget).addCssClass("appearance-desktop-preview");
@@ -33,8 +32,8 @@ pub const View = struct {
         sample.as(gtk.Widget).setHalign(.center);
         sample.as(gtk.Widget).setValign(.center);
         sample.as(gtk.Widget).setSizeRequest(126, 68);
-        sample.append(w.label(if (german) "Beispielfenster" else "Sample window", "appearance-mini-title").as(gtk.Widget));
-        sample.append(w.label("Aa", "appearance-mini-selection").as(gtk.Widget));
+        sample.append(w.label(@import("i18n").dtr("pearl", "Sample window"), "appearance-mini-title").as(gtk.Widget));
+        sample.append(w.label(@import("i18n").dtr("pearl", "Aa"), "appearance-mini-selection").as(gtk.Widget));
         root.addOverlay(sample.as(gtk.Widget));
         const bar = w.row(12);
         const dock = w.row(5);
@@ -46,18 +45,18 @@ pub const View = struct {
         layout.insert(root.as(gtk.Widget), -1);
         const caption = w.column(8);
         caption.as(gtk.Widget).setValign(.center);
-        caption.append(w.label(if (german) "Desktopvorschau" else "Desktop preview", "pearl-section-title").as(gtk.Widget));
-        caption.append(w.label(if (german) "Entwurf · zum Übernehmen anwenden und speichern." else "Draft · Apply & save to update your desktop.", "pearl-secondary").as(gtk.Widget));
+        caption.append(w.label(@import("i18n").dtr("pearl", "Desktop preview"), "pearl-section-title").as(gtk.Widget));
+        caption.append(w.label(@import("i18n").dtr("pearl", "Draft · Apply & save to update your desktop."), "pearl-secondary").as(gtk.Widget));
         const status = w.label("", "pearl-secondary");
         caption.append(status.as(gtk.Widget));
-        caption.append(w.label(if (german) "Schematisch · Standardleiste und Dock." else "Illustrative · Default bar and dock.", "pearl-secondary").as(gtk.Widget));
+        caption.append(w.label(@import("i18n").dtr("pearl", "Illustrative · Default bar and dock."), "pearl-secondary").as(gtk.Widget));
         var child = caption.as(gtk.Widget).getFirstChild();
         while (child) |widget| : (child = widget.getNextSibling()) if (@import("gobject2").ext.cast(gtk.Label, widget)) |label| label.setMaxWidthChars(24);
         layout.insert(caption.as(gtk.Widget), -1);
         host.append(layout.as(gtk.Widget));
         const provider = gtk.CssProvider.new();
         gtk.StyleContext.addProviderForDisplay(root.as(gtk.Widget).getDisplay(), provider.as(gtk.StyleProvider), 603);
-        self.* = .{ .root = root, .picture = picture, .bar = bar, .dock = dock, .status = status, .caption = caption, .provider = provider, .german = german };
+        self.* = .{ .root = root, .picture = picture, .bar = bar, .dock = dock, .status = status, .caption = caption, .provider = provider };
         return self;
     }
     pub fn destroy(self: *View) void {
@@ -68,7 +67,7 @@ pub const View = struct {
     pub fn palette(self: *View, colors: ?theme.Palette, native: bool) void {
         if (native) {
             self.provider.loadFromString("");
-            self.status.setText(if (self.german) "GTK-Beispiel · das native Design bestimmt das Aussehen." else "GTK sample · native theme controls the appearance.");
+            self.status.setText(@import("i18n").dtr("pearl", "GTK sample · native theme controls the appearance."));
             return;
         }
         const css = theme.scopedCss(a,
@@ -78,9 +77,9 @@ pub const View = struct {
         defer a.free(css);
         self.provider.loadFromString(css);
         self.status.setText(if (colors == null)
-            (if (self.german) "Beispielfarben · erzeugte Farben werden beim Speichern angewendet." else "Sample colors · generated colors apply on save.")
+            (@import("i18n").dtr("pearl", "Sample colors · generated colors apply on save."))
         else
-            (if (self.german) "Farben des Entwurfs · nur in dieser Vorschau." else "Draft colors · scoped to this preview."));
+            (@import("i18n").dtr("pearl", "Draft colors · scoped to this preview.")));
     }
     pub fn update(self: *View, p: prefs.Preferences) void {
         const bytes = std.json.Stringify.valueAlloc(a, .{ p.theme, p.wallpaper, p.bar, p.dock }, .{}) catch return;
@@ -103,12 +102,12 @@ pub const View = struct {
         if (!p.bar.islands) self.bar.as(gtk.Widget).addCssClass("appearance-mini-surface") else self.bar.as(gtk.Widget).removeCssClass("appearance-mini-surface");
         for ([_][]const u8{ p.bar.groups.left, p.bar.groups.center, p.bar.groups.right }) |group| {
             if (group.len == 0) continue;
-            const label = w.label("• • •", if (p.bar.islands) "appearance-mini-surface" else null);
+            const label = w.label(@import("i18n").dtr("pearl", "• • •"), if (p.bar.islands) "appearance-mini-surface" else null);
             self.bar.append(label.as(gtk.Widget));
         }
         self.dock.as(gtk.Widget).addCssClass("appearance-mini-surface");
         self.dock.as(gtk.Widget).setVisible(@intFromBool(p.dock.enabled));
-        for (0..4) |_| self.dock.append(w.label("▪", "appearance-mini-selection").as(gtk.Widget));
+        for (0..4) |_| self.dock.append(w.label(@import("i18n").dtr("pearl", "▪"), "appearance-mini-selection").as(gtk.Widget));
     }
 };
 fn clear(box: *gtk.Box) void {

@@ -38,6 +38,7 @@ fn endpointExists() bool {
 }
 
 pub fn main(init: std.process.Init) void {
+    @import("i18n").initShell();
     const bootstrap = @import("platform/wayland/activity_bootstrap.zig");
     bootstrap.capture(init) catch std.process.exit(1);
     defer bootstrap.close();
@@ -53,7 +54,7 @@ pub fn main(init: std.process.Init) void {
     if (parsed.mode == .demo or !options.wasm_plugins) bootstrap.close();
     switch (parsed.action) {
         .help => {
-            glib.print("Usage: pearl [--demo] [--help] [--version] [--check-environment] [--log-level LEVEL] [--log-scopes LIST]\n\nDefault: Aqueous session application.\n--demo: standalone gallery with sample content (Wayland required).\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes such as aqueous,ui; all for every scope;\n              prefix a scope with ~ to exclude it, as in all,~gallery.\n");
+            glib.print("%s", @import("i18n").tr("Usage: pearl [--demo] [--help] [--version] [--check-environment] [--log-level LEVEL] [--log-scopes LIST]\n\nDefault: Aqueous session application.\n--demo: standalone gallery with sample content (Wayland required).\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes such as aqueous,ui; all for every scope;\n              prefix a scope with ~ to exclude it, as in all,~gallery.\n").ptr);
             return;
         },
         .version => {
@@ -81,6 +82,7 @@ pub fn main(init: std.process.Init) void {
         std.process.exit(2);
     }
     gtk.IconTheme.getForDisplay(gdk.Display.getDefault().?).addResourcePath("/org/aqueous/Pearl/icons");
+    gtk.Widget.setDefaultDirection(if (@import("i18n").rtl()) .rtl else .ltr);
     const hooks: application.TestHooks = .{
         .worker_delay_ms = testNumber("PEARL_TEST_WORKER_DELAY_MS", 0, 5000),
         .close_after_ms = testNumber("PEARL_TEST_CLOSE_MS", 0, 10000),

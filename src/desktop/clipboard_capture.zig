@@ -80,7 +80,7 @@ pub const View = struct {
         const self = try a.create(View);
         const search = gtk.SearchEntry.new();
         search.setSearchDelay(0);
-        search.setPlaceholderText(tr("Filter clipboard history", "Zwischenablageverlauf filtern"));
+        search.setPlaceholderText(@import("i18n").dtr("pearl", "Filter clipboard history"));
         search.as(gtk.Widget).setName("clipboard-search");
         const strings = gtk.StringList.new(null);
         _ = strings.ref();
@@ -107,7 +107,7 @@ pub const View = struct {
             .region = gtk.Entry.new(),
             .picture = gtk.Picture.new(),
         };
-        host.append(w.label(tr("Clipboard & capture", "Zwischenablage & Bildschirmfoto"), "pearl-card-title").as(gtk.Widget));
+        host.append(w.label(@import("i18n").dtr("pearl", "Clipboard & capture"), "pearl-card-title").as(gtk.Widget));
         const switcher = gtk.StackSwitcher.new();
         switcher.setStack(self.stack);
         host.append(switcher.as(gtk.Widget));
@@ -117,11 +117,11 @@ pub const View = struct {
 
         const clipboard_page = w.column(8);
         clipboard_page.as(gtk.Widget).setVexpand(1);
-        _ = self.stack.addTitled(clipboard_page.as(gtk.Widget), "clipboard", tr("Clipboard", "Zwischenablage"));
+        _ = self.stack.addTitled(clipboard_page.as(gtk.Widget), "clipboard", @import("i18n").dtr("pearl", "Clipboard"));
         const filter = w.row(8);
         self.search.as(gtk.Widget).setHexpand(1);
         filter.append(self.search.as(gtk.Widget));
-        try self.button(filter, tr("Clear history", "Verlauf löschen"), .clear);
+        try self.button(filter, @import("i18n").dtr("pearl", "Clear history"), .clear);
         clipboard_page.append(filter.as(gtk.Widget));
         clipboard_page.append(self.hint.as(gtk.Widget));
         const scroll = gtk.ScrolledWindow.new();
@@ -131,24 +131,24 @@ pub const View = struct {
         clipboard_page.append(scroll.as(gtk.Widget));
         clipboard_page.append(self.clipboard_info.as(gtk.Widget));
 
-        const capture_content = self.page("capture", tr("Capture", "Bildschirmfoto"));
+        const capture_content = self.page("capture", @import("i18n").dtr("pearl", "Capture"));
         const capture_card = w.card();
         capture_content.append(capture_card.as(gtk.Widget));
-        capture_card.append(w.label(tr("Screenshot", "Bildschirmfoto"), "pearl-card-title").as(gtk.Widget));
-        capture_card.append(w.label(tr("Output crop includes visible overlapping windows. Coordinates are local to this output.", "Ausgabebereich enthält überlappende Fenster. Koordinaten gelten für diese Ausgabe."), "pearl-secondary").as(gtk.Widget));
-        self.region.setPlaceholderText("x,y,width,height");
-        w.name(self.region.as(gtk.Widget), tr("Output region in logical pixels", "Ausgabebereich in logischen Pixeln"));
+        capture_card.append(w.label(@import("i18n").dtr("pearl", "Screenshot"), "pearl-card-title").as(gtk.Widget));
+        capture_card.append(w.label(@import("i18n").dtr("pearl", "Output crop includes visible overlapping windows. Coordinates are local to this output."), "pearl-secondary").as(gtk.Widget));
+        self.region.setPlaceholderText(@import("i18n").dtr("pearl", "x,y,width,height"));
+        w.name(self.region.as(gtk.Widget), @import("i18n").dtr("pearl", "Output region in logical pixels"));
         capture_card.append(self.region.as(gtk.Widget));
         const first = w.row(8);
         capture_card.append(first.as(gtk.Widget));
-        try self.button(first, tr("Capture output", "Ausgabe aufnehmen"), .take);
-        try self.button(first, tr("Capture region", "Bereich aufnehmen"), .region);
-        try self.button(first, tr("Cancel", "Abbrechen"), .cancel);
-        self.window_selector = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{"No capturable windows"}));
-        w.name(self.window_selector.as(gtk.Widget), "Isolated window source");
+        try self.button(first, @import("i18n").dtr("pearl", "Capture output"), .take);
+        try self.button(first, @import("i18n").dtr("pearl", "Capture region"), .region);
+        try self.button(first, @import("i18n").dtr("pearl", "Cancel"), .cancel);
+        self.window_selector = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{@import("i18n").dtr("pearl", "No capturable windows")}));
+        w.name(self.window_selector.as(gtk.Widget), @import("i18n").dtr("pearl", "Isolated window source"));
         capture_card.append(self.window_selector.as(gtk.Widget));
-        try self.button(capture_card, "Capture isolated window", .window);
-        capture_card.append(w.label("Isolated capture excludes overlapping windows. PNG export requires SDR color metadata; unsupported or undescribed sources are reported without exporting.", "pearl-secondary").as(gtk.Widget));
+        try self.button(capture_card, @import("i18n").dtr("pearl", "Capture isolated window"), .window);
+        capture_card.append(w.label(@import("i18n").dtr("pearl", "Isolated capture excludes overlapping windows. PNG export requires SDR color metadata; unsupported or undescribed sources are reported without exporting."), "pearl-secondary").as(gtk.Widget));
         self.picture.setCanShrink(1);
         self.picture.as(gtk.Widget).setSizeRequest(-1, 150);
         self.picture.setContentFit(.contain);
@@ -156,8 +156,8 @@ pub const View = struct {
         capture_card.append(self.picture.as(gtk.Widget));
         const actions = w.row(8);
         capture_card.append(actions.as(gtk.Widget));
-        try self.button(actions, tr("Save PNG", "PNG speichern"), .save);
-        try self.button(actions, tr("Copy image", "Bild kopieren"), .copy);
+        try self.button(actions, @import("i18n").dtr("pearl", "Save PNG"), .save);
+        try self.button(actions, @import("i18n").dtr("pearl", "Copy image"), .copy);
         capture_card.append(self.info.as(gtk.Widget));
 
         self.connect(factory.as(object.Object), gtk.SignalListItemFactory.signals.setup.connect(factory, *View, setup, self, .{}));
@@ -253,9 +253,9 @@ pub const View = struct {
     }
     fn report(label: *gtk.Label, err: anyerror) void {
         label.setText(switch (err) {
-            error.InvalidRegion => tr("Enter a region inside this output: x,y,width,height", "Bereich innerhalb der Ausgabe eingeben: x,y,Breite,Höhe"),
-            error.Conflict => tr("File already exists; choose another path using pearlctl", "Datei vorhanden; anderen Pfad mit pearlctl wählen"),
-            else => tr("Action unavailable or failed. Try again.", "Aktion nicht verfügbar oder fehlgeschlagen. Erneut versuchen."),
+            error.InvalidRegion => @import("i18n").dtr("pearl", "Enter a region inside this output: x,y,width,height"),
+            error.Conflict => @import("i18n").dtr("pearl", "File already exists; choose another path using pearlctl"),
+            else => @import("i18n").dtr("pearl", "Action unavailable or failed. Try again."),
         });
     }
     fn act(self: *View, action: Action) !void {
@@ -345,11 +345,11 @@ pub const View = struct {
         image.setContentFit(.contain);
         image.as(gtk.Widget).setSizeRequest(-1, 96);
         image.as(gtk.Widget).setVisible(0);
-        w.name(image.as(gtk.Widget), tr("Clipboard image preview", "Bildvorschau der Zwischenablage"));
+        w.name(image.as(gtk.Widget), @import("i18n").dtr("pearl", "Clipboard image preview"));
         card.append(image.as(gtk.Widget));
         const actions = w.row(6);
-        const copy = gtk.Button.newWithLabel(tr("Copy", "Kopieren"));
-        const remove = gtk.Button.newWithLabel(tr("Delete", "Löschen"));
+        const copy = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Copy"));
+        const remove = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Delete"));
         actions.append(copy.as(gtk.Widget));
         actions.append(remove.as(gtk.Widget));
         card.append(actions.as(gtk.Widget));
@@ -401,7 +401,7 @@ pub const View = struct {
         self.freeRecords();
         if (!self.clipboard.locked) for (self.clipboard.entries.items) |entry| {
             if (self.record_count == self.records.len) break;
-            const label = history.preview(a, if (entry.kind == .text) entry.bytes else tr("PNG image", "PNG-Bild")) catch continue;
+            const label = history.preview(a, if (entry.kind == .text) entry.bytes else @import("i18n").dtr("pearl", "PNG image")) catch continue;
             const folded = apps.fold(a, label) catch {
                 a.free(label);
                 continue;
@@ -429,7 +429,7 @@ pub const View = struct {
         self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), @ptrCast(&values));
         const last: c_uint = if (self.visible_count == 0) 0 else @intCast(self.visible_count - 1);
         self.selection.setSelected(selected orelse @min(keep.position, last));
-        self.hint.setText(if (self.record_count == 0) tr("Copy text or a PNG image to start. History is cleared when locking.", "Text oder PNG kopieren. Beim Sperren wird der Verlauf gelöscht.") else tr("No matching entries", "Keine passenden Einträge"));
+        self.hint.setText(if (self.record_count == 0) @import("i18n").dtr("pearl", "Copy text or a PNG image to start. History is cleared when locking.") else @import("i18n").dtr("pearl", "No matching entries"));
         self.hint.as(gtk.Widget).setVisible(@intFromBool(self.visible_count == 0));
     }
     fn updateWindows(self: *View) void {

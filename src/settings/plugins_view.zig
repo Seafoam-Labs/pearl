@@ -95,8 +95,8 @@ pub const View = struct {
         const scene = w.column(12);
         scene.as(gtk.Widget).addCssClass("plugins-scene");
         const bar = w.row(12);
-        bar.append(w.label("●  1  2", "plugins-mini-surface").as(gtk.Widget));
-        const timer = w.label("◷ 00:42", "plugins-mini-selection");
+        bar.append(w.label(@import("i18n").dtr("pearl", "●  1  2"), "plugins-mini-surface").as(gtk.Widget));
+        const timer = w.label(@import("i18n").dtr("pearl", "◷ 00:42"), "plugins-mini-selection");
         timer.as(gtk.Widget).setHexpand(0);
         bar.append(timer.as(gtk.Widget));
         scene.append(bar.as(gtk.Widget));
@@ -104,33 +104,33 @@ pub const View = struct {
         sample.as(gtk.Widget).addCssClass("plugins-mini-window");
         sample.as(gtk.Widget).setHalign(.center);
         sample.as(gtk.Widget).setSizeRequest(120, 55);
-        sample.append(w.label("Sample window", "appearance-mini-title").as(gtk.Widget));
-        sample.append(w.label("Aa     +1", "plugins-mini-selection").as(gtk.Widget));
+        sample.append(w.label(@import("i18n").dtr("pearl", "Sample window"), "appearance-mini-title").as(gtk.Widget));
+        sample.append(w.label(@import("i18n").dtr("pearl", "Aa     +1"), "plugins-mini-selection").as(gtk.Widget));
         scene.append(sample.as(gtk.Widget));
-        const dock = w.label("▪ ▪ ▪ ▪", "plugins-mini-surface");
+        const dock = w.label(@import("i18n").dtr("pearl", "▪ ▪ ▪ ▪"), "plugins-mini-surface");
         dock.as(gtk.Widget).setHalign(.center);
         scene.append(dock.as(gtk.Widget));
         hero_layout.insert(scene.as(gtk.Widget), -1);
         const copy = w.column(8);
         copy.as(gtk.Widget).setValign(.center);
-        const title = w.label("At home in your bar. Or out on your desktop.", "pearl-section-title");
+        const title = w.label(@import("i18n").dtr("pearl", "At home in your bar. Or out on your desktop."), "pearl-section-title");
         title.setMaxWidthChars(28);
         copy.append(title.as(gtk.Widget));
-        const description = w.label("Enable a widget, choose its place, and give it only the permissions it needs.", "pearl-secondary");
+        const description = w.label(@import("i18n").dtr("pearl", "Enable a widget, choose its place, and give it only the permissions it needs."), "pearl-secondary");
         description.setMaxWidthChars(32);
         copy.append(description.as(gtk.Widget));
-        copy.append(w.label("Illustrative layout · Experimental plugins", "pearl-secondary").as(gtk.Widget));
+        copy.append(w.label(@import("i18n").dtr("pearl", "Illustrative layout · Experimental plugins"), "pearl-secondary").as(gtk.Widget));
         hero_layout.insert(copy.as(gtk.Widget), -1);
         hero.append(hero_layout.as(gtk.Widget));
         host.append(hero.as(gtk.Widget));
         const heading = w.flow(2);
         heading.setHomogeneous(0);
         const labels = w.column(4);
-        labels.append(w.label("Installed plugins", "pearl-section-title").as(gtk.Widget));
-        const summary = w.label("Discovering plugins…", "pearl-secondary");
+        labels.append(w.label(@import("i18n").dtr("pearl", "Installed plugins"), "pearl-section-title").as(gtk.Widget));
+        const summary = w.label(@import("i18n").dtr("pearl", "Discovering plugins…"), "pearl-secondary");
         labels.append(summary.as(gtk.Widget));
         heading.insert(labels.as(gtk.Widget), -1);
-        const refresh = gtk.Button.newWithLabel("Refresh plugins");
+        const refresh = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Refresh plugins"));
         refresh.as(gtk.Widget).setHalign(.end);
         refresh.as(gtk.Widget).setValign(.center);
         heading.insert(refresh.as(gtk.Widget), -1);
@@ -142,12 +142,12 @@ pub const View = struct {
         const filters = w.flow(2);
         filters.setHomogeneous(0);
         const search = gtk.SearchEntry.new();
-        search.setPlaceholderText("Find a plugin on this page…");
+        search.setPlaceholderText(@import("i18n").dtr("pearl", "Find a plugin on this page…"));
         search.as(gtk.Editable).setWidthChars(16);
-        w.name(search.as(gtk.Widget), "Find a plugin on this page");
+        w.name(search.as(gtk.Widget), @import("i18n").dtr("pearl", "Find a plugin on this page"));
         filters.insert(search.as(gtk.Widget), -1);
-        const filter = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "All on this page", "Enabled in draft", "Needs attention" }));
-        w.name(filter.as(gtk.Widget), "Filter plugins on this page");
+        const filter = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ @import("i18n").dtr("pearl", "All on this page"), @import("i18n").dtr("pearl", "Enabled in draft"), @import("i18n").dtr("pearl", "Needs attention") }));
+        w.name(filter.as(gtk.Widget), @import("i18n").dtr("pearl", "Filter plugins on this page"));
         filters.insert(filter.as(gtk.Widget), -1);
         host.append(filters.as(gtk.Widget));
         const content = w.column(16);
@@ -157,9 +157,9 @@ pub const View = struct {
         const controls = w.flow(2);
         controls.setHomogeneous(0);
         host.append(controls.as(gtk.Widget));
-        const previous = gtk.Button.newWithLabel("First page");
+        const previous = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "First page"));
         controls.insert(previous.as(gtk.Widget), -1);
-        const next = gtk.Button.newWithLabel("Next page");
+        const next = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Next page"));
         controls.insert(next.as(gtk.Widget), -1);
         const discovery_section = gtk.Expander.new("Plugin discovery");
         discovery_section.as(gtk.Widget).addCssClass("settings-card");
@@ -168,7 +168,7 @@ pub const View = struct {
         discovery.setSelectable(1);
         discovery_section.setChild(discovery.as(gtk.Widget));
         host.append(discovery_section.as(gtk.Widget));
-        host.append(w.label("Review and approve packages before enabling them. Apply & save saves all Pearl preferences. Refresh, Retry and Preview act immediately using saved settings.", "pearl-secondary").as(gtk.Widget));
+        host.append(w.label(@import("i18n").dtr("pearl", "Review and approve packages before enabling them. Apply & save saves all Pearl preferences. Refresh, Retry and Preview act immediately using saved settings."), "pearl-secondary").as(gtk.Widget));
         self.* = .{ .context = context, .invalidate = invalidate, .host = host, .editor = editor, .summary = summary, .content = content, .refresh = refresh, .next = next, .previous = previous, .search = search, .filter = filter, .empty = empty, .discovery = discovery, .discovery_issue = discovery_issue };
         self.refresh_signal = gtk.Button.signals.clicked.connect(refresh, *View, refreshPlugins, self, .{});
         self.previous_signal = gtk.Button.signals.clicked.connect(previous, *View, first, self, .{});
@@ -204,7 +204,7 @@ pub const View = struct {
             row.card.as(gtk.Widget).setVisible(@intFromBool(matches));
             count += @intFromBool(matches);
         }
-        self.empty.setText(if (self.rows.items.len == 0) "No plugins on this page. Install a complete package in a plugin folder, then refresh. Use First page to return to the start." else "No matching plugins on this page. Clear your search or choose another filter or page.");
+        self.empty.setText(if (self.rows.items.len == 0) @import("i18n").dtr("pearl", "No plugins on this page. Install a complete package in a plugin folder, then refresh. Use First page to return to the start.") else @import("i18n").dtr("pearl", "No matching plugins on this page. Clear your search or choose another filter or page."));
         self.empty.as(gtk.Widget).setVisible(@intFromBool(count == 0));
     }
     fn clear(self: *View) void {
@@ -298,7 +298,7 @@ pub const View = struct {
             // changed fingerprint; saved grants belong to the old package.
             if (!draft_changed) row.permissions_edited = false;
             row.status.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {s}{s}", .{ statusText(info.status), if (saved.placement.mode == .overlay) "Desktop overlay" else "Bar", if (draft_changed) " · Unsaved changes" else "" }, 0) catch continue);
-            row.notice.setText(if (!info.installed) "Package missing. Preferences are retained; you can still disable it." else if (incompatible) "Settings changed. Review the package and reset incompatible settings." else if (!info.available) "Package unavailable. See diagnostics before trying again." else if (!approved) "Review permissions and approve this package before enabling it." else if (info.error_code) |err| std.fmt.allocPrintSentinel(alloc, "Needs attention: {s}", .{err}, 0) catch "Plugin needs attention" else "");
+            row.notice.setText(if (!info.installed) @import("i18n").dtr("pearl", "Package missing. Preferences are retained; you can still disable it.") else if (incompatible) @import("i18n").dtr("pearl", "Settings changed. Review the package and reset incompatible settings.") else if (!info.available) @import("i18n").dtr("pearl", "Package unavailable. See diagnostics before trying again.") else if (!approved) @import("i18n").dtr("pearl", "Review permissions and approve this package before enabling it.") else if (info.error_code) |err| std.fmt.allocPrintSentinel(alloc, "Needs attention: {s}", .{err}, 0) catch "Plugin needs attention" else "");
             row.notice.as(gtk.Widget).setVisible(@intFromBool(row.attention));
             var paths: std.ArrayList([]const u8) = .empty;
             for (info.sources) |source| paths.append(alloc, source.path) catch continue;
@@ -385,9 +385,9 @@ pub const View = struct {
         const expand = gtk.ToggleButton.newWithLabel("Settings and placement");
         config.as(gtk.Widget).setSensitive(@intFromBool(info.installed));
         expand.as(gtk.Widget).addCssClass("plugins-expand");
-        const mode = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "Bar", "Desktop overlay" }));
-        field(placement, "Placement", mode.as(gtk.Widget));
-        const overlay = toggle(placement, "Allow desktop overlay");
+        const mode = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ @import("i18n").dtr("pearl", "Bar"), @import("i18n").dtr("pearl", "Desktop overlay") }));
+        field(placement, @import("i18n").dtr("pearl", "Placement"), mode.as(gtk.Widget));
+        const overlay = toggle(placement, @import("i18n").dtr("pearl", "Allow desktop overlay"));
         const placement_details = w.column(0);
         placement.append(placement_details.as(gtk.Widget));
         const diagnostic_expander = gtk.ToggleButton.newWithLabel("Package details and diagnostics");
@@ -400,10 +400,10 @@ pub const View = struct {
         const activity_group = w.column(0);
         activity_group.as(gtk.Widget).setVisible(@intFromBool(info.capabilities.input_activity));
         config.append(activity_group.as(gtk.Widget));
-        row.* = .{ .arena = arena, .card = card, .details = details, .expand = expand, .view = self, .info = info, .status = status, .diagnostics = diagnostics, .diagnostic_expander = diagnostic_expander, .diagnostic_details = diagnostic_details, .placement_details = placement_details, .notice = notice, .config = config, .enabled = enabled, .activity = toggle(activity_group, "Allow keyboard and mouse activity"), .overlay = overlay, .mode = mode, .output = makeEntry(placement_details, "Display (empty: first output)"), .x = number(placement_details, "Horizontal position", 0, 65535), .y = number(placement_details, "Vertical position", 0, 65535), .width = number(placement_details, "Width", 16, 512), .height = number(placement_details, "Height", 16, 512), .interactive = toggle(placement_details, "Accept clicks (off: click through)"), .locked = toggle(placement_details, "Lock placement"), .fullscreen = toggle(placement_details, "Hide over fullscreen windows"), .values = try alloc.alloc(*gtk.Widget, info.settings.len) };
+        row.* = .{ .arena = arena, .card = card, .details = details, .expand = expand, .view = self, .info = info, .status = status, .diagnostics = diagnostics, .diagnostic_expander = diagnostic_expander, .diagnostic_details = diagnostic_details, .placement_details = placement_details, .notice = notice, .config = config, .enabled = enabled, .activity = toggle(activity_group, @import("i18n").dtr("pearl", "Allow keyboard and mouse activity")), .overlay = overlay, .mode = mode, .output = makeEntry(placement_details, @import("i18n").dtr("pearl", "Display (empty: first output)")), .x = number(placement_details, @import("i18n").dtr("pearl", "Horizontal position"), 0, 65535), .y = number(placement_details, @import("i18n").dtr("pearl", "Vertical position"), 0, 65535), .width = number(placement_details, @import("i18n").dtr("pearl", "Width"), 16, 512), .height = number(placement_details, @import("i18n").dtr("pearl", "Height"), 16, 512), .interactive = toggle(placement_details, @import("i18n").dtr("pearl", "Accept clicks (off: click through)")), .locked = toggle(placement_details, @import("i18n").dtr("pearl", "Lock placement")), .fullscreen = toggle(placement_details, @import("i18n").dtr("pearl", "Hide over fullscreen windows")), .values = try alloc.alloc(*gtk.Widget, info.settings.len) };
         row.output.setMaxLength(128);
-        activity_group.append(w.label("Coarse activity only. No keys, text or pointer positions are exposed.", "pearl-secondary").as(gtk.Widget));
-        if (!info.capabilities.overlay) config.append(w.label("Placement: Bar", "pearl-secondary").as(gtk.Widget));
+        activity_group.append(w.label(@import("i18n").dtr("pearl", "Coarse activity only. No keys, text or pointer positions are exposed."), "pearl-secondary").as(gtk.Widget));
+        if (!info.capabilities.overlay) config.append(w.label(@import("i18n").dtr("pearl", "Placement: Bar"), "pearl-secondary").as(gtk.Widget));
         errdefer {
             for (row.signals.items) |signal| object.signalHandlerDisconnect(signal.value, signal.id);
             row.signals.deinit(a);
@@ -445,7 +445,7 @@ pub const View = struct {
         buttons.as(gtk.Widget).setMarginBottom(12);
         config.append(buttons.as(gtk.Widget));
         inline for (.{ .{ Action.approve, "Approve package" }, .{ Action.bar, "Add to bar" }, .{ Action.retry, "Retry" }, .{ Action.preview, "Preview" }, .{ Action.reset, "Reset settings" } }, 0..) |pair, index| {
-            const button = w.wrappingButton(if (pair[0] == .approve) "Review package" else pair[1]);
+            const button = w.wrappingButton(if (pair[0] == .approve) @import("i18n").dtr("pearl", "Review package") else pair[1]);
             row.actions[index] = button;
             if (pair[0] == .approve) {
                 // Review remains visible without expanding the settings.
@@ -543,31 +543,31 @@ pub const View = struct {
         errdefer self.closeReview(false);
         const body = shell.body;
         body.append(w.label(try alloc.dupeZ(u8, row.info.name), "pearl-section-title").as(gtk.Widget));
-        body.append(w.label("Approval is for this exact package. Updated packages require a fresh review.", "pearl-secondary").as(gtk.Widget));
+        body.append(w.label(@import("i18n").dtr("pearl", "Approval is for this exact package. Updated packages require a fresh review."), "pearl-secondary").as(gtk.Widget));
         const info = w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s}\nSource: {s}\n{s}\n\nPackage fingerprint:\n{s}", .{ row.info.id, row.info.version, row.info.source, row.info.path, row.info.digest }, 0), "pearl-secondary");
         info.setSelectable(1);
         body.append(info.as(gtk.Widget));
-        body.append(w.label("Optional permissions", "pearl-section-title").as(gtk.Widget));
+        body.append(w.label(@import("i18n").dtr("pearl", "Optional permissions"), "pearl-section-title").as(gtk.Widget));
         self.review_activity = null;
         self.review_overlay = null;
         if (row.info.capabilities.input_activity) {
-            const check = gtk.CheckButton.newWithLabel("Keyboard and mouse activity");
+            const check = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Keyboard and mouse activity"));
             check.setActive(row.activity.getActive());
             body.append(check.as(gtk.Widget));
-            body.append(w.label("Receive coarse activity notifications. No typed text, key identities or pointer positions are exposed.", "pearl-secondary").as(gtk.Widget));
+            body.append(w.label(@import("i18n").dtr("pearl", "Receive coarse activity notifications. No typed text, key identities or pointer positions are exposed."), "pearl-secondary").as(gtk.Widget));
             self.review_activity = check;
             try self.review_controls.append(a, .{ .id = "plugins.review.activity", .widget = check.as(gtk.Widget) });
         }
         if (row.info.capabilities.overlay) {
-            const check = gtk.CheckButton.newWithLabel("Desktop overlay");
+            const check = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Desktop overlay"));
             check.setActive(row.overlay.getActive());
             body.append(check.as(gtk.Widget));
-            body.append(w.label("Display the plugin outside the bar. Choose its placement under Settings and placement.", "pearl-secondary").as(gtk.Widget));
+            body.append(w.label(@import("i18n").dtr("pearl", "Display the plugin outside the bar. Choose its placement under Settings and placement."), "pearl-secondary").as(gtk.Widget));
             self.review_overlay = check;
             try self.review_controls.append(a, .{ .id = "plugins.review.overlay", .widget = check.as(gtk.Widget) });
         }
-        if (!row.info.capabilities.overlay and !row.info.capabilities.input_activity) body.append(w.label("This plugin requests no optional permissions.", "pearl-secondary").as(gtk.Widget));
-        body.append(w.label("Save this review to the shared draft, then enable the plugin and Apply & save. Review does not enable a newly installed plugin.", "pearl-secondary").as(gtk.Widget));
+        if (!row.info.capabilities.overlay and !row.info.capabilities.input_activity) body.append(w.label(@import("i18n").dtr("pearl", "This plugin requests no optional permissions."), "pearl-secondary").as(gtk.Widget));
+        body.append(w.label(@import("i18n").dtr("pearl", "Save this review to the shared draft, then enable the plugin and Apply & save. Review does not enable a newly installed plugin."), "pearl-secondary").as(gtk.Widget));
         const error_label = w.label("", "pearl-secondary");
         body.append(error_label.as(gtk.Widget));
         self.review_error = error_label;
@@ -617,7 +617,7 @@ pub const View = struct {
         }
         const row = self.review_row orelse return;
         if (!self.editor.editable() or !row.available) {
-            if (self.review_error) |label| label.setText("Settings are updating. Wait for synchronization, then try again.");
+            if (self.review_error) |label| label.setText(@import("i18n").dtr("pearl", "Settings are updating. Wait for synchronization, then try again."));
             return;
         }
         self.filling = true;

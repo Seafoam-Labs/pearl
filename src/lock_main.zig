@@ -27,5 +27,6 @@ pub fn main(init: std.process.Init) !void {
         const access: std.c.O = @bitCast(@as(u32, @intCast(flags)));
         if (access.ACCMODE == .RDONLY) return error.InvalidReadinessPipe;
     }
+    @import("i18n").init(false);
     try @import("lock/screen.zig").run(args.len == 2);
 }

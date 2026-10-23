@@ -205,7 +205,7 @@ pub const Agent = struct {
         const window = gtk.Window.new();
         window.ref();
         self.window = window;
-        window.setTitle("Pearl · Authentication");
+        window.setTitle(@import("i18n").dtr("pearl", "Pearl · Authentication"));
         for ([_][*:0]const u8{ "pearl-root", "pearl-shell", "pearl-dark" }) |c| window.as(gtk.Widget).addCssClass(c);
         layer.initForWindow(window);
         layer.setNamespace(window, "pearl:authentication");
@@ -240,7 +240,7 @@ pub const Agent = struct {
         icon.setPixelSize(40);
         icon.as(gtk.Widget).setValign(.start);
         header.append(icon.as(gtk.Widget));
-        header.append(w.label("Authentication required", "pearl-title").as(gtk.Widget));
+        header.append(w.label(@import("i18n").dtr("pearl", "Authentication required"), "pearl-title").as(gtk.Widget));
         panel.append(header.as(gtk.Widget));
         const message = params.getChildValue(1);
         defer message.unref();
@@ -281,7 +281,7 @@ pub const Agent = struct {
             const selector = gtk.DropDown.newFromStrings(@ptrCast(&label_ptrs));
             self.selector = selector;
             panel.append(selector.as(gtk.Widget));
-            self.status_label = w.label("Choose an identity, then authenticate.", "pearl-secondary");
+            self.status_label = w.label(@import("i18n").dtr("pearl", "Choose an identity, then authenticate."), "pearl-secondary");
         } else {
             const identity_row = w.row(12);
             identity_row.as(gtk.Widget).addCssClass("pearl-auth-user");
@@ -292,7 +292,7 @@ pub const Agent = struct {
             const who = object.ext.cast(polkit.UnixUser, self.identities[0].?).?;
             identity_row.append(w.label(std.mem.span(who.getName() orelse "User"), null).as(gtk.Widget));
             panel.append(identity_row.as(gtk.Widget));
-            self.status_label = w.label("Starting authentication…", "pearl-secondary");
+            self.status_label = w.label(@import("i18n").dtr("pearl", "Starting authentication…"), "pearl-secondary");
         }
         self.status_label.?.setWrap(1);
         self.status_label.?.setMaxWidthChars(44);
@@ -306,14 +306,14 @@ pub const Agent = struct {
         entry.setVisibility(0);
         entry.setInputPurpose(.password);
         entry.setMaxLength(1023);
-        entry.setPlaceholderText("Response");
+        entry.setPlaceholderText(@import("i18n").dtr("pearl", "Response"));
         entry.as(gtk.Widget).setHexpand(1);
-        w.name(entry.as(gtk.Widget), "Authentication response");
+        w.name(entry.as(gtk.Widget), @import("i18n").dtr("pearl", "Authentication response"));
         panel.append(entry.as(gtk.Widget));
         const actions = w.row(12);
         actions.as(gtk.Widget).setHalign(.end);
-        const cancel_button = gtk.Button.newWithLabel("Cancel");
-        const submit_button = gtk.Button.newWithLabel("Authenticate");
+        const cancel_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Cancel"));
+        const submit_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Authenticate"));
         self.cancel_button = cancel_button;
         self.submit_button = submit_button;
         submit_button.as(gtk.Widget).addCssClass("pearl-primary");
@@ -370,7 +370,7 @@ pub const Agent = struct {
             if (!answering) {
                 entry.setVisibility(0);
                 entry.setInputPurpose(.password);
-                w.name(entry.as(gtk.Widget), "Authentication response");
+                w.name(entry.as(gtk.Widget), @import("i18n").dtr("pearl", "Authentication response"));
             }
         }
         if (self.prompt) |prompt| {
@@ -378,7 +378,7 @@ pub const Agent = struct {
             prompt.as(gtk.Widget).setVisible(@intFromBool(answering));
         }
         if (self.submit_button) |button| {
-            button.setLabel(if (state == .retry) "Try again" else if (answering) "Continue" else "Authenticate");
+            button.setLabel(if (state == .retry) @import("i18n").dtr("pearl", "Try again") else if (answering) @import("i18n").dtr("pearl", "Continue") else @import("i18n").dtr("pearl", "Authenticate"));
             button.as(gtk.Widget).setSensitive(@intFromBool(actionable));
             button.as(gtk.Widget).setVisible(@intFromBool(actionable));
         }
@@ -451,7 +451,7 @@ pub const Agent = struct {
             const text = std.mem.span(self.entry.?.as(gtk.Editable).getText());
             @memcpy(response[0..@min(text.len, 1023)], text[0..@min(text.len, 1023)]);
             self.setState(.processing);
-            self.status_label.?.setText("Authenticating…");
+            self.status_label.?.setText(@import("i18n").dtr("pearl", "Authenticating…"));
             _ = self.cancel_button.?.as(gtk.Widget).grabFocus();
             session.response(&response);
             return;
@@ -467,7 +467,7 @@ pub const Agent = struct {
         const index = if (self.selector) |selector| selector.getSelected() else 0;
         if (index >= self.identity_count) return;
         self.setState(.processing);
-        self.status_label.?.setText("Authenticating…");
+        self.status_label.?.setText(@import("i18n").dtr("pearl", "Authenticating…"));
         _ = self.cancel_button.?.as(gtk.Widget).grabFocus();
         const session = agent.Session.new(self.identities[index].?, self.cookie.z());
         self.conversation = session;
@@ -493,7 +493,7 @@ pub const Agent = struct {
         self.prompt.?.setText(bounded.z());
         self.entry.?.setVisibility(echo);
         self.entry.?.setInputPurpose(if (echo != 0) .free_form else .password);
-        w.name(self.entry.?.as(gtk.Widget), if (bounded.len != 0) bounded.z() else "Authentication response");
+        w.name(self.entry.?.as(gtk.Widget), if (bounded.len != 0) bounded.z() else @import("i18n").dtr("pearl", "Authentication response"));
         _ = self.entry.?.as(gtk.Widget).grabFocus();
     }
     fn conversationInfo(session: *agent.Session, text: [*:0]u8, self: *Agent) callconv(.c) void {
@@ -510,7 +510,7 @@ pub const Agent = struct {
         if (gained == 0) {
             // Retry the configured conversation; it may never ask for a password.
             self.setState(.retry);
-            self.status_label.?.setText("Authentication failed. Try again.");
+            self.status_label.?.setText(@import("i18n").dtr("pearl", "Authentication failed. Try again."));
             _ = self.submit_button.?.as(gtk.Widget).grabFocus();
             return;
         }
@@ -526,7 +526,7 @@ pub const Agent = struct {
     fn selected(_: *object.Object, _: *object.ParamSpec, self: *Agent) callconv(.c) void {
         self.stopConversation();
         self.setState(if (self.activity_token.callback != null) .privacy else .choosing);
-        if (self.status_label) |label| label.setText("Identity changed. Authenticate to continue.");
+        if (self.status_label) |label| label.setText(@import("i18n").dtr("pearl", "Identity changed. Authenticate to continue."));
     }
     fn submitted(_: *gtk.Button, self: *Agent) callconv(.c) void {
         self.submit();

@@ -1,0 +1,137 @@
+# Pearl translation catalog
+# See translations/README.md for licensing and contribution requirements.
+msgid ""
+msgstr ""
+"Project-Id-Version: Pearl 1\n"
+"PO-Revision-Date: 2026-10-23 00:00+0000\n"
+"Last-Translator: Pearl contributors\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/agent/application.zig:464
+msgid "Answer complete. Check the sources for important details."
+msgstr ""
+
+#: src/agent/application.zig:300
+msgid "Answers on device · Web search online · Session only"
+msgstr ""
+
+#: src/agent/application.zig:282
+msgid "Ask a follow-up; Enter sends, Shift+Enter adds a line"
+msgstr ""
+
+#: src/agent/application.zig:258
+msgid "Ask a question to search your configured engine."
+msgstr ""
+
+#: src/agent/application.zig:594
+msgid "Checking runtime and preparing local model…"
+msgstr ""
+
+#: src/agent/application.zig:599
+msgid "Checking the answer and sources…"
+msgstr ""
+
+#: src/agent/application.zig:202
+msgid "Conversation history cleared."
+msgstr ""
+
+#: src/agent/application.zig:560
+msgid "Custom model · On device"
+msgstr ""
+
+#: src/agent/application.zig:595
+msgid "GPU unavailable. Continuing on CPU with your search results…"
+msgstr ""
+
+#: src/agent/application.zig:243
+msgid "History"
+msgstr ""
+
+#: src/agent/application.zig:238
+msgid "LFM2.5-350M · On device"
+msgstr ""
+
+#: src/agent/application.zig:562
+msgid "Local inference…"
+msgstr ""
+
+#: src/agent/application.zig:261 src/agent/application.zig:266
+msgid "Model unloaded"
+msgstr ""
+
+#: src/agent/application.zig:576
+msgid "Model unloaded; the conversation remains available."
+msgstr ""
+
+#: src/agent/application.zig:245
+msgid "New"
+msgstr ""
+
+#: src/agent_main.zig:15
+msgid "Open Pearl Assistant from the Super+Space launcher."
+msgstr ""
+
+#: src/agent/application.zig:227 src/agent/application.zig:237
+msgid "Pearl Assistant"
+msgstr ""
+
+#: src/agent/application.zig:593
+msgid "Preparing local model…"
+msgstr ""
+
+#: src/agent/application.zig:598
+msgid "Reading a source page…"
+msgstr ""
+
+#: src/agent/application.zig:563
+msgid "Runtime and device details update when the current operation completes."
+msgstr ""
+
+#: src/agent/application.zig:464
+msgid "Search results available; summary unavailable."
+msgstr ""
+
+#: src/agent/application.zig:597
+msgid "Searching configured engines…"
+msgstr ""
+
+#: src/agent/application.zig:294
+msgid "Send"
+msgstr ""
+
+#: src/agent/application.zig:290
+msgid "Settings"
+msgstr ""
+
+#: src/agent/application.zig:464
+msgid "Some selected searches failed; available results are shown."
+msgstr ""
+
+#: src/agent/application.zig:292
+msgid "Stop"
+msgstr ""
+
+#: src/agent/application.zig:358
+msgid "Stop the current answer before starting a new chat."
+msgstr ""
+
+#: src/agent/application.zig:347
+msgid "Stopped. Your question is preserved; Send retries it."
+msgstr ""
+
+#: src/agent/application.zig:274
+msgid "Use CPU once"
+msgstr ""
+
+#: src/agent/application.zig:596
+msgid "Working on your question…"
+msgstr ""
+
+#: src/agent/application.zig:607
+msgid "Writing a draft… sources will be checked when complete."
+msgstr ""

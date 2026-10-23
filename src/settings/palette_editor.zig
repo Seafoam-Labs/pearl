@@ -34,35 +34,35 @@ pub const View = struct {
     controls: std.ArrayList(struct { id: []const u8, widget: *gtk.Widget }) = .empty,
     pub fn create(host: *gtk.Box, context: *anyopaque, send: *const fn (*anyopaque, cmd.Request) anyerror!void) !*View {
         const self = try a.create(View);
-        self.* = .{ .root = w.column(10), .context = context, .send = send, .slug = gtk.Entry.new(), .title = gtk.Entry.new(), .variant = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ "Dark", "Light" })), .colors = .{ gtk.Entry.new(), gtk.Entry.new(), gtk.Entry.new() }, .buffer = gtk.TextBuffer.new(null), .status = w.label("Create a palette or choose Edit colors on a local palette.", "pearl-secondary"), .details = w.label("", "pearl-secondary"), .provider = gtk.CssProvider.new(), .import_path = gtk.Entry.new(), .output = gtk.Entry.new(), .metadata = gtk.Entry.new() };
+        self.* = .{ .root = w.column(10), .context = context, .send = send, .slug = gtk.Entry.new(), .title = gtk.Entry.new(), .variant = gtk.DropDown.newFromStrings(@ptrCast(&[_:null]?[*:0]const u8{ @import("i18n").dtr("pearl", "Dark"), @import("i18n").dtr("pearl", "Light") })), .colors = .{ gtk.Entry.new(), gtk.Entry.new(), gtk.Entry.new() }, .buffer = gtk.TextBuffer.new(null), .status = w.label(@import("i18n").dtr("pearl", "Create a palette or choose Edit colors on a local palette."), "pearl-secondary"), .details = w.label("", "pearl-secondary"), .provider = gtk.CssProvider.new(), .import_path = gtk.Entry.new(), .output = gtk.Entry.new(), .metadata = gtk.Entry.new() };
         const expander = gtk.Expander.new("Create and edit palettes");
         expander.setChild(self.root.as(gtk.Widget));
         host.append(expander.as(gtk.Widget));
-        self.root.append(w.label("Save writes this palette file. Saved edits to an active local palette apply live. Select a new palette in the list, then Apply & save.", "pearl-secondary").as(gtk.Widget));
+        self.root.append(w.label(@import("i18n").dtr("pearl", "Save writes this palette file. Saved edits to an active local palette apply live. Select a new palette in the list, then Apply & save."), "pearl-secondary").as(gtk.Widget));
         for ([_]*gtk.Entry{ self.slug, self.title }, [_][:0]const u8{ "Filename (for example meadow)", "Palette display name" }) |entry, label| {
             self.root.append(w.label(label, null).as(gtk.Widget));
             w.name(entry.as(gtk.Widget), label);
             self.root.append(entry.as(gtk.Widget));
         }
-        self.slug.as(gtk.Editable).setText("meadow");
-        self.title.as(gtk.Editable).setText("Meadow");
+        self.slug.as(gtk.Editable).setText(@import("i18n").dtr("pearl", "meadow"));
+        self.title.as(gtk.Editable).setText(@import("i18n").dtr("pearl", "Meadow"));
         try self.addControl("slug", self.slug.as(gtk.Widget));
         try self.addControl("name", self.title.as(gtk.Widget));
         try self.addControl("expander", expander.getLabelWidget().?);
         const actions = w.row(6);
         self.root.append(actions.as(gtk.Widget));
-        try self.button(actions, "Create", .create);
-        try self.button(actions, "Duplicate", .duplicate);
-        try self.button(actions, "Save palette", .save);
-        try self.button(actions, "Discard palette edits", .discard);
-        try self.button(actions, "Open file", .open);
-        w.name(self.variant.as(gtk.Widget), "Palette variant");
+        try self.button(actions, @import("i18n").dtr("pearl", "Create"), .create);
+        try self.button(actions, @import("i18n").dtr("pearl", "Duplicate"), .duplicate);
+        try self.button(actions, @import("i18n").dtr("pearl", "Save palette"), .save);
+        try self.button(actions, @import("i18n").dtr("pearl", "Discard palette edits"), .discard);
+        try self.button(actions, @import("i18n").dtr("pearl", "Open file"), .open);
+        w.name(self.variant.as(gtk.Widget), @import("i18n").dtr("pearl", "Palette variant"));
         self.root.append(self.variant.as(gtk.Widget));
         try self.addControl("variant", self.variant.as(gtk.Widget));
         for (self.colors, [_][:0]const u8{ "Background · surface", "Text · on_surface", "Accent · primary" }) |entry, label| {
             self.root.append(w.label(label, null).as(gtk.Widget));
             w.name(entry.as(gtk.Widget), label);
-            entry.setPlaceholderText("#RRGGBB");
+            entry.setPlaceholderText(@import("i18n").dtr("pearl", "#RRGGBB"));
             self.root.append(entry.as(gtk.Widget));
             _ = gtk.Editable.signals.changed.connect(entry.as(gtk.Editable), *View, coreChanged, self, .{});
         }
@@ -71,7 +71,7 @@ pub const View = struct {
         const editor = gtk.TextView.newWithBuffer(self.buffer);
         editor.setMonospace(1);
         editor.setWrapMode(.word_char);
-        w.name(editor.as(gtk.Widget), "Palette JSON");
+        w.name(editor.as(gtk.Widget), @import("i18n").dtr("pearl", "Palette JSON"));
         try self.addControl("json", editor.as(gtk.Widget));
         const scroller = gtk.ScrolledWindow.new();
         scroller.setMinContentHeight(220);
@@ -83,18 +83,18 @@ pub const View = struct {
         const sample = w.card();
         sample.as(gtk.Widget).addCssClass("pearl-root");
         sample.as(gtk.Widget).addCssClass("pearl-palette-editor-preview");
-        sample.append(w.label("Palette preview", "pearl-card-title").as(gtk.Widget));
-        sample.append(w.label("Body text", "pearl-secondary").as(gtk.Widget));
-        const accent = w.wrappingButton("Accent button");
+        sample.append(w.label(@import("i18n").dtr("pearl", "Palette preview"), "pearl-card-title").as(gtk.Widget));
+        sample.append(w.label(@import("i18n").dtr("pearl", "Body text"), "pearl-secondary").as(gtk.Widget));
+        const accent = w.wrappingButton(@import("i18n").dtr("pearl", "Accent button"));
         accent.as(gtk.Widget).addCssClass("pearl-primary");
         sample.append(accent.as(gtk.Widget));
-        const disabled = w.wrappingButton("Disabled");
+        const disabled = w.wrappingButton(@import("i18n").dtr("pearl", "Disabled"));
         disabled.as(gtk.Widget).setSensitive(0);
         sample.append(disabled.as(gtk.Widget));
         const sample_entry = gtk.Entry.new();
-        sample_entry.setPlaceholderText("Focus this entry");
+        sample_entry.setPlaceholderText(@import("i18n").dtr("pearl", "Focus this entry"));
         sample.append(sample_entry.as(gtk.Widget));
-        sample.append(w.label("Example error message", "pearl-error").as(gtk.Widget));
+        sample.append(w.label(@import("i18n").dtr("pearl", "Example error message"), "pearl-error").as(gtk.Widget));
         self.root.append(sample.as(gtk.Widget));
         const imports = gtk.Expander.new("Import and export");
         const box = w.column(8);
@@ -105,8 +105,8 @@ pub const View = struct {
             w.name(entry.as(gtk.Widget), label);
             box.append(entry.as(gtk.Widget));
         }
-        try self.button(box, "Import palette", .import_file);
-        try self.button(box, "Export package", .export_file);
+        try self.button(box, @import("i18n").dtr("pearl", "Import palette"), .import_file);
+        try self.button(box, @import("i18n").dtr("pearl", "Export package"), .export_file);
         gtk.StyleContext.addProviderForDisplay(self.root.as(gtk.Widget).getDisplay(), self.provider.as(gtk.StyleProvider), 602);
         _ = gtk.TextBuffer.signals.changed.connect(self.buffer, *View, jsonChanged, self, .{});
         _ = gtk.Editable.signals.changed.connect(self.title.as(gtk.Editable), *View, coreChanged, self, .{});
@@ -182,7 +182,7 @@ pub const View = struct {
         const palette = if (self.variant.getSelected() == 1) doc.light else doc.dark;
         const template = std.fmt.allocPrint(alloc, "{s}\n{s}\n.pearl-root.$scope.pearl-card {{ background: $surface$; color: $text$; }}", .{ @embedFile("settings_base_style"), @import("../theme/palette_resolver.zig").shellCss(alloc, doc, self.variant.getSelected() == 1) catch return }) catch return;
         self.provider.loadFromString(@import("../theme/theme.zig").scopedCss(alloc, template, "pearl-palette-editor-preview", palette) catch return);
-        self.status.setText("Valid palette · preview only until Save palette.");
+        self.status.setText(@import("i18n").dtr("pearl", "Valid palette · preview only until Save palette."));
         const authored = if (self.variant.getSelected() == 1) doc.source.light orelse doc.source.dark.? else doc.source.dark orelse doc.source.light.?;
         self.details.setText(std.fmt.allocPrintSentinel(alloc, "Resolved backgrounds: {s}, {s}, {s} · Text on accent: {s} ({s}) · Secondary text: {s} ({s}){s}", .{ palette.low, palette.container, palette.high, palette.on_primary, if (authored.object.contains("on_primary")) "authored" else "derived", palette.secondary, if (authored.object.contains("on_surface_variant")) "authored" else "derived", if (doc.source.light == null or doc.source.dark == null) " · One variant supplies both modes" else "" }, 0) catch return);
     }
@@ -264,7 +264,7 @@ pub const View = struct {
             return;
         };
         const source = value.object.get("source") orelse {
-            self.status.setText("Package exported.");
+            self.status.setText(@import("i18n").dtr("pearl", "Package exported."));
             return;
         };
         _ = self.memory.reset(.free_all);
@@ -277,6 +277,6 @@ pub const View = struct {
         self.setBuffer(self.saved);
         self.fill();
         self.preview();
-        self.status.setText("Palette file saved or loaded. Select it in the palette list to use it; active local palettes update on Save.");
+        self.status.setText(@import("i18n").dtr("pearl", "Palette file saved or loaded. Select it in the palette list to use it; active local palettes update on Save."));
     }
 };

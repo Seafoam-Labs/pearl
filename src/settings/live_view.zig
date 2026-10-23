@@ -41,7 +41,7 @@ pub const View = struct {
     pub fn create(host: *gtk.Box, window: *gtk.Window, editor: *Editor, route: nav.Route, context: *anyopaque, invalidate: *const fn (*anyopaque, nav.Route) void) !*View {
         const self = try a.create(View);
         self.* = .{ .editor = editor, .route = route, .window = window, .host = host, .context = context, .invalidate = invalidate, .arena = .init(a) };
-        host.append(w.label("Loading service state…", "pearl-secondary").as(gtk.Widget));
+        host.append(w.label(@import("i18n").dtr("pearl", "Loading service state…"), "pearl-secondary").as(gtk.Widget));
         return self;
     }
     fn clear(self: *View) void {
@@ -158,8 +158,8 @@ pub const View = struct {
         self.offset = std.fmt.parseInt(u64, page.offset, 10) catch 0;
         self.next_offset = if (page.next_offset) |offset| std.fmt.parseInt(u64, offset, 10) catch null else null;
         self.host.append(w.label(arena.dupeZ(u8, page.summary) catch return, "pearl-secondary").as(gtk.Widget));
-        if (page.pending) self.host.append(w.label("Request in progress…", "pearl-secondary").as(gtk.Widget));
-        if (page.truncated) self.host.append(w.label("The service reported more items than it can expose. This list is incomplete.", "pearl-secondary").as(gtk.Widget));
+        if (page.pending) self.host.append(w.label(@import("i18n").dtr("pearl", "Request in progress…"), "pearl-secondary").as(gtk.Widget));
+        if (page.truncated) self.host.append(w.label(@import("i18n").dtr("pearl", "The service reported more items than it can expose. This list is incomplete."), "pearl-secondary").as(gtk.Widget));
         var shown_rows: std.ArrayList(ui.Row) = .empty;
         if (self.header_host != null) if (page.notification_header) |row| shown_rows.append(arena, row) catch return;
         for (page.rows) |row| {
@@ -216,8 +216,8 @@ pub const View = struct {
             target.append(card.as(gtk.Widget));
         }
         const pagination = w.row(8);
-        const previous = w.wrappingButton("Previous items");
-        const next = w.wrappingButton("More items");
+        const previous = w.wrappingButton(@import("i18n").dtr("pearl", "Previous items"));
+        const next = w.wrappingButton(@import("i18n").dtr("pearl", "More items"));
         previous.as(gtk.Widget).setSensitive(@intFromBool(self.offset > 0));
         next.as(gtk.Widget).setSensitive(@intFromBool(self.next_offset != null));
         _ = gtk.Button.signals.clicked.connect(previous, *View, previousClicked, self, .{});
@@ -340,7 +340,7 @@ pub const View = struct {
         const dialog = gtk.Dialog.new();
         _ = dialog.ref();
         self.prompt = dialog;
-        dialog.as(gtk.Window).setTitle(if (self.prompt_service == .network) "Network authentication" else "Bluetooth pairing");
+        dialog.as(gtk.Window).setTitle(if (self.prompt_service == .network) @import("i18n").dtr("pearl", "Network authentication") else @import("i18n").dtr("pearl", "Bluetooth pairing"));
         dialog.as(gtk.Window).setTransientFor(self.window);
         dialog.as(gtk.Window).setModal(1);
         dialog.as(gtk.Window).setDefaultSize(420, 220);
@@ -358,11 +358,11 @@ pub const View = struct {
             entry.setShowPeekIcon(1);
             self.secret = entry;
             _ = gtk.PasswordEntry.signals.activate.connect(entry, *View, passwordActivated, self, .{});
-            w.name(entry.as(gtk.Widget), "Password, PIN or passkey");
+            w.name(entry.as(gtk.Widget), @import("i18n").dtr("pearl", "Password, PIN or passkey"));
             content.append(entry.as(gtk.Widget));
         }
         _ = dialog.addButton("Cancel", @intFromEnum(gtk.ResponseType.cancel));
-        if (data.editable) _ = dialog.addButton(if (self.prompt_service == .network) @import("../desktop/text.zig").tr("Connect", "Verbinden") else "Confirm", @intFromEnum(gtk.ResponseType.accept));
+        if (data.editable) _ = dialog.addButton(if (self.prompt_service == .network) @import("i18n").dtr("pearl", "Connect") else "Confirm", @intFromEnum(gtk.ResponseType.accept));
         _ = gtk.Dialog.signals.response.connect(dialog, *View, answered, self, .{});
         dialog.as(gtk.Window).present();
         if (self.secret) |entry| _ = entry.as(gtk.Widget).grabFocus();
@@ -377,7 +377,7 @@ pub const View = struct {
         const alloc = scratch.allocator();
         const text = if (self.secret) |entry| std.mem.span(entry.as(gtk.Editable).getText()) else "";
         if (text.len > 1024) {
-            if (self.prompt_message) |label| label.setText("The answer is too long. Please try again.");
+            if (self.prompt_message) |label| label.setText(@import("i18n").dtr("pearl", "The answer is too long. Please try again."));
             if (self.secret) |entry| entry.as(gtk.Editable).setText("");
             return;
         }
@@ -387,7 +387,7 @@ pub const View = struct {
         const params = std.json.parseFromSliceLeaky(std.json.Value, alloc, encoded, .{}) catch return;
         self.editor.liveAction(.@"prompt.answer", params) catch |err| {
             self.editor.error_code.set(@errorName(err));
-            if (self.prompt_message) |label| label.setText("The answer could not be sent. Please try again.");
+            if (self.prompt_message) |label| label.setText(@import("i18n").dtr("pearl", "The answer could not be sent. Please try again."));
             if (self.secret) |entry| entry.as(gtk.Editable).setText("");
             return;
         };

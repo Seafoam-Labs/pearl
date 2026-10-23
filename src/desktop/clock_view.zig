@@ -62,13 +62,13 @@ pub const View = struct {
         if (value) |text| {
             self.label.setText(text.time);
             if (self.date) |date| date.setText(if (self.vertical) text.date else std.fmt.allocPrintSentinel(alloc, "{s} ·", .{text.date}, 0) catch text.date);
-            const detail = std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ text.detail, tr("Open local calendar", "Lokalen Kalender öffnen") }, 0) catch return;
+            const detail = std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ text.detail, @import("i18n").dtr("pearl", "Open local calendar") }, 0) catch return;
             widget.setTooltipText(detail);
             w.name(widget, detail);
         } else {
-            self.label.setText("—");
+            self.label.setText(@import("i18n").dtr("pearl", "—"));
             if (self.date) |date| date.setText("");
-            const detail = std.fmt.allocPrintSentinel(alloc, "{s} · {s}: {s} · {s}", .{ self.definition.label, tr("Time zone unavailable", "Zeitzone nicht verfügbar"), self.definition.timezone, tr("Open local calendar", "Lokalen Kalender öffnen") }, 0) catch return;
+            const detail = std.fmt.allocPrintSentinel(alloc, "{s} · {s}: {s} · {s}", .{ self.definition.label, @import("i18n").dtr("pearl", "Time zone unavailable"), self.definition.timezone, @import("i18n").dtr("pearl", "Open local calendar") }, 0) catch return;
             widget.setTooltipText(detail);
             w.name(widget, detail);
         }

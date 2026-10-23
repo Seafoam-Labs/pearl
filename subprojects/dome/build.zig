@@ -7,8 +7,8 @@ pub fn build(b: *std.Build) void {
     scanner.addCustomProtocol(b.path("../../bindings/protocols/aqueous-shell-v1.xml"));
     scanner.addCustomProtocol(b.path("../../bindings/protocols/ext-workspace-v1.xml"));
     scanner.generate("aqueous_shell_manager_v1", 2);
-    const native = b.createModule(.{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
-    const appearance = b.createModule(.{ .root_source_file = b.path("../../src/appearance_client.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const native = createModule(b, .{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
+    const appearance = createModule(b, .{ .root_source_file = b.path("../../src/appearance_client.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| appearance.addImport(name, bindings.module(name));
     appearance.addImport("wayland", native);
     for ([_][]const u8{ "gtk4", "wayland-client", "libpng" }) |name| appearance.linkSystemLibrary(name, .{ .use_pkg_config = .force });
@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     options.addOption(bool, "test_hooks", b.option(bool, "test-hooks", "Enable isolated integration instrumentation") orelse false);
     const git_variant = b.option(bool, "git-variant", "Use the Git application identity") orelse false;
     options.addOption(bool, "git_variant", git_variant);
-    const module = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const module = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
     module.addOptions("build_options", options);
@@ -25,7 +25,7 @@ pub fn build(b: *std.Build) void {
     module.addImport("appearance_client", appearance);
     // Shared by path with the parent tree so every executable renders identical
     // log lines and redacts untrusted text the same way.
-    const logging = b.createModule(.{ .root_source_file = b.path("../../src/core/logging.zig"), .target = target, .optimize = optimize });
+    const logging = createModule(b, .{ .root_source_file = b.path("../../src/core/logging.zig"), .target = target, .optimize = optimize });
     module.addImport("logging", logging);
     const exe = b.addExecutable(.{ .name = if (git_variant) "dome-git" else "dome", .root_module = module });
     b.installArtifact(exe);
@@ -45,7 +45,7 @@ pub fn build(b: *std.Build) void {
     b.step("run", "Launch Dome").dependOn(&run.step);
     const test_step = b.step("test", "Test metric contracts, parsers, identities and live collector lifecycle");
     for ([_][]const u8{ "src/core/model.zig", "src/collectors/linux.zig" }) |path| {
-        const tm = b.createModule(.{ .root_source_file = b.path(path), .target = target, .optimize = optimize, .link_libc = true });
+        const tm = createModule(b, .{ .root_source_file = b.path(path), .target = target, .optimize = optimize, .link_libc = true });
         // A common root permits collector tests to import the pure model.
         const tests = if (std.mem.eql(u8, path, "src/core/model.zig")) b.addTest(.{ .root_module = tm }) else blk: {
             tm.root_source_file = b.path("src/tests.zig");
@@ -60,7 +60,7 @@ pub fn build(b: *std.Build) void {
     const test_options = b.addOptions();
     test_options.addOption(bool, "test_hooks", true);
     test_options.addOption(bool, "git_variant", false);
-    const im = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const im = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     im.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
     im.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
     im.addOptions("build_options", test_options);
@@ -77,9 +77,22 @@ pub fn build(b: *std.Build) void {
     themes.addArtifactArg(ie);
     if (b.args) |args| themes.addArgs(args);
     b.step("integration-themes", "Verify live committed Pearl appearance in a private session").dependOn(&themes.step);
-    const bm = b.createModule(.{ .root_source_file = b.path("src/benchmark.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark.zig"), .target = target, .optimize = optimize, .link_libc = true });
     bm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
     bm.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
     const benchmark = b.addExecutable(.{ .name = "dome-graph-benchmark", .root_module = bm });
     b.step("benchmark", "Measure Cairo graph drawing on a software image surface").dependOn(&b.addRunArtifact(benchmark).step);
+}
+
+fn createModule(b: *std.Build, opts: std.Build.Module.CreateOptions) *std.Build.Module {
+    const m = b.createModule(opts);
+    const runtime = b.modules.get("pearl_i18n") orelse blk: {
+        const runtime = b.addModule("pearl_i18n", .{ .root_source_file = b.path("../../src/i18n/runtime.zig"), .target = opts.target orelse b.graph.host, .optimize = opts.optimize orelse .Debug, .link_libc = true });
+        const options = b.addOptions();
+        options.addOption([]const u8, "prefix", b.option([]const u8, "i18n-prefix", "Language pack installation prefix") orelse "/usr");
+        runtime.addOptions("i18n_options", options);
+        break :blk runtime;
+    };
+    m.addImport("i18n", runtime);
+    return m;
 }

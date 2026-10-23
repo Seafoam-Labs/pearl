@@ -13,6 +13,7 @@ var prefs: Preferences = undefined;
 var instance: ?*App = null;
 var css: ?*c.GtkCssProvider = null;
 fn activate(application: ?*c.GApplication, _: ?*anyopaque) callconv(.c) void {
+    c.gtk_widget_set_default_direction(if (@import("i18n").rtl()) c.GTK_TEXT_DIR_RTL else c.GTK_TEXT_DIR_LTR);
     if (instance) |app| {
         c.gtk_window_present(u.cast(c.GtkWindow, app.window));
         return;
@@ -25,6 +26,7 @@ fn startup(_: ?*c.GApplication, _: ?*anyopaque) callconv(.c) void {
     c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), @ptrCast(css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 pub fn main(init: std.process.Init) void {
+    @import("i18n").init(false);
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch return;
     const loaded = Preferences.load();
     prefs = loaded.prefs;

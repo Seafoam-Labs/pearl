@@ -233,6 +233,10 @@ pub const Client = struct {
         const caps = try e.read(protocol.Capabilities, alloc, try e.field(result, "capabilities"));
         if (!caps.handshake) return error.Version;
         self.capabilities = caps;
+        if (result == .object) if (result.object.get("language")) |language| {
+            if (language != .string) return error.InvalidHello;
+            @import("i18n").initSession(language.string);
+        };
         var appearance: ?@import("appearance.zig").Snapshot = null;
         if (caps.committed_appearance) {
             appearance = try @import("appearance.zig").Snapshot.read(alloc, try e.field(result, "appearance"));

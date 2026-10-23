@@ -18,9 +18,9 @@ const a = std.heap.c_allocator;
 const columns: usize = 7;
 const weeks: usize = 6;
 const slots = columns * weeks;
-const month_names = [_][:0]const u8{ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+const month_names = [_][:0]const u8{ @import("i18n").mark("January"), @import("i18n").mark("February"), @import("i18n").mark("March"), @import("i18n").mark("April"), @import("i18n").mark("May"), @import("i18n").mark("June"), @import("i18n").mark("July"), @import("i18n").mark("August"), @import("i18n").mark("September"), @import("i18n").mark("October"), @import("i18n").mark("November"), @import("i18n").mark("December") };
 /// Monday-first, matching the ISO weekday numbering the pane used before.
-const weekday_names = [_][:0]const u8{ "MO", "TU", "WE", "TH", "FR", "SA", "SU" };
+const weekday_names = [_][:0]const u8{ @import("i18n").mark("MO"), @import("i18n").mark("TU"), @import("i18n").mark("WE"), @import("i18n").mark("TH"), @import("i18n").mark("FR"), @import("i18n").mark("SA"), @import("i18n").mark("SU") };
 const key_left: c_uint = 0xff51;
 const key_up: c_uint = 0xff52;
 const key_right: c_uint = 0xff53;
@@ -37,6 +37,7 @@ pub const View = struct {
     shown: Month,
     today: Date,
     selected: Date,
+    week_start: u32,
 
     pub fn create(host: *gtk.Box) !*View {
         const now = glib.DateTime.newNowLocal() orelse return error.ClockUnavailable;
@@ -65,16 +66,16 @@ pub const View = struct {
 
         const header = w.row(6);
         card.append(header.as(gtk.Widget));
-        const previous = stepButton("‹", tr("Previous month", "Vorheriger Monat"));
-        const next = stepButton("›", tr("Next month", "Nächster Monat"));
+        const previous = stepButton(if (@import("i18n").rtl()) "›" else "‹", @import("i18n").dtr("pearl", "Previous month"));
+        const next = stepButton(if (@import("i18n").rtl()) "‹" else "›", @import("i18n").dtr("pearl", "Next month"));
         const heading = gtk.Label.new("");
         heading.setXalign(0.5);
         heading.as(gtk.Widget).addCssClass("pearl-calendar-heading");
         heading.as(gtk.Widget).setHexpand(1);
-        const jump = gtk.Button.newWithLabel(tr("Today", "Heute"));
+        const jump = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Today"));
         jump.as(gtk.Widget).addCssClass("pearl-pill");
         jump.as(gtk.Widget).addCssClass("pearl-calendar-jump");
-        w.name(jump.as(gtk.Widget), tr("Show the current month", "Aktuellen Monat anzeigen"));
+        w.name(jump.as(gtk.Widget), @import("i18n").dtr("pearl", "Show the current month"));
         header.append(previous.as(gtk.Widget));
         header.append(heading.as(gtk.Widget));
         header.append(next.as(gtk.Widget));
@@ -86,15 +87,17 @@ pub const View = struct {
         grid.setRowSpacing(2);
         grid.as(gtk.Widget).setHexpand(1);
         card.append(grid.as(gtk.Widget));
-        for (weekday_names, 0..) |weekday, i| {
-            const cell = gtk.Label.new(weekday);
+        const week_start = @import("i18n").region.firstWeekday();
+        for (0..weekday_names.len) |i| {
+            const weekday = weekday_names[(i + week_start) % 7];
+            const cell = gtk.Label.new(@import("i18n").tr(weekday));
             cell.setXalign(0.5);
             cell.as(gtk.Widget).addCssClass("pearl-calendar-weekday");
             grid.attach(cell.as(gtk.Widget), @intCast(i), 0, 1, 1);
         }
 
         const today = Date{ .year = now.getYear(), .month = @intCast(now.getMonth()), .day = @intCast(now.getDayOfMonth()) };
-        self.* = .{ .heading = heading, .shown = model.monthOf(today), .today = today, .selected = today };
+        self.* = .{ .heading = heading, .shown = model.monthOf(today), .today = today, .selected = today, .week_start = week_start };
 
         for (&self.days, 0..) |*day, i| {
             const button = gtk.ToggleButton.new();
@@ -123,7 +126,7 @@ pub const View = struct {
         _ = gtk.EventControllerKey.signals.key_pressed.connect(keys, *View, keyPressed, self, .{});
         card.as(gtk.Widget).addController(keys.as(gtk.EventController));
 
-        content.append(w.status(.empty, w.label(tr("Your local calendar", "Dein lokaler Kalender"), null), w.label(tr("Browse months and dates. Calendar accounts are not connected.", "Blättere durch Monate und Tage. Kalenderkonten sind nicht verbunden."), "pearl-secondary")).as(gtk.Widget));
+        content.append(w.status(.empty, w.label(@import("i18n").dtr("pearl", "Your local calendar"), null), w.label(@import("i18n").dtr("pearl", "Browse months and dates. Calendar accounts are not connected."), "pearl-secondary")).as(gtk.Widget));
 
         self.render();
         return self;
@@ -134,9 +137,9 @@ pub const View = struct {
 
     fn render(self: *View) void {
         var text: [32:0]u8 = undefined;
-        self.heading.setText(std.fmt.bufPrintZ(&text, "{s} {d}", .{ month_names[self.shown.month - 1], self.shown.year }) catch unreachable);
+        self.heading.setText(std.fmt.bufPrintZ(&text, "{s} {d}", .{ @import("i18n").tr(month_names[self.shown.month - 1]), self.shown.year }) catch unreachable);
 
-        const lead = firstWeekday(self.shown.year, self.shown.month) - 1;
+        const lead = @import("i18n").region.leading(firstWeekday(self.shown.year, self.shown.month), self.week_start);
         const count = daysInMonth(self.shown.year, self.shown.month);
         const used = @min(slots, model.visibleSlots(lead, count, columns));
         // Keep the grid reachable by keyboard even when the selection sits in
@@ -161,7 +164,7 @@ pub const View = struct {
             var label: [8:0]u8 = undefined;
             day.button.as(gtk.Button).setLabel(std.fmt.bufPrintZ(&label, "{d}", .{date.day}) catch unreachable);
             var name: [48:0]u8 = undefined;
-            w.name(widget, std.fmt.bufPrintZ(&name, "{d} {s} {d}", .{ date.day, month_names[date.month - 1], date.year }) catch unreachable);
+            w.name(widget, std.fmt.bufPrintZ(&name, "{d} {s} {d}", .{ date.day, @import("i18n").tr(month_names[date.month - 1]), date.year }) catch unreachable);
             widget.setVisible(1);
             setClass(widget, "pearl-calendar-outside", outside);
             setClass(widget, "pearl-calendar-today", model.sameDate(date, self.today));
@@ -196,8 +199,8 @@ pub const View = struct {
     }
     fn keyPressed(_: *gtk.EventControllerKey, keyval: c_uint, _: c_uint, _: gdk.ModifierType, self: *View) callconv(.c) c_int {
         const offset: i32 = switch (keyval) {
-            key_left => -1,
-            key_right => 1,
+            key_left => if (@import("i18n").rtl()) 1 else -1,
+            key_right => if (@import("i18n").rtl()) -1 else 1,
             key_up => -@as(i32, @intCast(columns)),
             key_down => @intCast(columns),
             else => return 0,
@@ -213,7 +216,7 @@ pub const View = struct {
         self.render();
     }
     fn dateAt(self: *View, index: u8) Date {
-        const lead = firstWeekday(self.shown.year, self.shown.month) - 1;
+        const lead = @import("i18n").region.leading(firstWeekday(self.shown.year, self.shown.month), self.week_start);
         return shift(self.shown.year, self.shown.month, @as(i32, @intCast(index)) - @as(i32, @intCast(lead)) + 1);
     }
 };

@@ -7,6 +7,7 @@ comptime {
 }
 const backend = @import("portal/backend.zig");
 pub fn main(init: std.process.Init) void {
+    @import("i18n").init(false);
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch std.process.exit(2);
     const argv = init.arena.allocator().allocSentinel(?[*:0]const u8, args.len, null) catch std.process.exit(2);
     for (args, 0..) |arg, i| argv[i] = arg.ptr;

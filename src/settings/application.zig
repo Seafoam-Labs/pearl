@@ -36,6 +36,7 @@ const App = struct {
     failed: bool = false,
     held: bool = false,
     fn show(self: *App) !void {
+        gtk.Widget.setDefaultDirection(if (@import("i18n").rtl()) .rtl else .ltr);
         if (self.window == null) {
             self.window = try Window.create(self.app, self, retry, close, self.fixture, &self.editor, &self.aqueous);
             self.window.?.select(self.target, true);

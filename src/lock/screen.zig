@@ -202,17 +202,17 @@ const Screen = struct {
             if (!std.mem.eql(u8, std.mem.span(v.message.getText()), std.mem.span(status))) {
                 v.message.as(gtk.Accessible).announce(status, .medium);
             }
-            w.name(v.entry.as(gtk.Widget), if (self.waiting) self.prompt.z() else "Authentication response");
+            w.name(v.entry.as(gtk.Widget), if (self.waiting) self.prompt.z() else @import("i18n").dtr("pearl-lock", "Authentication response"));
             v.message.setText(status);
             // The float slot keeps its height; only the ink fades in and out.
             v.message.as(gtk.Widget).setOpacity(if (std.mem.span(status).len > 0) 1 else 0);
             v.entry.setVisibility(@intFromBool(self.echo));
             v.entry.setInputPurpose(if (self.echo) .free_form else .password);
-            v.entry.setPlaceholderText(if (self.echo) "Response" else "Password");
+            v.entry.setPlaceholderText(if (self.echo) @import("i18n").dtr("pearl-lock", "Response") else @import("i18n").dtr("pearl-lock", "Password"));
             // Keep focus-out delivery enabled while moving focus to Retry.
             // Insensitive GtkText widgets can drop that event and retain IM focus.
             v.entry.as(gtk.Editable).setEditable(@intFromBool(self.waiting));
-            v.button.setLabel(if (self.waiting) "Unlock" else if (self.auth != null) "Authenticating…" else "Try again");
+            v.button.setLabel(if (self.waiting) @import("i18n").dtr("pearl-lock", "Unlock") else if (self.auth != null) @import("i18n").dtr("pearl-lock", "Authenticating…") else @import("i18n").dtr("pearl-lock", "Try again"));
             v.button.as(gtk.Widget).setSensitive(@intFromBool(self.waiting or (self.auth == null and self.acquired and glib.getMonotonicTime() >= self.cooldown)));
             v.caps.as(gtk.Widget).setVisible(@intFromBool(self.caps_on));
             // The corner cluster hosts the power menu inline: a lock surface
@@ -223,7 +223,7 @@ const Screen = struct {
             v.reboot.as(gtk.Widget).setSensitive(@intFromBool(self.power.reboot and idle));
             v.off.as(gtk.Widget).setSensitive(@intFromBool(self.power.off and idle));
             if (self.pending_power) |action| {
-                v.power_prompt.setText(if (action == .off) "Power off?" else "Restart?");
+                v.power_prompt.setText(if (action == .off) @import("i18n").dtr("pearl-lock", "Power off?") else @import("i18n").dtr("pearl-lock", "Restart?"));
                 if (action == .off) v.confirm.as(gtk.Widget).addCssClass("pearl-destructive") else v.confirm.as(gtk.Widget).removeCssClass("pearl-destructive");
             }
             v.power_menu_box.as(gtk.Widget).setVisible(@intFromBool(!asking));
@@ -607,7 +607,7 @@ const Screen = struct {
         const window = gtk.Window.new();
         window.ref();
         output.ref();
-        window.setTitle("Pearl · Locked");
+        window.setTitle(@import("i18n").dtr("pearl-lock", "Pearl · Locked"));
         for ([_][*:0]const u8{ "pearl-root", "pearl-shell", "pearl-dark", "pearl-wallpaper", "pearl-lock", "background" }) |c| window.as(gtk.Widget).addCssClass(c);
         const overlay = gtk.Overlay.new();
         window.setChild(overlay.as(gtk.Widget));
@@ -648,20 +648,20 @@ const Screen = struct {
         panel.append(username.as(gtk.Widget));
         const entry = presentation.secureEntry(1024);
         entry.as(gtk.Widget).addCssClass("pearl-field");
-        w.name(entry.as(gtk.Widget), "Authentication response");
+        w.name(entry.as(gtk.Widget), @import("i18n").dtr("pearl-lock", "Authentication response"));
         panel.append(entry.as(gtk.Widget));
-        const caps = w.label("Caps Lock is on", "pearl-secondary");
+        const caps = w.label(@import("i18n").dtr("pearl-lock", "Caps Lock is on"), "pearl-secondary");
         caps.as(gtk.Widget).addCssClass("pearl-caps");
         caps.as(gtk.Widget).setVisible(0);
         panel.append(caps.as(gtk.Widget));
-        const button = gtk.Button.newWithLabel("Unlock");
+        const button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-lock", "Unlock"));
         button.as(gtk.Widget).addCssClass("pearl-primary");
         panel.append(button.as(gtk.Widget));
         column.append(panel.as(gtk.Widget));
         const floatbox = w.column(10);
         floatbox.as(gtk.Widget).addCssClass("pearl-float-slot");
         floatbox.as(gtk.Widget).setMarginTop(4);
-        const hint = w.label("Session locked · Esc cancels authentication", "pearl-secondary");
+        const hint = w.label(@import("i18n").dtr("pearl-lock", "Session locked · Esc cancels authentication"), "pearl-secondary");
         hint.as(gtk.Widget).addCssClass("pearl-float-status");
         hint.setXalign(0.5);
         floatbox.append(hint.as(gtk.Widget));
@@ -691,22 +691,22 @@ const Screen = struct {
         cluster.as(gtk.Widget).setMarginEnd(24);
         cluster.as(gtk.Widget).setMarginBottom(24);
         const power_menu_box = w.row(2);
-        const sleep_button = w.iconButton("pearl-sleep-symbolic", "Sleep");
-        const reboot = w.iconButton("pearl-system-reboot-symbolic", "Restart");
-        const off_button = w.iconButton("pearl-system-shutdown-symbolic", "Power off");
+        const sleep_button = w.iconButton("pearl-sleep-symbolic", @import("i18n").dtr("pearl-lock", "Sleep"));
+        const reboot = w.iconButton("pearl-system-reboot-symbolic", @import("i18n").dtr("pearl-lock", "Restart"));
+        const off_button = w.iconButton("pearl-system-shutdown-symbolic", @import("i18n").dtr("pearl-lock", "Power off"));
         power_menu_box.append(sleep_button.as(gtk.Widget));
         power_menu_box.append(reboot.as(gtk.Widget));
         power_menu_box.append(off_button.as(gtk.Widget));
         cluster.append(power_menu_box.as(gtk.Widget));
         const power_confirm_box = w.row(6);
-        const power_prompt = gtk.Label.new("Restart?");
+        const power_prompt = gtk.Label.new(@import("i18n").dtr("pearl-lock", "Restart?"));
         power_prompt.as(gtk.Widget).addCssClass("pearl-secondary");
         power_prompt.as(gtk.Widget).setMarginStart(10);
         power_prompt.as(gtk.Widget).setMarginEnd(4);
         power_confirm_box.append(power_prompt.as(gtk.Widget));
-        const confirm = gtk.Button.newWithLabel("Confirm");
+        const confirm = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-lock", "Confirm"));
         confirm.as(gtk.Widget).addCssClass("pearl-primary");
-        const cancel_power = gtk.Button.newWithLabel("Cancel");
+        const cancel_power = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-lock", "Cancel"));
         power_confirm_box.append(confirm.as(gtk.Widget));
         power_confirm_box.append(cancel_power.as(gtk.Widget));
         power_confirm_box.as(gtk.Widget).setVisible(0);
@@ -781,6 +781,7 @@ fn loadPreferences() model.Preferences {
 }
 pub fn run(ready_fd: bool) !void {
     gtk.init();
+    gtk.Widget.setDefaultDirection(if (@import("i18n").rtl()) .rtl else .ltr);
     const display = gdk.Display.getDefault() orelse return error.NoDisplay;
     const raw = @embedFile("pearl_resources");
     const bytes = glib.Bytes.newStatic(raw.ptr, raw.len);

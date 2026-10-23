@@ -143,61 +143,52 @@ pub const Service = struct {
     /// One line on what the scheduler is doing, shared by the flyout and
     /// Settings. A running profile is only reported once the kernel shows its
     /// scheduler attached, with the version it reports and when it started.
-    pub fn describe(self: *const Service, buffer: []u8, german: bool) [:0]const u8 {
-        const t = struct {
-            fn pick(de: bool, en: [:0]const u8, de_text: [:0]const u8) [:0]const u8 {
-                return if (de) de_text else en;
-            }
-        }.pick;
+    pub fn describe(self: *const Service, buffer: []u8) [:0]const u8 {
         if (self.problem) |problem| return problem;
         // The profile being applied, before systemd reports any change.
         if (self.applying) |id| if (self.config) |config| if (config.find(id)) |i| {
             const target = config.profiles[i];
-            return if (target.stop) t(german, "Stopping the scheduler...", "Scheduler wird beendet...") else std.fmt.bufPrintZ(buffer, "{s} {s}...", .{ t(german, "Starting", "Starte"), target.label }) catch "";
+            return if (target.stop) @import("i18n").dtr("pearl", "Stopping the scheduler...") else @import("i18n").fmt(buffer, "Starting {s}...", .{target.label});
         };
         const profile: ?p.Profile = if (self.config) |c| if (self.status.profile) |i| c.profiles[i] else null else null;
         const name = if (profile) |value| value.label else "";
         return switch (self.status.kind) {
-            .unavailable => if (self.config == null) t(german, "No scheduler profiles are installed.", "Es sind keine Scheduler-Profile installiert.") else if (self.kernel == .unavailable) t(german, "This kernel does not support sched_ext schedulers.", "Dieser Kernel unterstützt keine sched_ext-Scheduler.") else if (self.unit_state == .missing) t(german, "scx.service is not installed.", "scx.service ist nicht installiert.") else t(german, "Checking the scheduler...", "Scheduler wird geprüft..."),
-            .off => std.fmt.bufPrintZ(buffer, "{s} - {s}", .{ name, t(german, "kernel scheduler (EEVDF)", "Kernel-Scheduler (EEVDF)") }) catch "",
+            .unavailable => if (self.config == null) @import("i18n").dtr("pearl", "No scheduler profiles are installed.") else if (self.kernel == .unavailable) @import("i18n").dtr("pearl", "This kernel does not support sched_ext schedulers.") else if (self.unit_state == .missing) @import("i18n").dtr("pearl", "scx.service is not installed.") else @import("i18n").dtr("pearl", "Checking the scheduler..."),
+            .off => @import("i18n").fmt(buffer, "{s} - kernel scheduler (EEVDF)", .{name}),
             .running => blk: {
                 const sched = self.env.sched;
                 const version = p.opsVersion(sched, self.ops);
                 var time: [48]u8 = undefined;
-                const uptime = self.since(&time, german);
-                break :blk std.fmt.bufPrintZ(buffer, "{s} - {s}{s}{s}{s}{s}", .{
-                    t(german, "Running", "Läuft"),
-                    sched,
-                    if (version != null) " " else "",
-                    version orelse "",
-                    if (uptime.len > 0) " - " else "",
-                    uptime,
-                }) catch "";
+                const uptime = self.since(&time);
+                var identity_buffer: [512]u8 = undefined;
+                const identity = std.fmt.bufPrint(&identity_buffer, "{s}{s}{s}", .{ sched, if (version != null) " " else "", version orelse "" }) catch sched;
+                // Translators: Scheduler identity and a regional date/time, respectively.
+                break :blk if (uptime.len > 0) @import("i18n").fmt(buffer, "Running - {s} - since {s}", .{ identity, uptime }) else @import("i18n").fmt(buffer, "Running - {s}", .{identity});
             },
-            .starting => if (profile != null and profile.?.stop) t(german, "Stopping the scheduler...", "Scheduler wird beendet...") else std.fmt.bufPrintZ(buffer, "{s} {s}...", .{ t(german, "Starting", "Starte"), name }) catch "",
-            .failed => if (self.reason) |reason| std.fmt.bufPrintZ(buffer, "{s} {s}: {s}. {s}", .{ name, t(german, "stopped", "wurde beendet"), reason, t(german, "The kernel's default scheduler is running.", "Der Standard-Scheduler des Kernels läuft.") }) catch "" else std.fmt.bufPrintZ(buffer, "{s} {s}", .{ name, t(german, "stopped unexpectedly; the kernel's default scheduler is running.", "wurde unerwartet beendet; der Standard-Scheduler des Kernels läuft.") }) catch "",
-            .custom => if (self.ops.len > 0) std.fmt.bufPrintZ(buffer, "{s} - scx_{s} {s}", .{ t(german, "Custom", "Benutzerdefiniert"), opsName(self.ops), t(german, "is running outside these profiles.", "läuft außerhalb dieser Profile.") }) catch "" else t(german, "Custom - a scheduler configured outside these profiles is running.", "Benutzerdefiniert - ein Scheduler außerhalb dieser Profile läuft."),
+            .starting => if (profile != null and profile.?.stop) @import("i18n").dtr("pearl", "Stopping the scheduler...") else @import("i18n").fmt(buffer, "Starting {s}...", .{name}),
+            .failed => if (self.reason) |reason| @import("i18n").fmt(buffer, "{s} stopped: {s}. The kernel's default scheduler is running.", .{ name, reason }) else @import("i18n").fmt(buffer, "{s} stopped unexpectedly; the kernel's default scheduler is running.", .{name}),
+            .custom => if (self.ops.len > 0) @import("i18n").fmt(buffer, "Custom - scx_{s} is running outside these profiles.", .{opsName(self.ops)}) else @import("i18n").dtr("pearl", "Custom - a scheduler configured outside these profiles is running."),
         };
     }
 
     /// What went wrong before falling back to Default; empty when nothing did.
-    pub fn describeNotice(self: *const Service, buffer: []u8, german: bool) [:0]const u8 {
+    pub fn describeNotice(self: *const Service, buffer: []u8) [:0]const u8 {
         const label = self.notice_label[0..self.notice_label_len];
         const detail = self.notice_detail[0..self.notice_detail_len];
-        const default = self.defaultLabel(german);
+        const default = self.defaultLabel();
         return switch (self.notice) {
             .none => "",
             .stopped => if (detail.len > 0)
-                std.fmt.bufPrintZ(buffer, "{s} {s}: {s}. {s} {s}.", .{ label, if (german) "wurde beendet" else "stopped", detail, if (german) "Zurück zu" else "Switched back to", default }) catch ""
+                @import("i18n").fmt(buffer, "{s} stopped: {s}. Switched back to {s}.", .{ label, detail, default })
             else
-                std.fmt.bufPrintZ(buffer, "{s} {s}. {s} {s}.", .{ label, if (german) "wurde unerwartet beendet" else "stopped unexpectedly", if (german) "Zurück zu" else "Switched back to", default }) catch "",
-            .start_failed => std.fmt.bufPrintZ(buffer, "{s} {s}: {s}. {s} {s}.", .{ label, if (german) "konnte nicht gestartet werden" else "could not start", detail, if (german) "Zurück zu" else "Switched back to", default }) catch "",
+                @import("i18n").fmt(buffer, "{s} stopped unexpectedly. Switched back to {s}.", .{ label, default }),
+            .start_failed => @import("i18n").fmt(buffer, "{s} could not start: {s}. Switched back to {s}.", .{ label, detail, default }),
         };
     }
 
-    fn defaultLabel(self: *const Service, german: bool) []const u8 {
+    fn defaultLabel(self: *const Service) []const u8 {
         if (self.config) |config| if (p.firstStop(config)) |i| return config.profiles[i].label;
-        return if (german) "Standard" else "Default";
+        return @import("i18n").dtr("pearl", "Default");
     }
 
     /// A profile was chosen in the last few seconds and the running instance
@@ -220,7 +211,7 @@ pub const Service = struct {
     }
 
     /// "since 10:28", with the date when it started on another day.
-    fn since(self: *const Service, buffer: []u8, german: bool) []const u8 {
+    fn since(self: *const Service, buffer: []u8) []const u8 {
         if (self.active_since == 0) return "";
         const started = glib.DateTime.newFromUnixLocal(@intCast(self.active_since / std.time.us_per_s)) orelse return "";
         defer started.unref();
@@ -229,7 +220,7 @@ pub const Service = struct {
         const today = started.getYear() == now.getYear() and started.getDayOfYear() == now.getDayOfYear();
         const text = started.format(if (today) "%H:%M" else "%e %b, %H:%M") orelse return "";
         defer glib.free(text);
-        return std.fmt.bufPrint(buffer, "{s} {s}", .{ if (german) "seit" else "since", std.mem.trim(u8, std.mem.span(text), " ") }) catch "";
+        return std.fmt.bufPrint(buffer, "{s}", .{std.mem.trim(u8, std.mem.span(text), " ")}) catch "";
     }
 
     pub fn configured(self: *const Service) bool {
@@ -525,7 +516,7 @@ pub const Service = struct {
             const scheduler = if (self.config) |config| if (config.find(id)) |i| !config.profiles[i].stop else false else false;
             if (scheduler and !reverting and self.notify) {
                 const label = if (self.config) |config| config.profiles[config.find(id).?].label else id;
-                self.setNotice(.start_failed, label, if (detail.len > 0) detail else "the scheduler helper failed");
+                self.setNotice(.start_failed, label, if (detail.len > 0) detail else @import("i18n").dtr("pearl", "the scheduler helper failed"));
                 log.warn("event=sched-profile-failed profile={s} reason=\"{s}\"", .{ label, detail });
                 self.notifyFailure();
                 self.fallBack();
@@ -619,10 +610,10 @@ pub const Service = struct {
     fn notifyFailure(self: *Service) void {
         if (!self.notify) return;
         var body: [512]u8 = undefined;
-        const text = self.describeNotice(&body, false);
+        const text = self.describeNotice(&body);
         if (text.len == 0) return;
         var title_buffer: [96]u8 = undefined;
-        const title = std.fmt.bufPrintZ(&title_buffer, "CPU scheduler switched to {s}", .{self.defaultLabel(false)}) catch "CPU scheduler switched to Default";
+        const title = std.fmt.bufPrintZ(&title_buffer, "CPU scheduler switched to {s}", .{self.defaultLabel()}) catch "CPU scheduler switched to Default";
         const connection = self.app.getDbusConnection() orelse return;
         const strings = glib.VariantType.new("s");
         defer strings.free();

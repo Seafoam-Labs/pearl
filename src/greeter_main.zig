@@ -33,5 +33,8 @@ pub fn main(init: std.process.Init) !void {
     }
     if (args.len != 1) return error.InvalidArguments;
     if (!options.test_hooks and std.os.linux.getuid() == 0) return error.UnprivilegedAccountRequired;
+    const config = try cfg.load(std.heap.c_allocator);
+    defer config.deinit();
+    @import("i18n").initGreeter(config.value.language);
     try @import("greeter/screen.zig").run();
 }

@@ -110,7 +110,7 @@ const State = struct {
     fn activate(_: *gio.Application, self: *State) callconv(.c) void {
         const window = gtk.ApplicationWindow.new(self.app).as(gtk.Window);
         self.window = window;
-        window.setTitle("Share a source");
+        window.setTitle(@import("i18n").dtr("pearl-files", "Share a source"));
         window.setDefaultSize(520, 360);
         const widget = window.as(gtk.Widget);
         widget.addCssClass("pearl-root");
@@ -123,11 +123,11 @@ const State = struct {
         content.setMarginStart(24);
         content.setMarginEnd(24);
         window.setChild(content);
-        const title = gtk.Label.new("Share a source");
+        const title = gtk.Label.new(@import("i18n").dtr("pearl-files", "Share a source"));
         title.setXalign(0);
         title.as(gtk.Widget).addCssClass("capture-title");
         outer.append(title.as(gtk.Widget));
-        const subtitle = gtk.Label.new("Choose the source you want to share.");
+        const subtitle = gtk.Label.new(@import("i18n").dtr("pearl-files", "Choose the source you want to share."));
         subtitle.setXalign(0);
         subtitle.setWrap(1);
         subtitle.as(gtk.Widget).addCssClass("dim-label");
@@ -157,8 +157,8 @@ const State = struct {
         outer.append(scroll.as(gtk.Widget));
         const buttons = gtk.Box.new(.horizontal, 12);
         buttons.as(gtk.Widget).setHalign(.end);
-        const cancel_button = gtk.Button.newWithLabel("Cancel");
-        const share = gtk.Button.newWithLabel("Share source");
+        const cancel_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-files", "Cancel"));
+        const share = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-files", "Share source"));
         self.share = share;
         share.as(gtk.Widget).addCssClass("suggested-action");
         share.as(gtk.Widget).setSensitive(0);
@@ -240,6 +240,7 @@ pub fn run(init: std.process.Init) !void {
     if (sources.lines.items.len == 0) return;
     gdk.setAllowedBackends("wayland");
     if (gtk.initCheck() == 0) return error.WaylandUnavailable;
+    gtk.Widget.setDefaultDirection(if (@import("i18n").rtl()) .rtl else .ltr);
     const app = gtk.Application.new(if (options.git_variant) "org.aqueous.Pearl.Git.CapturePicker" else "org.aqueous.Pearl.CapturePicker", .{ .non_unique = true });
     defer app.unref();
     var self: State = .{ .app = app, .sources = &sources, .parent = std.os.linux.getppid() };
