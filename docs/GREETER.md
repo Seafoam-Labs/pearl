@@ -1,5 +1,14 @@
 # Pearl greeter
 
+The optional administrator-controlled `language` in `/etc/pearl/greeter.json`
+selects a separately installed language pack (for example, `"de"`). Missing or
+empty values follow the greeter service's system language preferences. The
+greeter validates its trusted configuration before initializing translations and
+ignores user preferences and shell language overrides. Packs can be installed
+without the desktop shell; their `pearl-greeter` catalog falls back to English
+for untranslated messages. This does not change authentication-provider prompts
+or the locale of the session being started. See [language packs](../translations/README.md).
+
 Pearl includes a separate Zig 0.16.0 / GTK4 greeter implementation for greetd,
 with generated Ghostty bindings, Material or installed GTK themes, and an installed
 Wayland/X11 desktop chooser. The host uses ordinary Aqueous with its existing

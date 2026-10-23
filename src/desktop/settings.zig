@@ -53,70 +53,70 @@ pub const View = struct {
     greeter_sync: *@import("../settings/greeter_sync.zig").View = undefined,
     pub fn create(host: *gtk.Box, service: *Service) !*View {
         const self = try a.create(View);
-        const title = w.label("Pearl settings", "pearl-title");
+        const title = w.label(@import("i18n").dtr("pearl", "Pearl settings"), "pearl-title");
         host.append(title.as(gtk.Widget));
         const notebook = gtk.Notebook.new();
         notebook.as(gtk.Widget).setVexpand(1);
         host.append(notebook.as(gtk.Widget));
-        const appearance = page(notebook, "Appearance");
-        const bar = page(notebook, "Bar & behavior");
-        const advanced = page(notebook, "Advanced");
-        const session = page(notebook, "Session");
-        self.* = .{ .service = service, .host = host, .forms = .{ appearance, bar, session }, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, "Theme", &.{ "Material · static", "Material · dynamic", "GTK theme", "Community package" }), .variant = dropdown(appearance, "Color variant", &.{ "Dark", "Light" }), .source = dropdown(appearance, "Dynamic colors from", &.{ "Seed color", "Wallpaper" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
-        session.append(w.label("Pearl's native lock screen uses your shell theme. Zero disables an automatic timeout. Suspend must follow the lock timeout; Pearl waits for verified lock acquisition.", "pearl-secondary").as(gtk.Widget));
+        const appearance = page(notebook, @import("i18n").dtr("pearl", "Appearance"));
+        const bar = page(notebook, @import("i18n").dtr("pearl", "Bar & behavior"));
+        const advanced = page(notebook, @import("i18n").dtr("pearl", "Advanced"));
+        const session = page(notebook, @import("i18n").dtr("pearl", "Session"));
+        self.* = .{ .service = service, .host = host, .forms = .{ appearance, bar, session }, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, @import("i18n").dtr("pearl", "Theme"), &.{ "Material · static", "Material · dynamic", "GTK theme", "Community package" }), .variant = dropdown(appearance, @import("i18n").dtr("pearl", "Color variant"), &.{ "Dark", "Light" }), .source = dropdown(appearance, @import("i18n").dtr("pearl", "Dynamic colors from"), &.{ "Seed color", "Wallpaper" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
+        session.append(w.label(@import("i18n").dtr("pearl", "Pearl's native lock screen uses your shell theme. Zero disables an automatic timeout. Suspend must follow the lock timeout; Pearl waits for verified lock acquisition."), "pearl-secondary").as(gtk.Widget));
         for ([_][:0]const u8{ "AC · lock after seconds", "AC · suspend after seconds", "Battery · lock after seconds", "Battery · suspend after seconds" }, 0..) |label, i| {
             self.idle_spins[i] = spin(session, label, 0, 86400);
             _ = gtk.SpinButton.signals.value_changed.connect(self.idle_spins[i], *View, spun, self, .{});
         }
-        const hints = w.label("GTK theme: leave the name empty to follow the system. Installed themes must support GTK4. Dynamic colors use optional matugen 4.x.", "pearl-secondary");
+        const hints = w.label(@import("i18n").dtr("pearl", "GTK theme: leave the name empty to follow the system. Installed themes must support GTK4. Dynamic colors use optional matugen 4.x."), "pearl-secondary");
         appearance.append(hints.as(gtk.Widget));
-        self.entries[0] = entry(appearance, "GTK theme name", "System default");
-        self.entries[1] = entry(appearance, "Seed color", "#6750a4");
+        self.entries[0] = entry(appearance, @import("i18n").dtr("pearl", "GTK theme name"), "System default");
+        self.entries[1] = entry(appearance, @import("i18n").dtr("pearl", "Seed color"), "#6750a4");
         const wallpaper_row = w.row(8);
         self.entries[2] = gtk.Entry.new();
         self.entries[2].setMaxLength(1024);
-        self.entries[2].setPlaceholderText("No image selected");
+        self.entries[2].setPlaceholderText(@import("i18n").dtr("pearl", "No image selected"));
         self.entries[2].as(gtk.Widget).setHexpand(1);
-        w.name(self.entries[2].as(gtk.Widget), "Wallpaper image");
+        w.name(self.entries[2].as(gtk.Widget), @import("i18n").dtr("pearl", "Wallpaper image"));
         wallpaper_row.append(self.entries[2].as(gtk.Widget));
-        self.wallpaper_button = gtk.Button.newWithLabel("Choose image…");
+        self.wallpaper_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Choose image…"));
         wallpaper_row.append(self.wallpaper_button.as(gtk.Widget));
-        appearance.append(w.section(w.label("Wallpaper image", null), null, wallpaper_row.as(gtk.Widget)).as(gtk.Widget));
+        appearance.append(w.section(w.label(@import("i18n").dtr("pearl", "Wallpaper image"), null), null, wallpaper_row.as(gtk.Widget)).as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(self.wallpaper_button, *View, chooseWallpaper, self, .{});
-        self.fit = dropdown(appearance, "Wallpaper fit", &.{ "Material gradient", "Solid color", "Cover", "Contain" });
-        self.entries[3] = entry(appearance, "Background color", "#141218");
-        self.entries[4] = entry(appearance, "Font family", "System default / Material fallback");
-        self.font_size = spin(appearance, "Font size", 10, 24);
-        self.density = dropdown(appearance, "Density", &.{ "Comfortable", "Compact" });
-        self.motion = gtk.CheckButton.newWithLabel("Reduce motion");
+        self.fit = dropdown(appearance, @import("i18n").dtr("pearl", "Wallpaper fit"), &.{ "Material gradient", "Solid color", "Cover", "Contain" });
+        self.entries[3] = entry(appearance, @import("i18n").dtr("pearl", "Background color"), "#141218");
+        self.entries[4] = entry(appearance, @import("i18n").dtr("pearl", "Font family"), "System default / Material fallback");
+        self.font_size = spin(appearance, @import("i18n").dtr("pearl", "Font size"), 10, 24);
+        self.density = dropdown(appearance, @import("i18n").dtr("pearl", "Density"), &.{ "Comfortable", "Compact" });
+        self.motion = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Reduce motion"));
         appearance.append(self.motion.as(gtk.Widget));
         self.qt_status = w.label("", "pearl-secondary");
         appearance.append(self.qt_status.as(gtk.Widget));
-        const qt_settings = gtk.Button.newWithLabel("Open Qt appearance settings…");
+        const qt_settings = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Open Qt appearance settings…"));
         appearance.append(qt_settings.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(qt_settings, *View, openQtSettings, self, .{});
-        self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences, false);
-        bar.append(w.label("Default layout for every output. Connector overrides are available in Advanced.", "pearl-secondary").as(gtk.Widget));
-        const bar_editor = gtk.Button.newWithLabel("Bar opacity and widgets…");
+        self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences);
+        bar.append(w.label(@import("i18n").dtr("pearl", "Default layout for every output. Connector overrides are available in Advanced."), "pearl-secondary").as(gtk.Widget));
+        const bar_editor = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Bar opacity and widgets…"));
         bar.append(bar_editor.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(bar_editor, *View, openBarSettings, self, .{});
-        self.edge = dropdown(bar, "Bar edge", &.{ "Top", "Right", "Bottom", "Left" });
-        self.bar_size = spin(bar, "Bar minimum size", 32, 160);
-        self.islands = gtk.CheckButton.newWithLabel("Separate rounded bar islands");
+        self.edge = dropdown(bar, @import("i18n").dtr("pearl", "Bar edge"), &.{ "Top", "Right", "Bottom", "Left" });
+        self.bar_size = spin(bar, @import("i18n").dtr("pearl", "Bar minimum size"), 32, 160);
+        self.islands = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Separate rounded bar islands"));
         bar.append(self.islands.as(gtk.Widget));
-        self.running_apps_per_window = gtk.CheckButton.newWithLabel("One taskbar button per window");
+        self.running_apps_per_window = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "One taskbar button per window"));
         bar.append(self.running_apps_per_window.as(gtk.Widget));
-        self.dock_enabled = gtk.CheckButton.newWithLabel("Show applications dock");
+        self.dock_enabled = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Show applications dock"));
         bar.append(self.dock_enabled.as(gtk.Widget));
-        self.dock_edge = dropdown(bar, "Dock edge (moves opposite if shared with bar)", &.{ "Top", "Right", "Bottom", "Left" });
-        self.dock_mode = dropdown(bar, "Dock visibility", &.{ "Always", "Hide when a window overlaps", "Auto-hide" });
-        self.dock_size = spin(bar, "Dock icon size", 24, 64);
-        self.dock_margin = spin(bar, "Dock distance from edge", 4, 32);
-        bar.append(w.label("Pin applications using their dock action menu. Per-output dock overrides and pinned desktop IDs are available in Advanced.", "pearl-secondary").as(gtk.Widget));
-        self.placement = dropdown(bar, "Popup placement", &.{ "Follow bar edge", "Centered" });
-        self.outside = gtk.CheckButton.newWithLabel("Dismiss popups when clicking outside");
+        self.dock_edge = dropdown(bar, @import("i18n").dtr("pearl", "Dock edge (moves opposite if shared with bar)"), &.{ "Top", "Right", "Bottom", "Left" });
+        self.dock_mode = dropdown(bar, @import("i18n").dtr("pearl", "Dock visibility"), &.{ "Always", "Hide when a window overlaps", "Auto-hide" });
+        self.dock_size = spin(bar, @import("i18n").dtr("pearl", "Dock icon size"), 24, 64);
+        self.dock_margin = spin(bar, @import("i18n").dtr("pearl", "Dock distance from edge"), 4, 32);
+        bar.append(w.label(@import("i18n").dtr("pearl", "Pin applications using their dock action menu. Per-output dock overrides and pinned desktop IDs are available in Advanced."), "pearl-secondary").as(gtk.Widget));
+        self.placement = dropdown(bar, @import("i18n").dtr("pearl", "Popup placement"), &.{ "Follow bar edge", "Centered" });
+        self.outside = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Dismiss popups when clicking outside"));
         bar.append(self.outside.as(gtk.Widget));
-        advanced.append(w.label("Full preferences JSON. This includes connector overrides, center widgets, popup limits and opt-in exports. Apply validates every field. Export files are owned under pearl/exports; edited files are protected and the first replacement is backed up.", "pearl-secondary").as(gtk.Widget));
+        advanced.append(w.label(@import("i18n").dtr("pearl", "Full preferences JSON. This includes connector overrides, center widgets, popup limits and opt-in exports. Apply validates every field. Export files are owned under pearl/exports; edited files are protected and the first replacement is backed up."), "pearl-secondary").as(gtk.Widget));
         const raw_view = gtk.TextView.new();
         raw_view.setMonospace(1);
         raw_view.setWrapMode(.word_char);
@@ -124,17 +124,17 @@ pub const View = struct {
         raw_view.as(gtk.Widget).setSizeRequest(-1, 340);
         advanced.append(raw_view.as(gtk.Widget));
         self.raw = raw_view.getBuffer();
-        w.name(raw_view.as(gtk.Widget), "Full preferences JSON");
+        w.name(raw_view.as(gtk.Widget), @import("i18n").dtr("pearl", "Full preferences JSON"));
         self.message = w.label("", "pearl-secondary");
         host.append(self.message.as(gtk.Widget));
         const actions = w.row(12);
         host.append(actions.as(gtk.Widget));
-        const discard = gtk.Button.newWithLabel("Discard draft");
+        const discard = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Discard draft"));
         actions.append(discard.as(gtk.Widget));
-        self.merge_button = gtk.Button.newWithLabel("Merge external changes");
+        self.merge_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Merge external changes"));
         actions.append(self.merge_button.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(self.merge_button, *View, merged, self, .{});
-        self.apply_button = gtk.Button.newWithLabel("Apply & save");
+        self.apply_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Apply & save"));
         self.apply_button.as(gtk.Widget).addCssClass("pearl-primary");
         actions.append(self.apply_button.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(discard, *View, discarded, self, .{});
@@ -239,12 +239,12 @@ pub const View = struct {
         const file = files.getFile(chooser) orelse return;
         defer file.unref();
         const path = file.getPath() orelse {
-            self.message.setText("Choose an image stored on this computer.");
+            self.message.setText(@import("i18n").dtr("pearl", "Choose an image stored on this computer."));
             return;
         };
         defer glib.free(path);
         if (std.mem.span(path).len > 1024 or !std.unicode.utf8ValidateSlice(std.mem.span(path))) {
-            self.message.setText("The image path must be valid UTF-8 and at most 1024 bytes.");
+            self.message.setText(@import("i18n").dtr("pearl", "The image path must be valid UTF-8 and at most 1024 bytes."));
             return;
         }
         self.filling = true;
@@ -342,7 +342,7 @@ pub const View = struct {
         defer self.filling = false;
         self.draft_serial = self.service.keepDraft(json, self.draft_serial, self.revision) catch |err| {
             self.local_error = err;
-            self.message.setText("Could not retain this edit. The shared draft has not been overwritten; reopen settings to load it.");
+            self.message.setText(@import("i18n").dtr("pearl", "Could not retain this edit. The shared draft has not been overwritten; reopen settings to load it."));
             return false;
         };
         self.local_error = null;
@@ -367,7 +367,7 @@ pub const View = struct {
         const context = self.host.as(gtk.Widget).getDisplay().getAppLaunchContext();
         defer context.unref();
         @import("../settings/launch.zig").open(.{ .page = .bar }, context.as(gio.AppLaunchContext), null) catch {
-            self.message.setText("Could not open Pearl Settings. Bar preferences remain available in Advanced.");
+            self.message.setText(@import("i18n").dtr("pearl", "Could not open Pearl Settings. Bar preferences remain available in Advanced."));
         };
     }
     fn openQtSettings(_: *gtk.Button, self: *View) callconv(.c) void {
@@ -375,7 +375,7 @@ pub const View = struct {
         const context = display.getAppLaunchContext();
         defer context.unref();
         @import("../settings/launch.zig").open(.{ .page = .appearance }, context.as(gio.AppLaunchContext), null) catch {
-            self.message.setText("Could not open Pearl Settings. Qt preferences remain available in Advanced.");
+            self.message.setText(@import("i18n").dtr("pearl", "Could not open Pearl Settings. Qt preferences remain available in Advanced."));
         };
     }
     fn edited(_: *gtk.Editable, self: *View) callconv(.c) void {
@@ -399,7 +399,7 @@ pub const View = struct {
         defer glib.free(old);
         if (length < 0 or std.mem.span(old).len + @as(usize, @intCast(length)) > model.max_bytes) {
             object.signalStopEmissionByName(buffer.as(object.Object), "insert-text");
-            self.message.setText("Draft is limited to 64 KiB. The insertion was rejected; existing text is retained.");
+            self.message.setText(@import("i18n").dtr("pearl", "Draft is limited to 64 KiB. The insertion was rejected; existing text is retained."));
         }
     }
     fn rawEdited(_: *gtk.TextBuffer, self: *View) callconv(.c) void {
@@ -410,7 +410,7 @@ pub const View = struct {
         const json = self.raw.getText(&start, &end, 1);
         defer glib.free(json);
         if (std.mem.span(json).len > model.max_bytes) {
-            self.message.setText("Draft exceeds 64 KiB. Reduce its size before applying.");
+            self.message.setText(@import("i18n").dtr("pearl", "Draft exceeds 64 KiB. Reduce its size before applying."));
             return;
         }
         if (!self.retain(std.mem.span(json))) return;
@@ -425,7 +425,7 @@ pub const View = struct {
         if (self.service.draft.text) |json| {
             var arena = std.heap.ArenaAllocator.init(a);
             defer arena.deinit();
-            if (model.parse(arena.allocator(), json)) |_| self.fill() else |_| self.message.setText("Advanced JSON is invalid. Correct it before using the form.");
+            if (model.parse(arena.allocator(), json)) |_| self.fill() else |_| self.message.setText(@import("i18n").dtr("pearl", "Advanced JSON is invalid. Correct it before using the form."));
         }
     }
     fn applied(_: *gtk.Button, self: *View) callconv(.c) void {
@@ -440,7 +440,7 @@ pub const View = struct {
         self.filling = true;
         defer self.filling = false;
         self.service.mergeDraft(self.draft_serial) catch |err| {
-            self.message.setText(if (err == error.MergeConflict) "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it." else "Cannot merge this draft. Correct its JSON and try again.");
+            self.message.setText(if (err == error.MergeConflict) @import("i18n").dtr("pearl", "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it.") else @import("i18n").dtr("pearl", "Cannot merge this draft. Correct its JSON and try again."));
             return;
         };
         self.fill();
@@ -450,7 +450,7 @@ pub const View = struct {
         self.filling = true;
         self.service.discardDraft(self.draft_serial) catch {
             self.filling = false;
-            self.message.setText("The shared draft changed. Reopen settings before discarding it.");
+            self.message.setText(@import("i18n").dtr("pearl", "The shared draft changed. Reopen settings before discarding it."));
             return;
         };
         self.filling = false;

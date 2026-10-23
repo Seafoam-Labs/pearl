@@ -554,7 +554,7 @@ pub fn portal_dialogs(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void 
         ffi.gtk_picture_set_content_fit(ffi.GTK_PICTURE(@ptrCast(@alignCast(d.*.picture))), ffi.GTK_CONTENT_FIT_CONTAIN);
         ffi.gtk_box_append(body, d.*.picture);
         if (portal_boolean(r.*.options, "editable_icon", 1) != 0) {
-            const button: [*c]ffi.GtkWidget = ffi.gtk_button_new_with_label("Choose icon\xe2\x80\xa6");
+            const button: [*c]ffi.GtkWidget = ffi.gtk_button_new_with_label(@import("i18n").dtr("pearl", "Choose icon\xe2\x80\xa6"));
             ffi.gtk_box_append(body, button);
             _ = ffi.g_signal_connect_data(@ptrCast(@alignCast(button)), "clicked", @as(ffi.GCallback, @ptrCast(@alignCast(@constCast(&change_icon)))), @ptrCast(@alignCast(r)), null, 0);
         }

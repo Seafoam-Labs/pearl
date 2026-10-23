@@ -34,10 +34,10 @@ pub const Catalog = struct {
     fn add(self: *Catalog, info: *gio.AppInfo, action: ?[*:0]const u8, name: [*:0]const u8) !void {
         const alloc = self.arena.allocator();
         const id = info.getId() orelse return;
-        const title = std.mem.span(name);
+        const title = (if (action == null) @import("application_metadata.zig").text(std.mem.span(id), .name, std.mem.span(name)) else null) orelse std.mem.span(name);
         if (title.len > 4096 or std.mem.span(id).len > 1024 or !std.unicode.utf8ValidateSlice(title)) return;
-        const detail = if (action != null) info.getDisplayName() else info.getDescription() orelse @import("text.zig").tr("Application", "Anwendung").ptr;
-        const description = std.mem.span(detail);
+        const detail = if (action != null) info.getDisplayName() else info.getDescription() orelse @import("i18n").dtr("pearl", "Application").ptr;
+        const description = (if (action == null) @import("application_metadata.zig").text(std.mem.span(id), .description, std.mem.span(detail)) else null) orelse std.mem.span(detail);
         if (description.len > 4096 or !std.unicode.utf8ValidateSlice(description)) return;
         const desktop = object.ext.cast(unix.DesktopAppInfo, info).?;
         var keywords: std.ArrayList(u8) = .empty;

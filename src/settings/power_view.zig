@@ -58,27 +58,20 @@ pub const View = struct {
     battery_selected: bool = false,
     initialized: bool = false,
     filling: bool = false,
-    german: bool,
     wanted: ?u8 = null,
     brightness_target: ?u8 = null,
     wanted_generation: u64 = 0,
     timer: c_uint = 0,
     deadline: i64 = 0,
 
-    fn t(self: *const View, en: [:0]const u8, de: [:0]const u8) [:0]const u8 {
-        return if (self.german) de else en;
-    }
-    fn format(self: *const View, buffer: []u8, comptime en: []const u8, comptime de: []const u8, args: anytype) [:0]const u8 {
-        return (if (self.german) std.fmt.bufPrintZ(buffer, de, args) else std.fmt.bufPrintZ(buffer, en, args)) catch "";
-    }
     fn card() *gtk.Box {
         const box = w.column(12);
         box.as(gtk.Widget).addCssClass("power-card");
         return box;
     }
-    fn section(self: *View, en: [:0]const u8, de: [:0]const u8) *gtk.Box {
+    fn section(self: *View, en: [:0]const u8) *gtk.Box {
         const box = w.column(8);
-        box.append(w.label(self.t(en, de), "pearl-section-title").as(gtk.Widget));
+        box.append(w.label(en, "pearl-section-title").as(gtk.Widget));
         self.root.append(box.as(gtk.Widget));
         return box;
     }
@@ -104,7 +97,6 @@ pub const View = struct {
 
     pub fn create(host: *gtk.Box, window: *gtk.Window, editor: *Editor) !*View {
         const self = try a.create(View);
-        const locale = if (glib.getenv("LANG")) |value| std.mem.span(value) else "";
         const root = w.column(16);
         root.as(gtk.Widget).addCssClass("power-view");
         const battery = card();
@@ -127,11 +119,11 @@ pub const View = struct {
         percent.as(gtk.Widget).setHexpand(0);
         const brightness_detail = w.label("", "pearl-secondary");
         const dim = gtk.Switch.new();
-        const source = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ "On battery", "Plugged in", null }));
-        const saver = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ "Off", "Below 10%", "Below 20%", "Below 30%", null }));
+        const source = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").dtr("pearl", "On battery"), @import("i18n").dtr("pearl", "Plugged in"), null }));
+        const saver = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").dtr("pearl", "Off"), @import("i18n").dtr("pearl", "Below 10%"), @import("i18n").dtr("pearl", "Below 20%"), @import("i18n").dtr("pearl", "Below 30%"), null }));
         const sleep_status = w.label("", "pearl-secondary");
         const action_detail = w.label("", "pearl-secondary");
-        self.* = .{ .editor = editor, .window = window, .lease = editor.view, .root = root, .status = status, .battery = battery, .percentage = percentage, .charge = charge, .estimate = estimate, .health = health, .history_label = history_label, .chart = chart, .battery_icon = battery_icon, .mode_detail = mode_detail, .brightness = brightness, .percent = percent, .brightness_detail = brightness_detail, .dim = dim, .source = source, .source_row = undefined, .saver = saver, .saver_row = undefined, .sleep_status = sleep_status, .action_detail = action_detail, .arena = .init(a), .german = std.mem.startsWith(u8, locale, "de") };
+        self.* = .{ .editor = editor, .window = window, .lease = editor.view, .root = root, .status = status, .battery = battery, .percentage = percentage, .charge = charge, .estimate = estimate, .health = health, .history_label = history_label, .chart = chart, .battery_icon = battery_icon, .mode_detail = mode_detail, .brightness = brightness, .percent = percent, .brightness_detail = brightness_detail, .dim = dim, .source = source, .source_row = undefined, .saver = saver, .saver_row = undefined, .sleep_status = sleep_status, .action_detail = action_detail, .arena = .init(a) };
         host.append(root.as(gtk.Widget));
         errdefer {
             self.destroy();
@@ -159,11 +151,11 @@ pub const View = struct {
         battery_layout.insert(history.as(gtk.Widget), -1);
         battery.append(battery_layout.as(gtk.Widget));
         chart.setDrawFunc(draw, self, null);
-        const modes = self.section("Power mode", "Energiemodus");
+        const modes = self.section(@import("i18n").dtr("pearl", "Power mode"));
         const mode_flow = w.flow(3);
         mode_flow.setHomogeneous(1);
-        const titles = if (self.german) [_][:0]const u8{ "Energiesparen", "Ausgeglichen", "Leistung" } else [_][:0]const u8{ "Power saver", "Balanced", "Performance" };
-        const details = if (self.german) [_][:0]const u8{ "Akkulaufzeit verlängern", "Leistung nach Bedarf", "Geschwindigkeit bevorzugen" } else [_][:0]const u8{ "Extend battery life", "Performance when you need it", "Prioritize speed" };
+        const titles = [_][:0]const u8{ @import("i18n").dtr("pearl", "Power saver"), @import("i18n").dtr("pearl", "Balanced"), @import("i18n").dtr("pearl", "Performance") };
+        const details = [_][:0]const u8{ @import("i18n").dtr("pearl", "Extend battery life"), @import("i18n").dtr("pearl", "Performance when you need it"), @import("i18n").dtr("pearl", "Prioritize speed") };
         for (0..3) |i| {
             const button = gtk.CheckButton.new();
             if (i > 0) button.setGroup(self.modes[0]);
@@ -182,48 +174,40 @@ pub const View = struct {
         modes.append(mode_flow.as(gtk.Widget));
         modes.append(mode_detail.as(gtk.Widget));
         const display = card();
-        self.section("Display", "Bildschirm").append(display.as(gtk.Widget));
+        self.section(@import("i18n").dtr("pearl", "Display")).append(display.as(gtk.Widget));
         const slider = w.row(12);
         slider.append(w.icon("pearl-display-brightness-symbolic").as(gtk.Widget));
-        const brightness_label = w.label(self.t("Brightness", "Helligkeit"), null);
+        const brightness_label = w.label(@import("i18n").dtr("pearl", "Brightness"), null);
         brightness_label.as(gtk.Widget).setHexpand(0);
         slider.append(brightness_label.as(gtk.Widget));
         slider.append(brightness.as(gtk.Widget));
         slider.append(percent.as(gtk.Widget));
         display.append(slider.as(gtk.Widget));
         display.append(brightness_detail.as(gtk.Widget));
-        _ = row(display, self.t("Dim screen when inactive", "Bildschirm bei Inaktivität dimmen"), dim.as(gtk.Widget));
-        display.append(w.label(self.t("Reduce brightness before the screen turns off", "Helligkeit vor dem Ausschalten reduzieren"), "pearl-secondary").as(gtk.Widget));
-        w.name(brightness.as(gtk.Widget), self.t("Brightness", "Helligkeit"));
+        _ = row(display, @import("i18n").dtr("pearl", "Dim screen when inactive"), dim.as(gtk.Widget));
+        display.append(w.label(@import("i18n").dtr("pearl", "Reduce brightness before the screen turns off"), "pearl-secondary").as(gtk.Widget));
+        w.name(brightness.as(gtk.Widget), @import("i18n").dtr("pearl", "Brightness"));
         try self.control("power/brightness", brightness.as(gtk.Widget));
         try self.control("power/dim", dim.as(gtk.Widget));
         try self.remember(brightness, gtk.Range.signals.value_changed.connect(brightness.as(gtk.Range), *View, brightnessChanged, self, .{}));
         try self.remember(dim, object.Object.signals.notify.connect(dim.as(object.Object), *View, dimChanged, self, .{ .detail = "active" }));
         const sleep = card();
-        self.section("Sleep & energy saving", "Ruhezustand und Energiesparen").append(sleep.as(gtk.Widget));
-        if (self.german) {
-            const strings = gtk.StringList.new(@ptrCast(&[_]?[*:0]const u8{ "Akkubetrieb", "Netzbetrieb", null }));
-            source.setModel(strings.as(gio.ListModel));
-            strings.unref();
-            const thresholds = gtk.StringList.new(@ptrCast(&[_]?[*:0]const u8{ "Aus", "Unter 10%", "Unter 20%", "Unter 30%", null }));
-            saver.setModel(thresholds.as(gio.ListModel));
-            thresholds.unref();
-        }
-        self.source_row = row(sleep, self.t("Settings for", "Einstellungen für"), source.as(gtk.Widget));
+        self.section(@import("i18n").dtr("pearl", "Sleep & energy saving")).append(sleep.as(gtk.Widget));
+        self.source_row = row(sleep, @import("i18n").dtr("pearl", "Settings for"), source.as(gtk.Widget));
         try self.control("power/source", source.as(gtk.Widget));
         try self.remember(source, object.Object.signals.notify.connect(source.as(object.Object), *View, sourceChanged, self, .{ .detail = "selected" }));
         for (0..2) |i| {
-            self.timeouts[i] = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ "Never", "1 minute", "5 minutes", "10 minutes", "15 minutes", "30 minutes", "1 hour", "Custom", null }));
+            self.timeouts[i] = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").dtr("pearl", "Never"), @import("i18n").dtr("pearl", "1 minute"), @import("i18n").dtr("pearl", "5 minutes"), @import("i18n").dtr("pearl", "10 minutes"), @import("i18n").dtr("pearl", "15 minutes"), @import("i18n").dtr("pearl", "30 minutes"), @import("i18n").dtr("pearl", "1 hour"), @import("i18n").dtr("pearl", "Custom"), null }));
             self.time_bindings[i] = .{ .view = self, .index = i };
-            _ = row(sleep, if (i == 0) self.t("Turn screen off after", "Bildschirm ausschalten nach") else self.t("Suspend after", "Bereitschaft nach"), self.timeouts[i].as(gtk.Widget));
+            _ = row(sleep, if (i == 0) @import("i18n").dtr("pearl", "Turn screen off after") else @import("i18n").dtr("pearl", "Suspend after"), self.timeouts[i].as(gtk.Widget));
             try self.control(if (i == 0) "power/screen-off" else "power/suspend-after", self.timeouts[i].as(gtk.Widget));
             try self.remember(self.timeouts[i], object.Object.signals.notify.connect(self.timeouts[i].as(object.Object), *Binding, timeoutChanged, &self.time_bindings[i], .{ .detail = "selected" }));
         }
-        self.saver_row = row(sleep, self.t("Automatic power saver", "Automatisches Energiesparen"), saver.as(gtk.Widget));
+        self.saver_row = row(sleep, @import("i18n").dtr("pearl", "Automatic power saver"), saver.as(gtk.Widget));
         try self.control("power/automatic-saver", saver.as(gtk.Widget));
         try self.remember(saver, object.Object.signals.notify.connect(saver.as(object.Object), *View, saverChanged, self, .{ .detail = "selected" }));
         sleep.append(sleep_status.as(gtk.Widget));
-        const locking = w.wrappingButton(self.t("Session & lock settings", "Einstellungen für Sitzung und Sperre"));
+        const locking = w.wrappingButton(@import("i18n").dtr("pearl", "Session & lock settings"));
         self.locking = locking;
         locking.as(gtk.Widget).setHalign(.start);
         locking.as(gtk.Widget).addCssClass("flat");
@@ -232,10 +216,10 @@ pub const View = struct {
         try self.remember(locking, gtk.Button.signals.clicked.connect(locking, *View, lockingClicked, self, .{}));
         const actions = card();
         root.append(actions.as(gtk.Widget));
-        actions.append(w.label(self.t("Session actions", "Sitzungsaktionen"), "settings-row-title").as(gtk.Widget));
+        actions.append(w.label(@import("i18n").dtr("pearl", "Session actions"), "settings-row-title").as(gtk.Widget));
         const action_flow = w.flow(3);
         const more = gtk.MenuButton.new();
-        more.setLabel(self.t("More", "Mehr"));
+        more.setLabel(@import("i18n").dtr("pearl", "More"));
         const popover = gtk.Popover.new();
         const menu = w.column(6);
         popover.setChild(menu.as(gtk.Widget));
@@ -299,19 +283,19 @@ pub const View = struct {
         self.visibility(self.source_row.as(gtk.Widget), s.battery_present);
         self.visibility(self.saver_row.as(gtk.Widget), s.battery_present);
         var buf: [512]u8 = undefined;
-        self.percentage.setText(if (s.percentage) |n| std.fmt.bufPrintZ(&buf, "{d:.0}%", .{n}) catch "" else self.t("Charge unavailable", "Ladestand unbekannt"));
+        self.percentage.setText(if (s.percentage) |n| std.fmt.bufPrintZ(&buf, "{d:.0}%", .{n}) catch "" else @import("i18n").dtr("pearl", "Charge unavailable"));
         self.battery_icon.setValue(s.percentage orelse 0);
         self.battery_icon.as(gtk.Widget).setVisible(@intFromBool(s.percentage != null));
         self.charge.setText(switch (s.state) {
-            1 => self.t("Charging", "Wird geladen"),
-            2 => self.t("On battery", "Akkubetrieb"),
-            4 => self.t("Fully charged", "Vollständig geladen"),
-            else => self.t("Battery", "Akku"),
+            1 => @import("i18n").dtr("pearl", "Charging"),
+            2 => @import("i18n").dtr("pearl", "On battery"),
+            4 => @import("i18n").dtr("pearl", "Fully charged"),
+            else => @import("i18n").dtr("pearl", "Battery"),
         });
-        self.estimate.setText(if (s.estimate > 0) (if (s.state == 1) self.format(&buf, "About {d} h {d} min until full", "Noch etwa {d} Std. {d} Min. bis voll", .{ @divTrunc(s.estimate, 3600), @divTrunc(@mod(s.estimate, 3600), 60) }) else self.format(&buf, "About {d} h {d} min remaining", "Noch etwa {d} Std. {d} Min.", .{ @divTrunc(s.estimate, 3600), @divTrunc(@mod(s.estimate, 3600), 60) })) else "");
-        self.health.setText(if (s.health) |n| self.format(&buf, "Battery health: {s} ({d:.0}%)", "Akkuzustand: {s} ({d:.0}%)", .{ if (n >= 80) self.t("Good", "Gut") else self.t("Reduced", "Verringert"), n }) else self.t("Battery health unavailable", "Akkuzustand unbekannt"));
+        self.estimate.setText(if (s.estimate > 0) (if (s.state == 1) @import("i18n").fmt(&buf, "About {d} h {d} min until full", .{ @divTrunc(s.estimate, 3600), @divTrunc(@mod(s.estimate, 3600), 60) }) else @import("i18n").fmt(&buf, "About {d} h {d} min remaining", .{ @divTrunc(s.estimate, 3600), @divTrunc(@mod(s.estimate, 3600), 60) })) else "");
+        self.health.setText(if (s.health) |n| @import("i18n").fmt(&buf, "Battery health: {s} ({d:.0}%)", .{ if (n >= 80) @import("i18n").dtr("pearl", "Good") else @import("i18n").dtr("pearl", "Reduced"), n }) else @import("i18n").dtr("pearl", "Battery health unavailable"));
         const span = if (s.history.len > 1) s.history[s.history.len - 1].seconds - s.history[0].seconds else 0;
-        self.history_label.setText(if (span >= 60) self.format(&buf, "Last {d} minutes · this session", "Letzte {d} Minuten · diese Sitzung", .{@divTrunc(span, 60)}) else self.t("Collecting battery history…", "Akkuverlauf wird erfasst…"));
+        self.history_label.setText(if (span >= 60) @import("i18n").fmt(&buf, "Last {d} minutes · this session", .{@divTrunc(span, 60)}) else @import("i18n").dtr("pearl", "Collecting battery history…"));
         w.name(self.chart.as(gtk.Widget), self.history_label.getText());
         self.chart.as(gtk.Widget).queueDraw();
         for (self.modes, 0..) |mode, i| {
@@ -319,9 +303,9 @@ pub const View = struct {
             mode.setActive(@intFromBool(active));
             mode.as(gtk.Widget).setSensitive(@intFromBool(s.profiles[i] and !s.profile_pending));
             if (active) mode.as(gtk.Widget).addCssClass("power-selected") else mode.as(gtk.Widget).removeCssClass("power-selected");
-            mode.as(gtk.Widget).setTooltipText(if (s.profiles[i]) null else self.t("This power mode is unavailable", "Dieser Energiemodus ist nicht verfügbar"));
+            mode.as(gtk.Widget).setTooltipText(if (s.profiles[i]) null else @import("i18n").dtr("pearl", "This power mode is unavailable"));
         }
-        self.mode_detail.setText(alloc.dupeZ(u8, if (s.profile_pending) self.t("Applying power mode…", "Energiemodus wird geändert…") else s.degraded) catch "");
+        self.mode_detail.setText(alloc.dupeZ(u8, if (s.profile_pending) @import("i18n").dtr("pearl", "Applying power mode…") else s.degraded) catch "");
         self.mode_detail.as(gtk.Widget).setVisible(@intFromBool(s.profile_pending or s.degraded.len > 0));
         const generation = std.fmt.parseInt(u64, s.brightness_generation, 10) catch 0;
         if (self.brightness_target != null and generation != self.wanted_generation) self.cancel();
@@ -331,7 +315,7 @@ pub const View = struct {
         if (self.brightness_target == null and self.wanted == null and !s.brightness_pending and self.editor.live_command == null) self.brightness.as(gtk.Range).setValue(@floatFromInt(s.brightness));
         self.brightness.as(gtk.Widget).setSensitive(@intFromBool(s.brightness_available));
         self.percent.setText(std.fmt.bufPrintZ(&buf, "{d:.0}%", .{self.brightness.as(gtk.Range).getValue()}) catch "");
-        self.brightness_detail.setText(if (s.brightness_available) "" else self.t("Brightness control is unavailable for this display", "Helligkeitsregelung für diesen Bildschirm nicht verfügbar"));
+        self.brightness_detail.setText(if (s.brightness_available) "" else @import("i18n").dtr("pearl", "Brightness control is unavailable for this display"));
         self.brightness_detail.as(gtk.Widget).setVisible(@intFromBool(!s.brightness_available));
         self.source.setSelected(if (self.battery_selected) 0 else 1);
         self.updateSettings();
@@ -363,7 +347,7 @@ pub const View = struct {
                 break;
             };
         };
-        const message = if (s.saving) self.t("Saving power settings…", "Energieeinstellungen werden gespeichert…") else if (s.error_message.len > 0) s.error_message else if (!s.available) self.t("Battery service unavailable", "Akkudienst nicht verfügbar") else "";
+        const message = if (s.saving) @import("i18n").dtr("pearl", "Saving power settings…") else if (s.error_message.len > 0) s.error_message else if (!s.available) @import("i18n").dtr("pearl", "Battery service unavailable") else "";
         self.status.setText(alloc.dupeZ(u8, message) catch "");
         self.status.as(gtk.Widget).setVisible(@intFromBool(message.len > 0));
     }
@@ -382,8 +366,8 @@ pub const View = struct {
             if (self.custom[i] == null or (index == durations.len and self.custom[i].? != seconds)) {
                 self.custom[i] = seconds;
                 var buffer: [80]u8 = undefined;
-                const label = self.format(&buffer, "Custom: {d} seconds", "Benutzerdefiniert: {d} Sekunden", .{seconds});
-                const labels = if (self.german) [_]?[*:0]const u8{ "Nie", "1 Minute", "5 Minuten", "10 Minuten", "15 Minuten", "30 Minuten", "1 Stunde", label, null } else [_]?[*:0]const u8{ "Never", "1 minute", "5 minutes", "10 minutes", "15 minutes", "30 minutes", "1 hour", label, null };
+                const label = @import("i18n").fmt(&buffer, "Custom: {d} seconds", .{seconds});
+                const labels = [_]?[*:0]const u8{ @import("i18n").dtr("pearl", "Never"), @import("i18n").dtr("pearl", "1 minute"), @import("i18n").dtr("pearl", "5 minutes"), @import("i18n").dtr("pearl", "10 minutes"), @import("i18n").dtr("pearl", "15 minutes"), @import("i18n").dtr("pearl", "30 minutes"), @import("i18n").dtr("pearl", "1 hour"), label, null };
                 const strings = gtk.StringList.new(@ptrCast(&labels));
                 self.timeouts[i].setModel(strings.as(gio.ListModel));
                 strings.unref();
@@ -393,7 +377,7 @@ pub const View = struct {
         }
         self.saver.setSelected(s.config.automatic_saver / 10);
         self.saver.as(gtk.Widget).setSensitive(@intFromBool(!s.saving and s.profiles[0]));
-        const message = if (!s.idle_available) self.t("Idle notifications unavailable", "Inaktivitätsmeldungen nicht verfügbar") else if (!s.display_power_available) self.t("Screen power control unavailable", "Bildschirm-Energiesteuerung nicht verfügbar") else if (timers.lock_seconds == 0) self.t("Enable automatic locking in Session & lock before setting a suspend timeout.", "Vor automatischer Bereitschaft die automatische Sperre unter Sitzung und Sperre aktivieren.") else "";
+        const message = if (!s.idle_available) @import("i18n").dtr("pearl", "Idle notifications unavailable") else if (!s.display_power_available) @import("i18n").dtr("pearl", "Screen power control unavailable") else if (timers.lock_seconds == 0) @import("i18n").dtr("pearl", "Enable automatic locking in Session & lock before setting a suspend timeout.") else "";
         self.sleep_status.setText(message);
         self.sleep_status.as(gtk.Widget).setVisible(@intFromBool(message.len > 0));
     }
@@ -481,12 +465,7 @@ pub const View = struct {
         };
         if (action.view.action_popover) |popover| popover.popdown();
     }
-    fn actionLabel(self: *const View, spec: ui.Control) []const u8 {
-        if (!self.german) return spec.label;
-        if (std.mem.startsWith(u8, spec.label, "Confirm")) return if (std.mem.eql(u8, spec.id, "reboot")) "Neustart bestätigen" else if (std.mem.eql(u8, spec.id, "shutdown")) "Ausschalten bestätigen" else "Sitzungsaktion bestätigen";
-        const ids = [_][]const u8{ "lock", "suspend", "hibernate", "logout", "inhibit", "uninhibit", "shutdown", "reboot", "cancel", "power-cancel" };
-        const labels = [_][]const u8{ "Sperren", "Bereitschaft", "Ruhezustand", "Abmelden…", "Automatische Inaktivität pausieren", "Automatische Inaktivität fortsetzen", "Ausschalten…", "Neustart…", "Abbrechen", "Energieaktion abbrechen" };
-        for (ids, labels) |id, label| if (std.mem.eql(u8, spec.id, id)) return label;
+    fn actionLabel(_: *const View, spec: ui.Control) []const u8 {
         return spec.label;
     }
     fn draw(area: *gtk.DrawingArea, cr: *cairo.Context, width: c_int, height: c_int, data: ?*anyopaque) callconv(.c) void {

@@ -72,14 +72,14 @@ pub const View = struct {
         const actions = w.row(8);
         card.append(actions.as(gtk.Widget));
         if (page == .network) {
-            self.radio = self.button(actions, "Wi-Fi", radioClicked);
-            _ = self.button(actions, "Network editor…", editorClicked);
-        } else self.scan_stop = self.button(actions, "Stop discovery", stopClicked);
-        self.cancel = self.button(actions, "Cancel request", cancelClicked);
+            self.radio = self.button(actions, @import("i18n").dtr("pearl", "Wi-Fi"), radioClicked);
+            _ = self.button(actions, @import("i18n").dtr("pearl", "Network editor…"), editorClicked);
+        } else self.scan_stop = self.button(actions, @import("i18n").dtr("pearl", "Stop discovery"), stopClicked);
+        self.cancel = self.button(actions, @import("i18n").dtr("pearl", "Cancel request"), cancelClicked);
         self.prompt = self.makePrompt(card, page == .network);
         self.items = w.column(12);
         self.expander = gtk.Expander.new(if (page == .network) "Adapters, nearby and saved networks" else "Adapters and devices");
-        self.expander.setLabelWidget(w.label(if (page == .network) "Adapters, nearby and saved networks" else "Adapters and devices", "pearl-section-title").as(gtk.Widget));
+        self.expander.setLabelWidget(w.label(if (page == .network) @import("i18n").dtr("pearl", "Adapters, nearby and saved networks") else @import("i18n").dtr("pearl", "Adapters and devices"), "pearl-section-title").as(gtk.Widget));
         focus_state.tag(self.expander.as(gtk.Widget), "connectivity-expander", .{});
         self.expander.setChild(self.items.as(gtk.Widget));
         self.expander.setExpanded(1);
@@ -109,12 +109,12 @@ pub const View = struct {
         box.append(title.as(gtk.Widget));
         const entry = gtk.PasswordEntry.new();
         entry.setShowPeekIcon(1);
-        w.name(entry.as(gtk.Widget), if (network) "Wi-Fi password" else "Bluetooth PIN or passkey");
+        w.name(entry.as(gtk.Widget), if (network) @import("i18n").dtr("pearl", "Wi-Fi password") else @import("i18n").dtr("pearl", "Bluetooth PIN or passkey"));
         box.append(entry.as(gtk.Widget));
         self.remember(entry.as(object.Object), gtk.PasswordEntry.signals.activate.connect(entry, *View, entryActivated, self, .{}), false);
         const actions = w.row(8);
         box.append(actions.as(gtk.Widget));
-        return .{ .box = box, .title = title, .entry = entry, .accept = self.button(actions, if (network) "Connect securely" else "Confirm", answerClicked), .cancel = self.button(actions, "Cancel", cancelClicked) };
+        return .{ .box = box, .title = title, .entry = entry, .accept = self.button(actions, if (network) @import("i18n").dtr("pearl", "Connect securely") else @import("i18n").dtr("pearl", "Confirm"), answerClicked), .cancel = self.button(actions, @import("i18n").dtr("pearl", "Cancel"), cancelClicked) };
     }
     fn remember(self: *View, obj: *object.Object, id: c_ulong, row: bool) void {
         (if (row) &self.row_connections else &self.connections).append(a, .{ .object = obj, .id = id }) catch @panic("OOM");
@@ -182,7 +182,7 @@ pub const View = struct {
             self.updatePrompt(&self.prompt, n.prompt_serial, visible, true);
             view.prompt_host.as(gtk.Widget).setVisible(@intFromBool(visible));
             if (was_visible and !visible) view.restoreFocus();
-            self.prompt.title.setText(if (!visible) "" else std.fmt.bufPrintZ(&buffer, "{s} {s}\n{s}", .{ @import("text.zig").tr("Connect to", "Verbinden mit"), n.title.slice(), if (n.selected_profile.len == 0) @import("text.zig").tr("This network will be saved after you connect.", "Dieses Netzwerk wird nach dem Verbinden gespeichert.") else @import("text.zig").tr("Enter this network’s Wi-Fi password.", "Das WLAN-Passwort für dieses Netzwerk eingeben.") }) catch "Wi-Fi password");
+            self.prompt.title.setText(if (!visible) "" else std.fmt.bufPrintZ(&buffer, "{s} {s}\n{s}", .{ @import("i18n").dtr("pearl", "Connect to"), n.title.slice(), if (n.selected_profile.len == 0) @import("i18n").dtr("pearl", "This network will be saved after you connect.") else @import("i18n").dtr("pearl", "Enter this network’s Wi-Fi password.") }) catch "Wi-Fi password");
             return;
         }
         var t: Text(1024) = .{};
@@ -195,7 +195,7 @@ pub const View = struct {
             };
             t.set(net_text);
             self.status.setText(t.z());
-            self.radio.?.setLabel(if (n.enabled) "Turn Wi-Fi off" else "Turn Wi-Fi on");
+            self.radio.?.setLabel(if (n.enabled) @import("i18n").dtr("pearl", "Turn Wi-Fi off") else @import("i18n").dtr("pearl", "Turn Wi-Fi on"));
             self.radio.?.as(gtk.Widget).setSensitive(@intFromBool(n.peer.owner.len != 0 and n.hardware_enabled and !n.pending));
             self.cancel.as(gtk.Widget).setVisible(@intFromBool(n.ownsPrompt(self.owner) and n.pending and n.device.len != 0));
         } else {
@@ -224,15 +224,15 @@ pub const View = struct {
             switch (row.kind) {
                 .device => if (n.findDevice(row.path.slice())) |dev| {
                     row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ dev.name.slice(), if (dev.state == 100) "Connected" else if (dev.state < 30) "Unavailable" else "Disconnected" }) catch "Network adapter");
-                    row.primary.setLabel("Disconnect");
+                    row.primary.setLabel(@import("i18n").dtr("pearl", "Disconnect"));
                     row.primary.as(gtk.Widget).setSensitive(@intFromBool(!n.pending and dev.state >= 40));
-                    row.secondary.setLabel("Scan Wi-Fi");
+                    row.secondary.setLabel(@import("i18n").dtr("pearl", "Scan Wi-Fi"));
                     row.secondary.as(gtk.Widget).setVisible(@intFromBool(dev.kind == 2));
                     row.secondary.as(gtk.Widget).setSensitive(@intFromBool(n.enabled and n.hardware_enabled and !n.scan_pending));
                 },
                 .ap => if (n.findAP(row.path.slice())) |ap| {
                     row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {d}% · {s}", .{ ap.label.slice(), ap.strength, @tagName(ap.security) }) catch "Wi-Fi network");
-                    row.primary.setLabel(if (ap.security == .advanced) "Use network editor…" else "Connect");
+                    row.primary.setLabel(if (ap.security == .advanced) @import("i18n").dtr("pearl", "Use network editor…") else @import("i18n").dtr("pearl", "Connect"));
                     const available = if (n.findDevice(ap.device.slice())) |dev| n.canConnectDevice(dev) else false;
                     row.primary.as(gtk.Widget).setSensitive(@intFromBool(!n.pending and (ap.security == .advanced or available)));
                     row.secondary.as(gtk.Widget).setVisible(0);
@@ -240,7 +240,7 @@ pub const View = struct {
                 .saved => for (n.saved[0..n.saved_count]) |*saved| {
                     if (!std.mem.eql(u8, saved.path.slice(), row.path.slice())) continue;
                     row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · Saved", .{saved.label.slice()}) catch "Saved network");
-                    row.primary.setLabel(if (saved.security == .advanced) "Use network editor…" else "Connect saved");
+                    row.primary.setLabel(if (saved.security == .advanced) @import("i18n").dtr("pearl", "Use network editor…") else @import("i18n").dtr("pearl", "Connect saved"));
                     const available = if (n.findDevice(saved.device.slice())) |dev| n.canConnectDevice(dev) else false;
                     row.primary.as(gtk.Widget).setSensitive(@intFromBool(saved.loaded and !n.pending and (available or saved.security == .advanced)));
                     row.secondary.as(gtk.Widget).setVisible(0);
@@ -248,16 +248,16 @@ pub const View = struct {
                 },
                 .adapter => if (b.findAdapter(row.path.slice())) |adapter| {
                     row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ adapter.label.slice(), if (adapter.powered) "On" else "Off" }) catch "Bluetooth adapter");
-                    row.primary.setLabel(if (adapter.powered) "Turn off" else "Turn on");
-                    row.secondary.setLabel("Discover");
+                    row.primary.setLabel(if (adapter.powered) @import("i18n").dtr("pearl", "Turn off") else @import("i18n").dtr("pearl", "Turn on"));
+                    row.secondary.setLabel(@import("i18n").dtr("pearl", "Discover"));
                     row.secondary.as(gtk.Widget).setSensitive(@intFromBool(adapter.powered and b.discovery_path.len == 0));
                 },
                 .bluetooth => if (b.findDevice(row.path.slice())) |dev| {
                     row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}{s}\n{s}", .{ dev.label.slice(), if (dev.connected) "Connected" else if (dev.paired) "Paired" else "Not paired", if (dev.trusted) " · Trusted" else "", dev.address.slice() }) catch "Bluetooth device");
-                    row.primary.setLabel(if (dev.connected) "Disconnect" else if (dev.paired) "Connect" else "Pair…");
+                    row.primary.setLabel(if (dev.connected) @import("i18n").dtr("pearl", "Disconnect") else if (dev.paired) @import("i18n").dtr("pearl", "Connect") else @import("i18n").dtr("pearl", "Pair…"));
                     const powered = if (b.findAdapter(dev.adapter.slice())) |adapter| adapter.powered else false;
                     row.primary.as(gtk.Widget).setSensitive(@intFromBool(!b.pending and !dev.blocked and powered));
-                    row.secondary.setLabel(if (dev.trusted) "Remove trust" else "Trust device");
+                    row.secondary.setLabel(if (dev.trusted) @import("i18n").dtr("pearl", "Remove trust") else @import("i18n").dtr("pearl", "Trust device"));
                     row.secondary.as(gtk.Widget).setSensitive(@intFromBool(!b.pending and dev.paired and !dev.blocked and powered));
                 },
             }

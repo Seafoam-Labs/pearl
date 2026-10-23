@@ -114,7 +114,7 @@ pub fn For(comptime View: type) type {
         }
         pub fn render(view: *View, box: *gtk.Box, snapshot: m.Value, category: []const u8) !void {
             if (!@import("../config/aqueous_contract.zig").Capabilities.read(snapshot).collections) {
-                box.append(w.label("Structured collections require an Aqueous helper with collection_schema_v1 and collection_preconditions_v1.", "pearl-secondary").as(gtk.Widget));
+                box.append(w.label(@import("i18n").dtr("pearl", "Structured collections require an Aqueous helper with collection_schema_v1 and collection_preconditions_v1."), "pearl-secondary").as(gtk.Widget));
                 return;
             }
             const a = view.arena.allocator();
@@ -122,17 +122,17 @@ pub fn For(comptime View: type) type {
             const card = w.card();
             box.append(card.as(gtk.Widget));
             card.append(w.label(switch (kind) {
-                .rules => "Window rule editor",
-                .bindings => "Custom shortcut editor",
-                .zones => "Legacy snap zones",
+                .rules => @import("i18n").dtr("pearl", "Window rule editor"),
+                .bindings => @import("i18n").dtr("pearl", "Custom shortcut editor"),
+                .zones => @import("i18n").dtr("pearl", "Legacy snap zones"),
             }, "pearl-title").as(gtk.Widget));
             card.append(w.label(switch (kind) {
-                .rules => "All matchers must match; first matching rule wins. Globs are anchored and case sensitive. Inherit removes a field; false and zero remain explicit. Save a move before other rule operations.",
-                .bindings => "Commands keep Aqueous syntax: spawn:, launch:, set_layout: or builtin:. Editing does not execute a command. Validate checks chord collisions.",
-                .zones => "Geometry is a fraction of the work area. Width and height must be positive and the zone must fit inside 0–1.",
+                .rules => @import("i18n").dtr("pearl", "All matchers must match; first matching rule wins. Globs are anchored and case sensitive. Inherit removes a field; false and zero remain explicit. Save a move before other rule operations."),
+                .bindings => @import("i18n").dtr("pearl", "Commands keep Aqueous syntax: spawn:, launch:, set_layout: or builtin:. Editing does not execute a command. Validate checks chord collisions."),
+                .zones => @import("i18n").dtr("pearl", "Geometry is a fraction of the work area. Width and height must be positive and the zone must fit inside 0–1."),
             }, "pearl-secondary").as(gtk.Widget));
             const form = try a.create(Form);
-            form.* = .{ .view = view, .kind = kind, .snapshot = snapshot, .selector = undefined, .preview = w.label("Stage changes to review the canonical request here. Validate checks the complete draft.", "pearl-secondary") };
+            form.* = .{ .view = view, .kind = kind, .snapshot = snapshot, .selector = undefined, .preview = w.label(@import("i18n").dtr("pearl", "Stage changes to review the canonical request here. Validate checks the complete draft."), "pearl-secondary") };
             const request = try m.parse(a, view.client.draft orelse "{}", m.max_request);
             var items: std.ArrayList(m.Value) = .empty;
             const base_key = switch (kind) {
@@ -172,7 +172,7 @@ pub fn For(comptime View: type) type {
                 row.append(w.label(view.z(key), null).as(gtk.Widget));
                 var field: Field = .{ .spec = spec, .input = undefined };
                 if (kind == .rules) {
-                    field.inherit = gtk.CheckButton.newWithLabel("Inherit");
+                    field.inherit = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Inherit"));
                     row.append(field.inherit.?.as(gtk.Widget));
                     named(field.inherit.?.as(gtk.Widget), view.z(try std.fmt.allocPrint(a, "Inherit {s}", .{key})));
                 }

@@ -115,7 +115,7 @@ pub const Operations = struct {
         }
         const raw = self.entry.?.as(gtk.Editable).getText();
         if (!@import("core/model.zig").validName(std.mem.span(raw))) {
-            self.error_label.?.setText("Enter a name without /; . and .. are not allowed.");
+            self.error_label.?.setText(@import("i18n").dtr("phyto", "Enter a name without /; . and .. are not allowed."));
             return;
         }
         const name_ = a.dupeZ(u8, std.mem.span(raw)) catch unreachable;
@@ -432,7 +432,7 @@ pub const Operations = struct {
             return;
         }
         const j = self.active.?;
-        const d = self.newDialog(if (self.conflict) "A file with this name already exists" else "File operations");
+        const d = self.newDialog(if (self.conflict) @import("i18n").dtr("phyto", "A file with this name already exists") else @import("i18n").dtr("phyto", "File operations"));
         if (self.conflict) {
             const p = j.pairs.items[j.index];
             const path = if (p.destination) |dest| dest.getParseName() else p.source.getParseName();
@@ -442,13 +442,13 @@ pub const Operations = struct {
             label.setWrapMode(.word_char);
             label.setMaxWidthChars(50);
             d.getContentArea().append(label.as(gtk.Widget));
-            d.getContentArea().append(u.label("The existing item will be kept.", "secondary").as(gtk.Widget));
+            d.getContentArea().append(u.label(@import("i18n").dtr("phyto", "The existing item will be kept."), "secondary").as(gtk.Widget));
             _ = d.addButton("Cancel operation", -1);
             _ = d.addButton("Skip", 0);
             if (!j.undo and !j.redo) _ = d.addButton("Keep both", 2);
             d.setDefaultResponse(0);
         } else {
-            const label = u.label("Working…", "secondary");
+            const label = u.label(@import("i18n").dtr("phyto", "Working…"), "secondary");
             self.progress_text = label;
             d.getContentArea().append(label.as(gtk.Widget));
             _ = d.addButton("Cancel operation", 0);

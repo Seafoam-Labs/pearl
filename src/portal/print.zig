@@ -298,7 +298,7 @@ pub fn response(_: [*c]ffi.GtkDialog, response_id: c_int, data: ffi.gpointer) ca
     const zero_ranges: [*c]u8 = shift_ranges(range, -1);
     defer if (zero_ranges != null) ffi.g_free(@ptrCast(zero_ranges));
     if (zero_ranges == null) {
-        ffi.gtk_label_set_text(ffi.cast(?*ffi.GtkLabel, d.*.status), "Use ascending page ranges, such as 1-3,5.");
+        ffi.gtk_label_set_text(ffi.cast(?*ffi.GtkLabel, d.*.status), @import("i18n").dtr("pearl", "Use ascending page ranges, such as 1-3,5."));
         return;
     }
     const t: [*c]PrintToken = ffi.cast([*c]PrintToken, ffi.g_malloc0_n(1, @sizeOf(PrintToken)));
@@ -417,7 +417,7 @@ pub fn capability_reply(source: [*c]ffi.GObject, result: ?*ffi.GAsyncResult, dat
         const media: ?*ffi.GVariant = @ptrCast(@alignCast(if (d.*.capabilities != null) ffi.cast(?*anyopaque, portal_option(d.*.capabilities, "papers", "a(sdddddd)")) else null));
         defer if (media != null) ffi.g_variant_unref(@ptrCast(media));
         if (media == null or ffi.g_variant_n_children(media) == 0) {
-            ffi.gtk_label_set_text(ffi.cast(?*ffi.GtkLabel, d.*.status), "Printer capabilities are unavailable. Choose another destination.");
+            ffi.gtk_label_set_text(ffi.cast(?*ffi.GtkLabel, d.*.status), @import("i18n").dtr("pearl", "Printer capabilities are unavailable. Choose another destination."));
         } else {
             const labels: ?*ffi.GtkStringList = ffi.gtk_string_list_new(null);
             {
@@ -483,7 +483,7 @@ pub fn printer_changed(_: [*c]ffi.GObject, _: [*c]ffi.GParamSpec, data: ffi.gpoi
         return;
     }
     ffi.gtk_dialog_set_response_sensitive(r.*.dialog, ffi.GTK_RESPONSE_ACCEPT, 0);
-    ffi.gtk_label_set_text(ffi.cast(?*ffi.GtkLabel, d.*.status), "Reading printer capabilities\xe2\x80\xa6");
+    ffi.gtk_label_set_text(ffi.cast(?*ffi.GtkLabel, d.*.status), @import("i18n").dtr("pearl", "Reading printer capabilities\xe2\x80\xa6"));
     var args: [5][*c]const u8 = [5][*c]const u8{
         "/proc/self/exe",
         "--print-worker",
@@ -511,7 +511,7 @@ pub fn enumerated(source: [*c]ffi.GObject, result: ?*ffi.GAsyncResult, data: ffi
         }
         const labels: ?*ffi.GtkStringList = ffi.gtk_string_list_new(null);
         if ((d.*.output_format != null) and !(portal_restricted(r.*.portal, "disable-save-to-disk") != 0)) {
-            ffi.gtk_string_list_append(labels, "Print to file\xe2\x80\xa6");
+            ffi.gtk_string_list_append(labels, @import("i18n").dtr("pearl", "Print to file\xe2\x80\xa6"));
             ffi.g_ptr_array_add(d.*.ids, @ptrCast(@alignCast(ffi.g_strdup(""))));
         }
         const printers: ?*ffi.GVariant = @ptrCast(@alignCast(if (((ok != 0) and (output != null)) and (ffi.strlen(output) < @as(usize, 65536))) ffi.cast(?*anyopaque, ffi.g_variant_parse(ffi.g_variant_type_checked_("a(ss)"), output, null, null, null)) else null));
@@ -529,7 +529,7 @@ pub fn enumerated(source: [*c]ffi.GObject, result: ?*ffi.GAsyncResult, data: ffi
         ffi.gtk_drop_down_set_model(ffi.GTK_DROP_DOWN(@ptrCast(@alignCast(d.*.printers))), ffi.G_LIST_MODEL(@ptrCast(@alignCast(labels))));
         ffi.g_object_unref(@ptrCast(@alignCast(labels)));
         ffi.gtk_drop_down_set_selected(ffi.GTK_DROP_DOWN(@ptrCast(@alignCast(d.*.printers))), 0);
-        ffi.gtk_label_set_text(ffi.cast(?*ffi.GtkLabel, d.*.status), if (d.*.ids.*.f_len > @as(ffi.guint, 1)) @constCast("") else @constCast("No printers found. Check the printer connection and CUPS service."));
+        ffi.gtk_label_set_text(ffi.cast(?*ffi.GtkLabel, d.*.status), if (d.*.ids.*.f_len > @as(ffi.guint, 1)) @constCast("") else @constCast(@import("i18n").dtr("pearl", "No printers found. Check the printer connection and CUPS service.")));
         ffi.gtk_dialog_set_response_sensitive(r.*.dialog, ffi.GTK_RESPONSE_ACCEPT, @intFromBool(d.*.ids.*.f_len > @as(ffi.guint, 0)));
         _ = ffi.g_signal_connect_data(@ptrCast(@alignCast(d.*.printers)), "notify::selected", @as(ffi.GCallback, @ptrCast(@alignCast(@constCast(&printer_changed)))), @ptrCast(@alignCast(r)), null, 0);
         printer_changed(null, null, @ptrCast(@alignCast(r)));
@@ -649,7 +649,7 @@ pub fn portal_print(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void {
     const initial_duplex: [*c]const u8 = portal_string(d.*.initial, "duplex", "simplex");
     ffi.gtk_drop_down_set_selected(ffi.GTK_DROP_DOWN(@ptrCast(@alignCast(d.*.duplex))), @bitCast(@as(c_int, if (ffi.strcmp(initial_duplex, "vertical") == 0) 1 else if (ffi.strcmp(initial_duplex, "horizontal") == 0) @as(c_int, 2) else 0)));
     field(body, "Sides", d.*.duplex);
-    d.*.color = ffi.gtk_check_button_new_with_label("Print in color");
+    d.*.color = ffi.gtk_check_button_new_with_label(@import("i18n").dtr("pearl", "Print in color"));
     ffi.gtk_check_button_set_active(ffi.cast([*c]ffi.GtkCheckButton, d.*.color), @intFromBool(ffi.strcmp(portal_string(d.*.initial, "use-color", "true"), "false") != 0));
     ffi.gtk_box_append(body, d.*.color);
     var orientation: [3][*c]const u8 = [3][*c]const u8{
@@ -669,23 +669,23 @@ pub fn portal_print(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void {
     d.*.paper = ffi.gtk_drop_down_new_from_strings(@ptrCast(@alignCast(&paper)));
     field(body, "Paper", d.*.paper);
     d.*.ranges = ffi.gtk_entry_new();
-    ffi.gtk_entry_set_placeholder_text(ffi.cast([*c]ffi.GtkEntry, d.*.ranges), "All pages, or 1-3,5");
+    ffi.gtk_entry_set_placeholder_text(ffi.cast([*c]ffi.GtkEntry, d.*.ranges), @import("i18n").dtr("pearl", "All pages, or 1-3,5"));
     const initial_ranges: [*c]u8 = shift_ranges(portal_string(d.*.initial, "page-ranges", ""), 1);
     defer if (initial_ranges != null) ffi.g_free(@ptrCast(initial_ranges));
     if (initial_ranges != null) {
         ffi.gtk_editable_set_text(ffi.cast(?*ffi.GtkEditable, d.*.ranges), initial_ranges);
     }
     const modes: ?*ffi.GtkStringList = ffi.gtk_string_list_new(null);
-    ffi.gtk_string_list_append(modes, "All pages");
+    ffi.gtk_string_list_append(modes, @import("i18n").dtr("pearl", "All pages"));
     ffi.g_ptr_array_add(d.*.page_modes, @ptrCast(@alignCast(ffi.g_strdup("all"))));
-    ffi.gtk_string_list_append(modes, "Page ranges");
+    ffi.gtk_string_list_append(modes, @import("i18n").dtr("pearl", "Page ranges"));
     ffi.g_ptr_array_add(d.*.page_modes, @ptrCast(@alignCast(ffi.g_strdup("ranges"))));
     if (portal_boolean(r.*.options, "has_current_page", 0) != 0) {
-        ffi.gtk_string_list_append(modes, "Current page");
+        ffi.gtk_string_list_append(modes, @import("i18n").dtr("pearl", "Current page"));
         ffi.g_ptr_array_add(d.*.page_modes, @ptrCast(@alignCast(ffi.g_strdup("current"))));
     }
     if (portal_boolean(r.*.options, "has_selected_pages", 0) != 0) {
-        ffi.gtk_string_list_append(modes, "Selection");
+        ffi.gtk_string_list_append(modes, @import("i18n").dtr("pearl", "Selection"));
         ffi.g_ptr_array_add(d.*.page_modes, @ptrCast(@alignCast(ffi.g_strdup("selection"))));
     }
     d.*.page_mode = ffi.gtk_drop_down_new(ffi.G_LIST_MODEL(@ptrCast(@alignCast(modes))), null);

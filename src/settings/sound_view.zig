@@ -114,7 +114,7 @@ pub const View = struct {
 
     fn menu(label: ?[:0]const u8) struct { button: *gtk.MenuButton, popover: *gtk.Popover, box: *gtk.Box } {
         const button = gtk.MenuButton.new();
-        if (label) |text| button.setLabel(text) else button.setLabel("•••");
+        if (label) |text| button.setLabel(text) else button.setLabel(@import("i18n").dtr("pearl", "•••"));
         const popover = gtk.Popover.new();
         const box = w.column(8);
         box.as(gtk.Widget).addCssClass("sound-menu");
@@ -147,7 +147,7 @@ pub const View = struct {
         head.insert(labels.as(gtk.Widget), -1);
         box.append(head.as(gtk.Widget));
         const line = w.row(10);
-        const mute = w.iconButton("pearl-audio-volume-high-symbolic", "Mute");
+        const mute = w.iconButton("pearl-audio-volume-high-symbolic", @import("i18n").dtr("pearl", "Mute"));
         mute.as(gtk.Widget).addCssClass("sound-mute");
         line.append(mute.as(gtk.Widget));
         const scale = gtk.Scale.newWithRange(.horizontal, 0, 100, 1);
@@ -162,7 +162,7 @@ pub const View = struct {
         number.as(gtk.Editable).setMaxWidthChars(3);
         number.as(gtk.Widget).addCssClass("sound-percent");
         line.append(number.as(gtk.Widget));
-        const percent = w.label("%", "pearl-secondary");
+        const percent = w.label(@import("i18n").dtr("pearl", "%"), "pearl-secondary");
         percent.as(gtk.Widget).setHexpand(0);
         line.append(percent.as(gtk.Widget));
         box.append(line.as(gtk.Widget));
@@ -179,10 +179,10 @@ pub const View = struct {
         const hardware = device.kind == .sink or device.kind == .source;
         if (hardware and !device.is_default) {
             const actions = w.column(0);
-            _ = try self.action(actions, "Use by default", try std.fmt.allocPrint(alloc, "{s}:{d}/default", .{ @tagName(device.kind), device.index }), .{ .key = row.key, .default = true }, null);
+            _ = try self.action(actions, @import("i18n").dtr("pearl", "Use by default"), try std.fmt.allocPrint(alloc, "{s}:{d}/default", .{ @tagName(device.kind), device.index }), .{ .key = row.key, .default = true }, null);
             head.insert(actions.as(gtk.Widget), -1);
         } else {
-            const popup = menu(if (hardware) "Change device" else null);
+            const popup = menu(if (hardware) @import("i18n").dtr("pearl", "Change device") else null);
             popup.button.as(gtk.Widget).setHalign(.end);
             w.name(popup.button.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "{s}: {s}", .{ device.label, if (hardware) "Change device" else "Routing options" }, 0));
             try self.control(try std.fmt.allocPrint(alloc, "{s}:{d}/menu", .{ @tagName(device.kind), device.index }), popup.button.as(gtk.Widget));
@@ -193,9 +193,9 @@ pub const View = struct {
                     popup.box.as(gtk.Widget).getLastChild().?.setSensitive(@intFromBool(!target.is_default));
                 };
             } else {
-                row.use_default = try self.action(popup.box, "Move to default", try std.fmt.allocPrint(alloc, "{s}:{d}/default", .{ @tagName(device.kind), device.index }), .{ .key = row.key }, popup.popover);
+                row.use_default = try self.action(popup.box, @import("i18n").dtr("pearl", "Move to default"), try std.fmt.allocPrint(alloc, "{s}:{d}/default", .{ @tagName(device.kind), device.index }), .{ .key = row.key }, popup.popover);
                 row.default_button = object.ext.cast(gtk.Button, popup.box.as(gtk.Widget).getLastChild().?).?;
-                popup.box.append(w.label("Choose device", "pearl-secondary").as(gtk.Widget));
+                popup.box.append(w.label(@import("i18n").dtr("pearl", "Choose device"), "pearl-secondary").as(gtk.Widget));
                 var names: std.ArrayList(?[*:0]const u8) = .empty;
                 var targets: std.ArrayList(u32) = .empty;
                 for (snapshot.devices) |target| if (target.kind == targetKind(device.kind)) {
@@ -237,7 +237,7 @@ pub const View = struct {
         for ([_]policy.Kind{ .sink, .source }, 0..) |kind, section| {
             const group = w.column(12);
             self.body.append(group.as(gtk.Widget));
-            group.append(w.label(if (kind == .sink) "Output" else "Input", "pearl-section-title").as(gtk.Widget));
+            group.append(w.label(if (kind == .sink) @import("i18n").dtr("pearl", "Output") else @import("i18n").dtr("pearl", "Input"), "pearl-section-title").as(gtk.Widget));
             const main = card();
             group.append(main.as(gtk.Widget));
             var total: usize = 0;
@@ -246,8 +246,8 @@ pub const View = struct {
                 total += 1;
                 if (device.is_default) default = device;
             };
-            if (default) |device| try self.addRow(main, device, snapshot) else main.append(w.label(if (kind == .sink) "No default output device" else "No default input device", "pearl-secondary").as(gtk.Widget));
-            if (total == 0) main.append(w.label(if (kind == .sink) "Connect speakers or headphones to play sound." else "Connect a microphone to record sound.", "pearl-secondary").as(gtk.Widget));
+            if (default) |device| try self.addRow(main, device, snapshot) else main.append(w.label(if (kind == .sink) @import("i18n").dtr("pearl", "No default output device") else @import("i18n").dtr("pearl", "No default input device"), "pearl-secondary").as(gtk.Widget));
+            if (total == 0) main.append(w.label(if (kind == .sink) @import("i18n").dtr("pearl", "Connect speakers or headphones to play sound.") else @import("i18n").dtr("pearl", "Connect a microphone to record sound."), "pearl-secondary").as(gtk.Widget));
             const others = total - @as(usize, if (default != null) 1 else 0);
             if (others > 0) {
                 const expander = gtk.Expander.new(try std.fmt.allocPrintSentinel(alloc, "{s} ({d})", .{ if (kind == .sink) "Other output devices" else "Other input devices", others }, 0));
@@ -262,7 +262,7 @@ pub const View = struct {
         }
         const apps = w.column(12);
         self.body.append(apps.as(gtk.Widget));
-        apps.append(w.label("Applications", "pearl-section-title").as(gtk.Widget));
+        apps.append(w.label(@import("i18n").dtr("pearl", "Applications"), "pearl-section-title").as(gtk.Widget));
         const list = card();
         apps.append(list.as(gtk.Widget));
         var count: usize = 0;
@@ -270,7 +270,7 @@ pub const View = struct {
             try self.addRow(list, device, snapshot);
             count += 1;
         };
-        if (count == 0) list.append(w.label("Applications appear here when they play or record audio.", "pearl-secondary").as(gtk.Widget));
+        if (count == 0) list.append(w.label(@import("i18n").dtr("pearl", "Applications appear here when they play or record audio."), "pearl-secondary").as(gtk.Widget));
         if (focused.len > 0) for (self.controls.items) |c| if (std.mem.eql(u8, c.id, focused.slice()) and c.widget.getVisible() != 0) {
             _ = c.widget.grabFocus();
             break;
@@ -296,7 +296,7 @@ pub const View = struct {
         defer self.filling = false;
         if (different) {
             self.rebuild(snapshot) catch {
-                self.status.setText("Unable to display sound controls.");
+                self.status.setText(@import("i18n").dtr("pearl", "Unable to display sound controls."));
                 return;
             };
             self.initialized = true;

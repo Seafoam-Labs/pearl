@@ -82,6 +82,8 @@ pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock =
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
+    /// Empty follows the system; applied at the next session start.
+    language: []const u8 = "",
     assistant: @import("../agent/config.zig").Config = .{},
     desktop_icons: @import("../desktop/icons/model.zig").Config = .{},
     notifications: @import("../services/notification_filter_policy.zig").Config = .{},
@@ -113,6 +115,7 @@ pub const Preferences = struct {
         return self.dock;
     }
     pub fn validate(self: Preferences) !void {
+        if (self.language.len > 0 and !@import("i18n").locale.valid(self.language)) return error.InvalidLanguage;
         try self.assistant.validate();
         try self.desktop_icons.validate();
         try self.notifications.validate();
@@ -235,6 +238,16 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Preferences {
     }
     try p.validate();
     return p;
+}
+test "language preferences default follow system preserve missing packs and reject paths" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    try std.testing.expectEqualStrings("", (try parse(alloc, "{}")).language);
+    const prefs = try parse(alloc, "{\"language\":\"zz_ZZ\"}");
+    const encoded = try std.json.Stringify.valueAlloc(alloc, prefs, .{});
+    try std.testing.expectEqualStrings("zz_ZZ", (try parse(alloc, encoded)).language);
+    try std.testing.expectError(error.InvalidLanguage, parse(alloc, "{\"language\":\"../../de\"}"));
 }
 test "assistant runtime migration preserves existing CPU installations" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);

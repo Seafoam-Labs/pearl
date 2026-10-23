@@ -8,5 +8,6 @@ pub fn module(b: *std.Build, root: std.Build.LazyPath, host: *std.Build.Module, 
     options.addOption([:0]const u8, "helper_path", if (git_variant) "/usr/lib/pearl-git/pearl-preview-helper" else "/usr/lib/pearl/pearl-preview-helper");
     m.addOptions("chooser_options", options);
     m.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    m.addImport("i18n", host.import_table.get("i18n").?);
     return m;
 }

@@ -159,12 +159,12 @@ pub fn For(comptime View: type) type {
                 f.hdr.setActive(@intFromBool(hdr));
                 f.hdr.as(gtk.Widget).setSensitive(@intFromBool(head.enabled and hdr_supported));
                 const primary = m.equal(f.val("primary"), .{ .bool = true });
-                f.primary.setLabel(if (primary) "Primary display" else "Set as primary");
+                f.primary.setLabel(if (primary) @import("i18n").dtr("pearl", "Primary display") else @import("i18n").dtr("pearl", "Set as primary"));
                 f.primary.as(gtk.Widget).setSensitive(@intFromBool(head.enabled and !primary));
                 const level = f.val("hdr_level");
                 const custom = (level != .null and !std.mem.eql(u8, m.str(level), "auto") and (m.get(m.get(m.get(out, "configured"), "hdr_level"), "value") != .null or staged(f, "hdr_level"))) or (f.val("sdr_white_level") != .null and (m.get(m.get(m.get(out, "configured"), "sdr_white_level"), "value") != .null or staged(f, "sdr_white_level")));
                 const white_value = f.val("sdr_white_level");
-                f.hdr_help.setText(if (!head.enabled) "Turn on this display to use HDR." else if (!hdr_supported) (if (reason.len > 0) if (std.mem.eql(u8, reason, "hdr_unsupported")) "This display does not support HDR." else "HDR preview is not available for this display." else "HDR support is unknown.") else if (custom) "Custom settings in More display options." else "Uses automatic settings.");
+                f.hdr_help.setText(if (!head.enabled) @import("i18n").dtr("pearl", "Turn on this display to use HDR.") else if (!hdr_supported) (if (reason.len > 0) if (std.mem.eql(u8, reason, "hdr_unsupported")) "This display does not support HDR." else "HDR preview is not available for this display." else "HDR support is unknown.") else if (custom) @import("i18n").dtr("pearl", "Custom settings in More display options.") else @import("i18n").dtr("pearl", "Uses automatic settings."));
                 f.hdr_level.setSelected(if (std.mem.eql(u8, m.str(level), "100") or (custom and model.num(level, 0) == 100)) 1 else if (std.mem.eql(u8, m.str(level), "400") or (custom and model.num(level, 0) == 400)) 2 else if (std.mem.eql(u8, m.str(level), "1000") or (custom and model.num(level, 0) == 1000)) 3 else 0);
                 const white_explicit = white_value != .null and (m.get(m.get(m.get(out, "configured"), "sdr_white_level"), "value") != .null or staged(f, "sdr_white_level"));
                 try numericOptions(f, f.sdr_white, &f.whites, &.{ 0, 100, 200, 300 }, if (white_explicit) model.num(white_value, 200) else 0, false);
@@ -226,7 +226,7 @@ pub fn For(comptime View: type) type {
                     if (active) button.as(gtk.Widget).addCssClass("display-alignment-selected") else button.as(gtk.Widget).removeCssClass("display-alignment-selected");
                     button.as(gtk.Widget).setSensitive(@intFromBool(can_position));
                 }
-                f.position_help.setText(if (mirrored) "This display mirrors another screen." else if (!can_position) "Turn on two displays to arrange them." else if (side == 4) "Custom arrangement. Drag a screen or set its exact position." else f.format("{s} display {d} · {d:.0}, {d:.0}", .{ ([_][]const u8{ "Left of", "Right of", "Above", "Below" })[@min(side, 3)], f.heads[other].number, head.rect.x, head.rect.y }));
+                f.position_help.setText(if (mirrored) @import("i18n").dtr("pearl", "This display mirrors another screen.") else if (!can_position) @import("i18n").dtr("pearl", "Turn on two displays to arrange them.") else if (side == 4) @import("i18n").dtr("pearl", "Custom arrangement. Drag a screen or set its exact position.") else f.format("{s} display {d} · {d:.0}, {d:.0}", .{ ([_][]const u8{ "Left of", "Right of", "Above", "Below" })[@min(side, 3)], f.heads[other].number, head.rect.x, head.rect.y }));
                 var overlap = false;
                 for (f.heads, 0..) |h, i| for (f.heads[0..i]) |t| {
                     if (h.enabled and t.enabled and m.str(model.value(f.base, f.draft, h.output, "mirror_of")).len == 0 and m.str(model.value(f.base, f.draft, t.output, "mirror_of")).len == 0 and h.rect.overlaps(t.rect)) overlap = true;
@@ -241,12 +241,12 @@ pub fn For(comptime View: type) type {
                     if (m.equal(model.value(f.base, f.draft, h.output, "hdr"), .{ .bool = true }) and !m.equal(m.get(m.get(m.get(h.output, "support"), "hdr"), "preview"), .{ .bool = true })) unavailable = "HDR preview is unavailable on this backend.";
                 };
                 if (unavailable.len > 0 or f.input_error != null) f.view.display_blocked = true;
-                f.warning.setText(if (f.input_error) |err| f.z(err) else if (overlap) "Displays overlap. Move them apart or choose mirroring before applying." else f.z(unavailable));
+                f.warning.setText(if (f.input_error) |err| f.z(err) else if (overlap) @import("i18n").dtr("pearl", "Displays overlap. Move them apart or choose mirroring before applying.") else f.z(unavailable));
                 f.warning.as(gtk.Widget).setVisible(@intFromBool(overlap or unavailable.len > 0 or f.input_error != null));
                 const count = model.changeCount(f.draft);
                 f.view.display_changes = count;
                 f.view.display_other_changes = model.otherChanges(f.draft);
-                f.status.setText(if (candidate_current and f.projection != .null) "Validated arrangement · unsaved" else if (count > 0) "Unsaved layout" else "Current layout");
+                f.status.setText(if (candidate_current and f.projection != .null) @import("i18n").dtr("pearl", "Validated arrangement · unsaved") else if (count > 0) @import("i18n").dtr("pearl", "Unsaved layout") else @import("i18n").dtr("pearl", "Current layout"));
                 w.name(f.canvas.as(gtk.Widget), f.format("Display {d}, {s}, position {d:.0}, {d:.0}. Arrow keys move; Shift moves one pixel.", .{ head.number, model.connector(out), head.rect.x, head.rect.y }));
                 f.canvas.as(gtk.Widget).queueDraw();
             }
@@ -360,7 +360,7 @@ pub fn For(comptime View: type) type {
             const a = view.arena.allocator();
             const outputs = model.outputs(base);
             if (outputs.len == 0) {
-                box.append(w.label("No connected displays. Refresh after reconnecting to Aqueous.", "pearl-secondary").as(gtk.Widget));
+                box.append(w.label(@import("i18n").dtr("pearl", "No connected displays. Refresh after reconnecting to Aqueous."), "pearl-secondary").as(gtk.Widget));
                 return;
             }
             const f = try a.create(Form);
@@ -371,19 +371,19 @@ pub fn For(comptime View: type) type {
             arrangement.setSpacing(8);
             arrangement.as(gtk.Widget).addCssClass("display-arrangement");
             box.append(arrangement.as(gtk.Widget));
-            const identify = gtk.Button.newWithLabel("Identify");
-            w.name(identify.as(gtk.Widget), "Identify displays");
-            arrangement.append(w.section(w.label("Arrange your displays", "pearl-title"), w.label("Drag screens to match how they sit on your desk.", "pearl-secondary"), identify.as(gtk.Widget)).as(gtk.Widget));
-            const status = w.label("Current layout", "pearl-secondary");
+            const identify = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Identify"));
+            w.name(identify.as(gtk.Widget), @import("i18n").dtr("pearl", "Identify displays"));
+            arrangement.append(w.section(w.label(@import("i18n").dtr("pearl", "Arrange your displays"), "pearl-title"), w.label(@import("i18n").dtr("pearl", "Drag screens to match how they sit on your desk."), "pearl-secondary"), identify.as(gtk.Widget)).as(gtk.Widget));
+            const status = w.label(@import("i18n").dtr("pearl", "Current layout"), "pearl-secondary");
             arrangement.append(status.as(gtk.Widget));
             const canvas = gtk.DrawingArea.new();
             canvas.setContentHeight(160);
             canvas.as(gtk.Widget).setHexpand(1);
             canvas.as(gtk.Widget).setFocusable(1);
             arrangement.append(canvas.as(gtk.Widget));
-            const side_by_side = gtk.Button.newWithLabel("Arrange side by side");
+            const side_by_side = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Arrange side by side"));
             side_by_side.as(gtk.Widget).addCssClass("flat");
-            arrangement.append(w.section(w.label("Click a screen to change its settings.", "pearl-secondary"), null, side_by_side.as(gtk.Widget)).as(gtk.Widget));
+            arrangement.append(w.section(w.label(@import("i18n").dtr("pearl", "Click a screen to change its settings."), "pearl-secondary"), null, side_by_side.as(gtk.Widget)).as(gtk.Widget));
             const selectors = w.flow(8);
             selectors.setHomogeneous(0);
             box.append(selectors.as(gtk.Widget));
@@ -408,34 +408,34 @@ pub fn For(comptime View: type) type {
             const title = w.label("", "pearl-title");
             const subtitle = w.label("", "pearl-secondary");
             const enabled = gtk.Switch.new();
-            w.name(enabled.as(gtk.Widget), "Enable display");
+            w.name(enabled.as(gtk.Widget), @import("i18n").dtr("pearl", "Enable display"));
             settings.append(w.section(title, subtitle, enabled.as(gtk.Widget)).as(gtk.Widget));
-            const hdr = gtk.CheckButton.newWithLabel("Enable HDR");
-            w.name(hdr.as(gtk.Widget), "Enable HDR");
+            const hdr = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Enable HDR"));
+            w.name(hdr.as(gtk.Widget), @import("i18n").dtr("pearl", "Enable HDR"));
             const hdr_row = w.column(4);
             settings.append(hdr_row.as(gtk.Widget));
             hdr_row.append(hdr.as(gtk.Widget));
-            const hdr_help = w.label("Uses automatic settings.", "pearl-secondary");
+            const hdr_help = w.label(@import("i18n").dtr("pearl", "Uses automatic settings."), "pearl-secondary");
             hdr_help.as(gtk.Widget).setMarginStart(24);
             hdr_row.append(hdr_help.as(gtk.Widget));
-            const primary = gtk.Button.newWithLabel("Set as primary");
-            w.name(primary.as(gtk.Widget), "Primary display");
+            const primary = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Set as primary"));
+            w.name(primary.as(gtk.Widget), @import("i18n").dtr("pearl", "Primary display"));
             primary.as(gtk.Widget).setHalign(.start);
             settings.append(primary.as(gtk.Widget));
             const first = pair(settings);
             const resolution = dropdown();
             const refresh = dropdown();
-            field(first[0], "Resolution", resolution.as(gtk.Widget));
-            field(first[1], "Refresh rate", refresh.as(gtk.Widget));
+            field(first[0], @import("i18n").dtr("pearl", "Resolution"), resolution.as(gtk.Widget));
+            field(first[1], @import("i18n").dtr("pearl", "Refresh rate"), refresh.as(gtk.Widget));
             const second = pair(settings);
             const scale = dropdown();
-            field(second[0], "Scale", scale.as(gtk.Widget));
+            field(second[0], @import("i18n").dtr("pearl", "Scale"), scale.as(gtk.Widget));
             const transform = options(&[_:null]?[*:0]const u8{ "Landscape", "Portrait", "Inverted", "Portrait left", "Flipped", "Flipped 90°", "Flipped 180°", "Flipped 270°" });
-            field(second[1], "Orientation", transform.as(gtk.Widget));
-            position.append(w.label("Position", "pearl-title").as(gtk.Widget));
+            field(second[1], @import("i18n").dtr("pearl", "Orientation"), transform.as(gtk.Widget));
+            position.append(w.label(@import("i18n").dtr("pearl", "Position"), "pearl-title").as(gtk.Widget));
             const places = pair(position);
             const side = options(&[_:null]?[*:0]const u8{ "To the left of", "To the right of", "Above", "Below", "Custom position" });
-            field(places[0], "Place this display", side.as(gtk.Widget));
+            field(places[0], @import("i18n").dtr("pearl", "Place this display"), side.as(gtk.Widget));
             const names = try a.allocSentinel(?[*:0]const u8, outputs.len, null);
             const mirror_names = try a.allocSentinel(?[*:0]const u8, outputs.len + 1, null);
             mirror_names[0] = "Extend desktop";
@@ -444,15 +444,15 @@ pub fn For(comptime View: type) type {
                 mirror_names[i + 1] = view.z(try std.fmt.allocPrint(a, "Mirror {s}", .{model.connector(out)}));
             }
             const relative = gtk.DropDown.newFromStrings(@ptrCast(names.ptr));
-            field(places[1], "Next to", relative.as(gtk.Widget));
-            position.append(w.label("Align edges", "pearl-secondary").as(gtk.Widget));
+            field(places[1], @import("i18n").dtr("pearl", "Next to"), relative.as(gtk.Widget));
+            position.append(w.label(@import("i18n").dtr("pearl", "Align edges"), "pearl-secondary").as(gtk.Widget));
             const alignment = w.row(0);
             alignment.as(gtk.Widget).addCssClass("linked");
             alignment.setHomogeneous(1);
             position.append(alignment.as(gtk.Widget));
             var align_buttons: [3]*gtk.Button = undefined;
             for (&align_buttons, 0..) |*button, i| {
-                button.* = gtk.Button.newWithLabel("Center");
+                button.* = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Center"));
                 alignment.append(button.*.as(gtk.Widget));
                 const choice = try a.create(Choice);
                 choice.* = .{ .form = f, .index = i };
@@ -470,8 +470,8 @@ pub fn For(comptime View: type) type {
             const y = gtk.SpinButton.newWithRange(-2147483648, 2147483647, 1);
             x.as(gtk.Editable).setWidthChars(6);
             y.as(gtk.Editable).setWidthChars(6);
-            field(xy[0], "Horizontal (X)", x.as(gtk.Widget));
-            field(xy[1], "Vertical (Y)", y.as(gtk.Widget));
+            field(xy[0], @import("i18n").dtr("pearl", "Horizontal (X)"), x.as(gtk.Widget));
+            field(xy[1], @import("i18n").dtr("pearl", "Vertical (Y)"), y.as(gtk.Widget));
             const warning = w.label("", "pearl-secondary");
             box.append(warning.as(gtk.Widget));
             const more = gtk.Expander.new("More display options");
@@ -480,16 +480,16 @@ pub fn For(comptime View: type) type {
             const advanced = w.card();
             more.setChild(advanced.as(gtk.Widget));
             const mirror = gtk.DropDown.newFromStrings(@ptrCast(mirror_names.ptr));
-            field(advanced, "Display mode", mirror.as(gtk.Widget));
-            advanced.append(w.label("HDR adjustments", "pearl-title").as(gtk.Widget));
+            field(advanced, @import("i18n").dtr("pearl", "Display mode"), mirror.as(gtk.Widget));
+            advanced.append(w.label(@import("i18n").dtr("pearl", "HDR adjustments"), "pearl-title").as(gtk.Widget));
             const hdr_pair = pair(advanced);
             const level = options(&[_:null]?[*:0]const u8{ "Automatic (recommended)", "100 nits", "400 nits", "1000 nits" });
-            field(hdr_pair[0], "HDR brightness", level.as(gtk.Widget));
+            field(hdr_pair[0], @import("i18n").dtr("pearl", "HDR brightness"), level.as(gtk.Widget));
             const white = dropdown();
-            field(hdr_pair[1], "SDR content brightness", white.as(gtk.Widget));
-            const reset = gtk.Button.newWithLabel("Use automatic settings");
+            field(hdr_pair[1], @import("i18n").dtr("pearl", "SDR content brightness"), white.as(gtk.Widget));
+            const reset = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Use automatic settings"));
             advanced.append(reset.as(gtk.Widget));
-            advanced.append(w.label("Automatic SDR brightness uses inherited/default settings. Other color options and display profiles are below.", "pearl-secondary").as(gtk.Widget));
+            advanced.append(w.label(@import("i18n").dtr("pearl", "Automatic SDR brightness uses inherited/default settings. Other color options and display profiles are below."), "pearl-secondary").as(gtk.Widget));
             f.* = .{ .view = view, .base = base, .draft = .null, .heads = heads, .canvas = canvas, .title = title, .subtitle = subtitle, .status = status, .warning = warning, .hdr_help = hdr_help, .position_help = position_help, .enabled = enabled, .hdr = hdr, .primary = primary, .resolution = resolution, .refresh = refresh, .scale = scale, .transform = transform, .x = x, .y = y, .side = side, .relative = relative, .mirror = mirror, .hdr_level = level, .sdr_white = white, .tabs = tabs, .align_buttons = align_buttons, .level_reset = reset };
             inline for (.{ .{ enabled, .enabled }, .{ hdr, .hdr }, .{ primary, .primary }, .{ resolution, .resolution }, .{ refresh, .refresh }, .{ scale, .scale }, .{ transform, .transform }, .{ x, .x }, .{ y, .y }, .{ side, .side }, .{ relative, .relative }, .{ mirror, .mirror }, .{ level, .hdr_level }, .{ white, .sdr_white } }) |entry| try bind(f, entry[0].as(gtk.Widget), entry[1]);
             try register(f, "arrangement", canvas.as(gtk.Widget));
@@ -530,7 +530,7 @@ pub fn For(comptime View: type) type {
             const details = w.column(12);
             declarations.setChild(details.as(gtk.Widget));
             @import("aqueous_display_editor.zig").For(View).render(view, details, base) catch {
-                details.append(w.label("The draft cannot be edited as declarations. Open Aqueous Advanced to correct the draft JSON.", "pearl-secondary").as(gtk.Widget));
+                details.append(w.label(@import("i18n").dtr("pearl", "The draft cannot be edited as declarations. Open Aqueous Advanced to correct the draft JSON."), "pearl-secondary").as(gtk.Widget));
             };
             for (outputs) |out| {
                 try view.inventory(advanced, out, "actual", "Display information");

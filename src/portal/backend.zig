@@ -443,6 +443,7 @@ pub fn portal_request(p: [*c]Portal, call: ?*ffi.GDBusMethodInvocation, params: 
         portal_error(call, "Failed", "No graphical display is available");
         return null;
     }
+    @import("gtk4").Widget.setDefaultDirection(if (@import("i18n").rtl()) .rtl else .ltr);
     const r: [*c]Request = ffi.cast([*c]Request, ffi.g_malloc0_n(1, @sizeOf(Request)));
     r.*.refs = 1;
     r.*.portal = p;

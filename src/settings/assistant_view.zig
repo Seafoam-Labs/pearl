@@ -101,21 +101,21 @@ pub const View = struct {
         const self = try a.create(View);
         host.as(gtk.Widget).addCssClass("assistant-view");
         host.setSpacing(16);
-        const operation = section(host, "Current operation");
+        const operation = section(host, @import("i18n").dtr("pearl", "Current operation"));
         const status = statusLabel(operation);
         const comparison_status = statusLabel(operation);
-        const cancel_button = button(operation, "Cancel operation");
+        const cancel_button = button(operation, @import("i18n").dtr("pearl", "Cancel operation"));
         const general = section(host, "");
-        const enabled = toggle(general, "Launcher assistant");
+        const enabled = toggle(general, @import("i18n").dtr("pearl", "Launcher assistant"));
         const enable_summary = statusLabel(general);
         note(general, "Answers run locally. Submitted questions go to your search engine; typing sends nothing. Experimental: check answers and their sources.");
-        const models = section(host, "Model");
+        const models = section(host, @import("i18n").dtr("pearl", "Model"));
         var model_labels: [registry.models.len + 1][:0]const u8 = undefined;
         for (registry.models, 0..) |item, i| model_labels[i] = item.name;
         model_labels[registry.models.len] = "Custom local GGUF (compatibility checked)";
-        const model = choice(models, "Selected model", &model_labels);
+        const model = choice(models, @import("i18n").dtr("pearl", "Selected model"), &model_labels);
         const model_options = layout.Section.create(models, "Model options", "License, downloads, custom file and comparisons");
-        const custom = entry(model_options.body, "Custom GGUF absolute path", 4096);
+        const custom = entry(model_options.body, @import("i18n").dtr("pearl", "Custom GGUF absolute path"), 4096);
         const readiness = w.label("", "pearl-secondary");
         readiness.setWrap(1);
         models.append(readiness.as(gtk.Widget));
@@ -124,103 +124,103 @@ pub const View = struct {
         const license = gtk.LinkButton.newWithLabel(registry.license_url, "Selected model license");
         model_options.body.append(license.as(gtk.Widget));
         const model_actions = layout.actions(model_options.body);
-        const download = layout.button(model_actions, "Download selected model");
-        const verify = button(models, "Verify model and test tools locally");
-        const remove = layout.button(model_actions, "Remove selected download");
-        const benchmark = layout.button(model_actions, "Compare models on CPU and GPU…");
+        const download = layout.button(model_actions, @import("i18n").dtr("pearl", "Download selected model"));
+        const verify = button(models, @import("i18n").dtr("pearl", "Verify model and test tools locally"));
+        const remove = layout.button(model_actions, @import("i18n").dtr("pearl", "Remove selected download"));
+        const benchmark = layout.button(model_actions, @import("i18n").dtr("pearl", "Compare models on CPU and GPU…"));
         const model_status = statusLabel(models);
-        const model_cancel = button(models, "Cancel model operation");
+        const model_cancel = button(models, @import("i18n").dtr("pearl", "Cancel model operation"));
         models.reorderChildAfter(model_options.expander.as(gtk.Widget), model_cancel.as(gtk.Widget));
-        const runtime_section = section(host, "Runtime & acceleration");
+        const runtime_section = section(host, @import("i18n").dtr("pearl", "Runtime & acceleration"));
         const runtime_summary = statusLabel(runtime_section);
         const compute_mode = layout.ComputeChoice.create(runtime_section);
         const runtime_options = layout.Section.create(runtime_section, "Runtime setup & checks", "Select a runtime, discover devices or check compatibility");
         const runtime_body = runtime_options.body;
-        const runtime_source = choice(runtime_body, "Runtime source", &.{ "System installation", "Pearl runtime package", "Custom executable" });
+        const runtime_source = choice(runtime_body, @import("i18n").dtr("pearl", "Runtime source"), &.{ "System installation", "Pearl runtime package", "Custom executable" });
         const custom_runtime = w.column(8);
         runtime_body.append(custom_runtime.as(gtk.Widget));
-        const runtime_path = entry(custom_runtime, "Custom llama-server absolute path", 4096);
-        const browse = button(custom_runtime, "Browse for llama-server…");
+        const runtime_path = entry(custom_runtime, @import("i18n").dtr("pearl", "Custom llama-server absolute path"), 4096);
+        const browse = button(custom_runtime, @import("i18n").dtr("pearl", "Browse for llama-server…"));
         note(runtime_body, "Setup reuses a compatible runtime or installs llama.cpp with Shelly on Devario and pacman on Arch. Complete authentication and package confirmation in the terminal.");
         note(runtime_body, "Packages install immediately; Apply saves the runtime selection. Closing Settings does not stop installation. Setup includes ggml-vulkan for Automatic/Vulkan or ggml-cuda for CUDA.");
         const runtime_actions = layout.actions(runtime_body);
-        const setup_runtime = layout.button(runtime_actions, "Set up runtime (install if needed)");
-        const discover = layout.button(runtime_actions, "Discover runtime and GPU devices");
-        const runtime_check = layout.button(runtime_actions, "Check runtime and model now");
-        const runtime_details = w.label("Runtime not checked. Discovery and testing run only when requested.", "pearl-secondary");
+        const setup_runtime = layout.button(runtime_actions, @import("i18n").dtr("pearl", "Set up runtime (install if needed)"));
+        const discover = layout.button(runtime_actions, @import("i18n").dtr("pearl", "Discover runtime and GPU devices"));
+        const runtime_check = layout.button(runtime_actions, @import("i18n").dtr("pearl", "Check runtime and model now"));
+        const runtime_details = w.label(@import("i18n").dtr("pearl", "Runtime not checked. Discovery and testing run only when requested."), "pearl-secondary");
         runtime_details.setWrap(1);
         runtime_details.setWrapMode(.word_char);
         runtime_details.setSelectable(1);
         runtime_body.append(runtime_details.as(gtk.Widget));
         const gpu_options = w.column(12);
         runtime_body.append(gpu_options.as(gtk.Widget));
-        const backend = choice(gpu_options, "GPU backend", &.{ "Automatic", "Vulkan", "CUDA" });
+        const backend = choice(gpu_options, @import("i18n").dtr("pearl", "GPU backend"), &.{ "Automatic", "Vulkan", "CUDA" });
         const device_names = gtk.StringList.new(null);
         _ = device_names.ref();
         device_names.append("Automatic device selection");
         const device = gtk.DropDown.new(device_names.as(gio.ListModel), null);
         layout.wrapChoice(device);
-        formRow(gpu_options, "GPU device", device.as(gtk.Widget));
-        const fallback = toggle(gpu_options, "Use CPU if the selected GPU is unavailable");
+        formRow(gpu_options, @import("i18n").dtr("pearl", "GPU device"), device.as(gtk.Widget));
+        const fallback = toggle(gpu_options, @import("i18n").dtr("pearl", "Use CPU if the selected GPU is unavailable"));
         const advanced = gtk.Expander.new("Advanced memory and layer offload");
         const advanced_body = w.column(8);
-        const layers = number(advanced_body, "GPU layers (0 = automatic)", 0, 1024, 1);
-        const gpu_memory = number(advanced_body, "GPU memory target MiB (0 = automatic)", 0, 1048576, 128);
+        const layers = number(advanced_body, @import("i18n").dtr("pearl", "GPU layers (0 = automatic)"), 0, 1024, 1);
+        const gpu_memory = number(advanced_body, @import("i18n").dtr("pearl", "GPU memory target MiB (0 = automatic)"), 0, 1048576, 128);
         note(advanced_body, "GPU memory targets are estimates, not hard VRAM caps. Integrated GPUs share system RAM. Pearl has no host RAM cap; available hardware and operating-system limits determine what can run.");
         advanced.setChild(advanced_body.as(gtk.Widget));
         gpu_options.append(advanced.as(gtk.Widget));
         note(runtime_body, "Checks use draft settings and a local model/tool test, without searches or Apply. Stop any current answer first; the idle model unloads before testing.");
         const runtime_status = statusLabel(runtime_section);
-        const runtime_cancel = button(runtime_section, "Cancel runtime check");
+        const runtime_cancel = button(runtime_section, @import("i18n").dtr("pearl", "Cancel runtime check"));
         const engines_section = layout.Section.create(host, "Search engines", "Choose the default engine and edit connections");
         const engines = engines_section.body;
-        const all = toggle(engines, "Search all enabled engines (maximum 3)");
+        const all = toggle(engines, @import("i18n").dtr("pearl", "Search all enabled engines (maximum 3)"));
         const names = gtk.StringList.new(null);
         _ = names.ref();
         const provider = gtk.DropDown.new(names.as(gio.ListModel), null);
         layout.wrapChoice(provider);
-        formRow(engines, "Edit engine", provider.as(gtk.Widget));
+        formRow(engines, @import("i18n").dtr("pearl", "Edit engine"), provider.as(gtk.Widget));
         const engine_actions = layout.actions(engines);
-        const add = layout.button(engine_actions, "Add search engine");
-        const remove_provider = layout.button(engine_actions, "Remove this engine");
+        const add = layout.button(engine_actions, @import("i18n").dtr("pearl", "Add search engine"));
+        const remove_provider = layout.button(engine_actions, @import("i18n").dtr("pearl", "Remove this engine"));
         const provider_editor = w.column(12);
         engines.append(provider_editor.as(gtk.Widget));
-        const provider_name = entry(provider_editor, "Display name", 80);
-        const provider_kind = choice(provider_editor, "Connection", &.{ "Google through SearXNG", "SearXNG", "Brave Search API", "Google API (existing accounts only)", "Bing (no setup required)" });
-        const endpoint = entry(provider_editor, "SearXNG base URL", 1024);
-        endpoint.setPlaceholderText("https://search.example.org");
-        const engine_id = entry(provider_editor, "Google API search engine ID", 128);
+        const provider_name = entry(provider_editor, @import("i18n").dtr("pearl", "Display name"), 80);
+        const provider_kind = choice(provider_editor, @import("i18n").dtr("pearl", "Connection"), &.{ "Google through SearXNG", "SearXNG", "Brave Search API", "Google API (existing accounts only)", "Bing (no setup required)" });
+        const endpoint = entry(provider_editor, @import("i18n").dtr("pearl", "SearXNG base URL"), 1024);
+        endpoint.setPlaceholderText(@import("i18n").dtr("pearl", "https://search.example.org"));
+        const engine_id = entry(provider_editor, @import("i18n").dtr("pearl", "Google API search engine ID"), 128);
         const legacy_notice = statusLabel(provider_editor);
-        legacy_notice.setText("Google's direct JSON API is closed to new customers and retires January 1, 2027. Existing accounts require an API key and engine ID.");
-        const language = entry(provider_editor, "Search language", 16);
-        const provider_enabled = toggle(provider_editor, "Engine enabled");
-        const default_provider = toggle(provider_editor, "Use as default engine");
-        const safe = toggle(provider_editor, "Safe search");
+        legacy_notice.setText(@import("i18n").dtr("pearl", "Google's direct JSON API is closed to new customers and retires January 1, 2027. Existing accounts require an API key and engine ID."));
+        const language = entry(provider_editor, @import("i18n").dtr("pearl", "Search language"), 16);
+        const provider_enabled = toggle(provider_editor, @import("i18n").dtr("pearl", "Engine enabled"));
+        const default_provider = toggle(provider_editor, @import("i18n").dtr("pearl", "Use as default engine"));
+        const safe = toggle(provider_editor, @import("i18n").dtr("pearl", "Safe search"));
         const credentials = w.column(12);
         provider_editor.append(credentials.as(gtk.Widget));
         const secret = gtk.PasswordEntry.new();
         secret.setShowPeekIcon(1);
-        formRow(credentials, "API key (never included in preferences)", secret.as(gtk.Widget));
-        const session_key = toggle(credentials, "Keep key in Secret Service session collection only");
+        formRow(credentials, @import("i18n").dtr("pearl", "API key (never included in preferences)"), secret.as(gtk.Widget));
+        const session_key = toggle(credentials, @import("i18n").dtr("pearl", "Keep key in Secret Service session collection only"));
         note(credentials, "Keys use Secret Service. Unlock it before saving. Saving or removing a key happens immediately, separately from Apply.");
         const key_actions = layout.actions(credentials);
-        const store_key = layout.button(key_actions, "Save or replace key now");
-        const remove_key = layout.button(key_actions, "Remove saved key now");
+        const store_key = layout.button(key_actions, @import("i18n").dtr("pearl", "Save or replace key now"));
+        const remove_key = layout.button(key_actions, @import("i18n").dtr("pearl", "Remove saved key now"));
         note(provider_editor, "Test sends “Pearl desktop” to the selected engine immediately. Bing needs no account, API key or server setup.");
-        const test_provider = button(provider_editor, "Test connection now");
+        const test_provider = button(provider_editor, @import("i18n").dtr("pearl", "Test connection now"));
         const provider_status = statusLabel(engines);
-        const provider_cancel = button(engines, "Cancel engine operation");
+        const provider_cancel = button(engines, @import("i18n").dtr("pearl", "Cancel engine operation"));
         // Comparison is one sibling section; all shortcuts reveal this instance.
         const comparison_host = w.column(0);
         host.append(comparison_host.as(gtk.Widget));
         const resources_section = layout.Section.create(host, "Resources & behavior", "Automatic model profile and idle unload");
         const resources = resources_section.body;
-        const read_pages = toggle(resources, "Read search result pages");
-        const threads = number(resources, "CPU threads (0 = runtime automatic)", 0, std.math.maxInt(c_int), 1);
-        const context = number(resources, "Context tokens (0 = model profile)", 0, std.math.maxInt(c_int), 1024);
-        const tokens = number(resources, "Generation tokens (0 = model profile)", 0, std.math.maxInt(c_int), 128);
+        const read_pages = toggle(resources, @import("i18n").dtr("pearl", "Read search result pages"));
+        const threads = number(resources, @import("i18n").dtr("pearl", "CPU threads (0 = runtime automatic)"), 0, std.math.maxInt(c_int), 1);
+        const context = number(resources, @import("i18n").dtr("pearl", "Context tokens (0 = model profile)"), 0, std.math.maxInt(c_int), 1024);
+        const tokens = number(resources, @import("i18n").dtr("pearl", "Generation tokens (0 = model profile)"), 0, std.math.maxInt(c_int), 128);
         note(resources, "Generation tokens include reasoning for thinking models. Context must leave room for the question, evidence and generation. Explicit thread counts are passed to the runtime without a Pearl hardware cap.");
-        const idle = number(resources, "Unload after idle seconds", 15, 300, 15);
+        const idle = number(resources, @import("i18n").dtr("pearl", "Unload after idle seconds"), 15, 300, 15);
         note(resources, "Conversations stay in this session only. Disabling the assistant clears conversations and stops its processes. Close or Escape cancels work; clicking another window keeps the chat open.");
         self.* = .{ .host = host, .editor = editor, .enabled = enabled, .model = model, .model_license = license, .custom = custom, .read_pages = read_pages, .all = all, .threads = threads, .context = context, .tokens = tokens, .idle = idle, .provider = provider, .provider_names = names, .provider_kind = provider_kind, .provider_name = provider_name, .endpoint = endpoint, .engine_id = engine_id, .language = language, .provider_enabled = provider_enabled, .default_provider = default_provider, .safe = safe, .secret = secret, .session_key = session_key, .status = status, .readiness = readiness, .cancel_button = cancel_button, .runtime_source = runtime_source, .runtime_path = runtime_path, .compute_mode = compute_mode, .backend = backend, .device = device, .device_names = device_names, .fallback = fallback, .layers = layers, .gpu_memory = gpu_memory, .runtime_details = runtime_details, .buttons = .{ download, verify, remove, test_provider, store_key, remove_key, discover, runtime_check, benchmark, setup_runtime }, .model_options = model_options, .runtime_options = runtime_options, .engines_section = engines_section, .resources_section = resources_section, .enable_summary = enable_summary, .runtime_summary = runtime_summary, .model_status = model_status, .runtime_status = runtime_status, .provider_status = provider_status, .provider_editor = provider_editor, .credentials = credentials, .legacy_notice = legacy_notice, .gpu_options = gpu_options, .custom_runtime = custom_runtime, .operation = operation, .comparison_status = comparison_status, .local_cancels = .{ model_cancel, runtime_cancel, provider_cancel } };
         for ([_]*gtk.Switch{ enabled, read_pages, all, provider_enabled, default_provider, safe, fallback }) |s| _ = object.Object.signals.notify.connect(s.as(object.Object), *View, changed, self, .{ .detail = "active" });
@@ -340,12 +340,12 @@ pub const View = struct {
         const fingerprint = runtimeFingerprint(alloc, config) catch return;
         if (self.checked_fingerprint) |checked| if (checked != fingerprint) {
             self.checked_fingerprint = null;
-            self.runtime_details.setText("Not checked for this draft. Check the runtime and model before use.");
+            self.runtime_details.setText(@import("i18n").dtr("pearl", "Not checked for this draft. Check the runtime and model before use."));
         };
         const committed = std.json.parseFromSliceLeaky(prefs.Preferences, alloc, self.editor.current orelse self.editor.base orelse "{}", .{}) catch prefs.Preferences{};
         self.enable_summary.setText(if (config.enabled != committed.assistant.enabled)
             (if (config.enabled) "On in draft · Apply & save to enable" else "Off in draft · Apply & save to disable")
-        else if (config.enabled) "On · Open with Super + Space" else "Off · Configure the assistant before enabling it");
+        else if (config.enabled) @import("i18n").dtr("pearl", "On · Open with Super + Space") else @import("i18n").dtr("pearl", "Off · Configure the assistant before enabling it"));
         const runtime_name = switch (config.runtime.source) {
             .system => "System installation",
             .packaged => "Pearl runtime package",
@@ -433,7 +433,7 @@ pub const View = struct {
             self.readiness.setText(std.fmt.allocPrintSentinel(alloc, "{s}\nContext: {d} tokens · Generation: {d} tokens{s}", .{ if (std.c.access(filename, std.c.F_OK) == 0) @as([]const u8, "Model downloaded. It is verified again before loading.") else "Model not installed. Download is optional and explicit.", config.contextTokens(), config.answerTokens(), if (model.reasoning) @as([]const u8, " · Includes reasoning") else "" }, 0) catch "Model selected");
         } else {
             self.model_license.as(gtk.Widget).setVisible(0);
-            self.readiness.setText("Custom GGUF: verify compatibility before use.");
+            self.readiness.setText(@import("i18n").dtr("pearl", "Custom GGUF: verify compatibility before use."));
         }
         const available = self.job == null and (if (self.comparison) |comparison| !comparison.busy() else true);
         for (self.buttons) |b| b.as(gtk.Widget).setSensitive(@intFromBool(available));
@@ -494,7 +494,7 @@ pub const View = struct {
         self.apply_dialog = dialog;
         dialog.as(gtk.Window).setTransientFor(object.ext.cast(gtk.Window, self.host.as(gtk.Widget).getRoot().?).?);
         dialog.as(gtk.Window).setModal(1);
-        dialog.as(gtk.Window).setTitle("Stop the current answer?");
+        dialog.as(gtk.Window).setTitle(@import("i18n").dtr("pearl", "Stop the current answer?"));
         note(dialog.getContentArea(), "Applying these settings stops the current answer and unloads its model. Your conversation stays available.");
         _ = dialog.addButton("Keep editing", @intFromEnum(gtk.ResponseType.cancel));
         _ = dialog.addButton("Stop & apply", @intFromEnum(gtk.ResponseType.accept));
@@ -592,7 +592,7 @@ pub const View = struct {
         task.setTaskData(job, null);
         task.runInThread(work);
         task.unref();
-        self.status.setText(if (action == .setup_runtime) "Checking installed runtimes… If installation is needed, complete the package manager prompts in the terminal. Setup continues until the terminal exits." else "Working…");
+        self.status.setText(if (action == .setup_runtime) @import("i18n").dtr("pearl", "Checking installed runtimes… If installation is needed, complete the package manager prompts in the terminal. Setup continues until the terminal exits.") else @import("i18n").dtr("pearl", "Working…"));
         self.update();
     }
     fn comparisonAvailable(context: *anyopaque) bool {
@@ -696,7 +696,7 @@ pub const View = struct {
                 const current = self.document(alloc) catch null;
                 const tested_json = std.json.Stringify.valueAlloc(alloc, job.config, .{}) catch "";
                 const current_json = if (current) |value| std.json.Stringify.valueAlloc(alloc, value.assistant, .{}) catch "" else "invalid";
-                self.runtime_details.setText(if (std.mem.eql(u8, tested_json, current_json)) alloc.dupeZ(u8, job.details) catch "Check completed" else "The tested draft has changed. Check the new selection before use.");
+                self.runtime_details.setText(if (std.mem.eql(u8, tested_json, current_json)) alloc.dupeZ(u8, job.details) catch "Check completed" else @import("i18n").dtr("pearl", "The tested draft has changed. Check the new selection before use."));
                 self.checked_fingerprint = runtimeFingerprint(alloc, job.config) catch null;
             }
             if (job.action == .apply_status) {
@@ -704,16 +704,16 @@ pub const View = struct {
             } else if (job.action == .apply_stop) self.editor.act(.apply);
         }
         self.status.setText(if (job.failure) |err| switch (err) {
-            error.AssistantRuntimeNotInstalled => "Runtime missing. Use Set up runtime (install if needed).",
-            error.RuntimeInstallationUnsupportedDistribution => "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then discover the runtime.",
-            error.RuntimePackageManagerUnavailable => "Package manager unavailable. Devario requires /usr/bin/shelly; Arch requires /usr/bin/pacman and /usr/bin/sudo.",
-            error.RuntimeInstallTerminalUnavailable => "Setup needs a terminal: foot, Ghostty, kitty, alacritty, konsole or xterm. Install one and retry.",
-            error.RuntimePackageInstallationFailed => "Installation failed or was cancelled. Check the package manager's repository, network or database-lock error, then retry Set up runtime. No repository was added or version pinned.",
-            error.RuntimeCapabilityMissing => "This runtime lacks required capabilities. Use Set up runtime to install the repository version. If it still fails, your repository needs a compatible llama.cpp update.",
-            error.RuntimeReasoningUnsupported => "This thinking model needs a runtime with reasoning-format support. Update llama.cpp or choose an Instruct model.",
+            error.AssistantRuntimeNotInstalled => @import("i18n").dtr("pearl", "Runtime missing. Use Set up runtime (install if needed)."),
+            error.RuntimeInstallationUnsupportedDistribution => @import("i18n").dtr("pearl", "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then discover the runtime."),
+            error.RuntimePackageManagerUnavailable => @import("i18n").dtr("pearl", "Package manager unavailable. Devario requires /usr/bin/shelly; Arch requires /usr/bin/pacman and /usr/bin/sudo."),
+            error.RuntimeInstallTerminalUnavailable => @import("i18n").dtr("pearl", "Setup needs a terminal: foot, Ghostty, kitty, alacritty, konsole or xterm. Install one and retry."),
+            error.RuntimePackageInstallationFailed => @import("i18n").dtr("pearl", "Installation failed or was cancelled. Check the package manager's repository, network or database-lock error, then retry Set up runtime. No repository was added or version pinned."),
+            error.RuntimeCapabilityMissing => @import("i18n").dtr("pearl", "This runtime lacks required capabilities. Use Set up runtime to install the repository version. If it still fails, your repository needs a compatible llama.cpp update."),
+            error.RuntimeReasoningUnsupported => @import("i18n").dtr("pearl", "This thinking model needs a runtime with reasoning-format support. Update llama.cpp or choose an Instruct model."),
             else => @errorName(err),
-        } else "Operation complete. Apply saves your configuration selection.");
-        if (job.failure != null and (job.action == .runtime_check or job.action == .verify or job.action == .discover or job.action == .setup_runtime)) self.runtime_details.setText("Compatibility not confirmed. Review the operation error and retry setup or the runtime check.");
+        } else @import("i18n").dtr("pearl", "Operation complete. Apply saves your configuration selection."));
+        if (job.failure != null and (job.action == .runtime_check or job.action == .verify or job.action == .discover or job.action == .setup_runtime)) self.runtime_details.setText(@import("i18n").dtr("pearl", "Compatibility not confirmed. Review the operation error and retry setup or the runtime check."));
         if (providerAction(job.action)) {
             const message = std.fmt.allocPrintSentinel(job.arena.allocator(), "{s}: {s}", .{ job.provider.name, std.mem.span(self.status.getText()) }, 0) catch "Engine operation finished";
             self.status.setText(message);

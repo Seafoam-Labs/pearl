@@ -8,11 +8,8 @@ const Client = @import("../aqueous/client.zig").Client;
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const a = std.heap.c_allocator;
-fn localized(alloc: std.mem.Allocator, comptime en: [:0]const u8, comptime de: [:0]const u8, args: anytype) ![:0]u8 {
-    return if (std.mem.eql(u8, tr(en, de), de)) std.fmt.allocPrintSentinel(alloc, de, args, 0) else std.fmt.allocPrintSentinel(alloc, en, args, 0);
-}
 fn windowWord(count: usize) [:0]const u8 {
-    return if (count == 1) tr("window", "Fenster") else tr("windows", "Fenster");
+    return if (count == 1) @import("i18n").dtr("pearl", "window") else @import("i18n").dtr("pearl", "windows");
 }
 pub const Event = union(enum) { activate: []const u8, group: []const u8, overflow: usize };
 pub const Rect = struct { x: f64, y: f64, width: i32, height: i32 };
@@ -143,7 +140,7 @@ pub const Strip = struct {
                 content.append(indicator.as(gtk.Widget));
                 button.setChild(content.as(gtk.Widget));
             }
-            const name = try localized(alloc, "{s} — {d} {s}, all workspaces{s}{s}", "{s} — {d} {s}, alle Arbeitsflächen{s}{s}", .{ if (win) |v| v.title else group.name, window_count, windowWord(window_count), if (focused) tr(", focused", ", fokussiert") else "", if (minimized) tr(", minimized", ", minimiert") else "" });
+            const name = try @import("i18n").fmtAlloc(alloc, "{s} — {d} {s}, all workspaces{s}{s}", .{ if (win) |v| v.title else group.name, window_count, windowWord(window_count), if (focused) @import("i18n").dtr("pearl", ", focused") else "", if (minimized) @import("i18n").dtr("pearl", ", minimized") else "" });
             w.name(button.as(gtk.Widget), name);
             button.as(gtk.Widget).setTooltipText(name);
             _ = gtk.Button.signals.clicked.connect(button, *StripButton, clicked, callback, .{});
@@ -161,7 +158,7 @@ pub const Strip = struct {
             const button = gtk.Button.newWithLabel(label);
             if (self.compact) button.as(gtk.Widget).addCssClass("pearl-task-compact");
             button.as(gtk.Widget).addCssClass("pearl-task-button");
-            const name = if (self.per_window) try localized(alloc, "{d} more windows", "{d} weitere Fenster", .{total - self.shown}) else if (self.shown == 0) try localized(alloc, "Running applications ({d})", "Laufende Anwendungen ({d})", .{total - self.shown}) else try localized(alloc, "{d} more applications", "{d} weitere Anwendungen", .{total - self.shown});
+            const name = if (self.per_window) try @import("i18n").fmtAlloc(alloc, "{d} more windows", .{total - self.shown}) else if (self.shown == 0) try @import("i18n").fmtAlloc(alloc, "Running applications ({d})", .{total - self.shown}) else try @import("i18n").fmtAlloc(alloc, "{d} more applications", .{total - self.shown});
             w.name(button.as(gtk.Widget), name);
             button.as(gtk.Widget).setTooltipText(name);
             _ = gtk.Button.signals.clicked.connect(button, *StripButton, clicked, callback, .{});
@@ -240,12 +237,12 @@ pub const Chooser = struct {
     revision: u64 = std.math.maxInt(u64),
     pub fn create(host: *gtk.Box, snapshot: *const tasks.Snapshot, index: *Apps.Index, context: *anyopaque, dispatch: Dispatch) !*Chooser {
         const self = try a.create(Chooser);
-        const title = gtk.Label.new(tr("Running applications", "Laufende Anwendungen"));
+        const title = gtk.Label.new(@import("i18n").dtr("pearl", "Running applications"));
         title.setXalign(0);
         title.setEllipsize(.end);
         title.as(gtk.Widget).addCssClass("title-2");
         host.append(title.as(gtk.Widget));
-        const subtitle = gtk.Label.new(tr("All workspaces · All displays", "Alle Arbeitsflächen · Alle Bildschirme"));
+        const subtitle = gtk.Label.new(@import("i18n").dtr("pearl", "All workspaces · All displays"));
         subtitle.setXalign(0);
         subtitle.setWrap(1);
         subtitle.as(gtk.Widget).addCssClass("pearl-secondary");
@@ -318,35 +315,35 @@ pub const Chooser = struct {
         self.clear();
         const alloc = self.arena.allocator();
         if (self.group) |id| {
-            _ = try self.addRow(.back, "", tr("All applications", "Alle Anwendungen"), tr("Back to the application list", "Zurück zur Anwendungsliste"), null, true);
+            _ = try self.addRow(.back, "", @import("i18n").dtr("pearl", "All applications"), @import("i18n").dtr("pearl", "Back to the application list"), null, true);
             if (self.snapshot.find(id)) |group| {
                 const anchor = try a.dupe(u8, group.windows.items[0].id);
                 if (self.group_anchor) |v| a.free(v);
                 self.group_anchor = anchor;
                 self.title.setText(group.name);
-                self.subtitle.setText(try localized(alloc, "{d} {s} · All workspaces & displays", "{d} {s} · Alle Arbeitsflächen und Bildschirme", .{ group.windows.items.len, windowWord(group.windows.items.len) }));
+                self.subtitle.setText(try @import("i18n").fmtAlloc(alloc, "{d} {s} · All workspaces & displays", .{ group.windows.items.len, windowWord(group.windows.items.len) }));
                 for (group.windows.items[0..@min(self.limit, group.windows.items.len)]) |win| {
-                    const workspace = if (win.workspace) |name| try localized(alloc, "Workspace {s}", "Arbeitsfläche {s}", .{name}) else tr("Workspace unavailable", "Arbeitsfläche nicht verfügbar");
-                    const detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s}{s}{s}", .{ workspace, win.output orelse tr("Display unavailable", "Bildschirm nicht verfügbar"), if (win.focused) tr(" · Focused", " · Fokussiert") else if (win.minimized) tr(" · Minimized", " · Minimiert") else "", if (!win.can_activate) tr(" · Activation unavailable", " · Aktivierung nicht verfügbar") else "" }, 0);
+                    const workspace = if (win.workspace) |name| try @import("i18n").fmtAlloc(alloc, "Workspace {s}", .{name}) else @import("i18n").dtr("pearl", "Workspace unavailable");
+                    const detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s}{s}{s}", .{ workspace, win.output orelse @import("i18n").dtr("pearl", "Display unavailable"), if (win.focused) @import("i18n").dtr("pearl", " · Focused") else if (win.minimized) @import("i18n").dtr("pearl", " · Minimized") else "", if (!win.can_activate) @import("i18n").dtr("pearl", " · Activation unavailable") else "" }, 0);
                     const row = try self.addRow(.window, win.id, win.title, detail, group.desktop, win.can_activate);
                     if (win.focused) row.as(gtk.Widget).addCssClass("suggested-action");
                 }
                 if (group.windows.items.len > self.limit) try self.more(group.windows.items.len - self.limit);
             } else {
-                self.title.setText(tr("Application closed", "Anwendung geschlossen"));
-                self.subtitle.setText(tr("No windows remain. Choose another application.", "Keine Fenster mehr geöffnet. Wähle eine andere Anwendung."));
+                self.title.setText(@import("i18n").dtr("pearl", "Application closed"));
+                self.subtitle.setText(@import("i18n").dtr("pearl", "No windows remain. Choose another application."));
             }
         } else {
-            self.title.setText(if (self.skip == 0) tr("Running applications", "Laufende Anwendungen") else tr("More applications", "Weitere Anwendungen"));
+            self.title.setText(if (self.skip == 0) @import("i18n").dtr("pearl", "Running applications") else @import("i18n").dtr("pearl", "More applications"));
             const groups = self.snapshot.groups[@min(self.skip, self.snapshot.groups.len)..];
-            self.subtitle.setText(try localized(alloc, "{d} {s} · All workspaces & displays", "{d} {s} · Alle Arbeitsflächen und Bildschirme", .{ groups.len, if (groups.len == 1) tr("application", "Anwendung") else tr("applications", "Anwendungen") }));
-            if (self.skip != 0) _ = try self.addRow(.back, "", tr("All applications", "Alle Anwendungen"), tr("Show the complete list", "Vollständige Liste anzeigen"), null, true);
+            self.subtitle.setText(try @import("i18n").fmtAlloc(alloc, "{d} {s} · All workspaces & displays", .{ groups.len, if (groups.len == 1) @import("i18n").dtr("pearl", "application") else @import("i18n").dtr("pearl", "applications") }));
+            if (self.skip != 0) _ = try self.addRow(.back, "", @import("i18n").dtr("pearl", "All applications"), @import("i18n").dtr("pearl", "Show the complete list"), null, true);
             for (groups[0..@min(self.limit, groups.len)]) |group| {
-                const detail = try localized(alloc, "{d} {s}{s}{s}", "{d} {s}{s}{s}", .{ group.windows.items.len, windowWord(group.windows.items.len), if (group.focused()) tr(" · Focused", " · Fokussiert") else "", if (group.minimized()) tr(" · Minimized", " · Minimiert") else "" });
+                const detail = try @import("i18n").fmtAlloc(alloc, "{d} {s}{s}{s}", .{ group.windows.items.len, windowWord(group.windows.items.len), if (group.focused()) @import("i18n").dtr("pearl", " · Focused") else "", if (group.minimized()) @import("i18n").dtr("pearl", " · Minimized") else "" });
                 _ = try self.addRow(.group, group.key, group.name, detail, group.desktop, true);
             }
             if (groups.len > self.limit) try self.more(groups.len - self.limit);
-            if (groups.len == 0) self.list.append(w.label(tr("No open applications", "Keine geöffneten Anwendungen"), "pearl-secondary").as(gtk.Widget));
+            if (groups.len == 0) self.list.append(w.label(@import("i18n").dtr("pearl", "No open applications"), "pearl-secondary").as(gtk.Widget));
         }
         if (focus_index) |i| {
             var target: ?*Row = null;
@@ -366,8 +363,8 @@ pub const Chooser = struct {
         return result.toOwnedSlice(alloc);
     }
     fn more(self: *Chooser, remaining: usize) !void {
-        const text = try localized(self.arena.allocator(), "Show more ({d} remaining)", "Mehr anzeigen ({d} verbleibend)", .{remaining});
-        _ = try self.addRow(.more, "more", text, tr("Load the next 50 items", "Nächste 50 Einträge laden"), null, true);
+        const text = try @import("i18n").fmtAlloc(self.arena.allocator(), "Show more ({d} remaining)", .{remaining});
+        _ = try self.addRow(.more, "more", text, @import("i18n").dtr("pearl", "Load the next 50 items"), null, true);
     }
     fn addRow(self: *Chooser, kind: @FieldType(Row, "kind"), id: []const u8, title: [:0]const u8, detail: [:0]const u8, desktop: ?[]const u8, enabled: bool) !*gtk.Button {
         const alloc = self.arena.allocator();

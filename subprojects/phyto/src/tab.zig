@@ -92,14 +92,14 @@ pub const Tab = struct {
         empty.as(gtk.Widget).setHalign(.center);
         empty.as(gtk.Widget).setValign(.center);
         empty.append(u.image("folder-symbolic", 48).as(gtk.Widget));
-        const error_title = u.label("This folder is empty", "state-title");
+        const error_title = u.label(@import("i18n").dtr("phyto", "This folder is empty"), "state-title");
         empty.append(error_title.as(gtk.Widget));
-        const error_label = u.label("Create a folder, or choose another location.", "secondary");
+        const error_label = u.label(@import("i18n").dtr("phyto", "Create a folder, or choose another location."), "secondary");
         error_label.setWrap(1);
         error_label.setMaxWidthChars(42);
         error_label.setJustify(.center);
         empty.append(error_label.as(gtk.Widget));
-        const retry = gtk.Button.newWithLabel("Refresh folder");
+        const retry = gtk.Button.newWithLabel(@import("i18n").dtr("phyto", "Refresh folder"));
         _ = gtk.Button.signals.clicked.connect(retry, *Tab, refreshClicked, self, .{});
         retry.as(gtk.Widget).setHalign(.center);
         empty.append(retry.as(gtk.Widget));
@@ -251,17 +251,17 @@ pub const Tab = struct {
         }
         const count = self.selection.as(gio.ListModel).getNItems();
         if (self.directory.getError()) |err| {
-            self.error_title.setText("Cannot open this folder");
+            self.error_title.setText(@import("i18n").dtr("phyto", "Cannot open this folder"));
             self.error_label.setText(err.f_message orelse "Could not load directory");
         } else if (self.directory.isLoading() != 0) {
-            self.error_title.setText("Loading folder…");
-            self.error_label.setText("You can navigate elsewhere while files load.");
+            self.error_title.setText(@import("i18n").dtr("phyto", "Loading folder…"));
+            self.error_label.setText(@import("i18n").dtr("phyto", "You can navigate elsewhere while files load."));
         } else if (self.query.len != 0) {
-            self.error_title.setText("No matching filenames");
-            self.error_label.setText("Try a shorter name, or clear the search.");
+            self.error_title.setText(@import("i18n").dtr("phyto", "No matching filenames"));
+            self.error_label.setText(@import("i18n").dtr("phyto", "Try a shorter name, or clear the search."));
         } else {
-            self.error_title.setText("This folder is empty");
-            self.error_label.setText("Create a folder, or choose another location.");
+            self.error_title.setText(@import("i18n").dtr("phyto", "This folder is empty"));
+            self.error_label.setText(@import("i18n").dtr("phyto", "Create a folder, or choose another location."));
         }
         self.root.setVisibleChildName(if (count == 0) "empty" else "files");
         if (self.focus_pending and self.directory.isLoading() == 0) {

@@ -55,9 +55,11 @@ pub fn previewPreferencesChanged() void {
     @import("preview.zig").schedule();
 }
 fn activate(app: *gio.Application, _: ?*anyopaque) callconv(.c) void {
+    gtk.Widget.setDefaultDirection(if (@import("i18n").rtl()) .rtl else .ltr);
     newWindow(@ptrCast(app), initial.?, options);
 }
 pub fn main(init: std.process.Init) void {
+    @import("i18n").init(false);
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch return;
     if (args.len > 1 and std.mem.eql(u8, args[1], "--preview-helper")) {
         @import("previews").helper.run(args[2..]);

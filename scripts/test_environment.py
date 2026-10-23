@@ -28,6 +28,7 @@ PACKAGES = {
     'pam-upstream': ['libsystemd', 'pam'],
 }
 TOOLS = {
+    'gettext': ['msgfmt'],
     'native': ['cc', 'glib-compile-resources'],
     'session': ['dbus-daemon', 'busctl', 'grim', 'wayland-scanner', 'cc', 'fc-match',
                 'wlr-randr', 'wlrctl', 'wtype', 'wl-copy', 'wl-paste', 'gdbus',
@@ -96,6 +97,7 @@ class Environment:
     def values(self, suite):
         prefix = self.prefix(suite.get('fixture') or 'production')
         return dict(root=str(self.root), python=self.python, zig=self.zig,
+                    jobs=str(self.args.jobs), offline=str(self.args.offline).lower(),
                     prefix=str(prefix), source=str(prefix / 'source'),
                     wasmtime=str(self.cache / 'tools/wasmtime'),
                     examples=str(self.cache / 'plugin-examples'),

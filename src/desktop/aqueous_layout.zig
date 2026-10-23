@@ -20,7 +20,7 @@ pub const Section = struct {
         const active = button.getActive() != 0;
         if (!self.state.filtering) self.state.expanded[@intFromEnum(self.id)] = active;
         self.body.as(gtk.Widget).setVisible(@intFromBool(active));
-        self.arrow.?.setText(if (active) "⌄" else "›");
+        self.arrow.?.setText(if (active) @import("i18n").dtr("pearl", "⌄") else @import("i18n").dtr("pearl", "›"));
         button.as(gtk.Accessible).updateState(.expanded, @as(c_int, @intFromBool(active)), @as(c_int, -1));
     }
     pub fn reveal(self: *Section) void {
@@ -90,7 +90,7 @@ pub fn For(comptime View: type) type {
             data.* = .{ .dropdown = dropdown, .buttons = try view.arena.allocator().alloc(*gtk.CheckButton, options.len) };
             const flow = w.flow(3);
             for (options, 0..) |option, i| {
-                const check = gtk.CheckButton.newWithLabel(view.z(m.str(option)));
+                const check = gtk.CheckButton.newWithLabel(view.z(@import("i18n").aqueousOption(m.str(m.get(field, "id")), m.str(option))));
                 check.as(gtk.Widget).addCssClass("aqueous-mode");
                 if (i > 0) check.setGroup(data.buttons[0]);
                 data.buttons[i] = check;
@@ -107,9 +107,9 @@ pub fn For(comptime View: type) type {
             row.append(dropdown.as(gtk.Widget));
             return flow.as(gtk.Widget);
         }
-        fn title(view: *View, id: map.Group) [:0]const u8 {
+        fn title(_: *View, id: map.Group) [:0]const u8 {
             const spec = map.spec(id);
-            return if (view.german) spec.de else spec.en;
+            return @import("i18n").tr(spec.en);
         }
         pub fn group(view: *View, host: *gtk.Box, id: map.Group) !*gtk.Box {
             if (view.layout.sections[@intFromEnum(id)]) |s| return s.body;
@@ -124,13 +124,13 @@ pub fn For(comptime View: type) type {
             view.layout.sections[@intFromEnum(id)] = s;
             const heading = w.column(4);
             heading.append(w.label(title(view, id), "pearl-section-title").as(gtk.Widget));
-            heading.append(w.label(if (view.german) spec.detail_de else spec.detail_en, "pearl-secondary").as(gtk.Widget));
+            heading.append(w.label(@import("i18n").tr(spec.detail_en), "pearl-secondary").as(gtk.Widget));
             if (spec.collapsed) {
                 const toggle = gtk.ToggleButton.new();
                 toggle.as(gtk.Widget).addCssClass("aqueous-disclosure");
                 const row = w.row(12);
                 row.append(heading.as(gtk.Widget));
-                const arrow = w.label("›", null);
+                const arrow = w.label(@import("i18n").dtr("pearl", "›"), null);
                 arrow.as(gtk.Widget).setHexpand(0);
                 row.append(arrow.as(gtk.Widget));
                 toggle.as(gtk.Button).setChild(row.as(gtk.Widget));
@@ -151,10 +151,10 @@ pub fn For(comptime View: type) type {
             if (std.mem.eql(u8, category, "keybinds")) {
                 const search = gtk.Entry.new();
                 search.setMaxLength(255);
-                search.setPlaceholderText(view.t("Search actions or shortcuts…", "Aktionen oder Tastenkürzel suchen…"));
+                search.setPlaceholderText(@import("i18n").dtr("pearl", "Search actions or shortcuts…"));
                 search.as(gtk.Editable).setText(&view.layout.search);
                 search.as(gtk.Widget).addCssClass("aqueous-search");
-                w.name(search.as(gtk.Widget), view.t("Search shortcuts", "Tastenkürzel suchen"));
+                w.name(search.as(gtk.Widget), @import("i18n").dtr("pearl", "Search shortcuts"));
                 view.layout.search_entry = search;
                 host.append(search.as(gtk.Widget));
                 const result = w.label("", "pearl-secondary");
@@ -201,7 +201,7 @@ pub fn For(comptime View: type) type {
                     try view.fieldEditor(body.?, field, draft, id);
                 }
                 if (id == .borders and body != null) {
-                    const link = w.wrappingButton(view.t("Automatic border colors: open Pearl Appearance", "Automatische Rahmenfarben: Pearl-Darstellung öffnen"));
+                    const link = w.wrappingButton(@import("i18n").dtr("pearl", "Automatic border colors: open Pearl Appearance"));
                     body.?.append(link.as(gtk.Widget));
                     const callback = try view.arena.allocator().create(Callback);
                     callback.* = .{ .view = view, .action = .appearance };
@@ -225,7 +225,7 @@ pub fn For(comptime View: type) type {
             }
             if (std.mem.eql(u8, category, "keybinds")) {
                 const custom = try group(view, host, .custom_shortcuts);
-                custom.append(w.label(view.t("Recording waits for Aqueous to inhibit shortcuts. Escape cancels.", "Die Aufnahme wartet auf die Tastenkürzelsperre durch Aqueous. Escape bricht ab."), "pearl-secondary").as(gtk.Widget));
+                custom.append(w.label(@import("i18n").dtr("pearl", "Recording waits for Aqueous to inhibit shortcuts. Escape cancels."), "pearl-secondary").as(gtk.Widget));
                 try @import("aqueous_collections.zig").For(View).render(view, custom, snapshot, category);
                 try view.inventory(custom, snapshot, "custom_keybinds", "Custom bindings");
             }
@@ -242,9 +242,9 @@ pub fn For(comptime View: type) type {
             body.append(actions.as(gtk.Widget));
             for ([_]Action{ .refresh, .validate, .rebase }, 0..) |kind, i| {
                 const button = w.wrappingButton(switch (kind) {
-                    .refresh => view.t("Refresh status", "Status aktualisieren"),
-                    .validate => view.t("Validate draft", "Entwurf prüfen"),
-                    .rebase => view.t("Rebase draft", "Entwurf neu abgleichen"),
+                    .refresh => @import("i18n").dtr("pearl", "Refresh status"),
+                    .validate => @import("i18n").dtr("pearl", "Validate draft"),
+                    .rebase => @import("i18n").dtr("pearl", "Rebase draft"),
                     else => unreachable,
                 });
                 actions.insert(button.as(gtk.Widget), -1);
@@ -296,17 +296,17 @@ pub fn For(comptime View: type) type {
             }
             if (view.layout.search_result) |label| {
                 var buffer: [160]u8 = undefined;
-                label.setText(if (total == 0) view.t("No matching shortcuts. Clear the search to see all actions.", "Keine passenden Tastenkürzel. Suche leeren, um alle Aktionen zu sehen.") else if (view.german) std.fmt.bufPrintZ(&buffer, "{d} passende Aktionen", .{total}) catch "" else std.fmt.bufPrintZ(&buffer, "{d} matching actions", .{total}) catch "");
+                label.setText(if (total == 0) @import("i18n").dtr("pearl", "No matching shortcuts. Clear the search to see all actions.") else @import("i18n").fmt(&buffer, "{d} matching actions", .{total}));
             }
         }
         fn preview(view: *View, body: *gtk.Box, layout: bool) !void {
-            const label = w.label(view.t("Draft illustration · Not applied", "Entwurfsansicht · Nicht angewendet"), "pearl-secondary");
+            const label = w.label(@import("i18n").dtr("pearl", "Draft illustration · Not applied"), "pearl-secondary");
             body.append(label.as(gtk.Widget));
             const canvas = gtk.DrawingArea.new();
             canvas.setContentHeight(150);
             canvas.as(gtk.Widget).setHexpand(1);
             canvas.as(gtk.Widget).addCssClass("aqueous-preview");
-            w.name(canvas.as(gtk.Widget), view.t("Draft illustration", "Entwurfsansicht"));
+            w.name(canvas.as(gtk.Widget), @import("i18n").dtr("pearl", "Draft illustration"));
             const data = try view.arena.allocator().create(Preview);
             data.* = .{ .view = view, .layout = layout };
             canvas.setDrawFunc(draw, data, null);

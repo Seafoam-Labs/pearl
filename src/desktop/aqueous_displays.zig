@@ -6,13 +6,13 @@ const c = @import("../config/aqueous_contract.zig");
 const w = @import("../ui/components/widgets.zig");
 pub fn render(view: anytype, box: *gtk.Box, snapshot: m.Value) !void {
     const a = view.arena.allocator();
-    box.append(w.label("Aqueous owns the preview deadline and rollback. Keep authorizes one durable save. Preview availability is reported per output and feature below.", "pearl-secondary").as(gtk.Widget));
+    box.append(w.label(@import("i18n").dtr("pearl", "Aqueous owns the preview deadline and rollback. Keep authorizes one durable save. Preview availability is reported per output and feature below."), "pearl-secondary").as(gtk.Widget));
     const observation = m.get(snapshot, "display_observation");
     view.placement_box = w.column(4);
     box.append(view.placement_box.?.as(gtk.Widget));
     try refreshPlacement(view);
     if (m.get(observation, "outputs") == .null) {
-        box.append(w.label("Live display observation unavailable. Refresh after reconnecting to Aqueous.", "pearl-secondary").as(gtk.Widget));
+        box.append(w.label(@import("i18n").dtr("pearl", "Live display observation unavailable. Refresh after reconnecting to Aqueous."), "pearl-secondary").as(gtk.Widget));
     }
     for (m.list(m.get(observation, "outputs"))) |output| {
         const card = w.card();
@@ -50,7 +50,7 @@ pub fn refreshPlacement(view: anytype) !void {
         const review = try m.parse(a, view.client.review orelse "{}", m.max_response);
         projection = m.get(review, "display");
     }
-    box.append(w.label(if (projection != .null) "Validated candidate arrangement" else "Current arrangement; Validate updates the diagram from Aqueous's candidate", "pearl-secondary").as(gtk.Widget));
+    box.append(w.label(if (projection != .null) @import("i18n").dtr("pearl", "Validated candidate arrangement") else @import("i18n").dtr("pearl", "Current arrangement; Validate updates the diagram from Aqueous's candidate"), "pearl-secondary").as(gtk.Widget));
     var left: f64 = std.math.inf(f64);
     var top = left;
     var right: f64 = -left;
@@ -86,7 +86,7 @@ pub fn refreshPlacement(view: anytype) !void {
         bottom = @max(bottom, y + height);
     }
     if (heads.items.len == 0) return;
-    box.append(w.label("Placement preview · logical output geometry", "pearl-secondary").as(gtk.Widget));
+    box.append(w.label(@import("i18n").dtr("pearl", "Placement preview · logical output geometry"), "pearl-secondary").as(gtk.Widget));
     const fixed = gtk.Fixed.new();
     fixed.as(gtk.Widget).setSizeRequest(360, 180);
     box.append(fixed.as(gtk.Widget));

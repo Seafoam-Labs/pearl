@@ -76,7 +76,7 @@ const State = struct {
         self.checkThread();
         self.ticket = self.life.beginWork() catch return;
         self.widget(gtk.Button, "reload").as(gtk.Widget).setSensitive(0);
-        self.widget(gtk.Label, "preview").setText("Loading preview…");
+        self.widget(gtk.Label, "preview").setText(@import("i18n").dtr("pearl", "Loading preview…"));
         if (self.gallery) |*gallery| gallery.previewLoading();
         const task = gio.Task.new(self.app.as(gobject.Object), self.cancel, workFinished, self);
         self.watch(task.as(gobject.Object));
@@ -176,15 +176,15 @@ fn activate(_: *gio.Application, self: *State) callconv(.c) void {
     _ = window.ref();
     self.window = window;
     self.watch(window.as(gobject.Object));
-    window.setTitle(if (self.mode == .demo) "Pearl · Demo gallery" else "Pearl");
+    window.setTitle(if (self.mode == .demo) @import("i18n").dtr("pearl", "Pearl · Demo gallery") else @import("i18n").dtr("pearl", "Pearl"));
     window.setDefaultSize(if (self.mode == .demo) 1160 else 680, if (self.mode == .demo) 660 else 480);
     window.as(gtk.Widget).addCssClass("pearl-root");
     window.as(gtk.Widget).addCssClass("pearl-dark");
     window.setChild(self.widget(gtk.Widget, "content"));
-    self.widget(gtk.Label, "badge").setText(if (self.mode == .demo) "DEMO · SAMPLE CONTENT" else "AQUEOUS");
-    self.widget(gtk.Label, "subtitle").setText(if (self.mode == .demo) "Explore Pearl’s appearance with sample content." else "Your desktop, taking shape.");
-    self.widget(gtk.Label, "card_title").setText(if (self.mode == .demo) "A place for your day" else "Welcome to Pearl");
-    self.widget(gtk.Label, "preview").setText("Session services are not available yet.");
+    self.widget(gtk.Label, "badge").setText(if (self.mode == .demo) @import("i18n").dtr("pearl", "DEMO · SAMPLE CONTENT") else @import("i18n").dtr("pearl", "AQUEOUS"));
+    self.widget(gtk.Label, "subtitle").setText(if (self.mode == .demo) @import("i18n").dtr("pearl", "Explore Pearl’s appearance with sample content.") else @import("i18n").dtr("pearl", "Your desktop, taking shape."));
+    self.widget(gtk.Label, "card_title").setText(if (self.mode == .demo) @import("i18n").dtr("pearl", "A place for your day") else @import("i18n").dtr("pearl", "Welcome to Pearl"));
+    self.widget(gtk.Label, "preview").setText(@import("i18n").dtr("pearl", "Session services are not available yet."));
     self.widget(gtk.Button, "reload").as(gtk.Widget).setVisible(@intFromBool(self.mode == .demo));
     if (self.mode == .demo) {
         self.gallery = @as(Gallery, undefined);
@@ -417,7 +417,7 @@ fn workFinished(_: ?*gobject.Object, result: *gio.AsyncResult, data: ?*anyopaque
     defer if (err) |owned| owned.free();
     if (may_update) {
         self.widget(gtk.Button, "reload").as(gtk.Widget).setSensitive(1);
-        self.widget(gtk.Label, "preview").setText(if (text) |value| @ptrCast(value) else "The preview could not be loaded.");
+        self.widget(gtk.Label, "preview").setText(if (text) |value| @ptrCast(value) else @import("i18n").dtr("pearl", "The preview could not be loaded."));
         if (self.gallery) |*gallery| gallery.previewComplete(text != null);
         if (err != null) self.failed = true;
     }

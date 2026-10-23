@@ -35,13 +35,6 @@ const a = std.heap.c_allocator;
 const Rect = policy.Rect;
 const Edge = policy.Edge;
 
-/// Format strings are comptime, so the locale selects between two literals
-/// rather than a runtime string reaching bufPrint.
-fn fmtLocalized(buffer: []u8, comptime en: []const u8, comptime de: []const u8, args: anytype) [:0]const u8 {
-    const locale = glib.getLanguageNames()[0];
-    const german = @import("../i18n.zig").fromLocale(std.mem.span(locale)) == .de;
-    return (if (german) std.fmt.bufPrintZ(buffer, de, args) else std.fmt.bufPrintZ(buffer, en, args)) catch "";
-}
 const Switcher = @import("../../desktop/window_switcher.zig");
 const Kind = enum { switcher, wallpaper, bar, popup, osd, frame, notification };
 const Surface = struct {
@@ -828,29 +821,29 @@ pub const Manager = struct {
         const crossed = level orelse return;
         const critical = crossed == .critical;
         const summary = switch (crossed) {
-            .low => tr("Low battery", "Niedriger Akkustand"),
-            .very_low => tr("Battery very low", "Akkustand sehr niedrig"),
-            .critical => tr("Critical battery level", "Kritischer Akkustand"),
+            .low => @import("i18n").dtr("pearl", "Low battery"),
+            .very_low => @import("i18n").dtr("pearl", "Battery very low"),
+            .critical => @import("i18n").dtr("pearl", "Critical battery level"),
         };
         const percent = if (self.power.percentage_valid) self.power.percentage else null;
         // An absent estimate stays absent; it is never reported as zero time left.
         const minutes = @divTrunc(self.power.time_to_empty, 60);
         var buffer: [512]u8 = undefined;
         const charge: [:0]const u8 = if (percent) |n|
-            (if (minutes > 0) fmtLocalized(&buffer, "{d:.0}% remaining · about {d} h {d} min left", "Noch {d:.0}% · etwa {d} Std. {d} Min.", .{ n, @divTrunc(self.power.time_to_empty, 3600), @mod(minutes, 60) }) else fmtLocalized(&buffer, "{d:.0}% charge remaining", "Noch {d:.0}% Ladung", .{n}))
+            (if (minutes > 0) @import("i18n").fmt(&buffer, "{d:.0}% remaining · about {d} h {d} min left", .{ n, @divTrunc(self.power.time_to_empty, 3600), @mod(minutes, 60) }) else @import("i18n").fmt(&buffer, "{d:.0}% charge remaining", .{n}))
         else if (minutes > 0)
-            fmtLocalized(&buffer, "About {d} h {d} min left", "Noch etwa {d} Std. {d} Min.", .{ @divTrunc(self.power.time_to_empty, 3600), minutes })
+            @import("i18n").fmt(&buffer, "About {d} h {d} min left", .{ @divTrunc(self.power.time_to_empty, 3600), minutes })
         else
             "";
-        const advice: [:0]const u8 = if (critical) tr("Connect power now to avoid losing unsaved work.", "Jetzt Strom anschließen, um keine Änderungen zu verlieren.") else "";
+        const advice: [:0]const u8 = if (critical) @import("i18n").dtr("pearl", "Connect power now to avoid losing unsaved work.") else "";
         var detail: [1024]u8 = undefined;
         const text: [:0]const u8 = if (charge.len != 0 and advice.len != 0)
-            fmtLocalized(&detail, "{s} {s}", "{s} {s}", .{ charge, advice })
-        else if (charge.len != 0) charge else if (advice.len != 0) advice else tr("Charge is running low.", "Der Ladestand ist niedrig.");
+            @import("i18n").fmt(&detail, "{s} {s}", .{ charge, advice })
+        else if (charge.len != 0) charge else if (advice.len != 0) advice else @import("i18n").dtr("pearl", "Charge is running low.");
         const notifications = &self.session_services.notifications;
         self.battery_warning = notifications.warn(summary, text, power_presentation.icon(self.power.battery_state, percent), critical, self.battery_warning) orelse self.battery_warning;
         var osd: [256]u8 = undefined;
-        self.queueOsd(if (percent) |n| fmtLocalized(&osd, "{s} · {d:.0}%", "{s} · {d:.0}%", .{ summary, n }) else summary);
+        self.queueOsd(if (percent) |n| @import("i18n").fmt(&osd, "{s} · {d:.0}%", .{ summary, n }) else summary);
     }
     fn validBrightness(self: *Manager, brightness: *const Osd.Brightness) bool {
         if (!self.power.brightnessAvailable()) return false;
@@ -1277,11 +1270,11 @@ pub const Manager = struct {
         if (self.error_pending) {
             self.error_pending = false;
             if (self.popup) |popup| {
-                if (popup.launcher) |launcher| launcher.message.setText(tr("The desktop action could not be confirmed.", "Die Desktop-Aktion konnte nicht bestätigt werden."));
+                if (popup.launcher) |launcher| launcher.message.setText(@import("i18n").dtr("pearl", "The desktop action could not be confirmed."));
             }
             var arena = std.heap.ArenaAllocator.init(a);
             defer arena.deinit();
-            _ = self.control(.{ .op = .osd_show, .text = tr("The desktop action could not be completed.", "Die Desktop-Aktion konnte nicht abgeschlossen werden."), .duration_ms = 3000 }, arena.allocator()) catch "";
+            _ = self.control(.{ .op = .osd_show, .text = @import("i18n").dtr("pearl", "The desktop action could not be completed."), .duration_ms = 3000 }, arena.allocator()) catch "";
         }
         self.session_services.notifications.setLocked(self.client.model.get(.session, "session").?.locked);
         try self.syncNotifications();
@@ -1307,7 +1300,7 @@ pub const Manager = struct {
             window.destroy();
             window.unref();
         }
-        window.setTitle("Pearl");
+        window.setTitle(@import("i18n").dtr("pearl", "Pearl"));
         window.as(gtk.Widget).addCssClass("pearl-root");
         window.as(gtk.Widget).addCssClass("pearl-dark");
         window.as(gtk.Widget).addCssClass("pearl-shell");
@@ -1502,8 +1495,8 @@ pub const Manager = struct {
                 const row = gtk.Box.new(.horizontal, 8);
                 row.setHomogeneous(1);
                 s.switcher_controls = row.as(gtk.Widget);
-                const previous = gtk.Button.newWithLabel(tr("Previous", "Zurück"));
-                const next = gtk.Button.newWithLabel(tr("Cycle →", "Weiter →"));
+                const previous = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Previous"));
+                const next = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Cycle →"));
                 next.as(gtk.Widget).addCssClass("suggested-action");
                 _ = gtk.Button.signals.clicked.connect(previous, *Surface, switcherPrevious, s, .{});
                 _ = gtk.Button.signals.clicked.connect(next, *Surface, switcherNext, s, .{});
@@ -1580,7 +1573,7 @@ pub const Manager = struct {
         const title = if (window) |w| w.title orelse w.app_id orelse "Window" else "Window";
         const workspace = if (state.switcher_workspace) |workspace_id| self.client.model.get(.workspace, workspace_id) else self.client.model.activeWorkspace(output.id);
         const destination = if (state.switcher_destination_output) |destination_id| self.client.model.get(.output, destination_id) else self.client.model.get(.output, output.id);
-        const location = try std.fmt.allocPrintSentinel(a, "{d} / {d} · {s} {s} · {s}", .{ state.switcher_position, state.switcher_total, tr("Workspace", "Arbeitsfläche"), if (workspace) |ws| ws.name else "", if (destination) |dest| dest.name else "" }, 0);
+        const location = try std.fmt.allocPrintSentinel(a, "{d} / {d} · {s} {s} · {s}", .{ state.switcher_position, state.switcher_total, @import("i18n").dtr("pearl", "Workspace"), if (workspace) |ws| ws.name else "", if (destination) |dest| dest.name else "" }, 0);
         defer a.free(location);
         const title_z = try a.dupeZ(u8, title);
         defer a.free(title_z);
@@ -2580,7 +2573,7 @@ fn dismissSurface(context: *anyopaque) void {
 fn layoutAction(context: *anyopaque, value: ?[]const u8) void {
     const s: *Surface = @ptrCast(@alignCast(context));
     s.manager.queryLayout(s.output, value) catch {
-        if (s.control.?.label) |label| label.setText(tr("Layout change unavailable", "Anordnung kann nicht geändert werden"));
+        if (s.control.?.label) |label| label.setText(@import("i18n").dtr("pearl", "Layout change unavailable"));
     };
 }
 fn settingsNavigate(context: *anyopaque, page: navigation.Route) anyerror!void {

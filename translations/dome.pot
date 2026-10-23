@@ -1,0 +1,497 @@
+# Pearl translation catalog
+# See translations/README.md for licensing and contribution requirements.
+msgid ""
+msgstr ""
+"Project-Id-Version: Pearl 1\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: subprojects/dome/src/app.zig:641
+msgid "A dash means the driver does not expose that metric or permission is unavailable. Visible client usage is never presented as device-wide utilization."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:581
+msgid "Active time"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:590
+msgid "Activity describes time with I/O in flight; it is not a measurement of maximum device performance. Partitions are excluded from the device list."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1290
+msgid "Appearance"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1285
+msgid "Appearance & monitoring"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:888
+msgid "Application scope"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1254
+msgid "Ask this process to close? Save any work before continuing."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:518
+msgid "Available"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:450
+msgid "Busiest processes"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:18 subprojects/dome/src/app.zig:413 subprojects/dome/src/app.zig:703
+msgid "CPU"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:495
+msgid "CPU 0 speed"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:464
+msgid "CPU counters unavailable"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:682
+msgid "CPU uses total machine capacity by default. Memory is RSS. Application groups use cgroup scopes; uncertain processes stay separate."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:521
+msgid "Cached"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1269
+msgid "Change service state?"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:639
+msgid "Clock"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:149
+msgid "Collecting the first sample…"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:905
+msgid "Command"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1292
+msgid "Compact process rows"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:204
+msgid "Could not start the system collector"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1286
+msgid "Dark"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:933
+msgid "Description"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:678 subprojects/dome/src/app.zig:688 subprojects/dome/src/app.zig:964
+msgid "Details"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:584
+msgid "Device capacity"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:627
+msgid "Device memory"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:460
+msgid "Disk and network cards show the first listed device. Open each page to choose a device; stacked interfaces are not summed."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:413 subprojects/dome/src/app.zig:703
+msgid "Disk read"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:20
+msgid "Disks"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:94 subprojects/dome/src/app.zig:103 subprojects/dome/src/app.zig:702
+msgid "Dome"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1248
+msgid "End process?"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:907
+msgid "End process…"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:904
+msgid "Executable"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1286
+msgid "Follow Pearl"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1248
+msgid "Force stop process?"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:908
+msgid "Force stop…"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:715
+msgid "Full monitor"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:22 subprojects/dome/src/app.zig:413 subprojects/dome/src/app.zig:703
+msgid "GPU"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:381
+msgid "Getting to know your system"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:676
+msgid "Group applications"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:506
+msgid "I/O wait"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:517
+msgid "In use"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:524
+msgid "In use = total − available. Available memory includes reclaimable cache. Process memory is RSS; shared pages can appear in more than one process."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:459
+msgid "Inspect processes →"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1292
+msgid "Keep 10 minutes of graph history"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1286
+msgid "Light"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:612
+msgid "Link speed"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:936
+msgid "Loaded"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:691
+msgid "Loading services…"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:154
+msgid "MONITOR"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:898
+msgid "Member"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:19 subprojects/dome/src/app.zig:413 subprojects/dome/src/app.zig:514 subprojects/dome/src/app.zig:703
+msgid "Memory"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:638
+msgid "Memory capacity"
+msgstr ""
+
+#: src/desktop/application_metadata.zig:28
+msgctxt "desktop.description"
+msgid "Monitor system resources, processes and services"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:894
+msgid "More members"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:585
+msgid "Mounted local filesystems (all devices)"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:677
+msgid "My processes"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1286
+msgid "Native GTK"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:122
+msgid "Navigation"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:21
+msgid "Network"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1292
+msgid "Network rates in bits per second"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:413 subprojects/dome/src/app.zig:703
+msgid "Network receive"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:618
+msgid "No GPU metrics available"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:569
+msgid "No disk selected"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:595
+msgid "No interface selected"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:646
+msgid "No sensors available"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:916 subprojects/dome/src/ui/table.zig:263
+msgid "Open raw processes to control one group member."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:17 subprojects/dome/src/app.zig:128
+msgid "Overview"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:714
+msgid "Pause"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:131
+msgid "Pause sampling · Ctrl+P"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:631
+msgid "Power"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:138 subprojects/dome/src/app.zig:1283
+msgid "Preferences"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1292
+msgid "Process CPU: one core = 100%"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:24 subprojects/dome/src/app.zig:446 subprojects/dome/src/app.zig:498
+msgid "Processes"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:676
+msgid "Raw processes"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:577
+msgid "Read /s · Solid"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:603
+msgid "Receive · Solid"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:356 subprojects/dome/src/app.zig:687
+msgid "Refresh"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:582
+msgid "Response time"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:938
+msgid "Restart service…"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:714
+msgid "Resume"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:157
+msgid "SYSTEM"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1017
+msgid "Sampling paused"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1017
+msgid "Sampling resumed; establishing new counter baselines"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:136
+msgid "Search · Ctrl+F"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:869
+msgid "Select a process"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:924
+msgid "Select a service"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:604
+msgid "Send · Dashed"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:413
+msgid "Sensor"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:23
+msgid "Sensors"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:25
+msgid "Services"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:691
+msgid "Services aren’t available"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1292
+msgid "Show PID column"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:677
+msgid "Show all users"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1292
+msgid "Show disk I/O columns"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:468
+msgid "Show logical processors"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1292
+msgid "Show memory column"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:468
+msgid "Show overall CPU"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:937
+msgid "Start service…"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:934
+msgid "State"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:939
+msgid "Stop service…"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1254
+msgid "Stop this process immediately? Unsaved work may be lost."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:935
+msgid "Substate"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:522
+msgid "Swap in use"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:686
+msgid "Switch to system services"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:686
+msgid "Switch to user services"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:105
+msgid "System monitor"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:630
+msgid "Temperature"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:644
+msgid "Thermals & fans"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1274
+msgid "This action may interrupt applications using the selected user service."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:916
+msgid "This process cannot be controlled here."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:1274
+msgid "This system action may interrupt dependent applications and require authentication."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:447 subprojects/dome/src/app.zig:499
+msgid "Threads"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:607
+msgid "Total received"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:608
+msgid "Total sent"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:613
+msgid "Traffic is measured per interface using Linux counters. Virtual, bridge and physical interfaces can contain overlapping traffic. Graph scale uses bytes per second."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:448 subprojects/dome/src/app.zig:500
+msgid "Uptime"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:494 subprojects/dome/src/app.zig:626
+msgid "Utilization"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:635
+msgid "Video decode"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:634
+msgid "Video encode"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:578
+msgid "Write /s · Dashed"
+msgstr ""
+
+#: subprojects/dome/src/app.zig:404
+msgid "Your system, at a glance."
+msgstr ""
+
+#: subprojects/dome/src/app.zig:312 subprojects/dome/src/app.zig:453 subprojects/dome/src/app.zig:839
+msgid "—"
+msgstr ""

@@ -137,6 +137,12 @@ First request (exactly these five fields):
 
 `ping` uses the identical shape and checks identity again. Success:
 `{settings:1,id,ok:true,result:{session,display,epoch,capabilities,limits}}`.
+Current backends also return optional `language`, a colon-separated snapshot of
+the shell's loaded language fallbacks ending in `en`. A frontend accepts it only
+after verifying the session, display, epoch and handshake capability, before
+creating its first window. It remains fixed for that process; changes to saved
+preferences do not retranslate an active window. Older backends omit this
+additive field, in which case the frontend resolves its own startup preferences.
 Failure: `{settings:1,id,ok:false,err:{code}}`; an unparseable request uses
 `id:"0"`. Protocol/identity errors close after replying; oversized, invalid UTF-8,
 empty or pipelined frames close immediately. Hello is required once. The S1 baseline returned only `handshake:true`; S3 additionally advertises

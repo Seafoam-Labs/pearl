@@ -260,7 +260,7 @@ pub const Table = struct {
             u.append(self.menu_box, finish);
             u.append(self.menu_box, force);
             if (p.is_group) {
-                const hint = u.label("Open raw processes to control one group member.", "secondary");
+                const hint = u.label(@import("i18n").dtr("dome", "Open raw processes to control one group member."), "secondary");
                 u.wrap(hint);
                 c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, hint), 40);
                 u.append(self.menu_box, hint);

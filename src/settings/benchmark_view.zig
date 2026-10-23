@@ -91,8 +91,8 @@ pub const View = struct {
             candidate.append(license.as(gtk.Widget));
         }
         const summary = label(body, "");
-        const mode = choice(body, "Hardware to compare", &.{ "CPU", "Current configuration", "Compare CPU and GPU" });
-        const detail = choice(body, "Comparison depth", &.{ "Quick · model profiles", "Detailed · threads and contexts" });
+        const mode = choice(body, @import("i18n").dtr("pearl", "Hardware to compare"), &.{ "CPU", "Current configuration", "Compare CPU and GPU" });
+        const detail = choice(body, @import("i18n").dtr("pearl", "Comparison depth"), &.{ "Quick · model profiles", "Detailed · threads and contexts" });
         _ = label(body, "Warm-up + three measured repetitions per fixture. Detailed comparisons take longer. Current configuration includes your thread and token settings. Comparisons start immediately; you can cancel.");
         const actions = layout.actions(body);
         const download = layout.button(actions, "Download selected missing models");
@@ -110,7 +110,7 @@ pub const View = struct {
         const history = gtk.DropDown.new(history_names.as(gio.ListModel), null);
         layout.wrapChoice(history);
         layout.row(saved, "Comparison history", history.as(gtk.Widget));
-        const sort = choice(saved, "Sort results", &.{ "Completion time", "Memory use", "Model name" });
+        const sort = choice(saved, @import("i18n").dtr("pearl", "Sort results"), &.{ "Completion time", "Memory use", "Model name" });
         const methodology = layout.Section.create(saved, "How comparisons work", "Workload, suggestions and measurement limits");
         _ = label(methodology.body, "Suggestions compare successful results within the same context workload. Balanced chooses the lowest memory within 20% of the fastest median or its observed range, whichever is larger. Fixture checks are limited; inspect the sample answers before choosing. Memory estimates are advisory. Download size is separate from runtime RAM.");
         const results = w.column(8);
@@ -230,7 +230,7 @@ pub const View = struct {
         _ = self.rows.reset(.free_all);
         self.row_controls = .empty;
         const alloc = self.rows.allocator();
-        self.details.setText("Select Show samples to inspect answers, settings and telemetry. GPU memory and separate reasoning throughput are unavailable unless reported; RAM is sampled process-tree RSS plus OS high-water information, which may miss brief child peaks.");
+        self.details.setText(@import("i18n").dtr("pearl", "Select Show samples to inspect answers, settings and telemetry. GPU memory and separate reasoning throughput are unavailable unless reported; RAM is sampled process-tree RSS plus OS high-water information, which may miss brief child peaks."));
         const run = self.report orelse {
             _ = label(self.results, "No saved comparisons.");
             return;
@@ -304,7 +304,7 @@ pub const View = struct {
         var value = try self.document(alloc);
         run.results[index].settings.adopt(&value.assistant);
         try self.editor.edit(try std.json.Stringify.valueAlloc(alloc, value, .{ .whitespace = .indent_2 }));
-        self.status.setText("Configuration added to your draft. Apply saves it; Discard restores your prior settings.");
+        self.status.setText(@import("i18n").dtr("pearl", "Configuration added to your draft. Apply saves it; Discard restores your prior settings."));
     }
     fn showSamples(_: *gtk.Button, row: *Row) callconv(.c) void {
         const self = row.view;
@@ -328,7 +328,7 @@ pub const View = struct {
     fn clicked(b: *gtk.Button, self: *View) callconv(.c) void {
         if (b == self.skip_button) {
             if (self.job) |job| job.progress.skip.store(true, .monotonic);
-            self.status.setText("Skipping this configuration after any current file verification completes…");
+            self.status.setText(@import("i18n").dtr("pearl", "Skipping this configuration after any current file verification completes…"));
             return;
         }
         if (b == self.cancel_button) {
@@ -439,10 +439,10 @@ pub const View = struct {
         self.reload() catch |err| self.fail(err);
         if (job.failure) |err| {
             if (err == error.AnswerInProgress) {
-                self.status.setText("An answer is running. Leave it running, or choose Stop answer and benchmark.");
+                self.status.setText(@import("i18n").dtr("pearl", "An answer is running. Leave it running, or choose Stop answer and benchmark."));
                 self.stop_start.as(gtk.Widget).setVisible(1);
             } else self.fail(err);
-        } else self.status.setText(if (job.run) |run| if (run.state == .cancelled) "Comparison cancelled. Completed results are saved." else "Comparison finished. Inspect results and samples, then choose a configuration." else "Downloads complete. Select Compare to start testing.");
+        } else self.status.setText(if (job.run) |run| if (run.state == .cancelled) @import("i18n").dtr("pearl", "Comparison cancelled. Completed results are saved.") else @import("i18n").dtr("pearl", "Comparison finished. Inspect results and samples, then choose a configuration.") else @import("i18n").dtr("pearl", "Downloads complete. Select Compare to start testing."));
         self.sensitivity();
     }
     fn sensitivity(self: *View) void {
@@ -495,7 +495,7 @@ pub const View = struct {
         const file = picker.as(gtk.FileChooser).getFile() orelse return;
         defer file.unref();
         const filename = file.getPath() orelse {
-            self.status.setText("Choose a local export file.");
+            self.status.setText(@import("i18n").dtr("pearl", "Choose a local export file."));
             return;
         };
         defer glib.free(filename);

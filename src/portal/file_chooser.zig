@@ -125,7 +125,7 @@ pub fn portal_files(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void {
     const caller: [*c]u8 = ffi.g_strdup_printf("Requested by %s", name);
     defer if (caller != null) ffi.g_free(@ptrCast(caller));
     chooser.setCaller(r.*.dialog, caller);
-    chooser.setAcceptLabel(r.*.dialog, portal_string(r.*.options, "accept_label", if (open != 0) @constCast("Open") else @constCast("Save")));
+    chooser.setAcceptLabel(r.*.dialog, portal_string(r.*.options, "accept_label", if (open != 0) @constCast(@import("i18n").dtr("pearl-files", "Open").ptr) else @constCast(@import("i18n").dtr("pearl-files", "Save").ptr)));
     chooser.setName(r.*.dialog, portal_string(r.*.options, "current_name", "Untitled"));
     const filters: ?*ffi.GVariant = portal_option(r.*.options, "filters", "a(sa(us))");
     defer if (filters != null) ffi.g_variant_unref(@ptrCast(filters));

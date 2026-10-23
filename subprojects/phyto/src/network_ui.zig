@@ -26,7 +26,7 @@ pub const UI = struct {
     }
     pub fn fillPlaces(self: *UI, box: *gtk.Box) void {
         const manager = net.shared orelse return;
-        box.append(u.label("NETWORK DEVICES", "section-label").as(gtk.Widget));
+        box.append(u.label(@import("i18n").dtr("phyto", "NETWORK DEVICES"), "section-label").as(gtk.Widget));
         if (manager.store.warning) |warning| {
             const l = u.label(warning, "error");
             l.setWrap(1);
@@ -53,23 +53,23 @@ pub const UI = struct {
             defer a.free(tip);
             button.as(gtk.Widget).setTooltipText(tip);
             row.append(button.as(gtk.Widget));
-            const settings = self.actionButton("⋮", .settings, p.id, null);
+            const settings = self.actionButton(@import("i18n").dtr("phyto", "⋮"), .settings, p.id, null);
             u.name(settings.as(gtk.Widget), "Connection settings");
-            settings.as(gtk.Widget).setTooltipText("Connection settings…");
+            settings.as(gtk.Widget).setTooltipText(@import("i18n").dtr("phyto", "Connection settings…"));
             row.append(settings.as(gtk.Widget));
             box.append(row.as(gtk.Widget));
         }
-        box.append(self.actionButton("Add connection…", .add, "", null).as(gtk.Widget));
+        box.append(self.actionButton(@import("i18n").dtr("phyto", "Add connection…"), .add, "", null).as(gtk.Widget));
     }
     pub fn fillNetwork(self: *UI, box: *gtk.Box, tab: u64) void {
         u.clear(box);
         const manager = net.shared orelse return;
         const heading = u.box(.horizontal, 8, null);
-        const title = u.label("Saved connections", null);
+        const title = u.label(@import("i18n").dtr("phyto", "Saved connections"), null);
         title.setWrap(1);
         title.as(gtk.Widget).setHexpand(1);
         heading.append(title.as(gtk.Widget));
-        const add = self.actionButton("Add connection…", .add, "", tab);
+        const add = self.actionButton(@import("i18n").dtr("phyto", "Add connection…"), .add, "", tab);
         add.as(gtk.Widget).addCssClass("suggested-action");
         heading.append(add.as(gtk.Widget));
         box.append(heading.as(gtk.Widget));
@@ -97,16 +97,16 @@ pub const UI = struct {
             actions.setMinChildrenPerLine(1);
             actions.setMaxChildrenPerLine(4);
             const running = e.state == .connecting or e.state == .queued;
-            const connect = self.actionButton(if (running) "Cancel" else if (e.state == .connected) "Open" else if (e.state == .needs_auth) "Sign in…" else if (e.state == .review) "Review…" else if (e.state == .failed) "Retry" else "Connect", if (running) .cancel else .connect, p.id, tab);
+            const connect = self.actionButton(if (running) @import("i18n").dtr("phyto", "Cancel") else if (e.state == .connected) @import("i18n").dtr("phyto", "Open") else if (e.state == .needs_auth) @import("i18n").dtr("phyto", "Sign in…") else if (e.state == .review) @import("i18n").dtr("phyto", "Review…") else if (e.state == .failed) @import("i18n").dtr("phyto", "Retry") else @import("i18n").dtr("phyto", "Connect"), if (running) .cancel else .connect, p.id, tab);
             connect.as(gtk.Widget).addCssClass("suggested-action");
             actions.insert(connect.as(gtk.Widget), -1);
-            if (e.state == .connected) actions.insert(self.actionButton("Disconnect", .disconnect, p.id, tab).as(gtk.Widget), -1);
-            actions.insert(self.actionButton("Settings…", .settings, p.id, tab).as(gtk.Widget), -1);
-            actions.insert(self.actionButton("Forget…", .forget, p.id, tab).as(gtk.Widget), -1);
+            if (e.state == .connected) actions.insert(self.actionButton(@import("i18n").dtr("phyto", "Disconnect"), .disconnect, p.id, tab).as(gtk.Widget), -1);
+            actions.insert(self.actionButton(@import("i18n").dtr("phyto", "Settings…"), .settings, p.id, tab).as(gtk.Widget), -1);
+            actions.insert(self.actionButton(@import("i18n").dtr("phyto", "Forget…"), .forget, p.id, tab).as(gtk.Widget), -1);
             card.append(actions.as(gtk.Widget));
             box.append(card.as(gtk.Widget));
         }
-        box.append(self.actionButton("Browse discovered servers", .discover, "", tab).as(gtk.Widget));
+        box.append(self.actionButton(@import("i18n").dtr("phyto", "Browse discovered servers"), .discover, "", tab).as(gtk.Widget));
     }
     fn actionButton(self: *UI, label: [:0]const u8, action: Action, id: []const u8, tab: ?u64) *gtk.Button {
         const b = gtk.Button.newWithLabel(label);
@@ -128,16 +128,16 @@ pub const UI = struct {
         const manager = net.shared.?;
         const profile = if (id) |v| manager.store.get(v) else null;
         if (id != null and profile == null) return;
-        const e = self.dialog(if (profile != null) "Connection settings" else "Add connection", id);
+        const e = self.dialog(if (profile != null) @import("i18n").dtr("phyto", "Connection settings") else @import("i18n").dtr("phyto", "Add connection"), id);
         const body = e.dialog.getContentArea();
         appendText(body, "Save a network location in Places.", "secondary");
-        e.name = field(body, "Connection name", if (profile) |p| p.name else "");
+        e.name = field(body, @import("i18n").dtr("phyto", "Connection name"), if (profile) |p| p.name else "");
         e.name.?.setMaxLength(256);
-        e.address = field(body, "Server address", if (profile) |p| p.uri else initial orelse "");
+        e.address = field(body, @import("i18n").dtr("phyto", "Server address"), if (profile) |p| p.uri else initial orelse "");
         appendText(body, "smb://server/share · sftp://server/folder\ndavs://server/folder · dav://server/folder", "secondary");
         appendText(body, "Reconnect", null);
-        const startup = gtk.CheckButton.newWithLabel("When Phyto opens");
-        const click = gtk.CheckButton.newWithLabel("When I click the network device");
+        const startup = gtk.CheckButton.newWithLabel(@import("i18n").dtr("phyto", "When Phyto opens"));
+        const click = gtk.CheckButton.newWithLabel(@import("i18n").dtr("phyto", "When I click the network device"));
         click.setGroup(startup);
         e.startup = startup;
         if (profile != null and profile.?.policy == .on_open) startup.setActive(1) else click.setActive(1);
@@ -157,7 +157,7 @@ pub const UI = struct {
     pub fn forget(self: *UI, id: [:0]const u8) void {
         self.close();
         const p = net.shared.?.store.get(id) orelse return;
-        const e = self.dialog("Forget connection?", id);
+        const e = self.dialog(@import("i18n").dtr("phyto", "Forget connection?"), id);
         e.forgetting = true;
         appendText(e.dialog.getContentArea(), p.name, null);
         appendText(e.dialog.getContentArea(), "Remove this saved device and its reconnect preference? Remote files and existing mounts remain. Disconnect separately if needed.", "secondary");

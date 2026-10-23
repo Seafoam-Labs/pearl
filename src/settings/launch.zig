@@ -35,6 +35,7 @@ pub fn available() bool {
     return true;
 }
 pub fn open(target: nav.Target, context: *gio.AppLaunchContext, activation: ?[]const u8) !void {
+    context.setenv("PEARL_SESSION_LANGUAGES", @import("i18n").sessionLanguages());
     try target.validate();
     const program = try path();
     defer a.free(program);

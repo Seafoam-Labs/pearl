@@ -41,13 +41,13 @@ pub const Section = struct {
 };
 pub const ModeChoice = struct {
     buttons: [4]*gtk.CheckButton,
-    fn create(host: *gtk.Box, german: bool) ModeChoice {
+    fn create(host: *gtk.Box) ModeChoice {
         const flow = w.flow(4);
         flow.setHomogeneous(1);
         flow.as(gtk.Widget).addCssClass("appearance-modes");
         var result: ModeChoice = undefined;
-        const titles: [4][:0]const u8 = if (german) .{ "Material", "Dynamisch", "GTK", "Community" } else .{ "Material", "Dynamic", "GTK", "Community" };
-        const descriptions: [4][:0]const u8 = if (german) .{ "Integrierte Farben", "Bild oder Ausgangsfarbe", "Systemdesign", "Installierte Designs" } else .{ "Built-in colors", "Wallpaper or seed", "System theme", "Installed themes" };
+        const titles: [4][:0]const u8 = .{ @import("i18n").dtr("pearl", "Material"), @import("i18n").dtr("pearl", "Dynamic"), @import("i18n").dtr("pearl", "GTK"), @import("i18n").dtr("pearl", "Community") };
+        const descriptions: [4][:0]const u8 = .{ @import("i18n").dtr("pearl", "Built-in colors"), @import("i18n").dtr("pearl", "Wallpaper or seed"), @import("i18n").dtr("pearl", "System theme"), @import("i18n").dtr("pearl", "Installed themes") };
         for (titles, descriptions, 0..) |title, description, i| {
             const button = gtk.CheckButton.new();
             if (i > 0) button.setGroup(result.buttons[0]);
@@ -110,6 +110,9 @@ pub const View = struct {
     density: *gtk.DropDown,
     entries: [5]*gtk.Entry,
     font_size: *gtk.SpinButton,
+    language: *gtk.DropDown = undefined,
+    language_arena: std.heap.ArenaAllocator = .init(a),
+    language_codes: std.ArrayList([:0]const u8) = .empty,
     motion: *gtk.Switch,
     picture: *gtk.Picture,
     preview_note: *gtk.Label,
@@ -158,36 +161,35 @@ pub const View = struct {
     night_times: [4]*gtk.SpinButton = undefined,
     night_status: *gtk.Label = undefined,
     night_resume: *gtk.Button = undefined,
-    german: bool,
     themes: *@import("themes_view.zig").View = undefined,
     profiles: *@import("profiles_view.zig").View = undefined,
     greeter_sync: *@import("greeter_sync.zig").View = undefined,
 
-    pub fn create(window: *gtk.Window, host: *gtk.Box, editor: *Editor, german: bool) !*View {
+    pub fn create(window: *gtk.Window, host: *gtk.Box, editor: *Editor) !*View {
         const self = try a.create(View);
         host.as(gtk.Widget).addCssClass("appearance-view");
         host.setSpacing(16);
         const preview_card = card(host);
-        const desktop_preview = try @import("appearance_preview.zig").View.create(preview_card, german);
+        const desktop_preview = try @import("appearance_preview.zig").View.create(preview_card);
         const preview_note = w.label("", "pearl-secondary");
         const appearance = card(host);
-        appearance.append(w.label(if (german) "Design und Farben" else "Theme & colors", "pearl-section-title").as(gtk.Widget));
-        const mode = ModeChoice.create(appearance, german);
-        const variant = dropdown(appearance, if (german) "Farbvariante" else "Color variant", &.{ "Dark", "Light" });
-        const source = dropdown(appearance, if (german) "Dynamische Farben aus" else "Dynamic colors from", &.{ "Seed color", "Wallpaper" });
-        const gtk_name = entry(appearance, if (german) "GTK-Designname" else "GTK theme name", 96);
-        gtk_name.setPlaceholderText(if (german) "Systemvorgabe" else "System default");
-        const seed = entry(appearance, if (german) "Ausgangsfarbe" else "Seed color", 7);
-        seed.setPlaceholderText("#6750a4");
-        const hint = w.label(if (german) "Dynamische Farben benötigen matugen 4.x. Ein leerer GTK-Name folgt dem System." else "Dynamic colors need matugen 4.x. An empty GTK theme name follows the system.", "pearl-secondary");
+        appearance.append(w.label(@import("i18n").dtr("pearl", "Theme & colors"), "pearl-section-title").as(gtk.Widget));
+        const mode = ModeChoice.create(appearance);
+        const variant = dropdown(appearance, @import("i18n").dtr("pearl", "Color variant"), &.{ "Dark", "Light" });
+        const source = dropdown(appearance, @import("i18n").dtr("pearl", "Dynamic colors from"), &.{ "Seed color", "Wallpaper" });
+        const gtk_name = entry(appearance, @import("i18n").dtr("pearl", "GTK theme name"), 96);
+        gtk_name.setPlaceholderText(@import("i18n").dtr("pearl", "System default"));
+        const seed = entry(appearance, @import("i18n").dtr("pearl", "Seed color"), 7);
+        seed.setPlaceholderText(@import("i18n").dtr("pearl", "#6750a4"));
+        const hint = w.label(@import("i18n").dtr("pearl", "Dynamic colors need matugen 4.x. An empty GTK theme name follows the system."), "pearl-secondary");
         appearance.append(hint.as(gtk.Widget));
-        const customize = w.wrappingButton(if (german) "Installierte Designs und Anpassungen…" else "Installed themes & customization…");
+        const customize = w.wrappingButton(@import("i18n").dtr("pearl", "Installed themes & customization…"));
         customize.as(gtk.Widget).addCssClass("appearance-action");
         appearance.append(customize.as(gtk.Widget));
         const wallpaper = card(host);
-        wallpaper.append(w.label(if (german) "Hintergrundbild" else "Wallpaper", "pearl-section-title").as(gtk.Widget));
+        wallpaper.append(w.label(@import("i18n").dtr("pearl", "Wallpaper"), "pearl-section-title").as(gtk.Widget));
         const picture = desktop_preview.picture;
-        w.name(picture.as(gtk.Widget), if (german) "Hintergrundvorschau" else "Wallpaper draft preview");
+        w.name(picture.as(gtk.Widget), @import("i18n").dtr("pearl", "Wallpaper draft preview"));
         const wallpaper_row = w.flow(3);
         wallpaper_row.setHomogeneous(0);
         wallpaper_row.as(gtk.Widget).addCssClass("appearance-wallpaper-row");
@@ -202,15 +204,15 @@ pub const View = struct {
         wallpaper_summary.setMaxWidthChars(28);
         wallpaper_summary.setSelectable(1);
         wallpaper_row.insert(wallpaper_summary.as(gtk.Widget), -1);
-        const choose = w.wrappingButton(if (german) "Bild auswählen…" else "Choose image…");
+        const choose = w.wrappingButton(@import("i18n").dtr("pearl", "Choose image…"));
         wallpaper_row.insert(choose.as(gtk.Widget), -1);
         wallpaper.append(wallpaper_row.as(gtk.Widget));
         wallpaper.append(preview_note.as(gtk.Widget));
-        const image_section = Section.create(wallpaper, if (german) "Bildoptionen und Diashow" else "Image options & slideshow", if (german) "Pfad, Darstellung und Bildwechsel" else "Path, fit and rotating images");
-        const path = entry(image_section.body, if (german) "Hintergrundbild" else "Wallpaper image", 1024);
-        path.setPlaceholderText(if (german) "Kein Bild ausgewählt" else "No image selected");
-        const fit = dropdown(image_section.body, if (german) "Hintergrundmodus" else "Wallpaper fit", if (german) &.{ "Material-Verlauf", "Einfarbig", "Ausfüllen", "Einpassen" } else &.{ "Material gradient", "Solid color", "Cover", "Contain" });
-        const color = entry(image_section.body, if (german) "Hintergrundfarbe" else "Background color", 7);
+        const image_section = Section.create(wallpaper, @import("i18n").dtr("pearl", "Image options & slideshow"), @import("i18n").dtr("pearl", "Path, fit and rotating images"));
+        const path = entry(image_section.body, @import("i18n").dtr("pearl", "Wallpaper image"), 1024);
+        path.setPlaceholderText(@import("i18n").dtr("pearl", "No image selected"));
+        const fit = dropdown(image_section.body, @import("i18n").dtr("pearl", "Wallpaper fit"), &.{ @import("i18n").dtr("pearl", "Material gradient"), @import("i18n").dtr("pearl", "Solid color"), @import("i18n").dtr("pearl", "Cover"), @import("i18n").dtr("pearl", "Contain") });
+        const color = entry(image_section.body, @import("i18n").dtr("pearl", "Background color"), 7);
         // One card owns the whole wallpaper area; the slideshow is a section of it.
         // Built from locals because `self` is only assigned after every card exists.
         const slideshow = image_section.body;
@@ -218,60 +220,63 @@ pub const View = struct {
         divider.as(gtk.Widget).setMarginTop(16);
         divider.as(gtk.Widget).setMarginBottom(16);
         slideshow.append(divider.as(gtk.Widget));
-        slideshow.append(w.label(if (german) "Diashow" else "Slideshow", "settings-row-title").as(gtk.Widget));
-        slideshow.append(w.label(if (german) "Wechselt durch die Bilder eines Ordners. Nur PNG und JPEG werden verwendet. Jeder Wechsel berechnet die Bildfarben neu, wenn das Design dem Bild folgt." else "Rotates through the images in one folder. Only PNG and JPEG are used. Each change re-runs wallpaper colors when the theme follows the image.", "pearl-secondary").as(gtk.Widget));
-        const slideshow_enabled = toggle(slideshow, if (german) "Diashow aktivieren" else "Enable slideshow");
-        const slideshow_folder = entry(slideshow, if (german) "Bildordner" else "Image folder", 1024);
-        slideshow_folder.setPlaceholderText(if (german) "Kein Ordner ausgewählt" else "No folder selected");
-        const slideshow_choose = w.wrappingButton(if (german) "Ordner auswählen…" else "Choose folder…");
+        slideshow.append(w.label(@import("i18n").dtr("pearl", "Slideshow"), "settings-row-title").as(gtk.Widget));
+        slideshow.append(w.label(@import("i18n").dtr("pearl", "Rotates through the images in one folder. Only PNG and JPEG are used. Each change re-runs wallpaper colors when the theme follows the image."), "pearl-secondary").as(gtk.Widget));
+        const slideshow_enabled = toggle(slideshow, @import("i18n").dtr("pearl", "Enable slideshow"));
+        const slideshow_folder = entry(slideshow, @import("i18n").dtr("pearl", "Image folder"), 1024);
+        slideshow_folder.setPlaceholderText(@import("i18n").dtr("pearl", "No folder selected"));
+        const slideshow_choose = w.wrappingButton(@import("i18n").dtr("pearl", "Choose folder…"));
         slideshow_choose.as(gtk.Widget).setHalign(.end);
         slideshow_choose.as(gtk.Widget).setMarginEnd(20);
         slideshow_choose.as(gtk.Widget).setMarginBottom(12);
         slideshow.append(slideshow_choose.as(gtk.Widget));
         const slideshow_interval = gtk.SpinButton.newWithRange(10, 86400, 10);
-        row(slideshow, if (german) "Wechseln alle (Sekunden)" else "Change every (seconds)", slideshow_interval.as(gtk.Widget));
-        const slideshow_order = dropdown(slideshow, if (german) "Reihenfolge" else "Order", if (german) &.{ "Fortlaufend", "Zufällig" } else &.{ "Sequential", "Random" });
-        const slideshow_transition = dropdown(slideshow, if (german) "Übergang" else "Transition", if (german) &.{ "Keiner", "Überblenden", "Schieben", "Drehen", "Überdecken", "Zufällig" } else &.{ "None", "Fade", "Slide", "Rotate", "Cover", "Random" });
+        row(slideshow, @import("i18n").dtr("pearl", "Change every (seconds)"), slideshow_interval.as(gtk.Widget));
+        const slideshow_order = dropdown(slideshow, @import("i18n").dtr("pearl", "Order"), &.{ @import("i18n").dtr("pearl", "Sequential"), @import("i18n").dtr("pearl", "Random") });
+        const slideshow_transition = dropdown(slideshow, @import("i18n").dtr("pearl", "Transition"), &.{ @import("i18n").dtr("pearl", "None"), @import("i18n").dtr("pearl", "Fade"), @import("i18n").dtr("pearl", "Slide"), @import("i18n").dtr("pearl", "Rotate"), @import("i18n").dtr("pearl", "Cover"), @import("i18n").dtr("pearl", "Random") });
         const slideshow_duration = gtk.SpinButton.newWithRange(100, 5000, 20);
-        row(slideshow, if (german) "Animationsdauer (ms)" else "Animation length (ms)", slideshow_duration.as(gtk.Widget));
-        const text_section = Section.create(host, if (german) "Text und Abstände" else "Text & layout", "");
+        row(slideshow, @import("i18n").dtr("pearl", "Animation length (ms)"), slideshow_duration.as(gtk.Widget));
+        const text_section = Section.create(host, @import("i18n").dtr("pearl", "Text & layout"), "");
+        const language = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").tr("Follow system").ptr, @import("i18n").dtr("pearl", "English"), null }));
+        row(text_section.body, @import("i18n").tr("Interface language"), language.as(gtk.Widget));
+        text_section.body.append(w.label(@import("i18n").tr("Install language packs with your package manager. Changes take full effect after signing out and back in."), "pearl-secondary").as(gtk.Widget));
         const typography = text_section.body;
-        const font = entry(typography, if (german) "Schriftfamilie" else "Font family", 96);
-        font.setPlaceholderText(if (german) "Systemvorgabe" else "System default");
+        const font = entry(typography, @import("i18n").dtr("pearl", "Font family"), 96);
+        font.setPlaceholderText(@import("i18n").dtr("pearl", "System default"));
         const font_size = gtk.SpinButton.newWithRange(10, 24, 1);
-        row(typography, if (german) "Schriftgröße" else "Font size", font_size.as(gtk.Widget));
-        const density = dropdown(typography, if (german) "Abstände" else "Density", &.{ "Comfortable", "Compact" });
+        row(typography, @import("i18n").dtr("pearl", "Font size"), font_size.as(gtk.Widget));
+        const density = dropdown(typography, @import("i18n").dtr("pearl", "Density"), &.{ "Comfortable", "Compact" });
         const motion = gtk.Switch.new();
-        row(typography, if (german) "Bewegungen reduzieren" else "Reduced motion", motion.as(gtk.Widget));
-        const apps_section = Section.create(host, if (german) "Anwendungsdesign" else "Application appearance", if (german) "Fensterrahmen, Qt und Anwendungsfarben" else "Window borders, Qt and application colors");
-        const sync_borders = toggle(apps_section.body, if (german) "Fensterrahmen folgen dem Pearl-Design" else "Window borders follow Pearl theme");
-        apps_section.body.append(w.label(if (german) "Wartet auf ausstehende Aqueous-Änderungen. Ausschalten behält die letzten Farben; im GTK-Modus pausiert die Synchronisierung." else "Waits for pending Aqueous edits. Turning off keeps the last colors; GTK mode pauses synchronization.", "pearl-secondary").as(gtk.Widget));
+        row(typography, @import("i18n").dtr("pearl", "Reduced motion"), motion.as(gtk.Widget));
+        const apps_section = Section.create(host, @import("i18n").dtr("pearl", "Application appearance"), @import("i18n").dtr("pearl", "Window borders, Qt and application colors"));
+        const sync_borders = toggle(apps_section.body, @import("i18n").dtr("pearl", "Window borders follow Pearl theme"));
+        apps_section.body.append(w.label(@import("i18n").dtr("pearl", "Waits for pending Aqueous edits. Turning off keeps the last colors; GTK mode pauses synchronization."), "pearl-secondary").as(gtk.Widget));
         const qt_card = card(apps_section.body);
-        qt_card.append(w.label(if (german) "Qt-Anwendungen · QtEngine + Darkly" else "Qt applications · QtEngine + Darkly", "settings-row-title").as(gtk.Widget));
-        qt_card.append(w.label(if (german) "QtEngine verwendet eine gemeinsame Konfiguration für Qt 5 und Qt 6. Ausgewählte Prüfungen kontrollieren die installierten Laufzeiten. GTK-Modus verwendet statische Pearl-Farben. Deaktivieren stellt unveränderte frühere Werte wieder her." else "QtEngine shares one configuration across Qt 5 and Qt 6. Selected checks verify the installed runtimes. Changes affect this user account. GTK mode uses Pearl's static colors. Disabling restores previous values that have not been edited elsewhere.", "pearl-secondary").as(gtk.Widget));
-        const qt_enabled = toggle(qt_card, if (german) "Qt-Aussehen verwalten" else "Manage Qt appearance");
-        const qt5 = toggle(qt_card, if (german) "Qt 5 prüfen" else "Check Qt 5");
-        const qt6 = toggle(qt_card, if (german) "Qt 6 prüfen" else "Check Qt 6");
-        const qt_palette = dropdown(qt_card, if (german) "Qt-Farben" else "Qt colors", if (german) &.{ "Pearl folgen", "Statisch dunkel", "Statisch hell" } else &.{ "Follow Pearl", "Static dark", "Static light" });
-        const qt_font = toggle(qt_card, if (german) "Schrift synchronisieren" else "Synchronize font");
-        const qt_icon = entry(qt_card, if (german) "Qt-Symboldesign" else "Qt icon theme", 96);
-        qt_icon.setPlaceholderText(if (german) "Vorhandene Einstellung behalten" else "Keep existing setting");
+        qt_card.append(w.label(@import("i18n").dtr("pearl", "Qt applications · QtEngine + Darkly"), "settings-row-title").as(gtk.Widget));
+        qt_card.append(w.label(@import("i18n").dtr("pearl", "QtEngine shares one configuration across Qt 5 and Qt 6. Selected checks verify the installed runtimes. Changes affect this user account. GTK mode uses Pearl's static colors. Disabling restores previous values that have not been edited elsewhere."), "pearl-secondary").as(gtk.Widget));
+        const qt_enabled = toggle(qt_card, @import("i18n").dtr("pearl", "Manage Qt appearance"));
+        const qt5 = toggle(qt_card, @import("i18n").dtr("pearl", "Check Qt 5"));
+        const qt6 = toggle(qt_card, @import("i18n").dtr("pearl", "Check Qt 6"));
+        const qt_palette = dropdown(qt_card, @import("i18n").dtr("pearl", "Qt colors"), &.{ @import("i18n").dtr("pearl", "Follow Pearl"), @import("i18n").dtr("pearl", "Static dark"), @import("i18n").dtr("pearl", "Static light") });
+        const qt_font = toggle(qt_card, @import("i18n").dtr("pearl", "Synchronize font"));
+        const qt_icon = entry(qt_card, @import("i18n").dtr("pearl", "Qt icon theme"), 96);
+        qt_icon.setPlaceholderText(@import("i18n").dtr("pearl", "Keep existing setting"));
         const qt_radius = gtk.SpinButton.newWithRange(0, 16, 1);
-        row(qt_card, if (german) "Eckenradius (0: beibehalten)" else "Corner radius (0: keep existing)", qt_radius.as(gtk.Widget));
-        const qt_motion = toggle(qt_card, if (german) "Bewegungen synchronisieren" else "Synchronize reduced motion");
-        const qt_density = toggle(qt_card, if (german) "Abstände synchronisieren" else "Synchronize density");
-        const qt_kde = toggle(qt_card, if (german) "Darkly-Fokusfarben in KDE synchronisieren" else "Synchronize Darkly focus colors in KDE");
+        row(qt_card, @import("i18n").dtr("pearl", "Corner radius (0: keep existing)"), qt_radius.as(gtk.Widget));
+        const qt_motion = toggle(qt_card, @import("i18n").dtr("pearl", "Synchronize reduced motion"));
+        const qt_density = toggle(qt_card, @import("i18n").dtr("pearl", "Synchronize density"));
+        const qt_kde = toggle(qt_card, @import("i18n").dtr("pearl", "Synchronize Darkly focus colors in KDE"));
         const qt_status = w.label("", "pearl-secondary");
         qt_status.setSelectable(1);
         qt_card.append(qt_status.as(gtk.Widget));
-        const qt_retry = w.wrappingButton(if (german) "Gespeicherte Qt-Einstellungen erneut anwenden" else "Retry saved Qt settings");
+        const qt_retry = w.wrappingButton(@import("i18n").dtr("pearl", "Retry saved Qt settings"));
         qt_card.append(qt_retry.as(gtk.Widget));
-        const qt_review = w.wrappingButton(if (german) "Externe Qt-Änderungen prüfen" else "Review external Qt changes");
+        const qt_review = w.wrappingButton(@import("i18n").dtr("pearl", "Review external Qt changes"));
         qt_card.append(qt_review.as(gtk.Widget));
         const qt_comparison = w.label("", "pearl-secondary");
         qt_comparison.setSelectable(1);
         qt_card.append(qt_comparison.as(gtk.Widget));
-        const qt_reapply = w.wrappingButton(if (german) "Geprüfte Werte durch gespeicherte Qt-Einstellungen ersetzen" else "Replace reviewed values with saved Qt settings");
+        const qt_reapply = w.wrappingButton(@import("i18n").dtr("pearl", "Replace reviewed values with saved Qt settings"));
         qt_card.append(qt_reapply.as(gtk.Widget));
         const message = w.label("", "pearl-secondary");
         host.append(message.as(gtk.Widget));
@@ -282,44 +287,55 @@ pub const View = struct {
         raw_view.setBottomMargin(20);
         raw_view.setLeftMargin(24);
         raw_view.setRightMargin(24);
-        w.name(raw_view.as(gtk.Widget), if (german) "Vollständige Pearl-Einstellungen als JSON" else "Full Pearl preferences JSON");
+        w.name(raw_view.as(gtk.Widget), @import("i18n").dtr("pearl", "Full Pearl preferences JSON"));
         // The caller installs raw_view directly in Advanced's sole viewport.
-        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .desktop_preview = desktop_preview, .wallpaper_summary = wallpaper_summary, .wallpaper_thumbnail = thumbnail, .customize = customize, .image_section = image_section, .text_section = text_section, .apps_section = apps_section, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .german = german, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
-        self.desktop_section = Section.create(host, self.t("Desktop icons", "Desktopsymbole"), "");
+        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .desktop_preview = desktop_preview, .wallpaper_summary = wallpaper_summary, .wallpaper_thumbnail = thumbnail, .customize = customize, .image_section = image_section, .text_section = text_section, .apps_section = apps_section, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
+        self.language = language;
+        const language_alloc = self.language_arena.allocator();
+        try self.language_codes.appendSlice(language_alloc, &.{ "", "en" });
+        const language_strings = object.ext.cast(gtk.StringList, language.getModel().?).?;
+        for (try @import("i18n").installed(language_alloc)) |pack| {
+            if (std.mem.eql(u8, pack.locale, "en")) continue;
+            try self.language_codes.append(language_alloc, pack.locale);
+            const label = if (pack.total == 0 or pack.translated == pack.total) pack.name else try std.fmt.allocPrintSentinel(language_alloc, "{s} · {d}%", .{ pack.name, @as(u64, pack.translated) * 100 / pack.total }, 0);
+            language_strings.append(label);
+        }
+        _ = object.Object.signals.notify.connect(language.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        self.desktop_section = Section.create(host, @import("i18n").dtr("pearl", "Desktop icons"), "");
         const desktop = self.desktop_section.body;
-        desktop.append(w.label(self.t("Files and application shortcuts from your Desktop folder. Enabled automatically for new installations.", "Dateien und Programmstarter aus deinem Desktopordner. Bei neuen Installationen automatisch aktiviert."), "pearl-secondary").as(gtk.Widget));
-        self.desktop_enabled = toggle(desktop, self.t("Show desktop icons", "Desktopsymbole anzeigen"));
-        self.desktop_output = entry(desktop, self.t("Display connector", "Bildschirmanschluss"), 128);
-        self.desktop_output.setPlaceholderText(self.t("Automatic (first connected display)", "Automatisch (erster verbundener Bildschirm)"));
-        self.desktop_size = dropdown(desktop, self.t("Icon size", "Symbolgröße"), &.{ "32", "48", "64", "96" });
-        self.desktop_arrangement = dropdown(desktop, self.t("Arrangement", "Anordnung"), if (german) &.{ "Automatisch · Name", "Manuell" } else &.{ "Automatic · Name", "Manual" });
-        self.desktop_hidden = toggle(desktop, self.t("Show hidden files", "Versteckte Dateien anzeigen"));
+        desktop.append(w.label(@import("i18n").dtr("pearl", "Files and application shortcuts from your Desktop folder. Enabled automatically for new installations."), "pearl-secondary").as(gtk.Widget));
+        self.desktop_enabled = toggle(desktop, @import("i18n").dtr("pearl", "Show desktop icons"));
+        self.desktop_output = entry(desktop, @import("i18n").dtr("pearl", "Display connector"), 128);
+        self.desktop_output.setPlaceholderText(@import("i18n").dtr("pearl", "Automatic (first connected display)"));
+        self.desktop_size = dropdown(desktop, @import("i18n").dtr("pearl", "Icon size"), &.{ "32", "48", "64", "96" });
+        self.desktop_arrangement = dropdown(desktop, @import("i18n").dtr("pearl", "Arrangement"), &.{ @import("i18n").dtr("pearl", "Automatic · Name"), @import("i18n").dtr("pearl", "Manual") });
+        self.desktop_hidden = toggle(desktop, @import("i18n").dtr("pearl", "Show hidden files"));
         for ([_]*gtk.Switch{ self.desktop_enabled, self.desktop_hidden }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "active" });
         for ([_]*gtk.DropDown{ self.desktop_size, self.desktop_arrangement }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
         _ = gtk.Editable.signals.changed.connect(self.desktop_output.as(gtk.Editable), *View, edited, self, .{});
-        self.night_section = Section.create(host, self.t("Night Light", "Nachtlicht"), "");
+        self.night_section = Section.create(host, @import("i18n").dtr("pearl", "Night Light"), "");
         const night = self.night_section.body;
-        night.append(w.label(self.t("Warmer screen colors on supported displays. The status below shows which displays can apply your saved schedule.", "Wärmere Farben auf unterstützten Bildschirmen. Der Status unten zeigt, welche Bildschirme den gespeicherten Zeitplan anwenden können."), "pearl-secondary").as(gtk.Widget));
-        self.night_enabled = toggle(night, self.t("Enable Night Light", "Nachtlicht aktivieren"));
+        night.append(w.label(@import("i18n").dtr("pearl", "Warmer screen colors on supported displays. The status below shows which displays can apply your saved schedule."), "pearl-secondary").as(gtk.Widget));
+        self.night_enabled = toggle(night, @import("i18n").dtr("pearl", "Enable Night Light"));
         self.night_temperature = gtk.SpinButton.newWithRange(2500, 6500, 100);
-        row(night, self.t("Color temperature (K) · lower is warmer", "Farbtemperatur (K) · niedriger ist wärmer"), self.night_temperature.as(gtk.Widget));
-        self.night_schedule = dropdown(night, self.t("Schedule", "Zeitplan"), if (german) &.{ "Manuell", "Eigene Zeiten" } else &.{ "Manual", "Custom times" });
+        row(night, @import("i18n").dtr("pearl", "Color temperature (K) · lower is warmer"), self.night_temperature.as(gtk.Widget));
+        self.night_schedule = dropdown(night, @import("i18n").dtr("pearl", "Schedule"), &.{ @import("i18n").dtr("pearl", "Manual"), @import("i18n").dtr("pearl", "Custom times") });
         for (0..2) |i| {
             const time_row = w.row(4);
             const hour = gtk.SpinButton.newWithRange(0, 23, 1);
             const minute = gtk.SpinButton.newWithRange(0, 59, 1);
-            w.name(hour.as(gtk.Widget), if (i == 0) self.t("Start hour", "Startstunde") else self.t("End hour", "Endstunde"));
-            w.name(minute.as(gtk.Widget), if (i == 0) self.t("Start minute", "Startminute") else self.t("End minute", "Endminute"));
+            w.name(hour.as(gtk.Widget), if (i == 0) @import("i18n").dtr("pearl", "Start hour") else @import("i18n").dtr("pearl", "End hour"));
+            w.name(minute.as(gtk.Widget), if (i == 0) @import("i18n").dtr("pearl", "Start minute") else @import("i18n").dtr("pearl", "End minute"));
             time_row.append(hour.as(gtk.Widget));
-            time_row.append(w.label(":", null).as(gtk.Widget));
+            time_row.append(w.label(@import("i18n").dtr("pearl", ":"), null).as(gtk.Widget));
             time_row.append(minute.as(gtk.Widget));
-            row(night, if (i == 0) self.t("Start (local time)", "Beginn (Ortszeit)") else self.t("End (local time)", "Ende (Ortszeit)"), time_row.as(gtk.Widget));
+            row(night, if (i == 0) @import("i18n").dtr("pearl", "Start (local time)") else @import("i18n").dtr("pearl", "End (local time)"), time_row.as(gtk.Widget));
             self.night_times[i * 2] = hour;
             self.night_times[i * 2 + 1] = minute;
         }
         self.night_status = w.label("", "pearl-secondary");
         night.append(self.night_status.as(gtk.Widget));
-        self.night_resume = w.wrappingButton(self.t("Resume saved policy", "Gespeicherte Einstellungen fortsetzen"));
+        self.night_resume = w.wrappingButton(@import("i18n").dtr("pearl", "Resume saved policy"));
         night.append(self.night_resume.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(self.night_resume, *View, resumeNight, self, .{});
         _ = object.Object.signals.notify.connect(self.night_enabled.as(object.Object), *View, selected, self, .{ .detail = "active" });
@@ -327,13 +343,13 @@ pub const View = struct {
         _ = gtk.SpinButton.signals.value_changed.connect(self.night_temperature, *View, spun, self, .{});
         for (self.night_times) |control| _ = gtk.SpinButton.signals.value_changed.connect(control, *View, spun, self, .{});
         host.reorderChildAfter(apps_section.expander.as(gtk.Widget), self.night_section.expander.as(gtk.Widget));
-        self.themes_section = Section.create(host, self.t("Themes & customization", "Designs und Anpassungen"), self.t("Installed themes, palettes and widget styles", "Installierte Designs, Paletten und Widget-Stile"));
+        self.themes_section = Section.create(host, @import("i18n").dtr("pearl", "Themes & customization"), @import("i18n").dtr("pearl", "Installed themes, palettes and widget styles"));
         self.themes = try @import("themes_view.zig").View.create(self.themes_section.body, editor);
         self.themes.preview_context = self;
         self.themes.preview_callback = previewPalette;
         self.profiles = try @import("profiles_view.zig").View.create(apps_section.body, editor);
-        self.login_section = Section.create(host, self.t("Login screen", "Anmeldebildschirm"), self.t("Copy appearance with administrator authentication", "Aussehen mit Administrator-Authentifizierung kopieren"));
-        self.greeter_sync = try @import("greeter_sync.zig").View.create(self.login_section.body, self, syncPreferences, german);
+        self.login_section = Section.create(host, @import("i18n").dtr("pearl", "Login screen"), @import("i18n").dtr("pearl", "Copy appearance with administrator authentication"));
+        self.greeter_sync = try @import("greeter_sync.zig").View.create(self.login_section.body, self, syncPreferences);
         host.reorderChildAfter(message.as(gtk.Widget), null);
         self.sync_borders = sync_borders;
         _ = object.Object.signals.notify.connect(sync_borders.as(object.Object), *View, selected, self, .{ .detail = "active" });
@@ -366,6 +382,7 @@ pub const View = struct {
     }
     pub fn destroy(self: *View) void {
         self.filling = true;
+        self.language_arena.deinit();
         self.themes.destroy();
         self.profiles.destroy();
         self.greeter_sync.destroy();
@@ -394,9 +411,6 @@ pub const View = struct {
         const self: *View = @ptrCast(@alignCast(context));
         if (!self.editor.editable() or self.raw_invalid) return error.Unavailable;
         return model.parse(alloc, self.editor.text());
-    }
-    fn t(self: *View, en: [:0]const u8, de: [:0]const u8) [:0]const u8 {
-        return if (self.german) de else en;
     }
     pub fn update(self: *View) void {
         self.night_status.setText(self.editor.night_summary.z());
@@ -443,8 +457,8 @@ pub const View = struct {
         showRow(self.entries[0].as(gtk.Widget), self.mode.getSelected() == 2);
         showRow(self.entries[1].as(gtk.Widget), self.mode.getSelected() == 1 and self.source.getSelected() == 0);
         self.mode_hint.as(gtk.Widget).setVisible(@intFromBool(self.mode.getSelected() != 0));
-        self.mode_hint.setText(if (self.mode.getSelected() == 2) self.t("An empty GTK theme name follows the system.", "Ein leerer GTK-Name folgt dem System.") else if (self.mode.getSelected() == 3) "Select an installed community theme below." else self.t("Dynamic colors need matugen 4.x.", "Dynamische Farben benötigen matugen 4.x."));
-        self.message.setText(if (self.raw_invalid) self.t("Advanced JSON is invalid. Correct it there to use these controls.", "Das JSON ist ungültig. Korrigiere es unter Erweitert, um diese Regler zu nutzen.") else "");
+        self.mode_hint.setText(if (self.mode.getSelected() == 2) @import("i18n").dtr("pearl", "An empty GTK theme name follows the system.") else if (self.mode.getSelected() == 3) @import("i18n").dtr("pearl", "Select an installed community theme below.") else @import("i18n").dtr("pearl", "Dynamic colors need matugen 4.x."));
+        self.message.setText(if (self.raw_invalid) @import("i18n").dtr("pearl", "Advanced JSON is invalid. Correct it there to use these controls.") else "");
         self.message.as(gtk.Widget).setVisible(@intFromBool(self.raw_invalid));
         self.customize.as(gtk.Widget).setVisible(@intFromBool(self.mode.getSelected() == 3));
         self.presentation();
@@ -457,24 +471,24 @@ pub const View = struct {
         if (self.editor.target.page == .appearance) self.desktop_preview.update(p);
         if (self.themes.preview_is_draft and self.editor.theme_error.len > 0 and !self.themes.preview_cancel_requested) self.desktop_preview.status.setText(self.editor.theme_error.z());
         var buf: [1024]u8 = undefined;
-        self.text_section.summary.setText(std.fmt.bufPrintZ(&buf, "{s} · {d} px · {s}{s}", .{ if (p.font.len == 0) self.t("System font", "Systemschrift") else p.font, p.font_size, if (p.density == .compact) self.t("Compact", "Kompakt") else self.t("Comfortable", "Komfortabel"), if (p.reduced_motion) self.t(" · Reduced motion", " · Weniger Bewegung") else "" }) catch "");
-        self.desktop_section.summary.setText(std.fmt.bufPrintZ(&buf, "{s} · {d} px · {s}", .{ if (p.desktop_icons.enabled) self.t("On", "An") else self.t("Off", "Aus"), p.desktop_icons.icon_size, if (@intFromEnum(p.desktop_icons.arrangement) == 0) self.t("Automatic arrangement", "Automatische Anordnung") else self.t("Manual arrangement", "Manuelle Anordnung") }) catch "");
+        self.text_section.summary.setText(std.fmt.bufPrintZ(&buf, "{s} · {d} px · {s}{s}", .{ if (p.font.len == 0) @import("i18n").dtr("pearl", "System font") else p.font, p.font_size, if (p.density == .compact) @import("i18n").dtr("pearl", "Compact") else @import("i18n").dtr("pearl", "Comfortable"), if (p.reduced_motion) @import("i18n").dtr("pearl", " · Reduced motion") else "" }) catch "");
+        self.desktop_section.summary.setText(std.fmt.bufPrintZ(&buf, "{s} · {d} px · {s}", .{ if (p.desktop_icons.enabled) @import("i18n").dtr("pearl", "On") else @import("i18n").dtr("pearl", "Off"), p.desktop_icons.icon_size, if (@intFromEnum(p.desktop_icons.arrangement) == 0) @import("i18n").dtr("pearl", "Automatic arrangement") else @import("i18n").dtr("pearl", "Manual arrangement") }) catch "");
         const night_summary = self.editor.night_summary.slice();
-        self.night_section.summary.setText(if (night_summary.len > 0) std.fmt.bufPrintZ(&buf, "{s}", .{night_summary[0 .. std.mem.indexOfScalar(u8, night_summary, '\n') orelse night_summary.len]}) catch "" else if (p.night_light.enabled) self.t("On · warmer screen colors", "An · wärmere Bildschirmfarben") else self.t("Off · warmer screen colors on supported displays", "Aus · wärmere Farben auf unterstützten Bildschirmen"));
+        self.night_section.summary.setText(if (night_summary.len > 0) std.fmt.bufPrintZ(&buf, "{s}", .{night_summary[0 .. std.mem.indexOfScalar(u8, night_summary, '\n') orelse night_summary.len]}) catch "" else if (p.night_light.enabled) @import("i18n").dtr("pearl", "On · warmer screen colors") else @import("i18n").dtr("pearl", "Off · warmer screen colors on supported displays"));
         var qt_attention = false;
         for ([_][]const u8{ "failed", "conflict", "missing_dependency", "restore_incomplete", "Restart", "Log in" }) |needle| if (std.mem.indexOf(u8, self.editor.qt_summary.slice(), needle) != null) {
             qt_attention = true;
             break;
         };
-        self.apps_section.summary.setText(if (self.editor.qt_review_text.len > 0) self.t("External Qt changes need review", "Externe Qt-Änderungen prüfen") else if (qt_attention) self.t("Qt needs attention · expand to review status", "Qt benötigt Aufmerksamkeit · Status aufklappen") else self.t("Window borders, Qt and application colors", "Fensterrahmen, Qt und Anwendungsfarben"));
+        self.apps_section.summary.setText(if (self.editor.qt_review_text.len > 0) @import("i18n").dtr("pearl", "External Qt changes need review") else if (qt_attention) @import("i18n").dtr("pearl", "Qt needs attention · expand to review status") else @import("i18n").dtr("pearl", "Window borders, Qt and application colors"));
         self.themes_section.summary.setText(if (self.editor.theme_error.len > 0 and !self.editor.application_command) self.editor.theme_error.z() else std.mem.span(self.themes.selection.getText()));
         if (self.editor.application_command and self.editor.theme_error.len > 0) self.apps_section.summary.setText(self.editor.theme_error.z());
         self.login_section.summary.setText(std.mem.span(self.greeter_sync.status.getText()));
-        const fit_names: [4][:0]const u8 = if (self.german) .{ "Material-Verlauf", "Einfarbig", "Ausfüllen", "Einpassen" } else .{ "Material gradient", "Solid color", "Cover", "Contain" };
+        const fit_names: [4][:0]const u8 = .{ @import("i18n").dtr("pearl", "Material gradient"), @import("i18n").dtr("pearl", "Solid color"), @import("i18n").dtr("pearl", "Cover"), @import("i18n").dtr("pearl", "Contain") };
         const fit_name = fit_names[@intFromEnum(p.wallpaper.mode)];
-        const filename = if (p.wallpaper.path.len > 0) std.fs.path.basename(p.wallpaper.path) else self.t("No image selected", "Kein Bild ausgewählt");
+        const filename = if (p.wallpaper.path.len > 0) std.fs.path.basename(p.wallpaper.path) else @import("i18n").dtr("pearl", "No image selected");
         self.wallpaper_summary.setText(if (@intFromEnum(p.wallpaper.mode) < 2) fit_name else std.fmt.bufPrintZ(&buf, "{s}\n{s}", .{ filename, fit_name }) catch fit_name);
-        self.image_section.summary.setText(if (p.wallpaper.slideshow.enabled) self.t("Slideshow on · path, fit and timing", "Diashow an · Pfad, Darstellung und Zeit") else self.t("Slideshow off · path, fit and background color", "Diashow aus · Pfad, Darstellung und Hintergrundfarbe"));
+        self.image_section.summary.setText(if (p.wallpaper.slideshow.enabled) @import("i18n").dtr("pearl", "Slideshow on · path, fit and timing") else @import("i18n").dtr("pearl", "Slideshow off · path, fit and background color"));
     }
     fn modeChosen(button: *gtk.CheckButton, self: *View) callconv(.c) void {
         if (button.getActive() == 0 or self.filling) return;
@@ -500,6 +514,20 @@ pub const View = struct {
         self.desktop_preview.palette(palette, self.prefs.theme.mode == .gtk);
     }
     fn fill(self: *View, prefs: model.Preferences) void {
+        var language_index: ?usize = null;
+        for (self.language_codes.items, 0..) |code, i| if (std.mem.eql(u8, code, prefs.language)) {
+            language_index = i;
+            break;
+        };
+        if (language_index == null) {
+            const alloc = self.language_arena.allocator();
+            const code = alloc.dupeZ(u8, prefs.language) catch return;
+            const label = @import("i18n").fmtAlloc(alloc, "{s} (language pack not installed)", .{code}) catch return;
+            language_index = self.language_codes.items.len;
+            self.language_codes.append(alloc, code) catch return;
+            object.ext.cast(gtk.StringList, self.language.getModel().?).?.append(label);
+        }
+        self.language.setSelected(@intCast(language_index.?));
         self.desktop_enabled.setActive(@intFromBool(prefs.desktop_icons.enabled));
         self.desktop_hidden.setActive(@intFromBool(prefs.desktop_icons.show_hidden));
         self.desktop_output.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, prefs.desktop_icons.output) catch "");
@@ -584,6 +612,7 @@ pub const View = struct {
             },
         };
         prefs.font = text(self.entries[4]);
+        prefs.language = self.language_codes.items[@min(self.language.getSelected(), self.language_codes.items.len - 1)];
         prefs.font_size = @intCast(self.font_size.getValueAsInt());
         prefs.density = @enumFromInt(self.density.getSelected());
         prefs.reduced_motion = self.motion.getActive() != 0;
@@ -702,7 +731,7 @@ pub const View = struct {
             picker.as(gtk.Window).present();
             return;
         }
-        const picker = files.create(self.t("Choose wallpaper image", "Hintergrundbild auswählen"), .open);
+        const picker = files.create(@import("i18n").dtr("pearl", "Choose wallpaper image"), .open);
         files.setStateKey(picker, "first-party/wallpaper-image");
         self.picker = picker;
         _ = picker.ref();
@@ -733,13 +762,13 @@ pub const View = struct {
         const file = files.getFile(dialog) orelse return;
         defer file.unref();
         const path = file.getPath() orelse {
-            self.message.setText(self.t("Choose an image stored on this computer.", "Wähle ein lokal gespeichertes Bild."));
+            self.message.setText(@import("i18n").dtr("pearl", "Choose an image stored on this computer."));
             self.message.as(gtk.Widget).setVisible(1);
             return;
         };
         defer glib.free(path);
         if (std.mem.span(path).len > 1024 or !std.unicode.utf8ValidateSlice(std.mem.span(path))) {
-            self.message.setText(self.t("The image path is too long or is not valid UTF-8.", "Der Bildpfad ist zu lang oder kein gültiges UTF-8."));
+            self.message.setText(@import("i18n").dtr("pearl", "The image path is too long or is not valid UTF-8."));
             self.message.as(gtk.Widget).setVisible(1);
             return;
         }
@@ -762,7 +791,7 @@ pub const View = struct {
             picker.as(gtk.Window).present();
             return;
         }
-        const picker = files.create(self.t("Choose wallpaper folder", "Hintergrundbild-Ordner auswählen"), .select_folder);
+        const picker = files.create(@import("i18n").dtr("pearl", "Choose wallpaper folder"), .select_folder);
         files.setStateKey(picker, "first-party/wallpaper-folder");
         self.folder_picker = picker;
         _ = picker.ref();
@@ -787,14 +816,14 @@ pub const View = struct {
         const file = files.getFile(dialog) orelse return;
         defer file.unref();
         const path = file.getPath() orelse {
-            self.message.setText(self.t("Choose a folder stored on this computer.", "Wähle einen lokal gespeicherten Ordner."));
+            self.message.setText(@import("i18n").dtr("pearl", "Choose a folder stored on this computer."));
             self.message.as(gtk.Widget).setVisible(1);
             return;
         };
         defer glib.free(path);
         const folder = std.mem.span(path);
         if (folder.len > 1024 or !std.unicode.utf8ValidateSlice(folder)) {
-            self.message.setText(self.t("The folder path is too long or is not valid UTF-8.", "Der Ordnerpfad ist zu lang oder kein gültiges UTF-8."));
+            self.message.setText(@import("i18n").dtr("pearl", "The folder path is too long or is not valid UTF-8."));
             self.message.as(gtk.Widget).setVisible(1);
             return;
         }
@@ -878,7 +907,7 @@ pub const View = struct {
         const key = self.paletteKey() orelse return 0;
         defer a.free(key);
         self.setPaletteKey(key);
-        self.desktop_preview.status.setText(self.t("Rendering draft colors…", "Entwurfsfarben werden gerendert…"));
+        self.desktop_preview.status.setText(@import("i18n").dtr("pearl", "Rendering draft colors…"));
         self.themes.previewDraft() catch |err| {
             self.desktop_preview.status.setText(@errorName(err));
         };
@@ -906,12 +935,12 @@ pub const View = struct {
         const css = std.fmt.allocPrintSentinel(a, ".settings-window .appearance-view .settings-draft-preview {{ background: {s}; }}", .{if (mode == 0) "linear-gradient(155deg, #211a2b, #9576b5)" else if (model.hex(color)) color else "#141218"}, 0) catch return 0;
         defer a.free(css);
         self.preview_css.loadFromString(css);
-        self.preview_note.setText(self.t("Draft preview · Changes take effect after Apply & save.", "Entwurfsvorschau · Änderungen werden erst beim Anwenden wirksam."));
+        self.preview_note.setText(@import("i18n").dtr("pearl", "Draft preview · Changes take effect after Apply & save."));
         if (mode < 2 or path.len == 0 or path[0] != '/') return 0;
         const z = a.dupeZ(u8, path) catch return 0;
         defer a.free(z);
         const preview = a.create(Preview) catch return 0;
-        self.preview_note.setText(self.t("Loading wallpaper preview…", "Hintergrundvorschau wird geladen…"));
+        self.preview_note.setText(@import("i18n").dtr("pearl", "Loading wallpaper preview…"));
         preview.* = .{ .owner = self, .file = gio.File.newForPath(z), .cancel = gio.Cancellable.new() };
         self.preview = preview;
         preview.file.readAsync(0, preview.cancel, Preview.opened, preview);
@@ -935,7 +964,7 @@ const Preview = struct {
     fn failed(self: *Preview) void {
         if (self.owner) |owner| {
             owner.preview = null;
-            owner.preview_note.setText(owner.t("Could not preview this image. Apply will validate the file.", "Keine Bildvorschau möglich. Beim Anwenden wird die Datei geprüft."));
+            owner.preview_note.setText(@import("i18n").dtr("pearl", "Could not preview this image. Apply will validate the file."));
         }
         self.destroy();
     }
@@ -964,7 +993,7 @@ const Preview = struct {
             defer texture.unref();
             owner.picture.setPaintable(texture.as(gdk.Paintable));
             owner.wallpaper_thumbnail.setPaintable(texture.as(gdk.Paintable));
-            owner.preview_note.setText(owner.t("Wallpaper draft preview · Changes take effect after Apply & save.", "Hintergrundvorschau · Änderungen erst nach Anwenden und Speichern."));
+            owner.preview_note.setText(@import("i18n").dtr("pearl", "Wallpaper draft preview · Changes take effect after Apply & save."));
             owner.preview_ready = true;
             owner.preview = null;
         }

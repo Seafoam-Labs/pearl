@@ -92,13 +92,13 @@ pub const Launcher = struct {
     pub fn configureAssistant(self: *Launcher, enabled: bool, ask: @FieldType(Launcher, "ask")) void {
         self.assistant_enabled = enabled;
         self.ask = ask;
-        self.search.setPlaceholderText(if (enabled) tr("Search apps, calculate, or ask a question", "Apps suchen, rechnen oder eine Frage stellen") else tr("Search applications, windows or calculate", "Programme und Fenster suchen oder rechnen"));
+        self.search.setPlaceholderText(if (enabled) @import("i18n").dtr("pearl", "Search apps, calculate, or ask a question") else @import("i18n").dtr("pearl", "Search applications, windows or calculate"));
         self.refresh();
     }
     pub fn assistantAcknowledged(self: *Launcher, ok: bool) bool {
         const revision = self.assistant_pending orelse return false;
         self.assistant_pending = null;
-        if (!ok) self.message.setText(tr("Could not open Assistant. Your question is preserved; retry or check Settings.", "Assistent konnte nicht geöffnet werden. Frage bleibt erhalten; erneut versuchen oder Einstellungen prüfen."));
+        if (!ok) self.message.setText(@import("i18n").dtr("pearl", "Could not open Assistant. Your question is preserved; retry or check Settings."));
         return ok and revision == self.edit_revision;
     }
     fn connect(self: *Launcher, instance: *object.Object, id: c_ulong) void {
@@ -107,10 +107,10 @@ pub const Launcher = struct {
     }
     pub fn create(host: *gtk.Box, app: *gio.Application, display: *gdk.Display, index: *apps.Index, client: *Client, context: *anyopaque, dismiss: @FieldType(Launcher, "dismiss"), copy_text: @FieldType(Launcher, "copy_text")) !*Launcher {
         const self = try a.create(Launcher);
-        host.append(widgets.label(tr("Find your next thing", "Was möchtest du als Nächstes tun?"), "pearl-card-title").as(gtk.Widget));
+        host.append(widgets.label(@import("i18n").dtr("pearl", "Find your next thing"), "pearl-card-title").as(gtk.Widget));
         const search = gtk.SearchEntry.new();
         search.setSearchDelay(0);
-        search.setPlaceholderText(tr("Search applications, windows or calculate", "Programme und Fenster suchen oder rechnen"));
+        search.setPlaceholderText(@import("i18n").dtr("pearl", "Search applications, windows or calculate"));
         search.as(gtk.Widget).setName("launcher-search");
         host.append(search.as(gtk.Widget));
         const strings = gtk.StringList.new(null);
@@ -126,7 +126,7 @@ pub const Launcher = struct {
         scroll.as(gtk.Widget).setVexpand(1);
         scroll.setChild(list.as(gtk.Widget));
         host.append(scroll.as(gtk.Widget));
-        const message = widgets.label(tr("Loading applications…", "Programme werden geladen…"), "pearl-secondary");
+        const message = widgets.label(@import("i18n").dtr("pearl", "Loading applications…"), "pearl-secondary");
         host.append(message.as(gtk.Widget));
         self.* = .{ .app = app, .display = display, .index = index, .client = client, .context = context, .dismiss = dismiss, .copy_text = copy_text, .search = search, .strings = strings, .selection = selection, .list = list, .message = message };
         self.connect(factory.as(object.Object), gtk.SignalListItemFactory.signals.setup.connect(factory, *Launcher, setup, self, .{}));
@@ -178,7 +178,7 @@ pub const Launcher = struct {
             self.dirty = true;
             return;
         }
-        self.begin() catch |err| self.message.setText(if (err == error.Busy) tr("Searching…", "Suche läuft…") else tr("Search is unavailable", "Suche nicht verfügbar"));
+        self.begin() catch |err| self.message.setText(if (err == error.Busy) @import("i18n").dtr("pearl", "Searching…") else @import("i18n").dtr("pearl", "Search is unavailable"));
     }
     fn begin(self: *Launcher) !void {
         if (self.index.searches >= 2) {
@@ -209,7 +209,7 @@ pub const Launcher = struct {
             const app_id = w.app_id orelse w.class orelse "";
             const title = w.title orelse app_id;
             if (title.len > 4096 or app_id.len > 1024) continue;
-            const detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s} · {s}", .{ app_id, output.?.name, if (workspace) |ws| ws.name else "—", if (w.minimized) tr("Minimized", "Minimiert") else if (w.visible) tr("Visible window", "Sichtbares Fenster") else tr("Other workspace", "Andere Arbeitsfläche") }, 0);
+            const detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s} · {s}", .{ app_id, output.?.name, if (workspace) |ws| ws.name else "—", if (w.minimized) @import("i18n").dtr("pearl", "Minimized") else if (w.visible) @import("i18n").dtr("pearl", "Visible window") else @import("i18n").dtr("pearl", "Other workspace") }, 0);
             try job.windows.append(alloc, .{ .id = try alloc.dupeZ(u8, w.id), .name = try alloc.dupeZ(u8, title), .detail = detail, .keywords = try alloc.dupeZ(u8, app_id), .visible = w.visible });
         }
         self.pending = true;
@@ -237,7 +237,7 @@ pub const Launcher = struct {
         job.calculation = calculator.evaluate(job.query);
         if (job.calculation.outcome == .value) {
             const value = try alloc.dupeZ(u8, job.calculation.outcome.value.text());
-            const detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ job.query, tr("Calculation · Enter to copy · = to continue", "Berechnung · Eingabe kopiert · = rechnet weiter") }, 0);
+            const detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ job.query, @import("i18n").dtr("pearl", "Calculation · Enter to copy · = to continue") }, 0);
             try job.hits.append(alloc, .{ .kind = .calculator, .index = 0, .score = std.math.maxInt(i32), .id = job.query, .name = value, .detail = detail });
         }
         if (job.calculation.explicit) return;
@@ -264,9 +264,9 @@ pub const Launcher = struct {
             break;
         };
         if (@import("../agent/intent.zig").score(job.query, job.assistant_enabled, job.calculation.outcome == .value, exact)) |score| {
-            try job.hits.append(alloc, .{ .kind = .ask, .index = 0, .score = score, .id = "pearl:ask", .name = tr("Ask Pearl", "Pearl fragen"), .detail = tr("Web answer · Enter to ask", "Web-Antwort · Eingabe zum Fragen") });
+            try job.hits.append(alloc, .{ .kind = .ask, .index = 0, .score = score, .id = "pearl:ask", .name = @import("i18n").dtr("pearl", "Ask Pearl"), .detail = @import("i18n").dtr("pearl", "Web answer · Enter to ask") });
         }
-        if (job.assistant_enabled and job.query.len == 0) try job.hits.append(alloc, .{ .kind = .conversation, .index = 0, .score = -1000, .id = "pearl:conversation", .name = tr("Resume conversation", "Gespräch fortsetzen"), .detail = tr("Pearl Assistant · This session", "Pearl-Assistent · Diese Sitzung") });
+        if (job.assistant_enabled and job.query.len == 0) try job.hits.append(alloc, .{ .kind = .conversation, .index = 0, .score = -1000, .id = "pearl:conversation", .name = @import("i18n").dtr("pearl", "Resume conversation"), .detail = @import("i18n").dtr("pearl", "Pearl Assistant · This session") });
         std.mem.sort(Hit, job.hits.items, {}, less);
     }
     fn less(_: void, x: Hit, y: Hit) bool {
@@ -337,9 +337,9 @@ pub const Launcher = struct {
         self.selection.setSelected(selected);
         if (old) |j| j.destroy();
         var buffer: [180]u8 = undefined;
-        const message = if (self.count == 0) (if (self.index.pending) tr("Loading applications…", "Programme werden geladen…") else if (self.index.failed) tr("Application discovery unavailable", "Programmsuche nicht verfügbar") else tr("No matches. Try another name.", "Keine Treffer. Versuche einen anderen Namen.")) else std.fmt.bufPrintZ(&buffer, "{d} · {s}", .{ job.hits.items.len, tr("results · ↑ ↓ to choose · Enter to open", "Ergebnisse · ↑ ↓ wählen · Eingabe öffnen") }) catch unreachable;
-        const detail = if (job.hits.items.len > self.count) std.fmt.bufPrintZ(&buffer, "{d} / {d} · {s}", .{ self.count, job.hits.items.len, tr("Refine your search for more results", "Suche eingrenzen für weitere Ergebnisse") }) catch unreachable else message;
-        self.message.setText(self.action_message orelse if (job.calculation.explicit and job.calculation.outcome != .value) calculationMessage(job.calculation.outcome) else if (job.calculation.outcome == .value) tr("↑ ↓ to choose · Enter to copy calculation · = to continue", "↑ ↓ wählen · Eingabe kopiert die Berechnung · = rechnet weiter") else detail);
+        const message = if (self.count == 0) (if (self.index.pending) @import("i18n").dtr("pearl", "Loading applications…") else if (self.index.failed) @import("i18n").dtr("pearl", "Application discovery unavailable") else @import("i18n").dtr("pearl", "No matches. Try another name.")) else std.fmt.bufPrintZ(&buffer, "{d} · {s}", .{ job.hits.items.len, @import("i18n").dtr("pearl", "results · ↑ ↓ to choose · Enter to open") }) catch unreachable;
+        const detail = if (job.hits.items.len > self.count) std.fmt.bufPrintZ(&buffer, "{d} / {d} · {s}", .{ self.count, job.hits.items.len, @import("i18n").dtr("pearl", "Refine your search for more results") }) catch unreachable else message;
+        self.message.setText(self.action_message orelse if (job.calculation.explicit and job.calculation.outcome != .value) calculationMessage(job.calculation.outcome) else if (job.calculation.outcome == .value) @import("i18n").dtr("pearl", "↑ ↓ to choose · Enter to copy calculation · = to continue") else detail);
         self.render_started = job.started;
         log.debug("event=launcher-results count={d} shown={d} publish_us={d}", .{ job.hits.items.len, self.count, glib.getMonotonicTime() - job.started });
     }
@@ -351,7 +351,7 @@ pub const Launcher = struct {
         // Invalidate synchronously, before SearchEntry's coalesced notification.
         self.count = 0;
         self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), null);
-        self.message.setText(tr("Searching…", "Suche läuft…"));
+        self.message.setText(@import("i18n").dtr("pearl", "Searching…"));
     }
     fn changed(_: *gtk.SearchEntry, self: *Launcher) callconv(.c) void {
         self.continuation_epoch = self.caret_epoch;
@@ -388,17 +388,17 @@ pub const Launcher = struct {
     }
     fn calculationMessage(outcome: calculator.Outcome) [:0]const u8 {
         return switch (outcome) {
-            .incomplete, .not_applicable => tr("Complete the expression", "Vervollständige den Ausdruck"),
-            .value => tr("Enter to copy", "Eingabe kopiert"),
+            .incomplete, .not_applicable => @import("i18n").dtr("pearl", "Complete the expression"),
+            .value => @import("i18n").dtr("pearl", "Enter to copy"),
             .diagnostic => |d| switch (d.kind) {
-                error.DivisionByZero => tr("Cannot divide by zero", "Division durch null ist nicht möglich"),
-                error.Domain => tr("Outside the function's real-number domain", "Außerhalb des reellen Definitionsbereichs"),
-                error.Overflow => tr("The result is too large", "Das Ergebnis ist zu groß"),
-                error.Limit => tr("The expression is too long or complex", "Der Ausdruck ist zu lang oder zu komplex"),
-                error.UnknownFunction => tr("Unknown function or constant", "Unbekannte Funktion oder Konstante"),
-                error.NumberFormat => tr("Use decimal points, without grouping or currency symbols", "Dezimalpunkt verwenden, ohne Tausender- oder Währungszeichen"),
-                error.Syntax => tr("Unsupported expression; check operators and parentheses", "Ungültiger Ausdruck; Operatoren und Klammern prüfen"),
-                error.Incomplete => tr("Complete the expression", "Vervollständige den Ausdruck"),
+                error.DivisionByZero => @import("i18n").dtr("pearl", "Cannot divide by zero"),
+                error.Domain => @import("i18n").dtr("pearl", "Outside the function's real-number domain"),
+                error.Overflow => @import("i18n").dtr("pearl", "The result is too large"),
+                error.Limit => @import("i18n").dtr("pearl", "The expression is too long or complex"),
+                error.UnknownFunction => @import("i18n").dtr("pearl", "Unknown function or constant"),
+                error.NumberFormat => @import("i18n").dtr("pearl", "Use decimal points, without grouping or currency symbols"),
+                error.Syntax => @import("i18n").dtr("pearl", "Unsupported expression; check operators and parentheses"),
+                error.Incomplete => @import("i18n").dtr("pearl", "Complete the expression"),
             },
         };
     }
@@ -427,7 +427,7 @@ pub const Launcher = struct {
         self.open(position) catch |err| {
             log.err("event=launcher-error error={s}", .{@errorName(err)});
             const is_calculation = if (self.shown) |job| position < job.hits.items.len and job.hits.items[position].kind == .calculator else false;
-            self.action_message = if (is_calculation) tr("Could not copy: clipboard unavailable or paused. Try again.", "Kopieren fehlgeschlagen: Zwischenablage nicht verfügbar oder pausiert. Erneut versuchen.") else tr("Could not open this result. Try again or choose another.", "Öffnen fehlgeschlagen. Versuche es erneut oder wähle einen anderen Eintrag.");
+            self.action_message = if (is_calculation) @import("i18n").dtr("pearl", "Could not copy: clipboard unavailable or paused. Try again.") else @import("i18n").dtr("pearl", "Could not open this result. Try again or choose another.");
             self.message.setText(self.action_message.?);
             return;
         };
@@ -442,7 +442,7 @@ pub const Launcher = struct {
             const ask = self.ask orelse return error.AssistantUnavailable;
             try ask(self.context, if (hit.kind == .ask) @import("../agent/intent.zig").question(job.query) else "");
             self.assistant_pending = self.edit_revision;
-            self.message.setText(tr("Opening Assistant…", "Assistent wird geöffnet…"));
+            self.message.setText(@import("i18n").dtr("pearl", "Opening Assistant…"));
             return;
         }
         if (hit.kind == .calculator) {
