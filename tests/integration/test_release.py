@@ -43,7 +43,13 @@ def main():
             assert (stage/'usr/share/pearl/release.json').is_file()
             assert (stage/'usr/share/pearl/scheduling-profiles.json').read_bytes()==(ROOT/'packaging/scheduling/scheduling-profiles.json').read_bytes()
             assert (stage/'usr/lib/pearl/pearl-scheduling-helper').stat().st_mode&0o7777==0o755
-            assert '/usr/lib/pearl/pearl-scheduling-helper' in (stage/'usr/share/polkit-1/actions/org.aqueous.Pearl.Scheduling.policy').read_text()
+            policy=(stage/'usr/share/polkit-1/actions/org.aqueous.Pearl.Scheduling.policy').read_text()
+            assert '/usr/lib/pearl/pearl-scheduling-helper' in policy
+            # Editing the profiles changes what every user may run as root: never without a password.
+            edit=policy.split('id="org.aqueous.Pearl.Scheduling.Profiles"')[1].split('</action>')[0]
+            assert '<allow_active>auth_admin_keep</allow_active>' in edit and '<allow_any>no</allow_any>' in edit and '<allow_inactive>no</allow_inactive>' in edit
+            assert '<annotate key="org.freedesktop.policykit.exec.argv1">profiles</annotate>' in edit
+            assert 'apply-custom' not in policy
             assert not list(stage.rglob('*.wants'))
             unit=(stage/'usr/lib/systemd/user/pearl.service').read_text()
             for field in ('KillMode=process','PartOf=graphical-session.target','Requisite=graphical-session.target','ConditionEnvironment=AQUEOUS_SOCKET','ConditionEnvironment=!AQUEOUS_NESTED=1','ExecCondition=/usr/bin/pearl --check-environment','SyslogIdentifier=pearl'):assert field in unit

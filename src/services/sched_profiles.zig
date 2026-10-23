@@ -5,7 +5,7 @@ const std = @import("std");
 
 pub const file_name = "scheduling-profiles.json";
 pub const env_path = "/etc/default/scx";
-pub const max_profiles = 8;
+pub const max_profiles = 16;
 pub const max_bytes = 16384;
 pub const max_args = 32;
 /// The kernel's sched_ext state, from /sys/kernel/sched_ext/state.
@@ -18,11 +18,37 @@ pub fn validName(name: []const u8) bool {
     return true;
 }
 
+/// Where schedulers may run from, in the order scx.service's shell searches
+/// them.
+pub const scheduler_dirs = [_][]const u8{ "/usr/local/bin", "/usr/bin" };
+
+/// A scheduler as a profile names it: an absolute path in one of
+/// scheduler_dirs, or a binary name that the helper resolves to one.
+pub fn validSched(sched: []const u8) bool {
+    if (sched.len == 0 or sched[0] != '/') return validName(sched);
+    const dir = std.fs.path.dirname(sched) orelse return false;
+    for (scheduler_dirs) |allowed| if (std.mem.eql(u8, dir, allowed)) return validName(std.fs.path.basename(sched));
+    return false;
+}
+
+/// The binary name of a scheduler given by path or name.
+pub fn schedName(sched: []const u8) []const u8 {
+    return std.fs.path.basename(sched);
+}
+
+/// Both name the same scheduler. Two paths must be equal; a bare name, as
+/// older files hold, matches the path it resolves to by name.
+pub fn sameSched(x: []const u8, y: []const u8) bool {
+    if (x.len > 0 and y.len > 0 and x[0] == '/' and y[0] == '/') return std.mem.eql(u8, x, y);
+    return std.mem.eql(u8, schedName(x), schedName(y));
+}
+
 pub const Profile = struct {
     id: []const u8,
     label: []const u8,
     description: []const u8 = "",
-    /// Scheduler binary, for example scx_cosmos. Null only for stop profiles.
+    /// Scheduler binary, for example /usr/bin/scx_cosmos. Null only for stop
+    /// profiles.
     sched: ?[]const u8 = null,
     args: []const []const u8 = &.{},
     /// Return to the kernel's default scheduler by disabling scx.service.
@@ -80,7 +106,7 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Config {
             has_stop = true;
         } else {
             const sched = try text(item, "sched") orelse return error.InvalidProfiles;
-            if (!validName(sched)) return error.InvalidProfiles;
+            if (!validSched(sched)) return error.InvalidProfiles;
             profile.sched = sched;
             if (item.object.get("args")) |args| {
                 if (args != .array or args.array.items.len > max_args) return error.InvalidProfiles;
@@ -143,7 +169,7 @@ pub fn parseEnv(bytes: []const u8) Env {
 /// The file still holds exactly what the profile would write.
 pub fn matches(profile: Profile, env: Env) bool {
     if (profile.stop) return true;
-    if (!std.mem.eql(u8, env.sched, profile.sched.?)) return false;
+    if (!sameSched(env.sched, profile.sched.?)) return false;
     var flags = std.mem.tokenizeScalar(u8, env.flags, ' ');
     for (profile.args) |arg| if (!std.mem.eql(u8, flags.next() orelse return false, arg)) return false;
     return flags.next() == null;
@@ -153,6 +179,105 @@ pub fn matches(profile: Profile, env: Env) bool {
 pub fn firstStop(config: Config) ?usize {
     for (config.profiles, 0..) |profile, i| if (profile.stop) return i;
     return null;
+}
+
+/// The profiles as a profile file that parse reads back unchanged.
+pub fn serialize(a: std.mem.Allocator, config: Config) ![]u8 {
+    const Entry = struct {
+        id: []const u8,
+        label: []const u8,
+        action: ?[]const u8 = null,
+        sched: ?[]const u8 = null,
+        args: ?[]const []const u8 = null,
+        description: ?[]const u8 = null,
+    };
+    const entries = try a.alloc(Entry, config.profiles.len);
+    for (config.profiles, entries) |profile, *entry| entry.* = .{
+        .id = profile.id,
+        .label = profile.label,
+        .action = if (profile.stop) "stop" else null,
+        .sched = profile.sched,
+        .args = if (profile.stop) null else profile.args,
+        .description = if (profile.description.len > 0) profile.description else null,
+    };
+    return std.json.Stringify.valueAlloc(a, .{ .version = 2, .profiles = entries }, .{ .whitespace = .indent_2, .emit_null_optional_fields = false });
+}
+
+/// Both profiles run the same command, or both turn sched_ext off.
+pub fn sameCommand(x: Profile, y: Profile) bool {
+    if (x.stop or y.stop) return x.stop and y.stop;
+    if (!sameSched(x.sched.?, y.sched.?) or x.args.len != y.args.len) return false;
+    for (x.args, y.args) |left, right| if (!std.mem.eql(u8, left, right)) return false;
+    return true;
+}
+
+/// An id for a new profile, from its label: lowercase letters, digits and
+/// dashes, unique among the existing profiles.
+pub fn slug(buffer: *[32]u8, label: []const u8, config: Config) []const u8 {
+    var len: usize = 0;
+    for (label) |c| {
+        if (len == 24) break;
+        if (std.ascii.isAlphanumeric(c)) {
+            buffer[len] = std.ascii.toLower(c);
+            len += 1;
+        } else if (len > 0 and buffer[len - 1] != '-') {
+            buffer[len] = '-';
+            len += 1;
+        }
+    }
+    while (len > 0 and buffer[len - 1] == '-') len -= 1;
+    if (len == 0) {
+        @memcpy(buffer[0..7], "profile");
+        len = 7;
+    }
+    const base = len;
+    var n: usize = 2;
+    while (config.find(buffer[0..len]) != null) : (n += 1) {
+        len = base + (std.fmt.bufPrint(buffer[base..], "-{d}", .{n}) catch unreachable).len;
+    }
+    return buffer[0..len];
+}
+
+/// The profile to apply once the list changes from before to after, so the
+/// running scheduler keeps matching the selected profile: the same profile
+/// when its command changed, Default when it is gone, else nothing.
+pub fn reapply(before: Config, after: Config, env: Env) ?[]const u8 {
+    const id = env.profile orelse return null;
+    const old = before.profiles[before.find(id) orelse return null];
+    // Only a profile still in effect; anything else was replaced by hand.
+    if (!matches(old, env)) return null;
+    if (after.find(id)) |i| return if (sameCommand(old, after.profiles[i])) null else id;
+    const stop = after.profiles[firstStop(after) orelse return null];
+    return if (old.stop) null else stop.id;
+}
+
+/// Edited profiles with the shipped Default in place of their own. It is what
+/// a failing scheduler falls back to, so it cannot be changed; it keeps its
+/// place in the edited order.
+pub fn lockDefault(a: std.mem.Allocator, user: Config, system: Config) !Config {
+    const default = system.profiles[firstStop(system) orelse return user];
+    var profiles: std.ArrayList(Profile) = .empty;
+    var placed = false;
+    for (user.profiles) |profile| {
+        if (profile.stop) {
+            if (!placed) try profiles.append(a, default);
+            placed = true;
+        } else if (!std.mem.eql(u8, profile.id, default.id)) try profiles.append(a, profile);
+    }
+    if (!placed) try profiles.insert(a, 0, default);
+    return .{ .profiles = profiles.items };
+}
+
+/// Scheduler options as typed in one line, split on whitespace.
+pub fn splitArgs(a: std.mem.Allocator, line: []const u8) ![]const []const u8 {
+    var args: std.ArrayList([]const u8) = .empty;
+    var words = std.mem.tokenizeAny(u8, line, " \t\r\n");
+    while (words.next()) |word| {
+        if (!validArg(word)) return error.InvalidArgument;
+        if (args.items.len == max_args) return error.TooManyArguments;
+        try args.append(a, word);
+    }
+    return args.items;
 }
 
 pub const Unit = enum { unknown, missing, active, activating, deactivating, inactive, failed };
@@ -171,14 +296,16 @@ pub const Status = struct {
 /// sched_ext names an attached scheduler <name>_<version>_<target>, where
 /// <name> is the binary name without its scx_ prefix.
 pub fn opsMatches(sched: []const u8, ops: []const u8) bool {
-    const name = if (std.mem.startsWith(u8, sched, "scx_")) sched[4..] else sched;
+    const binary = schedName(sched);
+    const name = if (std.mem.startsWith(u8, binary, "scx_")) binary[4..] else binary;
     return name.len > 0 and std.mem.startsWith(u8, ops, name) and (ops.len == name.len or ops[name.len] == '_');
 }
 
 /// The version an attached scheduler reports in its ops name, if any.
 pub fn opsVersion(sched: []const u8, ops: []const u8) ?[]const u8 {
     if (!opsMatches(sched, ops)) return null;
-    const name_len = if (std.mem.startsWith(u8, sched, "scx_")) sched.len - 4 else sched.len;
+    const binary = schedName(sched);
+    const name_len = if (std.mem.startsWith(u8, binary, "scx_")) binary.len - 4 else binary.len;
     if (ops.len <= name_len + 1) return null;
     const rest = ops[name_len + 1 ..];
     const version = rest[0 .. std.mem.indexOfScalar(u8, rest, '_') orelse rest.len];
@@ -343,7 +470,24 @@ test "profiles parse command lines, add the default profile and reject unsafe en
         "{\"version\":2,\"profiles\":[{\"id\":\"a\",\"label\":\"A\",\"sched\":\"scx_lavd\",\"args\":[\"$(reboot)\"]}]}",
         "{\"version\":2,\"profiles\":[{\"id\":\"a\",\"label\":\"A\",\"sched\":\"scx_lavd\",\"args\":[\"'\"]}]}",
         "{\"version\":2,\"profiles\":[{\"id\":\"a\",\"label\":\"A\",\"action\":\"stop\",\"sched\":\"scx_lavd\"}]}",
+        "{\"version\":2,\"profiles\":[{\"id\":\"a\",\"label\":\"A\",\"sched\":\"/tmp/scx_lavd\"}]}",
     }) |bad| try t.expect(std.meta.isError(parse(a, bad)));
+    const absolute = try parse(a, "{\"version\":2,\"profiles\":[{\"id\":\"a\",\"label\":\"A\",\"sched\":\"/usr/bin/scx_lavd\"}]}");
+    try t.expectEqualStrings("/usr/bin/scx_lavd", absolute.profiles[1].sched.?);
+}
+
+test "schedulers are named by path or by binary name" {
+    try t.expect(validSched("scx_lavd"));
+    try t.expect(validSched("/usr/bin/scx_lavd"));
+    try t.expect(validSched("/usr/local/bin/scx_lavd"));
+    for ([_][]const u8{ "", "/", "lavd", "/usr/bin/lavd", "/usr/bin/", "/home/me/scx_lavd", "/usr/bin/../bin/scx_lavd", "/usr//bin/scx_lavd", "usr/bin/scx_lavd", "/usr/sbin/scx_lavd" }) |bad| try t.expect(!validSched(bad));
+    try t.expectEqualStrings("scx_lavd", schedName("/usr/bin/scx_lavd"));
+    try t.expect(sameSched("/usr/bin/scx_lavd", "scx_lavd"));
+    try t.expect(sameSched("scx_lavd", "/usr/local/bin/scx_lavd"));
+    try t.expect(!sameSched("/usr/bin/scx_lavd", "/usr/local/bin/scx_lavd"));
+    try t.expect(!sameSched("/usr/bin/scx_lavd", "scx_cosmos"));
+    try t.expect(opsMatches("/usr/bin/scx_cosmos", "cosmos_1.1.7_x86_64_unknown_linux_gnu"));
+    try t.expectEqualStrings("1.1.7", opsVersion("/usr/bin/scx_cosmos", "cosmos_1.1.7_x86_64_unknown_linux_gnu").?);
 }
 
 test "the environment file round-trips and attributes the running scheduler" {
@@ -358,6 +502,10 @@ test "the environment file round-trips and attributes the running scheduler" {
     try t.expectEqualStrings("-s 700 -m performance -w", env.flags);
     try t.expect(matches(latency, env));
     try t.expect(!matches(config.profiles[1], env));
+    // The helper writes the path a bare name resolved to, as scxtui does.
+    var resolved = env;
+    resolved.sched = "/usr/bin/scx_cosmos";
+    try t.expect(matches(latency, resolved));
     try t.expectEqual(Status{ .kind = .running, .profile = 2 }, status(config, env, .active, .enabled, "cosmos_1.1.7_x86_64_unknown_linux_gnu", false, false));
     try t.expectEqual(Status{ .kind = .starting, .profile = 2 }, status(config, env, .activating, .disabled, "", false, false));
     try t.expectEqual(Status{ .kind = .failed, .profile = 2 }, status(config, env, .failed, .disabled, "", false, false));
@@ -486,4 +634,84 @@ test "attached schedulers and exit reasons are read from kernel and log text" {
     try t.expectEqualStrings("exited with status 1", processReason(&buffer, "exit-code", 1, 1).?);
     try t.expectEqualStrings("killed by SIGKILL repeatedly", processReason(&buffer, "start-limit-hit", 2, 9).?);
     try t.expectEqualStrings("restarted too often", processReason(&buffer, "start-limit-hit", 0, 0).?);
+}
+
+test "custom profiles serialize, get ids and split options" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const config = try parse(a, sample);
+    const again = try parse(a, try serialize(a, config));
+    try t.expectEqual(config.profiles.len, again.profiles.len);
+    for (config.profiles, again.profiles) |x, y| {
+        try t.expectEqualStrings(x.id, y.id);
+        try t.expectEqualStrings(x.label, y.label);
+        try t.expectEqualStrings(x.description, y.description);
+        try t.expect(sameCommand(x, y));
+    }
+
+    var edited = config.profiles[1];
+    edited.args = &.{"--powersave"};
+    try t.expect(!sameCommand(config.profiles[1], edited));
+    var moved = config.profiles[1];
+    moved.sched = "/usr/bin/scx_cosmos";
+    try t.expect(sameCommand(config.profiles[1], moved));
+
+    var buffer: [32]u8 = undefined;
+    try t.expectEqualStrings("my-lavd-2", slug(&buffer, "  My LAVD #2! ", config));
+    try t.expectEqualStrings("profile", slug(&buffer, "!!!", config));
+    try t.expectEqualStrings("default-2", slug(&buffer, "Default", config));
+    try t.expectEqualStrings("abcdefghijklmnopqrstuvwx", slug(&buffer, "abcdefghijklmnopqrstuvwxyz", config));
+
+    const args = try splitArgs(a, "  --slice-us 1600\t--disable-cgroups ");
+    try t.expectEqual(@as(usize, 3), args.len);
+    try t.expectEqualStrings("1600", args[1]);
+    try t.expectEqual(@as(usize, 0), (try splitArgs(a, "   ")).len);
+    try t.expectError(error.InvalidArgument, splitArgs(a, "--log $(reboot)"));
+    try t.expectError(error.InvalidArgument, splitArgs(a, "-s '700'"));
+}
+
+test "edited profiles always use the shipped Default" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const system = try parse(a, sample);
+    var renamed = system.profiles[0];
+    renamed.label = "Kernel";
+    renamed.description = "Changed by hand.";
+    const other: Profile = .{ .id = "off", .label = "Off", .stop = true };
+    const clash: Profile = .{ .id = "default", .label = "Not off", .sched = "scx_lavd" };
+    const locked = try lockDefault(a, .{ .profiles = &.{ system.profiles[2], renamed, other, clash } }, system);
+    try t.expectEqual(@as(usize, 2), locked.profiles.len);
+    try t.expectEqualStrings("latency", locked.profiles[0].id);
+    try t.expectEqualStrings(system.profiles[0].label, locked.profiles[1].label);
+    try t.expectEqualStrings(system.profiles[0].description, locked.profiles[1].description);
+    const missing = try lockDefault(a, .{ .profiles = &.{system.profiles[2]} }, system);
+    try t.expect(missing.profiles[0].stop);
+}
+
+test "editing or restoring profiles reapplies the selected one when its command changes" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const before = try parse(a, sample);
+    const running = parseEnv(try render(a, before.profiles[2]));
+    // Unchanged, or only renamed: nothing to do.
+    try t.expect(reapply(before, before, running) == null);
+    var profiles = try a.dupe(Profile, before.profiles);
+    profiles[2].label = "Fast";
+    try t.expect(reapply(before, .{ .profiles = profiles }, running) == null);
+    // New options: apply the profile again.
+    profiles[2].args = &.{"-w"};
+    try t.expectEqualStrings("latency", reapply(before, .{ .profiles = profiles }, running).?);
+    // Deleted: back to Default.
+    const without: Config = .{ .profiles = &.{ before.profiles[0], before.profiles[1] } };
+    try t.expectEqualStrings("default", reapply(before, without, running).?);
+    // Default stays off, and a hand-edited file is left alone.
+    const off = parseEnv(try render(a, before.profiles[0]));
+    try t.expect(reapply(before, .{ .profiles = &.{before.profiles[1]} }, off) == null);
+    var edited = running;
+    edited.flags = "-s 700";
+    try t.expect(reapply(before, without, edited) == null);
+    try t.expect(reapply(before, without, .{}) == null);
 }
