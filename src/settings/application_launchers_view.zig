@@ -21,7 +21,7 @@ pub const View = struct {
     idle: c_uint = 0,
     pub fn create(parent: *gtk.Box, editor: *Editor) !*View {
         const self = try a.create(View);
-        const title = tr("Application launchers", "Anwendungsstarter");
+        const title = @import("i18n").dtr("pearl", "Application launchers");
         const expander = gtk.Expander.new(null);
         expander.as(gtk.Widget).addCssClass("settings-card");
         expander.as(gtk.Widget).addCssClass("settings-section");
@@ -66,10 +66,10 @@ pub const View = struct {
         _ = self.arena.reset(.retain_capacity);
         self.controls = .empty;
         const alloc = self.arena.allocator();
-        const help = widgets.label(tr("Choose a launcher from a running application's dock menu. Removing a choice restores automatic matching; pins stay saved.", "Starter im Dock-Menü einer laufenden Anwendung auswählen. Entfernen stellt die automatische Zuordnung wieder her; angeheftete Einträge bleiben erhalten."), "pearl-secondary");
+        const help = widgets.label(@import("i18n").dtr("pearl", "Choose a launcher from a running application's dock menu. Removing a choice restores automatic matching; pins stay saved."), "pearl-secondary");
         help.setWrap(1);
         self.host.append(help.as(gtk.Widget));
-        if (choices.len == 0) self.host.append(widgets.label(tr("No launcher choices saved.", "Keine Starter-Zuordnungen gespeichert."), "pearl-secondary").as(gtk.Widget));
+        if (choices.len == 0) self.host.append(widgets.label(@import("i18n").dtr("pearl", "No launcher choices saved."), "pearl-secondary").as(gtk.Widget));
         for (choices) |choice| {
             const row = gtk.Box.new(.horizontal, 8);
             const label = widgets.label(try std.fmt.allocPrintSentinel(alloc, "{s} ({s})\n{s}", .{ choice.identity, @tagName(choice.backend), choice.desktop_id }, 0), null);
@@ -77,7 +77,7 @@ pub const View = struct {
             label.setMaxWidthChars(48);
             label.as(gtk.Widget).setHexpand(1);
             row.append(label.as(gtk.Widget));
-            const remove_button = gtk.Button.newWithLabel(tr("Remove choice", "Zuordnung entfernen"));
+            const remove_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Remove choice"));
             try self.controls.append(alloc, .{ .id = try std.fmt.allocPrint(alloc, "launchers.remove.{s}.{s}", .{ @tagName(choice.backend), choice.identity }), .widget = remove_button.as(gtk.Widget) });
             widgets.name(remove_button.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Remove launcher choice for {s}", .{choice.identity}, 0));
             const cb = try alloc.create(Callback);

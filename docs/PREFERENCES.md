@@ -1,5 +1,19 @@
 # Preferences, wallpaper and themes
 
+## Interface language
+
+The optional version-1 `language` field defaults to `""` (Follow system).
+`"en"` explicitly selects the built-in English fallback; another locale, such as
+`"de"`, selects a separately installed language pack. Identifiers are validated;
+paths are rejected. A missing pack is retained as a saved choice and falls back
+to English. Appearance → Interface language lists compatible installed packs
+with their native names and coverage, using the existing Apply/Discard draft.
+Changes take full effect on the next session start. The running shell, connected
+Settings, and shell-launched helpers retain their startup language. The setting
+does not alter regional formatting, keyboard layout, or the greeter's language.
+See [language packs](../translations/README.md). Older strict parsers may require
+removing this field before downgrading.
+
 ## Power and battery
 
 Power & battery applies brightness and power modes immediately. Its sleep,

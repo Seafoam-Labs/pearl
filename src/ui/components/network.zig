@@ -86,13 +86,13 @@ pub const View = struct {
         root.append(radio_card.as(gtk.Widget));
         const radio = gtk.Switch.new();
         radio.as(gtk.Widget).setValign(.center);
-        w.name(radio.as(gtk.Widget), tr("Wi-Fi", "WLAN"));
+        w.name(radio.as(gtk.Widget), @import("i18n").dtr("pearl", "Wi-Fi"));
         focus.tag(radio.as(gtk.Widget), "network-radio", .{});
         const radio_detail = w.label("", "pearl-secondary");
-        radio_card.append(w.section(heading(tr("Wi-Fi", "WLAN")), radio_detail, radio.as(gtk.Widget)).as(gtk.Widget));
+        radio_card.append(w.section(heading(@import("i18n").dtr("pearl", "Wi-Fi")), radio_detail, radio.as(gtk.Widget)).as(gtk.Widget));
         const names = gtk.StringList.new(null);
         const selector = gtk.DropDown.new(names.as(@import("gio2").ListModel), null);
-        w.name(selector.as(gtk.Widget), tr("Wi-Fi adapter", "WLAN-Adapter"));
+        w.name(selector.as(gtk.Widget), @import("i18n").dtr("pearl", "Wi-Fi adapter"));
         focus.tag(selector.as(gtk.Widget), "network-adapter", .{});
         radio_card.append(selector.as(gtk.Widget));
         var sections: [4]*gtk.Box = undefined;
@@ -106,24 +106,24 @@ pub const View = struct {
         feedback.append(feedback_text.as(gtk.Widget));
         const feedback_actions = w.flow(3);
         feedback_actions.setHomogeneous(0);
-        const retry = w.wrappingButton(tr("Try again", "Erneut versuchen"));
-        const dismiss = w.wrappingButton(tr("Dismiss", "Schließen"));
-        const cancel = w.wrappingButton(tr("Cancel connection", "Verbindung abbrechen"));
+        const retry = w.wrappingButton(@import("i18n").dtr("pearl", "Try again"));
+        const dismiss = w.wrappingButton(@import("i18n").dtr("pearl", "Dismiss"));
+        const cancel = w.wrappingButton(@import("i18n").dtr("pearl", "Cancel connection"));
         for ([_]*gtk.Button{ retry, dismiss, cancel }) |button| feedback_actions.insert(button.as(gtk.Widget), -1);
         feedback.append(feedback_actions.as(gtk.Widget));
         root.append(feedback.as(gtk.Widget));
         const nearby_header = w.column(6);
-        const refresh = w.wrappingButton(tr("Refresh", "Aktualisieren"));
+        const refresh = w.wrappingButton(@import("i18n").dtr("pearl", "Refresh"));
         focus.tag(refresh.as(gtk.Widget), "network-refresh", .{});
-        nearby_header.append(w.section(heading(tr("Nearby networks", "Netzwerke in der Nähe")), null, refresh.as(gtk.Widget)).as(gtk.Widget));
+        nearby_header.append(w.section(heading(@import("i18n").dtr("pearl", "Nearby networks")), null, refresh.as(gtk.Widget)).as(gtk.Widget));
         root.append(nearby_header.as(gtk.Widget));
         root.append(sections[1].as(gtk.Widget));
         const nearby_empty = w.label("", "pearl-secondary");
         root.append(nearby_empty.as(gtk.Widget));
-        const more = w.wrappingButton(tr("View all nearby networks", "Alle Netzwerke in der Nähe anzeigen"));
+        const more = w.wrappingButton(@import("i18n").dtr("pearl", "View all nearby networks"));
         root.append(more.as(gtk.Widget));
         root.append(sections[2].as(gtk.Widget));
-        const saved_title = tr("Saved networks", "Gespeicherte Netzwerke");
+        const saved_title = @import("i18n").dtr("pearl", "Saved networks");
         const saved = gtk.Expander.new(null);
         saved.as(gtk.Widget).addCssClass("settings-card");
         saved.as(gtk.Widget).addCssClass("settings-section");
@@ -134,16 +134,16 @@ pub const View = struct {
         saved.setLabelWidget(saved_heading.as(gtk.Widget));
         sections[3].as(gtk.Widget).addCssClass("settings-section-body");
         saved.setChild(sections[3].as(gtk.Widget));
-        const saved_empty = w.label(tr("No saved networks", "Keine gespeicherten Netzwerke"), "pearl-secondary");
+        const saved_empty = w.label(@import("i18n").dtr("pearl", "No saved networks"), "pearl-secondary");
         sections[3].append(saved_empty.as(gtk.Widget));
         saved.setExpanded(0);
         focus.tag(saved.as(gtk.Widget), "network-saved", .{});
         root.append(saved.as(gtk.Widget));
         saved.as(gtk.Widget).setVisible(@intFromBool(!compact));
-        const advanced = w.wrappingButton(tr("Advanced network settings…", "Erweiterte Netzwerkeinstellungen…"));
+        const advanced = w.wrappingButton(@import("i18n").dtr("pearl", "Advanced network settings…"));
         const advanced_box = card();
         advanced_box.append(advanced.as(gtk.Widget));
-        advanced_box.append(w.label(tr("VPN, hidden networks, IP & DNS. Opens the network editor.", "VPN, versteckte Netzwerke, IP & DNS. Öffnet den Netzwerkeditor."), "pearl-secondary").as(gtk.Widget));
+        advanced_box.append(w.label(@import("i18n").dtr("pearl", "VPN, hidden networks, IP & DNS. Opens the network editor."), "pearl-secondary").as(gtk.Widget));
         advanced_box.as(gtk.Widget).setVisible(@intFromBool(!compact));
         root.append(advanced_box.as(gtk.Widget));
         self.* = .{ .saved_empty = saved_empty, .status_icon = status_icon, .context = context, .request = request, .compact = compact, .root = root, .prompt_host = prompt_host, .status_title = status_title, .status_detail = status_detail, .radio = radio, .radio_detail = radio_detail, .selector = selector, .selector_names = names, .refresh = refresh, .nearby_empty = nearby_empty, .nearby_header = nearby_header, .sections = sections, .saved = saved, .more = more, .feedback = feedback, .feedback_text = feedback_text, .retry = retry, .cancel = cancel };
@@ -222,10 +222,10 @@ pub const View = struct {
         self.radio.setState(@intFromBool(data.radio == .on));
         self.radio.as(gtk.Widget).setSensitive(@intFromBool(data.radio_enabled));
         self.radio_detail.setText(switch (data.radio) {
-            .absent => tr("No Wi-Fi adapter found", "Kein WLAN-Adapter gefunden"),
-            .blocked => tr("Blocked by hardware. Use your device’s wireless switch.", "Hardware-Sperre. Bitte den WLAN-Schalter am Gerät verwenden."),
-            .off => tr("Wi-Fi is turned off. Turn it on to find nearby networks.", "WLAN ist aus. Einschalten, um Netzwerke zu finden."),
-            .on => tr("On · Wireless connections", "Ein · Drahtlose Verbindungen"),
+            .absent => @import("i18n").dtr("pearl", "No Wi-Fi adapter found"),
+            .blocked => @import("i18n").dtr("pearl", "Blocked by hardware. Use your device’s wireless switch."),
+            .off => @import("i18n").dtr("pearl", "Wi-Fi is turned off. Turn it on to find nearby networks."),
+            .on => @import("i18n").dtr("pearl", "On · Wireless connections"),
         });
         var hash = std.hash.Wyhash.init(0);
         self.choice_count = 0;
@@ -295,7 +295,7 @@ pub const View = struct {
             title.set(spec.title);
             row.title.setText(title.z());
             var buffer: [1024]u8 = undefined;
-            const detail = if (spec.section == .nearby or spec.section == .connected) std.fmt.bufPrintZ(&buffer, "{s}{s}{s} · {s}", .{ if (spec.state == .connecting) tr("Connecting…", "Verbindung wird hergestellt…") else if (spec.state == .connected) tr("Connected", "Verbunden") else "", if (spec.state == .connecting or spec.state == .connected) " · " else "", signalTitle(spec.strength), if (spec.profiles > 1) tr("Choose a saved profile", "Gespeichertes Profil wählen") else securityTitle(spec.security) }) catch "" else std.fmt.bufPrintZ(&buffer, "{s}{s}{s}", .{ stateTitle(spec.state), if (spec.section == .ethernet) " · " else "", if (spec.section == .ethernet and spec.device < data.devices.len) data.devices[spec.device].name else "" }) catch "";
+            const detail = if (spec.section == .nearby or spec.section == .connected) std.fmt.bufPrintZ(&buffer, "{s}{s}{s} · {s}", .{ if (spec.state == .connecting) @import("i18n").dtr("pearl", "Connecting…") else if (spec.state == .connected) @import("i18n").dtr("pearl", "Connected") else "", if (spec.state == .connecting or spec.state == .connected) " · " else "", signalTitle(spec.strength), if (spec.profiles > 1) @import("i18n").dtr("pearl", "Choose a saved profile") else securityTitle(spec.security) }) catch "" else std.fmt.bufPrintZ(&buffer, "{s}{s}{s}", .{ stateTitle(spec.state), if (spec.section == .ethernet) " · " else "", if (spec.section == .ethernet and spec.device < data.devices.len) data.devices[spec.device].name else "" }) catch "";
             row.detail.setText(detail);
             row.button.setLabel(actionTitle(spec.action));
             row.button.as(gtk.Widget).setSensitive(@intFromBool(spec.enabled));
@@ -312,7 +312,7 @@ pub const View = struct {
         const show_error = data.error_message.len > 0 and self.error_hash != self.dismissed;
         self.feedback.as(gtk.Widget).setVisible(@intFromBool(show_error or data.pending or data.truncated));
         var error_text: Text(1024) = .{};
-        error_text.set(if (show_error) data.error_message else if (data.pending) tr("Connection change in progress…", "Netzwerkänderung wird ausgeführt…") else tr("This list is incomplete. The service reported more networks than it can expose.", "Diese Liste ist unvollständig. Der Dienst meldet zu viele Netzwerke."));
+        error_text.set(if (show_error) data.error_message else if (data.pending) @import("i18n").dtr("pearl", "Connection change in progress…") else @import("i18n").dtr("pearl", "This list is incomplete. The service reported more networks than it can expose."));
         self.feedback_text.setText(error_text.z());
         self.retry.as(gtk.Widget).setVisible(@intFromBool(show_error and !data.pending and self.last_action != .none and self.last_generation == epoch));
         self.cancel.as(gtk.Widget).setVisible(@intFromBool(data.pending and data.owned));
@@ -361,9 +361,9 @@ pub const View = struct {
         self.saved_empty.as(gtk.Widget).setVisible(@intFromBool(saved == 0));
         self.nearby_header.as(gtk.Widget).setVisible(@intFromBool(self.powered));
         self.nearby_empty.as(gtk.Widget).setVisible(@intFromBool(self.powered and count == 0));
-        self.nearby_empty.setText(tr("Refresh to look for nearby networks.", "Aktualisieren, um nach Netzwerken zu suchen."));
+        self.nearby_empty.setText(@import("i18n").dtr("pearl", "Refresh to look for nearby networks."));
         self.more.as(gtk.Widget).setVisible(@intFromBool(self.compact and count > 3));
-        if (self.powered) self.radio_detail.setText(if (connected == 0) tr("On · Not connected", "Ein · Nicht verbunden") else tr("On · Connected", "Ein · Verbunden"));
+        if (self.powered) self.radio_detail.setText(if (connected == 0) @import("i18n").dtr("pearl", "On · Not connected") else @import("i18n").dtr("pearl", "On · Connected"));
         self.updateRefresh();
     }
     pub fn restoreFocus(self: *View) void {
@@ -380,9 +380,9 @@ pub const View = struct {
             break;
         };
         const waiting = glib.getMonotonicTime() < self.cooldown;
-        self.refresh.setLabel(if (self.scanning) tr("Refreshing…", "Wird aktualisiert…") else tr("Refresh", "Aktualisieren"));
+        self.refresh.setLabel(if (self.scanning) @import("i18n").dtr("pearl", "Refreshing…") else @import("i18n").dtr("pearl", "Refresh"));
         self.refresh.as(gtk.Widget).setSensitive(@intFromBool(ready and self.powered and !self.scanning and !self.pending and !waiting));
-        self.refresh.as(gtk.Widget).setTooltipText(if (waiting) tr("Please wait before refreshing again.", "Bitte vor dem erneuten Aktualisieren kurz warten.") else null);
+        self.refresh.as(gtk.Widget).setTooltipText(if (waiting) @import("i18n").dtr("pearl", "Please wait before refreshing again.") else null);
     }
     fn tick(data: ?*anyopaque) callconv(.c) c_int {
         const self: *View = @ptrCast(@alignCast(data.?));
@@ -450,56 +450,56 @@ pub const View = struct {
 };
 pub fn statusTitle(value: model.Status) [:0]const u8 {
     return switch (value) {
-        .loading => tr("Loading network connections…", "Netzwerkverbindungen werden geladen…"),
-        .unavailable => tr("Network service unavailable", "Netzwerkdienst nicht verfügbar"),
-        .unknown => tr("Internet status unknown", "Internetstatus unbekannt"),
-        .offline => tr("No internet connection", "Keine Internetverbindung"),
-        .portal => tr("Sign-in required", "Anmeldung erforderlich"),
-        .limited => tr("Limited connection", "Eingeschränkte Verbindung"),
-        .online => tr("Internet available", "Internet verfügbar"),
+        .loading => @import("i18n").dtr("pearl", "Loading network connections…"),
+        .unavailable => @import("i18n").dtr("pearl", "Network service unavailable"),
+        .unknown => @import("i18n").dtr("pearl", "Internet status unknown"),
+        .offline => @import("i18n").dtr("pearl", "No internet connection"),
+        .portal => @import("i18n").dtr("pearl", "Sign-in required"),
+        .limited => @import("i18n").dtr("pearl", "Limited connection"),
+        .online => @import("i18n").dtr("pearl", "Internet available"),
     };
 }
 fn statusDetail(value: model.Status) [:0]const u8 {
     return switch (value) {
-        .unavailable => tr("Waiting for the network service to reconnect.", "Warten auf die Wiederverbindung des Netzwerkdienstes."),
-        .portal => tr("Open your browser to sign in to this network.", "Den Browser öffnen, um sich bei diesem Netzwerk anzumelden."),
-        .limited => tr("Connected to a network, but internet access may be restricted.", "Mit einem Netzwerk verbunden, aber der Internetzugang kann eingeschränkt sein."),
-        .online => tr("Your device has internet access.", "Dein Gerät hat Internetzugang."),
-        .offline => tr("Choose a network below to connect.", "Zum Verbinden ein Netzwerk auswählen."),
+        .unavailable => @import("i18n").dtr("pearl", "Waiting for the network service to reconnect."),
+        .portal => @import("i18n").dtr("pearl", "Open your browser to sign in to this network."),
+        .limited => @import("i18n").dtr("pearl", "Connected to a network, but internet access may be restricted."),
+        .online => @import("i18n").dtr("pearl", "Your device has internet access."),
+        .offline => @import("i18n").dtr("pearl", "Choose a network below to connect."),
         else => "",
     };
 }
 fn signalTitle(value: u8) [:0]const u8 {
     return switch (model.signal(value)) {
-        .strong => tr("Strong signal", "Starkes Signal"),
-        .good => tr("Good signal", "Gutes Signal"),
-        .weak => tr("Weak signal", "Schwaches Signal"),
+        .strong => @import("i18n").dtr("pearl", "Strong signal"),
+        .good => @import("i18n").dtr("pearl", "Good signal"),
+        .weak => @import("i18n").dtr("pearl", "Weak signal"),
     };
 }
 fn securityTitle(value: @import("../../services/connectivity_policy.zig").Security) [:0]const u8 {
     return switch (value) {
-        .open => tr("Open network", "Offenes Netzwerk"),
-        .psk, .sae => tr("Secured", "Gesichert"),
-        .advanced => tr("Additional setup required", "Weitere Einrichtung erforderlich"),
+        .open => @import("i18n").dtr("pearl", "Open network"),
+        .psk, .sae => @import("i18n").dtr("pearl", "Secured"),
+        .advanced => @import("i18n").dtr("pearl", "Additional setup required"),
     };
 }
 fn stateTitle(value: model.State) [:0]const u8 {
     return switch (value) {
-        .connected => tr("Connected", "Verbunden"),
-        .disconnected => tr("Disconnected", "Nicht verbunden"),
-        .unavailable => tr("Adapter unavailable", "Adapter nicht verfügbar"),
-        .available => tr("Available", "Verfügbar"),
-        .saved => tr("Saved connection", "Gespeicherte Verbindung"),
-        .out_of_range => tr("Not in range", "Außer Reichweite"),
-        .connecting => tr("Connecting…", "Verbindung wird hergestellt…"),
+        .connected => @import("i18n").dtr("pearl", "Connected"),
+        .disconnected => @import("i18n").dtr("pearl", "Disconnected"),
+        .unavailable => @import("i18n").dtr("pearl", "Adapter unavailable"),
+        .available => @import("i18n").dtr("pearl", "Available"),
+        .saved => @import("i18n").dtr("pearl", "Saved connection"),
+        .out_of_range => @import("i18n").dtr("pearl", "Not in range"),
+        .connecting => @import("i18n").dtr("pearl", "Connecting…"),
     };
 }
 fn actionTitle(value: model.Action) [:0]const u8 {
     return switch (value) {
-        .connect, .connect_saved => tr("Connect", "Verbinden"),
-        .disconnect => tr("Disconnect", "Trennen"),
-        .editor => tr("Set up…", "Einrichten…"),
-        .profiles => tr("Choose profile…", "Profil wählen…"),
+        .connect, .connect_saved => @import("i18n").dtr("pearl", "Connect"),
+        .disconnect => @import("i18n").dtr("pearl", "Disconnect"),
+        .editor => @import("i18n").dtr("pearl", "Set up…"),
+        .profiles => @import("i18n").dtr("pearl", "Choose profile…"),
         else => "",
     };
 }

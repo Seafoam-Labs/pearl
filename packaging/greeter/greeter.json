@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "language": "",
   "theme": "material_dark",
   "font_size": 16,
   "reduced_motion": true,

@@ -39,7 +39,7 @@ pub const View = struct {
         const alloc = self.arena.allocator();
         const card = w.card();
         host.append(card.as(gtk.Widget));
-        card.append(w.label(tr("CPU Scheduler", "CPU-Scheduler"), "pearl-card-title").as(gtk.Widget));
+        card.append(w.label(@import("i18n").dtr("pearl", "CPU Scheduler"), "pearl-card-title").as(gtk.Widget));
         self.status = w.label("", null);
         self.status.setWrap(1);
         card.append(self.status.as(gtk.Widget));
@@ -92,7 +92,7 @@ pub const View = struct {
         var buffer: [512]u8 = undefined;
         const config = service.config;
         const profile: ?p.Profile = if (config) |c| if (service.status.profile) |i| c.profiles[i] else null else null;
-        self.status.setText(service.describe(&buffer, std.mem.eql(u8, tr("en", "de"), "de")));
+        self.status.setText(service.describe(&buffer));
         const usable = service.enabled and service.applying == null and service.status.kind != .unavailable;
         for (self.buttons, self.checks, self.ids) |button, check, id| {
             // Default stays selected while a scheduler outside the profiles runs.
@@ -102,7 +102,7 @@ pub const View = struct {
             button.as(gtk.Widget).setSensitive(@intFromBool(usable));
         }
         var note: [600]u8 = undefined;
-        self.note.setText(if (service.applying != null) "" else if (service.err) |err| std.fmt.bufPrintZ(&note, "{s}", .{err}) catch "" else service.describeNotice(&note, std.mem.eql(u8, tr("en", "de"), "de")));
+        self.note.setText(if (service.applying != null) "" else if (service.err) |err| std.fmt.bufPrintZ(&note, "{s}", .{err}) catch "" else service.describeNotice(&note));
         self.note.as(gtk.Widget).setVisible(@intFromBool(self.note.getText()[0] != 0));
     }
 
@@ -113,7 +113,7 @@ pub const View = struct {
         if (choice.view.checks[choice.index].as(gtk.Widget).getOpacity() > 0) return;
         self.service.apply(id) catch |err| {
             log.warn("event=sched-profile-select profile={s} result={s}", .{ id, @errorName(err) });
-            self.note.setText(if (err == error.Busy) tr("Another profile is being applied.", "Ein anderes Profil wird gerade angewendet.") else tr("This profile cannot be applied right now.", "Dieses Profil kann gerade nicht angewendet werden."));
+            self.note.setText(if (err == error.Busy) @import("i18n").dtr("pearl", "Another profile is being applied.") else @import("i18n").dtr("pearl", "This profile cannot be applied right now."));
             self.note.as(gtk.Widget).setVisible(1);
             return;
         };

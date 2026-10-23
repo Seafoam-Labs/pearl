@@ -320,9 +320,12 @@ fn refresh(s: *Chooser) void {
     const ready = valid and !s.busy and err == null and !loading;
     s.accept_button.setSensitive(@intFromBool(ready));
     if (s.accept_after_navigation and ready) _ = glib.idleAdd(&acceptIdle, u.ref(s.dialog));
-    if (err != null) message(s, "This location is unavailable. Choose another location or retry.") else if (loading) message(s, "Loading files…") else if (u.count(s.sorted) == 0) message(s, "No matching files in this folder.") else {
-        const text = u.fmt("{d} selected", .{n});
-        defer a.free(text);
+    if (err != null) message(s, @import("i18n").dtr("pearl-files", "This location is unavailable. Choose another location or retry.")) else if (loading) message(s, @import("i18n").dtr("pearl-files", "Loading files…")) else if (u.count(s.sorted) == 0) message(s, @import("i18n").dtr("pearl-files", "No matching files in this folder.")) else {
+        var count_buffer: [32]u8 = undefined;
+        var buffer: [256]u8 = undefined;
+        const count = std.fmt.bufPrint(&count_buffer, "{d}", .{n}) catch unreachable;
+        // Translators: Number of files selected in the file chooser.
+        const text = @import("i18n").dnmessage("pearl-files", &buffer, "{count} file selected", "{count} files selected", n, &.{.{ .name = "count", .value = count }});
         message(s, text);
     }
 }
@@ -381,7 +384,7 @@ fn breadcrumbs(s: *Chooser, folder: *gio.File) void {
         u.ownedData(b, "folder", u.ref(file), &u.unrefData);
         u.connect(b, "clicked", &breadcrumbClicked, s);
         u.append(s.breadcrumbs_box, b);
-        if (i != 0) u.append(s.breadcrumbs_box, gtk.Label.new("›").as(gtk.Widget));
+        if (i != 0) u.append(s.breadcrumbs_box, gtk.Label.new(@import("i18n").dtr("pearl-files", "›")).as(gtk.Widget));
     }
 }
 fn navigate(s: *Chooser, folder: *gio.File) void {
@@ -390,7 +393,7 @@ fn navigate(s: *Chooser, folder: *gio.File) void {
     u.clear(&s.pending_selection);
     if (s.closed or s.busy) return;
     if (s.local_only and folder.isNative() == 0) {
-        message(s, "Choose a location stored on this computer.");
+        message(s, @import("i18n").dtr("pearl-files", "Choose a location stored on this computer."));
         return;
     }
     if (!s.navigating_history) {
@@ -789,7 +792,7 @@ fn mkdirDone(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaqu
         s.busy = false;
         if (ok) navigate(s, file) else {
             refresh(s);
-            message(s, "Could not create that folder. Check its name and permissions.");
+            message(s, @import("i18n").dtr("pearl-files", "Could not create that folder. Check its name and permissions."));
         }
     }
 }
@@ -812,14 +815,14 @@ fn newFolder(_: ?*gtk.Button, s: *Chooser) callconv(.c) void {
     if (s.busy) return;
     const d = cast(gtk.Dialog, gtk.Dialog.new());
     const w = cast(gtk.Window, d);
-    w.setTitle("New folder");
+    w.setTitle(@import("i18n").dtr("pearl-files", "New folder"));
     w.setTransientFor(cast(gtk.Window, s.dialog));
     w.setModal(1);
     w.setDestroyWithParent(1);
     _ = d.addButton("Cancel", cancelled_response);
     _ = d.addButton("Create", accepted_response);
     const entry = gtk.Entry.new().as(gtk.Widget);
-    cast(gtk.Entry, entry).setPlaceholderText("Folder name");
+    cast(gtk.Entry, entry).setPlaceholderText(@import("i18n").dtr("pearl-files", "Folder name"));
     u.append(d.getContentArea(), entry);
     style.apply(w);
     u.setData(d, "entry", entry);
@@ -951,6 +954,7 @@ fn rememberState(dialog: *gtk.Dialog, response: c_int, _: ?*anyopaque) callconv(
     preferences.save(state_key, .{ .list = s.list_mode, .hidden = s.hidden, .reverse = s.reverse, .preview = s.show_preview, .sort = s.sort_kind, .folder = folder });
 }
 pub fn create(title: [*:0]const u8, action: gtk.FileChooserAction) callconv(.c) *gtk.Dialog {
+    gtk.Widget.setDefaultDirection(if (@import("i18n").rtl()) .rtl else .ltr);
     initPreviews();
     const dialog = cast(gtk.Dialog, gtk.Dialog.new());
     const s = u.new(Chooser, .{ .dialog = dialog, .action = action, .cancel = gio.Cancellable.new() });
@@ -977,7 +981,7 @@ pub fn create(title: [*:0]const u8, action: gtk.FileChooserAction) callconv(.c) 
     u.append(body, nav);
     s.places_button = gtk.MenuButton.new().as(gtk.Widget);
     cast(gtk.MenuButton, s.places_button).setIconName("sidebar-show-symbolic");
-    s.places_button.setTooltipText("Places");
+    s.places_button.setTooltipText(@import("i18n").dtr("pearl-files", "Places"));
     s.places_popup = gtk.Popover.new().as(gtk.Widget);
     cast(gtk.MenuButton, s.places_button).setPopover(cast(gtk.Popover, s.places_popup));
     s.places_button.setVisible(0);
@@ -1003,16 +1007,16 @@ pub fn create(title: [*:0]const u8, action: gtk.FileChooserAction) callconv(.c) 
     s.search.setHexpand(1);
     u.append(toolbar, s.search);
     const view_menu = gtk.MenuButton.new().as(gtk.Widget);
-    cast(gtk.MenuButton, view_menu).setLabel("View");
+    cast(gtk.MenuButton, view_menu).setLabel(@import("i18n").dtr("pearl-files", "View"));
     const view_popup = gtk.Popover.new().as(gtk.Widget);
     const view_options = gtk.Box.new(.vertical, 6).as(gtk.Widget);
     cast(gtk.Popover, view_popup).setChild(view_options);
     cast(gtk.MenuButton, view_menu).setPopover(cast(gtk.Popover, view_popup));
     u.append(toolbar, view_menu);
-    u.append(view_options, u.label("Sort by"));
+    u.append(view_options, u.label(@import("i18n").dtr("pearl-files", "Sort by")));
     const sort_names = [_:null]?[*:0]const u8{ "Name", "Modified", "Size", "Type" };
     s.sort_menu = gtk.DropDown.newFromStrings(@ptrCast(&sort_names)).as(gtk.Widget);
-    s.sort_menu.setTooltipText("Sort by");
+    s.sort_menu.setTooltipText(@import("i18n").dtr("pearl-files", "Sort by"));
     u.append(view_options, s.sort_menu);
     s.hidden_toggle = gtk.ToggleButton.newWithLabel("Hidden").as(gtk.Widget);
     u.append(view_options, s.hidden_toggle);
@@ -1076,7 +1080,7 @@ pub fn create(title: [*:0]const u8, action: gtk.FileChooserAction) callconv(.c) 
     u.append(s.preview_box, s.preview_label);
     u.append(s.panes, s.preview_box);
     s.name = gtk.Entry.new().as(gtk.Widget);
-    cast(gtk.Entry, s.name).setPlaceholderText("Filename");
+    cast(gtk.Entry, s.name).setPlaceholderText(@import("i18n").dtr("pearl-files", "Filename"));
     u.accessibleLabel(s.name, "Filename");
     u.append(body, s.name);
     s.name.setVisible(@intFromBool(action == .save));
@@ -1097,7 +1101,7 @@ pub fn create(title: [*:0]const u8, action: gtk.FileChooserAction) callconv(.c) 
     u.append(body, footer);
     _ = button(footer, "Cancel", &cancelClicked, s);
     // Validate asynchronously before emitting a response; this is not a Dialog action.
-    s.accept_button = gtk.Button.newWithLabel(if (action == .save) "Save" else "Select").as(gtk.Widget);
+    s.accept_button = gtk.Button.newWithLabel(if (action == .save) @import("i18n").dtr("pearl-files", "Save") else @import("i18n").dtr("pearl-files", "Select")).as(gtk.Widget);
     s.accept_button.addCssClass("suggested-action");
     u.append(footer, s.accept_button);
     u.connect(s.accept_button, "clicked", &accept, s);
@@ -1328,7 +1332,7 @@ fn asyncParentDestroyed(_: W, dialog: *gtk.Dialog) callconv(.c) void {
     if (u.data(anyopaque, dialog, "pearl-async-done") == null) dialog.response(cancelled_response);
 }
 fn asyncOpen(parent: ?*gtk.Window, action: gtk.FileChooserAction, multiple: c_int, name: ?[*:0]const u8, callback: ?gio.AsyncReadyCallback, data: ?*anyopaque) void {
-    const d = create(if (action == .save) "Save document" else "Open files", action);
+    const d = create(if (action == .save) @import("i18n").dtr("pearl-files", "Save document") else @import("i18n").dtr("pearl-files", "Open files"), action);
     const app = gio.Application.getDefault();
     const id = if (app) |application| application.getApplicationId() else null;
     const state_key = u.fmt("first-party/{s}/{d}", .{ id orelse "Pearl", @intFromEnum(action) });

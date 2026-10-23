@@ -21,6 +21,7 @@ var paths: std.ArrayList([:0]const u8) = .empty;
 var width: c_int = 1000;
 var height: c_int = 740;
 fn activate(application: ?*c.GApplication, _: ?*anyopaque) callconv(.c) void {
+    c.gtk_widget_set_default_direction(if (@import("i18n").rtl()) c.GTK_TEXT_DIR_RTL else c.GTK_TEXT_DIR_LTR);
     if (app) |p| {
         c.gtk_window_present(u.cast(c.GtkWindow, p.window));
         return;
@@ -32,6 +33,7 @@ fn activate(application: ?*c.GApplication, _: ?*anyopaque) callconv(.c) void {
     if (app.?.docs.items.len == 0) _ = app.?.newDocument();
 }
 pub fn main(init: std.process.Init) void {
+    @import("i18n").init(false);
     settings = Settings.load();
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch return;
     defer paths.deinit(u.a);

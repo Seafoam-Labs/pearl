@@ -13,7 +13,7 @@ pub fn secureEntry(max_characters: c_int) *gtk.Entry {
     entry.as(gtk.Editable).setWidthChars(10);
     entry.as(gtk.Editable).setMaxWidthChars(24);
     entry.setInputPurpose(.password);
-    entry.setPlaceholderText("Password");
+    entry.setPlaceholderText(@import("i18n").dtr("pearl", "Password"));
     entry.setInputHints(.{ .private = true, .no_spellcheck = true, .no_emoji = true });
     return entry;
 }

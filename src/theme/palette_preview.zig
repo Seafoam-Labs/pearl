@@ -52,7 +52,7 @@ const Preview = struct {
     }
     fn activate(_: *gio.Application, self: *Preview) callconv(.c) void {
         const window = gtk.ApplicationWindow.new(self.app);
-        window.as(gtk.Window).setTitle("Pearl palette preview");
+        window.as(gtk.Window).setTitle(@import("i18n").dtr("pearl", "Pearl palette preview"));
         window.as(gtk.Window).setDefaultSize(520, 420);
         const root = w.column(16);
         root.as(gtk.Widget).addCssClass("pearl-root");
@@ -66,22 +66,22 @@ const Preview = struct {
         }
         self.status = w.label("", "pearl-secondary");
         root.append(self.status.?.as(gtk.Widget));
-        const toggle = w.wrappingButton("Switch dark / light");
+        const toggle = w.wrappingButton(@import("i18n").dtr("pearl", "Switch dark / light"));
         root.append(toggle.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(toggle, *Preview, toggled, self, .{});
         const card = w.card();
-        card.append(w.label("Palette sample", "pearl-card-title").as(gtk.Widget));
-        card.append(w.label("Body text and secondary text", "pearl-secondary").as(gtk.Widget));
-        const accent = w.wrappingButton("Accent button");
+        card.append(w.label(@import("i18n").dtr("pearl", "Palette sample"), "pearl-card-title").as(gtk.Widget));
+        card.append(w.label(@import("i18n").dtr("pearl", "Body text and secondary text"), "pearl-secondary").as(gtk.Widget));
+        const accent = w.wrappingButton(@import("i18n").dtr("pearl", "Accent button"));
         accent.as(gtk.Widget).addCssClass("pearl-primary");
         card.append(accent.as(gtk.Widget));
-        const disabled = w.wrappingButton("Disabled button");
+        const disabled = w.wrappingButton(@import("i18n").dtr("pearl", "Disabled button"));
         disabled.as(gtk.Widget).setSensitive(0);
         card.append(disabled.as(gtk.Widget));
         const input = gtk.Entry.new();
-        input.setPlaceholderText("Focus this entry");
+        input.setPlaceholderText(@import("i18n").dtr("pearl", "Focus this entry"));
         card.append(input.as(gtk.Widget));
-        card.append(w.label("Example error message", "pearl-error").as(gtk.Widget));
+        card.append(w.label(@import("i18n").dtr("pearl", "Example error message"), "pearl-error").as(gtk.Widget));
         root.append(card.as(gtk.Widget));
         window.as(gtk.Window).setChild(root.as(gtk.Widget));
         gtk.StyleContext.addProviderForDisplay(gdk.Display.getDefault().?, self.provider.as(gtk.StyleProvider), 602);
@@ -94,7 +94,7 @@ const Preview = struct {
             self.monitor = dir.monitorDirectory(.{ .watch_moves = true }, null, null);
             if (self.monitor) |monitor| {
                 _ = gio.FileMonitor.signals.changed.connect(monitor, *Preview, changed, self, .{});
-            } else self.status.?.setText("Watch unavailable; reopen the preview after saving.");
+            } else self.status.?.setText(@import("i18n").dtr("pearl", "Watch unavailable; reopen the preview after saving."));
         }
         window.as(gtk.Window).present();
     }

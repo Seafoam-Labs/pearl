@@ -55,33 +55,33 @@ pub const App = struct {
         const self = a.create(App) catch unreachable;
         instance = self;
         const window = c.gtk_application_window_new(application).?;
-        c.gtk_window_set_title(u.cast(c.GtkWindow, window), "Coral");
+        c.gtk_window_set_title(u.cast(c.GtkWindow, window), @import("i18n").dtr("coral", "Coral"));
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, window), width, height);
         const root = u.box(false, 0);
         c.gtk_window_set_child(u.cast(c.GtkWindow, window), root);
         const header = c.gtk_header_bar_new().?;
         c.gtk_window_set_titlebar(u.cast(c.GtkWindow, window), header);
-        const title = u.label("Coral");
+        const title = u.label(@import("i18n").dtr("coral", "Coral"));
         c.gtk_header_bar_set_title_widget(u.cast(c.GtkHeaderBar, header), title);
-        const open = u.icon("document-open-symbolic", "Open files · Ctrl+O");
+        const open = u.icon("document-open-symbolic", @import("i18n").dtr("coral", "Open files · Ctrl+O"));
         c.gtk_header_bar_pack_start(u.cast(c.GtkHeaderBar, header), open);
         u.connect(open, "clicked", &onOpen, self);
-        const new = u.icon("list-add-symbolic", "New document · Ctrl+N");
+        const new = u.icon("list-add-symbolic", @import("i18n").dtr("coral", "New document · Ctrl+N"));
         c.gtk_header_bar_pack_start(u.cast(c.GtkHeaderBar, header), new);
         u.connect(new, "clicked", &onNew, self);
         const menu = c.gtk_menu_button_new().?;
         c.gtk_menu_button_set_icon_name(u.cast(c.GtkMenuButton, menu), "open-menu-symbolic");
-        c.gtk_widget_set_tooltip_text(menu, "Editor menu");
+        c.gtk_widget_set_tooltip_text(menu, @import("i18n").dtr("coral", "Editor menu"));
         c.gtk_header_bar_pack_end(u.cast(c.GtkHeaderBar, header), menu);
-        const search = u.icon("edit-find-symbolic", "Find and replace · Ctrl+F");
+        const search = u.icon("edit-find-symbolic", @import("i18n").dtr("coral", "Find and replace · Ctrl+F"));
         c.gtk_header_bar_pack_end(u.cast(c.GtkHeaderBar, header), search);
         u.connect(search, "clicked", &onSearch, self);
-        const save_button = u.icon("document-save-symbolic", "Save · Ctrl+S");
+        const save_button = u.icon("document-save-symbolic", @import("i18n").dtr("coral", "Save · Ctrl+S"));
         c.gtk_header_bar_pack_end(u.cast(c.GtkHeaderBar, header), save_button);
         u.connect(save_button, "clicked", &onSave, self);
         const model = c.g_menu_new().?;
         defer c.g_object_unref(model);
-        for ([_][2][*:0]const u8{ .{ "New document", "app.new" }, .{ "Open…", "app.open" }, .{ "Save", "app.save" }, .{ "Save As…", "app.save-as" }, .{ "Find / Replace", "app.find" }, .{ "Go to Line…", "app.goto" }, .{ "Spelling suggestions", "app.spelling" }, .{ "Preferences…", "app.preferences" }, .{ "About Coral", "app.about" }, .{ "Close tab", "app.close" }, .{ "Quit", "app.quit" } }) |item| c.g_menu_append(model, item[0], item[1]);
+        for ([_][2][*:0]const u8{ .{ @import("i18n").dtr("coral", "New document"), "app.new" }, .{ @import("i18n").dtr("coral", "Open…"), "app.open" }, .{ @import("i18n").dtr("coral", "Save"), "app.save" }, .{ @import("i18n").dtr("coral", "Save As…"), "app.save-as" }, .{ @import("i18n").dtr("coral", "Find / Replace"), "app.find" }, .{ @import("i18n").dtr("coral", "Go to Line…"), "app.goto" }, .{ @import("i18n").dtr("coral", "Spelling suggestions"), "app.spelling" }, .{ @import("i18n").dtr("coral", "Preferences…"), "app.preferences" }, .{ @import("i18n").dtr("coral", "About Coral"), "app.about" }, .{ @import("i18n").dtr("coral", "Close tab"), "app.close" }, .{ @import("i18n").dtr("coral", "Quit"), "app.quit" } }) |item| c.g_menu_append(model, item[0], item[1]);
         c.gtk_menu_button_set_menu_model(u.cast(c.GtkMenuButton, menu), u.cast(c.GMenuModel, model));
         const notebook = c.gtk_notebook_new().?;
         c.gtk_notebook_set_scrollable(u.cast(c.GtkNotebook, notebook), 1);
@@ -96,26 +96,26 @@ pub const App = struct {
         u.append(row, query);
         const matches = u.label("");
         u.append(row, matches);
-        const prev = u.icon("go-up-symbolic", "Previous match · Shift+F3");
+        const prev = u.icon("go-up-symbolic", @import("i18n").dtr("coral", "Previous match · Shift+F3"));
         u.append(row, prev);
         u.connect(prev, "clicked", &onPrev, self);
-        const next = u.icon("go-down-symbolic", "Next match · F3");
+        const next = u.icon("go-down-symbolic", @import("i18n").dtr("coral", "Next match · F3"));
         u.append(row, next);
         u.connect(next, "clicked", &onNext, self);
-        const hide = u.icon("window-close-symbolic", "Close search · Escape");
+        const hide = u.icon("window-close-symbolic", @import("i18n").dtr("coral", "Close search · Escape"));
         u.append(row, hide);
         u.connect(hide, "clicked", &onHideSearch, self);
         const replace_row = u.box(true, 6);
         u.append(searchbox, replace_row);
         const replacement = c.gtk_entry_new().?;
-        c.gtk_entry_set_placeholder_text(u.cast(c.GtkEntry, replacement), "Replace with");
+        c.gtk_entry_set_placeholder_text(u.cast(c.GtkEntry, replacement), @import("i18n").dtr("coral", "Replace with"));
         c.gtk_widget_set_hexpand(replacement, 1);
         c.gtk_widget_set_size_request(replacement, 80, -1);
         u.append(replace_row, replacement);
-        const replace_button = u.button("Replace");
+        const replace_button = u.button(@import("i18n").dtr("coral", "Replace"));
         u.append(replace_row, replace_button);
         u.connect(replace_button, "clicked", &onReplace, self);
-        const all = u.button("Replace all");
+        const all = u.button(@import("i18n").dtr("coral", "Replace all"));
         u.append(replace_row, all);
         u.connect(all, "clicked", &onReplaceAll, self);
         u.append(root, searchbox);
@@ -132,7 +132,7 @@ pub const App = struct {
         c.gtk_widget_set_hexpand(status, 1);
         c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, status), c.PANGO_ELLIPSIZE_END);
         u.append(footer, status);
-        const spell_button = u.button("Checking dictionaries…");
+        const spell_button = u.button(@import("i18n").dtr("coral", "Checking dictionaries…"));
         u.append(footer, spell_button);
         u.connect(spell_button, "clicked", &onSpelling, self);
         u.append(root, footer);
@@ -212,12 +212,12 @@ pub const App = struct {
         c.gtk_widget_set_hexpand(page, 1);
         c.gtk_widget_set_vexpand(page, 1);
         const tab = u.box(true, 6);
-        const tab_label = u.label("Untitled");
+        const tab_label = u.label(@import("i18n").dtr("coral", "Untitled"));
         c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, tab_label), c.PANGO_ELLIPSIZE_MIDDLE);
         c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, tab_label), 28);
         c.gtk_label_set_width_chars(u.cast(c.GtkLabel, tab_label), 18);
         u.append(tab, tab_label);
-        const close = u.icon("window-close-symbolic", "Close document");
+        const close = u.icon("window-close-symbolic", @import("i18n").dtr("coral", "Close document"));
         c.gtk_widget_add_css_class(close, "flat");
         u.append(tab, close);
         u.connect(close, "clicked", &onCloseTab, d);
@@ -305,7 +305,7 @@ pub const App = struct {
         c.gtk_widget_set_visible(self.new_button, @intFromBool(wide));
         c.gtk_widget_set_visible(self.search_button, @intFromBool(wide));
         for (self.docs.items) |d| {
-            var name: []const u8 = if (d.path) |p| std.fs.path.basename(p) else "Untitled";
+            var name: []const u8 = if (d.path) |p| std.fs.path.basename(p) else @import("i18n").dtr("coral", "Untitled");
             if (d.path) |p| {
                 for (self.docs.items) |other| {
                     if (other == d) continue;
@@ -325,16 +325,18 @@ pub const App = struct {
         const d = self.active() orelse return;
         var iter: c.GtkTextIter = undefined;
         c.gtk_text_buffer_get_iter_at_mark(d.buffer, &iter, c.gtk_text_buffer_get_insert(d.buffer));
-        const status = u.fmt("Ln {d}, Col {d}   ·   UTF-8{s} · {s}{s}", .{ c.gtk_text_iter_get_line(&iter) + 1, c.gtk_text_iter_get_line_offset(&iter) + 1, if (d.bom) " BOM" else "", @tagName(d.newline), if (d.busy) " · Working…" else if (d.large) " · Large file" else "" });
+        var status_buffer: [2048]u8 = undefined;
+        const status = @import("i18n").dfmt("coral", &status_buffer, "Ln {d}, Col {d}   ·   UTF-8{s} · {s}{s}", .{ c.gtk_text_iter_get_line(&iter) + 1, c.gtk_text_iter_get_line_offset(&iter) + 1, if (d.bom) " BOM" else "", @tagName(d.newline), if (d.busy) @import("i18n").dtr("coral", " · Working…") else if (d.large) @import("i18n").dtr("coral", " · Large file") else "" });
         u.setLabel(self.status, status);
-        a.free(status);
-        const spelling_text: [*:0]const u8 = if (!self.enumerated) "Checking dictionaries…" else if (!self.dictionary) "Dictionary unavailable" else if (!self.spellingEnabled(d)) "Spelling off" else "Spelling";
+        const spelling_text: [*:0]const u8 = if (!self.enumerated) @import("i18n").dtr("coral", "Checking dictionaries…") else if (!self.dictionary) @import("i18n").dtr("coral", "Dictionary unavailable") else if (!self.spellingEnabled(d)) @import("i18n").dtr("coral", "Spelling off") else @import("i18n").dtr("coral", "Spelling");
         c.gtk_button_set_label(u.cast(c.GtkButton, self.spell_button), spelling_text);
         const count = c.gtk_source_search_context_get_occurrences_count(d.search);
-        const count_text = u.fmt("{d} matches", .{@max(count, 0)});
+        var count_buffer: [32]u8 = undefined;
+        var matches_buffer: [256]u8 = undefined;
+        const number = std.fmt.bufPrint(&count_buffer, "{d}", .{@max(count, 0)}) catch unreachable;
+        const count_text = @import("i18n").dnmessage("coral", &matches_buffer, "{count} match", "{count} matches", @intCast(@max(count, 0)), &.{.{ .name = "count", .value = number }});
         u.setLabel(self.matches, count_text);
-        a.free(count_text);
-        const title = u.fmt("{s}{s} — Coral", .{ if (d.path) |p| std.fs.path.basename(p) else "Untitled", if (d.dirty()) " •" else "" });
+        const title = u.fmt("{s}{s} — Coral", .{ if (d.path) |p| std.fs.path.basename(p) else @import("i18n").dtr("coral", "Untitled"), if (d.dirty()) " •" else "" });
         c.gtk_window_set_title(u.cast(c.GtkWindow, self.window), title);
         a.free(title);
     }
@@ -372,7 +374,7 @@ pub const App = struct {
         const file = c.g_file_new_for_commandline_arg(p).?;
         defer c.g_object_unref(file);
         if (c.g_file_is_native(file) == 0) {
-            self.message("Only local files are supported.");
+            self.message(@import("i18n").dtr("coral", "Only local files are supported."));
             return;
         }
         const raw = c.g_file_get_path(file);
@@ -421,12 +423,12 @@ pub const App = struct {
     }
     fn save(self: *App, d: *Document, save_as: bool, force: bool) void {
         if (d.busy) {
-            self.message("Wait for the current file operation to finish.");
+            self.message(@import("i18n").dtr("coral", "Wait for the current file operation to finish."));
             return;
         }
         if (d.newline == .mixed) {
             d.normalize_save_as = save_as;
-            self.ask(.mixed, d, "Choose a line ending", "This file mixes LF and CRLF line endings. Choose a format before saving; Coral will normalize line endings explicitly.", &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Use LF", .id = 1 }, .{ .text = "Use CRLF", .id = 2 } });
+            self.ask(.mixed, d, @import("i18n").dtr("coral", "Choose a line ending"), @import("i18n").dtr("coral", "This file mixes LF and CRLF line endings. Choose a format before saving; Coral will normalize line endings explicitly."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Use LF"), .id = 1 }, .{ .text = @import("i18n").dtr("coral", "Use CRLF"), .id = 2 } });
             return;
         }
         if (save_as or d.path == null) {
@@ -443,7 +445,7 @@ pub const App = struct {
             if (other != d) {
                 if (other.path) |p| {
                     if (std.mem.eql(u8, p, path)) {
-                        self.message("That file is already open in another tab. Save to a different name.");
+                        self.message(@import("i18n").dtr("coral", "That file is already open in another tab. Save to a different name."));
                         d.close_after_save = false;
                         self.quitting = false;
                         return;
@@ -454,7 +456,7 @@ pub const App = struct {
         const text = u.bufferText(d.buffer);
         defer a.free(text);
         const bytes = codec.encode(a, text, d.bom, d.newline) catch {
-            self.message("Choose a line ending before saving.");
+            self.message(@import("i18n").dtr("coral", "Choose a line ending before saving."));
             return;
         };
         const op = a.create(SaveOp) catch unreachable;
@@ -500,14 +502,14 @@ pub const App = struct {
                 d.cancelled_close = true;
                 if (d.cancellable) |p| c.g_cancellable_cancel(p);
             } else {
-                self.message("Saving is still in progress. Close this document after it finishes.");
+                self.message(@import("i18n").dtr("coral", "Saving is still in progress. Close this document after it finishes."));
                 self.quitting = false;
             }
             return;
         }
         if (d.dirty()) {
             self.focus(d);
-            self.ask(.close, d, "Save your changes?", "Save this document before closing it? Discarding loses the unsaved edits.", &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Discard", .id = 1 }, .{ .text = "Save", .id = 2 } });
+            self.ask(.close, d, @import("i18n").dtr("coral", "Save your changes?"), @import("i18n").dtr("coral", "Save this document before closing it? Discarding loses the unsaved edits."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Discard"), .id = 1 }, .{ .text = @import("i18n").dtr("coral", "Save"), .id = 2 } });
             return;
         }
         self.remove(d);
@@ -593,17 +595,17 @@ pub const App = struct {
         if (self.dialog != null) return;
         self.hidePopover();
         const dialog = c.gtk_dialog_new().?;
-        c.gtk_window_set_title(u.cast(c.GtkWindow, dialog), "Coral preferences");
+        c.gtk_window_set_title(u.cast(c.GtkWindow, dialog), @import("i18n").dtr("coral", "Coral preferences"));
         c.gtk_window_set_transient_for(u.cast(c.GtkWindow, dialog), u.cast(c.GtkWindow, self.window));
         c.gtk_window_set_modal(u.cast(c.GtkWindow, dialog), 1);
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, dialog), 440, 520);
         const box = u.cast(c.GtkWidget, c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, dialog)));
         u.margin(box, 20);
-        const heading = u.label("Make yourself at home");
+        const heading = u.label(@import("i18n").dtr("coral", "Make yourself at home"));
         c.gtk_widget_add_css_class(heading, "title-2");
         u.append(box, heading);
         const theme = c.gtk_combo_box_text_new().?;
-        for ([_][*:0]const u8{ "Pearl dark", "Pearl light", "Native GTK", "Follow Pearl" }) |name| c.gtk_combo_box_text_append_text(u.cast(c.GtkComboBoxText, theme), name);
+        for ([_][*:0]const u8{ @import("i18n").dtr("coral", "Pearl dark"), @import("i18n").dtr("coral", "Pearl light"), @import("i18n").dtr("coral", "Native GTK"), @import("i18n").dtr("coral", "Follow Pearl") }) |name| c.gtk_combo_box_text_append_text(u.cast(c.GtkComboBoxText, theme), name);
         c.gtk_combo_box_set_active(u.cast(c.GtkComboBox, theme), self.settings.theme);
         self.prefRow(box, "Appearance", theme);
         u.connect(theme, "changed", &prefTheme, self);
@@ -634,7 +636,7 @@ pub const App = struct {
             self.prefRow(box, "Check current document", check);
             u.connect(check, "toggled", &prefDocument, d);
         }
-        const note = u.label(if (self.languages.items.len == 0) "No dictionaries found. Install an Enchant provider and a language dictionary, then restart Coral." else "Personal dictionary words may be shared with other Enchant applications.");
+        const note = u.label(if (self.languages.items.len == 0) @import("i18n").dtr("coral", "No dictionaries found. Install an Enchant provider and a language dictionary, then restart Coral.") else @import("i18n").dtr("coral", "Personal dictionary words may be shared with other Enchant applications."));
         c.gtk_label_set_wrap(u.cast(c.GtkLabel, note), 1);
         c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, note), 42);
         u.margin(note, 8);
@@ -663,7 +665,7 @@ pub const App = struct {
     fn gotoLine(self: *App) void {
         if (self.dialog != null) return;
         const d = self.active() orelse return;
-        self.ask(.goto, d, "Go to line", "Enter a line number.", &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Go", .id = 1 } });
+        self.ask(.goto, d, @import("i18n").dtr("coral", "Go to line"), @import("i18n").dtr("coral", "Enter a line number."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Go"), .id = 1 } });
         const input = c.gtk_spin_button_new_with_range(1, @floatFromInt(@max(c.gtk_text_buffer_get_line_count(d.buffer), 1)), 1).?;
         self.goto_input = input;
         u.append(u.cast(c.GtkWidget, c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, self.dialog.?))), input);
@@ -680,7 +682,7 @@ pub const App = struct {
         if (c.gtk_text_iter_has_tag(&start, d.tag) == 0) {
             c.gtk_text_buffer_get_start_iter(d.buffer, &start);
             if (c.gtk_text_iter_has_tag(&start, d.tag) == 0 and c.gtk_text_iter_forward_to_tag_toggle(&start, d.tag) == 0) {
-                self.message("No spelling suggestions in this document.");
+                self.message(@import("i18n").dtr("coral", "No spelling suggestions in this document."));
                 return;
             }
         }
@@ -725,15 +727,15 @@ pub const App = struct {
             u.connect(button, "clicked", &correctWord, self);
             u.append(box, button);
         }
-        if (job.words.items.len == 0) u.append(box, u.label("No replacements found"));
-        for ([_]struct { title: [*:0]const u8, callback: *const fn (?*c.GtkButton, ?*anyopaque) callconv(.c) void }{ .{ .title = "Ignore for this document", .callback = &ignoreWord }, .{ .title = "Add to dictionary", .callback = &addWord }, .{ .title = "Language…", .callback = &onPreferences } }) |item| {
+        if (job.words.items.len == 0) u.append(box, u.label(@import("i18n").dtr("coral", "No replacements found")));
+        for ([_]struct { title: [*:0]const u8, callback: *const fn (?*c.GtkButton, ?*anyopaque) callconv(.c) void }{ .{ .title = @import("i18n").dtr("coral", "Ignore for this document"), .callback = &ignoreWord }, .{ .title = @import("i18n").dtr("coral", "Add to dictionary"), .callback = &addWord }, .{ .title = @import("i18n").dtr("coral", "Language…"), .callback = &onPreferences } }) |item| {
             const button = u.button(item.title);
             u.connect(button, "clicked", item.callback, self);
             u.append(box, button);
         }
         const separator = c.gtk_separator_new(c.GTK_ORIENTATION_HORIZONTAL).?;
         u.append(box, separator);
-        for ([_][2][*:0]const u8{ .{ "Cut", "clipboard.cut" }, .{ "Copy", "clipboard.copy" }, .{ "Paste", "clipboard.paste" } }) |item| {
+        for ([_][2][*:0]const u8{ .{ @import("i18n").dtr("coral", "Cut"), "clipboard.cut" }, .{ @import("i18n").dtr("coral", "Copy"), "clipboard.copy" }, .{ @import("i18n").dtr("coral", "Paste"), "clipboard.paste" } }) |item| {
             const button = u.button(item[0]);
             c.g_object_set_data(u.cast(c.GObject, button), "edit-action", @constCast(item[1]));
             u.connect(button, "clicked", &editAction, self);
@@ -826,7 +828,7 @@ fn loaded(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) call
         return;
     }
     if (size > 128 * 1024 * 1024) {
-        self.message("This file exceeds Coral's 128 MiB safety limit.");
+        self.message(@import("i18n").dtr("coral", "This file exceeds Coral's 128 MiB safety limit."));
         if (!op.reload) {
             if (d.path) |p| a.free(p);
             d.path = null;
@@ -835,9 +837,9 @@ fn loaded(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) call
     }
     const decoded = codec.decode(a, contents[0..size]) catch |e| {
         self.message(switch (e) {
-            error.InvalidUtf8 => "This file is not valid UTF-8. Convert its encoding before opening it in Coral.",
-            error.UnsupportedLineEnding => "Standalone CR line endings are not supported. Convert this file to LF or CRLF.",
-            else => "This file contains binary data and cannot be edited as text.",
+            error.InvalidUtf8 => @import("i18n").dtr("coral", "This file is not valid UTF-8. Convert its encoding before opening it in Coral."),
+            error.UnsupportedLineEnding => @import("i18n").dtr("coral", "Standalone CR line endings are not supported. Convert this file to LF or CRLF."),
+            else => @import("i18n").dtr("coral", "This file contains binary data and cannot be edited as text."),
         });
         if (!op.reload) {
             if (d.path) |p| a.free(p);
@@ -849,7 +851,7 @@ fn loaded(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) call
     d.pending = decoded;
     if (etag != null) d.pending_etag = u.z(std.mem.span(etag));
     if (size > 10 * 1024 * 1024) {
-        self.ask(.large, d, "Open in large-file mode?", "This file is larger than 10 MiB. Automatic spelling and syntax highlighting will be disabled.", &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Open large file", .id = 1 } });
+        self.ask(.large, d, @import("i18n").dtr("coral", "Open in large-file mode?"), @import("i18n").dtr("coral", "This file is larger than 10 MiB. Automatic spelling and syntax highlighting will be disabled."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Open large file"), .id = 1 } });
     } else acceptLoaded(self, d, false);
 }
 fn acceptLoaded(self: *App, d: *Document, large: bool) void {
@@ -863,7 +865,7 @@ fn acceptLoaded(self: *App, d: *Document, large: bool) void {
     d.etag = d.pending_etag;
     d.pending_etag = null;
     self.commitLoad(d, decoded.text);
-    self.message(if (d.newline == .mixed) "Mixed line endings detected. Choose LF or CRLF when you save." else "");
+    self.message(if (d.newline == .mixed) @import("i18n").dtr("coral", "Mixed line endings detected. Choose LF or CRLF when you save.") else "");
 }
 fn startReplace(file: *c.GFile, op: *SaveOp) void {
     c.g_file_replace_contents_async(file, op.data.ptr, op.data.len, if (op.etag) |e| e.ptr else null, 0, c.G_FILE_CREATE_NONE, op.doc.cancellable, &saved, op);
@@ -915,14 +917,14 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
         if (!codec.saveKeepsDirty(op.revision, d.revision)) c.gtk_text_buffer_set_modified(d.buffer, 0);
         self.configure(d);
         self.update();
-        self.message("Saved.");
+        self.message(@import("i18n").dtr("coral", "Saved."));
         if (d.close_after_save) {
             d.close_after_save = false;
             if (!d.dirty()) {
                 self.remove(d);
             } else {
                 self.quitting = false;
-                self.message("Saved the earlier revision. Newer edits are still unsaved.");
+                self.message(@import("i18n").dtr("coral", "Saved the earlier revision. Newer edits are still unsaved."));
             }
         }
     } else {
@@ -931,8 +933,8 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
         logFileFailure("event=document-save-failed domain={f} code={d}", err);
         if (err) |e| {
             if (e.domain == c.g_io_error_quark() and e.code == c.G_IO_ERROR_WRONG_ETAG) {
-                self.message("File changed on disk. Save again to review the conflict; your edits are preserved.");
-                self.ask(.conflict, d, "This file changed elsewhere", "Your edits are preserved. Save a copy, reload the file, or explicitly overwrite the version on disk.", &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Reload", .id = 1 }, .{ .text = "Save As…", .id = 2 }, .{ .text = "Overwrite", .id = 3 } });
+                self.message(@import("i18n").dtr("coral", "File changed on disk. Save again to review the conflict; your edits are preserved."));
+                self.ask(.conflict, d, @import("i18n").dtr("coral", "This file changed elsewhere"), @import("i18n").dtr("coral", "Your edits are preserved. Save a copy, reload the file, or explicitly overwrite the version on disk."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Reload"), .id = 1 }, .{ .text = @import("i18n").dtr("coral", "Save As…"), .id = 2 }, .{ .text = @import("i18n").dtr("coral", "Overwrite"), .id = 3 } });
             } else self.message(std.mem.span(e.message));
             c.g_error_free(e);
         }
@@ -954,7 +956,7 @@ fn chosenOpen(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callc
             if (path != null) {
                 self.openPath(std.mem.span(path));
                 c.g_free(path);
-            } else self.message("Only local files are supported.");
+            } else self.message(@import("i18n").dtr("coral", "Only local files are supported."));
         }
     }
     logFileFailure("event=file-chooser-failed domain={f} code={d}", err);
@@ -975,7 +977,7 @@ fn chosenSave(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callc
             self.saveTo(d, std.mem.span(path), false, true);
             return;
         }
-        self.message("Only local files are supported.");
+        self.message(@import("i18n").dtr("coral", "Only local files are supported."));
     }
     logFileFailure("event=file-chooser-failed domain={f} code={d}", err);
     if (err) |e| c.g_error_free(e);
@@ -1009,7 +1011,7 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
             }
         },
         .conflict => {
-            if (response == 1) self.ask(.reload, doc, "Discard unsaved edits?", "Reloading replaces your current edits with the version on disk.", &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Discard and reload", .id = 1 } }) else if (response == 2) self.save(doc.?, true, false) else if (response == 3) self.save(doc.?, false, true);
+            if (response == 1) self.ask(.reload, doc, @import("i18n").dtr("coral", "Discard unsaved edits?"), @import("i18n").dtr("coral", "Reloading replaces your current edits with the version on disk."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Discard and reload"), .id = 1 } }) else if (response == 2) self.save(doc.?, true, false) else if (response == 3) self.save(doc.?, false, true);
         },
         .reload => {
             if (response == 1) self.load(doc.?, true);
@@ -1031,7 +1033,7 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
         .preferences => {
             self.settings.save() catch |err| {
                 config_log.err("event=preferences-save-failed error={s}", .{@errorName(err)});
-                self.message("Could not save preferences. Check the configuration directory permissions.");
+                self.message(@import("i18n").dtr("coral", "Could not save preferences. Check the configuration directory permissions."));
             };
         },
         .goto => {
@@ -1077,8 +1079,8 @@ fn tick(data: ?*anyopaque) callconv(.c) c_int {
             continue;
         }
         if (job.kind == .add) {
-            if (job.failed or !job.available) self.message("The personal dictionary could not be updated.") else {
-                self.message("Added to the personal dictionary shared by Enchant applications.");
+            if (job.failed or !job.available) self.message(@import("i18n").dtr("coral", "The personal dictionary could not be updated.")) else {
+                self.message(@import("i18n").dtr("coral", "Added to the personal dictionary shared by Enchant applications."));
                 self.resetSpelling();
             }
             continue;
@@ -1111,14 +1113,14 @@ fn tick(data: ?*anyopaque) callconv(.c) c_int {
                 d.priority_end = job.end;
                 d.priority_revision = d.revision;
             } else d.check_from = job.end;
-            if (job.failed) self.message("The spelling provider reported an error. Editing remains available.");
+            if (job.failed) self.message(@import("i18n").dtr("coral", "The spelling provider reported an error. Editing remains available."));
         }
     }
     const now = c.g_get_monotonic_time();
     for (self.docs.items) |d| {
         if (d.pending != null and self.dialog == null) {
             self.focus(d);
-            self.ask(.large, d, "Open in large-file mode?", "This file exceeds 10 MiB. Automatic spelling and syntax highlighting will be disabled.", &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Open large file", .id = 1 } });
+            self.ask(.large, d, @import("i18n").dtr("coral", "Open in large-file mode?"), @import("i18n").dtr("coral", "This file exceeds 10 MiB. Automatic spelling and syntax highlighting will be disabled."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Open large file"), .id = 1 } });
         }
         const count = c.gtk_text_buffer_get_char_count(d.buffer);
         if (!self.enumerated or !self.dictionary or !self.spellingEnabled(d) or d.inflight or d.loading or now < d.due or d.check_from >= count) continue;

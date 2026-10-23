@@ -38,7 +38,7 @@ pub const Bar = struct {
     revision: u64 = std.math.maxInt(u64),
     pub fn create(host: *gtk.Box, tray: *service.Tray, context: *anyopaque, open: @FieldType(Bar, "open")) !*Bar {
         const self = try a.create(Bar);
-        self.* = .{ .service = tray, .context = context, .open = open, .overflow = gtk.Button.newWithLabel("⋯") };
+        self.* = .{ .service = tray, .context = context, .open = open, .overflow = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "⋯")) };
         for (&self.rows) |*row| {
             const button = gtk.Button.new();
             const image = w.icon("pearl-application-x-executable-symbolic");
@@ -62,7 +62,7 @@ pub const Bar = struct {
             button.as(gtk.Widget).setVisible(0);
         }
         host.append(self.overflow.as(gtk.Widget));
-        w.name(self.overflow.as(gtk.Widget), "More tray items");
+        w.name(self.overflow.as(gtk.Widget), @import("i18n").dtr("pearl", "More tray items"));
         _ = gtk.Button.signals.clicked.connect(self.overflow, *Bar, overflowClicked, self, .{});
         self.update();
         return self;
@@ -140,7 +140,7 @@ fn menuRow() Row {
     label.setMaxWidthChars(32);
     label.as(gtk.Widget).setHexpand(1);
     label.as(gtk.Widget).setValign(.center);
-    const arrow = gtk.Label.new("›");
+    const arrow = gtk.Label.new(@import("i18n").dtr("pearl", "›"));
     arrow.as(gtk.Widget).addCssClass("pearl-menu-arrow");
     arrow.as(gtk.Widget).setValign(.center);
     arrow.as(gtk.Widget).setVisible(0);
@@ -179,10 +179,10 @@ pub const View = struct {
         root.as(gtk.Widget).setVexpand(1);
         host.append(root.as(gtk.Widget));
         const header = w.row(8);
-        const back = gtk.Button.newWithLabel("‹");
+        const back = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "‹"));
         back.as(gtk.Widget).addCssClass("pearl-icon");
-        back.as(gtk.Widget).setTooltipText("Back");
-        w.name(back.as(gtk.Widget), "Back");
+        back.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Back"));
+        w.name(back.as(gtk.Widget), @import("i18n").dtr("pearl", "Back"));
         const title = w.label("", "pearl-card-title");
         header.append(back.as(gtk.Widget));
         header.append(title.as(gtk.Widget));

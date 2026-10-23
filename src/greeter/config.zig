@@ -7,6 +7,7 @@ const options = @import("build_options");
 pub const Root = struct { path: []const u8, type: enum { wayland, x11 } };
 pub const Config = struct {
     version: u8 = 1,
+    language: []const u8 = "",
     theme: enum { material_dark, material_light, gtk } = .material_dark,
     gtk_theme: ?[]const u8 = null,
     wallpaper: ?[]const u8 = null,
@@ -35,6 +36,7 @@ pub const Config = struct {
     fingerprint_hint: bool = false,
     auth_timeout_seconds: u16 = 120,
     pub fn validate(self: Config) !void {
+        if (self.language.len > 0 and !@import("i18n").locale.valid(self.language)) return error.InvalidLanguage;
         if (self.preferred_output_edid) |value| _ = try @import("output_identity.zig").parseHash(value);
         if (self.wallpaper_color) |color| {
             if (color.len != 7 or color[0] != '#') return error.InvalidBackgroundColor;

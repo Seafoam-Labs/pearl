@@ -12,7 +12,20 @@ const Appearance = @import("ui/appearance.zig").Appearance;
 const Target = @import("platform/actions.zig").Target;
 const test_hooks = @import("build_options").test_hooks;
 const log = std.log.scoped(.config);
-const titles = [_][]const u8{ "Overview", "CPU", "Memory", "Disks", "Network", "GPU", "Sensors", "Processes", "Services" };
+fn pageTitle(index: usize) [:0]const u8 {
+    return switch (index) {
+        0 => @import("i18n").dtr("dome", "Overview"),
+        1 => @import("i18n").dtr("dome", "CPU"),
+        2 => @import("i18n").dtr("dome", "Memory"),
+        3 => @import("i18n").dtr("dome", "Disks"),
+        4 => @import("i18n").dtr("dome", "Network"),
+        5 => @import("i18n").dtr("dome", "GPU"),
+        6 => @import("i18n").dtr("dome", "Sensors"),
+        7 => @import("i18n").dtr("dome", "Processes"),
+        8 => @import("i18n").dtr("dome", "Services"),
+        else => "Dome",
+    };
+}
 const symbols = [_][*:0]const u8{ "view-grid-symbolic", "computer-symbolic", "media-flash-symbolic", "drive-harddisk-symbolic", "network-wireless-symbolic", "video-display-symbolic", "weather-clear-symbolic", "view-list-symbolic", "preferences-system-symbolic" };
 const Field = enum { cpu, io_wait, frequency, processes, threads, uptime, mem_used, mem_available, mem_cached, swap, disk_read, disk_write, disk_busy, disk_latency, disk_size, net_receive, net_send, net_rx, net_tx, net_speed, gpu_usage, gpu_used, gpu_total, gpu_temp, gpu_power, gpu_encode, gpu_decode, gpu_frequency, sensor, proc_cpu, proc_memory, proc_read, proc_write, proc_threads, proc_pss, proc_command };
 const Binding = struct { widget: u.W, field: Field, index: usize = 0 };
@@ -78,7 +91,7 @@ pub const App = struct {
     pub fn create(application: *c.GtkApplication, prefs: Preferences) *App {
         const self = u.a.create(App) catch unreachable;
         const window = c.gtk_application_window_new(application).?;
-        c.gtk_window_set_title(u.cast(c.GtkWindow, window), "Dome");
+        c.gtk_window_set_title(u.cast(c.GtkWindow, window), @import("i18n").dtr("dome", "Dome"));
         c.gtk_window_set_icon_name(u.cast(c.GtkWindow, window), @import("main.zig").identity);
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, window), prefs.width, prefs.height);
         u.class(window, "dome-root");
@@ -87,9 +100,9 @@ pub const App = struct {
         const header = c.gtk_header_bar_new().?;
         const brand = u.box(c.GTK_ORIENTATION_HORIZONTAL, 8, null);
         u.append(brand, u.image("utilities-system-monitor-symbolic", 20));
-        u.append(brand, u.label("Dome", "title"));
+        u.append(brand, u.label(@import("i18n").dtr("dome", "Dome"), "title"));
         c.gtk_header_bar_pack_start(u.cast(c.GtkHeaderBar, header), brand);
-        c.gtk_header_bar_set_title_widget(u.cast(c.GtkHeaderBar, header), u.label("System monitor", "secondary"));
+        c.gtk_header_bar_set_title_widget(u.cast(c.GtkHeaderBar, header), u.label(@import("i18n").dtr("dome", "System monitor"), "secondary"));
         c.gtk_window_set_titlebar(u.cast(c.GtkWindow, window), header);
         const work = u.box(c.GTK_ORIENTATION_HORIZONTAL, 0, null);
         c.gtk_widget_set_vexpand(work, 1);
@@ -106,23 +119,23 @@ pub const App = struct {
         u.append(main, toolbar);
         const nav_toggle = c.gtk_menu_button_new().?;
         c.gtk_menu_button_set_icon_name(u.cast(c.GtkMenuButton, nav_toggle), "sidebar-show-symbolic");
-        c.gtk_widget_set_tooltip_text(nav_toggle, "Navigation");
+        c.gtk_widget_set_tooltip_text(nav_toggle, @import("i18n").dtr("dome", "Navigation"));
         u.append(toolbar, nav_toggle);
         const popup = c.gtk_popover_new().?;
         const popup_nav = u.box(c.GTK_ORIENTATION_VERTICAL, 2, "sidebar");
         c.gtk_popover_set_child(u.cast(c.GtkPopover, popup), popup_nav);
         c.gtk_menu_button_set_popover(u.cast(c.GtkMenuButton, nav_toggle), popup);
-        const title = u.label("Overview", "title");
+        const title = u.label(@import("i18n").dtr("dome", "Overview"), "title");
         u.expand(title);
         u.append(toolbar, title);
-        const pause = u.iconButton("media-playback-pause-symbolic", "Pause sampling · Ctrl+P");
+        const pause = u.iconButton("media-playback-pause-symbolic", @import("i18n").dtr("dome", "Pause sampling · Ctrl+P"));
         u.append(toolbar, pause);
         const intervals = [_]?[*:0]const u8{ "0.5 s", "1 s", "2 s", "5 s", null };
         const interval = c.gtk_drop_down_new_from_strings(@ptrCast(&intervals)).?;
         u.append(toolbar, interval);
-        const search_button = u.iconButton("system-search-symbolic", "Search · Ctrl+F");
+        const search_button = u.iconButton("system-search-symbolic", @import("i18n").dtr("dome", "Search · Ctrl+F"));
         u.append(toolbar, search_button);
-        const preferences = u.iconButton("open-menu-symbolic", "Preferences");
+        const preferences = u.iconButton("open-menu-symbolic", @import("i18n").dtr("dome", "Preferences"));
         u.append(toolbar, preferences);
         const search = c.gtk_search_entry_new().?;
         c.gtk_search_entry_set_search_delay(u.cast(c.GtkSearchEntry, search), 60);
@@ -133,14 +146,15 @@ pub const App = struct {
         const content = u.box(c.GTK_ORIENTATION_VERTICAL, 16, "content");
         const body = u.scroll(content);
         u.append(main, body);
-        const status = u.label("Collecting the first sample…", "status");
+        const status = u.label(@import("i18n").dtr("dome", "Collecting the first sample…"), "status");
         u.ellipsize(status);
         u.append(main, status);
         self.* = .{ .application = application, .window = window, .root = root, .sidebar = sidebar, .popup = popup, .nav_toggle = nav_toggle, .toolbar = toolbar, .title = title, .pause_button = pause, .interval = interval, .status = status, .body = body, .content = content, .search = search, .prefs = prefs, .page = prefs.page, .histories = .init(u.a) };
         for ([_]u.W{ nav, popup_nav }, 0..) |parent, group| {
-            u.append(parent, u.label("MONITOR", "eyebrow"));
-            for (titles, 0..) |name, index| {
-                if (index == 7) u.append(parent, u.label("SYSTEM", "eyebrow"));
+            u.append(parent, u.label(@import("i18n").dtr("dome", "MONITOR"), "eyebrow"));
+            for (0..symbols.len) |index| {
+                const name = pageTitle(index);
+                if (index == 7) u.append(parent, u.label(@import("i18n").dtr("dome", "SYSTEM"), "eyebrow"));
                 const button = u.button("");
                 const row = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
                 u.append(row, u.image(symbols[index], 18));
@@ -187,7 +201,7 @@ pub const App = struct {
         self.appearance = .{ .context = self, .changed = appearanceChanged };
         self.applyTheme();
         self.worker.interval = prefs.interval;
-        self.worker.start() catch self.message("Could not start the system collector");
+        self.worker.start() catch self.message(@import("i18n").dtr("dome", "Could not start the system collector"));
         self.buildPage();
         self.timer = c.g_timeout_add(200, tick, self);
         c.gtk_window_present(u.cast(c.GtkWindow, window));
@@ -295,7 +309,7 @@ pub const App = struct {
         }
     }
     fn addBinding(self: *App, parent: u.W, field: Field, index: usize, style: ?[*:0]const u8) u.W {
-        const widget = u.label("—", style);
+        const widget = u.label(@import("i18n").dtr("dome", "—"), style);
         u.ellipsize(widget);
         u.append(parent, widget);
         self.bindings.append(u.a, .{ .widget = widget, .field = field, .index = index }) catch unreachable;
@@ -339,7 +353,7 @@ pub const App = struct {
         const b = u.label(text, "secondary");
         u.wrap(b);
         u.append(box, b);
-        u.append(box, self.actionButton("Refresh", 12));
+        u.append(box, self.actionButton(@import("i18n").dtr("dome", "Refresh"), 12));
         u.append(self.content, box);
     }
     fn buildPage(self: *App) void {
@@ -362,9 +376,9 @@ pub const App = struct {
             c.gtk_widget_remove_css_class(button, "active");
             if (i % 9 == self.page) u.class(button, "active");
         }
-        u.setLabel(self.title, titles[self.page]);
+        u.setLabel(self.title, pageTitle(self.page));
         const s = self.snapshot orelse {
-            self.unavailable("Getting to know your system", "Waiting for the first complete sample…");
+            self.unavailable(@import("i18n").dtr("dome", "Getting to know your system"), "Waiting for the first complete sample…");
             return;
         };
         if (self.summary) {
@@ -387,7 +401,7 @@ pub const App = struct {
         self.updateBindings();
     }
     fn buildOverview(self: *App, s: *m.Snapshot) void {
-        self.heading("Your system, at a glance.", s.cpu_name.slice());
+        self.heading(@import("i18n").dtr("dome", "Your system, at a glance."), s.cpu_name.slice());
         const flow = c.gtk_flow_box_new().?;
         c.gtk_flow_box_set_selection_mode(u.cast(c.GtkFlowBox, flow), c.GTK_SELECTION_NONE);
         c.gtk_flow_box_set_column_spacing(u.cast(c.GtkFlowBox, flow), 12);
@@ -396,7 +410,7 @@ pub const App = struct {
         c.gtk_flow_box_set_max_children_per_line(u.cast(c.GtkFlowBox, flow), if (self.narrow) 2 else 3);
         c.gtk_flow_box_set_homogeneous(u.cast(c.GtkFlowBox, flow), 1);
         u.append(self.content, flow);
-        for ([_]struct { title: []const u8, page: u32, field: Field, accent: usize }{ .{ .title = "CPU", .page = 1, .field = .cpu, .accent = 0 }, .{ .title = "Memory", .page = 2, .field = .mem_used, .accent = 1 }, .{ .title = "GPU", .page = 5, .field = .gpu_usage, .accent = 2 }, .{ .title = "Disk read", .page = 3, .field = .disk_read, .accent = 4 }, .{ .title = "Network receive", .page = 4, .field = .net_receive, .accent = 3 }, .{ .title = "Sensor", .page = 6, .field = .sensor, .accent = 5 } }) |card| {
+        for ([_]struct { title: []const u8, page: u32, field: Field, accent: usize }{ .{ .title = @import("i18n").dtr("dome", "CPU"), .page = 1, .field = .cpu, .accent = 0 }, .{ .title = @import("i18n").dtr("dome", "Memory"), .page = 2, .field = .mem_used, .accent = 1 }, .{ .title = @import("i18n").dtr("dome", "GPU"), .page = 5, .field = .gpu_usage, .accent = 2 }, .{ .title = @import("i18n").dtr("dome", "Disk read"), .page = 3, .field = .disk_read, .accent = 4 }, .{ .title = @import("i18n").dtr("dome", "Network receive"), .page = 4, .field = .net_receive, .accent = 3 }, .{ .title = @import("i18n").dtr("dome", "Sensor"), .page = 6, .field = .sensor, .accent = 5 } }) |card| {
             const button = self.actionButton("", card.page);
             u.class(button, "card");
             const inner = u.box(c.GTK_ORIENTATION_VERTICAL, 7, null);
@@ -429,29 +443,29 @@ pub const App = struct {
             c.gtk_flow_box_insert(u.cast(c.GtkFlowBox, flow), button, -1);
         }
         const row = u.box(c.GTK_ORIENTATION_HORIZONTAL, 16, null);
-        self.metric(row, "Processes", .processes, 0);
-        self.metric(row, "Threads", .threads, 0);
-        self.metric(row, "Uptime", .uptime, 0);
+        self.metric(row, @import("i18n").dtr("dome", "Processes"), .processes, 0);
+        self.metric(row, @import("i18n").dtr("dome", "Threads"), .threads, 0);
+        self.metric(row, @import("i18n").dtr("dome", "Uptime"), .uptime, 0);
         u.append(self.content, row);
-        u.append(self.content, u.label("Busiest processes", "title"));
+        u.append(self.content, u.label(@import("i18n").dtr("dome", "Busiest processes"), "title"));
         for (0..3) |i| {
             const button = self.actionButton("", @intCast(100 + i));
-            const label = u.label("—", null);
+            const label = u.label(@import("i18n").dtr("dome", "—"), null);
             u.ellipsize(label);
             c.gtk_button_set_child(u.cast(c.GtkButton, button), label);
             self.top_labels[i] = label;
             u.append(self.content, button);
         }
-        u.append(self.content, self.actionButton("Inspect processes →", 7));
-        self.addNote("Disk and network cards show the first listed device. Open each page to choose a device; stacked interfaces are not summed.");
+        u.append(self.content, self.actionButton(@import("i18n").dtr("dome", "Inspect processes →"), 7));
+        self.addNote(@import("i18n").dtr("dome", "Disk and network cards show the first listed device. Open each page to choose a device; stacked interfaces are not summed."));
     }
     fn buildCpu(self: *App, s: *m.Snapshot) void {
         if (s.cpus.len == 0) {
-            self.unavailable("CPU counters unavailable", "The kernel did not provide readable CPU counters.");
+            self.unavailable(@import("i18n").dtr("dome", "CPU counters unavailable"), "The kernel did not provide readable CPU counters.");
             return;
         }
         self.heading(s.cpu_name.slice(), "Utilization excludes idle and I/O wait. Each logical processor uses a 0–100% scale.");
-        u.append(self.content, self.actionButton(if (self.logical) "Show overall CPU" else "Show logical processors", 13));
+        u.append(self.content, self.actionButton(if (self.logical) @import("i18n").dtr("dome", "Show overall CPU") else @import("i18n").dtr("dome", "Show logical processors"), 13));
         if (self.logical) {
             const flow = c.gtk_flow_box_new().?;
             c.gtk_flow_box_set_selection_mode(u.cast(c.GtkFlowBox, flow), c.GTK_SELECTION_NONE);
@@ -477,19 +491,19 @@ pub const App = struct {
             self.plot(self.content, key.slice(), 0, 230, 100);
         }
         const row = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(row, "Utilization", .cpu, 0);
-        self.metric(row, "CPU 0 speed", .frequency, 0);
+        self.metric(row, @import("i18n").dtr("dome", "Utilization"), .cpu, 0);
+        self.metric(row, @import("i18n").dtr("dome", "CPU 0 speed"), .frequency, 0);
         u.append(self.content, row);
         const stats = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(stats, "Processes", .processes, 0);
-        self.metric(stats, "Threads", .threads, 0);
-        self.metric(stats, "Uptime", .uptime, 0);
+        self.metric(stats, @import("i18n").dtr("dome", "Processes"), .processes, 0);
+        self.metric(stats, @import("i18n").dtr("dome", "Threads"), .threads, 0);
+        self.metric(stats, @import("i18n").dtr("dome", "Uptime"), .uptime, 0);
         u.append(self.content, stats);
         const cores = io.path("{d} physical cores · {d} logical processors · Linux CPU counters", .{ s.core_count, s.cpus.len -| 1 });
         self.addNote(cores.slice());
         const cache_note = io.path("CPU 0 cache instances: {s}", .{s.cache.slice()});
         self.addNote(cache_note.slice());
-        self.metric(self.content, "I/O wait", .io_wait, 0);
+        self.metric(self.content, @import("i18n").dtr("dome", "I/O wait"), .io_wait, 0);
         if (s.base_frequency) |v| {
             const base = io.path("Base frequency: {d:.2} GHz", .{v});
             self.addNote(base.slice());
@@ -497,17 +511,17 @@ pub const App = struct {
     }
     fn buildMemory(self: *App, s: *m.Snapshot) void {
         const capacity = io.path("{s} total physical memory", .{u.bytes(@floatFromInt(s.memory.total)).slice()});
-        self.heading("Memory", capacity.slice());
+        self.heading(@import("i18n").dtr("dome", "Memory"), capacity.slice());
         self.plot(self.content, "memory", 1, 240, @floatFromInt(@max(1, s.memory.total)));
         const first = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(first, "In use", .mem_used, 0);
-        self.metric(first, "Available", .mem_available, 0);
+        self.metric(first, @import("i18n").dtr("dome", "In use"), .mem_used, 0);
+        self.metric(first, @import("i18n").dtr("dome", "Available"), .mem_available, 0);
         u.append(self.content, first);
         const second = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(second, "Cached", .mem_cached, 0);
-        self.metric(second, "Swap in use", .swap, 0);
+        self.metric(second, @import("i18n").dtr("dome", "Cached"), .mem_cached, 0);
+        self.metric(second, @import("i18n").dtr("dome", "Swap in use"), .swap, 0);
         u.append(self.content, second);
-        self.addNote("In use = total − available. Available memory includes reclaimable cache. Process memory is RSS; shared pages can appear in more than one process.");
+        self.addNote(@import("i18n").dtr("dome", "In use = total − available. Available memory includes reclaimable cache. Process memory is RSS; shared pages can appear in more than one process."));
     }
     fn deviceIndex(self: *App, kind: usize) ?usize {
         const s = self.snapshot orelse return null;
@@ -552,7 +566,7 @@ pub const App = struct {
     fn buildDisks(self: *App, s: *m.Snapshot) void {
         self.deviceSelector(0);
         const index = self.deviceIndex(0) orelse {
-            self.unavailable("No disk selected", "The selected device may have been removed. Choose an available device above.");
+            self.unavailable(@import("i18n").dtr("dome", "No disk selected"), "The selected device may have been removed. Choose an available device above.");
             return;
         };
         const d = s.disks[index];
@@ -560,25 +574,25 @@ pub const App = struct {
         const key = io.path("disk:{s}", .{d.key.slice()});
         self.plot(self.content, key.slice(), 4, 220, null);
         const first = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(first, "Read /s · Solid", .disk_read, index);
-        self.metric(first, "Write /s · Dashed", .disk_write, index);
+        self.metric(first, @import("i18n").dtr("dome", "Read /s · Solid"), .disk_read, index);
+        self.metric(first, @import("i18n").dtr("dome", "Write /s · Dashed"), .disk_write, index);
         u.append(self.content, first);
         const second = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(second, "Active time", .disk_busy, index);
-        self.metric(second, "Response time", .disk_latency, index);
+        self.metric(second, @import("i18n").dtr("dome", "Active time"), .disk_busy, index);
+        self.metric(second, @import("i18n").dtr("dome", "Response time"), .disk_latency, index);
         u.append(self.content, second);
-        self.metric(self.content, "Device capacity", .disk_size, index);
-        self.addNote("Mounted local filesystems (all devices)");
+        self.metric(self.content, @import("i18n").dtr("dome", "Device capacity"), .disk_size, index);
+        self.addNote(@import("i18n").dtr("dome", "Mounted local filesystems (all devices)"));
         for (s.mounts) |mount| {
             const info = io.path("{s} · {s} · {s} available / {s}", .{ mount.path.slice(), mount.kind.slice(), u.bytes(@floatFromInt(mount.available)).slice(), u.bytes(@floatFromInt(mount.total)).slice() });
             self.addNote(info.slice());
         }
-        self.addNote("Activity describes time with I/O in flight; it is not a measurement of maximum device performance. Partitions are excluded from the device list.");
+        self.addNote(@import("i18n").dtr("dome", "Activity describes time with I/O in flight; it is not a measurement of maximum device performance. Partitions are excluded from the device list."));
     }
     fn buildNetwork(self: *App, s: *m.Snapshot) void {
         self.deviceSelector(1);
         const index = self.deviceIndex(1) orelse {
-            self.unavailable("No interface selected", "The selected interface is unavailable. Choose another interface above.");
+            self.unavailable(@import("i18n").dtr("dome", "No interface selected"), "The selected interface is unavailable. Choose another interface above.");
             return;
         };
         const n = s.networks[index];
@@ -586,22 +600,22 @@ pub const App = struct {
         const key = io.path("net:{s}", .{n.key.slice()});
         self.plot(self.content, key.slice(), 3, 220, null);
         const first = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(first, "Receive · Solid", .net_receive, index);
-        self.metric(first, "Send · Dashed", .net_send, index);
+        self.metric(first, @import("i18n").dtr("dome", "Receive · Solid"), .net_receive, index);
+        self.metric(first, @import("i18n").dtr("dome", "Send · Dashed"), .net_send, index);
         u.append(self.content, first);
         const second = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(second, "Total received", .net_rx, index);
-        self.metric(second, "Total sent", .net_tx, index);
+        self.metric(second, @import("i18n").dtr("dome", "Total received"), .net_rx, index);
+        self.metric(second, @import("i18n").dtr("dome", "Total sent"), .net_tx, index);
         u.append(self.content, second);
         const addresses = io.path("Addresses: {s}\nHardware address: {s}", .{ n.address.slice(), n.mac.slice() });
         self.addNote(addresses.slice());
-        self.metric(self.content, "Link speed", .net_speed, index);
-        self.addNote("Traffic is measured per interface using Linux counters. Virtual, bridge and physical interfaces can contain overlapping traffic. Graph scale uses bytes per second.");
+        self.metric(self.content, @import("i18n").dtr("dome", "Link speed"), .net_speed, index);
+        self.addNote(@import("i18n").dtr("dome", "Traffic is measured per interface using Linux counters. Virtual, bridge and physical interfaces can contain overlapping traffic. Graph scale uses bytes per second."));
     }
     fn buildGpu(self: *App, s: *m.Snapshot) void {
         self.deviceSelector(2);
         const index = self.deviceIndex(2) orelse {
-            self.unavailable("No GPU metrics available", "No compatible display adapter was discovered. Other monitoring pages remain available.");
+            self.unavailable(@import("i18n").dtr("dome", "No GPU metrics available"), "No compatible display adapter was discovered. Other monitoring pages remain available.");
             return;
         };
         const g = self.nvml.resolve(s.gpus[index]);
@@ -609,27 +623,27 @@ pub const App = struct {
         const key = io.path("gpu:{s}", .{g.key.slice()});
         self.plot(self.content, key.slice(), 2, 220, 100);
         const first = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(first, "Utilization", .gpu_usage, index);
-        self.metric(first, "Device memory", .gpu_used, index);
+        self.metric(first, @import("i18n").dtr("dome", "Utilization"), .gpu_usage, index);
+        self.metric(first, @import("i18n").dtr("dome", "Device memory"), .gpu_used, index);
         u.append(self.content, first);
         const second = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(second, "Temperature", .gpu_temp, index);
-        self.metric(second, "Power", .gpu_power, index);
+        self.metric(second, @import("i18n").dtr("dome", "Temperature"), .gpu_temp, index);
+        self.metric(second, @import("i18n").dtr("dome", "Power"), .gpu_power, index);
         u.append(self.content, second);
         const video = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(video, "Video encode", .gpu_encode, index);
-        self.metric(video, "Video decode", .gpu_decode, index);
+        self.metric(video, @import("i18n").dtr("dome", "Video encode"), .gpu_encode, index);
+        self.metric(video, @import("i18n").dtr("dome", "Video decode"), .gpu_decode, index);
         u.append(self.content, video);
         const capacity = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(capacity, "Memory capacity", .gpu_total, index);
-        self.metric(capacity, "Clock", .gpu_frequency, index);
+        self.metric(capacity, @import("i18n").dtr("dome", "Memory capacity"), .gpu_total, index);
+        self.metric(capacity, @import("i18n").dtr("dome", "Clock"), .gpu_frequency, index);
         u.append(self.content, capacity);
-        self.addNote("A dash means the driver does not expose that metric or permission is unavailable. Visible client usage is never presented as device-wide utilization.");
+        self.addNote(@import("i18n").dtr("dome", "A dash means the driver does not expose that metric or permission is unavailable. Visible client usage is never presented as device-wide utilization."));
     }
     fn buildSensors(self: *App, s: *m.Snapshot) void {
-        self.heading("Thermals & fans", "Read-only readings exposed by Linux hwmon");
+        self.heading(@import("i18n").dtr("dome", "Thermals & fans"), "Read-only readings exposed by Linux hwmon");
         if (s.sensors.len == 0) {
-            self.unavailable("No sensors available", "This system does not expose readable temperature or fan sensors.");
+            self.unavailable(@import("i18n").dtr("dome", "No sensors available"), "This system does not expose readable temperature or fan sensors.");
             return;
         }
         for (s.sensors, 0..) |sensor, i| {
@@ -659,22 +673,22 @@ pub const App = struct {
     }
     fn buildProcesses(self: *App) void {
         const toolbar = u.box(c.GTK_ORIENTATION_HORIZONTAL, 8, null);
-        u.append(toolbar, self.actionButton(if (self.processes.grouped) "Raw processes" else "Group applications", 14));
-        u.append(toolbar, self.actionButton(if (self.processes.mine) "Show all users" else "My processes", 15));
-        u.append(toolbar, self.actionButton("Details", 16));
+        u.append(toolbar, self.actionButton(if (self.processes.grouped) @import("i18n").dtr("dome", "Raw processes") else @import("i18n").dtr("dome", "Group applications"), 14));
+        u.append(toolbar, self.actionButton(if (self.processes.mine) @import("i18n").dtr("dome", "Show all users") else @import("i18n").dtr("dome", "My processes"), 15));
+        u.append(toolbar, self.actionButton(@import("i18n").dtr("dome", "Details"), 16));
         u.append(self.content, toolbar);
         self.tableHost(self.processes);
         self.updateDetails(false);
-        self.addNote("CPU uses total machine capacity by default. Memory is RSS. Application groups use cgroup scopes; uncertain processes stay separate.");
+        self.addNote(@import("i18n").dtr("dome", "CPU uses total machine capacity by default. Memory is RSS. Application groups use cgroup scopes; uncertain processes stay separate."));
     }
     fn buildServices(self: *App) void {
         const toolbar = u.box(c.GTK_ORIENTATION_HORIZONTAL, 8, null);
-        u.append(toolbar, self.actionButton(if (self.services.system) "Switch to user services" else "Switch to system services", 17));
-        u.append(toolbar, self.actionButton("Refresh", 18));
-        u.append(toolbar, self.actionButton("Details", 16));
+        u.append(toolbar, self.actionButton(if (self.services.system) @import("i18n").dtr("dome", "Switch to user services") else @import("i18n").dtr("dome", "Switch to system services"), 17));
+        u.append(toolbar, self.actionButton(@import("i18n").dtr("dome", "Refresh"), 18));
+        u.append(toolbar, self.actionButton(@import("i18n").dtr("dome", "Details"), 16));
         u.append(self.content, toolbar);
         if (!self.services.available) {
-            self.unavailable(if (self.services.loading) "Loading services…" else "Services aren’t available", self.services.message.slice());
+            self.unavailable(if (self.services.loading) @import("i18n").dtr("dome", "Loading services…") else @import("i18n").dtr("dome", "Services aren’t available"), self.services.message.slice());
             return;
         }
         const note = u.label(self.services.message.slice(), "secondary");
@@ -685,8 +699,8 @@ pub const App = struct {
         self.updateDetails(false);
     }
     fn buildSummary(self: *App, s: *m.Snapshot) void {
-        self.heading("Dome", std.mem.span(c.g_get_host_name()));
-        const definitions = [_]struct { title: []const u8, field: Field, key: []const u8 }{ .{ .title = "CPU", .field = .cpu, .key = "cpu:4294967295" }, .{ .title = "Memory", .field = .mem_used, .key = "memory" }, .{ .title = "GPU", .field = .gpu_usage, .key = "" }, .{ .title = "Disk read", .field = .disk_read, .key = "" }, .{ .title = "Network receive", .field = .net_receive, .key = "" } };
+        self.heading(@import("i18n").dtr("dome", "Dome"), std.mem.span(c.g_get_host_name()));
+        const definitions = [_]struct { title: []const u8, field: Field, key: []const u8 }{ .{ .title = @import("i18n").dtr("dome", "CPU"), .field = .cpu, .key = "cpu:4294967295" }, .{ .title = @import("i18n").dtr("dome", "Memory"), .field = .mem_used, .key = "memory" }, .{ .title = @import("i18n").dtr("dome", "GPU"), .field = .gpu_usage, .key = "" }, .{ .title = @import("i18n").dtr("dome", "Disk read"), .field = .disk_read, .key = "" }, .{ .title = @import("i18n").dtr("dome", "Network receive"), .field = .net_receive, .key = "" } };
         _ = s;
         for (definitions) |d| {
             const row = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, "card");
@@ -697,8 +711,8 @@ pub const App = struct {
             u.append(self.content, row);
         }
         const controls = u.box(c.GTK_ORIENTATION_HORIZONTAL, 8, null);
-        u.append(controls, self.actionButton(if (self.paused) "Resume" else "Pause", 9));
-        u.append(controls, self.actionButton("Full monitor", 19));
+        u.append(controls, self.actionButton(if (self.paused) @import("i18n").dtr("dome", "Resume") else @import("i18n").dtr("dome", "Pause"), 9));
+        u.append(controls, self.actionButton(@import("i18n").dtr("dome", "Full monitor"), 19));
         u.append(self.content, controls);
     }
     fn numberText(value: ?f64, unit: []const u8) m.Text(512) {
@@ -822,7 +836,7 @@ pub const App = struct {
                         u.setLabel(label, value.slice());
                     } else {
                         self.top_ids[i] = .{};
-                        u.setLabel(label, "—");
+                        u.setLabel(label, @import("i18n").dtr("dome", "—"));
                     }
                 };
             }
@@ -852,7 +866,7 @@ pub const App = struct {
                 self.removeDetailBindings();
                 self.detail_id = .{};
                 self.worker.inspect(.{});
-                u.append(box, u.label("Select a process", "secondary"));
+                u.append(box, u.label(@import("i18n").dtr("dome", "Select a process"), "secondary"));
                 return;
             }
             const p = selected.?.process;
@@ -871,27 +885,27 @@ pub const App = struct {
                 _ = self.addBinding(box, f.field, 0, null);
             }
             if (p.is_group) {
-                detailFact(box, "Application scope", p.group.slice());
+                detailFact(box, @import("i18n").dtr("dome", "Application scope"), p.group.slice());
                 if (self.snapshot) |s| {
                     var shown: usize = 0;
                     for (s.processes) |member| {
                         if (std.mem.eql(u8, p.group.slice(), member.group.slice())) {
                             if (shown >= 20) {
-                                detailFact(box, "More members", "Open raw processes to inspect the complete group.");
+                                detailFact(box, @import("i18n").dtr("dome", "More members"), "Open raw processes to inspect the complete group.");
                                 break;
                             }
                             const info = io.path("{s} · PID {d}", .{ member.name.slice(), member.id.pid });
-                            detailFact(box, "Member", info.slice());
+                            detailFact(box, @import("i18n").dtr("dome", "Member"), info.slice());
                             shown += 1;
                         }
                     }
                 }
             }
-            detailFact(box, "Executable", if (p.exe.len > 0) p.exe.slice() else "Unavailable");
-            u.append(box, u.label("Command", "secondary"));
+            detailFact(box, @import("i18n").dtr("dome", "Executable"), if (p.exe.len > 0) p.exe.slice() else "Unavailable");
+            u.append(box, u.label(@import("i18n").dtr("dome", "Command"), "secondary"));
             _ = self.addBinding(box, .proc_command, 0, null);
-            const end = self.actionButton("End process…", 20);
-            const kill = self.actionButton("Force stop…", 21);
+            const end = self.actionButton(@import("i18n").dtr("dome", "End process…"), 20);
+            const kill = self.actionButton(@import("i18n").dtr("dome", "Force stop…"), 21);
             u.class(kill, "error");
             u.append(box, end);
             u.append(box, kill);
@@ -899,7 +913,7 @@ pub const App = struct {
             c.gtk_widget_set_sensitive(end, @intFromBool(permitted));
             c.gtk_widget_set_sensitive(kill, @intFromBool(permitted));
             if (!permitted) {
-                const label = u.label(if (p.is_group) "Open raw processes to control one group member." else "This process cannot be controlled here.", "secondary");
+                const label = u.label(if (p.is_group) @import("i18n").dtr("dome", "Open raw processes to control one group member.") else @import("i18n").dtr("dome", "This process cannot be controlled here."), "secondary");
                 u.wrap(label);
                 u.append(box, label);
             }
@@ -907,7 +921,7 @@ pub const App = struct {
             const selected = self.services_table.selected();
             if (selected == null) {
                 u.clear(box);
-                u.append(box, u.label("Select a service", "secondary"));
+                u.append(box, u.label(@import("i18n").dtr("dome", "Select a service"), "secondary"));
                 return;
             }
             const service = selected.?.service;
@@ -916,13 +930,13 @@ pub const App = struct {
             const title = u.label(service.name.slice(), "title");
             u.wrap(title);
             u.append(box, title);
-            detailFact(box, "Description", service.description.slice());
-            detailFact(box, "State", service.state.slice());
-            detailFact(box, "Substate", service.substate.slice());
-            detailFact(box, "Loaded", service.load.slice());
-            const start = self.actionButton("Start service…", 22);
-            const restart = self.actionButton("Restart service…", 23);
-            const stop = self.actionButton("Stop service…", 24);
+            detailFact(box, @import("i18n").dtr("dome", "Description"), service.description.slice());
+            detailFact(box, @import("i18n").dtr("dome", "State"), service.state.slice());
+            detailFact(box, @import("i18n").dtr("dome", "Substate"), service.substate.slice());
+            detailFact(box, @import("i18n").dtr("dome", "Loaded"), service.load.slice());
+            const start = self.actionButton(@import("i18n").dtr("dome", "Start service…"), 22);
+            const restart = self.actionButton(@import("i18n").dtr("dome", "Restart service…"), 23);
+            const stop = self.actionButton(@import("i18n").dtr("dome", "Stop service…"), 24);
             u.class(stop, "error");
             c.gtk_widget_set_sensitive(start, @intFromBool(selected.?.serviceEnabled(22)));
             c.gtk_widget_set_sensitive(restart, @intFromBool(selected.?.serviceEnabled(23)));
@@ -947,7 +961,7 @@ pub const App = struct {
             return;
         }
         // Narrow details are a standalone modal; selection remains in the table.
-        const dialog = self.newDialog("Details");
+        const dialog = self.newDialog(@import("i18n").dtr("dome", "Details"));
         const area = c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, dialog)).?;
         const box = u.box(c.GTK_ORIENTATION_VERTICAL, 8, "detail");
         u.append(@ptrCast(area), u.scroll(box));
@@ -1000,7 +1014,7 @@ pub const App = struct {
                 self.paused = !self.paused;
                 self.worker.configure(self.paused, self.prefs.interval, false);
                 c.gtk_button_set_icon_name(u.cast(c.GtkButton, self.pause_button), if (self.paused) "media-playback-start-symbolic" else "media-playback-pause-symbolic");
-                self.message(if (self.paused) "Sampling paused" else "Sampling resumed; establishing new counter baselines");
+                self.message(if (self.paused) @import("i18n").dtr("dome", "Sampling paused") else @import("i18n").dtr("dome", "Sampling resumed; establishing new counter baselines"));
                 if (self.summary) self.buildPage();
             },
             10 => self.showPreferences(),
@@ -1231,13 +1245,13 @@ pub const App = struct {
             return;
         };
         self.force = force;
-        const dialog = self.newDialog(if (force) "Force stop process?" else "End process?");
+        const dialog = self.newDialog(if (force) @import("i18n").dtr("dome", "Force stop process?") else @import("i18n").dtr("dome", "End process?"));
         const area: u.W = @ptrCast(c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, dialog)));
         const title = io.path("{s} · PID {d} · User {d}", .{ p.name.slice(), p.id.pid, p.uid });
         const label = u.label(title.slice(), "title");
         u.wrap(label);
         u.append(area, label);
-        const note = u.label(if (force) "Stop this process immediately? Unsaved work may be lost." else "Ask this process to close? Save any work before continuing.", null);
+        const note = u.label(if (force) @import("i18n").dtr("dome", "Stop this process immediately? Unsaved work may be lost.") else @import("i18n").dtr("dome", "Ask this process to close? Save any work before continuing."), null);
         u.wrap(note);
         u.append(area, note);
         _ = c.gtk_dialog_add_button(u.cast(c.GtkDialog, dialog), "Cancel", c.GTK_RESPONSE_CANCEL);
@@ -1252,12 +1266,12 @@ pub const App = struct {
         self.service_target = row.service.name;
         self.service_action.set(std.mem.span(method));
         self.service_generation = self.services.generation;
-        const dialog = self.newDialog("Change service state?");
+        const dialog = self.newDialog(@import("i18n").dtr("dome", "Change service state?"));
         const area: u.W = @ptrCast(c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, dialog)));
         const title = u.label(row.service.name.slice(), "title");
         u.wrap(title);
         u.append(area, title);
-        const label = u.label(if (self.services.system) "This system action may interrupt dependent applications and require authentication." else "This action may interrupt applications using the selected user service.", null);
+        const label = u.label(if (self.services.system) @import("i18n").dtr("dome", "This system action may interrupt dependent applications and require authentication.") else @import("i18n").dtr("dome", "This action may interrupt applications using the selected user service."), null);
         u.wrap(label);
         u.append(area, label);
         _ = c.gtk_dialog_add_button(u.cast(c.GtkDialog, dialog), "Cancel", c.GTK_RESPONSE_CANCEL);
@@ -1266,16 +1280,16 @@ pub const App = struct {
         c.gtk_window_present(u.cast(c.GtkWindow, dialog));
     }
     fn showPreferences(self: *App) void {
-        const dialog = self.newDialog("Preferences");
+        const dialog = self.newDialog(@import("i18n").dtr("dome", "Preferences"));
         const area: u.W = @ptrCast(c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, dialog)));
-        u.append(area, u.label("Appearance & monitoring", "title"));
-        const themes = [_]?[*:0]const u8{ "Follow Pearl", "Native GTK", "Light", "Dark", null };
+        u.append(area, u.label(@import("i18n").dtr("dome", "Appearance & monitoring"), "title"));
+        const themes = [_]?[*:0]const u8{ @import("i18n").dtr("dome", "Follow Pearl"), @import("i18n").dtr("dome", "Native GTK"), @import("i18n").dtr("dome", "Light"), @import("i18n").dtr("dome", "Dark"), null };
         const selector = c.gtk_drop_down_new_from_strings(@ptrCast(&themes)).?;
         c.gtk_drop_down_set_selected(u.cast(c.GtkDropDown, selector), @intFromEnum(self.prefs.theme));
         self.theme_selector = selector;
-        u.append(area, u.label("Appearance", null));
+        u.append(area, u.label(@import("i18n").dtr("dome", "Appearance"), null));
         u.append(area, selector);
-        const definitions = [_]struct { text: [*:0]const u8, value: bool }{ .{ .text = "Compact process rows", .value = self.prefs.compact }, .{ .text = "Network rates in bits per second", .value = self.prefs.bits }, .{ .text = "Process CPU: one core = 100%", .value = self.prefs.per_core }, .{ .text = "Keep 10 minutes of graph history", .value = self.prefs.duration > 120000000 }, .{ .text = "Show PID column", .value = self.prefs.columns & 2 != 0 }, .{ .text = "Show memory column", .value = self.prefs.columns & 8 != 0 }, .{ .text = "Show disk I/O columns", .value = self.prefs.columns & 48 != 0 } };
+        const definitions = [_]struct { text: [*:0]const u8, value: bool }{ .{ .text = @import("i18n").dtr("dome", "Compact process rows"), .value = self.prefs.compact }, .{ .text = @import("i18n").dtr("dome", "Network rates in bits per second"), .value = self.prefs.bits }, .{ .text = @import("i18n").dtr("dome", "Process CPU: one core = 100%"), .value = self.prefs.per_core }, .{ .text = @import("i18n").dtr("dome", "Keep 10 minutes of graph history"), .value = self.prefs.duration > 120000000 }, .{ .text = @import("i18n").dtr("dome", "Show PID column"), .value = self.prefs.columns & 2 != 0 }, .{ .text = @import("i18n").dtr("dome", "Show memory column"), .value = self.prefs.columns & 8 != 0 }, .{ .text = @import("i18n").dtr("dome", "Show disk I/O columns"), .value = self.prefs.columns & 48 != 0 } };
         for (definitions, 0..) |d, i| {
             const check = c.gtk_check_button_new_with_label(d.text).?;
             c.gtk_check_button_set_active(u.cast(c.GtkCheckButton, check), @intFromBool(d.value));

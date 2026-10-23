@@ -1,0 +1,77 @@
+# Pearl translation catalog
+# See translations/README.md for licensing and contribution requirements.
+msgid ""
+msgstr ""
+"Project-Id-Version: Pearl 1\n"
+"PO-Revision-Date: 2026-10-23 00:00+0000\n"
+"Last-Translator: Pearl contributors\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/lock/screen.zig:215
+msgid "Authenticating…"
+msgstr ""
+
+#: src/lock/screen.zig:205 src/lock/screen.zig:651
+msgid "Authentication response"
+msgstr ""
+
+#: src/lock/screen.zig:709
+msgid "Cancel"
+msgstr ""
+
+#: src/lock/screen.zig:653
+msgid "Caps Lock is on"
+msgstr ""
+
+#: src/lock/screen.zig:707
+msgid "Confirm"
+msgstr ""
+
+#: src/lock/screen.zig:211
+msgid "Password"
+msgstr ""
+
+#: src/lock/screen.zig:610
+msgid "Pearl · Locked"
+msgstr ""
+
+#: src/lock/screen.zig:696
+msgid "Power off"
+msgstr ""
+
+#: src/lock/screen.zig:226
+msgid "Power off?"
+msgstr ""
+
+#: src/lock/screen.zig:211
+msgid "Response"
+msgstr ""
+
+#: src/lock/screen.zig:695
+msgid "Restart"
+msgstr ""
+
+#: src/lock/screen.zig:226 src/lock/screen.zig:702
+msgid "Restart?"
+msgstr ""
+
+#: src/lock/screen.zig:664
+msgid "Session locked · Esc cancels authentication"
+msgstr ""
+
+#: src/lock/screen.zig:694
+msgid "Sleep"
+msgstr ""
+
+#: src/lock/screen.zig:215
+msgid "Try again"
+msgstr ""
+
+#: src/lock/screen.zig:215 src/lock/screen.zig:657
+msgid "Unlock"
+msgstr ""

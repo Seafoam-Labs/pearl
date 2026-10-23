@@ -63,15 +63,15 @@ pub const View = struct {
     pub fn create(host: *gtk.Box, window: *gtk.Window, editor: *Editor, context: *anyopaque, invalidate: @FieldType(View, "invalidate")) !*View {
         const self = try a.create(View);
         const heading = w.row(12);
-        const title = w.label(tr("Notification filters", "Benachrichtigungsfilter"), "pearl-card-title");
+        const title = w.label(@import("i18n").dtr("pearl", "Notification filters"), "pearl-card-title");
         title.setWrap(1);
         title.as(gtk.Widget).setHexpand(1);
         heading.append(title.as(gtk.Widget));
         const master = gtk.Switch.new();
         master.as(gtk.Widget).setValign(.center);
-        w.name(master.as(gtk.Widget), tr("Enable notification filters", "Benachrichtigungsfilter aktivieren"));
+        w.name(master.as(gtk.Widget), @import("i18n").dtr("pearl", "Enable notification filters"));
         heading.append(master.as(gtk.Widget));
-        const add = w.wrappingButton(tr("Add filter", "Filter hinzufügen"));
+        const add = w.wrappingButton(@import("i18n").dtr("pearl", "Add filter"));
         heading.append(add.as(gtk.Widget));
         host.append(heading.as(gtk.Widget));
         const notice = w.label("", "pearl-secondary");
@@ -79,10 +79,10 @@ pub const View = struct {
         host.append(notice.as(gtk.Widget));
         const rows = w.column(8);
         host.append(rows.as(gtk.Widget));
-        const help = w.label(tr("Block hides popups and history. History only hides popups. Block takes priority when several filters match.", "Blockieren blendet Popups und Verlauf aus. Nur Verlauf blendet Popups aus. Bei mehreren Treffern hat Blockieren Vorrang."), "pearl-secondary");
+        const help = w.label(@import("i18n").dtr("pearl", "Block hides popups and history. History only hides popups. Block takes priority when several filters match."), "pearl-secondary");
         help.setWrap(1);
         host.append(help.as(gtk.Widget));
-        const test_title = tr("Test filters", "Filter testen");
+        const test_title = @import("i18n").dtr("pearl", "Test filters");
         const expander = gtk.Expander.new(null);
         expander.as(gtk.Widget).addCssClass("settings-card");
         expander.as(gtk.Widget).addCssClass("settings-section");
@@ -96,14 +96,14 @@ pub const View = struct {
         tester.as(gtk.Widget).addCssClass("settings-section-body");
         expander.setChild(tester.as(gtk.Widget));
         host.append(expander.as(gtk.Widget));
-        const test_help = w.label(tr("Try a sample against the draft without sending a notification. DND and lock can also hide popups.", "Beispiel am Entwurf testen, ohne eine Benachrichtigung zu senden. Nicht stören und Sperre können Popups ebenfalls ausblenden."), "pearl-secondary");
+        const test_help = w.label(@import("i18n").dtr("pearl", "Try a sample against the draft without sending a notification. DND and lock can also hide popups."), "pearl-secondary");
         test_help.setWrap(1);
         tester.append(test_help.as(gtk.Widget));
         var sample: [4]*gtk.Entry = undefined;
-        for (&sample, [_][:0]const u8{ tr("Application name", "Anwendungsname"), tr("Desktop ID", "Desktop-ID"), tr("Title", "Titel"), tr("Body", "Text") }) |*entry, label| entry.* = entryRow(tester, label, 4096);
-        const urgency = choiceRow(tester, tr("Urgency", "Dringlichkeit"), &.{ tr("Low", "Niedrig"), tr("Normal", "Normal"), tr("Critical", "Kritisch"), null });
+        for (&sample, [_][:0]const u8{ @import("i18n").dtr("pearl", "Application name"), @import("i18n").dtr("pearl", "Desktop ID"), @import("i18n").dtr("pearl", "Title"), @import("i18n").dtr("pearl", "Body") }) |*entry, label| entry.* = entryRow(tester, label, 4096);
+        const urgency = choiceRow(tester, @import("i18n").dtr("pearl", "Urgency"), &.{ @import("i18n").dtr("pearl", "Low"), @import("i18n").dtr("pearl", "Normal"), @import("i18n").dtr("pearl", "Critical"), null });
         urgency.setSelected(1);
-        const test_button = w.wrappingButton(tr("Test sample", "Beispiel testen"));
+        const test_button = w.wrappingButton(@import("i18n").dtr("pearl", "Test sample"));
         tester.append(test_button.as(gtk.Widget));
         const result = w.label("", "pearl-secondary");
         result.setWrap(1);
@@ -169,7 +169,7 @@ pub const View = struct {
         const alloc = scratch.allocator();
         const prefs = model.parse(alloc, self.editor.text()) catch {
             self.host.as(gtk.Widget).setSensitive(0);
-            self.notice.setText(tr("Repair the invalid draft in Advanced before editing filters.", "Den ungültigen Entwurf unter Erweitert korrigieren."));
+            self.notice.setText(@import("i18n").dtr("pearl", "Repair the invalid draft in Advanced before editing filters."));
             return;
         };
         self.filling = true;
@@ -179,7 +179,7 @@ pub const View = struct {
         for (prefs.notifications.rules) |r| {
             if (r.enabled) active += 1;
         }
-        self.notice.setText(if (!self.editor.client.capabilities.notification_filters) tr("This session does not support notification filters.", "Diese Sitzung unterstützt keine Benachrichtigungsfilter.") else if (!prefs.notifications.filters_enabled) tr("Filters paused. Rules remain saved and editable.", "Filter pausiert. Regeln bleiben gespeichert und bearbeitbar.") else std.fmt.allocPrintSentinel(alloc, "{d} / {d} {s}", .{ active, prefs.notifications.rules.len, tr("filters enabled", "Filter aktiviert") }, 0) catch "");
+        self.notice.setText(if (!self.editor.client.capabilities.notification_filters) @import("i18n").dtr("pearl", "This session does not support notification filters.") else if (!prefs.notifications.filters_enabled) @import("i18n").dtr("pearl", "Filters paused. Rules remain saved and editable.") else std.fmt.allocPrintSentinel(alloc, "{d} / {d} {s}", .{ active, prefs.notifications.rules.len, @import("i18n").dtr("pearl", "filters enabled") }, 0) catch "");
         self.add.as(gtk.Widget).setSensitive(@intFromBool(prefs.notifications.rules.len < f.max_rules));
         const hash = configHash(alloc, prefs.notifications) catch return;
         if (self.signature == null or !std.mem.eql(u8, &hash, &self.signature.?)) {
@@ -187,20 +187,20 @@ pub const View = struct {
             self.signature = hash;
         }
         self.test_result.setText("");
-        if (self.editor.notification_test_error.len > 0) self.test_result.setText(tr("The sample could not be tested. Wait for the draft to sync, then try again.", "Beispiel konnte nicht getestet werden. Entwurf synchronisieren lassen und erneut versuchen."));
+        if (self.editor.notification_test_error.len > 0) self.test_result.setText(@import("i18n").dtr("pearl", "The sample could not be tested. Wait for the draft to sync, then try again."));
         if (self.editor.notification_test_result) |bytes| if (self.editor.notification_test_hash) |saved| {
             if (std.mem.eql(u8, &saved, &p.digest(self.editor.text()))) {
                 const Response = struct { decision: f.Decision, matches: []const struct { id: []const u8, name: []const u8 }, dirty: bool, filters_enabled: bool, draft_revision: []const u8, revision: []const u8 };
                 const result = std.json.parseFromSliceLeaky(Response, alloc, bytes, .{ .ignore_unknown_fields = true }) catch return;
                 if ((p.number(result.draft_revision) catch return) != self.editor.state.draft_revision or (p.number(result.revision) catch return) != self.editor.state.revision) return;
                 var out: std.Io.Writer.Allocating = .init(alloc);
-                out.writer.print("{s}: {s}", .{ if (result.dirty) tr("Draft result", "Entwurfsergebnis") else tr("Saved rules", "Gespeicherte Regeln"), switch (result.decision) {
-                    .normal => tr("Delivered normally", "Normal zugestellt"),
-                    .block => tr("Blocked — no popup or history", "Blockiert — kein Popup oder Verlauf"),
-                    .history_only => tr("History only — no popup", "Nur Verlauf — kein Popup"),
+                out.writer.print("{s}: {s}", .{ if (result.dirty) @import("i18n").dtr("pearl", "Draft result") else @import("i18n").dtr("pearl", "Saved rules"), switch (result.decision) {
+                    .normal => @import("i18n").dtr("pearl", "Delivered normally"),
+                    .block => @import("i18n").dtr("pearl", "Blocked — no popup or history"),
+                    .history_only => @import("i18n").dtr("pearl", "History only — no popup"),
                 } }) catch return;
                 for (result.matches) |match| out.writer.print("\n• {s}", .{match.name}) catch return;
-                if (!result.filters_enabled) out.writer.writeAll(tr("\nFiltering is paused.", "\nFilter sind pausiert.")) catch return;
+                if (!result.filters_enabled) out.writer.writeAll(@import("i18n").dtr("pearl", "\nFiltering is paused.")) catch return;
                 self.test_result.setText(alloc.dupeZ(u8, out.written()) catch return);
             }
         };
@@ -211,7 +211,7 @@ pub const View = struct {
         self.controls.shrinkRetainingCapacity(self.fixed_count);
         _ = self.arena.reset(.retain_capacity);
         const alloc = self.arena.allocator();
-        if (config.rules.len == 0) self.rows.append(w.label(tr("No filters yet. Add a filter to hide matching notifications.", "Noch keine Filter. Einen Filter hinzufügen, um passende Benachrichtigungen auszublenden."), "pearl-secondary").as(gtk.Widget));
+        if (config.rules.len == 0) self.rows.append(w.label(@import("i18n").dtr("pearl", "No filters yet. Add a filter to hide matching notifications."), "pearl-secondary").as(gtk.Widget));
         for (config.rules) |r| {
             const card = builder.card();
             const top = w.row(10);
@@ -222,19 +222,19 @@ pub const View = struct {
             const toggle = gtk.Switch.new();
             toggle.setActive(@intFromBool(r.enabled));
             toggle.as(gtk.Widget).setValign(.center);
-            w.name(toggle.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "{s}: {s}", .{ tr("Enable filter", "Filter aktivieren"), r.name }, 0));
+            w.name(toggle.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "{s}: {s}", .{ @import("i18n").dtr("pearl", "Enable filter"), r.name }, 0));
             const binding = try alloc.create(Binding);
             binding.* = .{ .view = self, .id = .{}, .toggle = true };
             binding.id.set(r.id);
             _ = object.Object.signals.notify.connect(toggle.as(object.Object), *Binding, ruleToggled, binding, .{ .detail = "active" });
             top.append(toggle.as(gtk.Widget));
-            const edit = w.wrappingButton(tr("Edit", "Bearbeiten"));
+            const edit = w.wrappingButton(@import("i18n").dtr("pearl", "Edit"));
             _ = gtk.Button.signals.clicked.connect(edit, *Binding, editClicked, binding, .{});
             top.append(edit.as(gtk.Widget));
             card.append(top.as(gtk.Widget));
             var out: std.Io.Writer.Allocating = .init(alloc);
-            try out.writer.print("{s} · {s}", .{ if (r.action == .block) tr("Block", "Blockieren") else tr("History only", "Nur Verlauf"), if (r.match == .all) tr("Match all", "Alle Bedingungen") else tr("Match any", "Eine Bedingung") });
-            for (r.conditions) |c| try out.writer.print("\n{s} {s} “{s}”", .{ fieldLabel(c.field), if (c.operator == .equals) tr("is", "ist") else tr("contains", "enthält"), c.value });
+            try out.writer.print("{s} · {s}", .{ if (r.action == .block) @import("i18n").dtr("pearl", "Block") else @import("i18n").dtr("pearl", "History only"), if (r.match == .all) @import("i18n").dtr("pearl", "Match all") else @import("i18n").dtr("pearl", "Match any") });
+            for (r.conditions) |c| try out.writer.print("\n{s} {s} “{s}”", .{ fieldLabel(c.field), if (c.operator == .equals) @import("i18n").dtr("pearl", "is") else @import("i18n").dtr("pearl", "contains"), c.value });
             const summary = w.label(try alloc.dupeZ(u8, out.written()), "pearl-secondary");
             summary.setWrap(1);
             card.append(summary.as(gtk.Widget));
@@ -244,11 +244,11 @@ pub const View = struct {
     }
     fn fieldLabel(field: f.Field) [:0]const u8 {
         return switch (field) {
-            .app_name => tr("Application name", "Anwendungsname"),
-            .desktop_entry => tr("Desktop ID", "Desktop-ID"),
-            .summary => tr("Title", "Titel"),
-            .body => tr("Body", "Text"),
-            .urgency => tr("Urgency", "Dringlichkeit"),
+            .app_name => @import("i18n").dtr("pearl", "Application name"),
+            .desktop_entry => @import("i18n").dtr("pearl", "Desktop ID"),
+            .summary => @import("i18n").dtr("pearl", "Title"),
+            .body => @import("i18n").dtr("pearl", "Body"),
+            .urgency => @import("i18n").dtr("pearl", "Urgency"),
         };
     }
     fn queue(self: *View) void {
@@ -318,7 +318,7 @@ pub const View = struct {
     }
     fn testClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         self.editor.testNotifications(.{ .app_name = std.mem.span(self.sample[0].as(gtk.Editable).getText()), .desktop_entry = std.mem.span(self.sample[1].as(gtk.Editable).getText()), .summary = std.mem.span(self.sample[2].as(gtk.Editable).getText()), .body = std.mem.span(self.sample[3].as(gtk.Editable).getText()), .urgency = @enumFromInt(@min(2, self.sample_urgency.getSelected())) }) catch |err| self.editor.notification_test_error.set(@errorName(err));
-        self.test_result.setText(tr("Testing the synchronized draft…", "Synchronisierten Entwurf testen…"));
+        self.test_result.setText(@import("i18n").dtr("pearl", "Testing the synchronized draft…"));
     }
     fn styleDialog(self: *View) void {
         const dialog = self.dialog orelse return;
@@ -354,15 +354,15 @@ pub const View = struct {
         self.rule_id.set(if (rule) |r| r.id else "");
         self.rule_enabled = if (rule) |r| r.enabled else true;
         self.focus_id.set(if (id) |value| try std.fmt.allocPrint(alloc, "filters.edit.{s}", .{value}) else "filters.add");
-        const shell = builder.open(self.window, if (rule != null) tr("Edit notification filter", "Benachrichtigungsfilter bearbeiten") else tr("Add notification filter", "Benachrichtigungsfilter hinzufügen"));
+        const shell = builder.open(self.window, if (rule != null) @import("i18n").dtr("pearl", "Edit notification filter") else @import("i18n").dtr("pearl", "Add notification filter"));
         const dialog = shell.dialog;
         const body = shell.body;
         self.dialog = dialog;
         self.dialog_scroll = shell.scroll;
         errdefer self.closeDialog();
-        self.rule_name = entryRow(body, tr("Filter name", "Filtername"), 80);
-        self.rule_action = choiceRow(body, tr("When a notification matches", "Bei passender Benachrichtigung"), &.{ tr("Block — hide everywhere", "Blockieren — überall ausblenden"), tr("History only — no popup", "Nur Verlauf — kein Popup"), null });
-        self.rule_match = choiceRow(body, tr("Conditions", "Bedingungen"), &.{ tr("Match all conditions", "Alle Bedingungen erfüllen"), tr("Match any condition", "Eine Bedingung erfüllen"), null });
+        self.rule_name = entryRow(body, @import("i18n").dtr("pearl", "Filter name"), 80);
+        self.rule_action = choiceRow(body, @import("i18n").dtr("pearl", "When a notification matches"), &.{ @import("i18n").dtr("pearl", "Block — hide everywhere"), @import("i18n").dtr("pearl", "History only — no popup"), null });
+        self.rule_match = choiceRow(body, @import("i18n").dtr("pearl", "Conditions"), &.{ @import("i18n").dtr("pearl", "Match all conditions"), @import("i18n").dtr("pearl", "Match any condition"), null });
         try self.dialog_controls.appendSlice(a, &.{ .{ .id = "filters.rule.name", .widget = self.rule_name.?.as(gtk.Widget) }, .{ .id = "filters.rule.action", .widget = self.rule_action.?.as(gtk.Widget) }, .{ .id = "filters.rule.match", .widget = self.rule_match.?.as(gtk.Widget) } });
         if (rule) |r| {
             self.rule_name.?.as(gtk.Editable).setText(try alloc.dupeZ(u8, r.name));
@@ -374,11 +374,11 @@ pub const View = struct {
             const box = w.column(6);
             box.as(gtk.Widget).addCssClass("settings-card");
             const line = w.row(8);
-            const label = w.label(try std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ tr("Condition", "Bedingung"), i + 1 }, 0), "settings-row-title");
+            const label = w.label(try std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ @import("i18n").dtr("pearl", "Condition"), i + 1 }, 0), "settings-row-title");
             label.as(gtk.Widget).setHexpand(1);
             line.append(label.as(gtk.Widget));
-            const remove = w.wrappingButton(tr("Remove", "Entfernen"));
-            w.name(remove.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ tr("Remove condition", "Bedingung entfernen"), i + 1 }, 0));
+            const remove = w.wrappingButton(@import("i18n").dtr("pearl", "Remove"));
+            w.name(remove.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ @import("i18n").dtr("pearl", "Remove condition"), i + 1 }, 0));
             line.append(remove.as(gtk.Widget));
             box.append(line.as(gtk.Widget));
             const selectors = w.flow(2);
@@ -388,13 +388,13 @@ pub const View = struct {
             selectors.insert(field_box.as(gtk.Widget), -1);
             selectors.insert(comparison_box.as(gtk.Widget), -1);
             box.append(selectors.as(gtk.Widget));
-            const field = choiceRow(field_box, tr("Field", "Feld"), &.{ fieldLabel(.app_name), fieldLabel(.desktop_entry), fieldLabel(.summary), fieldLabel(.body), fieldLabel(.urgency), null });
-            const comparison = choiceRow(comparison_box, tr("Comparison", "Vergleich"), &.{ tr("Is exactly", "Ist genau"), tr("Contains", "Enthält"), null });
-            const value = entryRow(box, tr("Value", "Wert"), 256);
-            const urgency = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ tr("Low", "Niedrig"), tr("Normal", "Normal"), tr("Critical", "Kritisch"), null }));
-            w.name(urgency.as(gtk.Widget), tr("Urgency", "Dringlichkeit"));
+            const field = choiceRow(field_box, @import("i18n").dtr("pearl", "Field"), &.{ fieldLabel(.app_name), fieldLabel(.desktop_entry), fieldLabel(.summary), fieldLabel(.body), fieldLabel(.urgency), null });
+            const comparison = choiceRow(comparison_box, @import("i18n").dtr("pearl", "Comparison"), &.{ @import("i18n").dtr("pearl", "Is exactly"), @import("i18n").dtr("pearl", "Contains"), null });
+            const value = entryRow(box, @import("i18n").dtr("pearl", "Value"), 256);
+            const urgency = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").dtr("pearl", "Low"), @import("i18n").dtr("pearl", "Normal"), @import("i18n").dtr("pearl", "Critical"), null }));
+            w.name(urgency.as(gtk.Widget), @import("i18n").dtr("pearl", "Urgency"));
             box.append(urgency.as(gtk.Widget));
-            const case_sensitive = gtk.CheckButton.newWithLabel(tr("Match case", "Groß-/Kleinschreibung beachten"));
+            const case_sensitive = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Match case"));
             box.append(case_sensitive.as(gtk.Widget));
             cw.* = .{ .view = self, .index = i, .host = box, .field = field, .comparison = comparison, .value = value, .urgency = urgency, .case_sensitive = case_sensitive };
             _ = object.Object.signals.notify.connect(field.as(object.Object), *ConditionWidgets, fieldChanged, cw, .{ .detail = "selected" });
@@ -419,11 +419,11 @@ pub const View = struct {
             };
             try self.dialog_controls.append(a, .{ .id = remove_ids[i], .widget = remove.as(gtk.Widget) });
         }
-        self.add_condition = w.wrappingButton(tr("Add condition", "Bedingung hinzufügen"));
+        self.add_condition = w.wrappingButton(@import("i18n").dtr("pearl", "Add condition"));
         self.add_condition.?.as(gtk.Widget).setSensitive(@intFromBool(self.condition_count < f.max_conditions));
         body.append(self.add_condition.?.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(self.add_condition.?, *View, addCondition, self, .{});
-        const help = w.label(tr("Application identifiers are supplied by the sender. Matching critical notifications are filtered too. Save rule updates the draft; Apply & save activates it.", "Anwendungskennungen stammen vom Absender. Passende kritische Benachrichtigungen werden ebenfalls gefiltert. Regel speichern ändert den Entwurf; Anwenden aktiviert ihn."), "pearl-secondary");
+        const help = w.label(@import("i18n").dtr("pearl", "Application identifiers are supplied by the sender. Matching critical notifications are filtered too. Save rule updates the draft; Apply & save activates it."), "pearl-secondary");
         help.setWrap(1);
         body.append(help.as(gtk.Widget));
         self.rule_error = w.label("", "pearl-error");
@@ -431,11 +431,11 @@ pub const View = struct {
         self.rule_error.?.as(gtk.Widget).setFocusable(1);
         body.append(self.rule_error.?.as(gtk.Widget));
         if (rule != null) {
-            const delete = dialog.addButton(tr("Delete filter", "Filter löschen"), 1);
+            const delete = dialog.addButton(@import("i18n").dtr("pearl", "Delete filter"), 1);
             try self.dialog_controls.append(a, .{ .id = "filters.rule.delete", .widget = delete });
         }
-        const cancel = dialog.addButton(tr("Cancel", "Abbrechen"), @intFromEnum(gtk.ResponseType.cancel));
-        const save = dialog.addButton(tr("Save rule", "Regel speichern"), @intFromEnum(gtk.ResponseType.accept));
+        const cancel = dialog.addButton(@import("i18n").dtr("pearl", "Cancel"), @intFromEnum(gtk.ResponseType.cancel));
+        const save = dialog.addButton(@import("i18n").dtr("pearl", "Save rule"), @intFromEnum(gtk.ResponseType.accept));
         try self.dialog_controls.appendSlice(a, &.{ .{ .id = "filters.rule.cancel", .widget = cancel }, .{ .id = "filters.rule.save", .widget = save }, .{ .id = "filters.condition.add", .widget = self.add_condition.?.as(gtk.Widget) } });
         _ = gtk.Dialog.signals.response.connect(dialog, *View, response, self, .{});
         dialog.as(gtk.Window).present();
@@ -486,7 +486,7 @@ pub const View = struct {
     fn removeCondition(_: *gtk.Button, cw: *ConditionWidgets) callconv(.c) void {
         const self = cw.view;
         if (self.condition_count <= 1) {
-            self.rule_error.?.setText(tr("Keep at least one condition.", "Mindestens eine Bedingung ist erforderlich."));
+            self.rule_error.?.setText(@import("i18n").dtr("pearl", "Keep at least one condition."));
             return;
         }
         for (cw.index..self.condition_count - 1) |i| {
@@ -531,7 +531,7 @@ pub const View = struct {
     fn response(_: *gtk.Dialog, code: c_int, self: *View) callconv(.c) void {
         if (code == @intFromEnum(gtk.ResponseType.accept) or code == 1) {
             self.commitRule(code == 1) catch |err| {
-                self.rule_error.?.setText(if (err == error.FilterDraftChanged) tr("Filters changed elsewhere. Your input is retained; cancel and reopen to review the current rules.", "Filter wurden anderswo geändert. Eingaben bleiben erhalten; abbrechen und zum Prüfen erneut öffnen.") else tr("Check the name and conditions. Values must be nonempty, within their byte limits, and valid for the selected field.", "Name und Bedingungen prüfen. Werte müssen ausgefüllt, innerhalb ihrer Byte-Grenzen und für das Feld gültig sein."));
+                self.rule_error.?.setText(if (err == error.FilterDraftChanged) @import("i18n").dtr("pearl", "Filters changed elsewhere. Your input is retained; cancel and reopen to review the current rules.") else @import("i18n").dtr("pearl", "Check the name and conditions. Values must be nonempty, within their byte limits, and valid for the selected field."));
                 _ = self.rule_error.?.as(gtk.Widget).grabFocus();
                 return;
             };

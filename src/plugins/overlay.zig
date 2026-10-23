@@ -30,7 +30,7 @@ pub const Overlay = struct {
         }
         window.setApplication(app);
         window.setDecorated(0);
-        window.setTitle("Pearl plugin");
+        window.setTitle(@import("i18n").dtr("pearl", "Pearl plugin"));
         window.as(gtk.Widget).addCssClass("pearl-root");
         window.as(gtk.Widget).addCssClass("pearl-shell");
         layer.initForWindow(window);

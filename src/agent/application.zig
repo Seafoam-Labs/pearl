@@ -106,6 +106,7 @@ const App = struct {
         if (self.job == null) self.app.as(gio.Application).quit();
     }
     fn activate(_: *gio.Application, self: *App) callconv(.c) void {
+        gtk.Widget.setDefaultDirection(if (@import("i18n").rtl()) .rtl else .ltr);
         self.app.as(gio.Application).hold();
         const socket = gio.Socket.newFromFd(3, null) orelse {
             self.shutdown();
@@ -198,7 +199,7 @@ const App = struct {
                 if (self.window != null) {
                     self.composer.getBuffer().setText("", 0);
                     self.render();
-                    self.status.setText("Conversation history cleared.");
+                    self.status.setText(@import("i18n").dtr("pearl-agent", "Conversation history cleared."));
                 }
             },
             .ask, .@"resume" => {
@@ -223,7 +224,7 @@ const App = struct {
     fn createWindow(self: *App) void {
         const win = gtk.ApplicationWindow.new(self.app).as(gtk.Window);
         self.window = win;
-        win.setTitle("Pearl Assistant");
+        win.setTitle(@import("i18n").dtr("pearl-agent", "Pearl Assistant"));
         win.as(gtk.Widget).addCssClass("pearl-root");
         win.as(gtk.Widget).addCssClass("pearl-agent");
         self.css = gtk.CssProvider.new();
@@ -233,15 +234,15 @@ const App = struct {
         win.as(gtk.Widget).setSizeRequest(320, 400);
         const header = gtk.HeaderBar.new();
         const title = w.column(2);
-        title.append(w.label("Pearl Assistant", "title").as(gtk.Widget));
-        self.model_label = w.label("LFM2.5-350M · On device", "dim-label");
+        title.append(w.label(@import("i18n").dtr("pearl-agent", "Pearl Assistant"), "title").as(gtk.Widget));
+        self.model_label = w.label(@import("i18n").dtr("pearl-agent", "LFM2.5-350M · On device"), "dim-label");
         self.model_label.setEllipsize(.end);
         self.model_label.setMaxWidthChars(22);
         title.append(self.model_label.as(gtk.Widget));
         header.setTitleWidget(title.as(gtk.Widget));
-        self.previous = gtk.Button.newWithLabel("History");
+        self.previous = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-agent", "History"));
         header.packStart(self.previous.as(gtk.Widget));
-        const fresh = gtk.Button.newWithLabel("New");
+        const fresh = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-agent", "New"));
         header.packEnd(fresh.as(gtk.Widget));
         win.setTitlebar(header.as(gtk.Widget));
         const root = w.column(8);
@@ -254,15 +255,15 @@ const App = struct {
         self.body = w.column(12);
         self.scroll.setChild(self.body.as(gtk.Widget));
         root.append(self.scroll.as(gtk.Widget));
-        self.status = w.label("Ask a question to search your configured engine.", "dim-label");
+        self.status = w.label(@import("i18n").dtr("pearl-agent", "Ask a question to search your configured engine."), "dim-label");
         self.status.setWrap(1);
         root.append(self.status.as(gtk.Widget));
-        self.compute_label = w.label("Model unloaded", "dim-label");
+        self.compute_label = w.label(@import("i18n").dtr("pearl-agent", "Model unloaded"), "dim-label");
         self.compute_label.setWrap(1);
         const compute_button = gtk.MenuButton.new();
         compute_button.setChild(self.compute_label.as(gtk.Widget));
         const popover = gtk.Popover.new();
-        self.compute_details = w.label("Model unloaded", "dim-label");
+        self.compute_details = w.label(@import("i18n").dtr("pearl-agent", "Model unloaded"), "dim-label");
         self.compute_details.setWrap(1);
         self.compute_details.setWrapMode(.word_char);
         self.compute_details.setMaxWidthChars(42);
@@ -270,7 +271,7 @@ const App = struct {
         popover.setChild(self.compute_details.as(gtk.Widget));
         compute_button.setPopover(popover);
         root.append(compute_button.as(gtk.Widget));
-        self.cpu_button = gtk.Button.newWithLabel("Use CPU once");
+        self.cpu_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-agent", "Use CPU once"));
         self.cpu_button.as(gtk.Widget).setVisible(0);
         root.append(self.cpu_button.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(self.cpu_button, *App, cpuClicked, self, .{});
@@ -278,7 +279,7 @@ const App = struct {
         self.composer.setWrapMode(.word_char);
         self.composer.setAcceptsTab(0);
         self.composer.as(gtk.Widget).setSizeRequest(-1, 64);
-        w.name(self.composer.as(gtk.Widget), "Ask a follow-up; Enter sends, Shift+Enter adds a line");
+        w.name(self.composer.as(gtk.Widget), @import("i18n").dtr("pearl-agent", "Ask a follow-up; Enter sends, Shift+Enter adds a line"));
         const input_scroll = gtk.ScrolledWindow.new();
         input_scroll.setPolicy(.never, .automatic);
         input_scroll.setMaxContentHeight(120);
@@ -286,17 +287,17 @@ const App = struct {
         input_scroll.setChild(self.composer.as(gtk.Widget));
         root.append(input_scroll.as(gtk.Widget));
         const actions = w.row(8);
-        const settings = gtk.Button.newWithLabel("Settings");
+        const settings = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-agent", "Settings"));
         actions.append(settings.as(gtk.Widget));
-        self.stop_button = gtk.Button.newWithLabel("Stop");
+        self.stop_button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-agent", "Stop"));
         actions.append(self.stop_button.as(gtk.Widget));
-        self.send = gtk.Button.newWithLabel("Send");
+        self.send = gtk.Button.newWithLabel(@import("i18n").dtr("pearl-agent", "Send"));
         self.send.as(gtk.Widget).addCssClass("suggested-action");
         self.send.as(gtk.Widget).setHexpand(1);
         self.send.as(gtk.Widget).setHalign(.end);
         actions.append(self.send.as(gtk.Widget));
         root.append(actions.as(gtk.Widget));
-        const privacy = w.label("Answers on device · Web search online · Session only", "dim-label");
+        const privacy = w.label(@import("i18n").dtr("pearl-agent", "Answers on device · Web search online · Session only"), "dim-label");
         privacy.setWrap(1);
         root.append(privacy.as(gtk.Widget));
         win.setChild(root.as(gtk.Widget));
@@ -343,7 +344,7 @@ const App = struct {
     }
     fn stopClicked(_: *gtk.Button, self: *App) callconv(.c) void {
         self.cancelWork();
-        self.status.setText("Stopped. Your question is preserved; Send retries it.");
+        self.status.setText(@import("i18n").dtr("pearl-agent", "Stopped. Your question is preserved; Send retries it."));
     }
     fn cpuClicked(_: *gtk.Button, self: *App) callconv(.c) void {
         self.cpu_once = true;
@@ -354,7 +355,7 @@ const App = struct {
     }
     fn newClicked(_: *gtk.Button, self: *App) callconv(.c) void {
         if (self.job != null) {
-            self.status.setText("Stop the current answer before starting a new chat.");
+            self.status.setText(@import("i18n").dtr("pearl-agent", "Stop the current answer before starting a new chat."));
             return;
         }
         self.newConversation();
@@ -460,7 +461,7 @@ const App = struct {
                 return;
             };
             self.render();
-            self.status.setText(if (answer.warning.len > 0) "Some selected searches failed; available results are shown." else if (answer.summarized) "Answer complete. Check the sources for important details." else "Search results available; summary unavailable.");
+            self.status.setText(if (answer.warning.len > 0) @import("i18n").dtr("pearl-agent", "Some selected searches failed; available results are shown.") else if (answer.summarized) @import("i18n").dtr("pearl-agent", "Answer complete. Check the sources for important details.") else @import("i18n").dtr("pearl-agent", "Search results available; summary unavailable."));
         }
         if (self.exiting) {
             self.app.as(gio.Application).quit();
@@ -556,10 +557,10 @@ const App = struct {
         self.stop_button.as(gtk.Widget).setSensitive(@intFromBool(self.job != null));
         self.previous.as(gtk.Widget).setSensitive(@intFromBool(self.job == null and self.count > 1));
         const model = @import("model_registry.zig").find(self.config.model_id);
-        self.model_label.setText(if (model) |m| m.name else "Custom model · On device");
+        self.model_label.setText(if (model) |m| m.name else @import("i18n").dtr("pearl-agent", "Custom model · On device"));
         if (self.job != null) {
-            self.compute_label.setText("Local inference…");
-            self.compute_details.setText("Runtime and device details update when the current operation completes.");
+            self.compute_label.setText(@import("i18n").dtr("pearl-agent", "Local inference…"));
+            self.compute_details.setText(@import("i18n").dtr("pearl-agent", "Runtime and device details update when the current operation completes."));
             return;
         }
         var buffer: [2048]u8 = undefined;
@@ -572,7 +573,7 @@ const App = struct {
             self.compute_details.setText(detail);
         } else {
             self.compute_label.as(gtk.Widget).setTooltipText(null);
-            self.compute_details.setText("Model unloaded; the conversation remains available.");
+            self.compute_details.setText(@import("i18n").dtr("pearl-agent", "Model unloaded; the conversation remains available."));
         }
     }
     fn publishCompute(self: *App) void {
@@ -589,13 +590,13 @@ const App = struct {
             self.reply(.{ .id = 0, .compute = self.computeStatus() });
         }
         if (self.job != null and self.window != null) self.status.setText(switch (self.phase.load(.monotonic)) {
-            .preparing => "Preparing local model…",
-            .checking => "Checking runtime and preparing local model…",
-            .fallback => "GPU unavailable. Continuing on CPU with your search results…",
-            .deciding => "Working on your question…",
-            .searching => "Searching configured engines…",
-            .reading => "Reading a source page…",
-            .answering => "Checking the answer and sources…",
+            .preparing => @import("i18n").dtr("pearl-agent", "Preparing local model…"),
+            .checking => @import("i18n").dtr("pearl-agent", "Checking runtime and preparing local model…"),
+            .fallback => @import("i18n").dtr("pearl-agent", "GPU unavailable. Continuing on CPU with your search results…"),
+            .deciding => @import("i18n").dtr("pearl-agent", "Working on your question…"),
+            .searching => @import("i18n").dtr("pearl-agent", "Searching configured engines…"),
+            .reading => @import("i18n").dtr("pearl-agent", "Reading a source page…"),
+            .answering => @import("i18n").dtr("pearl-agent", "Checking the answer and sources…"),
         });
         if (self.job != null) if (self.partial) |partial| {
             var buffer: [16384]u8 = undefined;
@@ -603,7 +604,7 @@ const App = struct {
                 const value = a.dupeZ(u8, text) catch return 1;
                 defer a.free(value);
                 partial.setText(value);
-                if (text.len > 0) self.status.setText("Writing a draft… sources will be checked when complete.");
+                if (text.len > 0) self.status.setText(@import("i18n").dtr("pearl-agent", "Writing a draft… sources will be checked when complete."));
             }
         };
         return 1;

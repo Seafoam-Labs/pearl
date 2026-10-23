@@ -133,7 +133,7 @@ pub fn For(comptime Parent: type) type {
                 return;
             };
             const blocked = projection.hasMove(request) or m.get(m.get(request, "raw_files"), "rules") != .null;
-            self.add = try self.button(host, "Add rule", "rules.add", .{ .self = self });
+            self.add = try self.button(host, @import("i18n").dtr("pearl", "Add rule"), "rules.add", .{ .self = self });
             self.add.?.as(gtk.Widget).setSensitive(@intFromBool(!blocked));
             if (blocked) text(host, "Apply or discard the pending move or raw rules edit before editing rules.", "pearl-secondary");
             if (rows.len == 0) text(host, "No window rules yet. New windows use normal Aqueous behavior until a rule matches.", "pearl-secondary");
@@ -150,18 +150,18 @@ pub fn For(comptime Parent: type) type {
                 actions.setHomogeneous(0);
                 card.append(actions.as(gtk.Widget));
                 const id = if (rule.pending) |index| try std.fmt.allocPrint(alloc, "new.{d}", .{index}) else m.str(rule.id);
-                const edit = try self.button(actions, "Edit rule", try std.fmt.allocPrint(alloc, "rules.edit.{s}", .{id}), .{ .self = self, .rule = rule });
+                const edit = try self.button(actions, @import("i18n").dtr("pearl", "Edit rule"), try std.fmt.allocPrint(alloc, "rules.edit.{s}", .{id}), .{ .self = self, .rule = rule });
                 w.name(edit.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Edit rule {d}", .{i + 1}, 0));
                 edit.as(gtk.Widget).setSensitive(@intFromBool(!blocked));
                 for ([_]i64{ -1, 1 }) |d| {
-                    const button_ = try self.button(actions, if (d == -1) "Move earlier" else "Move later", try std.fmt.allocPrint(alloc, "rules.{s}.{s}", .{ if (d == -1) "up" else "down", id }), .{ .self = self, .rule = rule, .direction = d });
+                    const button_ = try self.button(actions, if (d == -1) @import("i18n").dtr("pearl", "Move earlier") else @import("i18n").dtr("pearl", "Move later"), try std.fmt.allocPrint(alloc, "rules.{s}.{s}", .{ if (d == -1) "up" else "down", id }), .{ .self = self, .rule = rule, .direction = d });
                     w.name(button_.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Move rule {d} {s}", .{ i + 1, if (d == -1) "earlier" else "later" }, 0));
                     button_.as(gtk.Widget).setSensitive(@intFromBool(self.parent.client.draft == null and rule.pending == null and (if (d == -1) i > 0 else i + 1 < rows.len)));
                 }
             }
             if (rows.len > page_size) {
                 for ([_]bool{ false, true }) |next| {
-                    const button_ = w.wrappingButton(if (next) "Next rules" else "Previous rules");
+                    const button_ = w.wrappingButton(if (next) @import("i18n").dtr("pearl", "Next rules") else @import("i18n").dtr("pearl", "Previous rules"));
                     host.append(button_.as(gtk.Widget));
                     const action = try alloc.create(Action);
                     action.* = .{ .self = self, .direction = if (next) 1 else -1 };
@@ -269,7 +269,7 @@ pub fn For(comptime Parent: type) type {
                 field.* = .{ .self = self, .spec = spec, .row = row, .input = input, .active = value != .null };
                 if (projection.matcher(k) and options.len == 0 and std.mem.eql(u8, typ, "string") and (std.mem.eql(u8, k, "tag") or (value == .string and value.string.len == 0))) {
                     const empty = gtk.CheckButton.new();
-                    empty.setChild(w.label("Allow an explicit empty pattern (advanced)", null).as(gtk.Widget));
+                    empty.setChild(w.label(@import("i18n").dtr("pearl", "Allow an explicit empty pattern (advanced)"), null).as(gtk.Widget));
                     empty.setActive(@intFromBool(value == .string and value.string.len == 0));
                     if (object.ext.cast(gtk.Label, empty.getChild().?)) |caption| {
                         caption.setWrap(1);
@@ -279,7 +279,7 @@ pub fn For(comptime Parent: type) type {
                     field.empty = empty;
                     try self.control(try std.fmt.allocPrint(alloc, "rules.empty.{s}", .{k}), empty.as(gtk.Widget), true);
                 }
-                const remove = w.wrappingButton("Remove");
+                const remove = w.wrappingButton(@import("i18n").dtr("pearl", "Remove"));
                 row.append(remove.as(gtk.Widget));
                 w.name(remove.as(gtk.Widget), self.z(try std.fmt.allocPrint(alloc, "Remove {s}", .{labelFor(k)})));
                 _ = gtk.Button.signals.clicked.connect(remove, *Field, removeClicked, field, .{});
@@ -291,7 +291,7 @@ pub fn For(comptime Parent: type) type {
             for ([_]*gtk.Box{ conditions, effects }, 0..) |group, index| {
                 const choice = builder.choiceRow(group, if (index == 0) "Condition or scope" else "Setting", &.{null});
                 self.choosers[index] = choice;
-                const button_ = w.wrappingButton(if (index == 0) "Add condition" else "Add setting");
+                const button_ = w.wrappingButton(if (index == 0) @import("i18n").dtr("pearl", "Add condition") else @import("i18n").dtr("pearl", "Add setting"));
                 group.append(button_.as(gtk.Widget));
                 self.add_buttons[index] = button_;
                 _ = gtk.Button.signals.clicked.connect(button_, *Self, addClicked, self, .{});
@@ -421,10 +421,10 @@ pub fn For(comptime Parent: type) type {
             if (response == 1 or response == @intFromEnum(gtk.ResponseType.accept)) {
                 self.save(response == 1) catch |err| {
                     if (err != error.FieldValidation) self.error_label.?.setText(switch (err) {
-                        error.StaleDraft => "The shared draft or snapshot changed. Your input is retained. Cancel and reopen the rule to review the latest version.",
-                        error.MatcherAndSettingRequired => "Add at least one condition and one setting for a new rule. Scope alone is not a condition.",
-                        error.EmptyValueUnsupported => "This helper treats a new empty value as removal. Enter a value or remove the row. Existing empty values are preserved; Launch tag supports explicit empty patterns.",
-                        error.EmptyPatternNeedsConfirmation => "Enter a pattern, or explicitly allow an empty pattern in the advanced option.",
+                        error.StaleDraft => @import("i18n").dtr("pearl", "The shared draft or snapshot changed. Your input is retained. Cancel and reopen the rule to review the latest version."),
+                        error.MatcherAndSettingRequired => @import("i18n").dtr("pearl", "Add at least one condition and one setting for a new rule. Scope alone is not a condition."),
+                        error.EmptyValueUnsupported => @import("i18n").dtr("pearl", "This helper treats a new empty value as removal. Enter a value or remove the row. Existing empty values are preserved; Launch tag supports explicit empty patterns."),
+                        error.EmptyPatternNeedsConfirmation => @import("i18n").dtr("pearl", "Enter a pattern, or explicitly allow an empty pattern in the advanced option."),
                         else => self.z(@errorName(err)),
                     });
                     _ = self.error_label.?.as(gtk.Widget).grabFocus();

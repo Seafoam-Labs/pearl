@@ -1,0 +1,9 @@
+Pearl translation catalogs
+
+These catalogs contain messages and existing translations extracted from the
+Pearl source tree. They retain the licensing status of that source tree
+(LicenseRef-Pearl-Unlicensed in the existing package recipes). This extraction
+does not grant a new license or change the rights in existing translations.
+
+Contributors must identify their contribution and applicable license. A release
+must resolve the project's existing license acceptance gate before distribution.

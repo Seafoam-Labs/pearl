@@ -362,83 +362,83 @@ pub const Menu = struct {
         const menu = gio.Menu.new();
         defer menu.unref();
         if (c.kind == .connection) {
-            self.add(menu, "Connect / Open", .network_connect);
-            self.add(menu, "Cancel connection", .network_cancel);
-            self.add(menu, "Disconnect", .network_disconnect);
-            self.add(menu, "Connection settings…", .network_settings);
-            self.add(menu, "Forget connection…", .network_forget);
+            self.add(menu, @import("i18n").dtr("phyto", "Connect / Open"), .network_connect);
+            self.add(menu, @import("i18n").dtr("phyto", "Cancel connection"), .network_cancel);
+            self.add(menu, @import("i18n").dtr("phyto", "Disconnect"), .network_disconnect);
+            self.add(menu, @import("i18n").dtr("phyto", "Connection settings…"), .network_settings);
+            self.add(menu, @import("i18n").dtr("phyto", "Forget connection…"), .network_forget);
         } else if (c.kind == .tab) {
             const first = gio.Menu.new();
-            self.add(first, "New tab", .new_tab);
-            self.add(first, "Duplicate tab", .tab_duplicate);
+            self.add(first, @import("i18n").dtr("phyto", "New tab"), .new_tab);
+            self.add(first, @import("i18n").dtr("phyto", "Duplicate tab"), .tab_duplicate);
             self.section(menu, first);
             const second = gio.Menu.new();
-            self.add(second, "Move tab left", .tab_left);
-            self.add(second, "Move tab right", .tab_right);
-            if (self.owner.split) self.add(second, "Move to other pane", .tab_other);
+            self.add(second, @import("i18n").dtr("phyto", "Move tab left"), .tab_left);
+            self.add(second, @import("i18n").dtr("phyto", "Move tab right"), .tab_right);
+            if (self.owner.split) self.add(second, @import("i18n").dtr("phyto", "Move to other pane"), .tab_other);
             self.section(menu, second);
             const end = gio.Menu.new();
-            self.add(end, "Close tab", .close_tab);
-            self.add(end, "Close other tabs", .tab_close_others);
+            self.add(end, @import("i18n").dtr("phyto", "Close tab"), .close_tab);
+            self.add(end, @import("i18n").dtr("phyto", "Close other tabs"), .tab_close_others);
             self.section(menu, end);
         } else if (c.kind == .bookmark or c.kind == .place or c.kind == .location or c.kind == .device) {
             const open = gio.Menu.new();
-            self.add(open, "Open", .open);
-            self.add(open, "Open in new tab", .open_tab);
-            self.add(open, "Open in new window", .open_window);
-            if (apps.terminalProgram() != null) self.add(open, "Open in terminal", .terminal);
+            self.add(open, @import("i18n").dtr("phyto", "Open"), .open);
+            self.add(open, @import("i18n").dtr("phyto", "Open in new tab"), .open_tab);
+            self.add(open, @import("i18n").dtr("phyto", "Open in new window"), .open_window);
+            if (apps.terminalProgram() != null) self.add(open, @import("i18n").dtr("phyto", "Open in terminal"), .terminal);
             self.section(menu, open);
             const edit = gio.Menu.new();
-            self.add(edit, "Copy location", .copy_location);
-            if (self.allowed(c, .network_save)) self.add(edit, "Save connection…", .network_save);
+            self.add(edit, @import("i18n").dtr("phyto", "Copy location"), .copy_location);
+            if (self.allowed(c, .network_save)) self.add(edit, @import("i18n").dtr("phyto", "Save connection…"), .network_save);
             if (c.kind == .bookmark) {
-                self.add(edit, "Rename bookmark…", .bookmark_rename);
-                self.add(edit, "Remove bookmark", .bookmark_remove);
+                self.add(edit, @import("i18n").dtr("phyto", "Rename bookmark…"), .bookmark_rename);
+                self.add(edit, @import("i18n").dtr("phyto", "Remove bookmark"), .bookmark_remove);
             }
             if (c.kind == .device) {
-                if (self.allowed(c, .mount)) self.add(edit, "Mount", .mount);
-                if (self.allowed(c, .eject)) self.add(edit, "Eject", .eject) else if (self.allowed(c, .unmount)) self.add(edit, "Unmount", .unmount);
+                if (self.allowed(c, .mount)) self.add(edit, @import("i18n").dtr("phyto", "Mount"), .mount);
+                if (self.allowed(c, .eject)) self.add(edit, @import("i18n").dtr("phyto", "Eject"), .eject) else if (self.allowed(c, .unmount)) self.add(edit, @import("i18n").dtr("phyto", "Unmount"), .unmount);
             }
             self.section(menu, edit);
-            self.add(menu, "Properties", .properties);
+            self.add(menu, @import("i18n").dtr("phyto", "Properties"), .properties);
         } else if (f.trash) {
             const restore = gio.Menu.new();
             if (c.items.items.len > 0) {
-                self.add(restore, "Restore", .restore);
-                self.add(restore, "Restore to…", .restore_to);
-                self.add(restore, "Delete permanently…", .delete);
-            } else self.add(restore, "Empty Trash…", .empty_trash);
+                self.add(restore, @import("i18n").dtr("phyto", "Restore"), .restore);
+                self.add(restore, @import("i18n").dtr("phyto", "Restore to…"), .restore_to);
+                self.add(restore, @import("i18n").dtr("phyto", "Delete permanently…"), .delete);
+            } else self.add(restore, @import("i18n").dtr("phyto", "Empty Trash…"), .empty_trash);
             self.section(menu, restore);
             if (c.items.items.len == 0) self.viewMenu(menu);
-            self.add(menu, "Properties", .properties);
+            self.add(menu, @import("i18n").dtr("phyto", "Properties"), .properties);
         } else if (c.items.items.len == 0) {
             const create = gio.Menu.new();
-            self.add(create, "New folder…", .new_folder);
+            self.add(create, @import("i18n").dtr("phyto", "New folder…"), .new_folder);
             const documents = gio.Menu.new();
-            self.add(documents, "Empty document…", .new_document);
+            self.add(documents, @import("i18n").dtr("phyto", "Empty document…"), .new_document);
             self.templates(documents);
-            self.submenu(create, "New document", documents);
+            self.submenu(create, @import("i18n").dtr("phyto", "New document"), documents);
             self.section(menu, create);
             const edit = gio.Menu.new();
-            self.add(edit, "Paste", .paste);
-            self.add(edit, "Undo", .undo);
-            self.add(edit, "Redo", .redo);
+            self.add(edit, @import("i18n").dtr("phyto", "Paste"), .paste);
+            self.add(edit, @import("i18n").dtr("phyto", "Undo"), .undo);
+            self.add(edit, @import("i18n").dtr("phyto", "Redo"), .redo);
             self.section(menu, edit);
-            if (apps.terminalProgram() != null) self.add(menu, "Open in terminal", .terminal);
+            if (apps.terminalProgram() != null) self.add(menu, @import("i18n").dtr("phyto", "Open in terminal"), .terminal);
             self.viewMenu(menu);
             const extensions = gio.Menu.new();
             for (self.providers.items.items) |p| if (p.matches(c)) self.extra(extensions, p.name, .{ .kind = .provider, .provider = p });
             self.section(menu, extensions);
-            self.add(menu, "Properties", .properties);
+            self.add(menu, @import("i18n").dtr("phyto", "Properties"), .properties);
         } else {
             const open = gio.Menu.new();
             const label = if (c.items.items.len > 1) u.format("Open {d} items", .{c.items.items.len}) else a.dupeZ(u8, "Open") catch unreachable;
             defer a.free(label);
             self.add(open, label, .open);
             if (f.all_directories) {
-                self.add(open, "Open in new tab", .open_tab);
-                self.add(open, "Open in new window", .open_window);
-                if (apps.terminalProgram() != null and c.items.items.len == 1) self.add(open, "Open in terminal", .terminal);
+                self.add(open, @import("i18n").dtr("phyto", "Open in new tab"), .open_tab);
+                self.add(open, @import("i18n").dtr("phyto", "Open in new window"), .open_window);
+                if (apps.terminalProgram() != null and c.items.items.len == 1) self.add(open, @import("i18n").dtr("phyto", "Open in terminal"), .terminal);
             } else {
                 const with = gio.Menu.new();
                 const candidates = apps.common(c);
@@ -448,45 +448,45 @@ pub const Menu = struct {
                     list_.deinit(a);
                 }
                 for (candidates.items) |app| self.extra(with, app.getDisplayName(), .{ .kind = .app, .app = app });
-                self.add(with, "Other application…", .open_with);
-                self.submenu(open, "Open with", with);
+                self.add(with, @import("i18n").dtr("phyto", "Other application…"), .open_with);
+                self.submenu(open, @import("i18n").dtr("phyto", "Open with"), with);
             }
-            if (self.allowed(c, .preview)) self.add(open, "Preview", .preview);
-            if (self.allowed(c, .follow_link)) self.add(open, "Follow link to original", .follow_link);
-            if (self.owner.findTab(c.tab_id).?.query.len != 0) self.add(open, "Open containing folder", .containing);
+            if (self.allowed(c, .preview)) self.add(open, @import("i18n").dtr("phyto", "Preview"), .preview);
+            if (self.allowed(c, .follow_link)) self.add(open, @import("i18n").dtr("phyto", "Follow link to original"), .follow_link);
+            if (self.owner.findTab(c.tab_id).?.query.len != 0) self.add(open, @import("i18n").dtr("phyto", "Open containing folder"), .containing);
             self.section(menu, open);
             const edit = gio.Menu.new();
-            self.add(edit, "Cut", .cut);
-            self.add(edit, "Copy", .copy);
-            if (f.all_directories and c.items.items.len == 1) self.add(edit, "Paste into folder", .paste_into);
+            self.add(edit, @import("i18n").dtr("phyto", "Cut"), .cut);
+            self.add(edit, @import("i18n").dtr("phyto", "Copy"), .copy);
+            if (f.all_directories and c.items.items.len == 1) self.add(edit, @import("i18n").dtr("phyto", "Paste into folder"), .paste_into);
             if (self.owner.preferences.advanced) {
                 self.destinations(edit, false);
                 self.destinations(edit, true);
             }
             self.section(menu, edit);
             const change = gio.Menu.new();
-            if (c.items.items.len == 1) self.add(change, "Rename…", .rename) else if (apps.available("bulky")) self.add(change, "Rename items…", .bulk_rename);
+            if (c.items.items.len == 1) self.add(change, @import("i18n").dtr("phyto", "Rename…"), .rename) else if (apps.available("bulky")) self.add(change, @import("i18n").dtr("phyto", "Rename items…"), .bulk_rename);
             if (self.owner.preferences.advanced) {
-                self.add(change, "Duplicate", .duplicate);
-                self.add(change, "Make link", .link);
-                self.add(change, "Pinned", .pin);
-                self.add(change, "Favorite", .favorite);
+                self.add(change, @import("i18n").dtr("phyto", "Duplicate"), .duplicate);
+                self.add(change, @import("i18n").dtr("phyto", "Make link"), .link);
+                self.add(change, @import("i18n").dtr("phyto", "Pinned"), .pin);
+                self.add(change, @import("i18n").dtr("phyto", "Favorite"), .favorite);
             }
-            if (f.all_directories and c.items.items.len == 1) self.add(change, "Add bookmark", .bookmark_add);
+            if (f.all_directories and c.items.items.len == 1) self.add(change, @import("i18n").dtr("phyto", "Add bookmark"), .bookmark_add);
             self.section(menu, change);
             const extensions = gio.Menu.new();
             if (apps.available("file-roller") and f.local) {
-                self.add(extensions, "Compress…", .archive);
-                if (apps.archive(c)) self.add(extensions, "Extract…", .extract);
+                self.add(extensions, @import("i18n").dtr("phyto", "Compress…"), .archive);
+                if (apps.archive(c)) self.add(extensions, @import("i18n").dtr("phyto", "Extract…"), .extract);
             }
-            if (f.all_directories and f.local and apps.adminAvailable()) self.add(extensions, "Open as administrator", .admin);
+            if (f.all_directories and f.local and apps.adminAvailable()) self.add(extensions, @import("i18n").dtr("phyto", "Open as administrator"), .admin);
             for (self.providers.items.items) |p| if (p.matches(c)) self.extra(extensions, p.name, .{ .kind = .provider, .provider = p });
             self.section(menu, extensions);
             const remove = gio.Menu.new();
-            self.add(remove, "Move to Trash…", .trash);
-            if (self.owner.preferences.allow_delete) self.add(remove, "Delete permanently…", .delete);
+            self.add(remove, @import("i18n").dtr("phyto", "Move to Trash…"), .trash);
+            if (self.owner.preferences.allow_delete) self.add(remove, @import("i18n").dtr("phyto", "Delete permanently…"), .delete);
             self.section(menu, remove);
-            self.add(menu, "Properties", .properties);
+            self.add(menu, @import("i18n").dtr("phyto", "Properties"), .properties);
         }
         self.popover.?.setMenuModel(menu.as(gio.MenuModel));
         self.update();
@@ -494,25 +494,25 @@ pub const Menu = struct {
     fn viewMenu(self: *Menu, menu: *gio.Menu) void {
         const section_ = gio.Menu.new();
         const view = gio.Menu.new();
-        self.add(view, "Icon view", .grid);
-        self.add(view, "Detailed list", .list);
-        self.submenu(section_, "View", view);
+        self.add(view, @import("i18n").dtr("phyto", "Icon view"), .grid);
+        self.add(view, @import("i18n").dtr("phyto", "Detailed list"), .list);
+        self.submenu(section_, @import("i18n").dtr("phyto", "View"), view);
         const sort = gio.Menu.new();
-        self.add(sort, "Name", .sort_name);
-        self.add(sort, "Size", .sort_size);
-        self.add(sort, "Type", .sort_type);
-        self.add(sort, "Modified", .sort_modified);
-        self.add(sort, "Descending", .reverse);
-        self.add(sort, "Folders first", .folders_first);
-        self.submenu(section_, "Sort by", sort);
-        self.add(section_, "Show hidden files", .hidden);
-        self.add(section_, "Show thumbnails", .thumbnails);
-        self.add(section_, "Preview in details", .preview_details);
+        self.add(sort, @import("i18n").dtr("phyto", "Name"), .sort_name);
+        self.add(sort, @import("i18n").dtr("phyto", "Size"), .sort_size);
+        self.add(sort, @import("i18n").dtr("phyto", "Type"), .sort_type);
+        self.add(sort, @import("i18n").dtr("phyto", "Modified"), .sort_modified);
+        self.add(sort, @import("i18n").dtr("phyto", "Descending"), .reverse);
+        self.add(sort, @import("i18n").dtr("phyto", "Folders first"), .folders_first);
+        self.submenu(section_, @import("i18n").dtr("phyto", "Sort by"), sort);
+        self.add(section_, @import("i18n").dtr("phyto", "Show hidden files"), .hidden);
+        self.add(section_, @import("i18n").dtr("phyto", "Show thumbnails"), .thumbnails);
+        self.add(section_, @import("i18n").dtr("phyto", "Preview in details"), .preview_details);
         self.section(menu, section_);
     }
     fn destinations(self: *Menu, menu: *gio.Menu, move: bool) void {
         const part = gio.Menu.new();
-        if (self.owner.split) self.add(part, "Other pane", if (move) .move_other else .copy_other);
+        if (self.owner.split) self.add(part, @import("i18n").dtr("phyto", "Other pane"), if (move) .move_other else .copy_other);
         const bookmarks = self.owner.preferences.strings("bookmarks");
         defer if (bookmarks) |v| glib.strfreev(v);
         if (bookmarks) |v| for (std.mem.span(v)) |uri| {
@@ -522,8 +522,8 @@ pub const Menu = struct {
             defer glib.free(label);
             self.extra(part, label, .{ .kind = if (move) .move else .copy, .file = f });
         };
-        self.add(part, "Choose folder…", if (move) .move_to else .copy_to);
-        self.submenu(menu, if (move) "Move to" else "Copy to", part);
+        self.add(part, @import("i18n").dtr("phyto", "Choose folder…"), if (move) .move_to else .copy_to);
+        self.submenu(menu, if (move) @import("i18n").dtr("phyto", "Move to") else @import("i18n").dtr("phyto", "Copy to"), part);
     }
     fn templates(self: *Menu, menu: *gio.Menu) void {
         if (self.allowed(&self.snapshot.?, .new_document)) apps.templates(self, menu);
@@ -651,7 +651,7 @@ pub const Menu = struct {
         const r = a.create(OpenRequest) catch unreachable;
         r.* = .{ .menu = self, .context = c.clone(), .command = cmd };
         const d = gtk.Dialog.new();
-        d.as(gtk.Window).setTitle("Open selected items?");
+        d.as(gtk.Window).setTitle(@import("i18n").dtr("phyto", "Open selected items?"));
         d.as(gtk.Window).setTransientFor(self.owner.window);
         d.as(gtk.Window).setModal(1);
         d.as(gtk.Window).setDestroyWithParent(1);
@@ -700,7 +700,7 @@ pub const Menu = struct {
     }
     fn settings(self: *Menu) void {
         const d = gtk.Dialog.new();
-        d.as(gtk.Window).setTitle("File view options");
+        d.as(gtk.Window).setTitle(@import("i18n").dtr("phyto", "File view options"));
         d.as(gtk.Window).setDestroyWithParent(1);
         d.as(gtk.Window).setTransientFor(self.owner.window);
         d.as(gtk.Window).setModal(1);
@@ -715,8 +715,8 @@ pub const Menu = struct {
             b.as(gtk.Actionable).setActionName("win." ++ pair[1]);
             body.append(b.as(gtk.Widget));
         }
-        body.append(u.label("Image size limit (MiB)", null).as(gtk.Widget));
-        const provider_limits = u.label("PDF limit: 50 MiB · Video limit: 2 GiB", "dim-label");
+        body.append(u.label(@import("i18n").dtr("phyto", "Image size limit (MiB)"), null).as(gtk.Widget));
+        const provider_limits = u.label(@import("i18n").dtr("phyto", "PDF limit: 50 MiB · Video limit: 2 GiB"), "dim-label");
         provider_limits.setWrap(1);
         body.append(provider_limits.as(gtk.Widget));
         const limit = gtk.SpinButton.newWithRange(1, 50, 1);

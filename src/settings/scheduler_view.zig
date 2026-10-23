@@ -12,7 +12,6 @@ const Connection = struct { obj: *object.Object, id: c_ulong };
 
 pub const View = struct {
     service: *Service,
-    german: bool,
     arena: std.heap.ArenaAllocator = .init(a),
     ids: []const []const u8 = &.{},
     buttons: []*gtk.CheckButton = &.{},
@@ -23,17 +22,17 @@ pub const View = struct {
     updating: bool = false,
     const Binding = struct { view: *View, index: usize };
 
-    pub fn create(host: *gtk.Box, service: *Service, german: bool) !*View {
+    pub fn create(host: *gtk.Box, service: *Service) !*View {
         const self = try a.create(View);
         errdefer a.destroy(self);
-        self.* = .{ .service = service, .german = german, .status = undefined, .message = undefined };
+        self.* = .{ .service = service, .status = undefined, .message = undefined };
         errdefer self.arena.deinit();
         const alloc = self.arena.allocator();
         const root = w.column(16);
         root.as(gtk.Widget).addCssClass("power-view");
         host.append(root.as(gtk.Widget));
         const section = w.column(8);
-        section.append(w.label(self.t("CPU Scheduler", "CPU-Scheduler"), "pearl-section-title").as(gtk.Widget));
+        section.append(w.label(@import("i18n").dtr("pearl", "CPU Scheduler"), "pearl-section-title").as(gtk.Widget));
         root.append(section.as(gtk.Widget));
         self.status = w.label("", "pearl-secondary");
         self.status.setWrap(1);
@@ -80,17 +79,13 @@ pub const View = struct {
         a.destroy(self);
     }
 
-    fn t(self: *const View, en: [:0]const u8, de: [:0]const u8) [:0]const u8 {
-        return if (self.german) de else en;
-    }
-
     pub fn update(self: *View) void {
         self.updating = true;
         defer self.updating = false;
         const service = self.service;
         var buffer: [512]u8 = undefined;
         const profile: ?p.Profile = if (service.config) |c| if (service.status.profile) |i| c.profiles[i] else null else null;
-        self.status.setText(service.describe(&buffer, self.german));
+        self.status.setText(service.describe(&buffer));
         const usable = service.enabled and service.applying == null and service.status.kind != .unavailable;
         for (self.buttons, self.ids) |button, id| {
             // Default stays selected while a scheduler outside the profiles runs.
@@ -100,7 +95,7 @@ pub const View = struct {
             button.as(gtk.Widget).setSensitive(@intFromBool(usable));
         }
         var message: [600]u8 = undefined;
-        self.message.setText(if (service.applying != null) "" else if (service.err) |err| std.fmt.bufPrintZ(&message, "{s}", .{err}) catch "" else service.describeNotice(&message, self.german));
+        self.message.setText(if (service.applying != null) "" else if (service.err) |err| std.fmt.bufPrintZ(&message, "{s}", .{err}) catch "" else service.describeNotice(&message));
         self.message.as(gtk.Widget).setVisible(@intFromBool(self.message.getText()[0] != 0));
     }
 
@@ -112,7 +107,7 @@ pub const View = struct {
         self.service.apply(id) catch |err| {
             log.warn("event=sched-profile-select profile={s} result={s}", .{ id, @errorName(err) });
             self.update();
-            self.message.setText(if (err == error.Busy) self.t("Another profile is being applied.", "Ein anderes Profil wird gerade angewendet.") else self.t("This profile cannot be applied right now.", "Dieses Profil kann gerade nicht angewendet werden."));
+            self.message.setText(if (err == error.Busy) @import("i18n").dtr("pearl", "Another profile is being applied.") else @import("i18n").dtr("pearl", "This profile cannot be applied right now."));
             self.message.as(gtk.Widget).setVisible(1);
             return;
         };

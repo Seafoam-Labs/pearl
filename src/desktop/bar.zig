@@ -295,7 +295,7 @@ pub const Bar = struct {
                     .resources => blk: {
                         const resources = @import("resource_view.zig");
                         const button = if (self.resource_mode == .icon)
-                            try self.makeButton(.{ .pane = .resources }, "pearl-utilities-system-monitor-symbolic", tr("Resource monitor", "Ressourcenmonitor"), false)
+                            try self.makeButton(.{ .pane = .resources }, "pearl-utilities-system-monitor-symbolic", @import("i18n").dtr("pearl", "Resource monitor"), false)
                         else
                             try self.makeButton(.{ .pane = .resources }, null, "", false);
                         self.resources = try resources.View.create(button, self.vertical, self.resource_mode);
@@ -312,19 +312,19 @@ pub const Bar = struct {
                         content.append(label.as(gtk.Widget));
                         button.setChild(content.as(gtk.Widget));
                         if (item == .media) self.media_label = label else self.notification_label = label;
-                        w.name(button.as(gtk.Widget), if (item == .media) "Media" else "Notifications");
+                        w.name(button.as(gtk.Widget), if (item == .media) @import("i18n").dtr("pearl", "Media") else @import("i18n").dtr("pearl", "Notifications"));
                         break :blk button.as(gtk.Widget);
                     },
                     .launcher => blk: {
-                        const button = try self.makeButton(.{ .pane = .launcher }, @import("launcher_icon_policy.zig").default_icon, tr("Applications", "Programme"), false);
+                        const button = try self.makeButton(.{ .pane = .launcher }, @import("launcher_icon_policy.zig").default_icon, @import("i18n").dtr("pearl", "Applications"), false);
                         button.setChild((try self.launcher_icon.image(20)).as(gtk.Widget));
                         break :blk button.as(gtk.Widget);
                     },
-                    .window_switcher => (try self.makeButton(.window_switcher, "pearl-window-switcher-symbolic", tr("Cycle windows", "Fenster durchschalten"), false)).as(gtk.Widget),
-                    .overview => (try self.makeButton(.overview, "pearl-view-grid-symbolic", tr("Overview", "Übersicht"), false)).as(gtk.Widget),
-                    .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", tr("Clipboard & capture", "Zwischenablage & Bildschirmfoto"), false)).as(gtk.Widget),
-                    .wallpaper => (try self.makeButton(.{ .pane = .wallpapers }, "pearl-image-symbolic", tr("Wallpaper", "Hintergrundbild"), false)).as(gtk.Widget),
-                    .control => (try self.makeButton(.{ .settings = .overview }, "pearl-emblem-system-symbolic", tr("Open settings Overview", "Einstellungsübersicht öffnen"), false)).as(gtk.Widget),
+                    .window_switcher => (try self.makeButton(.window_switcher, "pearl-window-switcher-symbolic", @import("i18n").dtr("pearl", "Cycle windows"), false)).as(gtk.Widget),
+                    .overview => (try self.makeButton(.overview, "pearl-view-grid-symbolic", @import("i18n").dtr("pearl", "Overview"), false)).as(gtk.Widget),
+                    .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", @import("i18n").dtr("pearl", "Clipboard & capture"), false)).as(gtk.Widget),
+                    .wallpaper => (try self.makeButton(.{ .pane = .wallpapers }, "pearl-image-symbolic", @import("i18n").dtr("pearl", "Wallpaper"), false)).as(gtk.Widget),
+                    .control => (try self.makeButton(.{ .settings = .overview }, "pearl-emblem-system-symbolic", @import("i18n").dtr("pearl", "Open settings Overview"), false)).as(gtk.Widget),
                     .clock => unreachable,
                     .audio, .battery, .network, .bluetooth, .scheduler => blk: {
                         const button = try self.makeButton(if (item == .scheduler) .{ .pane = .scheduling } else .{ .settings = switch (item) {
@@ -378,7 +378,7 @@ pub const Bar = struct {
                     },
                     .keyboard => blk: {
                         const button = try self.makeButton(.keyboard, null, "", false);
-                        button.as(gtk.Widget).setTooltipText(tr("Switch keyboard layout", "Tastaturbelegung wechseln"));
+                        button.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Switch keyboard layout"));
                         self.keyboard = gtk.Label.new("");
                         self.keyboard.?.setEllipsize(.end);
                         self.keyboard.?.setMaxWidthChars(if (self.vertical) 2 else 14);
@@ -517,7 +517,7 @@ pub const Bar = struct {
             const supported = all or self.client.capabilities.workspace_switcher_v1;
             widget.setSensitive(@intFromBool(supported and (if (all) n > 0 else n > 1)));
             var buffer: [160]u8 = undefined;
-            const title = if (!supported) tr("Cycle windows requires updated Aqueous", "Fensterwechsel benötigt aktualisiertes Aqueous") else if (all) (if (n == 0) tr("No open windows", "Keine offenen Fenster") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ tr("Cycle windows across all workspaces and displays", "Fenster aller Arbeitsflächen und Bildschirme durchschalten"), n }) catch "Cycle windows") else if (n == 0) tr("No open windows on this workspace", "Keine offenen Fenster auf dieser Arbeitsfläche") else if (n == 1) tr("Only window on this workspace", "Nur ein Fenster auf dieser Arbeitsfläche") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ tr("Cycle windows on this workspace", "Fenster dieser Arbeitsfläche durchschalten"), n }) catch "Cycle windows";
+            const title = if (!supported) @import("i18n").dtr("pearl", "Cycle windows requires updated Aqueous") else if (all) (if (n == 0) @import("i18n").dtr("pearl", "No open windows") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ @import("i18n").dtr("pearl", "Cycle windows across all workspaces and displays"), n }) catch "Cycle windows") else if (n == 0) @import("i18n").dtr("pearl", "No open windows on this workspace") else if (n == 1) @import("i18n").dtr("pearl", "Only window on this workspace") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ @import("i18n").dtr("pearl", "Cycle windows on this workspace"), n }) catch "Cycle windows";
             widget.setTooltipText(title);
             w.name(widget, title);
         }
@@ -535,40 +535,40 @@ pub const Bar = struct {
         var service_buffer: [256]u8 = undefined;
         if (self.audio_label) |label| {
             const device = self.audio_service.default(.sink);
-            label.setText(if (device) |d| if (d.mute) tr("Muted", "Stumm") else std.fmt.bufPrintZ(&service_buffer, "{d}%", .{d.volume}) catch "" else "—");
+            label.setText(if (device) |d| if (d.mute) @import("i18n").dtr("pearl", "Muted") else std.fmt.bufPrintZ(&service_buffer, "{d}%", .{d.volume}) catch "" else @import("i18n").dtr("pearl", "—"));
             const widget = self.widgets[@intFromEnum(policy.Item.audio)].?;
             var detail: [768]u8 = undefined;
-            serviceName(widget, tr("Open Sound controls", "Klangsteuerung öffnen"), if (device) |d| std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ d.label.slice(), std.mem.span(label.getText()) }) catch d.label.z() else tr("Audio unavailable", "Audio nicht verfügbar"));
+            serviceName(widget, @import("i18n").dtr("pearl", "Open Sound controls"), if (device) |d| std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ d.label.slice(), std.mem.span(label.getText()) }) catch d.label.z() else @import("i18n").dtr("pearl", "Audio unavailable"));
         }
         if (self.battery_label) |label| {
             const power = self.power_service;
             // An unmeasured charge is shown as absent, never as a fabricated 0%.
             const percent = if (power.percentage_valid) power.percentage else null;
-            label.setText(if (percent) |n| std.fmt.bufPrintZ(&service_buffer, "{d:.0}%", .{n}) catch "—" else "—");
+            label.setText(if (percent) |n| std.fmt.bufPrintZ(&service_buffer, "{d:.0}%", .{n}) catch "—" else @import("i18n").dtr("pearl", "—"));
             if (self.battery_icon) |glyph| glyph.setFromIconName(presentation.icon(power.battery_state, percent));
             const widget = self.widgets[@intFromEnum(policy.Item.battery)].?;
             // Sticky presence: a transient UPower loss keeps the indicator, and a
             // machine that never reported a battery still never grows one.
             widget.setVisible(@intFromBool(power.battery_observed));
             var detail: [192]u8 = undefined;
-            serviceName(widget, tr("Open Power controls", "Energiesteuerung öffnen"), std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ std.mem.span(label.getText()), chargeState(power.battery_state) }) catch "");
+            serviceName(widget, @import("i18n").dtr("pearl", "Open Power controls"), std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ std.mem.span(label.getText()), chargeState(power.battery_state) }) catch "");
         }
         if (self.scheduler_label) |label| {
             const service = self.scheduling_service;
             const profile: ?sched_profiles.Profile = if (service.config) |config| if (service.status.profile) |i| config.profiles[i] else null else null;
             const name = if (profile) |value| value.label else "";
             label.setText(switch (service.status.kind) {
-                .running, .off => std.fmt.bufPrintZ(&service_buffer, "{s}", .{if (profile) |value| value.label else tr("Default", "Standard")}) catch "",
-                .starting => "...",
-                .failed => tr("Failed", "Fehler"),
-                .custom => tr("Custom", "Eigene"),
-                .unavailable => "-",
+                .running, .off => std.fmt.bufPrintZ(&service_buffer, "{s}", .{if (profile) |value| value.label else @import("i18n").dtr("pearl", "Default")}) catch "",
+                .starting => @import("i18n").dtr("pearl", "..."),
+                .failed => @import("i18n").dtr("pearl", "Failed"),
+                .custom => @import("i18n").dtr("pearl", "Custom"),
+                .unavailable => @import("i18n").dtr("pearl", "-"),
             });
             const widget = self.widgets[@intFromEnum(policy.Item.scheduler)].?;
             // Hidden without profiles, sched_ext support or scx.service.
             widget.setVisible(@intFromBool(service.configured() and service.status.kind != .unavailable));
             var detail: [512]u8 = undefined;
-            serviceName(widget, tr("Open CPU scheduler profiles", "CPU-Scheduler-Profile öffnen"), if (service.status.kind == .running) std.fmt.bufPrintZ(&detail, "{s} - {s}", .{ name, service.describe(&service_buffer, std.mem.eql(u8, tr("en", "de"), "de")) }) catch "" else service.describe(&detail, std.mem.eql(u8, tr("en", "de"), "de")));
+            serviceName(widget, @import("i18n").dtr("pearl", "Open CPU scheduler profiles"), if (service.status.kind == .running) std.fmt.bufPrintZ(&detail, "{s} - {s}", .{ name, service.describe(&service_buffer) }) catch "" else service.describe(&detail));
             if (self.scheduler_dot) |dot| {
                 // Red after a fallback to Default, until a profile is chosen;
                 // amber while starting or a scheduler outside the profiles runs.
@@ -589,9 +589,9 @@ pub const Bar = struct {
             for (n.devices[0..n.device_count]) |dev| if (dev.state == 100) {
                 connected = true;
             };
-            label.setText(if (n.peer.snapshot == null) "—" else if (n.pending) "…" else if (connected) "On" else if (n.enabled) "Wi-Fi" else "Off");
+            label.setText(if (n.peer.snapshot == null) @import("i18n").dtr("pearl", "—") else if (n.pending) @import("i18n").dtr("pearl", "…") else if (connected) @import("i18n").dtr("pearl", "On") else if (n.enabled) @import("i18n").dtr("pearl", "Wi-Fi") else @import("i18n").dtr("pearl", "Off"));
             const widget = self.widgets[@intFromEnum(policy.Item.network)].?;
-            serviceName(widget, tr("Open Network controls", "Netzwerksteuerung öffnen"), if (n.peer.snapshot == null) tr("Network unavailable", "Netzwerk nicht verfügbar") else if (n.pending) tr("Connecting…", "Verbindung wird hergestellt…") else if (connected) tr("Connected", "Verbunden") else if (n.enabled) tr("Wi-Fi on", "WLAN an") else tr("Wi-Fi off", "WLAN aus"));
+            serviceName(widget, @import("i18n").dtr("pearl", "Open Network controls"), if (n.peer.snapshot == null) @import("i18n").dtr("pearl", "Network unavailable") else if (n.pending) @import("i18n").dtr("pearl", "Connecting…") else if (connected) @import("i18n").dtr("pearl", "Connected") else if (n.enabled) @import("i18n").dtr("pearl", "Wi-Fi on") else @import("i18n").dtr("pearl", "Wi-Fi off"));
         }
         if (self.bluetooth_label) |label| {
             const b = self.bluetooth_service;
@@ -599,19 +599,19 @@ pub const Bar = struct {
             for (b.devices[0..b.device_count]) |dev| if (dev.connected) {
                 connected += 1;
             };
-            label.setText(if (b.peer.snapshot == null) "—" else std.fmt.bufPrintZ(&service_buffer, "{d}", .{connected}) catch "");
+            label.setText(if (b.peer.snapshot == null) @import("i18n").dtr("pearl", "—") else std.fmt.bufPrintZ(&service_buffer, "{d}", .{connected}) catch "");
             const widget = self.widgets[@intFromEnum(policy.Item.bluetooth)].?;
             var powered = false;
             for (b.adapters[0..b.adapter_count]) |adapter| powered = powered or adapter.powered;
             var detail: [128]u8 = undefined;
-            serviceName(widget, tr("Open Bluetooth controls", "Bluetooth-Steuerung öffnen"), if (b.peer.snapshot == null) tr("Bluetooth unavailable", "Bluetooth nicht verfügbar") else if (!powered) tr("Bluetooth off", "Bluetooth aus") else std.fmt.bufPrintZ(&detail, "{s} · {d} {s}", .{ tr("Bluetooth on", "Bluetooth an"), connected, tr("connected", "verbunden") }) catch "");
+            serviceName(widget, @import("i18n").dtr("pearl", "Open Bluetooth controls"), if (b.peer.snapshot == null) @import("i18n").dtr("pearl", "Bluetooth unavailable") else if (!powered) @import("i18n").dtr("pearl", "Bluetooth off") else std.fmt.bufPrintZ(&detail, "{s} · {d} {s}", .{ @import("i18n").dtr("pearl", "Bluetooth on"), connected, @import("i18n").dtr("pearl", "connected") }) catch "");
         }
         const focus = self.client.model.focus(null) catch null;
         if (self.title) |label| {
             const title: []const u8 = if (focus) |f| blk: {
                 if (f.seat.focus_kind == .window) if (f.window) |window| if (window.output) |output| if (std.mem.eql(u8, output, self.output)) break :blk window.title orelse window.app_id orelse "";
-                break :blk if (f.seat.focus_kind == .layer_surface) "Pearl" else tr("Desktop", "Desktop");
-            } else tr("Desktop", "Desktop");
+                break :blk if (f.seat.focus_kind == .layer_surface) "Pearl" else @import("i18n").dtr("pearl", "Desktop");
+            } else @import("i18n").dtr("pearl", "Desktop");
             const text = a.dupeZ(u8, title) catch return;
             defer a.free(text);
             label.setText(text);

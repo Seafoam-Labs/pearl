@@ -296,14 +296,16 @@ def main():
             current=json.loads(peer.document('committed'));current['font_size']=24;current['theme']['variant']='light'
             peer.keep(json.dumps(current));assert peer.action('apply')['state']=='succeeded';ready(s,ipc)
             app.stop();clean(app)
-            app=s.child('settings-german',[args.settings,'--page','power'],G_DEBUG='fatal-warnings',LANG='de_DE.UTF-8',LC_ALL='C.utf8')
+            # A connected Settings instance follows the verified shell language,
+            # even when its launcher environment asks for a different language.
+            app=s.child('settings-language-inheritance',[args.settings,'--page','power'],G_DEBUG='fatal-warnings',LANGUAGE='de',LC_ALL='C.utf8')
             app.expect('event=settings-window-created');ready(s,ipc)
-            v=probe(s,ipc);assert v['heading']=='Energie und Akku',v['heading']
-            capture(s,'power-narrow-light-large-text-german',output['name'])
+            v=probe(s,ipc);assert v['heading']=='Power & battery',v['heading']
+            capture(s,'power-narrow-light-large-text-session-language',output['name'])
             for c in v['controls']:
                 r=c['bounds']
                 if r:assert r['x']+r['width']<=v['width']+1,(c,v['width'])
-            checks['power-light-large-text-and-german']=True
+            checks['power-light-large-text-and-session-language']=True
             peer.close()
             report.update(status='passed',checks=checks)
             (args.output/'report.json').write_text(json.dumps(report,indent=2)+'\n')

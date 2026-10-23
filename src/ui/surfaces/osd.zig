@@ -16,13 +16,13 @@ pub const Content = union(enum) {
             .volume => |v| {
                 var result: policy.Text(512) = .{};
                 var buffer: [512]u8 = undefined;
-                result.set(std.fmt.bufPrint(&buffer, "{s} · {d}%{s}{s}", .{ v.label.slice(), v.percent, if (v.muted) " · " else "", if (v.muted) tr("Muted", "Stumm") else "" }) catch "");
+                result.set(std.fmt.bufPrint(&buffer, "{s} · {d}%{s}{s}", .{ v.label.slice(), v.percent, if (v.muted) " · " else "", if (v.muted) @import("i18n").dtr("pearl", "Muted") else "" }) catch "");
                 return result;
             },
             .brightness => |b| {
                 var result: policy.Text(512) = .{};
                 var buffer: [512]u8 = undefined;
-                result.set(std.fmt.bufPrint(&buffer, "{s} · {d}%", .{ tr("Brightness", "Helligkeit"), b.percent }) catch "");
+                result.set(std.fmt.bufPrint(&buffer, "{s} · {d}%", .{ @import("i18n").dtr("pearl", "Brightness"), b.percent }) catch "");
                 return result;
             },
         }
@@ -64,7 +64,7 @@ pub const View = struct {
         value.as(gtk.Widget).addCssClass("pearl-volume-value");
         row.append(value.as(gtk.Widget));
         const meter = gtk.ProgressBar.new();
-        meter.as(gtk.Accessible).updateProperty(.label, tr("Output volume", "Ausgabelautstärke").ptr, @as(c_int, -1));
+        meter.as(gtk.Accessible).updateProperty(.label, @import("i18n").dtr("pearl", "Output volume").ptr, @as(c_int, -1));
         card.append(meter.as(gtk.Widget));
         return .{ .root = root, .text = text, .card = card, .icon = icon, .label = label, .value = value, .meter = meter };
     }
@@ -75,15 +75,15 @@ pub const View = struct {
         switch (content.*) {
             .text => |t| self.text.setText(t.z()),
             .volume => |v| {
-                self.label.setText(if (v.label.len != 0) v.label.z() else tr("Output volume", "Ausgabelautstärke"));
+                self.label.setText(if (v.label.len != 0) v.label.z() else @import("i18n").dtr("pearl", "Output volume"));
                 self.icon.setFromIconName(if (v.muted) "pearl-audio-volume-muted-symbolic" else "pearl-audio-volume-high-symbolic");
                 var buffer: [80]u8 = undefined;
-                self.value.setText(std.fmt.bufPrintZ(&buffer, "{s}{s}{d}%", .{ if (v.muted) tr("Muted", "Stumm") else "", if (v.muted) " · " else "", v.percent }) catch "");
+                self.value.setText(std.fmt.bufPrintZ(&buffer, "{s}{s}{d}%", .{ if (v.muted) @import("i18n").dtr("pearl", "Muted") else "", if (v.muted) " · " else "", v.percent }) catch "");
                 self.meter.setFraction(@as(f64, @floatFromInt(v.percent)) / 100);
                 if (v.muted) self.card.as(gtk.Widget).addCssClass("pearl-volume-muted") else self.card.as(gtk.Widget).removeCssClass("pearl-volume-muted");
             },
             .brightness => |b| {
-                self.label.setText(tr("Brightness", "Helligkeit"));
+                self.label.setText(@import("i18n").dtr("pearl", "Brightness"));
                 self.icon.setFromIconName("pearl-display-brightness-symbolic");
                 var buffer: [80]u8 = undefined;
                 self.value.setText(std.fmt.bufPrintZ(&buffer, "{d}%", .{b.percent}) catch "");
@@ -91,7 +91,7 @@ pub const View = struct {
                 self.card.as(gtk.Widget).removeCssClass("pearl-volume-muted");
             },
         }
-        self.meter.as(gtk.Accessible).updateProperty(.label, (if (content.* == .brightness) tr("Brightness", "Helligkeit") else tr("Output volume", "Ausgabelautstärke")).ptr, @as(c_int, -1));
+        self.meter.as(gtk.Accessible).updateProperty(.label, (if (content.* == .brightness) @import("i18n").dtr("pearl", "Brightness") else @import("i18n").dtr("pearl", "Output volume")).ptr, @as(c_int, -1));
         const summary = content.summary();
         self.root.as(gtk.Accessible).updateProperty(.label, summary.z().ptr, @as(c_int, -1));
     }

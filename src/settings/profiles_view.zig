@@ -46,28 +46,28 @@ pub const View = struct {
         const root = w.column(8);
         root.as(gtk.Widget).addCssClass("settings-card");
         host.append(root.as(gtk.Widget));
-        root.append(w.label("Application themes · Matugen profiles", "pearl-card-title").as(gtk.Widget));
-        const hint = w.label("Wallpaper colors update automatically after wallpaper changes are committed, including when the image file changes. Some applications still require activation.", "pearl-secondary");
+        root.append(w.label(@import("i18n").dtr("pearl", "Application themes · Matugen profiles"), "pearl-card-title").as(gtk.Widget));
+        const hint = w.label(@import("i18n").dtr("pearl", "Wallpaper colors update automatically after wallpaper changes are committed, including when the image file changes. Some applications still require activation."), "pearl-secondary");
         hint.setWrap(1);
         root.append(hint.as(gtk.Widget));
         const enabled = gtk.Switch.new();
         enabled.as(gtk.Widget).setHalign(.start);
-        add(root, "Enable application themes", enabled.as(gtk.Widget));
+        add(root, @import("i18n").dtr("pearl", "Enable application themes"), enabled.as(gtk.Widget));
         const source = dropdown(&.{ "Follow Pearl", "Independent seed", "Wallpaper" });
-        add(root, "Application colors", source.as(gtk.Widget));
+        add(root, @import("i18n").dtr("pearl", "Application colors"), source.as(gtk.Widget));
         const seed = gtk.Entry.new();
-        seed.setPlaceholderText("#6750a4");
+        seed.setPlaceholderText(@import("i18n").dtr("pearl", "#6750a4"));
         seed.setMaxLength(7);
-        add(root, "Application seed", seed.as(gtk.Widget));
+        add(root, @import("i18n").dtr("pearl", "Application seed"), seed.as(gtk.Widget));
         const search = gtk.Entry.new();
-        search.setPlaceholderText("Search applications");
+        search.setPlaceholderText(@import("i18n").dtr("pearl", "Search applications"));
         root.append(search.as(gtk.Widget));
         self.* = .{ .editor = editor, .root = root, .enabled = enabled, .source = source, .seed = seed, .search = search, .rows = undefined, .details = undefined, .modes = undefined, .pickers = undefined, .status = w.label("", "pearl-secondary") };
-        const defaults = w.wrappingButton("Use Material defaults");
+        const defaults = w.wrappingButton(@import("i18n").dtr("pearl", "Use Material defaults"));
         self.defaults = defaults;
         root.append(defaults.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(defaults, *View, defaultsClicked, self, .{});
-        root.append(w.label("Base Material defaults preserve individual choices and Off. QtEngine + Darkly is managed by the Qt applications controls on this page. qtct palettes remain individually selectable exports.", "pearl-secondary").as(gtk.Widget));
+        root.append(w.label(@import("i18n").dtr("pearl", "Base Material defaults preserve individual choices and Off. QtEngine + Darkly is managed by the Qt applications controls on this page. qtct palettes remain individually selectable exports."), "pearl-secondary").as(gtk.Widget));
         for (std.enums.values(adapters.Group)) |group| {
             root.append(w.label(@tagName(group), "pearl-card-title").as(gtk.Widget));
             for (std.enums.values(profiles.Application), 0..) |application, i| {
@@ -88,7 +88,7 @@ pub const View = struct {
                 self.details[i].setSelectable(1);
                 row.append(self.details[i].as(gtk.Widget));
                 if (application == .pywalfox) {
-                    const refresh = w.wrappingButton("Refresh Pywalfox from committed colors");
+                    const refresh = w.wrappingButton(@import("i18n").dtr("pearl", "Refresh Pywalfox from committed colors"));
                     row.append(refresh.as(gtk.Widget));
                     _ = gtk.Button.signals.clicked.connect(refresh, *View, pywalfoxClicked, self, .{});
                 }
@@ -96,24 +96,24 @@ pub const View = struct {
                 _ = object.Object.signals.notify.connect(self.pickers[i].as(object.Object), *View, changed, self, .{ .detail = "selected" });
             }
         }
-        root.append(w.label("Zed and Equibop need activation in the application. Fluxer and Steam use the generated CSS. Starship generates a full prompt configuration; review it before installing. Off restores only unchanged Pearl-owned files.", "pearl-secondary").as(gtk.Widget));
-        const refresh = w.wrappingButton("Refresh application profiles");
+        root.append(w.label(@import("i18n").dtr("pearl", "Zed and Equibop need activation in the application. Fluxer and Steam use the generated CSS. Starship generates a full prompt configuration; review it before installing. Off restores only unchanged Pearl-owned files."), "pearl-secondary").as(gtk.Widget));
+        const refresh = w.wrappingButton(@import("i18n").dtr("pearl", "Refresh application profiles"));
         root.append(refresh.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(refresh, *View, refreshClicked, self, .{});
-        const adopt = w.wrappingButton("Use current profile versions on Apply");
+        const adopt = w.wrappingButton(@import("i18n").dtr("pearl", "Use current profile versions on Apply"));
         root.append(adopt.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(adopt, *View, adoptClicked, self, .{});
-        const retry = w.wrappingButton("Retry committed application themes");
+        const retry = w.wrappingButton(@import("i18n").dtr("pearl", "Retry committed application themes"));
         root.append(retry.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(retry, *View, retryClicked, self, .{});
-        const review = w.wrappingButton("Review Starship installation");
+        const review = w.wrappingButton(@import("i18n").dtr("pearl", "Review Starship installation"));
         root.append(review.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(review, *View, reviewClicked, self, .{});
         self.review_label = w.label("", "pearl-secondary");
         self.review_label.setSelectable(1);
         self.review_label.setWrap(1);
         root.append(self.review_label.as(gtk.Widget));
-        self.install_button = w.wrappingButton("Install reviewed Starship configuration and keep backup");
+        self.install_button = w.wrappingButton(@import("i18n").dtr("pearl", "Install reviewed Starship configuration and keep backup"));
         self.install_button.as(gtk.Widget).setSensitive(0);
         root.append(self.install_button.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(self.install_button, *View, installClicked, self, .{});

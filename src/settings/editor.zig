@@ -814,22 +814,21 @@ pub const Editor = struct {
                     self.night_override = night.override != null;
                     var lines: std.ArrayList(u8) = .empty;
                     defer lines.deinit(a);
-                    const tr = @import("../desktop/text.zig").tr;
                     const state_text = switch (night.state) {
-                        .off => tr("Off", "Aus"),
-                        .scheduled => tr("Scheduled", "Geplant"),
-                        .unavailable => tr("Unavailable", "Nicht verfügbar"),
-                        .pending => tr("Applying", "Wird angewendet"),
-                        .active => tr("Active", "Aktiv"),
-                        .partial => tr("Active on some displays", "Auf einigen Bildschirmen aktiv"),
-                        .restoring => tr("Restoring colors", "Farben werden wiederhergestellt"),
-                        .failed => tr("Application failed", "Anwendung fehlgeschlagen"),
+                        .off => @import("i18n").dtr("pearl", "Off"),
+                        .scheduled => @import("i18n").dtr("pearl", "Scheduled"),
+                        .unavailable => @import("i18n").dtr("pearl", "Unavailable"),
+                        .pending => @import("i18n").dtr("pearl", "Applying"),
+                        .active => @import("i18n").dtr("pearl", "Active"),
+                        .partial => @import("i18n").dtr("pearl", "Active on some displays"),
+                        .restoring => @import("i18n").dtr("pearl", "Restoring colors"),
+                        .failed => @import("i18n").dtr("pearl", "Application failed"),
                     };
                     const header = try std.fmt.allocPrint(a, "{s} · {d} K\n", .{ state_text, night.temperature_kelvin });
                     defer a.free(header);
                     try lines.appendSlice(a, header);
                     for (night.outputs) |output| {
-                        const output_text = if (std.mem.eql(u8, output.state, "committed")) tr("Active", "Aktiv") else if (std.mem.eql(u8, output.state, "pending")) tr("Applying", "Wird angewendet") else if (std.mem.eql(u8, output.state, "restoring")) tr("Restoring colors", "Farben werden wiederhergestellt") else if (std.mem.eql(u8, output.state, "busy")) tr("Another color service is active", "Ein anderer Farbdienst ist aktiv") else if (std.mem.eql(u8, output.state, "failed")) tr("Application failed", "Anwendung fehlgeschlagen") else if (output.available) tr("Available", "Verfügbar") else tr("Display color support unavailable", "Farbunterstützung nicht verfügbar");
+                        const output_text = if (std.mem.eql(u8, output.state, "committed")) @import("i18n").dtr("pearl", "Active") else if (std.mem.eql(u8, output.state, "pending")) @import("i18n").dtr("pearl", "Applying") else if (std.mem.eql(u8, output.state, "restoring")) @import("i18n").dtr("pearl", "Restoring colors") else if (std.mem.eql(u8, output.state, "busy")) @import("i18n").dtr("pearl", "Another color service is active") else if (std.mem.eql(u8, output.state, "failed")) @import("i18n").dtr("pearl", "Application failed") else if (output.available) @import("i18n").dtr("pearl", "Available") else @import("i18n").dtr("pearl", "Display color support unavailable");
                         const line = try std.fmt.allocPrint(a, "{s}: {s}\n", .{ output.connector, output_text });
                         defer a.free(line);
                         try lines.appendSlice(a, line);

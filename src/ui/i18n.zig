@@ -1,8 +1,4 @@
-const std = @import("std");
-pub const Language = enum { en, de };
-pub fn fromLocale(locale: []const u8) Language {
-    return if (std.mem.startsWith(u8, locale, "de")) .de else .en;
-}
+//! Gallery messages use the installed Pearl language pack.
 pub const en = .{
     .window_title = "Pearl · Component gallery",
     .demo = "COMPONENT GALLERY · SAMPLE CONTENT",
@@ -12,7 +8,7 @@ pub const en = .{
     .compact = "Compact",
     .large = "Larger text",
     .motion = "Reduce motion",
-    .language = "Deutsch",
+    .language = "Language",
     .close = "Close Pearl",
     .controls = "Control center",
     .sample = "Aqueous · Sample desktop",
@@ -53,67 +49,6 @@ pub const en = .{
     .disabled = "Unavailable action",
     .disabled_detail = "This action is unavailable in the sample desktop.",
 };
-pub const de = .{
-    .window_title = "Pearl · Komponentengalerie",
-    .demo = "KOMPONENTENGALERIE · BEISPIELINHALTE",
-    .title = "Dein Desktop. Ganz entspannt.",
-    .subtitle = "Etwas weniger Ablenkung. Etwas mehr Platz für das Wesentliche.",
-    .light = "Hell",
-    .compact = "Kompakt",
-    .large = "Größere Schrift",
-    .motion = "Bewegung reduzieren",
-    .language = "English",
-    .close = "Pearl schließen",
-    .controls = "Schnelleinstellungen",
-    .sample = "Aqueous · Beispiel-Desktop",
-    .profile = "Guten Nachmittag",
-    .settings = "Einstellungen",
-    .wifi = "WLAN",
-    .connected = "Verbunden",
-    .bluetooth = "Bluetooth",
-    .available = "Verfügbar",
-    .night = "Nachtlicht",
-    .off = "Aus",
-    .on = "Ein",
-    .quiet = "Nicht stören",
-    .quiet_detail = "Benachrichtigungen stummschalten, um konzentriert zu bleiben.",
-    .volume = "Lautstärke",
-    .brightness = "Helligkeit",
-    .launcher = "Was möchtest du als Nächstes tun?",
-    .search = "Beispielprogramme und Fenster durchsuchen",
-    .results = "Ergebnisse",
-    .selected = "Ausgewählt",
-    .nothing = "Keine Treffer",
-    .nothing_detail = "Versuche einen anderen Namen oder lösche die Suche.",
-    .empty = "Alles erledigt",
-    .empty_detail = "Neue Benachrichtigungen erscheinen hier.",
-    .error_title = "Verbindung nicht verfügbar",
-    .error_detail = "Dies ist ein Beispielfehler. Dein Desktop wurde nicht verändert.",
-    .pending = "Warten auf eine Antwort",
-    .pending_detail = "Beispiel für einen Wartezustand. Du kannst weiterblättern.",
-    .states = "Platz für jeden Zustand",
-    .preview = "In deinem Kalender",
-    .reload = "Vorschau neu laden",
-    .sample_window = "Beispielfenster",
-    .workspaces = "Arbeitsflächen",
-    .calendar = "Designbesprechung",
-    .calendar_detail = "Morgen · 10:00\nFarben, Abstände und Tastaturbedienung gemeinsam prüfen.",
-    .loading = "Vorschau wird geladen…",
-    .load_error = "Die Vorschau konnte nicht geladen werden.",
-    .disabled = "Aktion nicht verfügbar",
-    .disabled_detail = "Diese Aktion ist auf dem Beispiel-Desktop nicht verfügbar.",
-};
-pub fn text(language: Language, comptime key: []const u8) [:0]const u8 {
-    return switch (language) {
-        .en => @field(en, key),
-        .de => @field(de, key),
-    };
-}
-test "catalogs cover identical keys and locale falls back to English" {
-    inline for (@typeInfo(@TypeOf(en)).@"struct".fields) |field| {
-        try std.testing.expect(text(.de, field.name).len > 0);
-        try std.testing.expect(std.unicode.utf8ValidateSlice(text(.de, field.name)));
-    }
-    try std.testing.expectEqual(fromLocale("de_DE.UTF-8"), .de);
-    try std.testing.expectEqual(fromLocale("fr_FR.UTF-8"), .en);
+pub fn text(comptime key: []const u8) [:0]const u8 {
+    return @import("i18n").tr(@field(en, key));
 }

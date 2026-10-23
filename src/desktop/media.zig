@@ -26,7 +26,7 @@ pub const View = struct {
         const self = try a.create(View);
         const card = w.card();
         card.as(gtk.Widget).addCssClass("pearl-media-card");
-        card.append(w.label(tr("Now playing", "Aktuelle Wiedergabe"), "pearl-card-title").as(gtk.Widget));
+        card.append(w.label(@import("i18n").dtr("pearl", "Now playing"), "pearl-card-title").as(gtk.Widget));
         const choices = w.flow(2);
         card.append(choices.as(gtk.Widget));
         const image = w.icon("pearl-media-symbolic");
@@ -43,7 +43,7 @@ pub const View = struct {
         card.append(artist.as(gtk.Widget));
         const progress = gtk.Scale.newWithRange(.horizontal, 0, 100, 1);
         progress.setDrawValue(0);
-        w.name(progress.as(gtk.Widget), tr("Playback position", "Wiedergabeposition"));
+        w.name(progress.as(gtk.Widget), @import("i18n").dtr("pearl", "Playback position"));
         card.append(progress.as(gtk.Widget));
         const state = w.label("", "pearl-secondary");
         card.append(state.as(gtk.Widget));
@@ -62,7 +62,7 @@ pub const View = struct {
         controls.as(gtk.Widget).setHalign(.center);
         card.append(controls.as(gtk.Widget));
         for (&self.buttons, [_]m.Action{ .previous, .play_pause, .next, .stop, .seek }, [_][:0]const u8{ "Previous", "Play", "Next", "Stop", "Seek" }) |*b, action, label| {
-            const button = gtk.Button.newWithLabel(if (action == .previous) "‹" else if (action == .next) "›" else label);
+            const button = gtk.Button.newWithLabel(if (action == .previous) @import("i18n").dtr("pearl", "‹") else if (action == .next) @import("i18n").dtr("pearl", "›") else label);
             w.name(button.as(gtk.Widget), label);
             button.as(gtk.Widget).setTooltipText(label);
             b.* = .{ .view = self, .action = action, .widget = button };
@@ -116,8 +116,8 @@ pub const View = struct {
         self.track = track;
         self.generation = if (p) |player| player.generation else 0;
         const playing = if (p) |player| std.mem.eql(u8, player.playback.slice(), "Playing") else false;
-        self.title.setText(if (p) |player| (if (player.title.len > 0) player.title.z() else "Untitled track") else tr("Nothing playing", "Keine Wiedergabe"));
-        self.artist.setText(if (p) |player| player.artist.z() else tr("Open a media player to get started", "Öffne einen Mediaplayer"));
+        self.title.setText(if (p) |player| (if (player.title.len > 0) player.title.z() else "Untitled track") else @import("i18n").dtr("pearl", "Nothing playing"));
+        self.artist.setText(if (p) |player| player.artist.z() else @import("i18n").dtr("pearl", "Open a media player to get started"));
         if (self.service.art.image) |image| self.image.setFromPixbuf(image) else self.image.setFromIconName("pearl-media-symbolic");
         self.image.setPixelSize(96);
         for (&self.buttons) |*button| {
@@ -132,8 +132,8 @@ pub const View = struct {
             } else false;
             button.widget.as(gtk.Widget).setSensitive(@intFromBool(allowed));
             if (button.action == .play_pause) {
-                button.widget.setLabel(if (playing) "Pause" else "Play");
-                w.name(button.widget.as(gtk.Widget), if (playing) "Pause" else "Play");
+                button.widget.setLabel(if (playing) @import("i18n").dtr("pearl", "Pause") else @import("i18n").dtr("pearl", "Play"));
+                w.name(button.widget.as(gtk.Widget), if (playing) @import("i18n").dtr("pearl", "Pause") else @import("i18n").dtr("pearl", "Play"));
             }
         }
         self.progress.as(gtk.Widget).setSensitive(@intFromBool(if (p) |player| player.control and player.seek and player.length > 0 and !player.busy else false));

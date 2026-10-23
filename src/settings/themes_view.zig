@@ -60,29 +60,29 @@ pub const View = struct {
         const list = w.column(8);
         const status = w.label("", "pearl-secondary");
         self.* = .{ .editor = editor, .root = root, .list = list, .status = status, .search = gtk.Entry.new(), .source_id = gtk.Entry.new(), .source_name = gtk.Entry.new(), .source_url = gtk.Entry.new(), .archive_path = gtk.Entry.new(), .preview_root = w.column(8), .provider = gtk.CssProvider.new(), .arena = .init(a), .rows = .init(a) };
-        root.append(w.label("Palette and widget style", "pearl-card-title").as(gtk.Widget));
+        root.append(w.label(@import("i18n").dtr("pearl", "Palette and widget style"), "pearl-card-title").as(gtk.Widget));
         self.palette_editor = try @import("palette_editor.zig").View.create(root, self, paletteCommand);
         for (self.palette_editor.controls.items) |control| try self.controls.append(self.arena.allocator(), .{ .id = control.id, .widget = control.widget });
         self.selection = w.label("", "pearl-secondary");
         root.append(self.selection.as(gtk.Widget));
-        root.append(w.label("Download a community theme, choose Use theme, then Apply & save. Preview shows a sample without selecting it. Use colors and Use style let you mix themes.", "pearl-secondary").as(gtk.Widget));
+        root.append(w.label(@import("i18n").dtr("pearl", "Download a community theme, choose Use theme, then Apply & save. Preview shows a sample without selecting it. Use colors and Use style let you mix themes."), "pearl-secondary").as(gtk.Widget));
         const actions = w.column(8);
         root.append(actions.as(gtk.Widget));
-        try self.button(actions, "Installed", .installed, 0, false);
-        try self.button(actions, "Community · refresh", .community, 0, false);
-        if (@import("../theme/repository.zig").default_enabled) try self.button(actions, "Add default community repository", .source_default, 0, false);
-        try self.button(actions, "Cancel download", .cancel, 0, false);
-        try self.button(root, "Use built-in theme", .builtin, 0, false);
-        try self.button(root, "Use selected theme defaults", .defaults, 0, false);
-        try self.button(root, "Colors · use selected theme", .inherit_colors, 0, false);
-        try self.button(root, "Widget style · use Pearl default", .default_style, 0, false);
-        try self.button(root, "Preview current draft", .preview_draft, 0, false);
-        self.search.setPlaceholderText("Search names or authors");
-        w.name(self.search.as(gtk.Widget), "Search community themes");
+        try self.button(actions, @import("i18n").dtr("pearl", "Installed"), .installed, 0, false);
+        try self.button(actions, @import("i18n").dtr("pearl", "Community · refresh"), .community, 0, false);
+        if (@import("../theme/repository.zig").default_enabled) try self.button(actions, @import("i18n").dtr("pearl", "Add default community repository"), .source_default, 0, false);
+        try self.button(actions, @import("i18n").dtr("pearl", "Cancel download"), .cancel, 0, false);
+        try self.button(root, @import("i18n").dtr("pearl", "Use built-in theme"), .builtin, 0, false);
+        try self.button(root, @import("i18n").dtr("pearl", "Use selected theme defaults"), .defaults, 0, false);
+        try self.button(root, @import("i18n").dtr("pearl", "Colors · use selected theme"), .inherit_colors, 0, false);
+        try self.button(root, @import("i18n").dtr("pearl", "Widget style · use Pearl default"), .default_style, 0, false);
+        try self.button(root, @import("i18n").dtr("pearl", "Preview current draft"), .preview_draft, 0, false);
+        self.search.setPlaceholderText(@import("i18n").dtr("pearl", "Search names or authors"));
+        w.name(self.search.as(gtk.Widget), @import("i18n").dtr("pearl", "Search community themes"));
         root.append(self.search.as(gtk.Widget));
         _ = gtk.Editable.signals.changed.connect(self.search.as(gtk.Editable), *View, searched, self, .{});
         const sources = gtk.Expander.new(null);
-        sources.setLabelWidget(w.label("Community repositories and local archives", null).as(gtk.Widget));
+        sources.setLabelWidget(w.label(@import("i18n").dtr("pearl", "Community repositories and local archives"), null).as(gtk.Widget));
         const box = w.column(8);
         sources.setChild(box.as(gtk.Widget));
         root.append(sources.as(gtk.Widget));
@@ -93,20 +93,20 @@ pub const View = struct {
         }
         const source_actions = w.row(8);
         box.append(source_actions.as(gtk.Widget));
-        try self.button(source_actions, "Add repository", .source_add, 0, false);
-        try self.button(source_actions, "Remove repository", .source_remove, 0, false);
-        try self.button(box, "Import local archive", .import_archive, 0, false);
+        try self.button(source_actions, @import("i18n").dtr("pearl", "Add repository"), .source_add, 0, false);
+        try self.button(source_actions, @import("i18n").dtr("pearl", "Remove repository"), .source_remove, 0, false);
+        try self.button(box, @import("i18n").dtr("pearl", "Import local archive"), .import_archive, 0, false);
         root.append(status.as(gtk.Widget));
         root.append(list.as(gtk.Widget));
         self.preview_root.as(gtk.Widget).addCssClass("pearl-root");
         self.preview_root.as(gtk.Widget).addCssClass("pearl-theme-preview");
         self.preview_root.as(gtk.Widget).setVisible(0);
-        self.preview_root.append(w.label("Theme preview", "pearl-card-title").as(gtk.Widget));
+        self.preview_root.append(w.label(@import("i18n").dtr("pearl", "Theme preview"), "pearl-card-title").as(gtk.Widget));
         const sample = w.column(8);
         sample.as(gtk.Widget).addCssClass("pearl-card");
-        sample.append(w.label("Sample card", "pearl-card-title").as(gtk.Widget));
-        sample.append(w.wrappingButton("Example button").as(gtk.Widget));
-        const disabled = w.wrappingButton("Disabled button");
+        sample.append(w.label(@import("i18n").dtr("pearl", "Sample card"), "pearl-card-title").as(gtk.Widget));
+        sample.append(w.wrappingButton(@import("i18n").dtr("pearl", "Example button")).as(gtk.Widget));
+        const disabled = w.wrappingButton(@import("i18n").dtr("pearl", "Disabled button"));
         disabled.as(gtk.Widget).setSensitive(0);
         sample.append(disabled.as(gtk.Widget));
         self.preview_root.append(sample.as(gtk.Widget));
@@ -149,7 +149,7 @@ pub const View = struct {
         if (self.seen) |bytes| a.free(bytes);
         self.seen = null;
         self.last = request.action;
-        self.status.setText("Working…");
+        self.status.setText(@import("i18n").dtr("pearl", "Working…"));
     }
     pub fn previewDraft(self: *View) !void {
         try self.perform(.preview_draft, 0);
@@ -259,7 +259,7 @@ pub const View = struct {
                 p.theme.snapshot_digest = "";
                 try self.editor.edit(try std.json.Stringify.valueAlloc(alloc, p, .{ .whitespace = .indent_2 }));
                 self.draft_selection = true;
-                self.status.setText("Theme selection is in the draft. Use Apply & save to activate it.");
+                self.status.setText(@import("i18n").dtr("pearl", "Theme selection is in the draft. Use Apply & save to activate it."));
             },
         }
     }
@@ -284,9 +284,9 @@ pub const View = struct {
                 box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s}", .{ r.name, r.version, r.author }, 0), "pearl-card-title").as(gtk.Widget));
                 if (r.description.len > 0) box.append(w.label(try alloc.dupeZ(u8, r.description), "pearl-secondary").as(gtk.Widget));
                 box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ r.license, r.source }, 0), "pearl-secondary").as(gtk.Widget));
-                if (!r.requires.supported()) box.append(w.label("Requires an unsupported theme API", "pearl-secondary").as(gtk.Widget)) else try self.button(box, "Download / update", .install, i, true);
+                if (!r.requires.supported()) box.append(w.label(@import("i18n").dtr("pearl", "Requires an unsupported theme API"), "pearl-secondary").as(gtk.Widget)) else try self.button(box, @import("i18n").dtr("pearl", "Download / update"), .install, i, true);
             }
-            if (self.next_url.len > 0) try self.button(self.list, "Next repository page", .next, 0, true);
+            if (self.next_url.len > 0) try self.button(self.list, @import("i18n").dtr("pearl", "Next repository page"), .next, 0, true);
         } else {
             for (self.sources, 0..) |source, i| try self.button(self.list, try std.fmt.allocPrintSentinel(alloc, "Browse {s}", .{source.name}, 0), .source_select, i, true);
             for (self.entries, 0..) |e, i| {
@@ -301,21 +301,21 @@ pub const View = struct {
                 box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s}{s}{s}", .{ if (e.dark) "Dark " else "", if (e.light) "Light " else "", if (e.style) "Widget style" else "Palette" }, 0), "pearl-secondary").as(gtk.Widget));
                 const buttons = w.row(4);
                 box.append(buttons.as(gtk.Widget));
-                try self.button(buttons, "Use theme", .select, i, true);
-                if (e.dark or e.light) try self.button(buttons, "Use colors", .colors, i, true);
-                if (e.style) try self.button(buttons, "Use style", .style, i, true);
-                try self.button(box, "Preview", .preview, i, true);
+                try self.button(buttons, @import("i18n").dtr("pearl", "Use theme"), .select, i, true);
+                if (e.dark or e.light) try self.button(buttons, @import("i18n").dtr("pearl", "Use colors"), .colors, i, true);
+                if (e.style) try self.button(buttons, @import("i18n").dtr("pearl", "Use style"), .style, i, true);
+                try self.button(box, @import("i18n").dtr("pearl", "Preview"), .preview, i, true);
                 const manage = w.row(4);
                 box.append(manage.as(gtk.Widget));
                 if (e.editable) {
-                    try self.button(manage, "Edit colors", .edit_palette, i, true);
-                    box.append(w.label(if (e.fallback.len > 0) "Editable local palette · one variant supplies both modes · saved edits apply live" else "Editable local palette · saved edits apply live", "pearl-secondary").as(gtk.Widget));
+                    try self.button(manage, @import("i18n").dtr("pearl", "Edit colors"), .edit_palette, i, true);
+                    box.append(w.label(if (e.fallback.len > 0) @import("i18n").dtr("pearl", "Editable local palette · one variant supplies both modes · saved edits apply live") else @import("i18n").dtr("pearl", "Editable local palette · saved edits apply live"), "pearl-secondary").as(gtk.Widget));
                 } else {
-                    try self.button(manage, "Remove installed package", .remove, i, true);
-                    try self.button(manage, "Roll back installed version", .rollback, i, true);
+                    try self.button(manage, @import("i18n").dtr("pearl", "Remove installed package"), .remove, i, true);
+                    try self.button(manage, @import("i18n").dtr("pearl", "Roll back installed version"), .rollback, i, true);
                 }
             }
-            if (self.next_offset != null) try self.button(self.list, "More installed themes", .installed_next, 0, true);
+            if (self.next_offset != null) try self.button(self.list, @import("i18n").dtr("pearl", "More installed themes"), .installed_next, 0, true);
         }
     }
     pub fn update(self: *View) void {
@@ -339,7 +339,7 @@ pub const View = struct {
         };
         if (self.draft_selection and self.editor.local == null and !self.editor.state.dirty and !self.editor.state.busy) {
             self.draft_selection = false;
-            self.status.setText("Selection matches saved preferences.");
+            self.status.setText(@import("i18n").dtr("pearl", "Selection matches saved preferences."));
         }
         if (!self.initialized and self.editor.editable() and self.editor.client.capabilities.community_themes) {
             self.send(.{ .action = .catalog }) catch return;
@@ -368,7 +368,7 @@ pub const View = struct {
         self.automatic_refresh = true;
         self.catalog_generation = self.editor.theme_catalog_generation;
         self.preview_root.as(gtk.Widget).setVisible(0);
-        self.status.setText("Installed themes changed. Preview again before applying changed selections.");
+        self.status.setText(@import("i18n").dtr("pearl", "Installed themes changed. Preview again before applying changed selections."));
     }
     fn updateSelection(self: *View) void {
         var memory = std.heap.ArenaAllocator.init(a);
@@ -416,9 +416,9 @@ pub const View = struct {
                     self.source_name.as(gtk.Editable).setText(try alloc.dupeZ(u8, result.sources[0].name));
                     self.source_url.as(gtk.Editable).setText(try alloc.dupeZ(u8, result.sources[0].url));
                 }
-                self.status.setText(if (result.diagnostics.len > 0) try std.fmt.allocPrintSentinel(alloc, "Package unavailable: {s} ({s})", .{ result.diagnostics[0].path, result.diagnostics[0].error_code }, 0) else if (result.entries.len == 0) "No themes installed. Choose Community · refresh to browse themes." else "Installed themes. Choose colors and widget style, then Apply & save.");
+                self.status.setText(if (result.diagnostics.len > 0) try std.fmt.allocPrintSentinel(alloc, "Package unavailable: {s} ({s})", .{ result.diagnostics[0].path, result.diagnostics[0].error_code }, 0) else if (result.entries.len == 0) @import("i18n").dtr("pearl", "No themes installed. Choose Community · refresh to browse themes.") else @import("i18n").dtr("pearl", "Installed themes. Choose colors and widget style, then Apply & save."));
                 try self.render();
-                if (self.editor.theme_discovery_degraded) self.status.setText("Automatic discovery is degraded. Use Installed to refresh available themes.");
+                if (self.editor.theme_discovery_degraded) self.status.setText(@import("i18n").dtr("pearl", "Automatic discovery is degraded. Use Installed to refresh available themes."));
             },
             .refresh => {
                 _ = self.page_data.reset(.free_all);
@@ -429,13 +429,13 @@ pub const View = struct {
                 self.releases = page.index.releases;
                 self.next_url = page.index.next orelse "";
                 self.community = true;
-                self.status.setText(if (page.offline) "Offline · showing cached repository metadata" else "Community repository · download before selecting a theme");
+                self.status.setText(if (page.offline) @import("i18n").dtr("pearl", "Offline · showing cached repository metadata") else @import("i18n").dtr("pearl", "Community repository · download before selecting a theme"));
                 try self.render();
             },
             .preview, .preview_render => {
                 if (self.preview_digest) |digest| if (!std.mem.eql(u8, &digest, &@import("editor_protocol.zig").digest(self.editor.text()))) {
                     self.preview_root.as(gtk.Widget).setVisible(0);
-                    self.status.setText("Draft changed. Preview again to see the current selection.");
+                    self.status.setText(@import("i18n").dtr("pearl", "Draft changed. Preview again to see the current selection."));
                     return;
                 };
                 const alloc = temporary.allocator();
@@ -447,10 +447,10 @@ pub const View = struct {
                 const template = try std.fmt.allocPrint(alloc, "{s}\n{s}\n{s}\n{s}", .{ @embedFile("settings_base_style"), tokens, resolved.css, resolved.palette_css });
                 self.provider.loadFromString(try theme.scopedCss(alloc, template, "pearl-theme-preview", p));
                 self.preview_root.as(gtk.Widget).setVisible(1);
-                self.status.setText(if (resolved.palette == null) "Style preview uses default dark colors; generated colors apply on save." else "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save.");
+                self.status.setText(if (resolved.palette == null) @import("i18n").dtr("pearl", "Style preview uses default dark colors; generated colors apply on save.") else @import("i18n").dtr("pearl", "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."));
             },
             .install, .import_archive, .remove, .rollback, .source_add, .source_remove, .source_default => try self.send(.{ .action = .catalog }),
-            else => self.status.setText("Operation complete."),
+            else => self.status.setText(@import("i18n").dtr("pearl", "Operation complete.")),
         }
     }
 };

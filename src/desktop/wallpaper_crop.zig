@@ -157,7 +157,7 @@ pub const Window = struct {
         // settings wallpaper chooser does.
         window.as(gtk.Widget).addCssClass("pearl-root");
         window.as(gtk.Widget).addCssClass("pearl-shell");
-        window.setTitle(tr("Crop wallpaper", "Hintergrundbild zuschneiden"));
+        window.setTitle(@import("i18n").dtr("pearl", "Crop wallpaper"));
         window.setTransientFor(self.parent);
         window.setModal(1);
         window.setDefaultSize(820, 600);
@@ -179,7 +179,7 @@ pub const Window = struct {
         var buffer: [1025:0]u8 = undefined;
         const title = std.fmt.bufPrintZ(&buffer, "{s}", .{std.fs.path.basename(self.path)}) catch "wallpaper";
         content.append(w.label(title, "pearl-card-title").as(gtk.Widget));
-        content.append(w.label(tr("Drag to place, scroll to zoom. The frame is this display's shape.", "Ziehen zum Platzieren, scrollen zum Zoomen. Der Rahmen hat die Form dieses Bildschirms."), "pearl-secondary").as(gtk.Widget));
+        content.append(w.label(@import("i18n").dtr("pearl", "Drag to place, scroll to zoom. The frame is this display's shape."), "pearl-secondary").as(gtk.Widget));
 
         const picture = gtk.Picture.newForPaintable(self.texture.as(gdk.Paintable));
         picture.setCanShrink(1);
@@ -222,9 +222,9 @@ pub const Window = struct {
         // or the shell's button styling.
         const footer = w.row(12);
         footer.as(gtk.Widget).setHalign(.end);
-        const reset = w.wrappingButton(tr("Reset", "Zurücksetzen"));
-        const cancel = w.wrappingButton(tr("Cancel", "Abbrechen"));
-        const apply = w.wrappingButton(tr("Apply crop", "Zuschnitt übernehmen"));
+        const reset = w.wrappingButton(@import("i18n").dtr("pearl", "Reset"));
+        const cancel = w.wrappingButton(@import("i18n").dtr("pearl", "Cancel"));
+        const apply = w.wrappingButton(@import("i18n").dtr("pearl", "Apply crop"));
         apply.as(gtk.Widget).addCssClass("pearl-primary");
         footer.append(reset.as(gtk.Widget));
         footer.append(cancel.as(gtk.Widget));
@@ -310,7 +310,7 @@ pub const Window = struct {
     /// Committing through the preferences service keeps the wallpaper watch,
     /// dynamic colors and every output surface consistent with the edit.
     fn commit(self: *Window) bool {
-        const rejected = tr("Could not save the crop. Try again.", "Zuschnitt konnte nicht gespeichert werden. Bitte erneut versuchen.");
+        const rejected = @import("i18n").dtr("pearl", "Could not save the crop. Try again.");
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
         const alloc = arena.allocator();
@@ -331,13 +331,13 @@ pub const Window = struct {
         // rather than stored; one placement per image keeps the list bounded.
         const whole = entry.width > 1 - 0.001 and entry.height > 1 - 0.001;
         if (!whole) {
-            if (saved.items.len >= crop.max) return self.fail(tr("Too many saved crops. Reset one of the others first.", "Zu viele gespeicherte Zuschnitte. Setze zuerst einen anderen zurück."));
+            if (saved.items.len >= crop.max) return self.fail(@import("i18n").dtr("pearl", "Too many saved crops. Reset one of the others first."));
             saved.append(alloc, entry) catch return self.fail(rejected);
         }
         prefs.wallpaper.crops = saved.items;
         prefs.validate() catch return self.fail(rejected);
         const json = std.json.Stringify.valueAlloc(alloc, prefs, .{}) catch return self.fail(rejected);
-        self.service.apply(json, self.service.revision) catch return self.fail(tr("Could not apply the crop. Try again.", "Zuschnitt konnte nicht angewendet werden. Bitte erneut versuchen."));
+        self.service.apply(json, self.service.revision) catch return self.fail(@import("i18n").dtr("pearl", "Could not apply the crop. Try again."));
         return true;
     }
     fn fail(self: *Window, text: [:0]const u8) bool {

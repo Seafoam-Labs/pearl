@@ -9,8 +9,8 @@ ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build gallery -Doptimize=ReleaseSafe 
 ```
 
 The gallery opens maximized, with scrollable content. Buttons at the top switch
-light/dark palettes, compact density, larger text, reduced motion and English/
-German. They change only this running gallery, not desktop preferences. The
+light/dark palettes, compact density, larger text and reduced motion.
+They change only this running gallery, not desktop preferences. The
 control-center tiles, workspace pills and launcher activation demonstrate local
 widget behavior; they do not claim to control real services or windows.
 
@@ -54,13 +54,15 @@ factory objects with weak references in its instrumented lifecycle tests.
 
 ## Translation, accessibility and motion
 
-`src/ui/i18n.zig` supplies compiled English and German catalogs with checked key
-coverage and UTF-8. The initial language follows the environment and unsupported
-languages fall back to English. The gallery language button retranslates labels,
-accessible names, tooltips and pending/ready/error preview text. Sample application
-and window names are content identities and are not translated. Additional
-languages can supply the same catalog keys; gettext tooling is not required by
-this first component slice.
+`src/ui/i18n.zig` supplies English source keys for the shared Zig translation
+runtime. Translations come from separately installed language packs; German is
+no longer embedded. Language is resolved once at startup, with English fallback.
+Select the interface language in Settings and start a new session, or launch a
+fresh gallery with an explicit language preference. The gallery language control
+is informational; Ctrl+G no longer switches built-in catalogs. Labels, accessible
+names, tooltips and preview states use the same pack. Sample application/window
+names remain content identities. See the [translation guide](../translations/README.md)
+for staging packs and running the gallery language matrix.
 
 Native GTK buttons, toggles, switches, scales, search entry and list items provide
 their normal accessible roles and keyboard behavior. Icon-only buttons have an
@@ -78,7 +80,6 @@ accessible names. Default list activation and arrow navigation stay in GTK.
 | Escape | Clear search and return focus to it |
 | Ctrl+L / Ctrl+D | Toggle light palette / compact density |
 | Ctrl+E / Ctrl+R | Toggle larger text / reduced motion |
-| Ctrl+G | Switch English/German |
 | Ctrl+Home / Ctrl+End | Focus the first / last gallery control and reveal it |
 
 Reduced motion disables CSS transitions and GTK animations in this process. A

@@ -155,7 +155,7 @@ class PrivateSession:
         self.base = Path(self.temp.name)
         # Only locale and executable lookup survive. In particular, never retain
         # host bus, Wayland FDs, activation tokens, shell sockets or LD_PRELOAD.
-        self.env = {k: self.inherited[k] for k in ('PATH', 'LANG', 'LC_ALL', 'TZ') if k in self.inherited}
+        self.env = {k: self.inherited[k] for k in ('PATH', 'LANG', 'LC_ALL', 'LC_MESSAGES', 'LANGUAGE', 'TZ') if k in self.inherited}
         for key, name in [('HOME', 'home'), ('XDG_RUNTIME_DIR', 'run'), ('XDG_CONFIG_HOME', 'config'),
                           ('XDG_CACHE_HOME', 'cache'), ('XDG_STATE_HOME', 'state'), ('XDG_DATA_HOME', 'data'),
                           ('XDG_CONFIG_DIRS', 'system-config')]:

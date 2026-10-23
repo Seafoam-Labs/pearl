@@ -102,7 +102,7 @@ pub fn main(init: std.process.Init) void {
     const alloc = init.arena.allocator();
     var normalized = alloc.dupe([]const u8, args[1..]) catch std.process.exit(2);
     const verbosity = options.takeVerbosity(normalized) catch {
-        glib.printerr("%s", options.usage);
+        glib.printerr("%s", @import("i18n").tr(options.usage).ptr);
         std.process.exit(2);
     };
     normalized = verbosity.remaining;
@@ -131,12 +131,12 @@ pub fn main(init: std.process.Init) void {
         };
     }
     const parsed = options.parse(normalized) catch {
-        glib.printerr("%s", options.usage);
+        glib.printerr("%s", @import("i18n").tr(options.usage).ptr);
         std.process.exit(2);
     };
     switch (parsed) {
         .help => {
-            glib.print("%s", options.usage);
+            glib.print("%s", @import("i18n").tr(options.usage).ptr);
             return;
         },
         .version => {

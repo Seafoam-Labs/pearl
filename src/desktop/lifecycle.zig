@@ -23,7 +23,7 @@ pub const View = struct {
         errdefer a.destroy(self);
         const card = w.card();
         host.append(card.as(gtk.Widget));
-        card.append(w.label("Session & security", "pearl-card-title").as(gtk.Widget));
+        card.append(w.label(@import("i18n").dtr("pearl", "Session & security"), "pearl-card-title").as(gtk.Widget));
         self.* = .{ .service = service, .auth = auth, .power_actions = undefined, .label = w.label("", "pearl-secondary"), .buttons = undefined, .signals = undefined, .rows = undefined };
         self.label.setWrap(1);
         card.append(self.label.as(gtk.Widget));
@@ -68,7 +68,7 @@ pub const View = struct {
         self.buttons[1].as(gtk.Widget).setSensitive(@intFromBool(s.gate.active and s.lock_supported and s.can_suspend and s.delay_fd >= 0 and !s.action_busy));
         self.buttons[2].as(gtk.Widget).setSensitive(@intFromBool(s.gate.active and s.lock_supported and s.can_hibernate and s.delay_fd >= 0 and !s.action_busy));
         self.buttons[3].as(gtk.Widget).setSensitive(@intFromBool(s.gate.active and s.gate.available and s.client.capabilities.commands and !s.gate.locked));
-        self.buttons[4].setLabel(if (s.idle_held) "Resume automatic idle" else "Pause automatic idle");
+        self.buttons[4].setLabel(if (s.idle_held) @import("i18n").dtr("pearl", "Resume automatic idle") else @import("i18n").dtr("pearl", "Pause automatic idle"));
         self.buttons[5].as(gtk.Widget).setVisible(@intFromBool(s.pending != null));
         self.buttons[6].as(gtk.Widget).setVisible(@intFromBool(s.pending != null));
     }

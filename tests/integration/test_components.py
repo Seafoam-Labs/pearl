@@ -18,6 +18,7 @@ from pearl_session import PrivateSession, wait_for
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pearl', type=Path, required=True)
+    parser.add_argument('--language', default='en', help='Installed language pack to test; no live switching')
     parser.add_argument('--aqueous', type=Path, default=Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', ROOT / '.cache/aqueous')) / 'bin/aqueous')
     parser.add_argument('--ctl', type=Path, default=Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', ROOT / '.cache/aqueous')) / 'bin/aqueousctl')
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/t03/latest')
@@ -27,9 +28,10 @@ def main():
     result = dict(status='running', recorded_utc=datetime.now(timezone.utc).isoformat(),
                   executable_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest(), checks={}, probes={})
     try:
-        with PrivateSession(args.output, args.aqueous, inherited={'PATH': '/usr/bin', 'LANG': 'C.UTF-8'}) as session:
+        with PrivateSession(args.output, args.aqueous, inherited={'PATH': '/usr/bin', 'LANG': 'C.UTF-8', 'LANGUAGE': args.language}) as session:
             app = session.child('gallery', [args.pearl.resolve(), '--demo'], G_DEBUG='fatal-warnings')
             app.expect('event=work-finished applied=true')
+            app.expect('event=language value=' + args.language)
             time.sleep(.5)
             output = json.loads(session.run([args.ctl, 'outputs', '--json']).stdout)[0]['name']
 
@@ -78,10 +80,8 @@ def main():
             capture('dark-compact')
             ctrl('d')
             ctrl('e')
-            ctrl('g')
-            capture('dark-large-german')
+            capture('dark-large-' + args.language)
             ctrl('e')
-            ctrl('g')
             result['checks']['dark_light_density_large_text_and_translation'] = 'pass'
 
             ctrl('f')
@@ -141,12 +141,11 @@ def main():
             time.sleep(.3)
             ctrl('Home')
             ctrl('e')
-            ctrl('g')
-            narrow = capture('narrow-large-german')
+            narrow = capture('narrow-large-' + args.language)
             assert int(narrow['width']) == 640, narrow
             ctrl('End')
             capture('narrow-large-states')
-            result['checks']['640px_large_german_reflow'] = 'pass'
+            result['checks']['640px_large_translated_reflow'] = 'pass'
             app.signal()
             assert app.wait() == 0, app.lines[-20:]
             assert any('event=cleanup pending=false watched_objects=0' in line for line in app.lines)

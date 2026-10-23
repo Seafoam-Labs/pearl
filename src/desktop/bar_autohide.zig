@@ -37,7 +37,7 @@ pub const Controller = struct {
         _ = sensor.as(object.Object).refSink();
         sensor.setApplication(window.getApplication());
         sensor.setDecorated(0);
-        sensor.setTitle("Pearl bar reveal");
+        sensor.setTitle(@import("i18n").dtr("pearl", "Pearl bar reveal"));
         sensor.as(gtk.Widget).addCssClass("pearl-root");
         sensor.as(gtk.Widget).addCssClass("pearl-shell");
         layer.initForWindow(sensor);

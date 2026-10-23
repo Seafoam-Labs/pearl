@@ -76,7 +76,7 @@ fn reading(state: *const model.State, kind: model.Series, buffer: []u8) [:0]cons
             model.compactLabel(&sent, state.throughput_out),
         }) catch "—";
     }
-    if (!available(state, kind)) return tr("Unavailable", "Nicht verfügbar");
+    if (!available(state, kind)) return @import("i18n").dtr("pearl", "Unavailable");
     return std.fmt.bufPrintZ(buffer, "{d:.0}%", .{history(state, kind).newest() orelse 0}) catch "—";
 }
 
@@ -91,7 +91,7 @@ fn summary(state: *const model.State, buffer: []u8) [:0]const u8 {
             var sent: [24]u8 = undefined;
             writer.print("{s} ↓{s} ↑{s}", .{ model.abbreviation(kind), model.throughputLabel(&rates, state.throughput_in), model.throughputLabel(&sent, state.throughput_out) }) catch return "";
         } else if (!available(state, kind)) {
-            writer.print("{s} {s}", .{ model.abbreviation(kind), tr("unavailable", "nicht verfügbar") }) catch return "";
+            writer.print("{s} {s}", .{ model.abbreviation(kind), @import("i18n").dtr("pearl", "unavailable") }) catch return "";
         } else writer.print("{s} {d:.0}%", .{ model.abbreviation(kind), history(state, kind).newest() orelse 0 }) catch return "";
     }
     const text = writer.buffered();
@@ -244,7 +244,7 @@ pub const Detail = struct {
         const self = try a.create(Detail);
         errdefer a.destroy(self);
         const header = w.row(8);
-        header.append(w.label(tr("Resource monitor", "Ressourcenmonitor"), "pearl-card-title").as(gtk.Widget));
+        header.append(w.label(@import("i18n").dtr("pearl", "Resource monitor"), "pearl-card-title").as(gtk.Widget));
         host.append(header.as(gtk.Widget));
         const grid = gtk.Grid.new();
         grid.setColumnSpacing(10);
@@ -252,7 +252,7 @@ pub const Detail = struct {
         grid.setColumnHomogeneous(1);
         grid.as(gtk.Widget).setHexpand(1);
         grid.as(gtk.Widget).setVexpand(1);
-        const empty = w.label(tr("No graphs selected. Enable them in Settings → Bar & dock.", "Keine Diagramme ausgewählt. In Einstellungen → Leiste & Dock aktivieren."), "pearl-secondary");
+        const empty = w.label(@import("i18n").dtr("pearl", "No graphs selected. Enable them in Settings → Bar & dock."), "pearl-secondary");
         empty.as(gtk.Widget).setHalign(.center);
         empty.as(gtk.Widget).setValign(.center);
         empty.as(gtk.Widget).setVexpand(1);
@@ -272,7 +272,7 @@ pub const Detail = struct {
             column.as(gtk.Widget).addCssClass("pearl-resource-readout");
             column.as(gtk.Widget).setHexpand(1);
             const name = w.label(kind.label(), "pearl-resource-name");
-            const value = w.label("—", "pearl-resource-value");
+            const value = w.label(@import("i18n").dtr("pearl", "—"), "pearl-resource-value");
             // A fixed character width keeps the column — and so the whole grid —
             // from resizing every second as the reading's text length changes.
             for ([_]*gtk.Label{ name, value }) |label| {

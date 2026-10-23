@@ -17,13 +17,13 @@ pub fn build(b: *std.Build) void {
     const bindings = b.dependency("gobject", .{ .target = target, .optimize = optimize });
     const preview_options = b.addOptions();
     preview_options.addOption(bool, "test_hooks", false);
-    const preview_module = @import("src/files/preview/build.zig").module(b, bindings, target, optimize, b.path("src/files/preview/root.zig"), preview_options.createModule(), b.createModule(.{ .root_source_file = b.path("src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize }));
-    const preview_main = b.createModule(.{ .root_source_file = b.path("src/preview_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const preview_module = @import("src/files/preview/build.zig").module(b, bindings, target, optimize, b.path("src/files/preview/root.zig"), preview_options.createModule(), createModule(b, .{ .root_source_file = b.path("src/diagnostics/safe_text.zig"), .target = target, .optimize = optimize }));
+    const preview_main = createModule(b, .{ .root_source_file = b.path("src/preview_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     preview_main.addImport("previews", preview_module);
     const preview_helper = b.addExecutable(.{ .name = "pearl-preview-helper", .root_module = preview_main });
     const preview_install = b.addInstallArtifact(preview_helper, .{});
     b.getInstallStep().dependOn(&preview_install.step);
-    const chooser_main = b.createModule(.{ .root_source_file = b.path("src/chooser_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const chooser_main = createModule(b, .{ .root_source_file = b.path("src/chooser_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     chooser_main.addImport("previews", preview_module);
     chooser_main.addImport("file_chooser", @import("src/files/build.zig").module(b, b.path("src/files/chooser.zig"), chooser_main, bindings, preview_module, portal_variant == .git));
     chooser_main.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
@@ -31,7 +31,7 @@ pub fn build(b: *std.Build) void {
     const chooser_build = b.step("build-chooser", "Build the shared native file chooser and isolated preview helper");
     chooser_build.dependOn(&b.addInstallArtifact(chooser, .{}).step);
     chooser_build.dependOn(&preview_install.step);
-    const capture_main = b.createModule(.{ .root_source_file = b.path("src/capture_picker_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const capture_main = createModule(b, .{ .root_source_file = b.path("src/capture_picker_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| capture_main.addImport(name, bindings.module(name));
     const capture_options = b.addOptions();
     capture_options.addOption(bool, "test_hooks", b.option(bool, "capture-picker-test-hooks", "Enable isolated capture picker test controls") orelse false);
@@ -45,9 +45,9 @@ pub fn build(b: *std.Build) void {
     const capture_install = b.addInstallArtifact(capture, .{});
     b.getInstallStep().dependOn(&capture_install.step);
     b.step("build-capture-picker", "Build Pearl's capture source picker").dependOn(&capture_install.step);
-    const capture_tests = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/capture/sources.zig"), .target = target, .optimize = optimize }) });
+    const capture_tests = b.addTest(.{ .root_module = createModule(b, .{ .root_source_file = b.path("src/capture/sources.zig"), .target = target, .optimize = optimize }) });
     b.step("test-capture-picker", "Test capture source parsing and byte preservation").dependOn(&b.addRunArtifact(capture_tests).step);
-    const portal_main = b.createModule(.{ .root_source_file = b.path("src/portal_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const portal_main = createModule(b, .{ .root_source_file = b.path("src/portal_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     portal_main.addImport("previews", @import("src/files/preview/build.zig").module(b, bindings, target, optimize, b.path("src/files/preview/root.zig"), preview_module.import_table.get("build_options").?, portal_main));
     portal_main.addImport("file_chooser", @import("src/files/build.zig").module(b, b.path("src/files/chooser.zig"), portal_main, bindings, portal_main.import_table.get("previews").?, portal_variant == .git));
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| portal_main.addImport(name, bindings.module(name));
@@ -66,7 +66,7 @@ pub fn build(b: *std.Build) void {
     portal_build.dependOn(&portal_install.step);
     portal_build.dependOn(&preview_install.step);
     portal_build.dependOn(&capture_install.step);
-    const session_fixture_module = b.createModule(.{ .root_source_file = b.path("src/portal/session_test_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const session_fixture_module = createModule(b, .{ .root_source_file = b.path("src/portal/session_test_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     session_fixture_module.addOptions("portal_identity", portal_identity);
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| session_fixture_module.addImport(name, bindings.module(name));
     session_fixture_module.linkSystemLibrary("gio-2.0", .{ .use_pkg_config = .force });
@@ -76,7 +76,7 @@ pub fn build(b: *std.Build) void {
     const session_fixture_build = b.step("build-portal-session-test", "Build the private portal session fixture using the Zig session adapter");
     session_fixture_build.dependOn(&session_fixture_install.step);
     const portal_tests = b.step("test-portals", "Run the portal contracts, shared chooser, print worker and staging checks in isolated sessions");
-    const settings_module = b.createModule(.{ .root_source_file = b.path("src/portal_settings_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const settings_module = createModule(b, .{ .root_source_file = b.path("src/portal_settings_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| settings_module.addImport(name, bindings.module(name));
     settings_module.addOptions("portal_identity", portal_identity);
     settings_module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
@@ -94,14 +94,14 @@ pub fn build(b: *std.Build) void {
         portal_tests.dependOn(&check.step);
     }
 
-    const state_module = b.createModule(.{ .root_source_file = b.path("src/files/chooser/state.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const state_module = createModule(b, .{ .root_source_file = b.path("src/files/chooser/state.zig"), .target = target, .optimize = optimize, .link_libc = true });
     state_module.addImport("glib2", bindings.module("glib2"));
     state_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .force });
     const state_tests = b.addTest(.{ .root_module = state_module });
     const state_run = b.addRunArtifact(state_tests);
     b.step("test-file-chooser-state", "Test private chooser preference persistence").dependOn(&state_run.step);
     portal_tests.dependOn(&state_run.step);
-    const preview_tests = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/files/preview/core/preview.zig"), .target = target, .optimize = optimize }) });
+    const preview_tests = b.addTest(.{ .root_module = createModule(b, .{ .root_source_file = b.path("src/files/preview/core/preview.zig"), .target = target, .optimize = optimize }) });
     b.step("test-file-previews", "Test the shared thumbnail policy and helper protocol").dependOn(&b.addRunArtifact(preview_tests).step);
     if (b.option(bool, "codegen", "Build the pinned Ghostty GIR generator") orelse false) {
         if (b.lazyDependency("gobject_codegen", .{ .target = b.graph.host, .optimize = .ReleaseSafe })) |generator| {
@@ -117,7 +117,7 @@ pub fn build(b: *std.Build) void {
         b.installDirectory(.{ .source_dir = b.path(b.fmt("themes/profiles/seafoam.{s}", .{application})), .install_dir = .prefix, .install_subdir = b.fmt("share/pearl/matugen/profiles/seafoam.{s}", .{application}) });
     }
     for ([_]bool{ false, true }) |instrumented| {
-        const tm = b.createModule(.{ .root_source_file = b.path("src/themes_main.zig"), .target = target, .optimize = optimize, .link_libc = true, .strip = release and !instrumented });
+        const tm = createModule(b, .{ .root_source_file = b.path("src/themes_main.zig"), .target = target, .optimize = optimize, .link_libc = true, .strip = release and !instrumented });
         for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| tm.addImport(name, bindings.module(name));
         tm.addAnonymousImport("settings_base_style", .{ .root_source_file = b.path("resources/style.css") });
         tm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
@@ -143,7 +143,7 @@ pub fn build(b: *std.Build) void {
             }
         }
     }
-    const assets_module = b.createModule(.{ .root_source_file = b.path("src/theme_assets_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const assets_module = createModule(b, .{ .root_source_file = b.path("src/theme_assets_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     const publishing_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_theme_publishing.py", "--tool" });
     publishing_test.addArtifactArg(themes_tool);
     if (community_theme_repository) publishing_test.addArg("--default-enabled");
@@ -151,7 +151,7 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "gio-2.0", "libpng" }) |name| assets_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     const assets_test = b.addTest(.{ .root_module = assets_module });
     b.step("test-theme-assets", "Validate PNG bounds and native memory resource lifetimes").dependOn(&b.addRunArtifact(assets_test).step);
-    const theme_native_module = b.createModule(.{ .root_source_file = b.path("src/theme_native_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const theme_native_module = createModule(b, .{ .root_source_file = b.path("src/theme_native_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| theme_native_module.addImport(name, bindings.module(name));
     for ([_][]const u8{ "gio-2.0", "libcurl", "libarchive", "libpng" }) |name| theme_native_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     const native_options = b.addOptions();
@@ -165,7 +165,7 @@ pub fn build(b: *std.Build) void {
     matugen_tests.dependOn(&theme_native_test.step);
     const material_tests = b.step("test-base-material-profiles", "Verify built-in Material palettes, target coverage and ownership");
     material_tests.dependOn(matugen_tests);
-    const material_module = b.createModule(.{ .root_source_file = b.path("src/material_test_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const material_module = createModule(b, .{ .root_source_file = b.path("src/material_test_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| material_module.addImport(name, bindings.module(name));
     for ([_][]const u8{ "gio-2.0", "libcurl", "libarchive", "libpng" }) |name| material_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     material_module.addOptions("build_options", native_options);
@@ -225,7 +225,7 @@ pub fn build(b: *std.Build) void {
     scanner.generate("wl_compositor", 6);
     scanner.generate("wl_output", 4);
     scanner.generate("ext_background_effect_manager_v1", 1);
-    const native = b.createModule(.{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
+    const native = createModule(b, .{ .root_source_file = scanner.result, .target = target, .optimize = optimize });
     capture_main.addImport("wayland", native);
     capture_main.linkSystemLibrary("wayland-client", .{});
     portal_main.addImport("wayland", native);
@@ -248,7 +248,7 @@ pub fn build(b: *std.Build) void {
     resource_command.addArg("--dependency-file");
     _ = resource_command.addDepFileOutputArg("pearl.gresource.d");
 
-    const greeter_unit = b.addTest(.{ .root_module = b.createModule(.{ .root_source_file = b.path("src/greeter_tests.zig"), .target = target, .optimize = optimize }) });
+    const greeter_unit = b.addTest(.{ .root_module = createModule(b, .{ .root_source_file = b.path("src/greeter_tests.zig"), .target = target, .optimize = optimize }) });
     const greeter_unit_step = b.step("test-greeter-unit", "Test greetd framing, authority state, desktop parsing and monitor identity");
     greeter_unit_step.dependOn(&b.addRunArtifact(greeter_unit).step);
     const output_unit_module = greeterModule(b, bindings, target, optimize, "src/greeter_output_tests.zig", true);
@@ -314,11 +314,11 @@ pub fn build(b: *std.Build) void {
     b.getInstallStep().dependOn(&shell_install.step);
     b.step("build-shell", "Stage the production shell without launching it or building bundled applications").dependOn(&shell_install.step);
 
-    const agent_tests = b.createModule(.{ .root_source_file = b.path("src/agent_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const agent_tests = createModule(b, .{ .root_source_file = b.path("src/agent_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "giounix2", "glib2", "gobject2" }) |name| agent_tests.addImport(name, bindings.module(name));
     for ([_][]const u8{ "gio-2.0", "libcurl", "libxml-2.0", "libsecret-1" }) |name| agent_tests.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     b.step("test-agent", "Test assistant policy, tools, providers and native extraction").dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = agent_tests })).step);
-    const benchmark_module = b.createModule(.{ .root_source_file = b.path("src/benchmark_check.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const benchmark_module = createModule(b, .{ .root_source_file = b.path("src/benchmark_check.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "giounix2", "glib2", "gobject2" }) |name| benchmark_module.addImport(name, bindings.module(name));
     for ([_][]const u8{ "gio-2.0", "libcurl", "libxml-2.0", "libsecret-1" }) |name| benchmark_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
     const benchmark_check = b.addExecutable(.{ .name = "pearl-benchmark-check", .root_module = benchmark_module });
@@ -329,7 +329,7 @@ pub fn build(b: *std.Build) void {
     b.step("test-agent-benchmark", "Verify local benchmark lifecycle, failures and persistence").dependOn(&benchmark_tests.step);
     var agent_build: *std.Build.Step = undefined;
     for ([_]bool{ false, true }) |instrumented| {
-        const agent_module = b.createModule(.{ .root_source_file = b.path("src/agent_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+        const agent_module = createModule(b, .{ .root_source_file = b.path("src/agent_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
         for ([_][]const u8{ "gtk4", "gdk4", "gio2", "giounix2", "glib2", "gobject2" }) |name| agent_module.addImport(name, bindings.module(name));
         for ([_][]const u8{ "gtk4", "libcurl", "libxml-2.0", "libsecret-1" }) |name| agent_module.linkSystemLibrary(name, .{ .use_pkg_config = .force });
         const agent_options = b.addOptions();
@@ -355,7 +355,7 @@ pub fn build(b: *std.Build) void {
     for ([_]bool{ false, true }) |instrumented| {
         // Ordinary application: deliberately excludes layer-shell, PulseAudio,
         // polkit/PAM and shell service initialization dependencies.
-        const sm = b.createModule(.{ .root_source_file = b.path("src/settings_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+        const sm = createModule(b, .{ .root_source_file = b.path("src/settings_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
         for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "glibunix2", "gobject2", "gdkwayland4", "cairo1", "graphene1", "gdkpixbuf2", "giounix2" }) |name| sm.addImport(name, bindings.module(name));
         sm.addImport("wayland", native);
         sm.addAnonymousImport("settings_base_style", .{ .root_source_file = b.path("resources/style.css") });
@@ -388,7 +388,7 @@ pub fn build(b: *std.Build) void {
     for ([_]bool{ false, true }) |instrumented| {
         const lock_module = gtkModule(b, bindings, target, optimize, "src/lock_main.zig", pulse_module);
         configureApp(b, lock_module, resources, instrumented, false, community_theme_repository, false, portal_variant == .git);
-      
+
         lock_module.addAnonymousImport("lock_style", .{ .root_source_file = b.path("resources/style.css") });
         lock_module.addImport("pam", pam_module);
         lock_module.linkSystemLibrary("pam", .{});
@@ -406,7 +406,7 @@ pub fn build(b: *std.Build) void {
 
     const spike_module = gtkModule(b, bindings, target, optimize, "spikes/t00/main.zig", pulse_module);
     // The spike root lives outside src/, so it reaches the handler by module name.
-    spike_module.addImport("logging", b.createModule(.{ .root_source_file = b.path("src/core/logging.zig"), .target = target, .optimize = optimize }));
+    spike_module.addImport("logging", createModule(b, .{ .root_source_file = b.path("src/core/logging.zig"), .target = target, .optimize = optimize }));
     const spike = b.addExecutable(.{ .name = "pearl-t00", .root_module = spike_module });
     spike.step.dependOn(&system_versions.step);
     b.installArtifact(spike);
@@ -414,20 +414,20 @@ pub fn build(b: *std.Build) void {
     bindings_test.step.dependOn(&system_versions.step);
     b.step("test-bindings", "Test generated binding types and API coverage").dependOn(&b.addRunArtifact(bindings_test).step);
 
-    const pure_module = b.createModule(.{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize });
+    const pure_module = createModule(b, .{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize });
     pure_module.addAnonymousImport("aqueous_presentation_fixture", .{ .root_source_file = b.path("tests/fixtures/aqueous-master/snapshot.json") });
-    pure_module.addImport("aqueous_fixtures", b.createModule(.{ .root_source_file = b.path("tests/fixtures/aqueous/fixtures.zig"), .target = target, .optimize = optimize }));
+    pure_module.addImport("aqueous_fixtures", createModule(b, .{ .root_source_file = b.path("tests/fixtures/aqueous/fixtures.zig"), .target = target, .optimize = optimize }));
     const pure = b.addTest(.{ .root_module = pure_module });
-    const filter_module = b.createModule(.{ .root_source_file = b.path("src/notification_filter_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const filter_module = createModule(b, .{ .root_source_file = b.path("src/notification_filter_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     filter_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .force });
     const filter_tests = b.addRunArtifact(b.addTest(.{ .root_module = filter_module }));
     b.step("test-notification-filters", "Verify notification Unicode matching and policy lifetime").dependOn(&filter_tests.step);
 
-    const night_clock_module = b.createModule(.{ .root_source_file = b.path("src/night_light_clock_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const night_clock_module = createModule(b, .{ .root_source_file = b.path("src/night_light_clock_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     night_clock_module.addImport("glib2", bindings.module("glib2"));
     night_clock_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .force });
     const night_clock = b.addRunArtifact(b.addTest(.{ .root_module = night_clock_module }));
-    const bar_clock_module = b.createModule(.{ .root_source_file = b.path("src/bar_clock_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const bar_clock_module = createModule(b, .{ .root_source_file = b.path("src/bar_clock_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     bar_clock_module.addImport("glib2", bindings.module("glib2"));
     bar_clock_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .force });
     const bar_clock = b.addRunArtifact(b.addTest(.{ .root_module = bar_clock_module }));
@@ -437,6 +437,11 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run model and Unicode policy tests without GTK or a compositor");
     test_step.dependOn(&b.addRunArtifact(pure).step);
     test_step.dependOn(&filter_tests.step);
+    const i18n_tests = b.addSystemCommand(&.{ b.graph.zig_exe, "build", "--build-file", "translations/build.zig", "test", "check-templates" });
+    i18n_tests.setCwd(b.path("."));
+    i18n_tests.has_side_effects = true;
+    b.step("test-i18n", "Check translation infrastructure and generated catalog inventory").dependOn(&i18n_tests.step);
+    test_step.dependOn(&i18n_tests.step);
 
     b.step("test-plugin-unit", "Verify plugin documents, permissions, framing and route isolation").dependOn(&b.addRunArtifact(pure).step);
     var plugin_test_helper: ?*std.Build.Step.InstallArtifact = null;
@@ -444,7 +449,7 @@ pub fn build(b: *std.Build) void {
         const prefix = b.option([]const u8, "wasmtime-prefix", "Verified Wasmtime 48.0.2 C API prefix") orelse @panic("-Dwasm-plugins=true requires -Dwasmtime-prefix");
         const translated = b.addTranslateC(.{ .root_source_file = .{ .cwd_relative = b.pathJoin(&.{ prefix, "include/wasmtime.h" }) }, .target = target, .optimize = optimize });
         translated.addIncludePath(.{ .cwd_relative = b.pathJoin(&.{ prefix, "include" }) });
-        const host = b.createModule(.{ .root_source_file = b.path("src/plugin_host_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+        const host = createModule(b, .{ .root_source_file = b.path("src/plugin_host_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
         host.addImport("wasmtime", translated.createModule());
         host.addObjectFile(.{ .cwd_relative = b.pathJoin(&.{ prefix, "lib/libwasmtime.a" }) });
         host.linkSystemLibrary("m", .{});
@@ -465,7 +470,7 @@ pub fn build(b: *std.Build) void {
         b.step("test-plugin-host", "Exercise three guest languages, sprites and helper failures").dependOn(&check.step);
     }
 
-    const ctl_module = b.createModule(.{ .root_source_file = b.path("src/pearlctl.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const ctl_module = createModule(b, .{ .root_source_file = b.path("src/pearlctl.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| ctl_module.addImport(name, bindings.module(name));
     ctl_module.strip = release;
     const ctl = b.addExecutable(.{ .name = "pearlctl", .root_module = ctl_module });
@@ -473,7 +478,7 @@ pub fn build(b: *std.Build) void {
     b.step("build-ctl", "Stage the Pearl command-line client").dependOn(&b.addInstallArtifact(ctl, .{}).step);
 
     // Root helper for scheduling profiles; packaging installs it in lib/pearl.
-    const scheduling_helper_module = b.createModule(.{ .root_source_file = b.path("src/scheduling_helper_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const scheduling_helper_module = createModule(b, .{ .root_source_file = b.path("src/scheduling_helper_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| scheduling_helper_module.addImport(name, bindings.module(name));
     scheduling_helper_module.strip = release;
     b.installArtifact(b.addExecutable(.{ .name = "pearl-scheduling-helper", .root_module = scheduling_helper_module }));
@@ -615,10 +620,10 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| performance_test.addArgs(args);
     b.step("test-release-performance", "Measure production idle cost and 1,000 popup cycles in private Aqueous").dependOn(&performance_test.step);
 
-    const adapter_module = b.createModule(.{ .root_source_file = b.path("src/adapter_probe.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const adapter_module = createModule(b, .{ .root_source_file = b.path("src/adapter_probe.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "giounix2", "glib2", "glibunix2", "gobject2", "gdkpixbuf2" }) |name| adapter_module.addImport(name, bindings.module(name));
     const adapter_probe = b.addExecutable(.{ .name = "pearl-adapter-probe", .root_module = adapter_module });
-    const qt_test_module = b.createModule(.{ .root_source_file = b.path("src/qt_theme_test_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const qt_test_module = createModule(b, .{ .root_source_file = b.path("src/qt_theme_test_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "giounix2", "glib2", "gobject2" }) |name| qt_test_module.addImport(name, bindings.module(name));
     const qt_driver = b.addExecutable(.{ .name = "pearl-qt-test", .root_module = qt_test_module });
     const qt_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_qt_theme.py", "--driver" });
@@ -767,7 +772,7 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| settings_integration.addArgs(args);
     b.step("test-settings-integration", "Verify staged Settings desktop, CLI and flyout launch integration").dependOn(&settings_integration.step);
 
-    const pam_fixture_module = b.createModule(.{ .root_source_file = b.path("tests/fixtures/pam.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const pam_fixture_module = createModule(b, .{ .root_source_file = b.path("tests/fixtures/pam.zig"), .target = target, .optimize = optimize, .link_libc = true });
     pam_fixture_module.addImport("pam", pam_module);
     pam_fixture_module.linkSystemLibrary("pam", .{});
     const pam_fixture = b.addLibrary(.{ .name = "pearl-pam-fixture", .linkage = .dynamic, .root_module = pam_fixture_module });
@@ -806,7 +811,7 @@ pub fn build(b: *std.Build) void {
     security.addArtifactArg(pam_fixture);
     if (b.args) |args| security.addArgs(args);
     b.step("test-security", "Verify native lock, PAM, polkit and idle/sleep sequencing on private services").dependOn(&security.step);
-    const clipboard_fixture_module = b.createModule(.{ .root_source_file = b.path("tests/fixtures/clipboard.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const clipboard_fixture_module = createModule(b, .{ .root_source_file = b.path("tests/fixtures/clipboard.zig"), .target = target, .optimize = optimize, .link_libc = true });
     clipboard_fixture_module.addImport("wayland", native);
     clipboard_fixture_module.linkSystemLibrary("wayland-client", .{});
     const clipboard_fixture = b.addExecutable(.{ .name = "pearl-clipboard-fixture", .root_module = clipboard_fixture_module });
@@ -1104,7 +1109,7 @@ fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.L
     options.addOption(bool, "community_theme_repository", community_theme_repository);
     module.addOptions("build_options", options);
     if (!file_chooser) return;
-    const previews = b.createModule(.{ .root_source_file = b.path("src/files/preview/root.zig"), .target = module.resolved_target, .optimize = module.optimize, .link_libc = true });
+    const previews = createModule(b, .{ .root_source_file = b.path("src/files/preview/root.zig"), .target = module.resolved_target, .optimize = module.optimize, .link_libc = true });
     for ([_][]const u8{ "gdk4", "gio2", "glib2", "gobject2", "gdkpixbuf2" }) |name| previews.addImport(name, module.import_table.get(name).?);
     previews.addImport("build_options", module.import_table.get("build_options").?);
     previews.addImport("diagnostics", module);
@@ -1112,7 +1117,7 @@ fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.L
     const portal_identity = b.addOptions();
     portal_identity.addOption(bool, "git_variant", git_variant);
     module.addOptions("portal_identity", portal_identity);
-    const chooser = b.createModule(.{ .root_source_file = b.path("src/files/chooser.zig"), .target = module.resolved_target, .optimize = module.optimize, .link_libc = true });
+    const chooser = createModule(b, .{ .root_source_file = b.path("src/files/chooser.zig"), .target = module.resolved_target, .optimize = module.optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| chooser.addImport(name, module.import_table.get(name).?);
     chooser.addImport("previews", previews);
     const chooser_options = b.addOptions();
@@ -1122,7 +1127,7 @@ fn configureApp(b: *std.Build, module: *std.Build.Module, resources: std.Build.L
 }
 
 fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, source: []const u8, pulse: *std.Build.Module) *std.Build.Module {
-    const module = b.createModule(.{ .root_source_file = b.path(source), .target = target, .optimize = optimize, .link_libc = true });
+    const module = createModule(b, .{ .root_source_file = b.path(source), .target = target, .optimize = optimize, .link_libc = true });
     module.addImport("pulse", pulse);
     module.addImport("giounix2", bindings.module("giounix2"));
     module.addImport("graphene1", bindings.module("graphene1"));
@@ -1132,13 +1137,13 @@ fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.R
     module.linkSystemLibrary("gtk4-layer-shell-0", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
     module.linkSystemLibrary("wayland-client", .{});
-    const polkit = b.createModule(.{ .root_source_file = b.path("bindings/generated/polkit1/polkit1.zig"), .target = target, .optimize = optimize });
+    const polkit = createModule(b, .{ .root_source_file = b.path("bindings/generated/polkit1/polkit1.zig"), .target = target, .optimize = optimize });
     var polkit_imports = bindings.module("gtk4").import_table.iterator();
     while (polkit_imports.next()) |entry| polkit.addImport(entry.key_ptr.*, entry.value_ptr.*);
     module.addImport("polkit1", polkit);
     module.linkSystemLibrary("polkit-agent-1", .{ .use_pkg_config = .force });
     for ([_][]const u8{ "gtk4layershell1", "gtk4sessionlock1", "polkitagent1" }) |name| {
-        const generated = b.createModule(.{
+        const generated = createModule(b, .{
             .root_source_file = b.path(b.fmt("bindings/generated/{s}/{s}.zig", .{ name, name })),
             .target = target,
             .optimize = optimize,
@@ -1155,7 +1160,7 @@ fn gtkModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.R
 }
 
 fn greeterModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, source: []const u8, instrumented: bool) *std.Build.Module {
-    const m = b.createModule(.{ .root_source_file = b.path(source), .target = target, .optimize = optimize, .link_libc = true });
+    const m = createModule(b, .{ .root_source_file = b.path(source), .target = target, .optimize = optimize, .link_libc = true });
     m.addAnonymousImport("greeter_style", .{ .root_source_file = b.path("resources/style.css") });
     const options = b.addOptions();
     options.addOption(bool, "test_hooks", instrumented);
@@ -1163,10 +1168,16 @@ fn greeterModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Bui
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "giounix2", "glib2", "glibunix2", "gobject2", "gdkpixbuf2" }) |name| m.addImport(name, bindings.module(name));
     m.linkSystemLibrary("gtk4-layer-shell-0", .{ .use_pkg_config = .force });
     m.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
-    const layer = b.createModule(.{ .root_source_file = b.path("bindings/generated/gtk4layershell1/gtk4layershell1.zig"), .target = target, .optimize = optimize });
+    const layer = createModule(b, .{ .root_source_file = b.path("bindings/generated/gtk4layershell1/gtk4layershell1.zig"), .target = target, .optimize = optimize });
     layer.addImport("gtk4", bindings.module("gtk4"));
     var imports = bindings.module("gtk4").import_table.iterator();
     while (imports.next()) |entry| layer.addImport(entry.key_ptr.*, entry.value_ptr.*);
     m.addImport("gtk4layershell1", layer);
+    return m;
+}
+
+fn createModule(b: *std.Build, opts: std.Build.Module.CreateOptions) *std.Build.Module {
+    const m = b.createModule(opts);
+    m.addImport("i18n", @import("src/i18n/build.zig").module(b, opts.target orelse b.graph.host, opts.optimize orelse .Debug, b.path("src/i18n/runtime.zig")));
     return m;
 }
