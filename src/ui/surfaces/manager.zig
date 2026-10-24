@@ -12,6 +12,7 @@ const protocol = @import("../../cli/protocol.zig");
 const diagnostics = @import("../../diagnostics/safe_text.zig");
 const policy = @import("policy.zig");
 const Bar = @import("../../desktop/bar.zig");
+const BarOpacity = @import("../../desktop/bar_opacity.zig");
 const BarVisibility = @import("../../desktop/bar_visibility.zig");
 const BarAutohide = @import("../../desktop/bar_autohide.zig").Controller;
 const Osd = @import("osd.zig");
@@ -1217,7 +1218,12 @@ pub const Manager = struct {
                 };
                 controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen);
             }
-            if (o.dock) |dock| try dock.update(self.preferences.prefs().dockForOutput(o.connector), o.reservations.bar_edge, bounds, dock_locked);
+            if (o.dock) |dock| {
+                const dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
+                const opacity: BarOpacity.Config = if (dock_prefs.opacity_sync) self.preferences.prefs().forOutput(o.connector).background_opacity else .{ .mode = .custom, .percent = dock_prefs.background_opacity.percent };
+                try dock.setBackgroundOpacity(opacity, self.preferences.barBackgroundColor(dock.scroll.as(gtk.Widget)));
+                try dock.update(dock_prefs, o.reservations.bar_edge, bounds, dock_locked);
+            }
             try self.syncPluginOverlays(o, dock_locked);
             if (self.osd) |surface| if (surface.output == o) positionOsd(surface);
             if (changed and self.popup != null and self.popup.?.output == o) self.positionPopup();

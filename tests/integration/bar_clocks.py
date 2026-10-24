@@ -89,7 +89,7 @@ def verify_editor(s, ipc, peer, args, output, baseline, passed, app, shell):
     ready(s, ipc)
     center = json.loads(peer.document())['bar']['groups']['center'].split(',')
     assert tokyo_ref in center and london_ref in center and center.index(tokyo_ref) == center.index(london_ref) - 1, center
-    drag_row(s, ipc, tokyo_ref, 'bar.widget.control')
+    drag_row(s, ipc, tokyo_ref, 'bar.remove.control')
     ready(s, ipc)
     groups = json.loads(peer.document())['bar']['groups']
     assert 'clock:' + tokyo in groups['right'].split(',') and 'clock:' + tokyo not in groups['center'].split(','), groups

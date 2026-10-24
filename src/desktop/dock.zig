@@ -40,6 +40,9 @@ pub const Dock = struct {
     menus: std.ArrayList(*gtk.Popover) = .empty,
     hash: ?u64 = null,
     config: p.Config = .{},
+    background_css: ?*gtk.CssProvider = null,
+    background_opacity: @import("bar_opacity.zig").Config = .{},
+    background_color: ?gdk.RGBA = null,
     bounds: placement.Rect = .{ .x = 0, .y = 0, .width = 1, .height = 1 },
     rect: placement.Rect = .{ .x = 0, .y = 0, .width = 1, .height = 1 },
     reason: p.Reason = .empty,
@@ -127,6 +130,10 @@ pub const Dock = struct {
         self.stopFade();
         self.effects.deinit();
         self.clear();
+        if (self.background_css) |provider| {
+            self.scroll.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
+            provider.unref();
+        }
         self.window.destroy();
         self.window.unref();
         self.sensor.destroy();
@@ -152,6 +159,23 @@ pub const Dock = struct {
     }
     fn match(self: *Dock, win: *const e.Window) ?[]const u8 {
         return self.tasks.match(win.*, self.preferences.prefs().application_launchers, self.preferences.prefs().pinned_apps);
+    }
+    pub fn setBackgroundOpacity(self: *Dock, config: @import("bar_opacity.zig").Config, color: gdk.RGBA) !void {
+        const alpha = config.alpha();
+        var resolved = color;
+        resolved.f_alpha = alpha orelse 1;
+        if (std.meta.eql(self.background_opacity, config) and (alpha == null or (self.background_color != null and std.meta.eql(self.background_color.?, resolved)))) return;
+        if (alpha != null) {
+            const css = try std.fmt.allocPrintSentinel(a, ".pearl-surface-panel {{ background: rgba({d}, {d}, {d}, {d:.2}); }}", .{ @as(u8, @intFromFloat(@round(resolved.f_red * 255))), @as(u8, @intFromFloat(@round(resolved.f_green * 255))), @as(u8, @intFromFloat(@round(resolved.f_blue * 255))), resolved.f_alpha }, 0);
+            defer a.free(css);
+            if (self.background_css == null) {
+                self.background_css = gtk.CssProvider.new();
+                self.scroll.as(gtk.Widget).getStyleContext().addProvider(self.background_css.?.as(gtk.StyleProvider), 602);
+            }
+            self.background_css.?.loadFromString(css);
+        } else if (self.background_css) |provider| provider.loadFromString("");
+        self.background_color = if (alpha != null) resolved else null;
+        self.background_opacity = config;
     }
     pub fn update(self: *Dock, config: p.Config, bar_edge: placement.Edge, bounds: placement.Rect, locked: bool) !void {
         var next = config;

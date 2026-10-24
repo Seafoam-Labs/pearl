@@ -22,6 +22,8 @@ const bar_fields = [_]Spec{
     .{ .path = "dock.mode", .label = "Dock visibility", .kind = .choice, .choices = &.{ "always", "autohide", "intelligent" } },
     .{ .path = "dock.icon_size", .label = "Dock icon size", .kind = .number, .min = 24, .max = 64 },
     .{ .path = "dock.margin", .label = "Dock margin", .kind = .number, .min = 4, .max = 32 },
+    .{ .path = "dock.opacity_sync", .label = "Match bar opacity", .kind = .toggle },
+    .{ .path = "dock.background_opacity.percent", .label = "Dock opacity (%)", .kind = .percent, .min = 0, .max = 100 },
     .{ .path = "popup.dismiss_outside", .label = "Dismiss flyouts when clicking outside", .kind = .toggle },
     .{ .path = "popup.placement", .label = "Flyout placement", .kind = .choice, .choices = &.{ "anchored", "centered" } },
     .{ .path = "popup.max_width", .label = "Maximum flyout width", .kind = .number, .min = 320, .max = 1280 },
@@ -33,7 +35,7 @@ const idle_fields = [_]Spec{
     .{ .path = "idle.battery.lock_seconds", .label = "On battery · Lock after seconds (0 disables)", .kind = .number },
     .{ .path = "idle.battery.suspend_seconds", .label = "On battery · Suspend after seconds (0 disables)", .kind = .number },
 };
-const Field = struct { view: *View, spec: Spec, widget: *gtk.Widget, signal: c_ulong, slider: ?*gtk.Scale = null };
+const Field = struct { view: *View, spec: Spec, widget: *gtk.Widget, signal: c_ulong, slider: ?*gtk.Scale = null, lock: ?*gtk.Widget = null };
 pub const View = struct {
     editor: *Editor,
     host: *gtk.Box,
@@ -108,11 +110,12 @@ pub const View = struct {
             }
             field.* = .{ .view = self, .spec = spec, .widget = widget, .signal = 0 };
             if (spec.kind == .percent) {
+                const dock_slider = std.mem.eql(u8, spec.path, "dock.background_opacity.percent");
                 const slider = gtk.Scale.new(.horizontal, object.ext.cast(gtk.SpinButton, widget).?.getAdjustment());
                 slider.setDrawValue(0);
                 slider.setDigits(0);
                 slider.as(gtk.Widget).setHexpand(1);
-                w.name(slider.as(gtk.Widget), @import("i18n").dtr("pearl", "Background opacity slider (%)"));
+                w.name(slider.as(gtk.Widget), if (dock_slider) @import("i18n").dtr("pearl", "Dock opacity slider (%)") else @import("i18n").dtr("pearl", "Background opacity slider (%)"));
                 const slider_row = w.row(8);
                 slider_row.as(gtk.Widget).addCssClass("settings-form-row");
                 const transparent = w.label(@import("i18n").dtr("pearl", "Transparent"), "pearl-secondary");
@@ -123,11 +126,20 @@ pub const View = struct {
                 opaque_label.as(gtk.Widget).setHexpand(0);
                 slider_row.append(opaque_label.as(gtk.Widget));
                 card.append(slider_row.as(gtk.Widget));
-                const hint = w.label(@import("i18n").dtr("pearl", "Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable."), "pearl-secondary").as(gtk.Widget);
-                hint.setMarginStart(20);
-                hint.setMarginEnd(20);
-                hint.setMarginBottom(16);
-                card.append(hint);
+                if (dock_slider) {
+                    const lock = w.label(@import("i18n").dtr("pearl", "Locked to bar"), "pearl-secondary");
+                    lock.as(gtk.Widget).setHalign(.end);
+                    lock.as(gtk.Widget).setValign(.center);
+                    row.insert(lock.as(gtk.Widget), -1);
+                    field.lock = lock.as(gtk.Widget);
+                }
+                if (!dock_slider) {
+                    const hint = w.label(@import("i18n").dtr("pearl", "Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable."), "pearl-secondary").as(gtk.Widget);
+                    hint.setMarginStart(20);
+                    hint.setMarginEnd(20);
+                    hint.setMarginBottom(16);
+                    card.append(hint);
+                }
                 field.slider = slider;
             }
             field.signal = switch (spec.kind) {
@@ -168,9 +180,19 @@ pub const View = struct {
         for (self.fields) |field| {
             const value = lookup(document, field.spec.path) orelse continue;
             if (field.slider) |slider| {
-                const mode = lookup(document, "bar.background_opacity.mode");
-                const custom = mode != null and mode.? == .string and std.mem.eql(u8, mode.?.string, "custom");
-                const sensitive = @intFromBool(custom and self.editor.editable());
+                const usable = if (std.mem.eql(u8, field.spec.path, "dock.background_opacity.percent")) blk: {
+                    // The dock owns its opacity only while bar sync is off.
+                    const sync = lookup(document, "dock.opacity_sync");
+                    const own = sync != null and sync.? == .bool and !sync.?.bool;
+                    field.widget.setVisible(@intFromBool(own));
+                    if (field.lock) |lock| lock.setVisible(@intFromBool(!own));
+                    if (slider.as(gtk.Widget).getParent()) |row| row.setVisible(@intFromBool(own));
+                    break :blk own;
+                } else blk: {
+                    const mode = lookup(document, "bar.background_opacity.mode");
+                    break :blk mode != null and mode.? == .string and std.mem.eql(u8, mode.?.string, "custom");
+                };
+                const sensitive = @intFromBool(usable and self.editor.editable());
                 field.widget.setSensitive(sensitive);
                 slider.as(gtk.Widget).setSensitive(sensitive);
             }

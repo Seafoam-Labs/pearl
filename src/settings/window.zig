@@ -1275,7 +1275,11 @@ pub const Window = struct {
             };
         };
         for (self.preference_pages) |item| if (item) |view| for (view.fields) |field| {
-            if (field.slider) |slider| if (slider.as(gtk.Widget).getMapped() != 0) try controls.append(alloc, .{ .field = "bar.background_opacity.slider", .focused = slider.as(gtk.Widget).hasFocus() != 0, .bounds = self.bounds(slider.as(gtk.Widget)) });
+            if (field.slider) |slider| if (slider.as(gtk.Widget).getMapped() != 0) {
+                const suffix = ".percent";
+                const base = if (std.mem.endsWith(u8, field.spec.path, suffix)) field.spec.path[0 .. field.spec.path.len - suffix.len] else field.spec.path;
+                try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "{s}.slider", .{base}), .focused = slider.as(gtk.Widget).hasFocus() != 0, .bounds = self.bounds(slider.as(gtk.Widget)) });
+            };
             if (field.widget.getMapped() != 0) try controls.append(alloc, .{ .field = field.spec.path, .focused = if (focus) |f| f == field.widget or f.isAncestor(field.widget) != 0 else false, .bounds = self.bounds(field.widget) });
         };
         if (self.notification_filters) |view| {

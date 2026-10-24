@@ -3,9 +3,19 @@ const std = @import("std");
 const e = @import("../aqueous/entities.zig");
 const p = @import("../ui/surfaces/policy.zig");
 pub const Mode = enum { always, intelligent, autohide };
-pub const Config = struct { enabled: bool = true, edge: p.Edge = .bottom, mode: Mode = .intelligent, icon_size: u8 = 40, margin: u8 = 8 };
+pub const Config = struct {
+    enabled: bool = true,
+    edge: p.Edge = .bottom,
+    mode: Mode = .intelligent,
+    icon_size: u8 = 40,
+    margin: u8 = 8,
+    /// Follow the bar's background opacity; when off, `background_opacity` applies.
+    opacity_sync: bool = true,
+    background_opacity: @import("bar_opacity.zig").Config = .{},
+};
 pub fn validate(c: Config) !void {
     if (c.icon_size < 24 or c.icon_size > 64 or c.margin < 4 or c.margin > 32) return error.InvalidDock;
+    try c.background_opacity.validate();
 }
 pub fn desktopId(id: []const u8) bool {
     if (id.len < 9 or id.len > 1024 or !std.mem.endsWith(u8, id, ".desktop") or !std.unicode.utf8ValidateSlice(id)) return false;
@@ -75,6 +85,8 @@ test "dock hiding gates override interaction and keep non-obscured output visibl
     try t.expect(desktopId("org.example.App.desktop"));
     try t.expect(!desktopId("../App.desktop"));
     try t.expectError(error.InvalidDock, validate(.{ .icon_size = 90 }));
+    try t.expect((Config{}).opacity_sync);
+    try t.expectError(error.InvalidBarOpacity, validate(.{ .background_opacity = .{ .percent = 101 } }));
 }
 
 test "desktop IDs accept installed names without allowing paths or control characters" {
