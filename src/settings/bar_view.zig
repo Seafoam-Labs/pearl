@@ -319,7 +319,7 @@ pub const View = struct {
         preview.append(icon_status.as(gtk.Widget));
         try self.controls.append(a, .{ .id = "bar.icon.status", .widget = icon_status.as(gtk.Widget) });
         self.content.append(w.label(@import("i18n").dtr("pearl", "Widgets"), "settings-row-title").as(gtk.Widget));
-        self.content.append(w.label(@import("i18n").dtr("pearl", "Add a widget to a group. Drag rows between groups to move or reorder them, or use the actions menu to configure or remove."), "pearl-secondary").as(gtk.Widget));
+        self.content.append(w.label(@import("i18n").dtr("pearl", "Add a widget to a group. Drag rows between groups to move or reorder them, or use the trash button to remove one."), "pearl-secondary").as(gtk.Widget));
         const flow = w.flow(3);
         self.content.append(flow.as(gtk.Widget));
         for (model.groups) |group| {
@@ -387,9 +387,16 @@ pub const View = struct {
                     labels.append(detail.as(gtk.Widget));
                 }
                 row.append(labels.as(gtk.Widget));
-                const b = try self.button(row, @import("i18n").dtr("pearl", "⋯"), try std.fmt.allocPrint(alloc, "bar.widget.{s}", .{id}), id, .actions, false);
-                w.name(b.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Actions for {s}, {s}, position {d} of {d}", .{ title, model.groupLabel(group, document.bar.edge), i + 1, layout.items[g].items.len }, 0));
-                b.as(gtk.Widget).setTooltipText(try std.fmt.allocPrintSentinel(alloc, "Actions for {s}", .{title}, 0));
+                if (clock_policy.reference(id) != null or std.mem.eql(u8, id, "launcher") or std.mem.eql(u8, id, "workspaces") or std.mem.eql(u8, id, "resources")) {
+                    const b = try self.button(row, @import("i18n").dtr("pearl", "⋯"), try std.fmt.allocPrint(alloc, "bar.widget.{s}", .{id}), id, .actions, false);
+                    w.name(b.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Actions for {s}, {s}, position {d} of {d}", .{ title, model.groupLabel(group, document.bar.edge), i + 1, layout.items[g].items.len }, 0));
+                    b.as(gtk.Widget).setTooltipText(try std.fmt.allocPrintSentinel(alloc, "Actions for {s}", .{title}, 0));
+                }
+                const trash = try self.button(row, "", try std.fmt.allocPrint(alloc, "bar.remove.{s}", .{id}), id, .{ .change = .remove }, false);
+                trash.setChild(w.icon("user-trash-symbolic").as(gtk.Widget));
+                trash.as(gtk.Widget).addCssClass("pearl-icon");
+                w.name(trash.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Remove {s} from bar", .{title}, 0));
+                trash.as(gtk.Widget).setTooltipText(try std.fmt.allocPrintSentinel(alloc, "Remove {s} from bar", .{title}, 0));
             }
         }
         for (document.bar.clocks) |definition| {
@@ -428,6 +435,7 @@ pub const View = struct {
         popup.setChild(menu.as(gtk.Widget));
         _ = gtk.Popover.signals.closed.connect(popup, *View, closed, self, .{});
         self.popup_error = w.label("", "pearl-secondary");
+        self.popup_error.?.as(gtk.Widget).setVisible(0);
         if (group) |destination| {
             box.append(w.label(@import("i18n").dtr("pearl", "Add widget"), "settings-row-title").as(gtk.Widget));
             const names = [_:null]?[*:0]const u8{ model.groupLabel(.left, document.bar.edge), model.groupLabel(.center, document.bar.edge), model.groupLabel(.right, document.bar.edge) };
@@ -557,7 +565,6 @@ pub const View = struct {
                     try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.resource.series.{s}", .{@tagName(kind)}), .widget = choice_.as(gtk.Widget) });
                 }
             }
-            _ = try self.button(box, @import("i18n").dtr("pearl", "Remove from bar"), "bar.action.remove", id, .{ .change = .remove }, true);
         }
         box.append(self.popup_error.?.as(gtk.Widget));
         if (std.mem.eql(u8, id, "launcher-icon")) try self.menu_controls.append(a, .{ .id = "bar.icon.error", .widget = self.popup_error.?.as(gtk.Widget) });
@@ -589,13 +596,20 @@ pub const View = struct {
         }
         if (self.zone_list) |list| {
             list.as(gtk.Widget).setVisible(@intFromBool(query.len != 0));
-            if (self.popup_error) |label| label.setText(if (count == 0) @import("i18n").dtr("pearl", "No time zones match your search.") else "");
-        } else if (self.popup_error) |label| label.setText(if (count == 0) @import("i18n").dtr("pearl", "No widgets match your search.") else "");
+            self.popupMessage(if (count == 0) @import("i18n").dtr("pearl", "No time zones match your search.") else "");
+        } else self.popupMessage(if (count == 0) @import("i18n").dtr("pearl", "No widgets match your search.") else "");
     }
     fn closed(_: *gtk.Popover, self: *View) callconv(.c) void {
         if (self.popup == null) return;
         self.popup_closed = true;
         self.queue();
+    }
+    /// Keeps the popup's trailing message label collapsed while empty so the
+    /// menu does not reserve padding at the bottom.
+    fn popupMessage(self: *View, text: [:0]const u8) void {
+        const label = self.popup_error orelse return;
+        label.setText(text);
+        label.as(gtk.Widget).setVisible(@intFromBool(text.len != 0));
     }
     fn report(self: *View, err: anyerror) void {
         const message: [:0]const u8 = switch (err) {
@@ -610,7 +624,7 @@ pub const View = struct {
             error.Unavailable => "Editing is unavailable. Your draft is retained.",
             else => "The change could not be completed. Your draft is retained; review Advanced.",
         };
-        if (self.popup_error) |label| label.setText(message) else self.notice.setText(message);
+        if (self.popup_error != null) self.popupMessage(message) else self.notice.setText(message);
     }
     fn mutate(self: *View, id: []const u8, action_: model.Action) !void {
         if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
@@ -632,7 +646,7 @@ pub const View = struct {
             }
         }
         const next = try model.patch(alloc, self.editor.text(), id, action);
-        const focus = if (action == .remove) try std.fmt.allocPrint(alloc, "bar.add.{s}", .{@tagName((try model.Layout.parse(alloc, document.bar.groups)).find(id).?.group)}) else try std.fmt.allocPrint(alloc, "bar.widget.{s}", .{id});
+        const focus = if (action == .remove) try std.fmt.allocPrint(alloc, "bar.add.{s}", .{@tagName((try model.Layout.parse(alloc, document.bar.groups)).find(id).?.group)}) else try std.fmt.allocPrint(alloc, "bar.remove.{s}", .{id});
         const next_layout = try model.Layout.parse(alloc, (try prefs.parse(alloc, next)).bar.groups);
         const title = try name(alloc, id, self.catalog(alloc), document.bar);
         const announcement = if (next_layout.find(id)) |pos| try std.fmt.allocPrintSentinel(alloc, "{s}, {s}, position {d} of {d}. Unsaved changes.", .{ title, model.groupLabel(pos.group, document.bar.edge), pos.index + 1, next_layout.items[@intFromEnum(pos.group)].items.len }, 0) else try std.fmt.allocPrintSentinel(alloc, "{s} removed from bar. Unsaved changes.", .{title}, 0);
@@ -881,7 +895,7 @@ pub const View = struct {
         const utc = glib.DateTime.newNowUtc() orelse return;
         defer utc.unref();
         const text = clock_time.format(alloc, d, utc, zone, false) catch return;
-        if (self.popup_error) |message| message.setText("");
+        self.popupMessage("");
         label.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {s}\n{s}{s}{s}", .{ @import("i18n").dtr("pearl", "Example"), clock_policy.displayName(alloc, d) catch return, if (d.show_date) text.date else "", if (d.show_date) " · " else "", text.time }, 0) catch return);
     }
     fn clockEdited(_: *gtk.Editable, self: *View) callconv(.c) void {
@@ -1048,7 +1062,7 @@ pub const View = struct {
             self.report(err);
             return;
         };
-        if (self.popup_error) |label| label.setText(@import("i18n").dtr("pearl", "Checking PNG…"));
+        self.popupMessage(@import("i18n").dtr("pearl", "Checking PNG…"));
     }
     fn candidateLoaded(context: *anyopaque) void {
         const self: *View = @ptrCast(@alignCast(context));
@@ -1061,7 +1075,7 @@ pub const View = struct {
             self.focus_id = null;
             self.popup_closed = false;
             if (self.popup) |popup| popup.popup();
-            if (self.popup_error) |label| label.setText(@import("i18n").dtr("pearl", "Could not load PNG. Choose a regular local static PNG up to 2 MiB and 2048 × 2048 pixels."));
+            self.popupMessage(@import("i18n").dtr("pearl", "Could not load PNG. Choose a regular local static PNG up to 2 MiB and 2048 × 2048 pixels."));
             return;
         }
         self.mutateIcon(self.candidate.selection) catch |err| self.report(err);
@@ -1122,7 +1136,12 @@ pub const View = struct {
             .icon_retry => self.retryIcon() catch |err| self.report(err),
             .picker => |group| self.showMenu(button_.as(gtk.Widget), "", group) catch |err| self.report(err),
             .actions => self.showMenu(button_.as(gtk.Widget), binding.id, null) catch |err| self.report(err),
-            .change => |action| self.mutate(binding.id, action) catch |err| self.report(err),
+            // Row-level removal never has an opened menu, so anchor the
+            // stale-bar guard to the document as of the click.
+            .change => |action| {
+                if (action == .remove) self.syncBarHash();
+                self.mutate(binding.id, action) catch |err| self.report(err);
+            },
             .workspace_mode => |mode| self.mutateWorkspaceMode(mode) catch |err| self.report(err),
             .resource_mode => |mode| self.mutateResourceMode(mode) catch |err| self.report(err),
             // Checkboxes drive the graph picker through `toggled`, never a click.

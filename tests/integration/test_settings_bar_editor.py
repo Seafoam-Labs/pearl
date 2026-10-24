@@ -35,9 +35,8 @@ def choose(s, ipc, group, name, identifier):
 
 
 def action(s, ipc, identifier, operation):
-    click(s, ipc, 'bar.widget.' + identifier)
-    menu_click(s, ipc, 'bar.action.' + operation)
-    menu_closed(s, ipc)
+    assert operation == 'remove'
+    click(s, ipc, 'bar.remove.' + identifier)
 
 
 def main():
@@ -109,7 +108,7 @@ def main():
                 ready(s,ipc)
             fields={c['field'] for c in probe(s,ipc)['controls']}
             assert not {'bar.groups.left','bar.groups.center','bar.groups.right'} & fields
-            assert {'bar.add.left','bar.add.center','bar.add.right','bar.widget.launcher','bar.widget.plugin:missing/main'} <= fields
+            assert {'bar.add.left','bar.add.center','bar.add.right','bar.widget.launcher','bar.remove.plugin:missing/main'} <= fields
             assert path.read_bytes()==disk and not peer.state()['dirty']
             capture(s,'bar-editor-desktop',output['name'])
             passed('opening-is-read-only-and-unavailable-plugin-is-retained')
@@ -356,13 +355,12 @@ def main():
             wait_for(lambda:'bluetooth' in json.loads(peer.document())['bar']['groups']['right'])
             assert path.read_bytes()==disk
             passed('native-picker-search-add-and-duplicate-prevention')
-            click(s,ipc,'bar.widget.launcher')
-            controls = probe(s,ipc)['controls']
-            assert next(c for c in controls if c['field']=='bar.action.remove')['enabled']
+            fields = {c['field'] for c in probe(s,ipc)['controls']}
+            assert 'bar.remove.launcher' in fields
             # Reorder and cross-group moves are drag-and-drop only now.
-            assert not any(c['field'] in ('bar.action.earlier','bar.action.later') or c['field'].startswith('bar.action.move') for c in controls)
+            assert not any(f in ('bar.action.earlier','bar.action.later') or f.startswith('bar.action.move') for f in fields)
             capture(s,'bar-editor-launcher-actions',output['name'])
-            menu_click(s,ipc,'bar.action.remove');menu_closed(s,ipc)
+            action(s,ipc,'launcher','remove')
             wait_for(lambda:'launcher' not in json.loads(peer.document())['bar']['groups']['left'])
             assert 'bar.widget.launcher' not in {c['field'] for c in probe(s,ipc)['controls']}
             choose(s,ipc,'left','Launcher','launcher')
@@ -398,15 +396,15 @@ def main():
             app.stop();clean(app)
             app=s.child('settings-reopened',[args.settings,'--page','bar'],G_DEBUG='fatal-warnings')
             app.expect('event=settings-window-created');ready(s,ipc)
-            assert 'bar.widget.bluetooth' in {c['field'] for c in probe(s,ipc)['controls']}
-            assert 'bar.widget.running_apps' in {c['field'] for c in probe(s,ipc)['controls']}
+            assert 'bar.remove.bluetooth' in {c['field'] for c in probe(s,ipc)['controls']}
+            assert 'bar.remove.running_apps' in {c['field'] for c in probe(s,ipc)['controls']}
             passed('discard-apply-and-reopen-persist-selections')
-            click(s,ipc,'bar.widget.clock')
+            click(s,ipc,'bar.add.center')
             external=copy.deepcopy(committed);external['bar']['groups']['center']='plugin:missing/main,bluetooth'
             external['bar']['groups']['left'] += ',clock'
             keep(json.dumps(external))
             ready(s,ipc)
-            menu_click(s,ipc,'bar.action.remove')
+            menu_click(s,ipc,'bar.pick.overview')
             assert json.loads(peer.document())==external
             keys(s,'Escape');menu_closed(s,ipc)
             passed('stale-menu-cannot-overwrite-a-newer-layout')
