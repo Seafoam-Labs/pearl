@@ -59,11 +59,11 @@ msgstr ""
 msgid ", minimized"
 msgstr ""
 
-#: src/desktop/bar.zig:565
+#: src/desktop/bar.zig:573
 msgid "-"
 msgstr ""
 
-#: src/desktop/bar.zig:562
+#: src/desktop/bar.zig:570
 msgid "..."
 msgstr ""
 
@@ -125,6 +125,10 @@ msgstr ""
 
 #: src/settings/window.zig:835
 msgid "A profile applies immediately and stays selected after a restart."
+msgstr ""
+
+#: src/settings/scheduler_view.zig:425
+msgid "A profile takes at most 32 options."
 msgstr ""
 
 #: src/desktop/dock.zig:447
@@ -259,12 +263,20 @@ msgstr ""
 msgid "Add notification filter"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:67
+msgid "Add profile"
+msgstr ""
+
 #: src/settings/themes_view.zig:96
 msgid "Add repository"
 msgstr ""
 
 #: src/settings/window_rules_view.zig:136
 msgid "Add rule"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:354
+msgid "Add scheduler profile"
 msgstr ""
 
 #: src/settings/assistant_view.zig:184
@@ -289,6 +301,10 @@ msgstr ""
 
 #: src/config/aqueous_presentation.zig:71
 msgid "Add, edit, delete and record custom bindings"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:338
+msgid "Added and changed profiles are removed for every user, and the profiles that came with the system are used again. If the running profile changes, it is applied again. This asks for an administrator password."
 msgstr ""
 
 #: src/config/aqueous_presentation.zig:78
@@ -426,7 +442,7 @@ msgstr ""
 msgid "Another notification service is active."
 msgstr ""
 
-#: src/desktop/scheduling.zig:116 src/settings/scheduler_view.zig:110
+#: src/desktop/scheduling.zig:133 src/settings/scheduler_view.zig:263
 msgid "Another profile is being applied."
 msgstr ""
 
@@ -635,7 +651,7 @@ msgstr ""
 msgid "At home in your bar. Or out on your desktop."
 msgstr ""
 
-#: src/desktop/bar.zig:541 src/desktop/services.zig:115
+#: src/desktop/bar.zig:549 src/desktop/services.zig:115
 msgid "Audio unavailable"
 msgstr ""
 
@@ -873,11 +889,11 @@ msgstr ""
 msgid "Bluetooth PIN or passkey"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "Bluetooth off"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "Bluetooth on"
 msgstr ""
 
@@ -885,7 +901,7 @@ msgstr ""
 msgid "Bluetooth pairing"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "Bluetooth unavailable"
 msgstr ""
 
@@ -1011,7 +1027,7 @@ msgstr ""
 msgid "CONNECTIONS"
 msgstr ""
 
-#: src/desktop/scheduling.zig:42 src/settings/scheduler_view.zig:35
+#: src/desktop/scheduling.zig:45 src/settings/scheduler_view.zig:64
 msgid "CPU Scheduler"
 msgstr ""
 
@@ -1023,7 +1039,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:307 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:864 src/settings/greeter_sync.zig:60 src/settings/notification_filters_view.zig:437
+#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:307 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:864 src/settings/greeter_sync.zig:60 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:341 src/settings/scheduler_view.zig:404
 msgid "Cancel"
 msgstr ""
 
@@ -1114,6 +1130,10 @@ msgstr ""
 msgid "Change icon…"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:202
+msgid "Changes apply to every user of this computer and ask for an administrator password. Choosing a profile does not. Restore defaults returns to the profiles that came with the system."
+msgstr ""
+
 #: src/settings/window.zig:835
 msgid "Changes on this page take effect immediately."
 msgstr ""
@@ -1167,7 +1187,7 @@ msgstr ""
 msgid "Checking settings…"
 msgstr ""
 
-#: src/services/scheduling.zig:156
+#: src/services/scheduling.zig:182
 msgid "Checking the scheduler..."
 msgstr ""
 
@@ -1205,6 +1225,10 @@ msgstr ""
 
 #: src/ui/components/network.zig:298
 msgid "Choose a saved profile"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:427
+msgid "Choose a scheduler."
 msgstr ""
 
 #: src/settings/bar_view.zig:877
@@ -1526,7 +1550,7 @@ msgstr ""
 msgid "Connect to"
 msgstr ""
 
-#: src/ui/i18n.zig:18 src/desktop/bar.zig:594 src/ui/components/network.zig:298 src/ui/components/network.zig:488
+#: src/ui/i18n.zig:18 src/desktop/bar.zig:602 src/ui/components/network.zig:298 src/ui/components/network.zig:488
 msgid "Connected"
 msgstr ""
 
@@ -1554,7 +1578,7 @@ msgstr ""
 msgid "Connecting to your Pearl session…"
 msgstr ""
 
-#: src/desktop/bar.zig:594 src/ui/components/network.zig:298 src/ui/components/network.zig:494
+#: src/desktop/bar.zig:602 src/ui/components/network.zig:298 src/ui/components/network.zig:494
 msgid "Connecting…"
 msgstr ""
 
@@ -1769,15 +1793,15 @@ msgctxt "aqueous.desktop.cursor.theme.label"
 msgid "Cursor theme"
 msgstr ""
 
-#: src/desktop/bar.zig:564 src/settings/power_view.zig:200
+#: src/desktop/bar.zig:572 src/settings/power_view.zig:200 src/settings/scheduler_view.zig:166
 msgid "Custom"
 msgstr ""
 
-#: src/services/scheduling.zig:170
+#: src/services/scheduling.zig:196
 msgid "Custom - a scheduler configured outside these profiles is running."
 msgstr ""
 
-#: src/services/scheduling.zig:170
+#: src/services/scheduling.zig:196
 msgid "Custom - scx_{0} is running outside these profiles."
 msgstr ""
 
@@ -1821,15 +1845,15 @@ msgstr ""
 msgid "Cycle windows"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "Cycle windows across all workspaces and displays"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "Cycle windows on this workspace"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
@@ -1862,7 +1886,7 @@ msgstr ""
 msgid "December"
 msgstr ""
 
-#: src/desktop/bar.zig:561 src/services/scheduling.zig:191
+#: src/desktop/bar.zig:569 src/services/scheduling.zig:217
 msgid "Default"
 msgstr ""
 
@@ -1891,6 +1915,10 @@ msgstr ""
 msgid "Delete filter"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:403
+msgid "Delete profile"
+msgstr ""
+
 #: src/desktop/aqueous_display_editor.zig:224
 msgid "Delete profile members"
 msgstr ""
@@ -1907,11 +1935,15 @@ msgstr ""
 msgid "Density"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:360
+msgid "Description"
+msgstr ""
+
 #: src/ui/i18n.zig:45
 msgid "Design review"
 msgstr ""
 
-#: src/desktop/bar.zig:613 src/desktop/bar.zig:614
+#: src/desktop/bar.zig:621 src/desktop/bar.zig:622
 msgid "Desktop"
 msgstr ""
 
@@ -2161,6 +2193,10 @@ msgstr ""
 msgid "Dock visibility"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:238
+msgid "Done"
+msgstr ""
+
 #: src/settings/themes_view.zig:287
 msgid "Download / update"
 msgstr ""
@@ -2265,7 +2301,7 @@ msgctxt "aqueous.layout.options.float.resistance.label"
 msgid "Edge resistance"
 msgstr ""
 
-#: src/settings/notification_filters_view.zig:231
+#: src/settings/notification_filters_view.zig:231 src/settings/scheduler_view.zig:187
 msgid "Edit"
 msgstr ""
 
@@ -2281,8 +2317,24 @@ msgstr ""
 msgid "Edit notification filter"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:196
+msgid "Edit profile"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:69 src/settings/scheduler_view.zig:238
+msgid "Edit profiles"
+msgstr ""
+
+#: src/desktop/scheduling.zig:84
+msgid "Edit profiles..."
+msgstr ""
+
 #: src/settings/window_rules_view.zig:153
 msgid "Edit rule"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:354
+msgid "Edit scheduler profile"
 msgstr ""
 
 #: src/settings/themes_view.zig:312
@@ -2396,6 +2448,10 @@ msgstr ""
 msgid "English"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:426
+msgid "Enter a name of at most 64 characters."
+msgstr ""
+
 #: src/settings/window_rules_view.zig:427
 msgid "Enter a pattern, or explicitly allow an empty pattern in the advanced option."
 msgstr ""
@@ -2448,7 +2504,7 @@ msgstr ""
 msgid "Fade"
 msgstr ""
 
-#: src/desktop/bar.zig:563
+#: src/desktop/bar.zig:571
 msgid "Failed"
 msgstr ""
 
@@ -3152,7 +3208,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2576
+#: src/ui/surfaces/manager.zig:2581
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3537,6 +3593,10 @@ msgstr ""
 msgid "Model"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:166
+msgid "Modified"
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.options.monocle.show_borders.label"
 msgid "Monocle border"
@@ -3586,6 +3646,10 @@ msgctxt "aqueous.input.touchpad.natural_scroll.description"
 msgid "Move content in the same direction as fingers."
 msgstr ""
 
+#: src/settings/scheduler_view.zig:176
+msgid "Move down"
+msgstr ""
+
 #: src/settings/window_rules_view.zig:157
 msgid "Move earlier"
 msgstr ""
@@ -3616,15 +3680,19 @@ msgstr ""
 msgid "Move to default"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:175
+msgid "Move up"
+msgstr ""
+
 #: src/desktop/services.zig:84 src/desktop/services.zig:129 src/settings/sound_view.zig:150
 msgid "Mute"
 msgstr ""
 
-#: src/desktop/bar.zig:538 src/ui/surfaces/osd.zig:19 src/ui/surfaces/osd.zig:81
+#: src/desktop/bar.zig:546 src/ui/surfaces/osd.zig:19 src/ui/surfaces/osd.zig:81
 msgid "Muted"
 msgstr ""
 
-#: src/desktop/icons/view.zig:505
+#: src/desktop/icons/view.zig:505 src/settings/scheduler_view.zig:359
 msgid "Name"
 msgstr ""
 
@@ -3674,7 +3742,7 @@ msgstr ""
 msgid "Network settings"
 msgstr ""
 
-#: src/desktop/bar.zig:594
+#: src/desktop/bar.zig:602
 msgid "Network unavailable"
 msgstr ""
 
@@ -3818,11 +3886,11 @@ msgstr ""
 msgid "No open applications"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "No open windows"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "No open windows on this workspace"
 msgstr ""
 
@@ -3838,7 +3906,11 @@ msgstr ""
 msgid "No saved networks"
 msgstr ""
 
-#: src/services/scheduling.zig:156
+#: src/settings/scheduler_view.zig:394
+msgid "No sched_ext schedulers are installed."
+msgstr ""
+
+#: src/services/scheduling.zig:182
 msgid "No scheduler profiles are installed."
 msgstr ""
 
@@ -3916,7 +3988,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: src/ui/i18n.zig:22 src/desktop/bar.zig:592 src/settings/editor.zig:818 src/settings/power_view.zig:123 src/settings/preferences_view.zig:475
+#: src/ui/i18n.zig:22 src/desktop/bar.zig:600 src/settings/editor.zig:818 src/settings/power_view.zig:123 src/settings/preferences_view.zig:475
 msgid "Off"
 msgstr ""
 
@@ -3932,7 +4004,7 @@ msgstr ""
 msgid "Offline · showing cached repository metadata"
 msgstr ""
 
-#: src/ui/i18n.zig:23 src/desktop/bar.zig:592 src/settings/preferences_view.zig:475
+#: src/ui/i18n.zig:23 src/desktop/bar.zig:600 src/settings/preferences_view.zig:475
 msgid "On"
 msgstr ""
 
@@ -3973,7 +4045,7 @@ msgstr ""
 msgid "One taskbar button per window"
 msgstr ""
 
-#: src/desktop/bar.zig:520
+#: src/desktop/bar.zig:528
 msgid "Only window on this workspace"
 msgstr ""
 
@@ -3999,11 +4071,11 @@ msgstr ""
 msgid "Open Advanced"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "Open Bluetooth controls"
 msgstr ""
 
-#: src/desktop/bar.zig:571
+#: src/desktop/bar.zig:579
 msgid "Open CPU scheduler profiles"
 msgstr ""
 
@@ -4011,11 +4083,11 @@ msgstr ""
 msgid "Open Desktop folder"
 msgstr ""
 
-#: src/desktop/bar.zig:594
+#: src/desktop/bar.zig:602
 msgid "Open Network controls"
 msgstr ""
 
-#: src/desktop/bar.zig:554
+#: src/desktop/bar.zig:562
 msgid "Open Power controls"
 msgstr ""
 
@@ -4023,7 +4095,7 @@ msgstr ""
 msgid "Open Qt appearance settings…"
 msgstr ""
 
-#: src/desktop/bar.zig:541
+#: src/desktop/bar.zig:549
 msgid "Open Sound controls"
 msgstr ""
 
@@ -4086,6 +4158,18 @@ msgstr ""
 
 #: src/settings/plugins_view.zig:550
 msgid "Optional permissions"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:384
+msgid "Options"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:390
+msgid "Options are passed to the scheduler as typed, separated by spaces, for example --slice-us 1600. Run the scheduler with --help in a terminal to list them. Saving asks for an administrator password."
+msgstr ""
+
+#: src/settings/scheduler_view.zig:424
+msgid "Options may contain only letters, digits and - _ . = , : + / % @, separated by spaces."
 msgstr ""
 
 #: src/settings/preferences_view.zig:235
@@ -4316,6 +4400,10 @@ msgstr ""
 
 #: src/desktop/panels.zig:283 src/desktop/settings.zig:56
 msgid "Pearl settings"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:194
+msgid "Pearl switches back to this profile when a scheduler fails, so it cannot be changed."
 msgstr ""
 
 #: src/services/polkit.zig:208
@@ -4938,6 +5026,14 @@ msgstr ""
 msgid "Restart…"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:336
+msgid "Restore default profiles"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:68 src/settings/scheduler_view.zig:342
+msgid "Restore defaults"
+msgstr ""
+
 #: src/settings/editor.zig:824 src/settings/editor.zig:831
 msgid "Restoring colors"
 msgstr ""
@@ -5087,12 +5183,12 @@ msgstr ""
 msgid "Rules: window rules"
 msgstr ""
 
-#: src/services/scheduling.zig:166
+#: src/services/scheduling.zig:192
 #. Scheduler identity and a regional date/time, respectively.
 msgid "Running - {0}"
 msgstr ""
 
-#: src/services/scheduling.zig:166
+#: src/services/scheduling.zig:192
 #. Scheduler identity and a regional date/time, respectively.
 msgid "Running - {0} - since {1}"
 msgstr ""
@@ -5160,6 +5256,10 @@ msgstr ""
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.blur.vibrancy.description"
 msgid "Saturation boost applied to blurred colors."
+msgstr ""
+
+#: src/settings/scheduler_view.zig:405
+msgid "Save"
 msgstr ""
 
 #: src/desktop/clipboard_capture.zig:159
@@ -5248,6 +5348,10 @@ msgstr ""
 
 #: src/settings/editor.zig:819
 msgid "Scheduled"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:377
+msgid "Scheduler"
 msgstr ""
 
 #: src/settings/power_view.zig:380
@@ -6255,7 +6359,7 @@ msgstr ""
 msgid "Starting authentication…"
 msgstr ""
 
-#: src/services/scheduling.zig:151 src/services/scheduling.zig:168
+#: src/services/scheduling.zig:177 src/services/scheduling.zig:194
 msgid "Starting {0}..."
 msgstr ""
 
@@ -6279,7 +6383,7 @@ msgstr ""
 msgid "Stop the current answer?"
 msgstr ""
 
-#: src/services/scheduling.zig:151 src/services/scheduling.zig:168
+#: src/services/scheduling.zig:177 src/services/scheduling.zig:194
 msgid "Stopping the scheduler..."
 msgstr ""
 
@@ -6322,7 +6426,7 @@ msgstr ""
 msgid "Switch dark / light"
 msgstr ""
 
-#: src/desktop/bar.zig:381
+#: src/desktop/bar.zig:389
 msgid "Switch keyboard layout"
 msgstr ""
 
@@ -6451,6 +6555,10 @@ msgstr ""
 msgid "The connection ended during an operation. Review the current settings before applying again."
 msgstr ""
 
+#: src/settings/scheduler_view.zig:417
+msgid "The default profiles could not be restored."
+msgstr ""
+
 #: src/ui/surfaces/manager.zig:1277
 msgid "The desktop action could not be completed."
 msgstr ""
@@ -6493,6 +6601,10 @@ msgstr ""
 
 #: src/ui/i18n.zig:48 src/core/application.zig:420
 msgid "The preview could not be loaded."
+msgstr ""
+
+#: src/settings/scheduler_view.zig:280 src/settings/scheduler_view.zig:428 src/settings/scheduler_view.zig:469
+msgid "The profiles could not be saved."
 msgstr ""
 
 #: src/desktop/launcher.zig:396
@@ -6583,7 +6695,7 @@ msgstr ""
 msgid "This is a sample error. Your desktop has not changed."
 msgstr ""
 
-#: src/services/scheduling.zig:156
+#: src/services/scheduling.zig:182
 msgid "This kernel does not support sched_ext schedulers."
 msgstr ""
 
@@ -6615,7 +6727,7 @@ msgstr ""
 msgid "This power mode is unavailable"
 msgstr ""
 
-#: src/desktop/scheduling.zig:116 src/settings/scheduler_view.zig:110
+#: src/desktop/scheduling.zig:133 src/settings/scheduler_view.zig:263
 msgid "This profile cannot be applied right now."
 msgstr ""
 
@@ -6748,6 +6860,10 @@ msgstr ""
 
 #: src/settings/power_view.zig:202
 msgid "Turn screen off after"
+msgstr ""
+
+#: src/settings/scheduler_view.zig:209
+msgid "Turns sched_ext schedulers off: the kernel's built-in scheduler runs."
 msgstr ""
 
 #: src/settings/sound_view.zig:299
@@ -7013,6 +7129,10 @@ msgstr ""
 msgid "WE"
 msgstr ""
 
+#: src/settings/scheduler_view.zig:280
+msgid "Wait until the profile being applied or saved is done."
+msgstr ""
+
 #: src/desktop/aqueous_settings.zig:961
 msgid "Waiting for Aqueous to inhibit shortcuts… Escape cancels."
 msgstr ""
@@ -7101,7 +7221,7 @@ msgstr ""
 msgid "When a notification matches"
 msgstr ""
 
-#: src/ui/i18n.zig:17 src/desktop/bar.zig:592 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
+#: src/ui/i18n.zig:17 src/desktop/bar.zig:600 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
 msgid "Wi-Fi"
 msgstr ""
 
@@ -7113,11 +7233,11 @@ msgstr ""
 msgid "Wi-Fi is turned off. Turn it on to find nearby networks."
 msgstr ""
 
-#: src/desktop/bar.zig:594
+#: src/desktop/bar.zig:602
 msgid "Wi-Fi off"
 msgstr ""
 
-#: src/desktop/bar.zig:594
+#: src/desktop/bar.zig:602
 msgid "Wi-Fi on"
 msgstr ""
 
@@ -7371,7 +7491,7 @@ msgctxt "aqueous.desktop.font.width.option"
 msgid "condensed"
 msgstr ""
 
-#: src/desktop/bar.zig:607
+#: src/desktop/bar.zig:615
 msgid "connected"
 msgstr ""
 
@@ -8199,7 +8319,7 @@ msgctxt "aqueous.layout.slots.tertiary.option"
 msgid "scrolling"
 msgstr ""
 
-#: src/services/scheduling.zig:156
+#: src/services/scheduling.zig:182
 msgid "scx.service is not installed."
 msgstr ""
 
@@ -8353,7 +8473,7 @@ msgctxt "aqueous.layout.slots.tertiary.option"
 msgid "stacking"
 msgstr ""
 
-#: src/services/scheduling.zig:519
+#: src/services/scheduling.zig:648
 msgid "the scheduler helper failed"
 msgstr ""
 
@@ -8555,11 +8675,11 @@ msgstr ""
 msgid "{0} (language pack not installed)"
 msgstr ""
 
-#: src/services/scheduling.zig:157
+#: src/services/scheduling.zig:183
 msgid "{0} - kernel scheduler (EEVDF)"
 msgstr ""
 
-#: src/services/scheduling.zig:185
+#: src/services/scheduling.zig:211
 msgid "{0} could not start: {1}. Switched back to {2}."
 msgstr ""
 
@@ -8575,19 +8695,19 @@ msgstr ""
 msgid "{0} more windows"
 msgstr ""
 
-#: src/services/scheduling.zig:184
+#: src/services/scheduling.zig:210
 msgid "{0} stopped unexpectedly. Switched back to {1}."
 msgstr ""
 
-#: src/services/scheduling.zig:169
+#: src/services/scheduling.zig:195
 msgid "{0} stopped unexpectedly; the kernel's default scheduler is running."
 msgstr ""
 
-#: src/services/scheduling.zig:182
+#: src/services/scheduling.zig:208
 msgid "{0} stopped: {1}. Switched back to {2}."
 msgstr ""
 
-#: src/services/scheduling.zig:169
+#: src/services/scheduling.zig:195
 msgid "{0} stopped: {1}. The kernel's default scheduler is running."
 msgstr ""
 
@@ -8627,7 +8747,7 @@ msgstr ""
 msgid "×"
 msgstr ""
 
-#: src/desktop/bar.zig:538 src/desktop/bar.zig:547 src/desktop/bar.zig:592 src/desktop/bar.zig:602 src/desktop/clock_view.zig:69 src/desktop/resource_view.zig:275
+#: src/desktop/bar.zig:546 src/desktop/bar.zig:555 src/desktop/bar.zig:600 src/desktop/bar.zig:610 src/desktop/clock_view.zig:69 src/desktop/resource_view.zig:275
 msgid "—"
 msgstr ""
 
@@ -8639,7 +8759,7 @@ msgstr ""
 msgid "•••"
 msgstr ""
 
-#: src/desktop/bar.zig:592
+#: src/desktop/bar.zig:600
 msgid "…"
 msgstr ""
 

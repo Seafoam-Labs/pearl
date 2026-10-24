@@ -21,10 +21,13 @@ every user, before anyone logs in.
 
 The file is written by `pearl-scheduling-helper`, installed in
 `/usr/lib/pearl`, which Pearl runs through `pkexec`. The helper accepts only a
-profile id and reads the command line from the system profile file, so users
-can choose among the configured profiles but cannot run other commands. The
+profile id and reads the command line from the profile file, so users can
+choose among the configured profiles but cannot run other commands. The
 polkit action `org.aqueous.Pearl.Scheduling` allows this without a password for
-active local sessions. The helper also clears `SCX_SCHEDULER_OVERRIDE` and
+active local sessions. The helper writes the scheduler's absolute path, as
+scxtui does: a bare `sched` resolves to the first match in `/usr/local/bin`,
+then `/usr/bin`, so a binary installed later elsewhere cannot replace the one
+chosen. The helper also clears `SCX_SCHEDULER_OVERRIDE` and
 `SCX_FLAGS_OVERRIDE` from the systemd manager so nothing else replaces the
 selected profile. For now it also stops `scx_loader.service`, in case an older
 setup still has it running; Pearl no longer uses scx_loader, and this step will
@@ -40,8 +43,29 @@ Pearl reads the first of these files that exists:
 1. `/etc/pearl/scheduling-profiles.json` (administrator)
 2. `/usr/share/pearl/scheduling-profiles.json` (distribution default)
 
-Git builds use `/etc/pearl-git` and `share/pearl-git`. There is no per-user
-file, because profiles run as root.
+Git builds use `/etc/pearl-git` and `share/pearl-git`.
+
+### Editing profiles
+
+**Edit profiles** in Settings > System > CPU Scheduler adds, edits, deletes
+and reorders profiles for every user. It saves them as the administrator's
+file with `pearl-scheduling-helper profiles save`, which reads the list on
+stdin and checks it like any profile file; **Restore defaults** removes that
+file with `pearl-scheduling-helper profiles reset`, so the shipped profiles
+are used again. Both change what any user may run as root, so their polkit
+action, `org.aqueous.Pearl.Scheduling.Profiles`, asks for an administrator
+password (kept for a few minutes). Choosing a profile, edited or not, still
+needs none. Right-clicking the bar widget, or **Edit profiles...** at the end
+of its flyout, opens this page.
+
+Editing the command of the selected profile applies it again, and deleting it
+applies Default. The shell and Settings watch the administrator's file, so
+changes made by hand show up at once too. The editor saves each scheduler by
+its path in `/usr/bin`.
+
+Default is what Pearl switches back to when a scheduler fails, so it cannot be
+edited or deleted, only moved. Saving always keeps the shipped Default, even
+if the list sent changes it, leaves it out or adds another `stop` profile.
 
 ```json
 {
@@ -62,11 +86,11 @@ file, because profiles run as root.
 | `id` | Lowercase letters, digits and `-`, at most 32 characters; unique. |
 | `label` | Profile name shown in the list, at most 64 characters. |
 | `description` | Optional, at most 256 characters; shown in tooltips and for the active profile. |
-| `sched` | Scheduler binary name starting with `scx_`, found in `/usr/bin` or `/usr/local/bin`. |
+| `sched` | Scheduler binary starting with `scx_`: its absolute path in `/usr/bin` or `/usr/local/bin`, or its name, which the helper resolves to the first of those that has it. |
 | `args` | Optional list of arguments, one per element. Each may contain only letters, digits and `-_.=,:+/%@`, with no spaces. |
 | `action` | `"stop"` returns to the kernel's default scheduler; it cannot be combined with `sched` or `args`. |
 
-A file holds one to eight profiles. If it has no `stop` profile, Pearl adds
+A file holds one to sixteen profiles. If it has no `stop` profile, Pearl adds
 **Default** first, so returning to the kernel's scheduler is always possible.
 The shipped profiles have their own **Default** for this.
 
