@@ -26,6 +26,7 @@ pub const View = struct {
     mode: *gtk.DropDown,
     variant: *gtk.DropDown,
     source: *gtk.DropDown,
+    scheme: *gtk.DropDown,
     fit: *gtk.DropDown,
     density: *gtk.DropDown,
     edge: *gtk.DropDown,
@@ -63,7 +64,7 @@ pub const View = struct {
         const bar = page(notebook, @import("i18n").dtr("pearl", "Bar & behavior"));
         const advanced = page(notebook, @import("i18n").dtr("pearl", "Advanced"));
         const session = page(notebook, @import("i18n").dtr("pearl", "Session"));
-        self.* = .{ .service = service, .host = host, .forms = .{ appearance, bar, session }, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, @import("i18n").dtr("pearl", "Theme"), &.{ "Material · static", "Material · dynamic", "GTK theme", "Community package" }), .variant = dropdown(appearance, @import("i18n").dtr("pearl", "Color variant"), &.{ "Dark", "Light" }), .source = dropdown(appearance, @import("i18n").dtr("pearl", "Dynamic colors from"), &.{ "Seed color", "Wallpaper" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
+        self.* = .{ .service = service, .host = host, .forms = .{ appearance, bar, session }, .arena = std.heap.ArenaAllocator.init(a), .mode = dropdown(appearance, @import("i18n").dtr("pearl", "Theme"), &.{ "Material · static", "Material · dynamic", "GTK theme", "Community package" }), .variant = dropdown(appearance, @import("i18n").dtr("pearl", "Color variant"), &.{ "Dark", "Light" }), .source = dropdown(appearance, @import("i18n").dtr("pearl", "Dynamic colors from"), &.{ "Seed color", "Wallpaper" }), .scheme = dropdown(appearance, @import("i18n").dtr("pearl", "Matugen scheme"), &.{ "Content", "Expressive", "Fidelity", "Fruit salad", "Monochrome", "Neutral", "Rainbow", "Tonal spot", "Vibrant", "Smart" }), .fit = undefined, .density = undefined, .edge = undefined, .placement = undefined, .entries = undefined, .font_size = undefined, .bar_size = undefined, .motion = undefined, .outside = undefined, .raw = undefined, .message = undefined, .apply_button = undefined };
         session.append(w.label(@import("i18n").dtr("pearl", "Pearl's native lock screen uses your shell theme. Zero disables an automatic timeout. Suspend must follow the lock timeout; Pearl waits for verified lock acquisition."), "pearl-secondary").as(gtk.Widget));
         for ([_][:0]const u8{ "AC · lock after seconds", "AC · suspend after seconds", "Battery · lock after seconds", "Battery · suspend after seconds" }, 0..) |label, i| {
             self.idle_spins[i] = spin(session, label, 0, 86400);
@@ -143,7 +144,7 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(discard, *View, discarded, self, .{});
         _ = gtk.Button.signals.clicked.connect(self.apply_button, *View, applied, self, .{});
         for (self.entries) |e| _ = gtk.Editable.signals.changed.connect(e.as(gtk.Editable), *View, edited, self, .{});
-        for ([_]*gtk.DropDown{ self.mode, self.variant, self.source, self.fit, self.density, self.edge, self.placement, self.dock_edge, self.dock_mode }) |d| _ = object.Object.signals.notify.connect(d.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        for ([_]*gtk.DropDown{ self.mode, self.variant, self.source, self.scheme, self.fit, self.density, self.edge, self.placement, self.dock_edge, self.dock_mode }) |d| _ = object.Object.signals.notify.connect(d.as(object.Object), *View, selected, self, .{ .detail = "selected" });
         for ([_]*gtk.SpinButton{ self.font_size, self.bar_size, self.dock_size, self.dock_margin }) |s| _ = gtk.SpinButton.signals.value_changed.connect(s, *View, spun, self, .{});
         for ([_]*gtk.CheckButton{ self.motion, self.outside, self.islands, self.attached, self.running_apps_per_window, self.dock_enabled }) |c| _ = gtk.CheckButton.signals.toggled.connect(c, *View, toggled, self, .{});
         _ = gtk.TextBuffer.signals.insert_text.connect(self.raw, *View, inserting, self, .{});
@@ -281,6 +282,7 @@ pub const View = struct {
         });
         self.variant.setSelected(@intFromEnum(p.theme.variant));
         self.source.setSelected(@intFromEnum(p.theme.source));
+        self.scheme.setSelected(@intFromEnum(p.theme.scheme));
         self.fit.setSelected(@intFromEnum(p.wallpaper.mode));
         self.density.setSelected(@intFromEnum(p.density));
         self.islands.setActive(@intFromBool(p.bar.islands));
@@ -311,6 +313,7 @@ pub const View = struct {
         };
         p.theme.variant = @enumFromInt(self.variant.getSelected());
         p.theme.source = @enumFromInt(self.source.getSelected());
+        p.theme.scheme = @enumFromInt(self.scheme.getSelected());
         p.wallpaper.mode = @enumFromInt(self.fit.getSelected());
         p.density = @enumFromInt(self.density.getSelected());
         p.bar.islands = self.islands.getActive() != 0;

@@ -106,6 +106,7 @@ pub const View = struct {
     sync_borders: *gtk.Switch = undefined,
     variant: *gtk.DropDown,
     source: *gtk.DropDown,
+    scheme: *gtk.DropDown,
     fit: *gtk.DropDown,
     density: *gtk.DropDown,
     entries: [5]*gtk.Entry,
@@ -177,6 +178,7 @@ pub const View = struct {
         const mode = ModeChoice.create(appearance);
         const variant = dropdown(appearance, @import("i18n").dtr("pearl", "Color variant"), &.{ "Dark", "Light" });
         const source = dropdown(appearance, @import("i18n").dtr("pearl", "Dynamic colors from"), &.{ "Seed color", "Wallpaper" });
+        const scheme = dropdown(appearance, @import("i18n").dtr("pearl", "Matugen scheme"), &.{ "Content", "Expressive", "Fidelity", "Fruit salad", "Monochrome", "Neutral", "Rainbow", "Tonal spot", "Vibrant", "Smart" });
         const gtk_name = entry(appearance, @import("i18n").dtr("pearl", "GTK theme name"), 96);
         gtk_name.setPlaceholderText(@import("i18n").dtr("pearl", "System default"));
         const seed = entry(appearance, @import("i18n").dtr("pearl", "Seed color"), 7);
@@ -289,7 +291,7 @@ pub const View = struct {
         raw_view.setRightMargin(24);
         w.name(raw_view.as(gtk.Widget), @import("i18n").dtr("pearl", "Full Pearl preferences JSON"));
         // The caller installs raw_view directly in Advanced's sole viewport.
-        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .desktop_preview = desktop_preview, .wallpaper_summary = wallpaper_summary, .wallpaper_thumbnail = thumbnail, .customize = customize, .image_section = image_section, .text_section = text_section, .apps_section = apps_section, .variant = variant, .source = source, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
+        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .desktop_preview = desktop_preview, .wallpaper_summary = wallpaper_summary, .wallpaper_thumbnail = thumbnail, .customize = customize, .image_section = image_section, .text_section = text_section, .apps_section = apps_section, .variant = variant, .source = source, .scheme = scheme, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
         self.language = language;
         const language_alloc = self.language_arena.allocator();
         try self.language_codes.appendSlice(language_alloc, &.{ "", "en" });
@@ -364,7 +366,7 @@ pub const View = struct {
         for (self.entries) |control| _ = gtk.Editable.signals.changed.connect(control.as(gtk.Editable), *View, edited, self, .{});
         for (mode.buttons) |control| _ = gtk.CheckButton.signals.toggled.connect(control, *View, modeChosen, self, .{});
         _ = gtk.Button.signals.clicked.connect(customize, *View, openThemes, self, .{});
-        for ([_]*gtk.DropDown{ variant, source, fit, density }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        for ([_]*gtk.DropDown{ variant, source, scheme, fit, density }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
         _ = gtk.SpinButton.signals.value_changed.connect(font_size, *View, spun, self, .{});
         _ = object.Object.signals.notify.connect(motion.as(object.Object), *View, selected, self, .{ .detail = "active" });
         _ = gtk.Button.signals.clicked.connect(choose, *View, chooseWallpaper, self, .{});
@@ -547,6 +549,7 @@ pub const View = struct {
         self.sync_borders.setActive(@intFromBool(prefs.theme.sync_borders));
         self.variant.setSelected(@intFromEnum(prefs.theme.variant));
         self.source.setSelected(@intFromEnum(prefs.theme.source));
+        self.scheme.setSelected(@intFromEnum(prefs.theme.scheme));
         self.fit.setSelected(@intFromEnum(prefs.wallpaper.mode));
         self.slideshow_enabled.setActive(@intFromBool(prefs.wallpaper.slideshow.enabled));
         self.slideshow_folder.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, prefs.wallpaper.slideshow.folder) catch "");
@@ -589,6 +592,7 @@ pub const View = struct {
         prefs.theme.sync_borders = self.sync_borders.getActive() != 0;
         prefs.theme.variant = @enumFromInt(self.variant.getSelected());
         prefs.theme.source = @enumFromInt(self.source.getSelected());
+        prefs.theme.scheme = @enumFromInt(self.scheme.getSelected());
         prefs.theme.gtk_name = text(self.entries[0]);
         prefs.theme.seed = text(self.entries[1]);
         // A rotating image is only visible in an image fit, so enabling the
@@ -871,7 +875,7 @@ pub const View = struct {
     }
     fn paletteKey(self: *View) ?[]u8 {
         const p = self.prefs;
-        return std.fmt.allocPrint(a, "{s}:{s}:{s}:{s}:{s}:{s}:{s}:{s}", .{ @tagName(p.theme.mode), @tagName(p.theme.variant), @tagName(p.theme.source), p.theme.seed, p.theme.package_id, p.theme.palette_id, p.theme.style_id, p.wallpaper.path }) catch null;
+        return std.fmt.allocPrint(a, "{s}:{s}:{s}:{s}:{s}:{s}:{s}:{s}:{s}", .{ @tagName(p.theme.mode), @tagName(p.theme.variant), @tagName(p.theme.source), @tagName(p.theme.scheme), p.theme.seed, p.theme.package_id, p.theme.palette_id, p.theme.style_id, p.wallpaper.path }) catch null;
     }
     fn setPaletteKey(self: *View, key: []const u8) void {
         if (self.palette_key) |old| a.free(old);
@@ -1045,7 +1049,8 @@ fn entry(host: *gtk.Box, title: [:0]const u8, max: c_int) *gtk.Entry {
     return control;
 }
 fn dropdown(host: *gtk.Box, title: [:0]const u8, choices: []const [*:0]const u8) *gtk.DropDown {
-    var strings: [8]?[*:0]const u8 = @splat(null);
+    // Room for the longest choice list plus the NULL terminator newFromStrings needs.
+    var strings: [16]?[*:0]const u8 = @splat(null);
     for (choices, 0..) |choice, i| strings[i] = choice;
     const control = gtk.DropDown.newFromStrings(@ptrCast(&strings));
     row(host, title, control.as(gtk.Widget));
