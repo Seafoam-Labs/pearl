@@ -197,6 +197,37 @@ fn propertiesReady(_: ?*u.object.Object, _: *gio.AsyncResult, data: ?*anyopaque)
     }
     if (!r.owner.closed) r.owner.message("Properties", @ptrCast(r.text.items.ptr));
 }
+pub fn runnable(info: *gio.FileInfo) ?bool {
+    if (info.getAttributeBoolean("access::can-execute") != 0) return false;
+    const mime = std.mem.span(info.getContentType() orelse "");
+    if (std.mem.indexOf(u8, mime, "executable") != null or std.mem.indexOf(u8, mime, "shellscript") != null or std.mem.indexOf(u8, mime, "x-sh") != null) return true;
+    return null;
+}
+pub fn makeExecutable(owner: *Window, file: *gio.File) bool {
+    const path = file.getPath() orelse return false;
+    defer glib.free(path);
+    var err: ?*glib.Error = null;
+    const fresh = file.queryInfo("unix::mode", .{ .nofollow_symlinks = true }, null, &err) orelse {
+        const text = if (err) |e| e.f_message else null;
+        defer if (err) |e| e.free();
+        owner.message(@import("i18n").dtr("phyto", "Could not run file"), text orelse @import("i18n").dtr("phyto", "The file could not be read."));
+        return false;
+    };
+    defer fresh.unref();
+    const mode: u16 = @truncate(fresh.getAttributeUint32("unix::mode"));
+    if (g_chmod(path, @as(c_int, mode | 0o111)) != 0) {
+        owner.message(@import("i18n").dtr("phyto", "Could not run file"), "The file could not be made executable. Check the folder permissions.");
+        return false;
+    }
+    return true;
+}
+pub fn runExecutable(owner: *Window, file: *gio.File) void {
+    const path = file.getPath() orelse return;
+    defer glib.free(path);
+    const dir = file.getParent() orelse return;
+    defer dir.unref();
+    spawn(owner, &.{path}, dir);
+}
 pub fn archiveMime(mime: []const u8) bool {
     return std.mem.indexOf(u8, mime, "zip") != null or std.mem.indexOf(u8, mime, "tar") != null or std.mem.indexOf(u8, mime, "compressed") != null or std.mem.indexOf(u8, mime, "archive") != null;
 }
@@ -421,3 +452,4 @@ pub fn runProvider(owner: *Window, c: *const Context, provider: *Provider) void 
 }
 
 extern "c" fn g_app_info_get_all_for_type([*:0]const u8) ?*glib.List;
+extern "c" fn g_chmod([*:0]const u8, c_int) c_int;
