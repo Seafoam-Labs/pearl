@@ -67,7 +67,7 @@ pub fn full(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]const u8, cach
 }
 pub fn fullWithContext(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]const u8, cache_dir: [:0]const u8, cancel: *gio.Cancellable, hit: *bool, context: *Context) !Full {
     const version = try context.getVersion(a, cancel);
-    const identity = try std.fmt.allocPrint(a, "pearl-palette-v1\n{s}\n{s}\n{s}\n{s}", .{ version, @tagName(p.theme.variant), @tagName(p.theme.source), if (p.theme.source == .seed) p.theme.seed else image orelse return error.ImageRequired });
+    const identity = try std.fmt.allocPrint(a, "pearl-palette-v1\n{s}\n{s}\n{s}\n{s}\n{s}", .{ version, @tagName(p.theme.variant), @tagName(p.theme.source), @tagName(p.theme.scheme), if (p.theme.source == .seed) p.theme.seed else image orelse return error.ImageRequired });
     const key = io.digest(identity);
     const slot = key[0] % 8;
     const cache = try std.fmt.allocPrintSentinel(a, "{s}/palette-{d}.json", .{ cache_dir, slot }, 0);
@@ -88,10 +88,12 @@ pub fn fullWithContext(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]con
         if (p.theme.source == .wallpaper) _ = std.c.unlink(input);
     }
     const seed = try a.dupeZ(u8, p.theme.seed);
+    const scheme = Prefs.matugenScheme(p.theme.scheme);
+    // matugen 4 takes the scheme as the subcommand-level --type flag, after the source args.
     const args: []const [:0]const u8 = if (p.theme.source == .seed)
-        &.{ "matugen", "--config", config, "--dry-run", "--json", "hex", "--source-color-index", "0", "--mode", @tagName(p.theme.variant), "color", "hex", seed }
+        &.{ "matugen", "--config", config, "--dry-run", "--json", "hex", "--source-color-index", "0", "--mode", @tagName(p.theme.variant), "color", "hex", seed, "--type", scheme }
     else
-        &.{ "matugen", "--config", config, "--dry-run", "--json", "hex", "--source-color-index", "0", "--mode", @tagName(p.theme.variant), "image", input };
+        &.{ "matugen", "--config", config, "--dry-run", "--json", "hex", "--source-color-index", "0", "--mode", @tagName(p.theme.variant), "image", input, "--type", scheme };
     const json = try run(a, args, cancel);
     const value = try theme.matugenPalette(a, json, @tagName(p.theme.variant));
     if (cancel.isCancelled() != 0) return error.Cancelled;

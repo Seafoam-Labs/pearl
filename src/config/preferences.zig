@@ -59,10 +59,26 @@ pub const Theme = struct {
     variant: enum { dark, light } = .dark,
     seed: []const u8 = "#6750a4",
     source: enum { seed, wallpaper } = .seed,
+    scheme: Scheme = .tonal_spot,
     // Empty follows GTK settings, including GTK_THEME and user gtk.css.
     gtk_name: []const u8 = "",
     sync_borders: bool = false,
 };
+pub const Scheme = enum { content, expressive, fidelity, fruit_salad, monochrome, neutral, rainbow, tonal_spot, vibrant, smart };
+pub fn matugenScheme(s: Scheme) [:0]const u8 {
+    return switch (s) {
+        .content => "scheme-content",
+        .expressive => "scheme-expressive",
+        .fidelity => "scheme-fidelity",
+        .fruit_salad => "scheme-fruit-salad",
+        .monochrome => "scheme-monochrome",
+        .neutral => "scheme-neutral",
+        .rainbow => "scheme-rainbow",
+        .tonal_spot => "scheme-tonal-spot",
+        .vibrant => "scheme-vibrant",
+        .smart => "scheme-smart",
+    };
+}
 pub const Wallpaper = struct {
     mode: enum { gradient, solid, cover, contain } = .gradient,
     path: []const u8 = "",
@@ -77,7 +93,7 @@ pub const Dock = @import("../desktop/dock_policy.zig").Config;
 pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
 pub const ResourceMode = @import("../desktop/resource_model.zig").Mode;
 pub const ResourceSelection = @import("../desktop/resource_model.zig").Selection;
-pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, running_apps_per_window: bool = false, resource_mode: ResourceMode = .icon, resource_series: ResourceSelection = .{}, islands: bool = true, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
+pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, running_apps_per_window: bool = false, resource_mode: ResourceMode = .icon, resource_series: ResourceSelection = .{}, islands: bool = true, attached: bool = false, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
 pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {

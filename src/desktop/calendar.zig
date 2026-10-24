@@ -51,6 +51,8 @@ pub const View = struct {
         host.append(w.label(stamp, "pearl-card-title").as(gtk.Widget));
         const scroll = gtk.ScrolledWindow.new();
         scroll.setPolicy(.never, .automatic);
+        // Report the content height so positionPopup can hug it.
+        scroll.setPropagateNaturalHeight(1);
         scroll.as(gtk.Widget).setVexpand(1);
         const content = w.column(14);
         scroll.setChild(content.as(gtk.Widget));

@@ -14,6 +14,7 @@ const bar_fields = [_]Spec{
     .{ .path = "bar.size", .label = "Bar size", .kind = .number, .min = 32, .max = 160 },
     .{ .path = "bar.running_apps_per_window", .label = "One taskbar button per window", .kind = .toggle },
     .{ .path = "bar.islands", .label = "Separate bar islands", .kind = .toggle },
+    .{ .path = "bar.attached", .label = "Attach bar to screen edge", .kind = .toggle },
     .{ .path = "bar.background_opacity.mode", .label = "Background opacity", .kind = .choice, .choices = &.{ "automatic", "custom" } },
     .{ .path = "bar.background_opacity.percent", .label = "Background opacity (%)", .kind = .percent, .min = 0, .max = 100 },
     .{ .path = "dock.enabled", .label = "Show dock", .kind = .toggle },

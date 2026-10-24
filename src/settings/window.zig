@@ -1200,8 +1200,8 @@ pub const Window = struct {
             }
         };
         if (self.preferences_view) |view| {
-            const widgets = [_]*gtk.Widget{ view.mode.widget(), view.variant.as(gtk.Widget), view.source.as(gtk.Widget), view.entries[0].as(gtk.Widget), view.entries[1].as(gtk.Widget), view.entries[2].as(gtk.Widget), view.entries[3].as(gtk.Widget), view.entries[4].as(gtk.Widget), view.font_size.as(gtk.Widget), view.fit.as(gtk.Widget), view.density.as(gtk.Widget), view.motion.as(gtk.Widget), view.choose.as(gtk.Widget), view.greeter_sync.button.as(gtk.Widget), view.raw_view.as(gtk.Widget), self.save.as(gtk.Widget), self.discard.as(gtk.Widget), self.merge_button.as(gtk.Widget) };
-            for (widgets, [_][]const u8{ "mode", "variant", "source", "gtk_name", "seed", "wallpaper", "color", "font", "font_size", "fit", "density", "motion", "choose", "greeter_sync", "raw", "apply", "discard", "merge" }) |widget, name| {
+            const widgets = [_]*gtk.Widget{ view.mode.widget(), view.variant.as(gtk.Widget), view.source.as(gtk.Widget), view.entries[0].as(gtk.Widget), view.entries[1].as(gtk.Widget), view.entries[2].as(gtk.Widget), view.entries[3].as(gtk.Widget), view.entries[4].as(gtk.Widget), view.font_size.as(gtk.Widget), view.fit.as(gtk.Widget), view.density.as(gtk.Widget), view.motion.as(gtk.Widget), view.choose.as(gtk.Widget), view.raw_view.as(gtk.Widget), self.save.as(gtk.Widget), self.discard.as(gtk.Widget), self.merge_button.as(gtk.Widget) };
+            for (widgets, [_][]const u8{ "mode", "variant", "source", "gtk_name", "seed", "wallpaper", "color", "font", "font_size", "fit", "density", "motion", "choose", "raw", "apply", "discard", "merge" }) |widget, name| {
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget or f.isAncestor(widget) != 0 else false, .bounds = self.bounds(widget) });
             }
         }
