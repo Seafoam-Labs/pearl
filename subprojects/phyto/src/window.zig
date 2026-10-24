@@ -1289,9 +1289,53 @@ pub const Window = struct {
         self.message_dialog = null;
         dialog.as(gtk.Window).destroy();
     }
+    const ExtractAsk = struct { owner: *Window, file: *gio.File, tool: @import("platform/applications.zig").Extractor };
+    fn askExtract(self: *Window, file: *gio.File, info: *gio.FileInfo, tool: @import("platform/applications.zig").Extractor) void {
+        const r = a.create(ExtractAsk) catch unreachable;
+        file.ref();
+        r.* = .{ .owner = self, .file = file, .tool = tool };
+        self.app.as(gio.Application).hold();
+        const title = @import("i18n").dtr("phyto", "Extract archive?");
+        const dialog = gtk.Dialog.new();
+        dialog.as(gtk.Widget).addCssClass("phyto-root");
+        dialog.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
+        dialog.as(gtk.Window).setTitle(title);
+        dialog.as(gtk.Window).setTransientFor(self.window);
+        dialog.as(gtk.Window).setDestroyWithParent(1);
+        dialog.as(gtk.Window).setModal(1);
+        dialog.as(gtk.Window).setDefaultSize(420, -1);
+        const body = dialog.getContentArea();
+        body.as(gtk.Widget).addCssClass("dialog-body");
+        body.append(u.label(info.getName(), "state-title").as(gtk.Widget));
+        const caption = u.label(@import("i18n").dtr("phyto", "This is an archive. Extract its contents into the folder that contains it?"), null);
+        caption.setWrap(1);
+        caption.setWrapMode(.word_char);
+        caption.setMaxWidthChars(50);
+        body.append(caption.as(gtk.Widget));
+        _ = dialog.addButton(@import("i18n").dtr("phyto", "Cancel"), 0);
+        _ = dialog.addButton(@import("i18n").dtr("phyto", "Extract here"), 1);
+        dialog.setDefaultResponse(1);
+        dialog.as(object.Object).setDataFull("phyto-extract", r, extractAskFreed);
+        _ = gtk.Dialog.signals.response.connect(dialog, *ExtractAsk, extractAskResponse, r, .{});
+        dialog.as(gtk.Window).present();
+    }
+    fn extractAskResponse(dialog: *gtk.Dialog, response: c_int, r: *ExtractAsk) callconv(.c) void {
+        if (response == 1 and !r.owner.closed) @import("platform/applications.zig").extractHere(r.owner, r.file, r.tool);
+        dialog.as(gtk.Window).destroy();
+    }
+    fn extractAskFreed(data: ?*anyopaque) callconv(.c) void {
+        const r: *ExtractAsk = @ptrCast(@alignCast(data.?));
+        r.file.unref();
+        r.owner.app.as(gio.Application).release();
+        a.destroy(r);
+    }
     pub fn openFile(self: *Window, file: *gio.File, info: *gio.FileInfo) void {
         if (info.getAttributeBoolean("access::can-execute") != 0 or std.mem.endsWith(u8, std.mem.span(info.getName()), ".desktop")) {
             self.message(@import("i18n").dtr("phyto", "Executable file"), "Executable files are not launched by double-click. Open them deliberately using another application.");
+            return;
+        }
+        if (@import("platform/applications.zig").extractorForMime(std.mem.span(info.getContentType() orelse ""))) |tool| {
+            self.askExtract(file, info, tool);
             return;
         }
         const uri = file.getUri();

@@ -317,7 +317,8 @@ pub const Menu = struct {
                 break :blk false;
             },
             .tab_close_others => self.owner.panes[c.pane].tabs.items.len > 1,
-            .archive, .extract => f.local and count > 0 and apps.available("file-roller"),
+            .archive => f.local and count > 0 and apps.available("file-roller"),
+            .extract => f.local and apps.extractor(c) != null,
             .bulk_rename => count > 1 and apps.available("bulky") and f.local,
             .admin => f.local and f.all_directories and apps.adminAvailable(),
             else => true,
@@ -475,10 +476,8 @@ pub const Menu = struct {
             if (f.all_directories and c.items.items.len == 1) self.add(change, @import("i18n").dtr("phyto", "Add bookmark"), .bookmark_add);
             self.section(menu, change);
             const extensions = gio.Menu.new();
-            if (apps.available("file-roller") and f.local) {
-                self.add(extensions, @import("i18n").dtr("phyto", "Compress…"), .archive);
-                if (apps.archive(c)) self.add(extensions, @import("i18n").dtr("phyto", "Extract…"), .extract);
-            }
+            if (apps.available("file-roller") and f.local) self.add(extensions, @import("i18n").dtr("phyto", "Compress…"), .archive);
+            if (f.local and apps.extractor(c) != null) self.add(extensions, @import("i18n").dtr("phyto", "Extract…"), .extract);
             if (f.all_directories and f.local and apps.adminAvailable()) self.add(extensions, @import("i18n").dtr("phyto", "Open as administrator"), .admin);
             for (self.providers.items.items) |p| if (p.matches(c)) self.extra(extensions, p.name, .{ .kind = .provider, .provider = p });
             self.section(menu, extensions);
