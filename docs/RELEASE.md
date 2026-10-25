@@ -42,11 +42,11 @@ session dispatcher and asynchronous capture-backend patch together. See the
 [capture picker implementation record](FILE_CHOOSER_IMPLEMENTATION_PLAN.md#capture-picker-implementation-record)
 for verification and rebuild details.
 
-The checked-in `packaging/arch/PKGBUILD` targets the Git release tag `v0.3.2`.
+The checked-in `packaging/arch/PKGBUILD` uses the SHA-256-pinned source archive for `v0.3.2`.
 Its Arch version is `1:0.3.2-1`; the epoch allows upgrades from the earlier
 `1.0.0rc2` packages. The source and runtime version are also `0.3.2`.
 The Devario [standard split recipe](../packaging/Devario/pearl/PKGBUILD) uses the
-same tag and produces `pearl` and `pearl-greeter` from one checkout and build.
+same archive and produces `pearl` and `pearl-greeter` from one source tree and build.
 The [Devario Git split recipe](../packaging/Devario/pearl-git/PKGBUILD) tracks the
 default branch and produces `pearl-git` and `pearl-greeter-git`, matching the Arch
 Git recipe. Run `makepkg` in the corresponding directory, keeping its `.install`
