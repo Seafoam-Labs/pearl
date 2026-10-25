@@ -283,12 +283,17 @@ def basic(args, checks):
             assert '=== check-environment exit=0 ===' in text
             assert 'Aqueous session environment is valid.' in text
             assert '=== pearlctl status ===' in text and '"availability"' in text
-            # The journal query names the stream the shell resolved itself (its own
-            # unit, else its executable); a guessed unit name is the bug this guards.
-            journal = re.search(r'^=== journalctl --user (.+) -n 500 --no-pager ===$', text, re.MULTILINE)
-            query = journal.group(1).strip('"') if journal else ''
-            assert journal and query.startswith(('--unit=', '_EXE=')), \
-                f'journal query must name the resolved stream: {journal and journal.group(0)}'
+            # One current-boot query includes the authenticated compositor peer
+            # and Pearl's own stream, bounded to the compositor lifetime.
+            import shlex
+            journal = re.search(r"^=== ('journalctl'.+) ===$", text, re.MULTILINE)
+            assert journal, 'missing scoped journal query'
+            query = shlex.split(journal.group(1))
+            assert '--user' in query and '-b' in query and 'json' in query
+            assert any(arg.startswith('--since=@') for arg in query)
+            assert any(arg.startswith('_PID=') for arg in query)
+            assert any(arg.startswith(('_SYSTEMD_USER_UNIT=', '_EXE=')) for arg in query)
+            assert 'gpu-agreement=unverified' in text
             section = text[journal.end():].split('=== report complete')[0].strip()
             assert section, 'journal section must carry entries or a marker, never nothing'
             assert text.rstrip().endswith('=== report complete exit=0 ===')

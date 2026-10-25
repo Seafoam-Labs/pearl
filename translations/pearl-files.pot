@@ -43,7 +43,7 @@ msgstr ""
 msgid "No matching files in this folder."
 msgstr ""
 
-#: src/portal/file_chooser.zig:128
+#: src/portal/file_chooser.zig:134
 msgid "Open"
 msgstr ""
 
@@ -55,7 +55,7 @@ msgstr ""
 msgid "Places"
 msgstr ""
 
-#: src/files/chooser.zig:1104 src/portal/file_chooser.zig:128
+#: src/files/chooser.zig:1104 src/portal/file_chooser.zig:134
 msgid "Save"
 msgstr ""
 
