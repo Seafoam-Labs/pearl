@@ -376,24 +376,27 @@ pub const Window = struct {
         const f: *gio.File = @ptrCast(@alignCast(data.?));
         f.unref();
     }
+    fn placeHidden(self: *Window, f: *gio.File) bool {
+        return self.preferences.contains("hidden_places", f);
+    }
     fn fillPlaces(self: *Window, container: *gtk.Box) void {
         container.append(u.label(@import("i18n").dtr("phyto", "PLACES"), "section-label").as(gtk.Widget));
-        self.place(container, @import("i18n").dtr("phyto", "Home"), "user-home-symbolic", self.home);
+        if (!self.placeHidden(self.home)) self.place(container, @import("i18n").dtr("phyto", "Home"), "user-home-symbolic", self.home);
         inline for (.{ .{ "Documents", "folder-documents-symbolic", glib.UserDirectory.directory_documents }, .{ "Downloads", "folder-download-symbolic", glib.UserDirectory.directory_download }, .{ "Pictures", "folder-pictures-symbolic", glib.UserDirectory.directory_pictures }, .{ "Music", "folder-music-symbolic", glib.UserDirectory.directory_music }, .{ "Videos", "folder-videos-symbolic", glib.UserDirectory.directory_videos } }) |entry| {
             const f = if (glib.getUserSpecialDir(entry[2])) |path| gio.File.newForPath(path) else self.home.getChild(entry[0]);
             defer f.unref();
-            self.place(container, entry[0], entry[1], f);
+            if (!self.placeHidden(f)) self.place(container, entry[0], entry[1], f);
         }
         const trash = gio.File.newForUri("trash:///");
         defer trash.unref();
-        self.place(container, @import("i18n").dtr("phyto", "Trash"), "user-trash-symbolic", trash);
+        if (!self.placeHidden(trash)) self.place(container, @import("i18n").dtr("phyto", "Trash"), "user-trash-symbolic", trash);
         container.append(u.label(@import("i18n").dtr("phyto", "LOCATIONS"), "section-label").as(gtk.Widget));
         const root = gio.File.newForPath("/");
         defer root.unref();
-        self.place(container, @import("i18n").dtr("phyto", "File System"), "drive-harddisk-symbolic", root);
+        if (!self.placeHidden(root)) self.place(container, @import("i18n").dtr("phyto", "File System"), "drive-harddisk-symbolic", root);
         const network = gio.File.newForUri(@import("network_ui.zig").overview_uri);
         defer network.unref();
-        self.place(container, @import("i18n").dtr("phyto", "Network"), "network-workgroup-symbolic", network);
+        if (!self.placeHidden(network)) self.place(container, @import("i18n").dtr("phyto", "Network"), "network-workgroup-symbolic", network);
         inline for (.{ .{ "bookmarks", "BOOKMARKS" }, .{ "favorites", "FAVORITES" } }) |group| {
             if (self.preferences.strings(group[0])) |values| {
                 defer glib.strfreev(values);

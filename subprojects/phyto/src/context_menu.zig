@@ -396,6 +396,7 @@ pub const Menu = struct {
                 self.add(edit, @import("i18n").dtr("phyto", "Rename bookmark…"), .bookmark_rename);
                 self.add(edit, @import("i18n").dtr("phyto", "Remove bookmark"), .bookmark_remove);
             }
+            if (c.kind == .place) self.add(edit, @import("i18n").dtr("phyto", "Hide from Places"), .place_hide);
             if (c.kind == .device) {
                 if (self.allowed(c, .mount)) self.add(edit, @import("i18n").dtr("phyto", "Mount"), .mount);
                 if (self.allowed(c, .eject)) self.add(edit, @import("i18n").dtr("phyto", "Eject"), .eject) else if (self.allowed(c, .unmount)) self.add(edit, @import("i18n").dtr("phyto", "Unmount"), .unmount);
@@ -618,6 +619,10 @@ pub const Menu = struct {
                 owner.preferences.removeBookmark(c.target());
                 owner.refreshPlaces();
             },
+            .place_hide => {
+                owner.preferences.toggle("hidden_places", c.target());
+                owner.refreshPlaces();
+            },
             .bookmark_rename => owner.operations.name(c, .bookmark),
             .pin, .favorite => {
                 const key: [:0]const u8 = if (cmd == .pin) "pinned" else "favorites";
@@ -697,6 +702,18 @@ pub const Menu = struct {
             if (!r.owner.closed) r.owner.operations.transfer(&r.context, dir, if (r.command == .copy_to) .copy else if (r.command == .restore_to) .restore else .move);
         }
     }
+    fn toggleHiddenPlace(button: *gtk.CheckButton, self: *Menu) callconv(.c) void {
+        const uri: [*:0]u8 = @ptrCast(@alignCast(button.as(object.Object).getData("phyto-uri").?));
+        const f = gio.File.newForUri(uri);
+        defer f.unref();
+        const hidden = self.owner.preferences.contains("hidden_places", f);
+        if (hidden != (button.getActive() != 0)) return;
+        self.owner.preferences.toggle("hidden_places", f);
+        self.owner.refreshPlaces();
+    }
+    fn freeUriData(data: ?*anyopaque) callconv(.c) void {
+        glib.free(@as([*:0]u8, @ptrCast(@alignCast(data.?))));
+    }
     fn settings(self: *Menu) void {
         const d = gtk.Dialog.new();
         d.as(gtk.Window).setTitle(@import("i18n").dtr("phyto", "File view options"));
@@ -713,6 +730,22 @@ pub const Menu = struct {
             b.setActive(@intFromBool(@field(self.owner.preferences, pair[1])));
             b.as(gtk.Actionable).setActionName("win." ++ pair[1]);
             body.append(b.as(gtk.Widget));
+        }
+        if (self.owner.preferences.strings("hidden_places")) |values| {
+            defer glib.strfreev(values);
+            if (values[0] != null) {
+                body.append(u.label(@import("i18n").dtr("phyto", "Hidden places (check to show again)"), null).as(gtk.Widget));
+                for (std.mem.span(values)) |uri| {
+                    const f = gio.File.newForUri(uri.?);
+                    defer f.unref();
+                    const basename = f.getBasename();
+                    defer if (basename) |bn| glib.free(bn);
+                    const b = gtk.CheckButton.newWithLabel(if (basename) |bn| bn else uri.?);
+                    b.as(object.Object).setDataFull("phyto-uri", glib.strdup(uri.?), freeUriData);
+                    _ = gtk.CheckButton.signals.toggled.connect(b, *Menu, toggleHiddenPlace, self, .{});
+                    body.append(b.as(gtk.Widget));
+                }
+            }
         }
         body.append(u.label(@import("i18n").dtr("phyto", "Image size limit (MiB)"), null).as(gtk.Widget));
         const provider_limits = u.label(@import("i18n").dtr("phyto", "PDF limit: 50 MiB · Video limit: 2 GiB"), "dim-label");
