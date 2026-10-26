@@ -48,6 +48,8 @@ pub const Dock = struct {
     reason: p.Reason = .empty,
     count: usize = 0,
     truncated: bool = false,
+    /// Edge-direction thickness including margin, reserved as exclusive zone in `always` mode.
+    thickness: i32 = 0,
     hover: bool = false,
     keyboard: bool = false,
     locked: bool = true,
@@ -291,6 +293,7 @@ pub const Dock = struct {
         }
         const actual_width = if (self.window.as(gtk.Widget).getWidth() > 0) self.window.as(gtk.Widget).getWidth() else width;
         const actual_height = if (self.window.as(gtk.Widget).getHeight() > 0) self.window.as(gtk.Widget).getHeight() else height;
+        self.thickness = (if (vertical) actual_width else actual_height) + @as(i32, self.config.margin);
         // Fill the margin gap between the screen edge and the dock so the
         // pointer never crosses dead space where both surfaces lose hover.
         const strip = @max(2, @as(i32, self.config.margin));
@@ -312,6 +315,9 @@ pub const Dock = struct {
         const shown = p.shown(self.reason);
         layer.setLayer(self.window, if (shown and self.fullscreen) .overlay else .top);
         layer.setKeyboardMode(self.window, if (shown and self.keyboard) .exclusive else .none);
+        // Mirror the bar: `always` reserves space so applications avoid the dock;
+        // other modes float above them.
+        layer.setExclusiveZone(self.window, if (shown and self.config.mode == .always and !self.fullscreen) self.thickness else -1);
         if (self.shown != shown) {
             self.shown = shown;
             self.animate(shown);
