@@ -8,6 +8,7 @@ const a = u.a;
 const preview = @import("preview.zig");
 const Window = @import("window.zig").Window;
 const History = @import("core/model.zig").History;
+const Sort = @import("platform/preferences.zig").Sort;
 
 pub const Tab = struct {
     owner: *Window,
@@ -68,14 +69,24 @@ pub const Tab = struct {
         list.setEnableRubberband(1);
         list.as(gtk.Widget).addCssClass("files-list");
         u.name(list.as(gtk.Widget), "Files in detailed list");
-        inline for (.{ .{ "Name", Column.name }, .{ "Size", Column.size }, .{ "Modified", Column.modified } }) |col| {
+        inline for (.{ .{ "Name", Column.name, compareName }, .{ "Size", Column.size, compareSize }, .{ "Modified", Column.modified, compareModified } }) |col| {
             const f = factory(col[1]);
             const c = gtk.ColumnViewColumn.new(col[0], f.as(gtk.ListItemFactory));
+            const column_sorter = gtk.CustomSorter.new(col[2], self, null);
+            c.setSorter(column_sorter.as(gtk.Sorter));
+            column_sorter.unref();
             c.setExpand(@intFromBool(col[1] == .name));
             if (col[1] != .name) c.setFixedWidth(if (col[1] == .size) 88 else 156);
             list.appendColumn(c);
             c.unref();
         }
+        // The column view's sorter drives header-click sorting in the list; the
+        // preferences sorter keeps grid view (and unsorted headers) in order.
+        const multi = gtk.MultiSorter.new();
+        if (list.getSorter()) |view_sorter| multi.append(view_sorter);
+        multi.append(sorter.as(gtk.Sorter));
+        sorted.setSorter(multi.as(gtk.Sorter));
+        multi.unref();
         const views = gtk.Stack.new();
         views.setHhomogeneous(0);
         views.setVhomogeneous(0);
@@ -284,7 +295,15 @@ pub const Tab = struct {
         defer glib.free(needle);
         return @intFromBool(std.mem.indexOf(u8, std.mem.span(folded), std.mem.span(needle)) != null);
     }
-    fn compare(left: ?*const anyopaque, right: ?*const anyopaque, data: ?*anyopaque) callconv(.c) c_int {
+    fn keyOrder(l: *gio.FileInfo, r: *gio.FileInfo, key: Sort) c_int {
+        return switch (key) {
+            .name => glib.utf8Collate(l.getDisplayName(), r.getDisplayName()),
+            .size => if (l.getSize() < r.getSize()) -1 else if (l.getSize() > r.getSize()) 1 else 0,
+            .type => glib.strcmp0(l.getContentType(), r.getContentType()),
+            .modified => if (l.getAttributeUint64("time::modified") < r.getAttributeUint64("time::modified")) -1 else if (l.getAttributeUint64("time::modified") > r.getAttributeUint64("time::modified")) 1 else 0,
+        };
+    }
+    fn compareKeyed(left: ?*const anyopaque, right: ?*const anyopaque, data: ?*anyopaque, key: Sort) c_int {
         const l: *gio.FileInfo = @ptrCast(@alignCast(@constCast(left.?)));
         const r: *gio.FileInfo = @ptrCast(@alignCast(@constCast(right.?)));
         const ld = l.getFileType() == .directory;
@@ -295,14 +314,24 @@ pub const Tab = struct {
         const rp = pref.contains("pinned", u.file(r));
         if (lp != rp) return if (lp) -1 else 1;
         if (pref.folders_first and ld != rd) return if (ld) -1 else 1;
-        var order: c_int = switch (pref.sort) {
-            .name => glib.utf8Collate(l.getDisplayName(), r.getDisplayName()),
-            .size => if (l.getSize() < r.getSize()) -1 else if (l.getSize() > r.getSize()) 1 else 0,
-            .type => glib.strcmp0(l.getContentType(), r.getContentType()),
-            .modified => if (l.getAttributeUint64("time::modified") < r.getAttributeUint64("time::modified")) -1 else if (l.getAttributeUint64("time::modified") > r.getAttributeUint64("time::modified")) 1 else 0,
-        };
+        var order: c_int = keyOrder(l, r, key);
         if (order == 0) order = glib.utf8Collate(l.getDisplayName(), r.getDisplayName());
-        return if (pref.reverse) -std.math.sign(order) else std.math.sign(order);
+        return std.math.sign(order);
+    }
+    fn compare(left: ?*const anyopaque, right: ?*const anyopaque, data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Tab = @ptrCast(@alignCast(data.?));
+        const pref = self.owner.preferences;
+        const order = compareKeyed(left, right, data, pref.sort);
+        return if (pref.reverse) -order else order;
+    }
+    fn compareName(left: ?*const anyopaque, right: ?*const anyopaque, data: ?*anyopaque) callconv(.c) c_int {
+        return compareKeyed(left, right, data, .name);
+    }
+    fn compareSize(left: ?*const anyopaque, right: ?*const anyopaque, data: ?*anyopaque) callconv(.c) c_int {
+        return compareKeyed(left, right, data, .size);
+    }
+    fn compareModified(left: ?*const anyopaque, right: ?*const anyopaque, data: ?*anyopaque) callconv(.c) c_int {
+        return compareKeyed(left, right, data, .modified);
     }
     fn directoryChanged(_: *object.Object, _: *object.ParamSpec, self: *Tab) callconv(.c) void {
         if (self.alive and self.ready) self.owner.queueUpdate();
