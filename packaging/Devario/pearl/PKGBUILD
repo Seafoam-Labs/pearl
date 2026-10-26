@@ -1,8 +1,8 @@
-# Devario Core: build the v0.2.9 Pearl release tag.
+# Devario Core: build the checksum-pinned v0.3.2 Pearl source archive.
 # One build produces the independently installable shell and login greeter.
 pkgbase=pearl
 pkgname=(pearl pearl-greeter)
-pkgver=0.2.9
+pkgver=0.3.2
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
@@ -36,16 +36,16 @@ options=('!strip' '!debug')
 _wasmtime=48.0.2
 _wit_bindgen=0.62.0
 _wasm_tools=1.259.0
-source=("pearl-$pkgver::git+$url.git#tag=v$pkgver"
+source=("pearl-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
         "https://github.com/bytecodealliance/wasmtime/releases/download/v$_wasmtime/wasmtime-v$_wasmtime-x86_64-linux-c-api.tar.xz"
         "https://github.com/bytecodealliance/wit-bindgen/releases/download/v$_wit_bindgen/wit-bindgen-$_wit_bindgen-x86_64-linux.tar.gz"
         "https://github.com/bytecodealliance/wasm-tools/releases/download/v$_wasm_tools/wasm-tools-$_wasm_tools-x86_64-linux.tar.gz"
         'pearl-greeter.install')
-sha256sums=('SKIP'
+sha256sums=('738a006a64198c7293c8a5b01bf60e6f30422f9868cfd0e6b1f324753b436e08'
             'd9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9'
             '3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe'
             '3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160'
-            '562532959fa4274ab7b37a5d36894bfb0a4f161fd002a418ea8d46114c3a9b1f')
+            'e7d94c5907b9e341f6797a56afd6e8e0bb94c55729c2a3cb4b8ea901b0931843')
 
 prepare() {
     cd "$srcdir/pearl-$pkgver"

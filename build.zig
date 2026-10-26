@@ -881,6 +881,13 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| components.addArgs(args);
     b.step("test-components", "Exercise gallery keyboard behavior and capture private Aqueous visuals").dependOn(&components.step);
 
+    const gpu_report = b.addSystemCommand(&.{ "python3", "tests/integration/test_gpu_report.py", "--pearl" });
+    gpu_report.addArtifactArg(app);
+    gpu_report.addArg("--ctl");
+    gpu_report.addArtifactArg(ctl);
+    if (b.args) |args| gpu_report.addArgs(args);
+    b.step("test-gpu-report", "Verify GPU/report diagnostics on a private compositor (-- --aqueous PATH)").dependOn(&gpu_report.step);
+
     const surfaces = b.addSystemCommand(&.{ "python3", "tests/integration/test_surfaces.py", "--pearl" });
     const effect_trace_tests = b.addSystemCommand(&.{ "python3", "tests/test_background_effect_trace.py" });
     surfaces.step.dependOn(&effect_trace_tests.step);

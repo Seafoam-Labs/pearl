@@ -90,19 +90,24 @@ never compete for the same files. Translation revisions do not require rebuildin
 application binaries or an exact application patch-version dependency.
 
 Arch and Devario recipes are in `packaging/arch-lang/PKGBUILD` and
-`packaging/Devario/pearl-lang-de/PKGBUILD`. Both consume a catalog-only source archive:
+`packaging/Devario/pearl-lang-de/PKGBUILD`. The Devario recipe downloads the
+checksum-pinned Pearl release archive and builds only its catalogs. It needs no
+locally generated source files; `_sourcever` selects the application source
+release independently of the translation package's `pkgver`.
+
+The Arch development recipe consumes a catalog-only source archive:
 
 ```sh
 zig build --build-file translations/build.zig source --prefix /tmp/pearl-language-source
 ```
 
-Copy that archive beside the selected recipe in a private build directory. On
+Copy that archive beside the Arch recipe in a private build directory. On
 this development host, inspect `shelly build --help`, then use `shelly build` there.
 Do not assume the host is Arch or use `pacman`/`makepkg`. The small PKGBUILD shell
 boundary is required by those packaging formats; compilation and validation are
 Zig build targets. The recipes do not install packages into the host. Before
-publication, replace the local-development `SKIP` checksum with the archive's
-SHA-256 and update `pkgver`/`pkgrel` for the translation revision. An exported
+publication of the Arch recipe, replace its local-development `SKIP` checksum
+with the archive's SHA-256 and update `pkgver`/`pkgrel` for the translation revision. An exported
 source archive supports catalog builds and tests; regenerating templates needs
 the full application checkout and its pinned Aqueous schema.
 

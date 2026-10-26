@@ -81,3 +81,7 @@ comptime {
 test {
     _ = @import("plugins/activity_policy.zig");
 }
+
+test {
+    _ = @import("cli/journal.zig");
+}

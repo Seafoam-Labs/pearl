@@ -3160,7 +3160,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2593
+#: src/ui/surfaces/manager.zig:2598
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -6499,7 +6499,7 @@ msgstr ""
 msgid "The preference draft needs repair. Open Advanced to fix it; your text is retained."
 msgstr ""
 
-#: src/ui/i18n.zig:48 src/core/application.zig:420
+#: src/ui/i18n.zig:48 src/core/application.zig:421
 msgid "The preview could not be loaded."
 msgstr ""
 

@@ -11,6 +11,7 @@ pub const prefix = "report-";
 pub const suffix = ".log";
 pub const header = "=== pearl report ===";
 pub const footer = "=== report complete exit=0 ===";
+pub const EnvironmentValue = struct { name: []const u8, value: []const u8 };
 
 pub const Sections = struct {
     argv: []const u8,
@@ -24,6 +25,7 @@ pub const Sections = struct {
     /// Must already have its session token fingerprinted via `redactSession`.
     status: []const u8,
     journal: Journal,
+    graphics_environment: []const EnvironmentValue = &.{},
 };
 
 /// The status section when the live probe could not answer: a valid JSON object
@@ -50,6 +52,10 @@ pub const Journal = struct {
     /// line (or a helper failure name), so a broken journal is not mistaken for
     /// an empty one.
     unavailable: ?[]const u8 = null,
+    scoped: bool = false,
+    truncated: bool = false,
+    unverified: usize = 0,
+    excluded: usize = 0,
 };
 
 /// The user unit expected to carry this process' journal stream: the innermost
@@ -139,8 +145,16 @@ pub fn redactSession(alloc: std.mem.Allocator, status: []const u8) ![]const u8 {
 pub fn write(writer: *std.Io.Writer, sections: Sections) std.Io.Writer.Error!void {
     try writer.print("{s}\nversion={s}\nlog-level={s}\nlog-scopes={s}\nargv={f}\n", .{ header, sections.version, sections.log_level, sections.log_scopes, diagnostics.safe(sections.argv) });
     try writer.print("=== check-environment exit={d} ===\n{s}\n", .{ sections.environment_exit, sections.environment });
+    try writer.writeAll("gpu-agreement=unverified (environment validation checks session prerequisites only)\n");
+    if (sections.graphics_environment.len > 0) {
+        try writer.writeAll("=== graphics requests ===\n");
+        for (sections.graphics_environment) |entry| try writer.print("{f}={f}\n", .{ diagnostics.safe(entry.name), diagnostics.safe(entry.value) });
+    }
     try writer.print("=== pearlctl status ===\n{s}\n", .{sections.status});
     try writer.print("=== {f} ===\n", .{diagnostics.safe(sections.journal.command)});
+    if (sections.journal.scoped) try writer.print("journal-scope=current-boot/compositor-lifetime format=correlated-json truncated={} unverified={d} excluded-other-session={d}\n", .{
+        sections.journal.truncated, sections.journal.unverified, sections.journal.excluded,
+    });
     if (sections.journal.unavailable) |reason| {
         if (reason.len == 0) {
             try writer.writeAll("journal=unavailable\n");

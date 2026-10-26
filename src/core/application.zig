@@ -289,6 +289,7 @@ fn sessionChanged(data: ?*anyopaque) callconv(.c) c_int {
             sessionFailed(self, err);
             return 0;
         };
+        self.control_server.?.setCompositorPid(client.request.wire.peerPid());
         self.control_server.?.start() catch |err| {
             sessionFailed(self, err);
             return 0;

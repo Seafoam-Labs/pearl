@@ -5,6 +5,7 @@ const glib = @import("glib2");
 const wire = @import("../aqueous/transport.zig");
 const protocol = @import("protocol.zig");
 const report = @import("report.zig");
+const journal = @import("journal.zig");
 const startup = @import("../core/startup.zig");
 const logging = @import("../core/logging.zig");
 const files = @import("../config/io.zig");
@@ -25,6 +26,12 @@ pub const Server = struct {
     handle: *const fn (*anyopaque, protocol.Request, std.mem.Allocator) anyerror![]const u8,
     quit: *const fn (*anyopaque) void,
     quit_source: c_uint = 0,
+    compositor_pid: ?u32 = null,
+    compositor_start: ?u64 = null,
+    pub fn setCompositorPid(self: *Server, pid: ?u32) void {
+        self.compositor_pid = pid;
+        self.compositor_start = if (pid) |value| processStart(value) else null;
+    }
     pub fn init(runtime: []const u8, session: []const u8, display: []const u8, context: *anyopaque, handle: @FieldType(Server, "handle"), quit: @FieldType(Server, "quit")) !Server {
         const path = try protocol.endpoint(a, runtime, session);
         errdefer a.free(path);
@@ -251,6 +258,14 @@ fn writeReport(owner: *Server, request: protocol.Request, alloc: std.mem.Allocat
     const seconds_raw = std.Io.Clock.real.now(std.Options.debug_io).toSeconds();
     var name_storage: [32]u8 = undefined;
     var out: std.Io.Writer.Allocating = .init(alloc);
+    const graphics_keys = [_][:0]const u8{
+        "GSK_RENDERER",          "MESA_VK_DEVICE_SELECT",     "MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE",
+        "DRI_PRIME",             "__GLX_VENDOR_LIBRARY_NAME", "__NV_PRIME_RENDER_OFFLOAD",
+        "__VK_LAYER_NV_optimus", "NODEVICE_SELECT",           "VK_LOADER_LAYERS_DISABLE",
+        "VK_DRIVER_FILES",       "VK_ICD_FILENAMES",
+    };
+    var graphics_environment: [graphics_keys.len]report.EnvironmentValue = undefined;
+    for (graphics_keys, &graphics_environment) |key, *entry| entry.* = .{ .name = key, .value = envValue(key) };
     report.write(&out.writer, .{
         .argv = commandLine(alloc),
         .version = @import("../version.zig").string,
@@ -259,7 +274,8 @@ fn writeReport(owner: *Server, request: protocol.Request, alloc: std.mem.Allocat
         .environment = environment.text,
         .environment_exit = environment.exit,
         .status = try report.redactSession(alloc, status),
-        .journal = journalExcerpt(alloc),
+        .journal = journalExcerpt(alloc, owner),
+        .graphics_environment = &graphics_environment,
     }) catch return error.SaveFailed;
     const directory = try std.fmt.allocPrintSentinel(alloc, "{s}/pearl", .{std.mem.span(glib.getUserStateDir())}, 0);
     privateDirectory(directory) catch return error.SaveFailed;
@@ -302,102 +318,88 @@ fn commandLine(alloc: std.mem.Allocator) []const u8 {
     return std.mem.trimEnd(u8, text, " ");
 }
 
-/// One journalctl invocation plus the exact command line to show for it, so the
-/// report header always reproduces the excerpt below it.
-const JournalQuery = struct { argv: []const [:0]const u8, command: []const u8 };
-
-const journal_lines = "500";
-/// Shared across attempts: `pearlctl` answers with a five second deadline, and
-/// the report must stay inside it however many streams it walks.
-const journal_budget_us = 2_000_000;
-
-fn journalQuery(alloc: std.mem.Allocator, specifier: []const u8, value: []const u8) ?JournalQuery {
-    const match = std.fmt.allocPrintSentinel(alloc, "{s}{s}", .{ specifier, value }, 0) catch return null;
-    const argv = alloc.alloc([:0]const u8, 6) catch return null;
-    argv[0] = "journalctl";
-    argv[1] = "--user";
-    argv[2] = match;
-    argv[3] = "-n";
-    argv[4] = journal_lines;
-    argv[5] = "--no-pager";
-    // Quoted so the header stays a command that reproduces the excerpt when the
-    // executable path holds a space (an `_EXE=` match can, a unit name cannot).
-    const quoted = std.mem.indexOfScalar(u8, match, ' ') != null;
-    const command = std.fmt.allocPrint(alloc, "journalctl --user {s}{s}{s} -n {s} --no-pager", .{ if (quoted) "\"" else "", match, if (quoted) "\"" else "", journal_lines }) catch return null;
-    return .{ .argv = argv, .command = command };
+fn processStart(pid: u32) ?u64 {
+    var path: [64]u8 = undefined;
+    var storage: [4096]u8 = undefined;
+    const name = std.fmt.bufPrintZ(&path, "/proc/{d}/stat", .{pid}) catch return null;
+    return journal.startTicks(procText(name, &storage) orelse return null) catch null;
 }
 
-fn firstLine(text: []const u8) []const u8 {
-    var lines = std.mem.splitScalar(u8, text, '\n');
+fn sessionSince(owner: *Server) ?u64 {
+    const ticks = owner.compositor_start orelse return null;
+    if (processStart(owner.compositor_pid orelse return null) != ticks) return null;
+    const hz = std.c.getauxval(std.elf.AT_CLKTCK);
+    if (hz <= 0) return null;
+    var storage: [65536]u8 = undefined;
+    const stat = procText("/proc/stat", &storage) orelse return null;
+    var lines = std.mem.splitScalar(u8, stat, '\n');
     while (lines.next()) |line| {
-        const trimmed = std.mem.trim(u8, line, " \t\r");
-        if (trimmed.len > 0) return trimmed;
+        if (!std.mem.startsWith(u8, line, "btime ")) continue;
+        const boot = std.fmt.parseInt(u64, line[6..], 10) catch return null;
+        return boot + ticks / @as(u64, @intCast(hz));
     }
-    return "";
+    return null;
 }
 
-/// journalctl prints a sentinel rather than nothing when a query matches no
-/// entry; echoing it would put a line in the report that reads like an entry.
-fn journalEntries(text: []const u8) []const u8 {
-    return if (std.mem.eql(u8, std.mem.trim(u8, text, " \t\r\n"), "-- No entries --")) "" else text;
+/// One current-boot query covers Pearl's restart history and the authenticated
+/// compositor peer. JSON metadata correlates untagged GTK messages by PID.
+/// Unknown attribution remains explicit; foreign session markers are excluded.
+fn journalExcerpt(alloc: std.mem.Allocator, owner: *Server) report.Journal {
+    return collectJournal(alloc, owner) catch |err| .{ .command = "journalctl --user -b", .text = "", .unavailable = @errorName(err) };
 }
 
-/// The user journal only, never the system journal: no privilege escalation for
-/// a support artifact. The stream is resolved from this process rather than
-/// assumed from a unit name, because the shell's log lines are in whichever unit
-/// started it: Aqueous's integration units own the stream and are not named
-/// `pearl.service`, while a shell started from a terminal or a nested session is
-/// in a scope that must not be mined for its other output. A unit query that
-/// matches nothing falls through to the executable-scoped one; the header always
-/// names a stream that was actually looked in.
-fn journalExcerpt(alloc: std.mem.Allocator) report.Journal {
+fn collectJournal(alloc: std.mem.Allocator, owner: *Server) !report.Journal {
+    const since = sessionSince(owner) orelse return .{
+        .command = "journalctl --user -b",
+        .text = "",
+        .unavailable = "compositor lifetime unavailable; refusing an unscoped history query",
+    };
     const cancel = gio.Cancellable.new();
     defer cancel.unref();
-    var queries: [2]JournalQuery = undefined;
-    var count: usize = 0;
+    var boot_storage: [64]u8 = undefined;
+    const boot = std.mem.trim(u8, procText("/proc/sys/kernel/random/boot_id", &boot_storage) orelse return error.BootIdentityUnavailable, "\r\n");
+    const boot_arg = try alloc.dupeZ(u8, boot);
+    var argv: std.ArrayList([:0]const u8) = .empty;
+    try argv.appendSlice(alloc, &.{ "journalctl", "--user", "-b", boot_arg, "--no-pager", "-o", "json", "-n", "501", "--output-fields=MESSAGE,_PID,_SYSTEMD_INVOCATION_ID,__REALTIME_TIMESTAMP" });
+    try argv.append(alloc, try std.fmt.allocPrintSentinel(alloc, "--since=@{d}", .{since}, 0));
+    const until = glib.getRealTime();
+    try argv.append(alloc, try std.fmt.allocPrintSentinel(alloc, "--until=@{d}.{d:0>6}", .{ @as(u64, @intCast(@divTrunc(until, 1_000_000))), @as(u32, @intCast(@mod(until, 1_000_000))) }, 0));
     var storage: [4096]u8 = undefined;
     if (procText("/proc/self/cgroup", &storage)) |text| {
         if (report.unitFromCgroup(text)) |unit| {
-            if (journalQuery(alloc, "--unit=", unit)) |query| {
-                queries[count] = query;
-                count += 1;
-            }
+            try argv.append(alloc, try std.fmt.allocPrintSentinel(alloc, "_SYSTEMD_USER_UNIT={s}", .{unit}, 0));
+            try argv.append(alloc, "+");
         }
     }
     var link: [4096]u8 = undefined;
     const size = std.c.readlink("/proc/self/exe", &link, link.len);
-    if (size > 0) {
-        if (journalQuery(alloc, "_EXE=", link[0..@intCast(size)])) |query| {
-            queries[count] = query;
-            count += 1;
-        }
+    if (size > 0 and size < link.len) {
+        try argv.append(alloc, try std.fmt.allocPrintSentinel(alloc, "_EXE={s}", .{link[0..@intCast(size)]}, 0));
+        try argv.append(alloc, "+");
     }
-    if (count == 0) return .{ .command = "journalctl --user", .text = "", .unavailable = "this process' journal stream is not resolvable" };
-    const started = glib.getMonotonicTime();
-    var reason: []const u8 = "";
-    for (queries[0..count]) |query| {
-        const left = started + journal_budget_us - glib.getMonotonicTime();
-        if (left <= 0) {
-            if (reason.len == 0) reason = "journal budget exhausted";
-            break;
+    try argv.append(alloc, try std.fmt.allocPrintSentinel(alloc, "_PID={d}", .{owner.compositor_pid.?}, 0));
+    var command: std.Io.Writer.Allocating = .init(alloc);
+    for (argv.items, 0..) |arg, i| {
+        if (i != 0) try command.writer.writeByte(' ');
+        try command.writer.writeByte('\'');
+        for (arg) |ch| {
+            if (ch == '\'') try command.writer.writeAll("'\\''") else try command.writer.writeByte(ch);
         }
-        const result = helper.run(alloc, query.argv, null, cancel, @divTrunc(left, 1000)) catch |err| {
-            if (reason.len == 0) reason = @errorName(err);
-            continue;
-        };
-        if (!result.success) {
-            if (reason.len == 0) reason = if (result.stderr.len > 0) firstLine(result.stderr) else "journalctl exited unsuccessfully";
-            continue;
-        }
-        const text = journalEntries(result.stdout);
-        if (text.len == 0) continue;
-        return .{ .command = query.command, .text = text };
+        try command.writer.writeByte('\'');
     }
-    // Nothing matched, so the header keeps the primary stream: a reader sees
-    // where Pearl looked, and a query that never answered is told apart from one
-    // that came back empty.
-    const unavailable: ?[]const u8 = if (reason.len > 0) reason else null;
-    return .{ .command = queries[0].command, .text = "", .unavailable = unavailable };
+    const command_text = command.written();
+    const result = helper.runConfigured(alloc, argv.items, null, cancel, 2000, null, .{ .stdout_limit = 2 * 1024 * 1024, .plain_output = true }) catch |err| return .{
+        .command = command_text,
+        .text = "",
+        .unavailable = @errorName(err),
+    };
+    if (!result.success) return .{ .command = command_text, .text = "", .unavailable = result.stderr };
+    const filtered = journal.filter(alloc, result.stdout, &owner.session, owner.compositor_pid) catch |err| return .{
+        .command = command_text,
+        .text = "",
+        .unavailable = @errorName(err),
+    };
+    return .{ .command = command_text, .text = filtered.text, .scoped = true, .truncated = filtered.truncated, .unverified = filtered.unverified, .excluded = filtered.excluded };
 }
 
 /// Retention runs after a successful write and never fails the report.

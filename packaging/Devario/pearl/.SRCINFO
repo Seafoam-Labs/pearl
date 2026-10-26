@@ -1,6 +1,6 @@
 pkgbase = pearl
 	pkgdesc = GTK desktop shell exclusively for Aqueous (release candidate)
-	pkgver = 0.3.0
+	pkgver = 0.3.2
 	pkgrel = 1
 	epoch = 1
 	url = https://github.com/Seafoam-Labs/pearl
@@ -37,12 +37,12 @@ pkgbase = pearl
 	makedepends = cairo>=1.18.4
 	options = !strip
 	options = !debug
-	source = pearl-0.3.0::git+https://github.com/Seafoam-Labs/pearl.git#tag=v0.3.0
+	source = pearl-0.3.2.tar.gz::https://github.com/Seafoam-Labs/pearl/archive/refs/tags/v0.3.2.tar.gz
 	source = https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.2/wasmtime-v48.0.2-x86_64-linux-c-api.tar.xz
 	source = https://github.com/bytecodealliance/wit-bindgen/releases/download/v0.62.0/wit-bindgen-0.62.0-x86_64-linux.tar.gz
 	source = https://github.com/bytecodealliance/wasm-tools/releases/download/v1.259.0/wasm-tools-1.259.0-x86_64-linux.tar.gz
 	source = pearl-greeter.install
-	sha256sums = SKIP
+	sha256sums = 738a006a64198c7293c8a5b01bf60e6f30422f9868cfd0e6b1f324753b436e08
 	sha256sums = d9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9
 	sha256sums = 3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe
 	sha256sums = 3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160
@@ -95,6 +95,7 @@ pkgname = pearl
 	optdepends = bluez>=5.87: Bluetooth controls
 	optdepends = upower>=1.91.4: battery status
 	optdepends = power-profiles-daemon>=0.30: power profiles
+	provides = pearl=1:0.3.1-1
 	provides = pearl-capture-picker=1
 	conflicts = pearl-git
 	backup = etc/pam.d/pearl

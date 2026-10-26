@@ -376,24 +376,27 @@ pub const Window = struct {
         const f: *gio.File = @ptrCast(@alignCast(data.?));
         f.unref();
     }
+    fn placeHidden(self: *Window, f: *gio.File) bool {
+        return self.preferences.contains("hidden_places", f);
+    }
     fn fillPlaces(self: *Window, container: *gtk.Box) void {
         container.append(u.label(@import("i18n").dtr("phyto", "PLACES"), "section-label").as(gtk.Widget));
-        self.place(container, @import("i18n").dtr("phyto", "Home"), "user-home-symbolic", self.home);
+        if (!self.placeHidden(self.home)) self.place(container, @import("i18n").dtr("phyto", "Home"), "user-home-symbolic", self.home);
         inline for (.{ .{ "Documents", "folder-documents-symbolic", glib.UserDirectory.directory_documents }, .{ "Downloads", "folder-download-symbolic", glib.UserDirectory.directory_download }, .{ "Pictures", "folder-pictures-symbolic", glib.UserDirectory.directory_pictures }, .{ "Music", "folder-music-symbolic", glib.UserDirectory.directory_music }, .{ "Videos", "folder-videos-symbolic", glib.UserDirectory.directory_videos } }) |entry| {
             const f = if (glib.getUserSpecialDir(entry[2])) |path| gio.File.newForPath(path) else self.home.getChild(entry[0]);
             defer f.unref();
-            self.place(container, entry[0], entry[1], f);
+            if (!self.placeHidden(f)) self.place(container, entry[0], entry[1], f);
         }
         const trash = gio.File.newForUri("trash:///");
         defer trash.unref();
-        self.place(container, @import("i18n").dtr("phyto", "Trash"), "user-trash-symbolic", trash);
+        if (!self.placeHidden(trash)) self.place(container, @import("i18n").dtr("phyto", "Trash"), "user-trash-symbolic", trash);
         container.append(u.label(@import("i18n").dtr("phyto", "LOCATIONS"), "section-label").as(gtk.Widget));
         const root = gio.File.newForPath("/");
         defer root.unref();
-        self.place(container, @import("i18n").dtr("phyto", "File System"), "drive-harddisk-symbolic", root);
+        if (!self.placeHidden(root)) self.place(container, @import("i18n").dtr("phyto", "File System"), "drive-harddisk-symbolic", root);
         const network = gio.File.newForUri(@import("network_ui.zig").overview_uri);
         defer network.unref();
-        self.place(container, @import("i18n").dtr("phyto", "Network"), "network-workgroup-symbolic", network);
+        if (!self.placeHidden(network)) self.place(container, @import("i18n").dtr("phyto", "Network"), "network-workgroup-symbolic", network);
         inline for (.{ .{ "bookmarks", "BOOKMARKS" }, .{ "favorites", "FAVORITES" } }) |group| {
             if (self.preferences.strings(group[0])) |values| {
                 defer glib.strfreev(values);
@@ -1289,9 +1292,108 @@ pub const Window = struct {
         self.message_dialog = null;
         dialog.as(gtk.Window).destroy();
     }
+    const ExtractAsk = struct { owner: *Window, file: *gio.File, tool: @import("platform/applications.zig").Extractor };
+    fn askExtract(self: *Window, file: *gio.File, info: *gio.FileInfo, tool: @import("platform/applications.zig").Extractor) void {
+        const r = a.create(ExtractAsk) catch unreachable;
+        file.ref();
+        r.* = .{ .owner = self, .file = file, .tool = tool };
+        self.app.as(gio.Application).hold();
+        const title = @import("i18n").dtr("phyto", "Extract archive?");
+        const dialog = gtk.Dialog.new();
+        dialog.as(gtk.Widget).addCssClass("phyto-root");
+        dialog.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
+        dialog.as(gtk.Window).setTitle(title);
+        dialog.as(gtk.Window).setTransientFor(self.window);
+        dialog.as(gtk.Window).setDestroyWithParent(1);
+        dialog.as(gtk.Window).setModal(1);
+        dialog.as(gtk.Window).setDefaultSize(420, -1);
+        const body = dialog.getContentArea();
+        body.as(gtk.Widget).addCssClass("dialog-body");
+        body.append(u.label(info.getName(), "state-title").as(gtk.Widget));
+        const caption = u.label(@import("i18n").dtr("phyto", "This is an archive. Extract its contents into the folder that contains it?"), null);
+        caption.setWrap(1);
+        caption.setWrapMode(.word_char);
+        caption.setMaxWidthChars(50);
+        body.append(caption.as(gtk.Widget));
+        _ = dialog.addButton(@import("i18n").dtr("phyto", "Cancel"), 0);
+        _ = dialog.addButton(@import("i18n").dtr("phyto", "Extract here"), 1);
+        dialog.setDefaultResponse(1);
+        dialog.as(object.Object).setDataFull("phyto-extract", r, extractAskFreed);
+        _ = gtk.Dialog.signals.response.connect(dialog, *ExtractAsk, extractAskResponse, r, .{});
+        dialog.as(gtk.Window).present();
+    }
+    fn extractAskResponse(dialog: *gtk.Dialog, response: c_int, r: *ExtractAsk) callconv(.c) void {
+        if (response == 1 and !r.owner.closed) @import("platform/applications.zig").extractHere(r.owner, r.file, r.tool);
+        dialog.as(gtk.Window).destroy();
+    }
+    fn extractAskFreed(data: ?*anyopaque) callconv(.c) void {
+        const r: *ExtractAsk = @ptrCast(@alignCast(data.?));
+        r.file.unref();
+        r.owner.app.as(gio.Application).release();
+        a.destroy(r);
+    }
+    const RunAsk = struct { owner: *Window, file: *gio.File, needs_chmod: bool };
+    fn askRun(self: *Window, file: *gio.File, info: *gio.FileInfo, needs_chmod: bool) void {
+        const r = a.create(RunAsk) catch unreachable;
+        file.ref();
+        r.* = .{ .owner = self, .file = file, .needs_chmod = needs_chmod };
+        self.app.as(gio.Application).hold();
+        const dialog = gtk.Dialog.new();
+        dialog.as(gtk.Widget).addCssClass("phyto-root");
+        dialog.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
+        dialog.as(gtk.Window).setTitle(@import("i18n").dtr("phyto", "Run executable?"));
+        dialog.as(gtk.Window).setTransientFor(self.window);
+        dialog.as(gtk.Window).setDestroyWithParent(1);
+        dialog.as(gtk.Window).setModal(1);
+        dialog.as(gtk.Window).setDefaultSize(420, -1);
+        const body = dialog.getContentArea();
+        body.as(gtk.Widget).addCssClass("dialog-body");
+        body.append(u.label(info.getName(), "state-title").as(gtk.Widget));
+        const caption = u.label(if (needs_chmod)
+            @import("i18n").dtr("phyto", "This file is not marked as executable. It will be made executable and run as a program. Only run programs from sources you trust.")
+        else
+            @import("i18n").dtr("phyto", "This file will be run as a program. Only run programs from sources you trust."), null);
+        caption.setWrap(1);
+        caption.setWrapMode(.word_char);
+        caption.setMaxWidthChars(50);
+        body.append(caption.as(gtk.Widget));
+        _ = dialog.addButton(@import("i18n").dtr("phyto", "Cancel"), 0);
+        const ok = dialog.addButton(if (needs_chmod) @import("i18n").dtr("phyto", "Make executable and run") else @import("i18n").dtr("phyto", "Run"), 1);
+        ok.addCssClass("destructive-action");
+        dialog.setDefaultResponse(0);
+        dialog.as(object.Object).setDataFull("phyto-run", r, runAskFreed);
+        _ = gtk.Dialog.signals.response.connect(dialog, *RunAsk, runAskResponse, r, .{});
+        dialog.as(gtk.Window).present();
+    }
+    fn runAskResponse(dialog: *gtk.Dialog, response: c_int, r: *RunAsk) callconv(.c) void {
+        defer dialog.as(gtk.Window).destroy();
+        if (response != 1 or r.owner.closed) return;
+        const apps = @import("platform/applications.zig");
+        if (r.needs_chmod and !apps.makeExecutable(r.owner, r.file)) return;
+        apps.runExecutable(r.owner, r.file);
+    }
+    fn runAskFreed(data: ?*anyopaque) callconv(.c) void {
+        const r: *RunAsk = @ptrCast(@alignCast(data.?));
+        r.file.unref();
+        r.owner.app.as(gio.Application).release();
+        a.destroy(r);
+    }
     pub fn openFile(self: *Window, file: *gio.File, info: *gio.FileInfo) void {
-        if (info.getAttributeBoolean("access::can-execute") != 0 or std.mem.endsWith(u8, std.mem.span(info.getName()), ".desktop")) {
+        if (std.mem.endsWith(u8, std.mem.span(info.getName()), ".desktop")) {
             self.message(@import("i18n").dtr("phyto", "Executable file"), "Executable files are not launched by double-click. Open them deliberately using another application.");
+            return;
+        }
+        if (@import("platform/applications.zig").runnable(info)) |needs_chmod| {
+            if (file.getPath()) |path| {
+                glib.free(path);
+                self.askRun(file, info, needs_chmod);
+                return;
+            }
+            self.message(@import("i18n").dtr("phyto", "Executable file"), "Executable files are not launched by double-click. Open them deliberately using another application.");
+            return;
+        }
+        if (@import("platform/applications.zig").extractorForMime(std.mem.span(info.getContentType() orelse ""))) |tool| {
+            self.askExtract(file, info, tool);
             return;
         }
         const uri = file.getUri();
