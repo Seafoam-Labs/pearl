@@ -197,11 +197,73 @@ fn propertiesReady(_: ?*u.object.Object, _: *gio.AsyncResult, data: ?*anyopaque)
     }
     if (!r.owner.closed) r.owner.message("Properties", @ptrCast(r.text.items.ptr));
 }
+pub fn runnable(info: *gio.FileInfo) ?bool {
+    if (info.getAttributeBoolean("access::can-execute") != 0) return false;
+    const mime = std.mem.span(info.getContentType() orelse "");
+    if (std.mem.indexOf(u8, mime, "executable") != null or std.mem.indexOf(u8, mime, "shellscript") != null or std.mem.indexOf(u8, mime, "x-sh") != null) return true;
+    return null;
+}
+pub fn makeExecutable(owner: *Window, file: *gio.File) bool {
+    const path = file.getPath() orelse return false;
+    defer glib.free(path);
+    var err: ?*glib.Error = null;
+    const fresh = file.queryInfo("unix::mode", .{ .nofollow_symlinks = true }, null, &err) orelse {
+        const text = if (err) |e| e.f_message else null;
+        defer if (err) |e| e.free();
+        owner.message(@import("i18n").dtr("phyto", "Could not run file"), text orelse @import("i18n").dtr("phyto", "The file could not be read."));
+        return false;
+    };
+    defer fresh.unref();
+    const mode: u16 = @truncate(fresh.getAttributeUint32("unix::mode"));
+    if (g_chmod(path, @as(c_int, mode | 0o111)) != 0) {
+        owner.message(@import("i18n").dtr("phyto", "Could not run file"), "The file could not be made executable. Check the folder permissions.");
+        return false;
+    }
+    return true;
+}
+pub fn runExecutable(owner: *Window, file: *gio.File) void {
+    const path = file.getPath() orelse return;
+    defer glib.free(path);
+    const dir = file.getParent() orelse return;
+    defer dir.unref();
+    spawn(owner, &.{path}, dir);
+}
+pub fn archiveMime(mime: []const u8) bool {
+    return std.mem.indexOf(u8, mime, "zip") != null or std.mem.indexOf(u8, mime, "tar") != null or std.mem.indexOf(u8, mime, "compressed") != null or std.mem.indexOf(u8, mime, "archive") != null;
+}
 pub fn archive(c: *const Context) bool {
     if (c.items.items.len != 1) return false;
     const info = c.items.items[0].info orelse return false;
-    const mime = std.mem.span(info.getContentType() orelse "");
-    return std.mem.indexOf(u8, mime, "zip") != null or std.mem.indexOf(u8, mime, "tar") != null or std.mem.indexOf(u8, mime, "compressed") != null or std.mem.indexOf(u8, mime, "archive") != null;
+    return archiveMime(std.mem.span(info.getContentType() orelse ""));
+}
+pub const Extractor = enum { file_roller, bsdtar, unzip, tar };
+pub fn extractorForMime(mime: []const u8) ?Extractor {
+    if (!archiveMime(mime)) return null;
+    if (available("file-roller")) return .file_roller;
+    if (available("bsdtar")) return .bsdtar;
+    if (std.mem.indexOf(u8, mime, "zip") != null) return if (available("unzip")) Extractor.unzip else null;
+    return if (available("tar")) Extractor.tar else null;
+}
+pub fn extractor(c: *const Context) ?Extractor {
+    if (c.items.items.len != 1) return null;
+    const info = c.items.items[0].info orelse return null;
+    return extractorForMime(std.mem.span(info.getContentType() orelse ""));
+}
+pub fn extractHere(owner: *Window, file: *gio.File, tool: Extractor) void {
+    const path = file.getPath() orelse return;
+    defer glib.free(path);
+    const dir = file.getParent() orelse return;
+    defer dir.unref();
+    var args: std.ArrayList([*:0]const u8) = .empty;
+    defer args.deinit(a);
+    switch (tool) {
+        .file_roller => args.appendSlice(a, &.{ "file-roller", "--extract", "--" }) catch unreachable,
+        .bsdtar => args.appendSlice(a, &.{ "bsdtar", "-xf" }) catch unreachable,
+        .unzip => args.appendSlice(a, &.{ "unzip", "-q" }) catch unreachable,
+        .tar => args.appendSlice(a, &.{ "tar", "-xf" }) catch unreachable,
+    }
+    args.append(a, path) catch unreachable;
+    spawn(owner, args.items, dir);
 }
 pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
     if (cmd == .admin) {
@@ -215,6 +277,10 @@ pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
         defer file.unref();
         owner.addTab(c.pane, file);
         owner.sync();
+        return;
+    }
+    if (cmd == .extract) {
+        extractHere(owner, c.items.items[0].file, extractor(c) orelse return);
         return;
     }
     var args: std.ArrayList([*:0]const u8) = .empty;
@@ -386,3 +452,4 @@ pub fn runProvider(owner: *Window, c: *const Context, provider: *Provider) void 
 }
 
 extern "c" fn g_app_info_get_all_for_type([*:0]const u8) ?*glib.List;
+extern "c" fn g_chmod([*:0]const u8, c_int) c_int;
