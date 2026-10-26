@@ -514,6 +514,8 @@ pub const Window = struct {
         for (self.panes) |pane| for (pane.tabs.items) |tab| {
             var selected = @import("context.zig").Context.capture(tab);
             defer selected.deinit();
+            // Drop any header-click sort so the menu choice applies.
+            tab.list.sortByColumn(null, .ascending);
             tab.sorter.as(gtk.Sorter).changed(.different);
             const model_ = tab.selection.as(gio.ListModel);
             const selection = tab.selection.as(gtk.SelectionModel);

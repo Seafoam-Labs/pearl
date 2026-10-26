@@ -23,7 +23,7 @@ const identity = @import("app_identity.zig");
 const TaskApps = @import("task_apps.zig");
 const Picker = @import("launcher_picker.zig");
 const Action = enum { activate, launch, pin, unpin, minimize, maximize, close, choose_launcher };
-const Callback = struct { dock: *Dock, action: Action, id: [:0]const u8, value: bool = false, desktop_action: ?[:0]const u8 = null, resolution_hash: u64 = 0, window_id: ?[:0]const u8 = null, picker: ?Picker.Request = null };
+const Callback = struct { dock: *Dock, action: Action, id: [:0]const u8, value: bool = false, desktop_action: ?[:0]const u8 = null, resolution_hash: u64 = 0, window_id: ?[:0]const u8 = null, desktop_id: ?[:0]const u8 = null, picker: ?Picker.Request = null };
 const Group = struct { key: []const u8, desktop: ?[]const u8, pinned: bool, windows: std.ArrayList(*const e.Window) = .empty };
 pub const Dock = struct {
     client: *Client,
@@ -416,10 +416,10 @@ pub const Dock = struct {
         const values = [_]u64{ identity.digest(prefs.application_launchers), identity.pinDigest(prefs.pinned_apps), self.index.generation };
         return std.hash.Wyhash.hash(0, std.mem.asBytes(&values));
     }
-    fn button(self: *Dock, text: [:0]const u8, action: Action, id: []const u8, value: bool, desktop_action: ?[]const u8, window_id: ?[]const u8) !*gtk.Button {
+    fn button(self: *Dock, text: [:0]const u8, action: Action, id: []const u8, value: bool, desktop_action: ?[]const u8, window_id: ?[]const u8, desktop_id: ?[]const u8) !*gtk.Button {
         const alloc = self.arena.allocator();
         const cb = try alloc.create(Callback);
-        cb.* = .{ .dock = self, .resolution_hash = self.resolutionHash(), .window_id = if (window_id) |v| try alloc.dupeZ(u8, v) else null, .action = action, .id = try alloc.dupeZ(u8, id), .value = value, .desktop_action = if (desktop_action) |v| try alloc.dupeZ(u8, v) else null };
+        cb.* = .{ .dock = self, .resolution_hash = self.resolutionHash(), .window_id = if (window_id) |v| try alloc.dupeZ(u8, v) else null, .action = action, .id = try alloc.dupeZ(u8, id), .value = value, .desktop_action = if (desktop_action) |v| try alloc.dupeZ(u8, v) else null, .desktop_id = if (desktop_id) |v| try alloc.dupeZ(u8, v) else null };
         const button_ = gtk.Button.newWithLabel(text);
         w.name(button_.as(gtk.Widget), text);
         if (button_.getChild()) |child| if (object.ext.cast(gtk.Label, child)) |label| {
@@ -450,7 +450,7 @@ pub const Dock = struct {
             }
             const description = try std.fmt.allocPrintSentinel(alloc, "{s} — {d} running{s}{s}{s}{s}", .{ title, group.windows.items.len, if (focused) ", focused" else "", if (minimized) ", minimized windows" else "", if (hidden) ", hidden windows" else "", if (group.pinned) ", pinned" else "" }, 0);
             const box = gtk.Box.new(.horizontal, 0);
-            const primary = try self.button(description, if (target != null) .activate else .launch, if (target) |win| win.id else group.desktop.?, false, null, null);
+            const primary = try self.button(description, if (target != null) .activate else .launch, if (target) |win| win.id else group.desktop.?, false, null, null, if (target != null) group.desktop else null);
             primary.as(gtk.Widget).setTooltipText(description);
             if (target == null and entry == null) primary.as(gtk.Widget).setSensitive(1); // Keep context menu and Unpin reachable.
             // Keep the icon reachable so unavailable pins can still be unpinned.
@@ -495,12 +495,12 @@ pub const Dock = struct {
             primary.as(gtk.Widget).addController(context_keys.as(gtk.EventController));
             const resolution_window = if (group.windows.items.len > 0) group.windows.items[0].id else null;
             if (group.desktop) |id| {
-                if (entry != null) items.append((try self.button("Open new window", .launch, id, false, null, resolution_window)).as(gtk.Widget));
-                if (p.desktopId(id)) items.append((try self.button(if (group.pinned) "Unpin" else "Pin to dock", if (group.pinned) .unpin else .pin, id, false, null, resolution_window)).as(gtk.Widget));
+                if (entry != null) items.append((try self.button("Open new window", .launch, id, false, null, resolution_window, null)).as(gtk.Widget));
+                if (p.desktopId(id)) items.append((try self.button(if (group.pinned) "Unpin" else "Pin to dock", if (group.pinned) .unpin else .pin, id, false, null, resolution_window, null)).as(gtk.Widget));
                 var actions: usize = 0;
                 if (self.index.catalog) |catalog| for (catalog.entries.items) |item| {
                     if (item.action != null and std.mem.eql(u8, item.id, id) and actions < 8) {
-                        items.append((try self.button(item.name, .launch, id, false, item.action, resolution_window)).as(gtk.Widget));
+                        items.append((try self.button(item.name, .launch, id, false, item.action, resolution_window, null)).as(gtk.Widget));
                         actions += 1;
                     }
                 };
@@ -537,12 +537,12 @@ pub const Dock = struct {
             for (group.windows.items) |win| {
                 const title_text = win.title orelse "Untitled window";
                 const label = try alloc.dupeZ(u8, title_text);
-                const activate = try self.button(label, .activate, win.id, false, null, null);
+                const activate = try self.button(label, .activate, win.id, false, null, null, null);
                 activate.as(gtk.Widget).setSensitive(@intFromBool(win.can_activate));
                 items.append(activate.as(gtk.Widget));
-                if (win.can_minimize) items.append((try self.button(if (win.minimized) "Restore minimized window" else "Minimize", .minimize, win.id, !win.minimized, null, null)).as(gtk.Widget));
-                if (win.can_maximize) items.append((try self.button(if (win.maximized) "Unmaximize" else "Maximize", .maximize, win.id, !win.maximized, null, null)).as(gtk.Widget));
-                items.append((try self.button("Close window", .close, win.id, false, null, null)).as(gtk.Widget));
+                if (win.can_minimize) items.append((try self.button(if (win.minimized) "Restore minimized window" else "Minimize", .minimize, win.id, !win.minimized, null, null, null)).as(gtk.Widget));
+                if (win.can_maximize) items.append((try self.button(if (win.maximized) "Unmaximize" else "Maximize", .maximize, win.id, !win.maximized, null, null, null)).as(gtk.Widget));
+                items.append((try self.button("Close window", .close, win.id, false, null, null, null)).as(gtk.Widget));
             }
             self.panel.append(box.as(gtk.Widget));
         }
@@ -582,35 +582,26 @@ pub const Dock = struct {
         switch (cb.action) {
             .choose_launcher => try (self.choose_launcher orelse return error.Unavailable)(self.context, self.output, cb.picker.?),
             .pin, .unpin => try self.pin(cb.id, cb.action == .pin),
-            .launch => {
-                _ = self.installed(cb.id) orelse return error.StaleApplication;
-                const desktop = unix.DesktopAppInfo.new(cb.id) orelse return error.StaleApplication;
-                defer desktop.unref();
-                if (desktop.as(gio.AppInfo).shouldShow() == 0) return error.StaleApplication;
-                const context = self.window.as(gtk.Widget).getDisplay().getAppLaunchContext();
-                defer context.unref();
-                context.setTimestamp(0);
-                if (cb.desktop_action) |action| {
-                    var found = false;
-                    const actions: [*:null]const ?[*:0]const u8 = @ptrCast(desktop.listActions());
-                    var i: usize = 0;
-                    while (actions[i]) |v| : (i += 1) {
-                        if (std.mem.eql(u8, action, std.mem.span(v))) found = true;
-                    }
-                    if (!found) return error.StaleAction;
-                    desktop.launchAction(action, context.as(gio.AppLaunchContext));
-                } else {
-                    var err: ?*glib.Error = null;
-                    defer if (err) |v| v.free();
-                    if (desktop.as(gio.AppInfo).launch(null, context.as(gio.AppLaunchContext), &err) == 0) return error.LaunchFailed;
+            .launch => try self.launchDesktop(cb.id, cb.desktop_action),
+            .activate => {
+                const win = if (self.client.model.get(.window, cb.id)) |found| (if (p.eligible(found.*, self.output)) found else null) else null;
+                if (win == null) {
+                    // The icon can outlive the window it was built for; launch instead of swallowing the click.
+                    const desktop = cb.desktop_id orelse return error.StaleWindow;
+                    log.info("event=dock-activate-fallback reason=stale-window id={s} desktop={s}", .{ cb.id, desktop });
+                    try self.launchDesktop(desktop, null);
+                    return;
                 }
-                self.index.remember(cb.id);
+                _ = self.client.enqueue(.{ .window_activate = .{ .id = cb.id } }) catch |err| {
+                    const desktop = cb.desktop_id orelse return err;
+                    log.info("event=dock-activate-fallback reason={s} id={s} desktop={s}", .{ @errorName(err), cb.id, desktop });
+                    try self.launchDesktop(desktop, null);
+                };
             },
             else => {
                 const win = self.client.model.get(.window, cb.id) orelse return error.StaleWindow;
                 if (!p.eligible(win.*, self.output)) return error.StaleWindow;
                 _ = try self.client.enqueue(switch (cb.action) {
-                    .activate => .{ .window_activate = .{ .id = cb.id } },
                     .minimize => .{ .window_minimized = .{ .id = cb.id, .value = cb.value } },
                     .maximize => .{ .window_maximized = .{ .id = cb.id, .value = cb.value } },
                     .close => .{ .window_close = .{ .id = cb.id } },
@@ -618,6 +609,30 @@ pub const Dock = struct {
                 });
             },
         }
+    }
+    fn launchDesktop(self: *Dock, id: [:0]const u8, action: ?[:0]const u8) !void {
+        _ = self.installed(id) orelse return error.StaleApplication;
+        const desktop = unix.DesktopAppInfo.new(id) orelse return error.StaleApplication;
+        defer desktop.unref();
+        if (desktop.as(gio.AppInfo).shouldShow() == 0) return error.StaleApplication;
+        const context = self.window.as(gtk.Widget).getDisplay().getAppLaunchContext();
+        defer context.unref();
+        context.setTimestamp(0);
+        if (action) |name| {
+            var found = false;
+            const actions: [*:null]const ?[*:0]const u8 = @ptrCast(desktop.listActions());
+            var i: usize = 0;
+            while (actions[i]) |v| : (i += 1) {
+                if (std.mem.eql(u8, name, std.mem.span(v))) found = true;
+            }
+            if (!found) return error.StaleAction;
+            desktop.launchAction(name, context.as(gio.AppLaunchContext));
+        } else {
+            var err: ?*glib.Error = null;
+            defer if (err) |v| v.free();
+            if (desktop.as(gio.AppInfo).launch(null, context.as(gio.AppLaunchContext), &err) == 0) return error.LaunchFailed;
+        }
+        self.index.remember(id);
     }
     pub fn pin(self: *Dock, id: []const u8, value: bool) !void {
         if (!p.desktopId(id)) return error.InvalidDesktopId;
