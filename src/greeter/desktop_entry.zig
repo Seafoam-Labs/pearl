@@ -58,7 +58,8 @@ pub fn parse(a: A, bytes: []const u8, locale: []const u8) !Entry {
         const result = try keys.getOrPut(a, key);
         if (result.found_existing) return error.DuplicateKey;
         const v = std.mem.trim(u8, line[n + 1 ..], " \t");
-        if (std.mem.eql(u8, key, "Hidden")) out.hidden = try boolean(v) else if (std.mem.eql(u8, key, "NoDisplay")) out.no_display = try boolean(v) else if (std.mem.eql(u8, key, "Terminal") and try boolean(v)) return error.TerminalSessionUnsupported else if (std.mem.eql(u8, key, "Type")) out.application = std.mem.eql(u8, v, "Application") else if (std.mem.eql(u8, key, "Name")) {
+        // Session entries ship as Type=Application or the spec's Type=XSession (Plasma, many X11 sessions).
+        if (std.mem.eql(u8, key, "Hidden")) out.hidden = try boolean(v) else if (std.mem.eql(u8, key, "NoDisplay")) out.no_display = try boolean(v) else if (std.mem.eql(u8, key, "Terminal") and try boolean(v)) return error.TerminalSessionUnsupported else if (std.mem.eql(u8, key, "Type")) out.application = std.mem.eql(u8, v, "Application") or std.mem.eql(u8, v, "XSession") else if (std.mem.eql(u8, key, "Name")) {
             if (best_locale == 0) out.name = try unescape(a, v);
         } else if (std.mem.startsWith(u8, key, "Name[") and std.mem.endsWith(u8, key, "]")) {
             const lang = key[5 .. key.len - 1];
@@ -172,6 +173,18 @@ test "localized metadata and argv quoting do not execute shell metacharacters" {
     try std.testing.expectError(error.InvalidExec, arguments(a, .{ .exec = "example;touch /tmp/no" }, ""));
     try std.testing.expectError(error.InvalidFieldCode, arguments(a, .{ .exec = "example %z" }, ""));
     try std.testing.expectError(error.DuplicateKey, parse(a, "[Desktop Entry]\nHidden=true\nHidden=false\n", "C"));
+}
+
+test "spec Type=XSession session entries are accepted" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const e = try parse(a, "[Desktop Entry]\nType=XSession\nExec=/usr/bin/startplasma-wayland\nTryExec=/usr/bin/startplasma-wayland\nDesktopNames=KDE\nName=Plasma (Wayland)\n", "C");
+    try std.testing.expect(e.application);
+    try std.testing.expectEqualStrings("Plasma (Wayland)", e.name);
+    const argv = try arguments(a, e, "/usr/share/wayland-sessions/plasma.desktop");
+    try std.testing.expectEqualStrings("/usr/bin/startplasma-wayland", argv[0]);
+    try std.testing.expectError(error.InvalidDesktopEntry, parse(a, "[Desktop Entry]\nType=Link\nExec=/usr/bin/x\nName=X\n", "C"));
 }
 
 test "field expansion has a hard allocation bound and preserves argument boundaries" {
