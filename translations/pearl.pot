@@ -107,7 +107,7 @@ msgstr ""
 msgid "5 minutes"
 msgstr ""
 
-#: src/desktop/weather_view.zig:79
+#: src/desktop/weather_view.zig:104
 msgid "7-day forecast"
 msgstr ""
 
@@ -2502,7 +2502,7 @@ msgstr ""
 msgid "February"
 msgstr ""
 
-#: src/desktop/bar.zig:645 src/desktop/weather_view.zig:28
+#: src/desktop/bar.zig:645 src/desktop/weather_view.zig:35
 msgid "Fetching weather…"
 msgstr ""
 
@@ -3766,7 +3766,7 @@ msgstr ""
 msgid "New zone"
 msgstr ""
 
-#: src/desktop/weather_view.zig:60
+#: src/desktop/weather_view.zig:67
 msgid "Next 24 hours"
 msgstr ""
 
@@ -3983,7 +3983,7 @@ msgstr ""
 msgid "November"
 msgstr ""
 
-#: src/desktop/weather_view.zig:69
+#: src/desktop/weather_view.zig:82
 msgid "Now"
 msgstr ""
 
@@ -4140,7 +4140,7 @@ msgstr ""
 msgid "Open settings Overview"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:228 src/config/aqueous_presentation.zig:229 src/config/aqueous_presentation.zig:230
+#: src/config/aqueous_presentation.zig:230 src/config/aqueous_presentation.zig:231 src/config/aqueous_presentation.zig:232
 msgid "Open terminal"
 msgstr ""
 
@@ -6775,7 +6775,7 @@ msgstr ""
 msgid "Title"
 msgstr ""
 
-#: src/desktop/calendar.zig:75 src/desktop/weather_view.zig:82
+#: src/desktop/calendar.zig:75 src/desktop/weather_view.zig:107
 msgid "Today"
 msgstr ""
 
@@ -7225,7 +7225,7 @@ msgstr ""
 msgid "Weather location search"
 msgstr ""
 
-#: src/desktop/bar.zig:645 src/desktop/weather_view.zig:28
+#: src/desktop/bar.zig:645 src/desktop/weather_view.zig:35
 msgid "Weather unavailable"
 msgstr ""
 
