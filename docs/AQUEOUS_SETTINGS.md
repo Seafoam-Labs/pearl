@@ -15,6 +15,13 @@ Pearl selects the helper beside the verified compositor executable, negotiates c
 `--shell none`. Older helpers can remain readable, but writes require the modern
 receipt, candidate-impact and recoverable-commit capabilities.
 
+An upgrade can replace the compositor executable while its process is still
+running. Pearl continues using the helper in that executable's original
+installation directory, with the running compositor's configuration paths and
+the usual capability checks. It never substitutes a helper found earlier on
+`PATH`. A missing replacement helper requires repairing or finishing that
+installation; a removed compositor working directory requires a session restart.
+
 See [capability coverage](AQUEOUS_CAPABILITY_COVERAGE.md), the
 [implementation plan](AQUEOUS_082_UPDATE_PLAN.md), and the concrete
 [upstream dependencies](AQUEOUS_MASTER_DEPENDENCIES.md). The original
@@ -90,6 +97,16 @@ An early rejection with a complete failure receipt can resolve the operation eve
 before candidate bindings exist: no write, reload or display change was requested.
 Pearl retains that draft and permits an explicit retry; it does not retry the write
 automatically.
+Writer-lock admission conflicts are a separate case. When a new Apply receives
+an explicit rejection before transaction processing starts, Pearl retries for
+up to eight seconds. Persistent contention reports `ConfigWriterBusy`, retains
+the draft and resolves the local pending record so another Apply remains usable.
+This supports both the structured `admission: "busy"` response and the older
+helper's exact `config_writer_busy` error envelope. Confirmed display previews
+are reverted without this retry loop to preserve their commit deadline. A lost
+admission reply still requires receipt recovery; old ambiguous pending records
+are never automatically cleared. Older Pearl versions do not use the additive
+admission field and retain their conservative recovery behavior.
 Unsaved editor text itself is still memory-only across process restarts.
 
 `pearlctl aqueous status --text operation` shows the bounded stage report;

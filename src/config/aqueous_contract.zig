@@ -195,6 +195,61 @@ pub const Result = struct {
         return self.save != .uncertain and self.save != .recovery_conflict and self.display != .previewing and self.receipt != .unknown and self.receipt != .recovery_conflict;
     }
 };
+
+/// Evidence about one invocation, never about a recovered operation ID. The
+/// caller may use this only for a fresh Apply and retries rejected the same way.
+pub fn admissionBusy(v: Value, operation: []const u8) !bool {
+    if (m.get(v, "result_version") == .null) {
+        // Older helpers return this exact envelope when receipts.begin cannot
+        // acquire the lock. Other failures, including malformed replies, remain
+        // uncertain and must go through operation-status.
+        if (v != .object or v.object.count() != 4 or
+            !std.mem.eql(u8, m.str(m.get(v, "code")), "config_writer_busy") or
+            !std.mem.eql(u8, m.str(m.get(v, "message")), "ConfigWriterBusy")) return false;
+        try version(v, "protocol", 1);
+        return !try boolean(v, "ok");
+    }
+    if (!std.mem.eql(u8, m.str(m.get(v, "admission")), "busy")) return false;
+    const result = try Result.read(v, operation);
+    const failure = m.get(v, "failure");
+    return !result.ok and result.save == .uncertain and result.receipt == .unavailable and
+        result.reload == .not_requested and result.display == .not_requested and
+        std.mem.eql(u8, m.str(m.get(failure, "code")), "config_writer_busy") and
+        try boolean(failure, "retryable");
+}
+
+pub fn rejectedAdmission(alloc: std.mem.Allocator, operation: []const u8) !Result {
+    return Result.read(try m.parse(alloc, try std.json.Stringify.valueAlloc(alloc, .{
+        .ok = false,
+        .protocol = 1,
+        .result_version = 1,
+        .operation_id = operation,
+        .admission = "busy",
+        .save = "failed",
+        .receipt = "unavailable",
+        .reload = "not_requested",
+        .display = "not_requested",
+        .failure = .{ .code = "config_writer_busy", .retryable = true },
+    }, .{}), m.max_response), operation);
+}
+
+test "admission evidence is distinct from unknown receipts and terminal failures" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    const legacy = try m.parse(alloc, "{\"ok\":false,\"protocol\":1,\"code\":\"config_writer_busy\",\"message\":\"ConfigWriterBusy\"}", 4096);
+    try std.testing.expect(try admissionBusy(legacy, "new"));
+    const busy = try m.parse(alloc, "{\"ok\":false,\"protocol\":1,\"result_version\":1,\"operation_id\":\"new\",\"admission\":\"busy\",\"save\":\"uncertain\",\"receipt\":\"unavailable\",\"reload\":\"not_requested\",\"display\":\"not_requested\",\"failure\":{\"code\":\"config_writer_busy\",\"retryable\":true}}", 4096);
+    try std.testing.expect(try admissionBusy(busy, "new"));
+    try std.testing.expect(!(try Result.read(busy, "new")).certain());
+    try std.testing.expectError(error.OperationMismatch, admissionBusy(busy, "other"));
+    const rejected = try rejectedAdmission(alloc, "new");
+    try std.testing.expect(rejected.certain());
+    try std.testing.expect(!try admissionBusy(rejected.value, "new"));
+    const absent = try m.parse(alloc, "{\"ok\":true,\"protocol\":1,\"result_version\":1,\"operation_id\":\"new\",\"save\":\"uncertain\",\"receipt\":\"unknown\",\"reason\":\"absent\",\"reload\":\"unknown\",\"display\":\"not_requested\"}", 4096);
+    try std.testing.expect(!try admissionBusy(absent, "new"));
+    try std.testing.expect(!(try Result.read(absent, "new")).certain());
+}
 fn enumeration(comptime T: type, v: Value, key: []const u8) !T {
     return std.meta.stringToEnum(T, try text(v, key, 64)) orelse error.InvalidContract;
 }

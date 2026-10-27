@@ -20,6 +20,27 @@ pub const Context = struct {
     }
 };
 
+pub fn failureDetail(err: anyerror) ?[]const u8 {
+    return switch (err) {
+        error.InstanceHelperUnavailable => "The running compositor's installation has no executable aqueous-config helper. Repair or finish updating that installation, then Refresh.",
+        error.AqueousWorkingDirectoryUnavailable => "The running compositor's working directory was removed. Restart the compositor session to restore relative configuration paths.",
+        error.UnsupportedHelper, error.HelperUpgradeRequired => "The configuration helper lacks required capabilities. Update the matching Aqueous installation, then Refresh; restart the session if its running compositor is incompatible.",
+        else => null,
+    };
+}
+
+fn linkPath(value: []const u8, executable: bool) ![]const u8 {
+    if (!std.fs.path.isAbsolute(value)) return error.AqueousInstanceUnavailable;
+    const deleted = " (deleted)";
+    if (std.mem.endsWith(u8, value, deleted)) {
+        if (!executable) return error.AqueousWorkingDirectoryUnavailable;
+        // Package upgrades unlink the old executable while the verified IPC
+        // peer keeps running. Its original installation still owns the helper.
+        return value[0 .. value.len - deleted.len];
+    }
+    return value;
+}
+
 fn link(a: std.mem.Allocator, pid: u32, name: []const u8) ![:0]const u8 {
     var path_buffer: [64]u8 = undefined;
     const path = try std.fmt.bufPrintZ(&path_buffer, "/proc/{d}/{s}", .{ pid, name });
@@ -27,8 +48,7 @@ fn link(a: std.mem.Allocator, pid: u32, name: []const u8) ![:0]const u8 {
     const n = std.c.readlink(path, &buffer, buffer.len);
     if (n <= 0 or n == buffer.len) return error.AqueousInstanceUnavailable;
     const value = buffer[0..@intCast(n)];
-    if (!std.fs.path.isAbsolute(value) or std.mem.endsWith(u8, value, " (deleted)")) return error.AqueousInstanceUnavailable;
-    return a.dupeZ(u8, value);
+    return a.dupeZ(u8, try linkPath(value, std.mem.eql(u8, name, "exe")));
 }
 
 pub fn read(a: std.mem.Allocator, pid: u32) !Context {
@@ -84,4 +104,11 @@ test "instance context imports only config paths, preserves empty values and rej
     try std.testing.expect(values[3] == null);
     try std.testing.expectError(error.IncompleteEnvironment, parse(a, "HOME=/tmp"));
     try std.testing.expectError(error.DuplicateConfigEnvironment, parse(a, "HOME=one\x00HOME=two\x00"));
+}
+
+test "upgraded executable keeps its installation but deleted cwd remains unavailable" {
+    try std.testing.expectEqualStrings("/opt/aqueous/bin/aqueous", try linkPath("/opt/aqueous/bin/aqueous (deleted)", true));
+    try std.testing.expectEqualStrings("/opt/aqueous (deleted)/bin/aqueous", try linkPath("/opt/aqueous (deleted)/bin/aqueous", true));
+    try std.testing.expectError(error.AqueousWorkingDirectoryUnavailable, linkPath("/tmp/removed (deleted)", false));
+    try std.testing.expectError(error.AqueousInstanceUnavailable, linkPath("relative/aqueous (deleted)", true));
 }

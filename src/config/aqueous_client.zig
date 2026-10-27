@@ -234,6 +234,12 @@ pub const Client = struct {
     }
     pub fn begin(self: *Client, op: Operation) !void {
         if (!self.running or self.job != null or self.reload_ticket != null) return error.Busy;
+        errdefer |err| if (@import("aqueous_instance.zig").failureDetail(err)) |detail| {
+            self.err = err;
+            self.detail = @splat(0);
+            @memcpy(self.detail[0..@min(detail.len, 255)], detail[0..@min(detail.len, 255)]);
+            self.changed(self.context);
+        };
         if (op != .refresh and self.draft == null) return error.NoDraft;
         if (op == .apply and !self.can_reload(self.context)) return error.ReloadUnavailable;
         if (op == .apply and self.unresolved) return error.SaveUncertain;
@@ -319,9 +325,24 @@ pub const Client = struct {
             &.{ j.owner.helper.?, "apply", "--shell", "none", "--request", "-", "--result", "v1", "--operation-id", operation }
         else
             &.{ j.owner.helper.?, "operation-status", "--shell", "none", "--operation-id", operation };
-        const reply = try process.runIn(alloc, argv, input, j.cancel, 35000, j.instance);
-        // Even a nonzero exit may describe an already persisted save.
-        return contract.Result.read(try model.parse(alloc, reply.stdout, model.max_response), id);
+        const admission_deadline = glib.getMonotonicTime() + 8000000;
+        while (true) {
+            const reply = try process.runIn(alloc, argv, input, j.cancel, 35000, j.instance);
+            const value_ = try model.parse(alloc, reply.stdout, model.max_response);
+            // Apply is entered only for a fresh, locally owned operation ID.
+            // Recovery calls operation-status (input == null), never this path.
+            if (input != null and try contract.admissionBusy(value_, id)) {
+                // A confirmed display preview has a separate commit deadline;
+                // reject promptly and let the normal preview recovery revert it.
+                if (j.route != .display and glib.getMonotonicTime() + 150000 < admission_deadline and j.cancel.isCancelled() == 0) {
+                    glib.usleep(100000);
+                    if (j.cancel.isCancelled() == 0) continue;
+                }
+                return contract.rejectedAdmission(alloc, id);
+            }
+            // Even a nonzero exit may describe an already persisted save.
+            return contract.Result.read(value_, id);
+        }
     }
     fn acceptResult(j: *Job, store: operations.Store, pending: model.Value, result: contract.Result) !void {
         const alloc = j.arena.allocator();
@@ -359,6 +380,10 @@ pub const Client = struct {
         if (!result.ok) {
             j.failure = error.HelperRejected;
             j.detail = model.str(model.get(model.get(result.value, "failure"), "code"));
+            if (rejected_before_write and std.mem.eql(u8, j.detail, "config_writer_busy")) {
+                j.failure = error.ConfigWriterBusy;
+                j.detail = "Configuration busy; try again. Your draft is retained.";
+            }
         }
         if (j.uncertain) return error.SaveUncertain;
         try store.resolved(model.str(model.get(pending, "operation_id")));
@@ -548,6 +573,7 @@ pub const Client = struct {
         const j: *Job = @ptrCast(@alignCast(data.?));
         perform(j) catch |err| {
             j.failure = err;
+            if (j.detail.len == 0) j.detail = @import("aqueous_instance.zig").failureDetail(err) orelse "";
         };
         task.returnBoolean(1);
     }

@@ -18,6 +18,9 @@ def main():
  wrapper=tool_dir/'aqueous-config';shutil.copyfile(ROOT/'tests/fixtures/aqueous_master_helper.py',wrapper);wrapper.chmod(0o700)
  try:
   with PrivateSession(args.output/'session',tool_prefix=args.prefix,aqueous=tool_dir/'aqueous') as s:
+   # Do not inherit installed /etc defaults when a canonical user file is absent.
+   for name in ('layout','input','outputs','rules','appearance'):
+    (Path(s.env['XDG_CONFIG_HOME'])/'aqueous'/f'{name}.toml').touch()
    fault=s.base/'helper-fault';fault.write_text('')
    calls=s.base/'helper-calls.jsonl';bin_dir=s.base/'bin';bin_dir.mkdir()
    decoy=bin_dir/'aqueous-config';decoy.write_text('#!/bin/sh\nexit 99\n');decoy.chmod(0o700)
@@ -52,6 +55,36 @@ def main():
    checks['structured-runtime-save-and-review']=True
    record=Path(s.env['XDG_STATE_HOME'])/'pearl/aqueous-operations/pending.json';assert json.loads(record.read_text())['pending'] is False
    checks['durable-pending-record-resolved']=True
+   # Replacing a package executable leaves the live peer's /proc/exe deleted.
+   replacement=tool_dir/'aqueous.next';shutil.copy2(args.prefix/'bin/aqueous',replacement);replacement.replace(tool_dir/'aqueous')
+   assert os.readlink(f'/proc/{s.compositor.proc.pid}/exe').endswith(' (deleted)')
+   ctl(s,args.ctl,'aqueous','refresh');v=settled(s,args.ctl);assert v['err'] is None and v['helper']==str(wrapper),v
+   stage(s,args.ctl,changes=[dict(id='layout.gaps_outer',value=19)])
+   ctl(s,args.ctl,'aqueous','validate');assert settled(s,args.ctl)['outcome']=='validated'
+   ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl);assert v['outcome']=='saved' and not v['unresolved'],v
+   assert wrong_wm.read_text()=='[layout]\ngaps_outer = 97\n'
+   checks['executable-upgrade-preserves-refresh-validate-apply-and-instance-paths']=True
+   wrapper.rename(tool_dir/'helper.hidden')
+   missing=ctl(s,args.ctl,'aqueous','refresh',code=4);assert not missing['ok'],missing
+   assert 'no executable aqueous-config helper' in state(s,args.ctl)['detail']
+   (tool_dir/'helper.hidden').rename(wrapper)
+   ctl(s,args.ctl,'aqueous','refresh');assert settled(s,args.ctl)['err'] is None
+   checks['missing-upgraded-helper-does-not-fall-back-to-path']=True
+   count=lambda:sum(json.loads(line)['op']=='apply' for line in calls.read_text().splitlines())
+   stage(s,args.ctl,changes=[dict(id='layout.gaps_outer',value=20)])
+   fault.write_text('admission-busy-once');before_count=count()
+   ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+   assert v['outcome']=='saved' and not v['unresolved'] and count()==before_count+2,v
+   checks['transient-admission-contention-retries-without-uncertain-save']=True
+   for failure in ('admission-busy','legacy-admission-busy'):
+    stage(s,args.ctl,changes=[dict(id='layout.gaps_outer',value=21)])
+    generation=state(s,args.ctl)['generation'];fault.write_text(failure)
+    ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+    assert v['err']=='ConfigWriterBusy' and v['draft'] and not v['unresolved'] and v['generation']==generation,v
+    assert json.loads(record.read_text())['pending'] is False
+    fault.write_text('');ctl(s,args.ctl,'aqueous','refresh');settled(s,args.ctl)
+    ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl);assert v['outcome']=='saved' and not v['unresolved'],v
+   checks['persistent-and-legacy-admission-contention-preserves-draft-and-allows-retry']=True
    # A semantic no-change can still carry a comment which must be persisted.
    comments=state(s,args.ctl,'raw_files')['value']['outputs']+'\n# Pearl preserves comments\n'
    stage(s,args.ctl,raw_files={'outputs':comments})
@@ -65,6 +98,14 @@ def main():
    ctl(s,args.ctl,'aqueous','revert');v=settled(s,args.ctl);assert v['outcome']=='reverted' and v['draft'],v
    wait_for(lambda:ipc.call('display.snapshot')['outputs'][0]['actual']==before)
    checks['native-preview-revert-no-persistence']=True
+   fault.write_text('admission-busy');before_count=count()
+   ctl(s,args.ctl,'aqueous','apply');v=wait_for(lambda:(lambda v:v if v['display_preview']=='pending' or not v['busy'] else False)(state(s,args.ctl)),15);assert v['display_preview']=='pending',v
+   ctl(s,args.ctl,'aqueous','keep');v=settled(s,args.ctl)
+   assert v['draft'] and not v['unresolved'] and count()==before_count+1,v
+   assert json.loads(record.read_text())['pending'] is False
+   assert json.loads(Path(str(record)+'.preview').read_text())['pending'] is False
+   wait_for(lambda:ipc.call('display.snapshot')['outputs'][0]['actual']==before)
+   fault.write_text('');checks['display-admission-contention-reverts-without-retrying-expired-lease']=True
    ctl(s,args.ctl,'aqueous','apply');v=wait_for(lambda:(lambda v:v if v['display_preview']=='pending' or not v['busy'] else False)(state(s,args.ctl)),15);assert v['display_preview']=='pending',v
    ctl(s,args.ctl,'aqueous','keep');v=settled(s,args.ctl);assert v['outcome']=='saved' and not v['draft'] and not v['unresolved'],v
    result=state(s,args.ctl,'operation')['value'];assert result['display']=='kept' and result['receipt']=='complete',result
@@ -188,6 +229,17 @@ def main():
    wait_for(lambda:ipc.call('display.snapshot')['outputs'][0]['actual']==before)
    app=s.child('pearl-after-preview-crash',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready');ctl(s,args.ctl,'aqueous','refresh');v=settled(s,args.ctl);assert v['generation']==gen and not v['unresolved'],v
    checks['owner-crash-rolls-back-without-persistence']=True
+   # Losing even a pre-admission rejection must stay uncertain across restart;
+   # an absent receipt is not proof that an arbitrary old operation never ran.
+   stage(s,args.ctl,changes=[dict(id='layout.gaps_outer',value=31)])
+   fault.write_text('lost-admission-busy');before_count=count()
+   ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+   assert v['unresolved'] and count()==before_count+1 and json.loads(record.read_text())['pending'],v
+   fault.write_text('');ctl(s,args.ctl,'quit');app.proc.wait(timeout=10);clean(app)
+   app=s.child('pearl-absent-receipt',[args.pearl],G_DEBUG='fatal-warnings');app.expect('event=control-ready')
+   ctl(s,args.ctl,'aqueous','refresh');v=settled(s,args.ctl)
+   assert v['unresolved'] and count()==before_count+1 and json.loads(record.read_text())['pending'],v
+   checks['lost-admission-reply-and-old-absent-receipt-never-replay']=True
    ipc.close();ctl(s,args.ctl,'quit');app.proc.wait(timeout=10);clean(app)
   report['status']='passed'
  except Exception as e:report.update(status='failed',error=str(e));raise

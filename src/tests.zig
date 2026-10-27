@@ -44,6 +44,7 @@ test {
     _ = @import("config/aqueous_draft.zig");
     _ = @import("config/border_theme.zig");
     _ = @import("config/aqueous_contract.zig");
+    _ = @import("config/aqueous_instance.zig");
     _ = @import("config/aqueous_collections.zig");
     _ = @import("config/aqueous_rule_editor.zig");
     _ = @import("config/aqueous_transactions.zig");
