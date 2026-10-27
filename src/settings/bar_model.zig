@@ -27,6 +27,7 @@ pub fn metadata(item: policy.Item) Metadata {
         .clipboard => .{ .name = "Clipboard", .description = "Recent copied items", .icon = "pearl-edit-copy-symbolic" },
         .wallpaper => .{ .name = "Wallpaper", .description = "Browse a folder and set the wallpaper", .icon = "pearl-image-symbolic" },
         .scheduler => .{ .name = "CPU Scheduler", .description = "CPU scheduler profile (sched_ext)", .icon = "pearl-scheduler-symbolic" },
+        .weather => .{ .name = "Weather", .description = "Current temperature and conditions for your location", .icon = "pearl-weather-clear-symbolic" },
     };
 }
 pub fn groupLabel(group: Group, edge: prefs.Edge) [:0]const u8 {
@@ -141,6 +142,16 @@ pub fn patchResourceSeries(a: std.mem.Allocator, text: []const u8, selection: pr
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("resources") == null) return error.WidgetNotFound;
     document.bar.resource_series = selection;
+    try document.validate();
+    const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
+    if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
+    return result;
+}
+/// The weather location is a global preference; per-output bars share it.
+pub fn patchWeather(a: std.mem.Allocator, text: []const u8, config: @import("../desktop/weather_policy.zig").Config) ![]const u8 {
+    var document = try prefs.parse(a, text);
+    try config.validate();
+    document.weather = config;
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -308,6 +319,21 @@ test "resource patches need the widget placed and preserve every unrelated prefe
     // An unrelated per-output bar policy is untouched by both patches.
     try std.testing.expectEqual(prefs.WorkspaceMode.small, restored.outputs[0].bar.workspace_mode);
     try std.testing.expectEqual(prefs.ResourceMode.icon, restored.outputs[0].bar.resource_mode);
+}
+
+test "weather patches preserve unrelated preferences and reject invalid locations" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const document: prefs.Preferences = .{ .font_size = 19, .outputs = &.{.{ .connector = "DP-1" }} };
+    const text = try std.json.Stringify.valueAlloc(a, document, .{});
+    const changed = try patchWeather(a, text, .{ .location = "Berlin", .latitude = 52.52, .longitude = 13.405, .units = .fahrenheit });
+    const parsed = try prefs.parse(a, changed);
+    try std.testing.expectEqualStrings("Berlin", parsed.weather.location);
+    try std.testing.expectEqual(@as(u16, 19), parsed.font_size);
+    try std.testing.expectEqualStrings("DP-1", parsed.outputs[0].connector);
+    try std.testing.expectError(error.InvalidWeatherCoordinates, patchWeather(a, text, .{ .latitude = 91 }));
+    try std.testing.expectError(error.InvalidWeatherLocation, patchWeather(a, text, .{ .location = "" }));
 }
 
 pub fn patchLauncherIcon(a: std.mem.Allocator, text: []const u8, icon: @import("../desktop/launcher_icon_policy.zig").Config) ![]const u8 {

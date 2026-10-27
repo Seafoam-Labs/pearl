@@ -3,6 +3,7 @@ const files = @import("file_chooser");
 const std = @import("std");
 const gtk = @import("gtk4");
 const gdk = @import("gdk4");
+const gio = @import("gio2");
 const object = @import("gobject2");
 const glib = @import("glib2");
 const prefs = @import("../config/preferences.zig");
@@ -11,6 +12,8 @@ const clock_time = @import("../desktop/clock_time.zig");
 const tr = @import("../desktop/text.zig").tr;
 const workspace_policy = @import("../desktop/workspace_policy.zig");
 const resource_model = @import("../desktop/resource_model.zig");
+const weather_policy = @import("../desktop/weather_policy.zig");
+const weather_service = @import("../services/weather.zig");
 const policy = @import("../desktop/policy.zig");
 const model = @import("bar_model.zig");
 const protocol = @import("editor_protocol.zig");
@@ -19,7 +22,7 @@ const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Group = model.Group;
 const Icon = @import("../ui/components/launcher_icon.zig");
-const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, clock_zone, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, resource_mode: prefs.ResourceMode, resource_series: resource_model.Series, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
+const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, clock_zone, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, resource_mode: prefs.ResourceMode, resource_series: resource_model.Series, weather_units: weather_policy.Units, weather_search, weather_place: struct { location: []const u8, latitude: f64, longitude: f64 }, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
 const Binding = struct { view: *View, id: []const u8, intent: Intent };
 /// G_TYPE_STRING: fundamental type index 16 (2 is G_TYPE_INTERFACE) shifted into GType space.
 const g_type_string: usize = 16 << 2;
@@ -28,6 +31,9 @@ const RowDrop = struct { view: *View, group: Group, index: usize, widget: *gtk.W
 const CardDrop = struct { view: *View, group: Group, widget: *gtk.Widget };
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
 const Choice = struct { widget: *gtk.Widget, text: []const u8 };
+/// Geocoding runs on a worker; the popup may close while the query is in
+/// flight, so the job keeps a nullable back-pointer instead of assuming one.
+const WeatherJob = struct { view: ?*View, query: [:0]u8, cancel: *gio.Cancellable, epoch: u64 };
 pub const View = struct {
     icon: Icon.Renderer = .{},
     candidate: Icon.Renderer = .{},
@@ -62,6 +68,11 @@ pub const View = struct {
     popup_error: ?*gtk.Label = null,
     popup_workspace_mode: prefs.WorkspaceMode = .large,
     popup_resource_mode: prefs.ResourceMode = .icon,
+    popup_weather_units: weather_policy.Units = .celsius,
+    weather_entry: ?*gtk.Entry = null,
+    weather_results: ?*gtk.Box = null,
+    weather_job: ?*WeatherJob = null,
+    weather_epoch: u64 = 0,
     destination: ?*gtk.DropDown = null,
     search: ?*gtk.Entry = null,
     zone_list: ?*gtk.ScrolledWindow = null,
@@ -119,6 +130,7 @@ pub const View = struct {
     fn clearPopup(self: *View) void {
         self.closePicker();
         self.candidate.deinit();
+        self.cancelWeatherSearch();
         self.icon_entry = null;
         self.clock_zone = null;
         self.clock_label = null;
@@ -138,6 +150,8 @@ pub const View = struct {
         self.destination = null;
         self.search = null;
         self.zone_list = null;
+        self.weather_entry = null;
+        self.weather_results = null;
         self.popup_closed = false;
         self.menu_controls.clearRetainingCapacity();
         self.choices.clearRetainingCapacity();
@@ -150,7 +164,7 @@ pub const View = struct {
         const self: *View = @ptrCast(@alignCast(data.?));
         self.idle = 0;
         if (self.popup_closed) {
-            if (self.picker != null or self.candidate.job != null) return 0;
+            if (self.picker != null or self.candidate.job != null or self.weather_job != null) return 0;
             self.clearPopup();
         }
         self.update();
@@ -381,13 +395,18 @@ pub const View = struct {
                 }
                 if (builtin == .workspaces) labels.append(w.label(document.bar.workspace_mode.label(), "pearl-secondary").as(gtk.Widget));
                 if (builtin == .resources) labels.append(w.label(document.bar.resource_mode.label(), "pearl-secondary").as(gtk.Widget));
+                if (builtin == .weather) {
+                    const detail = w.label(try alloc.dupeZ(u8, document.weather.location), "pearl-secondary");
+                    detail.setMaxWidthChars(18);
+                    labels.append(detail.as(gtk.Widget));
+                }
                 if (builtin == null) {
                     const detail = w.label(try pluginDetail(alloc, document, id, plugins), "pearl-secondary");
                     detail.setMaxWidthChars(18);
                     labels.append(detail.as(gtk.Widget));
                 }
                 row.append(labels.as(gtk.Widget));
-                if (clock_policy.reference(id) != null or std.mem.eql(u8, id, "launcher") or std.mem.eql(u8, id, "workspaces") or std.mem.eql(u8, id, "resources")) {
+                if (clock_policy.reference(id) != null or std.mem.eql(u8, id, "launcher") or std.mem.eql(u8, id, "workspaces") or std.mem.eql(u8, id, "resources") or std.mem.eql(u8, id, "weather")) {
                     const b = try self.button(row, @import("i18n").dtr("pearl", "⋯"), try std.fmt.allocPrint(alloc, "bar.widget.{s}", .{id}), id, .actions, false);
                     w.name(b.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Actions for {s}, {s}, position {d} of {d}", .{ title, model.groupLabel(group, document.bar.edge), i + 1, layout.items[g].items.len }, 0));
                     b.as(gtk.Widget).setTooltipText(try std.fmt.allocPrintSentinel(alloc, "Actions for {s}", .{title}, 0));
@@ -564,6 +583,46 @@ pub const View = struct {
                     _ = gtk.CheckButton.signals.toggled.connect(choice_, *Binding, seriesToggled, binding, .{});
                     try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.resource.series.{s}", .{@tagName(kind)}), .widget = choice_.as(gtk.Widget) });
                 }
+            }
+            if (std.mem.eql(u8, id, "weather")) {
+                box.append(w.label(@import("i18n").dtr("pearl", "Temperature units"), "settings-row-title").as(gtk.Widget));
+                self.popup_weather_units = document.weather.units;
+                var first: ?*gtk.CheckButton = null;
+                for (std.enums.values(weather_policy.Units)) |units| {
+                    const choice_ = gtk.CheckButton.new();
+                    const label = w.label(units.label(), null);
+                    label.as(gtk.Widget).setCanTarget(0);
+                    choice_.as(gtk.Widget).setSizeRequest(-1, 32);
+                    choice_.setChild(label.as(gtk.Widget));
+                    if (first) |leader| choice_.setGroup(leader) else first = choice_;
+                    choice_.setActive(@intFromBool(units == document.weather.units));
+                    box.append(choice_.as(gtk.Widget));
+                    w.name(choice_.as(gtk.Widget), units.label());
+                    const binding = try alloc.create(Binding);
+                    binding.* = .{ .view = self, .id = "weather", .intent = .{ .weather_units = units } };
+                    _ = gtk.CheckButton.signals.toggled.connect(choice_, *Binding, weatherUnitsToggled, binding, .{});
+                    try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.weather.units.{s}", .{@tagName(units)}), .widget = choice_.as(gtk.Widget) });
+                }
+                box.append(w.label(@import("i18n").dtr("pearl", "Location"), "settings-row-title").as(gtk.Widget));
+                const current = w.label(try std.fmt.allocPrintSentinel(alloc, "{s}: {s}", .{ @import("i18n").dtr("pearl", "Current location"), document.weather.location }, 0), "pearl-secondary");
+                current.setMaxWidthChars(30);
+                box.append(current.as(gtk.Widget));
+                const search_row = w.row(8);
+                box.append(search_row.as(gtk.Widget));
+                const entry = gtk.Entry.new();
+                self.weather_entry = entry;
+                entry.setMaxLength(128);
+                entry.as(gtk.Editable).setWidthChars(16);
+                entry.setPlaceholderText(@import("i18n").dtr("pearl", "Search for a city…"));
+                entry.as(gtk.Widget).setHexpand(1);
+                w.name(entry.as(gtk.Widget), @import("i18n").dtr("pearl", "Weather location search"));
+                search_row.append(entry.as(gtk.Widget));
+                try self.menu_controls.append(a, .{ .id = "bar.weather.location", .widget = entry.as(gtk.Widget) });
+                _ = gtk.Entry.signals.activate.connect(entry, *View, weatherSearchActivated, self, .{});
+                _ = try self.button(search_row, @import("i18n").dtr("pearl", "Search"), "bar.weather.search", "", .weather_search, true);
+                const results = w.column(4);
+                self.weather_results = results;
+                box.append(results.as(gtk.Widget));
             }
         }
         box.append(self.popup_error.?.as(gtk.Widget));
@@ -789,6 +848,136 @@ pub const View = struct {
         self.clearPopup();
         self.rememberFocus("bar.widget.resources");
         try self.showMenu(anchor, "resources", null);
+    }
+    fn mutateWeatherUnits(self: *View, units: weather_policy.Units) !void {
+        if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const alloc = temp.allocator();
+        const document = try prefs.parse(alloc, self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
+        var config = document.weather;
+        config.units = units;
+        const next = try model.patchWeather(alloc, self.editor.text(), config);
+        self.editing = true;
+        defer self.editing = false;
+        try self.editor.edit(next);
+        self.host.as(gtk.Accessible).announce(try std.fmt.allocPrintSentinel(alloc, "Weather units: {s}. Unsaved changes.", .{units.label()}, 0), .medium);
+        self.rememberFocus("bar.widget.weather");
+        self.popup.?.popdown();
+        self.queue();
+    }
+    fn mutateWeatherPlace(self: *View, location: []const u8, latitude: f64, longitude: f64) !void {
+        if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const alloc = temp.allocator();
+        const document = try prefs.parse(alloc, self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
+        var config = document.weather;
+        config.location = location;
+        config.latitude = latitude;
+        config.longitude = longitude;
+        const next = try model.patchWeather(alloc, self.editor.text(), config);
+        self.editing = true;
+        defer self.editing = false;
+        try self.editor.edit(next);
+        self.host.as(gtk.Accessible).announce(try std.fmt.allocPrintSentinel(alloc, "Weather location: {s}. Unsaved changes.", .{location}, 0), .medium);
+        self.rememberFocus("bar.widget.weather");
+        self.popup.?.popdown();
+        self.queue();
+    }
+    fn cancelWeatherSearch(self: *View) void {
+        if (self.weather_job) |job| {
+            // The completion still runs on the main context; detaching the view
+            // keeps it from touching widgets this popup no longer owns.
+            job.view = null;
+            job.cancel.cancel();
+        }
+        self.weather_job = null;
+    }
+    fn weatherSearchActivated(_: *gtk.Entry, self: *View) callconv(.c) void {
+        self.startWeatherSearch();
+    }
+    fn startWeatherSearch(self: *View) void {
+        const entry = self.weather_entry orelse return;
+        const raw = std.mem.trim(u8, std.mem.span(entry.as(gtk.Editable).getText()), " ");
+        if (raw.len == 0) {
+            self.popupMessage(@import("i18n").dtr("pearl", "Enter a location name to search."));
+            return;
+        }
+        self.cancelWeatherSearch();
+        if (self.weather_results) |results| while (results.as(gtk.Widget).getFirstChild()) |child| results.remove(child);
+        const query = a.dupeZ(u8, raw) catch return;
+        const job = a.create(WeatherJob) catch {
+            a.free(query);
+            return;
+        };
+        self.weather_epoch += 1;
+        job.* = .{ .view = self, .query = query, .cancel = gio.Cancellable.new(), .epoch = self.weather_epoch };
+        self.weather_job = job;
+        self.popupMessage(@import("i18n").dtr("pearl", "Searching…"));
+        const task = gio.Task.new(null, job.cancel, weatherSearchDone, job);
+        task.setCheckCancellable(0);
+        _ = task.setReturnOnCancel(0);
+        task.setTaskData(job, null);
+        task.runInThread(weatherSearchWork);
+        task.unref();
+    }
+    fn weatherSearchWork(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
+        const job: *WeatherJob = @ptrCast(@alignCast(data.?));
+        const result = a.create([]weather_policy.Place) catch {
+            task.returnPointer(null, null);
+            return;
+        };
+        result.* = weather_service.search(a, job.query, job.cancel) catch {
+            a.destroy(result);
+            task.returnPointer(null, null);
+            return;
+        };
+        task.returnPointer(@as(?*anyopaque, @ptrCast(result)), null);
+    }
+    fn freePlaces(list: []weather_policy.Place) void {
+        for (list) |place| {
+            a.free(place.name);
+            a.free(place.region);
+        }
+        a.free(list);
+    }
+    fn weatherSearchDone(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const job: *WeatherJob = @ptrCast(@alignCast(data.?));
+        const task = object.ext.cast(gio.Task, result).?;
+        const raw = task.propagatePointer(null);
+        const places: ?*[]weather_policy.Place = if (raw) |p| @ptrCast(@alignCast(p)) else null;
+        defer if (places) |list| {
+            freePlaces(list.*);
+            a.destroy(list);
+        };
+        defer {
+            job.cancel.unref();
+            a.free(job.query);
+            a.destroy(job);
+        }
+        const self = job.view orelse return;
+        if (self.weather_job != job) return;
+        self.weather_job = null;
+        const results = self.weather_results orelse return;
+        if (places == null) {
+            self.popupMessage(@import("i18n").dtr("pearl", "Location search failed. Check your connection and try again."));
+            return;
+        }
+        if (places.?.len == 0) {
+            self.popupMessage(@import("i18n").dtr("pearl", "No places match that search."));
+            return;
+        }
+        self.popupMessage("");
+        const alloc = self.menu_arena.allocator();
+        for (places.?.*) |place| {
+            const location = alloc.dupeZ(u8, if (place.region.len != 0) std.fmt.allocPrint(alloc, "{s}, {s}", .{ place.name, place.region }) catch continue else place.name) catch continue;
+            if (location.len > 128) continue;
+            const b = self.button(results, location, "bar.weather.place", location, .{ .weather_place = .{ .location = location, .latitude = place.latitude, .longitude = place.longitude } }, true) catch continue;
+            w.name(b.as(gtk.Widget), std.fmt.allocPrintSentinel(alloc, "Set weather location to {s}", .{location}, 0) catch location);
+        }
     }
     fn openClock(self: *View, ref: ?[]const u8) !void {
         var temp = std.heap.ArenaAllocator.init(a);
@@ -1112,6 +1301,19 @@ pub const View = struct {
         if (self.editing) return;
         self.mutateResourceSeries(binding.intent.resource_series, choice_.getActive() != 0) catch |err| self.report(err);
     }
+    fn weatherUnitsToggled(choice_: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
+        const self = binding.view;
+        if (choice_.getActive() == 0 or self.editing) return;
+        self.mutateWeatherUnits(binding.intent.weather_units) catch |err| {
+            self.report(err);
+            // A rejected draft edit must not leave falsely selected units.
+            self.editing = true;
+            defer self.editing = false;
+            for (self.menu_controls.items) |control| if (std.mem.startsWith(u8, control.id, "bar.weather.units.") and std.mem.endsWith(u8, control.id, @tagName(self.popup_weather_units))) {
+                if (object.ext.cast(gtk.CheckButton, control.widget)) |previous| previous.setActive(1);
+            };
+        };
+    }
     fn clicked(button_: *gtk.Button, binding: *Binding) callconv(.c) void {
         const self = binding.view;
         switch (binding.intent) {
@@ -1146,6 +1348,9 @@ pub const View = struct {
             .resource_mode => |mode| self.mutateResourceMode(mode) catch |err| self.report(err),
             // Checkboxes drive the graph picker through `toggled`, never a click.
             .resource_series => {},
+            .weather_units => {},
+            .weather_search => self.startWeatherSearch(),
+            .weather_place => |place| self.mutateWeatherPlace(place.location, place.latitude, place.longitude) catch |err| self.report(err),
             .focus => |group| if (self.cards[@intFromEnum(group)]) |card| {
                 _ = card.grabFocus();
             },

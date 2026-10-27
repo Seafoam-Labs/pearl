@@ -63,6 +63,7 @@ const Surface = struct {
     wallpapers: ?*@import("../../desktop/wallpapers.zig").View = null,
     scheduling: ?*@import("../../desktop/scheduling.zig").View = null,
     resources: ?*@import("../../desktop/resource_view.zig").Detail = null,
+    weather: ?*@import("../../desktop/weather_view.zig").View = null,
     notifications: ?*@import("../../desktop/notifications.zig").View = null,
     media: ?*@import("../../desktop/media.zig").View = null,
     tray: ?*@import("../../desktop/tray.zig").View = null,
@@ -98,6 +99,7 @@ const Surface = struct {
         if (self.wallpapers) |view| view.destroy();
         if (self.scheduling) |view| view.destroy();
         if (self.resources) |view| view.destroy();
+        if (self.weather) |view| view.destroy();
         if (self.measure_clock) |clock| {
             if (object.signalHandlerIsConnected(clock.as(object.Object), self.measure_signal) != 0) object.signalHandlerDisconnect(clock.as(object.Object), self.measure_signal);
             clock.unref();
@@ -158,6 +160,7 @@ pub const Manager = struct {
     lifecycle: @import("../../services/lifecycle.zig").Lifecycle = undefined,
     auth: @import("../../services/polkit.zig").Agent = undefined,
     night_light: @import("../../services/night_light.zig").NightLight = undefined,
+    weather: @import("../../services/weather.zig").Service = .{},
     scheduling: @import("../../services/scheduling.zig").Service = undefined,
     power: @import("../../services/power.zig").Power = undefined,
     network: @import("../../services/network.zig").Network = undefined,
@@ -256,6 +259,9 @@ pub const Manager = struct {
         self.services_started = true;
         self.night_light.start();
         self.night_light.configure(self.preferences.prefs().night_light);
+        self.weather = .{ .app = self.app.as(gio.Application), .context = self, .changed = weatherChanged };
+        self.weather.configure(self.preferences.prefs().weather);
+        self.weather.start();
         self.audio.start();
         self.lifecycle = .{ .app = self.app.as(gio.Application), .display = self.display, .client = self.client, .context = self, .changed = lifecycleChanged, .request_logout = logoutRequested, .activity_broker = self.activity, .power = &self.power };
         self.auth = .{ .app = self.app.as(gio.Application), .context = self, .changed = authChanged, .activity_broker = self.activity, .focused_monitor = authMonitor };
@@ -315,6 +321,7 @@ pub const Manager = struct {
             self.lifecycle.stop();
             self.auth.stop();
             self.night_light.stop();
+            self.weather.stop();
             self.scheduling.stop();
             self.power.stop();
             self.network.stop();
@@ -592,6 +599,7 @@ pub const Manager = struct {
         if (!self.running) return;
         self.agent.palette = if (self.preferences.live) |live| live.palette else @import("../../theme/theme.zig").dark;
         self.agent.configure(self.preferences.prefs().assistant);
+        self.weather.configure(self.preferences.prefs().weather);
         if (self.popup) |surface| if (surface.launcher) |view| view.configureAssistant(self.preferences.prefs().assistant.enabled, askAssistant);
         if (self.session_services.started and self.preferences.live != null) {
             self.session_services.notifications.configure(self.preferences.prefs().notifications) catch |err| {
@@ -791,6 +799,13 @@ pub const Manager = struct {
         const gate = self.lifecycle.gate;
         return !session.locked and !gate.locked and !gate.requesting and !gate.preparing and
             (self.lifecycle.session_id.slice().len == 0 or (gate.available and gate.active));
+    }
+
+    fn weatherChanged(context: *anyopaque) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        for (self.outputs.items) |o| if (o.bar) |s| if (s.bar) |bar| bar.update();
+        // An open forecast popup follows the refreshed snapshot live.
+        if (self.popup) |surface| if (surface.weather) |view| view.update();
     }
 
     fn powerChanged(context: *anyopaque, event: @import("../../services/power.zig").Event) void {
@@ -1358,6 +1373,7 @@ pub const Manager = struct {
             if (s.wallpapers) |view| view.destroy();
             if (s.scheduling) |view| view.destroy();
             if (s.resources) |view| view.destroy();
+            if (s.weather) |view| view.destroy();
             if (s.notifications) |view| view.destroy();
             if (s.media) |view| view.destroy();
             if (s.tray) |view| view.destroy();
@@ -1407,7 +1423,7 @@ pub const Manager = struct {
                 const bar_pref = self.preferences.prefs().forOutput(output.connector);
                 if (bar_pref.attached) panel_widget.addCssClass("pearl-bar-attached");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, if (bar_pref.attached) 0 else 4);
-                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index, &self.scheduling);
+                s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index, &self.scheduling, &self.weather);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -1458,6 +1474,7 @@ pub const Manager = struct {
                     .calendar => s.calendar = try @import("../../desktop/calendar.zig").View.create(panel),
                     .wallpapers => s.wallpapers = try @import("../../desktop/wallpapers.zig").View.create(panel, &self.preferences, .{ .context = self, .open = pickerCrop }),
                     .resources => s.resources = try @import("../../desktop/resource_view.zig").Detail.create(panel, self.preferences.prefs().forOutput(output.connector).resource_series),
+                    .weather => s.weather = try @import("../../desktop/weather_view.zig").View.create(panel, &self.weather),
                     .notifications => s.notifications = try @import("../../desktop/notifications.zig").View.create(panel, &self.session_services.notifications, false),
                     .media => {
                         const scroll = gtk.ScrolledWindow.new();
@@ -1790,7 +1807,7 @@ pub const Manager = struct {
                 height = @min(@max(size.height + 16, 48), height);
             }
         }
-        if (self.pane == .scheduling or self.pane == .media or self.pane == .calendar) {
+        if (self.pane == .scheduling or self.pane == .media or self.pane == .calendar or self.pane == .weather) {
             // These cards hug their content instead of reserving the full pane;
             // scrolled panes scroll once their content exceeds the max height.
             var natural: c_int = 0;
