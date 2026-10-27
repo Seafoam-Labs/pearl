@@ -24,6 +24,14 @@
     <file>icons/scalable/actions/pearl-emblem-system-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-network-wireless-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-weather-clear-night-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-weather-clear-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-weather-few-clouds-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-weather-few-clouds-night-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-weather-overcast-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-weather-fog-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-weather-showers-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-weather-snow-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-weather-storm-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-view-grid-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-window-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-window-switcher-symbolic.svg</file>

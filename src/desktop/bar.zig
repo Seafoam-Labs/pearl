@@ -16,7 +16,7 @@ const a = std.heap.c_allocator;
 const clocks = @import("clock_policy.zig");
 const Clock = @import("clock_view.zig").View;
 const Running = @import("running_apps.zig");
-pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers, resources, scheduling };
+pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers, resources, scheduling, weather };
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 pub const Bar = struct {
@@ -51,6 +51,9 @@ pub const Bar = struct {
     scheduler_label: ?*gtk.Label = null,
     /// Dot on the scheduler icon: running, starting or failed.
     scheduler_dot: ?*gtk.Widget = null,
+    weather_service: ?*@import("../services/weather.zig").Service = null,
+    weather_icon: ?*gtk.Image = null,
+    weather_label: ?*gtk.Label = null,
     client: *Client,
     output: []const u8,
     context: *anyopaque,
@@ -74,9 +77,9 @@ pub const Bar = struct {
     running_apps_per_window: bool = false,
     length: i32 = 1280,
     thickness: i32 = 48,
-    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager, tasks: *const @import("task_model.zig").Snapshot, app_index: *@import("apps.zig").Index, scheduling: *@import("../services/scheduling.zig").Service) !*Bar {
+    pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager, tasks: *const @import("task_model.zig").Snapshot, app_index: *@import("apps.zig").Index, scheduling: *@import("../services/scheduling.zig").Service, weather: ?*@import("../services/weather.zig").Service) !*Bar {
         const self = try a.create(Bar);
-        self.* = .{ .scheduling_service = scheduling, .host = host, .tasks = tasks, .app_index = app_index, .plugins = plugins, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
+        self.* = .{ .scheduling_service = scheduling, .host = host, .tasks = tasks, .app_index = app_index, .plugins = plugins, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .weather_service = weather, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
         self.groups = .{ try a.dupeZ(u8, "launcher,workspaces,title"), try a.dupeZ(u8, "clock"), try a.dupeZ(u8, (policy.Groups{}).right) };
         try self.build();
         return self;
@@ -131,6 +134,8 @@ pub const Bar = struct {
         self.bluetooth_label = null;
         self.scheduler_label = null;
         self.scheduler_dot = null;
+        self.weather_icon = null;
+        self.weather_label = null;
         self.workspace_hash = null;
     }
     pub fn configure(self: *Bar, groups: policy.Groups, definitions: []const clocks.Definition) !void {
@@ -313,6 +318,24 @@ pub const Bar = struct {
                         button.setChild(content.as(gtk.Widget));
                         if (item == .media) self.media_label = label else self.notification_label = label;
                         w.name(button.as(gtk.Widget), if (item == .media) @import("i18n").dtr("pearl", "Media") else @import("i18n").dtr("pearl", "Notifications"));
+                        break :blk button.as(gtk.Widget);
+                    },
+                    .weather => blk: {
+                        const button = try self.makeButton(.{ .pane = .weather }, null, "", false);
+                        const content = gtk.Box.new(if (self.vertical) .vertical else .horizontal, if (self.vertical) 0 else 4);
+                        const glyph = w.icon("pearl-weather-clear-symbolic");
+                        self.weather_icon = glyph;
+                        content.append(glyph.as(gtk.Widget));
+                        const label = gtk.Label.new("");
+                        if (self.vertical) {
+                            label.setEllipsize(.end);
+                            label.setMaxWidthChars(3);
+                            label.as(gtk.Widget).addCssClass("pearl-bar-value");
+                        }
+                        content.append(label.as(gtk.Widget));
+                        self.weather_label = label;
+                        button.setChild(content.as(gtk.Widget));
+                        w.name(button.as(gtk.Widget), @import("i18n").dtr("pearl", "Weather"));
                         break :blk button.as(gtk.Widget);
                     },
                     .launcher => blk: {
@@ -606,6 +629,22 @@ pub const Bar = struct {
             var detail: [128]u8 = undefined;
             serviceName(widget, @import("i18n").dtr("pearl", "Open Bluetooth controls"), if (b.peer.snapshot == null) @import("i18n").dtr("pearl", "Bluetooth unavailable") else if (!powered) @import("i18n").dtr("pearl", "Bluetooth off") else std.fmt.bufPrintZ(&detail, "{s} · {d} {s}", .{ @import("i18n").dtr("pearl", "Bluetooth on"), connected, @import("i18n").dtr("pearl", "connected") }) catch "");
         }
+        if (self.weather_label) |label| if (self.weather_service) |weather| {
+            const widget = self.widgets[@intFromEnum(policy.Item.weather)].?;
+            const action = @import("i18n").dtr("pearl", "Open weather forecast");
+            var detail: [384]u8 = undefined;
+            if (weather.snapshot) |forecast| {
+                const snapshot = forecast.current;
+                // An unfetched temperature is shown as pending, never invented.
+                label.setText(std.fmt.bufPrintZ(&service_buffer, "{d:.0}°", .{snapshot.temperature}) catch "");
+                if (self.weather_icon) |glyph| glyph.setFromIconName(@import("weather_policy.zig").icon(snapshot.code, !snapshot.is_day));
+                serviceName(widget, action, std.fmt.bufPrintZ(&detail, "{s} · {s} · {s}", .{ weather.config.location, @import("weather_policy.zig").condition(snapshot.code), std.mem.span(label.getText()) }) catch "");
+            } else {
+                if (self.weather_icon) |glyph| glyph.setFromIconName("pearl-weather-clear-symbolic");
+                label.setText(if (weather.failed) @import("i18n").dtr("pearl", "—") else @import("i18n").dtr("pearl", "…"));
+                serviceName(widget, action, if (weather.failed) @import("i18n").dtr("pearl", "Weather unavailable") else @import("i18n").dtr("pearl", "Fetching weather…"));
+            }
+        };
         const focus = self.client.model.focus(null) catch null;
         if (self.title) |label| {
             const title: []const u8 = if (focus) |f| blk: {

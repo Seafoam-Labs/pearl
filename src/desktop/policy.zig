@@ -2,7 +2,7 @@
 const std = @import("std");
 const Window = @import("../aqueous/entities.zig").Window;
 pub const Layout = enum { tile, monocle, grid, rows, dwindle, @"reverse-dwindle", scrolling, float, @"game-mode", composable };
-pub const Item = enum { window_switcher, running_apps, clipboard, launcher, workspaces, title, clock, keyboard, overview, control, audio, battery, network, bluetooth, resources, notifications, media, tray, wallpaper, scheduler };
+pub const Item = enum { window_switcher, running_apps, clipboard, launcher, workspaces, title, clock, keyboard, overview, control, audio, battery, network, bluetooth, resources, notifications, media, tray, wallpaper, scheduler, weather };
 pub const Groups = struct {
     left: []const u8 = "launcher,workspaces,title",
     center: []const u8 = "clock",
@@ -61,7 +61,7 @@ test "bar groups reject duplicate and unknown widgets while every builtin stays 
     try (Groups{ .left = "", .center = "", .right = "" }).validate();
     try std.testing.expectError(error.InvalidGroups, (Groups{ .right = "clock" }).validate());
     try std.testing.expectError(error.InvalidGroups, (Groups{ .left = "workspaces", .center = "workspaces" }).validate());
-    try std.testing.expectError(error.InvalidGroups, (Groups{ .center = "weather" }).validate());
+    try std.testing.expectError(error.InvalidGroups, (Groups{ .center = "forecast" }).validate());
 }
 test "ranking favors exact names and recent empty-query entries without conflating IDs" {
     try std.testing.expect(score("term", "term", "", false, false, false).? > score("term", "terminal", "", false, false, false).?);

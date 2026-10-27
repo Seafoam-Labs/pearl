@@ -15,6 +15,20 @@ test "old preferences default night light off and new invalid policies are rejec
     try std.testing.expectError(error.InvalidNightLightInterval, parse(alloc, "{\"night_light\":{\"schedule\":\"custom\",\"start_minute\":60,\"end_minute\":60}}"));
     try std.testing.expectError(error.UnknownField, parse(alloc, "{\"night_light\":{\"force\":true}}"));
 }
+test "weather preferences default to New York, roundtrip and reject unsafe values" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    const defaults = try parse(alloc, "{}");
+    try std.testing.expectEqualStrings("New York", defaults.weather.location);
+    try std.testing.expectEqual(@import("../desktop/weather_policy.zig").Units.celsius, defaults.weather.units);
+    const saved = try parse(alloc, "{\"weather\":{\"location\":\"Berlin\",\"latitude\":52.52,\"longitude\":13.405,\"units\":\"fahrenheit\"}}");
+    const encoded = try std.json.Stringify.valueAlloc(alloc, saved, .{});
+    try std.testing.expectEqualDeep(saved.weather, (try parse(alloc, encoded)).weather);
+    try std.testing.expectError(error.InvalidWeatherCoordinates, parse(alloc, "{\"weather\":{\"latitude\":95}}"));
+    try std.testing.expectError(error.InvalidWeatherLocation, parse(alloc, "{\"weather\":{\"location\":\"\"}}"));
+    try std.testing.expectError(error.UnknownField, parse(alloc, "{\"weather\":{\"provider\":\"openweathermap\"}}"));
+}
 test "wallpaper slideshow roundtrips and rejects a non-image fit" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -104,6 +118,7 @@ pub const Preferences = struct {
     desktop_icons: @import("../desktop/icons/model.zig").Config = .{},
     notifications: @import("../services/notification_filter_policy.zig").Config = .{},
     night_light: @import("../services/night_light_policy.zig").Config = .{},
+    weather: @import("../desktop/weather_policy.zig").Config = .{},
     plugins: @import("../plugins/model.zig").Preferences = .{},
     idle: @import("../services/idle_policy.zig").Config = .{},
     theme: Theme = .{},
@@ -137,6 +152,7 @@ pub const Preferences = struct {
         try self.notifications.validate();
         try @import("../desktop/app_identity.zig").validate(self.application_launchers);
         try self.night_light.validate();
+        try self.weather.validate();
         try self.plugins.validate();
         try self.qt.validate();
         try self.matugen.validate();
