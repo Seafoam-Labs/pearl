@@ -35,6 +35,7 @@ pub const events: []const Event = &.{
     .{ .name = "desktop-action", .scopes = &.{.ui} },
     .{ .name = "desktop-action-dropped", .scopes = &.{.ui} },
     .{ .name = "dock-action", .scopes = &.{.desktop} },
+    .{ .name = "dock-activate-fallback", .scopes = &.{.desktop} },
     .{ .name = "document-load-failed", .scopes = &.{.platform} },
     .{ .name = "document-save-failed", .scopes = &.{.platform} },
     .{ .name = "file-chooser-failed", .scopes = &.{.platform} },

@@ -101,7 +101,7 @@ pub fn group(field: m.Value) Group {
     const id = m.str(m.get(field, "id"));
     const page = m.fieldCategory(field);
     if (eq(page, "appearance")) {
-        if (one(id, &.{ "layout.border_width", "layout.border_focused" })) return .borders;
+        if (one(id, &.{ "layout.border_width", "layout.border_focused", "decoration.corner_radius" })) return .borders;
         if (one(id, &.{ "blur.enabled", "opacity.enabled" })) return .effects;
         if (prefix(id, &.{ "blur.", "opacity.", "workspace_transition.", "layout.border_" })) return .effect_tuning;
         if (prefix(id, &.{ "desktop.font.", "desktop.cursor." })) return .typography;
@@ -223,6 +223,8 @@ test "all pinned scalar fields have exactly one section and future fields remain
     try std.testing.expectEqual(Group.input_extra, group(future));
     const centering = try m.parse(arena.allocator(), "{\"id\":\"layout.options.grid.center_single_window\",\"category\":\"layouts\"}", 1024);
     try std.testing.expectEqual(Group.layout_behavior, group(centering));
+    const corners = try m.parse(arena.allocator(), "{\"id\":\"decoration.corner_radius\",\"category\":\"appearance\"}", 1024);
+    try std.testing.expectEqual(Group.borders, group(corners));
 }
 test "search uses id label or chord without rewriting field values" {
     try std.testing.expect(matches("TERMINAL", "spawn_terminal", @import("i18n").dtr("pearl", "Open terminal"), "Super+Return"));
