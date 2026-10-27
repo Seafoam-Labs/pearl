@@ -43,10 +43,11 @@ session dispatcher and asynchronous capture-backend patch together. See the
 for verification and rebuild details.
 
 The checked-in `packaging/arch/PKGBUILD` targets the source archive for `v0.3.3`.
-After publishing the tag, refresh the first source SHA-256 in both stable
-PKGBUILDs and their `.SRCINFO` files; it currently still pins the `v0.3.2` archive.
+Both stable PKGBUILDs and their `.SRCINFO` files pin the downloaded archive
+with SHA-256. The currently published `v0.3.3` archive still declares `0.3.2`
+in `packaging/release.json`; if the tag is corrected, refresh these checksums.
 Its Arch version is `1:0.3.3-1`; the epoch allows upgrades from the earlier
-`1.0.0rc2` packages. The source and runtime version are also `0.3.3`.
+`1.0.0rc2` packages. The local source and runtime version are also `0.3.3`.
 The Devario [standard split recipe](../packaging/Devario/pearl/PKGBUILD) uses the
 same archive and produces `pearl` and `pearl-greeter` from one source tree and build.
 The [Devario Git split recipe](../packaging/Devario/pearl-git/PKGBUILD) tracks the
