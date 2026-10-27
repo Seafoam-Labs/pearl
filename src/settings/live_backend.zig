@@ -63,7 +63,7 @@ pub const Live = struct {
             .scan => self.network.scan_pending,
             .bluetooth => self.bluetooth.pending,
             .discovery => self.bluetooth.discovery_waiting,
-            .brightness => self.power.brightness_pending or self.power.brightness_wanted != null,
+            .brightness => self.power.brightnessBusy(),
             .profile => self.power.profile_pending or self.power.profile_wanted != null,
             .power => self.power.action_pending,
             .lifecycle => self.lifecycle.action_busy,
@@ -143,7 +143,13 @@ pub const Live = struct {
                 if (route != .power or scope.power == null) return error.WrongPage;
                 const v = try p.fields(ui.Brightness, alloc, params);
                 if (try p.number(v.generation) != self.power.brightnessGeneration()) return error.Stale;
-                try self.power.setBrightness(v.percent);
+                if (v.target) |target| {
+                    if (v.percent == null) {
+                        try self.power.selectDisplay(target);
+                        return .none;
+                    }
+                }
+                try self.power.setDisplayBrightness(v.target, v.percent orelse return error.InvalidRequest);
                 return .brightness;
             },
             .@"profile.set" => {
@@ -416,6 +422,8 @@ pub const Live = struct {
                     .profile_generation = try std.fmt.allocPrint(alloc, "{d}", .{power.profileGeneration()}),
                     .profile_pending = self.busy(.profile),
                     .degraded = power.degraded.slice(),
+                    .displays = try power.displaySnapshot(alloc),
+                    .selected_display = try alloc.dupe(u8, power.selected_display.slice()),
                     .brightness = power.backlight.percent(),
                     .brightness_available = power.brightnessAvailable(),
                     .brightness_pending = self.busy(.brightness),

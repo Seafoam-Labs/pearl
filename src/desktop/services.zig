@@ -161,6 +161,7 @@ pub const PowerView = struct {
     brightness_label: *gtk.Label,
     error_label: *gtk.Label,
     brightness: *gtk.Scale,
+    brightness_view: ?*@import("brightness_controls.zig").View = null,
     profiles: [3]*gtk.Button,
     actions: *PowerActions,
     updating: bool = false,
@@ -192,19 +193,10 @@ pub const PowerView = struct {
         self.power_status.setWrap(1);
         state_row.append(self.power_status.as(gtk.Widget));
         power_card.append(state_row.as(gtk.Widget));
-        self.brightness_label = w.label("", "pearl-secondary");
-        power_card.append(self.brightness_label.as(gtk.Widget));
-        const brightness_row = w.row(10);
-        brightness_row.append(w.icon("pearl-display-brightness-symbolic").as(gtk.Widget));
-        self.brightness = gtk.Scale.newWithRange(.horizontal, 0, 100, 1);
+        self.brightness_view = try @import("brightness_controls.zig").View.create(power_card, power, null);
+        self.brightness = self.brightness_view.?.scale;
+        self.brightness_label = self.brightness_view.?.status;
         focus_state.tag(self.brightness.as(gtk.Widget), "brightness", .{});
-        self.brightness.setDrawValue(0);
-        self.brightness.setDigits(0);
-        self.brightness.as(gtk.Widget).setHexpand(1);
-        self.brightness.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Display brightness"));
-        brightness_row.append(self.brightness.as(gtk.Widget));
-        power_card.append(brightness_row.as(gtk.Widget));
-        self.remember(self.brightness.as(object.Object), gtk.Range.signals.value_changed.connect(self.brightness.as(gtk.Range), *PowerView, brightnessChanged, self, .{}), false);
         self.profile_status = w.label("", "pearl-secondary");
         power_card.append(self.profile_status.as(gtk.Widget));
         const profile_box = w.row(4);
@@ -230,6 +222,7 @@ pub const PowerView = struct {
         self.connections.append(a, .{ .object = obj, .id = id }) catch @panic("OOM");
     }
     pub fn destroy(self: *PowerView) void {
+        if (self.brightness_view) |view| view.destroy();
         self.actions.destroy();
         for (self.connections.items) |c| object.signalHandlerDisconnect(c.object, c.id);
         self.power.releaseView(self.owner);
@@ -252,12 +245,8 @@ pub const PowerView = struct {
         else
             std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ @import("i18n").dtr("pearl", "Charge unavailable"), chargeState(power.battery_state) }) catch "Battery";
         self.power_status.setText(battery);
-        self.brightness_label.setText(if (power.backlight.maximum == 0) @import("i18n").dtr("pearl", "Brightness unavailable · no supported backlight") else std.fmt.bufPrintZ(&buffer, "{s} · {s}{s}", .{ @import("i18n").dtr("pearl", "Brightness"), power.backlight.name.slice(), if (power.brightness_pending or power.brightness_wanted != null) @import("i18n").dtr("pearl", " · Applying…") else "" }) catch "Brightness");
-        self.brightness_label.setWrap(1);
-        self.brightness.as(gtk.Widget).setSensitive(@intFromBool(power.brightnessAvailable()));
-        if (!power.brightness_pending and power.brightness_wanted == null and power.feedback == null) self.brightness.as(gtk.Range).setValue(@floatFromInt(power.backlight.percent()));
+        self.brightness_view.?.update();
         self.profile_status.setText(if (!power.profiles[0] and !power.profiles[1] and !power.profiles[2]) @import("i18n").dtr("pearl", "Power profiles unavailable") else @import("i18n").dtr("pearl", "Power profile"));
-        if (power.backlight.maximum > 0 and !power.brightnessAvailable()) self.brightness_label.setText(@import("i18n").dtr("pearl", "Brightness unavailable · an active session is required"));
         for (self.profiles, 0..) |button, i| {
             button.as(gtk.Widget).setSensitive(@intFromBool(power.profiles[i]));
             if (std.mem.eql(u8, power.profile.slice(), Power.profile_names[i])) button.as(gtk.Widget).addCssClass("pearl-selected") else button.as(gtk.Widget).removeCssClass("pearl-selected");

@@ -45,7 +45,7 @@ pub const Page = struct { discovery_issue: ?[]const u8 = null, power: ?@import("
 pub const List = struct { view: []const u8, list: enum { items }, revision: []const u8, offset: []const u8 };
 pub const Audio = struct { view: []const u8, operation: []const u8, generation: []const u8, device: u32, kind: @import("../services/policy.zig").Kind, volume: ?u8 = null, mute: ?bool = null, make_default: ?bool = null, target: ?u32 = null };
 pub const NightLight = struct { view: []const u8, operation: []const u8, generation: []const u8, action: @import("../services/night_light_policy.zig").Action };
-pub const Brightness = struct { view: []const u8, operation: []const u8, generation: []const u8, percent: u8 };
+pub const Brightness = struct { view: []const u8, operation: []const u8, generation: []const u8, percent: ?u8 = null, target: ?[]const u8 = null };
 pub const PowerSettings = struct { view: []const u8, operation: []const u8, revision: []const u8, source: @import("../config/power_patch.zig").Source, field: @import("../config/power_patch.zig").Field, value: u32 };
 pub const Profile = struct { view: []const u8, operation: []const u8, generation: []const u8, profile: []const u8 };
 pub const Network = struct { view: []const u8, operation: []const u8, generation: []const u8, path: []const u8, action: enum { scan, connect, connect_saved, disconnect, enable, disable, cancel } };

@@ -8,7 +8,8 @@ const ext = @import("wayland").client.ext;
 const zwlr = @import("wayland").client.zwlr;
 const Timeouts = @import("../../services/idle_policy.zig").Timeouts;
 pub const Event = enum { lock, sleep, dim, screen_off, display_changed, resumed, unavailable };
-const Output = struct {
+pub const Output = struct {
+    name: @import("../../services/policy.zig").Text(128) = .{},
     owner: ?*Idle = null,
     id: u32 = 0,
     proxy: ?*wl.Output = null,
@@ -33,6 +34,7 @@ pub const Idle = struct {
     power_name: ?u32 = null,
     outputs: [32]Output = @splat(.{}),
     timeouts: Timeouts = .{},
+    manual_wake: ?*ext.IdleNotificationV1 = null,
     pub fn start(self: *Idle) !void {
         const wayland = object.ext.cast(backend.WaylandDisplay, self.display) orelse return error.NotWayland;
         const connection: *wl.Display = @ptrCast(wayland.getWlDisplay().?);
@@ -54,6 +56,8 @@ pub const Idle = struct {
         self.display.flush();
     }
     fn clear(self: *Idle) void {
+        if (self.manual_wake) |n| n.destroy();
+        self.manual_wake = null;
         for (&self.notifications) |*n| {
             if (n.*) |p| p.destroy();
             n.* = null;
@@ -165,11 +169,55 @@ pub const Idle = struct {
         };
         self.display.flush();
     }
-    fn outputEvent(_: *wl.Output, _: wl.Output.Event, _: *Output) void {}
+    fn outputEvent(_: *wl.Output, event: wl.Output.Event, output: *Output) void {
+        switch (event) {
+            .name => |n| output.name.set(std.mem.span(n.name)),
+            .done => if (output.owner) |owner| owner.event(owner.context, .display_changed),
+            else => {},
+        }
+    }
+    pub fn findOutput(self: *Idle, name: []const u8) ?*Output {
+        if (name.len == 0) return null;
+        var found: ?*Output = null;
+        for (&self.outputs) |*output| if (output.proxy != null and std.mem.eql(u8, output.name.slice(), name)) {
+            if (found != null) return null;
+            found = output;
+        };
+        return found;
+    }
+    pub fn setOutputOff(self: *Idle, name: []const u8, off: bool) !void {
+        const output = self.findOutput(name) orelse return error.Unavailable;
+        const power = output.power orelse return error.Unavailable;
+        const mode = output.mode orelse return error.Unavailable;
+        if (off) {
+            if (mode == .off) return;
+            const notifier = self.notifier orelse return error.Unavailable;
+            const seat = self.seat orelse return error.Unavailable;
+            if (self.manual_wake == null) {
+                self.manual_wake = try notifier.getIdleNotification(0, seat);
+                self.manual_wake.?.setListener(*Idle, manualNotify, self);
+            }
+            output.owned = true;
+            power.setMode(.off);
+        } else {
+            // Explicit user restore is allowed even if another client blanked it.
+            output.owned = false;
+            power.setMode(.on);
+        }
+        self.display.flush();
+    }
+    fn manualNotify(_: *ext.IdleNotificationV1, event: ext.IdleNotificationV1.Event, self: *Idle) void {
+        if (event != .resumed) return;
+        self.setScreenOff(false);
+        if (self.manual_wake) |n| n.destroy();
+        self.manual_wake = null;
+        self.event(self.context, .resumed);
+    }
     fn powerEvent(power: *zwlr.OutputPowerV1, event: zwlr.OutputPowerV1.Event, output: *Output) void {
         switch (event) {
             .mode => |m| {
                 output.mode = m.mode;
+                if (m.mode == .on) output.owned = false;
             },
             .failed => {
                 power.destroy();

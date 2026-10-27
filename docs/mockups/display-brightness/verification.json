@@ -1,0 +1,23 @@
+{
+  "scope": "Offline HTML prototype only",
+  "status": "passed",
+  "checks": [
+    "three-display-picker",
+    "pending-feedback",
+    "confirmed-brightness",
+    "target-change-cancels-stale-write",
+    "screen-off-disables-slider",
+    "restore-remembers-brightness",
+    "unavailable-display",
+    "failed-write-preserves-confirmed-value",
+    "disconnect-retargets-explicitly",
+    "collapse-picker",
+    "night-light-toggle",
+    "light-appearance",
+    "no-horizontal-overflow-390",
+    "flyout-fits-390",
+    "no-horizontal-overflow-560",
+    "flyout-fits-560",
+    "no-browser-errors"
+  ]
+}

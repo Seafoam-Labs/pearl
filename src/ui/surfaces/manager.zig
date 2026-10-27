@@ -241,6 +241,7 @@ pub const Manager = struct {
         self.scheduling = .{ .app = self.app.as(gio.Application), .context = self, .changed = schedulingChanged };
         self.power = .{ .app = self.app.as(gio.Application), .context = self, .changed = powerChanged };
         if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_BACKLIGHT")) |root| self.power.backlight_root.set(std.mem.span(root));
+        if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_DRM")) |root| self.power.drm_root.set(std.mem.span(root));
         self.network = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
         self.bluetooth = .{ .app = self.app.as(gio.Application), .context = self, .changed = connectivityChanged };
         self.clipboard = .{ .display = self.display, .context = self, .changed = nativeChanged };
@@ -847,9 +848,8 @@ pub const Manager = struct {
         self.queueOsd(if (percent) |n| @import("i18n").fmt(&osd, "{s} · {d:.0}%", .{ summary, n }) else summary);
     }
     fn validBrightness(self: *Manager, brightness: *const Osd.Brightness) bool {
-        if (!self.power.brightnessAvailable()) return false;
-        const current = Osd.Brightness.from(self.power.backlight);
-        return brightness.sameDevice(&current);
+        const device = self.power.displays.find(brightness.name.slice()) orelse return false;
+        return self.power.deviceAvailable(device);
     }
     fn queueOsd(self: *Manager, text: []const u8) void {
         var content: Osd.Content = .{ .text = .{} };
@@ -858,7 +858,17 @@ pub const Manager = struct {
     }
     fn queueOsdContent(self: *Manager, content: Osd.Content) void {
         if (!self.osdAllowed()) return;
-        const output = if (self.osd) |surface| surface.output else self.osd_pending_output orelse (self.selected(null) catch return);
+        var output = if (self.osd) |surface| surface.output else self.osd_pending_output orelse (self.selected(null) catch return);
+        if (content == .brightness) if (self.power.displays.find(content.brightness.name.slice())) |device| {
+            for (self.outputs.items) |candidate| {
+                if (self.client.model.get(.output, candidate.id)) |entity| {
+                    if (device.output.len != 0 and std.mem.eql(u8, entity.name, device.output.slice())) {
+                        output = candidate;
+                        break;
+                    }
+                }
+            }
+        };
         self.osd_pending = content;
         self.osd_pending_output = output;
         if (self.osd_flush == 0) self.osd_flush = glib.timeoutAdd(80, flushOsd, self);
@@ -1469,6 +1479,7 @@ pub const Manager = struct {
                     .clipboard_capture => s.clipboard_capture = try @import("../../desktop/clipboard_capture.zig").View.create(panel, &self.clipboard, &self.capture, s, captureRequested, dismissSurface),
                     .scheduling => s.scheduling = try @import("../../desktop/scheduling.zig").View.create(panel, &self.scheduling),
                     .control => {
+                        if (self.client.model.get(.output, output.id)) |entity| self.power.preferOutput(entity.name);
                         s.control = try Panels.Control.create(panel, &self.layout.?, s, layoutAction, controlTask, settingsNavigate, self.settings_page.?, window, .{ .audio = &self.audio, .power = &self.power, .night_light = &self.night_light, .network = &self.network, .bluetooth = &self.bluetooth, .lifecycle = &self.lifecycle, .auth = &self.auth });
                     },
                 }
@@ -2286,7 +2297,7 @@ pub const Manager = struct {
                 return "{\"queued\":true}";
             },
             .brightness_set => {
-                try self.power.setBrightness(request.percent.?);
+                if (request.delta) |delta| try self.power.adjustBrightness(request.output, delta) else try self.power.setDisplayBrightness(request.output, request.percent.?);
                 return "{\"queued\":true}";
             },
             .profile_set => {
@@ -2399,6 +2410,7 @@ pub const Manager = struct {
     const ServiceStatus = struct {
         audio: struct { ready: bool, generation: u64, count: usize, truncated: bool, pending: bool, in_flight: bool, err: ?[]const u8, default_sink: ?u32, default_source: ?u32, devices: []const DeviceStatus, next_offset: ?usize },
         power: struct { battery_present: bool, percentage: f64, state: u32, on_battery: bool, time_to_empty: i64, time_to_full: i64, profile: []const u8, profiles: [3]bool, degraded: []const u8, can_power_off: bool, can_reboot: bool, session_active: bool, session_source: ?[]const u8, preparing: bool, pending: bool, profile_in_flight: bool, err: ?[]const u8 },
+        displays: []const @import("../../services/power_presentation.zig").DisplayBrightness,
         brightness: struct { available: bool, device: []const u8, maximum: u32, value: u32, percent: u8, pending: bool, in_flight: bool },
     };
     const DeviceStatus = struct { kind: @import("../../services/audio.zig").Kind, index: u32, name: []const u8, label: []const u8, volume: u8, mute: bool, target: u32, writable: bool };
@@ -2411,6 +2423,7 @@ pub const Manager = struct {
         return .{
             .audio = .{ .ready = self.audio.ready, .generation = self.audio.generation, .count = self.audio.count, .truncated = self.audio.truncated, .pending = self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null, .in_flight = self.audio.active != null, .err = self.audio.err, .default_sink = if (self.audio.default(.sink)) |d| d.key.index else null, .default_source = if (self.audio.default(.source)) |d| d.key.index else null, .devices = devices.items, .next_offset = if (end < self.audio.count) end else null },
             .power = .{ .battery_present = power.battery_present, .percentage = power.percentage, .state = power.battery_state, .on_battery = power.on_battery, .time_to_empty = power.time_to_empty, .time_to_full = power.time_to_full, .profile = power.profile.slice(), .profiles = power.profiles, .degraded = power.degraded.slice(), .can_power_off = power.can_off, .can_reboot = power.can_reboot, .session_active = power.session_active, .session_source = if (power.session_path.len != 0) @tagName(self.lifecycle.session_source) else null, .preparing = power.preparing, .pending = power.profile_pending or power.profile_wanted != null or power.action_pending, .profile_in_flight = power.profile_pending, .err = power.err },
+            .displays = try power.displaySnapshot(alloc),
             .brightness = .{ .available = power.brightnessAvailable(), .device = power.backlight.name.slice(), .maximum = power.backlight.maximum, .value = power.backlight.value, .percent = power.backlight.percent(), .pending = power.brightness_pending or power.brightness_wanted != null, .in_flight = power.brightness_pending },
         };
     }

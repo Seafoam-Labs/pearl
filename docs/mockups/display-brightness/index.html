@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pearl · Display brightness</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header class="review"><a class="brand" href="#"><span class="pearl"></span>Pearl <span class="muted">/ Design preview</span></a><button id="theme" class="outline">Light appearance</button></header>
+<main>
+<section class="intro"><div class="eyebrow">CONTROL CENTER · PROPOSAL 01</div><h1>A little brighter.<br>On every display.</h1><p class="lede">Adjust the screen you’re looking at, keep each display’s brightness, and put a monitor to sleep without rearranging your desktop.</p>
+<div class="notes"><div><span class="number">01</span><p><strong>One clear target</strong>The quick slider names its display. Expand to choose another.</p></div><div><span class="number">02</span><p><strong>Brightness and power, separately</strong>Minimum brightness stays lit. Turning a screen off is an explicit action.</p></div><div><span class="number">03</span><p><strong>Honest feedback</strong>Show the confirmed value, pending changes, and a useful explanation when control is unavailable.</p></div></div>
+<div class="preview-tools"><label for="scenario">Try a display state</label><select id="scenario"><option value="normal">Connected displays</option><option value="unsupported">Brightness unavailable</option><option value="denied">Update fails</option><option value="disconnect">External display disconnected</option></select><p>Interactive sample data. No monitor settings are changed.</p></div>
+<a class="plan-link" href="#plan">Read the implementation plan <span aria-hidden="true">↓</span></a></section>
+<section class="stage" aria-label="Pearl flyout mockup"><div class="desktop-bar"><span class="bar-brand"><span class="pearl"></span> Aqueous</span><span>Tue, Oct 27 <b>10:42</b></span><span aria-label="Battery 82 percent">82% ▰</span></div>
+<div class="flyout"><header class="flyout-head"><div><span class="eyebrow">PEARL</span><h2>Control center</h2></div><span class="avatar" aria-label="User Zoey">Z</span></header>
+<div class="quick-state"><span><i></i> Connected</span><span>Balanced <span class="muted">·</span> 82%</span></div>
+<section class="card volume"><div class="line"><label for="volume">Volume</label><output id="volume-value" for="volume">45%</output></div><div class="slider-line"><span aria-hidden="true">♫</span><input id="volume" type="range" min="0" max="100" value="45"></div></section>
+<section class="card brightness"><div class="line"><h3>Brightness</h3><span class="pill" id="count">3 displays</span></div>
+<button id="display-picker" class="display-picker" aria-expanded="true" aria-controls="display-list"><span class="monitor" aria-hidden="true"></span><span class="display-copy"><strong id="selected-name">Studio display</strong><small id="selected-detail">DP-1 · External display</small></span><span id="chevron" aria-hidden="true">⌃</span></button>
+<div class="slider-line"><span aria-hidden="true">☼</span><input id="brightness" type="range" min="0" max="100" value="68" aria-label="Studio display brightness" aria-describedby="feedback"><output id="brightness-value" for="brightness">68%</output></div>
+<p id="feedback" class="feedback" role="status" aria-live="polite">Brightness is up to date.</p>
+<div id="display-list" role="group" aria-label="Choose display"></div>
+<div class="power-row"><div><strong id="power-title">Screen power</strong><small id="power-hint">Keeps your desktop layout</small></div><button id="power" class="outline">Turn off</button></div>
+</section>
+<section class="card night"><span class="moon" aria-hidden="true">☾</span><div><h3>Night Light</h3><p id="night-status">Off · Sunset to sunrise</p></div><button id="night" role="switch" aria-checked="false" aria-label="Night Light" class="switch"></button></section>
+<div class="footnote"><span class="dot"></span> Changes apply to the selected display</div>
+</div><p class="stage-caption">Interactive flyout · Proposed behavior</p></section>
+</main>
+<section id="plan" class="plan"><div class="eyebrow">IMPLEMENTATION PLAN</div><h2>Extend Pearl’s existing controls.</h2><p class="plan-intro">Hardware brightness lives in Pearl. Aqueous already provides the screen-power protocol used by wlopm; Pearl already binds it directly.</p>
+<div class="plan-grid"><article><span class="number">01 / MODEL</span><h3>Give every display an identity</h3><p>Replace the single selected backlight with display records: stable identity, output association, backend, supported range, confirmed value, requested value, availability, and operation generation. Resolve connector/EDID matches conservatively; do not silently control an ambiguous monitor.</p></article>
+<article><span class="number">02 / SERVICE</span><h3>Add external monitor brightness</h3><p>Keep sysfs discovery and logind SetBrightness for built-in backlights. Add a Zig integration with libddcutil for supported external monitors, including device access and packaging. Run I/O off the UI thread, coalesce writes, read back results, and reject stale replies after hotplug.</p></article>
+<article><span class="number">03 / INTERFACE</span><h3>Connect the flyout and shared controls</h3><p>Extend panels.zig with a display picker and per-display status. Prefer the flyout’s output when it has a known brightness device; otherwise show an explicit available selection. Share the model with settings, brightness keys, pearlctl, idle dimming, and the OSD. Preserve minimum-nonzero backlight behavior.</p></article>
+<article><span class="number">04 / POWER</span><h3>Reuse the native Wayland connection</h3><p>Extend idle.zig’s output records with names and per-output actions. Share ownership with lifecycle idle blanking instead of starting wlopm. Define restoration on input for screens Pearl turns off; do not wake screens turned off by another owner. The preview’s restore button simulates that input path.</p></article>
+<article><span class="number">05 / VALIDATION</span><h3>Cover the transitions</h3><p>Verify mixed backlight/DDC setups, rapid slider changes, permission failures, reconnects, duplicate display identities, stale replies, sleep/wake, and OSD targeting. Test monitor power on physical hardware and confirm windows remain in place. Include keyboard, narrow-width, and light/dark UI checks.</p></article>
+<article><span class="number">LATER / OPTIONAL</span><h3>Software dimming needs its own design</h3><p>Displays without hardware brightness stay unavailable in the first version. A later Aqueous dimming capability would need coordination with Night Light, color management, and HDR. Pixel dimming must be clearly distinguished from hardware brightness.</p></article></div>
+<p class="sources">References: <a href="https://leon_plickat.srht.site/wlopm.html">wlopm power protocol</a> · <a href="https://www.ddcutil.com/">ddcutil monitor control</a></p></section>
+<footer class="page-footer">Pearl / Aqueous <span>Local HTML prototype · Production implementation remains Zig</span></footer>
+<script src="mockup.js"></script>
+</body></html>

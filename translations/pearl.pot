@@ -19,7 +19,7 @@ msgstr ""
 msgid " · Activation unavailable"
 msgstr ""
 
-#: src/desktop/services.zig:115 src/desktop/services.zig:255
+#: src/desktop/services.zig:115
 msgid " · Applying…"
 msgstr ""
 
@@ -67,15 +67,15 @@ msgstr ""
 msgid "..."
 msgstr ""
 
-#: src/settings/power_view.zig:200 src/settings/power_view.zig:370
+#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
 msgid "1 hour"
 msgstr ""
 
-#: src/settings/power_view.zig:200 src/settings/power_view.zig:370
+#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
 msgid "1 minute"
 msgstr ""
 
-#: src/settings/power_view.zig:200 src/settings/power_view.zig:370
+#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
 msgid "10 minutes"
 msgstr ""
 
@@ -83,7 +83,7 @@ msgstr ""
 msgid "12-hour time"
 msgstr ""
 
-#: src/settings/power_view.zig:200 src/settings/power_view.zig:370
+#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
 msgid "15 minutes"
 msgstr ""
 
@@ -99,11 +99,11 @@ msgstr ""
 msgid "270"
 msgstr ""
 
-#: src/settings/power_view.zig:200 src/settings/power_view.zig:370
+#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
 msgid "30 minutes"
 msgstr ""
 
-#: src/settings/power_view.zig:200 src/settings/power_view.zig:370
+#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
 msgid "5 minutes"
 msgstr ""
 
@@ -127,7 +127,7 @@ msgstr ""
 msgid "A profile applies immediately and stays selected after a restart."
 msgstr ""
 
-#: src/desktop/dock.zig:529
+#: src/desktop/dock.zig:535
 msgid "A unique application identity is needed. Existing choices can be removed in Settings."
 msgstr ""
 
@@ -162,15 +162,15 @@ msgstr ""
 msgid "Aa     +1"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:836
+#: src/ui/surfaces/manager.zig:837
 msgid "About {0} h {1} min left"
 msgstr ""
 
-#: src/settings/power_view.zig:295
+#: src/settings/power_view.zig:302
 msgid "About {0} h {1} min remaining"
 msgstr ""
 
-#: src/settings/power_view.zig:295
+#: src/settings/power_view.zig:302
 msgid "About {0} h {1} min until full"
 msgstr ""
 
@@ -194,7 +194,7 @@ msgstr ""
 msgid "Action unavailable or failed. Try again."
 msgstr ""
 
-#: src/desktop/dock.zig:559
+#: src/desktop/dock.zig:565
 msgid "Action unavailable; the application or window may have changed."
 msgstr ""
 
@@ -502,7 +502,7 @@ msgstr ""
 msgid "Applications are still loading. Retry shortly."
 msgstr ""
 
-#: src/desktop/dock.zig:111
+#: src/desktop/dock.zig:113
 msgid "Applications dock"
 msgstr ""
 
@@ -558,15 +558,19 @@ msgstr ""
 msgid "Applying"
 msgstr ""
 
-#: src/settings/power_view.zig:308
+#: src/desktop/brightness_controls.zig:99
+msgid "Applying brightness…"
+msgstr ""
+
+#: src/settings/power_view.zig:315
 msgid "Applying power mode…"
 msgstr ""
 
-#: src/desktop/services.zig:266
+#: src/desktop/services.zig:255
 msgid "Applying power profile…"
 msgstr ""
 
-#: src/desktop/panels.zig:472
+#: src/desktop/panels.zig:471
 msgid "Applying warmer colors…"
 msgstr ""
 
@@ -586,7 +590,7 @@ msgstr ""
 msgid "Aqueous owns the preview deadline and rollback. Keep authorizes one durable save. Preview availability is reported per output and feature below."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:108 src/desktop/panels.zig:283
+#: src/desktop/aqueous_settings.zig:108 src/desktop/panels.zig:280
 msgid "Aqueous settings"
 msgstr ""
 
@@ -707,7 +711,7 @@ msgstr ""
 msgid "Automatic locking and sleep for your session."
 msgstr ""
 
-#: src/settings/power_view.zig:206
+#: src/settings/power_view.zig:213
 msgid "Automatic power saver"
 msgstr ""
 
@@ -753,7 +757,7 @@ msgstr ""
 msgid "Balance performance and energy use"
 msgstr ""
 
-#: src/desktop/services.zig:213 src/settings/power_view.zig:157
+#: src/desktop/services.zig:205 src/settings/power_view.zig:159
 msgid "Balanced"
 msgstr ""
 
@@ -794,7 +798,7 @@ msgctxt "aqueous.desktop.cursor.size.description"
 msgid "Base cursor size in pixels before output scaling."
 msgstr ""
 
-#: src/desktop/text.zig:13 src/settings/power_view.zig:293
+#: src/desktop/text.zig:13 src/settings/power_view.zig:300
 msgid "Battery"
 msgstr ""
 
@@ -802,19 +806,19 @@ msgstr ""
 msgid "Battery empty"
 msgstr ""
 
-#: src/settings/power_view.zig:296
+#: src/settings/power_view.zig:303
 msgid "Battery health unavailable"
 msgstr ""
 
-#: src/settings/power_view.zig:296
+#: src/settings/power_view.zig:303
 msgid "Battery health: {0} ({1}%)"
 msgstr ""
 
-#: src/settings/power_view.zig:350
+#: src/settings/power_view.zig:377
 msgid "Battery service unavailable"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:826
+#: src/ui/surfaces/manager.zig:827
 msgid "Battery very low"
 msgstr ""
 
@@ -833,15 +837,15 @@ msgctxt "aqueous.bell.volume.label"
 msgid "Bell volume"
 msgstr ""
 
-#: src/settings/power_view.zig:123
+#: src/settings/power_view.zig:125
 msgid "Below 10%"
 msgstr ""
 
-#: src/settings/power_view.zig:123
+#: src/settings/power_view.zig:125
 msgid "Below 20%"
 msgstr ""
 
-#: src/settings/power_view.zig:123
+#: src/settings/power_view.zig:125
 msgid "Below 30%"
 msgstr ""
 
@@ -958,7 +962,7 @@ msgctxt "aqueous.struts.bottom.label"
 msgid "Bottom reserved space"
 msgstr ""
 
-#: src/ui/i18n.zig:27 src/desktop/panels.zig:255 src/desktop/services.zig:255 src/settings/power_view.zig:180 src/settings/power_view.zig:189 src/ui/surfaces/osd.zig:25 src/ui/surfaces/osd.zig:86 src/ui/surfaces/osd.zig:94
+#: src/ui/i18n.zig:27 src/desktop/brightness_controls.zig:23 src/settings/power_view.zig:182 src/settings/power_view.zig:196 src/ui/surfaces/osd.zig:25 src/ui/surfaces/osd.zig:86 src/ui/surfaces/osd.zig:94
 msgid "Brightness"
 msgstr ""
 
@@ -967,16 +971,12 @@ msgctxt "aqueous.blur.brightness.description"
 msgid "Brightness applied to the blurred backdrop; 1 is neutral."
 msgstr ""
 
-#: src/settings/power_view.zig:318
+#: src/settings/power_view.zig:340 src/settings/power_view.zig:341
 msgid "Brightness control is unavailable for this display"
 msgstr ""
 
-#: src/desktop/services.zig:260
+#: src/desktop/brightness_controls.zig:99
 msgid "Brightness unavailable · an active session is required"
-msgstr ""
-
-#: src/desktop/services.zig:255
-msgid "Brightness unavailable · no supported backlight"
 msgstr ""
 
 #: src/settings/assistant_view.zig:143
@@ -1027,7 +1027,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:307 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:878 src/settings/greeter_sync.zig:49 src/settings/notification_filters_view.zig:437
+#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:878 src/settings/greeter_sync.zig:49 src/settings/notification_filters_view.zig:437
 msgid "Cancel"
 msgstr ""
 
@@ -1118,6 +1118,10 @@ msgstr ""
 msgid "Change icon…"
 msgstr ""
 
+#: src/desktop/brightness_controls.zig:99
+msgid "Changes apply to the selected display"
+msgstr ""
+
 #: src/settings/window.zig:835
 msgid "Changes on this page take effect immediately."
 msgstr ""
@@ -1127,15 +1131,15 @@ msgctxt "aqueous.input.repeat_rate.description"
 msgid "Characters per second; zero disables repeat."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:843
+#: src/ui/surfaces/manager.zig:844
 msgid "Charge is running low."
 msgstr ""
 
-#: src/desktop/services.zig:253 src/settings/power_view.zig:286
+#: src/desktop/services.zig:246 src/settings/power_view.zig:293
 msgid "Charge unavailable"
 msgstr ""
 
-#: src/desktop/text.zig:8 src/settings/power_view.zig:290
+#: src/desktop/text.zig:8 src/settings/power_view.zig:297
 msgid "Charging"
 msgstr ""
 
@@ -1307,7 +1311,7 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: src/desktop/panels.zig:130
+#: src/desktop/panels.zig:131
 msgid "Close Network controls"
 msgstr ""
 
@@ -1324,7 +1328,7 @@ msgctxt "aqueous.layout.options.float.move_step_coarse.label"
 msgid "Coarse move step"
 msgstr ""
 
-#: src/settings/power_view.zig:298
+#: src/settings/power_view.zig:305
 msgid "Collecting battery history…"
 msgstr ""
 
@@ -1490,11 +1494,11 @@ msgstr ""
 msgid "Confirm log out"
 msgstr ""
 
-#: src/desktop/panels.zig:520 src/desktop/services.zig:331
+#: src/desktop/panels.zig:520 src/desktop/services.zig:320
 msgid "Confirm power off"
 msgstr ""
 
-#: src/desktop/panels.zig:520 src/desktop/services.zig:332
+#: src/desktop/panels.zig:520 src/desktop/services.zig:321
 msgid "Confirm restart"
 msgstr ""
 
@@ -1510,7 +1514,7 @@ msgstr ""
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:839
+#: src/ui/surfaces/manager.zig:840
 msgid "Connect power now to avoid losing unsaved work."
 msgstr ""
 
@@ -1715,7 +1719,7 @@ msgstr ""
 msgid "Critical"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:827
+#: src/ui/surfaces/manager.zig:828
 msgid "Critical battery level"
 msgstr ""
 
@@ -1773,7 +1777,7 @@ msgctxt "aqueous.desktop.cursor.theme.label"
 msgid "Cursor theme"
 msgstr ""
 
-#: src/desktop/bar.zig:564 src/settings/power_view.zig:200
+#: src/desktop/bar.zig:564 src/settings/power_view.zig:207
 msgid "Custom"
 msgstr ""
 
@@ -1817,7 +1821,7 @@ msgstr ""
 msgid "Custom times"
 msgstr ""
 
-#: src/settings/power_view.zig:369
+#: src/settings/power_view.zig:396
 msgid "Custom: {0} seconds"
 msgstr ""
 
@@ -1837,7 +1841,7 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1511
+#: src/ui/surfaces/manager.zig:1522
 msgid "Cycle →"
 msgstr ""
 
@@ -1981,7 +1985,7 @@ msgstr ""
 msgid "Desktop typography and synchronization"
 msgstr ""
 
-#: src/settings/power_view.zig:187
+#: src/settings/power_view.zig:194
 msgid "Dim screen when inactive"
 msgstr ""
 
@@ -2068,7 +2072,7 @@ msgstr ""
 msgid "Dismiss popups when clicking outside"
 msgstr ""
 
-#: src/settings/power_view.zig:177
+#: src/desktop/brightness_controls.zig:26 src/settings/power_view.zig:179 src/settings/power_view.zig:191
 msgid "Display"
 msgstr ""
 
@@ -2076,7 +2080,7 @@ msgstr ""
 msgid "Display (empty: first output)"
 msgstr ""
 
-#: src/desktop/services.zig:204
+#: src/desktop/brightness_controls.zig:34
 msgid "Display brightness"
 msgstr ""
 
@@ -2084,7 +2088,7 @@ msgstr ""
 msgid "Display color support unavailable"
 msgstr ""
 
-#: src/desktop/panels.zig:474
+#: src/desktop/panels.zig:473
 msgid "Display colors could not be updated."
 msgstr ""
 
@@ -2351,7 +2355,7 @@ msgstr ""
 msgid "Enable application themes"
 msgstr ""
 
-#: src/settings/power_view.zig:380
+#: src/settings/power_view.zig:407
 msgid "Enable automatic locking in Session & lock before setting a suspend timeout."
 msgstr ""
 
@@ -2440,7 +2444,7 @@ msgstr ""
 msgid "Export package"
 msgstr ""
 
-#: src/settings/power_view.zig:158
+#: src/settings/power_view.zig:160
 msgid "Extend battery life"
 msgstr ""
 
@@ -2522,7 +2526,7 @@ msgstr ""
 msgid "Find your next thing"
 msgstr ""
 
-#: src/desktop/panels.zig:464 src/desktop/panels.zig:466
+#: src/desktop/panels.zig:463 src/desktop/panels.zig:465
 msgid "Finish or cancel this connection first."
 msgstr ""
 
@@ -2654,11 +2658,11 @@ msgstr ""
 msgid "Full preferences JSON. This includes connector overrides, center widgets, popup limits and opt-in exports. Apply validates every field. Export files are owned under pearl/exports; edited files are protected and the first replacement is backed up."
 msgstr ""
 
-#: src/desktop/panels.zig:221
+#: src/desktop/panels.zig:222
 msgid "Full settings could not be started. Try again after checking the installation."
 msgstr ""
 
-#: src/desktop/panels.zig:104 src/desktop/panels.zig:221 src/desktop/panels.zig:466
+#: src/desktop/panels.zig:105 src/desktop/panels.zig:222 src/desktop/panels.zig:465
 msgid "Full settings is not installed."
 msgstr ""
 
@@ -2667,7 +2671,7 @@ msgctxt "aqueous.state.fullscreen_hides_bar.label"
 msgid "Fullscreen hides bar"
 msgstr ""
 
-#: src/desktop/text.zig:11 src/settings/power_view.zig:292
+#: src/desktop/text.zig:11 src/settings/power_view.zig:299
 msgid "Fully charged"
 msgstr ""
 
@@ -2743,7 +2747,7 @@ msgctxt "aqueous.input.pointer_acceleration_factor.description"
 msgid "Global libinput pointer speed."
 msgstr ""
 
-#: src/settings/power_view.zig:296
+#: src/settings/power_view.zig:303
 msgid "Good"
 msgstr ""
 
@@ -2853,7 +2857,7 @@ msgstr ""
 msgid "Identity changed. Authenticate to continue."
 msgstr ""
 
-#: src/settings/power_view.zig:380
+#: src/settings/power_view.zig:407
 msgid "Idle notifications unavailable"
 msgstr ""
 
@@ -3107,7 +3111,7 @@ msgstr ""
 msgid "Larger text"
 msgstr ""
 
-#: src/settings/power_view.zig:298
+#: src/settings/power_view.zig:305
 msgid "Last {0} minutes · this session"
 msgstr ""
 
@@ -3160,7 +3164,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2598
+#: src/ui/surfaces/manager.zig:2611
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3360,7 +3364,7 @@ msgstr ""
 msgid "Locked to bar"
 msgstr ""
 
-#: src/desktop/panels.zig:111 src/desktop/panels.zig:512
+#: src/desktop/panels.zig:112 src/desktop/panels.zig:512
 msgid "Log out"
 msgstr ""
 
@@ -3376,7 +3380,7 @@ msgstr ""
 msgid "Low"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:825
+#: src/ui/surfaces/manager.zig:826
 msgid "Low battery"
 msgstr ""
 
@@ -3505,7 +3509,7 @@ msgstr ""
 msgid "Media"
 msgstr ""
 
-#: src/desktop/panels.zig:283
+#: src/desktop/panels.zig:280
 msgid "Media controls"
 msgstr ""
 
@@ -3558,7 +3562,7 @@ msgctxt "aqueous.layout.options.monocle.show_borders.label"
 msgid "Monocle border"
 msgstr ""
 
-#: src/settings/power_view.zig:222
+#: src/settings/power_view.zig:229
 msgid "More"
 msgstr ""
 
@@ -3686,7 +3690,7 @@ msgstr ""
 msgid "Network service unavailable"
 msgstr ""
 
-#: src/desktop/panels.zig:140
+#: src/desktop/panels.zig:141
 msgid "Network settings"
 msgstr ""
 
@@ -3694,7 +3698,7 @@ msgstr ""
 msgid "Network unavailable"
 msgstr ""
 
-#: src/settings/power_view.zig:200 src/settings/power_view.zig:370
+#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
 msgid "Never"
 msgstr ""
 
@@ -3730,23 +3734,23 @@ msgstr ""
 msgid "Next to"
 msgstr ""
 
-#: src/desktop/panels.zig:264 src/settings/preferences_view.zig:318
+#: src/desktop/panels.zig:261 src/settings/preferences_view.zig:318
 msgid "Night Light"
 msgstr ""
 
-#: src/desktop/panels.zig:471
+#: src/desktop/panels.zig:470
 msgid "Night Light is active on some displays."
 msgstr ""
 
-#: src/desktop/panels.zig:470
+#: src/desktop/panels.zig:469
 msgid "Night Light is active."
 msgstr ""
 
-#: src/desktop/panels.zig:476
+#: src/desktop/panels.zig:475
 msgid "Night Light is off."
 msgstr ""
 
-#: src/desktop/panels.zig:274
+#: src/desktop/panels.zig:271
 msgid "Night Light settings"
 msgstr ""
 
@@ -3766,7 +3770,7 @@ msgstr ""
 msgid "No audio devices"
 msgstr ""
 
-#: src/desktop/services.zig:249
+#: src/desktop/services.zig:242
 msgid "No battery reported"
 msgstr ""
 
@@ -3858,6 +3862,10 @@ msgstr ""
 msgid "No scheduler profiles are installed."
 msgstr ""
 
+#: src/desktop/brightness_controls.zig:99
+msgid "No supported display brightness controls"
+msgstr ""
+
 #: src/settings/themes_view.zig:419
 msgid "No themes installed. Choose Community · refresh to browse themes."
 msgstr ""
@@ -3932,7 +3940,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: src/ui/i18n.zig:22 src/desktop/bar.zig:592 src/settings/editor.zig:818 src/settings/power_view.zig:123 src/settings/preferences_view.zig:477
+#: src/ui/i18n.zig:22 src/desktop/bar.zig:592 src/settings/editor.zig:818 src/settings/power_view.zig:125 src/settings/preferences_view.zig:477
 msgid "Off"
 msgstr ""
 
@@ -3952,7 +3960,7 @@ msgstr ""
 msgid "On"
 msgstr ""
 
-#: src/desktop/text.zig:10 src/settings/power_view.zig:122 src/settings/power_view.zig:291
+#: src/desktop/text.zig:10 src/settings/power_view.zig:124 src/settings/power_view.zig:298
 msgid "On battery"
 msgstr ""
 
@@ -4072,7 +4080,7 @@ msgstr ""
 msgid "Open settings Overview"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:228 src/config/aqueous_presentation.zig:229 src/config/aqueous_presentation.zig:230
+#: src/config/aqueous_presentation.zig:230 src/config/aqueous_presentation.zig:231 src/config/aqueous_presentation.zig:232
 msgid "Open terminal"
 msgstr ""
 
@@ -4242,7 +4250,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1311
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1321
 msgid "Pearl"
 msgstr ""
 
@@ -4278,11 +4286,11 @@ msgstr ""
 msgid "Pearl bar reveal"
 msgstr ""
 
-#: src/desktop/dock.zig:99
+#: src/desktop/dock.zig:101
 msgid "Pearl dock"
 msgstr ""
 
-#: src/desktop/dock.zig:99
+#: src/desktop/dock.zig:101
 msgid "Pearl dock reveal"
 msgstr ""
 
@@ -4330,7 +4338,7 @@ msgstr ""
 msgid "Pearl session unavailable. Start Pearl, then choose Retry."
 msgstr ""
 
-#: src/desktop/panels.zig:283 src/desktop/settings.zig:58
+#: src/desktop/panels.zig:280 src/desktop/settings.zig:58
 msgid "Pearl settings"
 msgstr ""
 
@@ -4350,11 +4358,11 @@ msgstr ""
 msgid "Pearl's native lock screen uses your shell theme. Zero disables an automatic timeout. Suspend must follow the lock timeout; Pearl waits for verified lock acquisition."
 msgstr ""
 
-#: src/desktop/services.zig:213 src/settings/power_view.zig:157
+#: src/desktop/services.zig:205 src/settings/power_view.zig:159
 msgid "Performance"
 msgstr ""
 
-#: src/settings/power_view.zig:158
+#: src/settings/power_view.zig:160
 msgid "Performance when you need it"
 msgstr ""
 
@@ -4453,7 +4461,7 @@ msgstr ""
 msgid "Please wait before refreshing again."
 msgstr ""
 
-#: src/settings/power_view.zig:122
+#: src/settings/power_view.zig:124
 msgid "Plugged in"
 msgstr ""
 
@@ -4533,35 +4541,35 @@ msgstr ""
 msgid "Power & battery"
 msgstr ""
 
-#: src/desktop/services.zig:184
+#: src/desktop/services.zig:185
 msgid "Power and brightness"
 msgstr ""
 
-#: src/settings/power_view.zig:154
+#: src/settings/power_view.zig:156
 msgid "Power mode"
 msgstr ""
 
-#: src/desktop/panels.zig:520 src/desktop/services.zig:328
+#: src/desktop/panels.zig:520 src/desktop/services.zig:317
 msgid "Power off after confirmation"
 msgstr ""
 
-#: src/desktop/panels.zig:520 src/desktop/services.zig:328
+#: src/desktop/panels.zig:520 src/desktop/services.zig:317
 msgid "Power off is unavailable or requires permission"
 msgstr ""
 
-#: src/desktop/panels.zig:113 src/desktop/services.zig:297 src/desktop/services.zig:331
+#: src/desktop/panels.zig:114 src/desktop/services.zig:286 src/desktop/services.zig:320
 msgid "Power off…"
 msgstr ""
 
-#: src/desktop/services.zig:259
+#: src/desktop/services.zig:249
 msgid "Power profile"
 msgstr ""
 
-#: src/desktop/services.zig:259
+#: src/desktop/services.zig:249
 msgid "Power profiles unavailable"
 msgstr ""
 
-#: src/desktop/services.zig:213 src/settings/power_view.zig:157
+#: src/desktop/services.zig:205 src/settings/power_view.zig:159
 msgid "Power saver"
 msgstr ""
 
@@ -4619,7 +4627,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1510
+#: src/ui/surfaces/manager.zig:1521
 msgid "Previous"
 msgstr ""
 
@@ -4664,7 +4672,7 @@ msgstr ""
 msgid "Printer capabilities are unavailable. Choose another destination."
 msgstr ""
 
-#: src/settings/power_view.zig:158
+#: src/settings/power_view.zig:160
 msgid "Prioritize speed"
 msgstr ""
 
@@ -4760,7 +4768,7 @@ msgstr ""
 msgid "Recording waits for Aqueous to inhibit shortcuts. Escape cancels."
 msgstr ""
 
-#: src/settings/power_view.zig:188
+#: src/settings/power_view.zig:195
 msgid "Reduce brightness before the screen turns off"
 msgstr ""
 
@@ -4768,7 +4776,7 @@ msgstr ""
 msgid "Reduce motion"
 msgstr ""
 
-#: src/settings/power_view.zig:296
+#: src/settings/power_view.zig:303
 msgid "Reduced"
 msgstr ""
 
@@ -4792,7 +4800,7 @@ msgstr ""
 msgid "Refresh application profiles"
 msgstr ""
 
-#: src/desktop/panels.zig:296
+#: src/desktop/panels.zig:293
 msgid "Refresh layout"
 msgstr ""
 
@@ -4938,23 +4946,27 @@ msgstr ""
 msgid "Response"
 msgstr ""
 
-#: src/desktop/panels.zig:520 src/desktop/services.zig:329
+#: src/desktop/panels.zig:520 src/desktop/services.zig:318
 msgid "Restart after confirmation"
 msgstr ""
 
-#: src/desktop/panels.zig:520 src/desktop/services.zig:329
+#: src/desktop/panels.zig:520 src/desktop/services.zig:318
 msgid "Restart is unavailable or requires permission"
 msgstr ""
 
-#: src/desktop/panels.zig:112 src/desktop/services.zig:298 src/desktop/services.zig:332
+#: src/desktop/panels.zig:113 src/desktop/services.zig:287 src/desktop/services.zig:321
 msgid "Restart…"
+msgstr ""
+
+#: src/desktop/brightness_controls.zig:90
+msgid "Restore display"
 msgstr ""
 
 #: src/settings/editor.zig:824 src/settings/editor.zig:831
 msgid "Restoring colors"
 msgstr ""
 
-#: src/desktop/panels.zig:473
+#: src/desktop/panels.zig:472
 msgid "Restoring display colors…"
 msgstr ""
 
@@ -4970,7 +4982,7 @@ msgstr ""
 msgid "Resume conversation"
 msgstr ""
 
-#: src/desktop/panels.zig:271 src/settings/preferences_view.zig:340
+#: src/desktop/panels.zig:268 src/settings/preferences_view.zig:340
 msgid "Resume saved policy"
 msgstr ""
 
@@ -5242,7 +5254,7 @@ msgstr ""
 msgid "Saving launcher choice…"
 msgstr ""
 
-#: src/settings/power_view.zig:350
+#: src/settings/power_view.zig:377
 msgid "Saving power settings…"
 msgstr ""
 
@@ -5262,7 +5274,11 @@ msgstr ""
 msgid "Scheduled"
 msgstr ""
 
-#: src/settings/power_view.zig:380
+#: src/desktop/brightness_controls.zig:99
+msgid "Screen is off. Move the mouse or press a key to wake."
+msgstr ""
+
+#: src/settings/power_view.zig:407
 msgid "Screen power control unavailable"
 msgstr ""
 
@@ -5435,7 +5451,7 @@ msgstr ""
 msgid "Session & lock"
 msgstr ""
 
-#: src/settings/power_view.zig:210
+#: src/settings/power_view.zig:217
 msgid "Session & lock settings"
 msgstr ""
 
@@ -5443,7 +5459,7 @@ msgstr ""
 msgid "Session & security"
 msgstr ""
 
-#: src/settings/power_view.zig:219
+#: src/settings/power_view.zig:226
 msgid "Session actions"
 msgstr ""
 
@@ -5483,7 +5499,7 @@ msgstr ""
 msgid "Set up…"
 msgstr ""
 
-#: src/ui/i18n.zig:16 src/desktop/panels.zig:114
+#: src/ui/i18n.zig:16 src/desktop/panels.zig:115
 msgid "Settings"
 msgstr ""
 
@@ -5499,11 +5515,11 @@ msgstr ""
 msgid "Settings changed. Review the package and reset incompatible settings."
 msgstr ""
 
-#: src/settings/power_view.zig:196
+#: src/settings/power_view.zig:203
 msgid "Settings for"
 msgstr ""
 
-#: src/desktop/panels.zig:464
+#: src/desktop/panels.zig:463
 msgid "Settings is not installed."
 msgstr ""
 
@@ -6137,7 +6153,7 @@ msgstr ""
 msgid "Sign-in required"
 msgstr ""
 
-#: src/desktop/panels.zig:97
+#: src/desktop/panels.zig:98
 msgid "Signed-in user"
 msgstr ""
 
@@ -6149,7 +6165,7 @@ msgstr ""
 msgid "Skipping this configuration after any current file verification completes…"
 msgstr ""
 
-#: src/settings/power_view.zig:195
+#: src/settings/power_view.zig:202
 msgid "Sleep & energy saving"
 msgstr ""
 
@@ -6316,7 +6332,7 @@ msgctxt "aqueous.input.touchpad.dwt.description"
 msgid "Suppress touchpad motion while typing."
 msgstr ""
 
-#: src/settings/power_view.zig:202
+#: src/settings/power_view.zig:209
 msgid "Suspend after"
 msgstr ""
 
@@ -6459,11 +6475,11 @@ msgstr ""
 msgid "The connection ended during an operation. Review the current settings before applying again."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1285
+#: src/ui/surfaces/manager.zig:1295
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1281
+#: src/ui/surfaces/manager.zig:1291
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -6619,7 +6635,7 @@ msgstr ""
 msgid "This plugin requests no optional permissions."
 msgstr ""
 
-#: src/settings/power_view.zig:306
+#: src/settings/power_view.zig:313
 msgid "This power mode is unavailable"
 msgstr ""
 
@@ -6659,7 +6675,7 @@ msgstr ""
 msgid "Today"
 msgstr ""
 
-#: src/desktop/panels.zig:266
+#: src/desktop/panels.zig:263
 msgid "Toggle Night Light"
 msgstr ""
 
@@ -6742,6 +6758,10 @@ msgstr ""
 msgid "Turn off"
 msgstr ""
 
+#: src/desktop/brightness_controls.zig:43 src/desktop/brightness_controls.zig:90
+msgid "Turn off display"
+msgstr ""
+
 #: src/desktop/connectivity.zig:251
 msgid "Turn on"
 msgstr ""
@@ -6754,7 +6774,7 @@ msgstr ""
 msgid "Turn on two displays to arrange them."
 msgstr ""
 
-#: src/settings/power_view.zig:202
+#: src/settings/power_view.zig:209
 msgid "Turn screen off after"
 msgstr ""
 
@@ -6762,7 +6782,7 @@ msgstr ""
 msgid "Unable to display sound controls."
 msgstr ""
 
-#: src/desktop/panels.zig:423
+#: src/desktop/panels.zig:422
 msgid "Unable to open this section. Choose another section to retry."
 msgstr ""
 
@@ -6828,8 +6848,8 @@ msgstr ""
 msgid "Usage: pearl-settings [--page PAGE] [--section AQUEOUS_SECTION]\n\nPages: overview, network, bluetooth, sound, power, appearance, bar,\n       notifications, system, session, aqueous, advanced, plugins\nAqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n\nA generic launch opens Overview. Repeated launches activate the existing\nwindow in this Aqueous session. Editing requires a running Pearl session.\n"
 msgstr ""
 
-#: src/cli/options.zig:168
-msgid "Usage: pearlctl status | report | quit | lock\n       pearlctl assistant status|show|stop|clear|release|cancel\n       pearlctl night-light status|on|off|toggle|resume|retry\n       pearlctl clipboard status|show|toggle|clear\n       pearlctl clipboard select|delete --generation ENTRY_ID\n       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]\n       pearlctl preferences apply --revision N --file PREFERENCES_JSON\n       pearlctl dock show|hide [--output ID]\n       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]\n       pearlctl capture status|show|cancel\n       pearlctl wm action --text ACTION_JSON\n       pearlctl capture windows [--offset N]\n       pearlctl capture window --text TOPLEVEL_ID\n       pearlctl capture output [--output ID]\n       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]\n       pearlctl capture copy --generation N\n       pearlctl capture save --generation N [--path /absolute/new.png]\n       pearlctl lifecycle status\n       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit\n       pearlctl lifecycle action --text confirm --generation N\n       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)\n       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload\n       pearlctl aqueous keep|revert\n       pearlctl aqueous record --text FIELD_ID\n       pearlctl aqueous draft --text JSON\n       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]\n       Settings pages: overview, appearance, network, bluetooth, sound, power,\n                       bar, notifications, session, aqueous, advanced\n       Aqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n       Repeated settings launches activate the window; they never toggle it closed.\n       pearlctl plugins refresh\n       pearlctl plugins list [--offset N]\n       pearlctl plugins inspect|reload --path ID\n       pearlctl plugins enable --path ID --text PACKAGE_SHA256 --revision N\n       pearlctl plugins disable --path ID --revision N\n       pearlctl preferences status|reload\n       pearlctl preferences apply --revision N --text JSON\n       pearlctl popup show|toggle [--output ID]\n       pearlctl popup hide\n       pearlctl bar set --output ID --edge top|right|bottom|left --size 32..160\n       pearlctl frame set --output ID --edge EDGE --size 0..160\n       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]\n\n       pearlctl launcher show|hide|toggle [--output ID]\n       pearlctl control-center show|toggle [--output ID] [--page PAGE]\n       PAGE: overview (default), sound, network, bluetooth, power\n       Opens the compact flyout. Toggle closes the same page or switches to another.\n       Status popup.page reports its route; invalid pages leave the flyout unchanged.\n       pearlctl window-switcher next|previous|dismiss [--output ID]\n         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.\n       pearlctl running-apps show [--output ID]\n       pearlctl desktop focus [--output ID]\n       pearlctl calendar toggle [--output ID]\n       pearlctl overview toggle [--output ID]\n       pearlctl layout get|set --output ID [--layout NAME]\n       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS\n       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard\n       Also clock:ID for instances defined in the output's effective bar.clocks preferences.\n\n       pearlctl notifications|media|tray toggle [--output ID]\n       pearlctl session status [--offset N]\n       pearlctl session action --command COMMAND [--generation N] [--notification ID]\n                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]\n       See docs/SESSION_SERVICES.md for commands and identity fields.\n\n       pearlctl connectivity status [--offset N]\n       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]\n       pearlctl services status [--offset N]\n       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]\n                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]\n       pearlctl brightness set --percent 0..100\n       pearlctl profile set --profile power-saver|balanced|performance\n\n       pearlctl report: write a bounded support report (environment, status,\n       recent journal lines) to ~/.local/state/pearl/report-*.log and print\n       its path. Contents and retention: docs/LOGGING.md.\n\nUses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.\nOutput IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.\n\nAny command also accepts --log-level error|warning|info|debug and\n--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).\n"
+#: src/cli/options.zig:181
+msgid "Usage: pearlctl status | report | quit | lock\n       pearlctl assistant status|show|stop|clear|release|cancel\n       pearlctl night-light status|on|off|toggle|resume|retry\n       pearlctl clipboard status|show|toggle|clear\n       pearlctl clipboard select|delete --generation ENTRY_ID\n       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]\n       pearlctl preferences apply --revision N --file PREFERENCES_JSON\n       pearlctl dock show|hide [--output ID]\n       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]\n       pearlctl capture status|show|cancel\n       pearlctl wm action --text ACTION_JSON\n       pearlctl capture windows [--offset N]\n       pearlctl capture window --text TOPLEVEL_ID\n       pearlctl capture output [--output ID]\n       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]\n       pearlctl capture copy --generation N\n       pearlctl capture save --generation N [--path /absolute/new.png]\n       pearlctl lifecycle status\n       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit\n       pearlctl lifecycle action --text confirm --generation N\n       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)\n       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload\n       pearlctl aqueous keep|revert\n       pearlctl aqueous record --text FIELD_ID\n       pearlctl aqueous draft --text JSON\n       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]\n       Settings pages: overview, appearance, network, bluetooth, sound, power,\n                       bar, notifications, session, aqueous, advanced\n       Aqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n       Repeated settings launches activate the window; they never toggle it closed.\n       pearlctl plugins refresh\n       pearlctl plugins list [--offset N]\n       pearlctl plugins inspect|reload --path ID\n       pearlctl plugins enable --path ID --text PACKAGE_SHA256 --revision N\n       pearlctl plugins disable --path ID --revision N\n       pearlctl preferences status|reload\n       pearlctl preferences apply --revision N --text JSON\n       pearlctl popup show|toggle [--output ID]\n       pearlctl popup hide\n       pearlctl bar set --output ID --edge top|right|bottom|left --size 32..160\n       pearlctl frame set --output ID --edge EDGE --size 0..160\n       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]\n\n       pearlctl launcher show|hide|toggle [--output ID]\n       pearlctl control-center show|toggle [--output ID] [--page PAGE]\n       PAGE: overview (default), sound, network, bluetooth, power\n       Opens the compact flyout. Toggle closes the same page or switches to another.\n       Status popup.page reports its route; invalid pages leave the flyout unchanged.\n       pearlctl window-switcher next|previous|dismiss [--output ID]\n         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.\n       pearlctl running-apps show [--output ID]\n       pearlctl desktop focus [--output ID]\n       pearlctl calendar toggle [--output ID]\n       pearlctl overview toggle [--output ID]\n       pearlctl layout get|set --output ID [--layout NAME]\n       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS\n       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard\n       Also clock:ID for instances defined in the output's effective bar.clocks preferences.\n\n       pearlctl notifications|media|tray toggle [--output ID]\n       pearlctl session status [--offset N]\n       pearlctl session action --command COMMAND [--generation N] [--notification ID]\n                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]\n       See docs/SESSION_SERVICES.md for commands and identity fields.\n\n       pearlctl connectivity status [--offset N]\n       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]\n       pearlctl services status [--offset N]\n       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]\n                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]\n       pearlctl brightness set --percent 0..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl brightness adjust --delta -100..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl profile set --profile power-saver|balanced|performance\n\n       pearlctl report: write a bounded support report (environment, status,\n       recent journal lines) to ~/.local/state/pearl/report-*.log and print\n       its path. Contents and retention: docs/LOGGING.md.\n\nUses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.\nOutput IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.\n\nAny command also accepts --log-level error|warning|info|debug and\n--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).\n"
 msgstr ""
 
 #: src/settings/assistant_view.zig:164
@@ -6893,7 +6913,7 @@ msgstr ""
 msgid "Use launcher"
 msgstr ""
 
-#: src/desktop/dock.zig:515 src/desktop/dock.zig:516
+#: src/desktop/dock.zig:521 src/desktop/dock.zig:522
 msgid "Use launcher…"
 msgstr ""
 
@@ -7008,7 +7028,7 @@ msgctxt "aqueous.bell.mode.description"
 msgid "Visual feedback, custom sound, both, or off."
 msgstr ""
 
-#: src/ui/i18n.zig:26 src/desktop/panels.zig:250
+#: src/ui/i18n.zig:26 src/desktop/panels.zig:251
 msgid "Volume"
 msgstr ""
 
@@ -7041,11 +7061,11 @@ msgstr ""
 msgid "Waiting for the network service to reconnect."
 msgstr ""
 
-#: src/desktop/services.zig:266 src/desktop/services.zig:336
+#: src/desktop/services.zig:255 src/desktop/services.zig:325
 msgid "Waiting for the power service…"
 msgstr ""
 
-#: src/desktop/panels.zig:475
+#: src/desktop/panels.zig:474
 msgid "Waiting for the saved schedule."
 msgstr ""
 
@@ -7085,7 +7105,7 @@ msgstr ""
 msgid "Warmer screen colors on supported displays. The status below shows which displays can apply your saved schedule."
 msgstr ""
 
-#: src/desktop/panels.zig:477
+#: src/desktop/panels.zig:476
 msgid "Warming is unavailable on these displays."
 msgstr ""
 
@@ -7180,7 +7200,7 @@ msgctxt "aqueous.opacity.value.label"
 msgid "Window opacity"
 msgstr ""
 
-#: src/desktop/panels.zig:283
+#: src/desktop/panels.zig:280
 msgid "Window overview"
 msgstr ""
 
@@ -7209,7 +7229,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1588
+#: src/ui/surfaces/manager.zig:1599
 msgid "Workspace"
 msgstr ""
 
@@ -7218,7 +7238,7 @@ msgctxt "aqueous.workspace_transition.enabled.label"
 msgid "Workspace animation"
 msgstr ""
 
-#: src/desktop/panels.zig:295
+#: src/desktop/panels.zig:292
 msgid "Workspace layout"
 msgstr ""
 
@@ -8603,7 +8623,7 @@ msgstr ""
 msgid "{0} unsaved changes · "
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:842
+#: src/ui/surfaces/manager.zig:843
 msgid "{0} {1}"
 msgstr ""
 
@@ -8615,7 +8635,7 @@ msgstr ""
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:847
+#: src/ui/surfaces/manager.zig:848
 msgid "{0} · {1}%"
 msgstr ""
 
@@ -8623,15 +8643,15 @@ msgstr ""
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:834
+#: src/ui/surfaces/manager.zig:835
 msgid "{0}% charge remaining"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:834
+#: src/ui/surfaces/manager.zig:835
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 
-#: src/desktop/panels.zig:129
+#: src/desktop/panels.zig:130
 msgid "×"
 msgstr ""
 

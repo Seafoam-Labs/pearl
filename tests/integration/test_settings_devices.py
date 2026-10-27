@@ -183,7 +183,16 @@ def main():
             wait_for(lambda:peer.page()['live']['power']['battery_present'])
             wait_for(lambda:'power/battery' in {c['field'] for c in probe(s,ipc)['controls']})
             time.sleep(.3) # Let GTK allocate the inserted status card before pointer input.
-        click(s,ipc,'power/brightness');keys(s,'Home');s.run(['wtype','-s','10']+['-k','Right','-s','10']*62)
+        selected_display = peer.page()['live']['power']['selected_display']
+        click(s,ipc,'power/display'); keys(s,'Home'); keys(s,'Down'); keys(s,'Return')
+        wait_for(lambda:peer.page()['live']['power']['selected_display'] != selected_display)
+        assert not peer.page()['live']['power']['brightness_available']
+        click(s,ipc,'power/display'); keys(s,'Home'); keys(s,'Return')
+        wait_for(lambda:peer.page()['live']['power']['selected_display'] == selected_display)
+        checks['power-display-picker-shares-selection-and-unavailable-state']=True
+        # Both settings and flyout now expose the same 0..100 range. Zero maps
+        # to the backlight's minimum nonzero raw value.
+        click(s,ipc,'power/brightness');keys(s,'Home');s.run(['wtype','-s','10']+['-k','Right','-s','10']*63)
         wait_for(lambda:(root/'test_panel/brightness').read_text().strip()=='630')
         click(s,ipc,'power/performance');await_services(s,args.ctl,lambda v:v['power']['profile']=='performance' and not v['power']['pending'])
         capture(s,'power-real-controls',output['name'])

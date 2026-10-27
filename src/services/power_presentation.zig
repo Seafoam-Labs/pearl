@@ -131,6 +131,16 @@ pub const Alarm = struct {
         return self.pending;
     }
 };
+pub const DisplayBrightness = struct {
+    id: []const u8,
+    name: []const u8,
+    output: []const u8,
+    backend: @import("brightness_model.zig").Backend,
+    available: bool,
+    percent: u8,
+    pending: bool,
+    reason: []const u8 = "",
+};
 pub const Snapshot = struct {
     available: bool = false,
     battery_present: bool = false,
@@ -145,6 +155,8 @@ pub const Snapshot = struct {
     profile_generation: []const u8 = "0",
     profile_pending: bool = false,
     degraded: []const u8 = "",
+    displays: []const DisplayBrightness = &.{},
+    selected_display: []const u8 = "",
     brightness: u8 = 0,
     brightness_available: bool = false,
     brightness_pending: bool = false,

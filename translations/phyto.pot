@@ -11,7 +11,7 @@ msgstr ""
 msgid "A file with this name already exists"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:791
+#: subprojects/phyto/src/window.zig:793
 msgid "Access"
 msgstr ""
 
@@ -40,7 +40,7 @@ msgctxt "desktop.description"
 msgid "Browse files with Pearl"
 msgstr ""
 
-#: subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/window.zig:1318 subprojects/phyto/src/window.zig:1360
+#: subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/window.zig:1320 subprojects/phyto/src/window.zig:1362
 msgid "Cancel"
 msgstr ""
 
@@ -48,7 +48,7 @@ msgstr ""
 msgid "Cancel connection"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:254
+#: subprojects/phyto/src/tab.zig:265
 msgid "Cannot open this folder"
 msgstr ""
 
@@ -56,7 +56,7 @@ msgstr ""
 msgid "Choose folder…"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:760
+#: subprojects/phyto/src/window.zig:762
 msgid "Close details"
 msgstr ""
 
@@ -108,7 +108,7 @@ msgstr ""
 msgid "Copy to"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1411
+#: subprojects/phyto/src/window.zig:1413
 msgid "Could not open file"
 msgstr ""
 
@@ -116,7 +116,7 @@ msgstr ""
 msgid "Could not run file"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:97 subprojects/phyto/src/tab.zig:264
+#: subprojects/phyto/src/tab.zig:108 subprojects/phyto/src/tab.zig:275
 msgid "Create a folder, or choose another location."
 msgstr ""
 
@@ -172,15 +172,15 @@ msgstr ""
 msgid "Enter a name without /; . and .. are not allowed."
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1383 subprojects/phyto/src/window.zig:1392
+#: subprojects/phyto/src/window.zig:1385 subprojects/phyto/src/window.zig:1394
 msgid "Executable file"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1301
+#: subprojects/phyto/src/window.zig:1303
 msgid "Extract archive?"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1319
+#: subprojects/phyto/src/window.zig:1321
 msgid "Extract here"
 msgstr ""
 
@@ -192,7 +192,7 @@ msgstr ""
 msgid "Favorite"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:644
+#: subprojects/phyto/src/window.zig:646
 msgid "Favorite is unavailable"
 msgstr ""
 
@@ -200,7 +200,7 @@ msgstr ""
 msgid "File System"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:757
+#: subprojects/phyto/src/window.zig:759
 msgid "File details"
 msgstr ""
 
@@ -280,15 +280,15 @@ msgstr ""
 msgid "LOCATIONS"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:257 subprojects/phyto/src/window.zig:206
+#: subprojects/phyto/src/tab.zig:268 subprojects/phyto/src/window.zig:206
 msgid "Loading folder…"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:784
+#: subprojects/phyto/src/window.zig:786
 msgid "Location"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1361
+#: subprojects/phyto/src/window.zig:1363
 msgid "Make executable and run"
 msgstr ""
 
@@ -296,7 +296,7 @@ msgstr ""
 msgid "Make link"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:504 subprojects/phyto/src/window.zig:790
+#: subprojects/phyto/src/context_menu.zig:504 subprojects/phyto/src/window.zig:792
 msgid "Modified"
 msgstr ""
 
@@ -356,7 +356,7 @@ msgstr ""
 msgid "New tab · Ctrl+T"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:260
+#: subprojects/phyto/src/tab.zig:271
 msgid "No matching filenames"
 msgstr ""
 
@@ -436,7 +436,7 @@ msgstr ""
 msgid "Places"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:501 subprojects/phyto/src/window.zig:1262
+#: subprojects/phyto/src/window.zig:501 subprojects/phyto/src/window.zig:1264
 msgid "Preferences were not saved"
 msgstr ""
 
@@ -448,7 +448,7 @@ msgstr ""
 msgid "Preview in details"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:405 subprojects/phyto/src/context_menu.zig:415 subprojects/phyto/src/context_menu.zig:434 subprojects/phyto/src/context_menu.zig:489 subprojects/phyto/src/window.zig:792
+#: subprojects/phyto/src/context_menu.zig:405 subprojects/phyto/src/context_menu.zig:415 subprojects/phyto/src/context_menu.zig:434 subprojects/phyto/src/context_menu.zig:489 subprojects/phyto/src/window.zig:794
 msgid "Properties"
 msgstr ""
 
@@ -456,7 +456,7 @@ msgstr ""
 msgid "Redo"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:102
+#: subprojects/phyto/src/tab.zig:113
 msgid "Refresh folder"
 msgstr ""
 
@@ -492,11 +492,11 @@ msgstr ""
 msgid "Review…"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1361
+#: subprojects/phyto/src/window.zig:1363
 msgid "Run"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1344
+#: subprojects/phyto/src/window.zig:1346
 msgid "Run executable?"
 msgstr ""
 
@@ -536,7 +536,7 @@ msgstr ""
 msgid "Sign in…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:502 subprojects/phyto/src/window.zig:787
+#: subprojects/phyto/src/context_menu.zig:502 subprojects/phyto/src/window.zig:789
 msgid "Size"
 msgstr ""
 
@@ -564,19 +564,19 @@ msgstr ""
 msgid "The file could not be read."
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1353
+#: subprojects/phyto/src/window.zig:1355
 msgid "This file is not marked as executable. It will be made executable and run as a program. Only run programs from sources you trust."
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1355
+#: subprojects/phyto/src/window.zig:1357
 msgid "This file will be run as a program. Only run programs from sources you trust."
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:95 subprojects/phyto/src/tab.zig:263
+#: subprojects/phyto/src/tab.zig:106 subprojects/phyto/src/tab.zig:274
 msgid "This folder is empty"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1313
+#: subprojects/phyto/src/window.zig:1315
 msgid "This is an archive. Extract its contents into the folder that contains it?"
 msgstr ""
 
@@ -584,11 +584,11 @@ msgstr ""
 msgid "Trash"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:261
+#: subprojects/phyto/src/tab.zig:272
 msgid "Try a shorter name, or clear the search."
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:503 subprojects/phyto/src/window.zig:783
+#: subprojects/phyto/src/context_menu.zig:503 subprojects/phyto/src/window.zig:785
 msgid "Type"
 msgstr ""
 
@@ -620,7 +620,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:258
+#: subprojects/phyto/src/tab.zig:269
 msgid "You can navigate elsewhere while files load."
 msgstr ""
 

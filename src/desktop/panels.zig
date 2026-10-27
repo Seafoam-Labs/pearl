@@ -57,6 +57,7 @@ pub const Control = struct {
     tab_rows: [pages.len]TabRow = undefined,
     volume_scale: ?*gtk.Scale = null,
     brightness_scale: ?*gtk.Scale = null,
+    brightness_view: ?*@import("brightness_controls.zig").View = null,
     sliders_updating: bool = false,
     bodies: [pages.len]*gtk.Box = undefined,
     viewports: [pages.len]*gtk.ScrolledWindow = undefined,
@@ -252,12 +253,8 @@ pub const Control = struct {
         focus_state.tag(volume.scale.as(gtk.Widget), "quick-volume", .{});
         _ = gtk.Range.signals.value_changed.connect(volume.scale.as(gtk.Range), *Control, volumeChanged, self, .{});
         quick.append(volume.box.as(gtk.Widget));
-        const brightness = w.slider(w.label(@import("i18n").dtr("pearl", "Brightness"), "pearl-secondary"), "pearl-display-brightness-symbolic", 0);
-        self.brightness_scale = brightness.scale;
-        focus_state.tag(brightness.scale.as(gtk.Widget), "quick-brightness", .{});
-        _ = gtk.Range.signals.value_changed.connect(brightness.scale.as(gtk.Range), *Control, brightnessChanged, self, .{});
-        quick.append(brightness.box.as(gtk.Widget));
         body.append(quick.as(gtk.Widget));
+        self.brightness_view = try @import("brightness_controls.zig").View.create(body, self.models.power, &self.models.lifecycle.idle);
         if (self.models.night_light != null) {
             const night = w.card();
             self.night_label = w.label("", "pearl-secondary");
@@ -331,6 +328,8 @@ pub const Control = struct {
         self.night_resume = null;
         self.volume_scale = null;
         self.brightness_scale = null;
+        if (self.brightness_view) |view| view.destroy();
+        self.brightness_view = null;
         if (lifecycle) |view| view.destroy();
         if (sound) |view| view.destroy();
         if (power) |view| view.destroy();
@@ -497,6 +496,7 @@ pub const Control = struct {
                 self.sliders_updating = false;
             }
         }
+        if (self.brightness_view) |view| view.update();
         if (self.brightness_scale) |scale| {
             const power = self.models.power;
             scale.as(gtk.Widget).setSensitive(@intFromBool(power.brightnessAvailable()));

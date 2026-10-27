@@ -30,6 +30,7 @@ pub const Request = struct {
     make_default: ?bool = null,
     target: ?u32 = null,
     percent: ?u8 = null,
+    delta: ?i16 = null,
     profile: ?u8 = null,
     offset: ?u16 = null,
     output: ?[]const u8 = null,
@@ -128,7 +129,7 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
             .connectivity_action => &[_][]const u8{ "service", "action", "path", "generation" },
             .services_status => &[_][]const u8{"offset"},
             .audio_set => &[_][]const u8{ "generation", "device", "kind", "volume", "mute", "make_default", "target" },
-            .brightness_set => &[_][]const u8{"percent"},
+            .brightness_set => &[_][]const u8{ "percent", "delta", "output" },
             .profile_set => &[_][]const u8{"profile"},
         };
         var found = false;
@@ -235,7 +236,11 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
             if (r.make_default) |v| if (!v or (kind != .sink and kind != .source)) return error.InvalidRequest;
             if (r.target != null and kind != .playback and kind != .recording) return error.InvalidRequest;
         },
-        .brightness_set => if (r.percent == null or r.percent.? > 100) return error.InvalidRequest,
+        .brightness_set => {
+            if ((r.percent == null) == (r.delta == null)) return error.InvalidRequest;
+            if (r.percent) |v| if (v > 100) return error.InvalidRequest;
+            if (r.delta) |v| if (v == 0 or v < -100 or v > 100) return error.InvalidRequest;
+        },
         .profile_set => if (r.profile == null or r.profile.? > 2) return error.InvalidRequest,
         .services_status => if (r.offset != null and r.offset.? > 128) return error.InvalidRequest,
         .bar_groups => {

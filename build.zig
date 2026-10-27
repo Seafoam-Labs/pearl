@@ -970,6 +970,21 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| desktop_icons.addArgs(args);
     b.step("test-desktop-icons", "Verify desktop files, input, placement and installation defaults in private Aqueous").dependOn(&desktop_icons.step);
 
+    const ddc_fixture = b.addLibrary(.{ .name = "pearl-ddc-fixture", .linkage = .dynamic, .root_module = createModule(b, .{
+        .root_source_file = b.path("tests/fixtures/services/ddc.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    }) });
+    const brightness_test = b.addSystemCommand(&.{ "python3", "tests/integration/test_display_brightness.py", "--pearl" });
+    brightness_test.addArtifactArg(integration_app);
+    brightness_test.addArg("--ctl");
+    brightness_test.addArtifactArg(ctl);
+    brightness_test.addArg("--ddc-library");
+    brightness_test.addArtifactArg(ddc_fixture);
+    if (b.args) |args| brightness_test.addArgs(args);
+    b.step("test-display-brightness", "Test mixed display brightness, identity and recovery against a private DDC ABI").dependOn(&brightness_test.step);
+
     const services = b.addSystemCommand(&.{ "python3", "tests/integration/test_services.py", "--pearl" });
     services.addArtifactArg(integration_app);
     services.addArg("--ctl");

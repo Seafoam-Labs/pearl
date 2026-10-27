@@ -36,6 +36,8 @@ pub const View = struct {
     profile_bindings: [3]Binding = undefined,
     mode_detail: *gtk.Label,
     brightness: *gtk.Scale,
+    display_picker: *gtk.DropDown = undefined,
+    display_signature: u64 = 0,
     percent: *gtk.Label,
     brightness_detail: *gtk.Label,
     dim: *gtk.Switch,
@@ -112,7 +114,7 @@ pub const View = struct {
         battery_icon.as(gtk.Widget).addCssClass("power-battery-icon");
         const status = w.label("", "pearl-secondary");
         const mode_detail = w.label("", "pearl-secondary");
-        const brightness = gtk.Scale.newWithRange(.horizontal, 1, 100, 1);
+        const brightness = gtk.Scale.newWithRange(.horizontal, 0, 100, 1);
         brightness.setDrawValue(0);
         brightness.as(gtk.Widget).setHexpand(1);
         const percent = w.label("", null);
@@ -184,6 +186,11 @@ pub const View = struct {
         slider.append(percent.as(gtk.Widget));
         display.append(slider.as(gtk.Widget));
         display.append(brightness_detail.as(gtk.Widget));
+        self.display_picker = gtk.DropDown.new(null, null);
+        display.prepend(self.display_picker.as(gtk.Widget));
+        w.name(self.display_picker.as(gtk.Widget), @import("i18n").dtr("pearl", "Display"));
+        try self.control("power/display", self.display_picker.as(gtk.Widget));
+        try self.remember(self.display_picker, object.Object.signals.notify.connect(self.display_picker.as(object.Object), *View, displaySelected, self, .{ .detail = "selected" }));
         _ = row(display, @import("i18n").dtr("pearl", "Dim screen when inactive"), dim.as(gtk.Widget));
         display.append(w.label(@import("i18n").dtr("pearl", "Reduce brightness before the screen turns off"), "pearl-secondary").as(gtk.Widget));
         w.name(brightness.as(gtk.Widget), @import("i18n").dtr("pearl", "Brightness"));
@@ -307,6 +314,21 @@ pub const View = struct {
         }
         self.mode_detail.setText(alloc.dupeZ(u8, if (s.profile_pending) @import("i18n").dtr("pearl", "Applying power mode…") else s.degraded) catch "");
         self.mode_detail.as(gtk.Widget).setVisible(@intFromBool(s.profile_pending or s.degraded.len > 0));
+        var display_hash = std.hash.Wyhash.init(0);
+        for (s.displays) |d| {
+            display_hash.update(d.id);
+            display_hash.update(d.name);
+        }
+        if (display_hash.final() != self.display_signature) {
+            const names = gtk.StringList.new(null);
+            defer names.unref();
+            for (s.displays) |d| names.append(alloc.dupeZ(u8, d.name) catch "");
+            self.display_picker.setModel(names.as(@import("gio2").ListModel));
+            self.display_signature = display_hash.final();
+        }
+        for (s.displays, 0..) |d, i| if (std.mem.eql(u8, d.id, s.selected_display)) {
+            self.display_picker.setSelected(@intCast(i));
+        };
         const generation = std.fmt.parseInt(u64, s.brightness_generation, 10) catch 0;
         if (self.brightness_target != null and generation != self.wanted_generation) self.cancel();
         if (self.brightness_target) |target| {
@@ -316,7 +338,12 @@ pub const View = struct {
         self.brightness.as(gtk.Widget).setSensitive(@intFromBool(s.brightness_available));
         self.percent.setText(std.fmt.bufPrintZ(&buf, "{d:.0}%", .{self.brightness.as(gtk.Range).getValue()}) catch "");
         self.brightness_detail.setText(if (s.brightness_available) "" else @import("i18n").dtr("pearl", "Brightness control is unavailable for this display"));
-        self.brightness_detail.as(gtk.Widget).setVisible(@intFromBool(!s.brightness_available));
+        var detail: []const u8 = if (s.brightness_available) "" else @import("i18n").dtr("pearl", "Brightness control is unavailable for this display");
+        for (s.displays) |d| if (std.mem.eql(u8, d.id, s.selected_display)) {
+            if (d.reason.len != 0) detail = d.reason;
+        };
+        self.brightness_detail.setText(alloc.dupeZ(u8, detail) catch "");
+        self.brightness_detail.as(gtk.Widget).setVisible(@intFromBool(detail.len != 0));
         self.source.setSelected(if (self.battery_selected) 0 else 1);
         self.updateSettings();
         for (&self.actions) |*action| {
@@ -430,6 +457,13 @@ pub const View = struct {
         if (index >= durations.len) return;
         b.view.save(if (b.index == 0) .screen_off_seconds else .suspend_seconds, durations[index]);
     }
+    fn displaySelected(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
+        if (self.filling) return;
+        const index = self.display_picker.getSelected();
+        if (index >= self.snapshot.displays.len) return;
+        self.cancel();
+        _ = self.send(.@"brightness.set", .{ .generation = self.snapshot.brightness_generation, .target = self.snapshot.displays[index].id });
+    }
     fn brightnessChanged(range: *gtk.Range, self: *View) callconv(.c) void {
         if (self.filling) return;
         self.wanted = @intFromFloat(range.getValue());
@@ -449,7 +483,7 @@ pub const View = struct {
         }
         if (self.editor.live_command != null) return 1;
         if (self.wanted) |value| {
-            if (!self.send(.@"brightness.set", .{ .generation = @import("editor_protocol.zig").num(self.wanted_generation), .percent = value }) and std.mem.eql(u8, self.editor.error_code.slice(), "Busy")) return 1;
+            if (!self.send(.@"brightness.set", .{ .generation = @import("editor_protocol.zig").num(self.wanted_generation), .percent = value, .target = self.snapshot.selected_display }) and std.mem.eql(u8, self.editor.error_code.slice(), "Busy")) return 1;
         }
         self.wanted = null;
         self.timer = 0;

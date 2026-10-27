@@ -66,3 +66,15 @@ order. `gtk4-layer-shell-0` is the pkg-config name on the tested system.
 0BSD notice, and gtk4-layer-shell's MIT notice for the copied GIR documentation.
 The downloaded Ghostty artifact itself omits a license file; its upstream fork
 notice is retained here explicitly.
+
+## Optional monitor brightness ABI
+
+`src/services/brightness_io.zig` declares the small, stable public libddcutil C
+API used for external monitor brightness: opaque identifiers/references/handles
+and the four-byte non-table VCP value record. It loads libddcutil at runtime and
+keeps it loaded for the process lifetime. The source of the ABI is
+<https://github.com/rockowitz/ddcutil/tree/master/src/public>. Calls are serialized
+on worker threads. No generated headers, C implementation bridge, or required
+build-time dependency are introduced. Packaging recommends `ddcutil` for its
+library and device-access setup. The Zig fixture in `tests/fixtures/services/ddc.zig`
+implements the same ABI for isolated integration checks.

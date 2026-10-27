@@ -99,31 +99,58 @@ clears pending intent; bus recovery retries after five seconds and does not exit
 the application. Cancellation plus application holds drains outstanding async
 callbacks before service storage is released. No service is auto-started.
 
-## Validated brightness
+## Display brightness and power
 
-A cancellable GTask reads `/sys/class/backlight`; GTK never scans files on its
-main thread. The scan considers at most 64 entries, validates device-name
-components, positive 32-bit maximums and current values within range. It keeps
-an existing valid selection; otherwise it selects the first valid name in
-lexical order. Multiple-display DDC and a backlight chooser are future work.
+Pearl discovers backlights through `/sys/class/backlight` and external displays
+through `/sys/class/drm`. A bounded display list carries stable device IDs,
+connector associations, hardware ranges, confirmed percentages, pending intent,
+and availability. The flyout and Power pages offer a display chooser. Opening the
+flyout prefers its own output when that output has an unambiguous usable device;
+otherwise the existing valid selection remains visible. A single internal panel
+and a single backlight can be associated automatically. Ambiguous connector names
+or identical external-monitor EDIDs never select an arbitrary write target.
 
-The only write path is logind Session.SetBrightness with the literal subsystem
-`backlight`, the validated name and a bounded value. Pearl never writes sysfs or
-executes a privileged helper. Zero slider position maps to the smallest nonzero
-hardware value to keep the panel lit. Permission denial retains observed state.
-A 40 ms source coalesces writes; a queued update survives an in-flight reply and
-is read back after success. Device removal drops pending intent for that device.
+Backlight writes still use the active logind session's `SetBrightness` method;
+Pearl never writes real sysfs brightness files. The slider's zero position maps
+to the smallest nonzero backlight value. External monitors use the optional
+`libddcutil.so.5` / `.so.4` public API and brightness VCP feature `0x10`, with
+readback after each write. Install `ddcutil`, enable DDC/CI in the monitor's menu,
+and use the device access rules supplied by that package. Restart Pearl after
+installing the library. There is no dependency on the `wlopm` executable.
 
-Directory monitoring discovers additions/removals, and a single-file monitor on
-the selected backlight's `brightness` attribute discovers value writes from any
-writer (`brightnessctl`, brightness daemons, logind). Non-selected devices stay
-quiet, matching the non-default-sink audio policy. While a Power page owner has
-live interest and a backlight exists, a two-second worker refresh remains as a
-safety net for kernel drivers that change the attribute without an inotify
-event. The poll stops after the last Power owner leaves. There is one scan worker, one coalesced rescan and
-one brightness write at a time. No backlight means an explicit unavailable state.
-Only the instrumented integration executable accepts the private fixture root;
-the production binary always uses `/sys/class/backlight`.
+Discovery and hardware operations run in cancellable GTasks off GTK's thread.
+Writes coalesce independently per device, and all hardware jobs are serialized.
+A captured logind owner and generation prevent stale replies from changing current
+state. DDC writes re-discover the connector/EDID identity before opening it.
+Confirmed values remain visible on failure; the affected display reports the
+failure. Session inactivity, sleep preparation, and powered-off displays disable
+writes. Directory/selected-backlight monitoring and a five-second worker refresh
+track changes, including external writers. Sleeping DDC displays retain the last
+confirmed value and idle-dim restoration state.
+
+Idle dimming operates on all available devices and restores only Pearl's unchanged
+20% dim level. A manual brightness change relinquishes restoration for that
+particular device. OSD feedback comes from confirmed per-device observations and
+uses the associated output when one is known. A replacement starts a fresh
+observation baseline. Background discovery does not fabricate brightness changes.
+
+The flyout's separate **Turn off display** action uses Pearl's existing native
+`wlr-output-power-management-v1` connection. It retains desktop layout and arms
+an idle notification so the next input restores screens Pearl turned off, even
+when automatic blanking is disabled. Explicit restore is available as well.
+The protocol reports mode rather than the requesting client: it cannot distinguish
+a second client's repeated off request on an already-off screen. Unsupported
+brightness does not disable an otherwise available screen-power action.
+
+Software pixel dimming is not provided by this implementation. Unsupported
+hardware remains unavailable; a future fallback must account for Night Light,
+color management, and HDR.
+
+Only the instrumented integration executable accepts `PEARL_TEST_BACKLIGHT` and
+`PEARL_TEST_DRM`. `zig build test-display-brightness` builds a private Zig DDC ABI
+fixture and checks mixed hardware backends without touching host monitors.
+`PEARL_TEST_AQUEOUS_PREFIX` selects its compositor fixture, and
+`PEARL_TEST_AQUEOUS_SOURCE` selects the source used by existing service tests.
 
 Open these pages with `pearlctl control-center show --page sound` or `--page power`.
 Overview and the section chooser retain access when an icon is omitted or no
@@ -139,7 +166,9 @@ pearlctl audio set --kind sink --volume 45  # capture the current default output
 pearlctl audio set --kind source --mute true
 pearlctl audio set --kind sink --generation GENERATION --device INDEX --default true
 pearlctl audio set --kind playback --generation GENERATION --device INDEX --target SINK_INDEX
-pearlctl brightness set --percent 65
+pearlctl brightness set --percent 65                 # current selection
+pearlctl brightness set --output DP-1 --percent 65  # connector or stable device ID
+pearlctl brightness adjust --delta -5               # coalesces repeated key presses
 pearlctl profile set --profile balanced
 pearlctl bar groups --output OUTPUT_ID --left launcher,workspaces,title \
   --center clock --right audio,battery,keyboard,overview,control
@@ -154,7 +183,12 @@ unavailable Aqueous session. Rejected values use InvalidRequest/InvalidValue;
 missing devices use Unavailable, a full queue uses Busy, and daemon reply errors
 appear in service status and the affected panel/OSD.
 
-`pearlctl status` includes a service summary. `services status` includes audio
+`pearlctl status` includes a service summary. `services status` also exposes a `displays` array with IDs, outputs, backends,
+confirmed values, pending state, and availability. The original `brightness`
+object remains the selected-device compatibility view. Omitting `--output`
+uses that selection.
+
+`services status` includes audio
 pages of four entries with 64-byte name/96-byte label previews, generation,
 next_offset, defaults, observed volume/mute/routing, availability, pending and
 in-flight state. Power status includes battery, profile, session/preparation,
@@ -235,3 +269,17 @@ The scheduler bar widget, its flyout and Settings -> System select one of the
 system's scheduler profiles. Each profile maps to an `scx.service` command line;
 Pearl writes `/etc/default/scx` through `pearl-scheduling-helper` and watches the
 unit over systemd's D-Bus API. See [CPU scheduler profiles](SCHEDULING_PROFILES.md).
+
+### Brightness key bindings with Pearl
+
+Use these entries in the `[keybinds.custom]` section of Aqueous's `wm.toml`
+(the same section as the existing XF86 brightness bindings):
+
+```toml
+"XF86MonBrightnessUp" = "spawn:pearlctl brightness adjust --delta 5"
+"XF86MonBrightnessDown" = "spawn:pearlctl brightness adjust --delta -5"
+```
+
+These use the same selected display and per-device pending value as the flyout.
+Add `--output DP-1` or a device ID to pin a binding to a particular screen. Existing
+brightnessctl bindings continue to work for backlights and are observed by Pearl.

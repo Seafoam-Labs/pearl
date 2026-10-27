@@ -19,15 +19,22 @@ const Slot = struct { service: *Power, tag: Tag, proxy: ?*gio.DBusProxy = null, 
 const Creation = struct { slot: *Slot, generation: u64 };
 const Purpose = enum { can_off, can_reboot, brightness, profile, power_off, reboot };
 const Call = struct { service: *Power, tag: Tag, generation: u64, purpose: Purpose };
-pub const Backlight = struct {
-    name: Text(128) = .{},
-    maximum: u32 = 0,
-    value: u32 = 0,
-    pub fn percent(self: Backlight) u8 {
-        return if (self.maximum == 0) 0 else @intCast(@min(100, (@as(u64, self.value) * 100 + self.maximum / 2) / self.maximum));
-    }
+pub const brightness_model = @import("brightness_model.zig");
+const brightness_io = @import("brightness_io.zig");
+pub const Backlight = brightness_model.Device;
+const Scan = struct { service: *Power, root: Text(512), drm: Text(512), result: brightness_model.List = .{} };
+const BrightnessWrite = struct {
+    service: *Power,
+    device: Backlight,
+    percent: u8,
+    session_generation: u64,
+    connection: ?*gio.DBusConnection = null,
+    owner: Text(256) = .{},
+    path: Text(512) = .{},
+    root: Text(512),
+    drm: Text(512),
+    reason: ?[]const u8 = null,
 };
-const Scan = struct { service: *Power, root: Text(512), preferred: Text(128), result: Backlight = .{} };
 pub const Power = struct {
     app: *gio.Application,
     context: *anyopaque,
@@ -49,9 +56,6 @@ pub const Power = struct {
     battery_identity: Text(512) = .{},
     saver: presentation.Saver = .{},
     saver_threshold: u8 = 0,
-    dim_restore: ?u8 = null,
-    dim_restoring: bool = false,
-    dim_generation: u64 = 0,
     percentage: f64 = 0,
     battery_state: u32 = 0,
     time_to_empty: i64 = 0,
@@ -66,7 +70,17 @@ pub const Power = struct {
     profile: Text(64) = .{},
     profiles: [3]bool = .{ false, false, false },
     degraded: Text(256) = .{},
-    backlight: Backlight = .{},
+    backlight: Backlight = .{}, // Selected-device compatibility snapshot for existing views.
+    displays: brightness_model.List = .{},
+    selected_display: Text(128) = .{},
+    preferred_output: Text(128) = .{},
+    next_brightness_generation: u64 = 0,
+    brightness_io_pending: bool = false,
+    write_cancel: ?*gio.Cancellable = null,
+    output_states: [32]struct { name: Text(128) = .{}, powered: bool = true } = @splat(.{}),
+    drm_root: Text(512) = .{},
+    drm_monitor: ?*gio.FileMonitor = null,
+    drm_monitor_signal: c_ulong = 0,
     backlight_root: Text(512) = .{},
     scan_pending: bool = false,
     scan_again: bool = false,
@@ -99,7 +113,15 @@ pub const Power = struct {
         defer file.unref();
         self.monitor = file.monitorDirectory(.{}, self.cancel, null);
         if (self.monitor) |m| self.monitor_signal = gio.FileMonitor.signals.changed.connect(m, *Power, backlightChanged, self, .{});
+        if (std.mem.eql(u8, self.backlight_root.slice(), "/sys/class/backlight")) self.drm_root.set("/sys/class/drm");
+        if (self.drm_root.len != 0) {
+            const drm_file = gio.File.newForPath(self.drm_root.z());
+            defer drm_file.unref();
+            self.drm_monitor = drm_file.monitorDirectory(.{}, self.cancel, null);
+            if (self.drm_monitor) |m| self.drm_monitor_signal = gio.FileMonitor.signals.changed.connect(m, *Power, backlightChanged, self, .{});
+        }
         self.scan();
+        self.poll_source = glib.timeoutAdd(5000, poll, self);
     }
     fn closeSlot(slot: *Slot) void {
         slot.generation += 1;
@@ -114,16 +136,31 @@ pub const Power = struct {
         slot.signals = .{ 0, 0, 0 };
     }
     pub fn stop(self: *Power) void {
-        // This last restoration has no callback into the retiring service and is
-        // independent of the cancellable used by ordinary interactive requests.
-        if (self.dim_restore) |before| if (self.dim_generation == self.brightnessGeneration()) if (self.available(.session)) |slot| {
-            const value = policy.brightness(before, self.backlight.maximum) catch 0;
-            if (value > 0) slot.proxy.?.getConnection().call(slot.owner.z(), self.session_path.z(), interfaces[@intFromEnum(Tag.session)], "SetBrightness", tuple(&.{ glib.Variant.newString("backlight"), glib.Variant.newString(self.backlight.name.z()), glib.Variant.newUint32(value) }), null, .{ .no_auto_start = true }, 1000, null, null, null);
+        // Best-effort restoration of confirmed idle dimming. These tasks have
+        // their own cancellation lifetime and cannot callback into stopped UI.
+        for (self.displays.slice()) |d| if (d.dim_restore) |before| {
+            if (d.pending or d.percent() != 20 or !self.deviceAvailable(&d)) continue;
+            const slot = self.available(.session) orelse continue;
+            const job = a.create(BrightnessWrite) catch continue;
+            job.* = .{ .service = self, .device = d, .percent = before, .session_generation = slot.generation, .root = self.backlight_root, .drm = self.drm_root, .owner = slot.owner, .path = self.session_path };
+            if (d.backend == .backlight) {
+                job.connection = slot.proxy.?.getConnection();
+                job.connection.?.ref();
+            }
+            self.app.hold();
+            const cancel = gio.Cancellable.new();
+            defer cancel.unref();
+            const task = gio.Task.new(self.app.as(object.Object), cancel, detachedBrightnessWritten, job);
+            task.setTaskData(job, null);
+            _ = task.setReturnOnCancel(0);
+            task.runInThread(brightnessThread);
+            task.unref();
         };
         self.running = false;
         self.interest.revoke();
         self.panel_open = false;
         self.cancel.cancel();
+        if (self.write_cancel) |c| c.cancel();
         for ([_]c_uint{ self.retry_source, self.poll_source, self.write_source }) |id| if (id != 0) {
             _ = glib.Source.remove(id);
         };
@@ -136,6 +173,12 @@ pub const Power = struct {
             m.unref();
         }
         self.monitor = null;
+        if (self.drm_monitor) |m| {
+            object.signalHandlerDisconnect(m.as(object.Object), self.drm_monitor_signal);
+            _ = m.cancel();
+            m.unref();
+        }
+        self.drm_monitor = null;
         self.unwatchBrightness();
         self.observed = .{};
         self.brightness_change = null;
@@ -350,6 +393,7 @@ pub const Power = struct {
         // neither warn nor silently clear an in-progress low-battery episode.
         if (self.battery_available) self.alarm.update(self.battery_present and self.on_battery and self.battery_state == 2, if (self.percentage_valid) self.percentage else null);
         self.session_active = self.boolean(.session, "Active");
+        if (!self.session_active or self.preparing) self.invalidateBrightness();
         self.profiles = .{ false, false, false };
         self.profile = .{};
         self.degraded = .{};
@@ -402,42 +446,128 @@ pub const Power = struct {
         }
     }
     pub fn dim(self: *Power, active: bool) void {
-        if (active) {
-            if (self.dim_restore != null or !self.brightnessAvailable() or self.brightness_pending or self.brightness_wanted != null) return;
-            const before = self.backlight.percent();
-            if (before <= 20) return;
-            self.dim_restore = before;
-            self.dim_generation = self.brightnessGeneration();
-            self.brightness_wanted = 20;
-            self.arm();
-        } else if (self.dim_restore != null) {
-            if (self.dim_generation != self.brightnessGeneration() or !self.brightnessAvailable()) {
-                self.dim_restore = null;
-                self.dim_restoring = false;
-                return;
+        for (self.displays.slice()) |*d| {
+            if (active) {
+                if (d.dim_restore != null or !self.deviceAvailable(d) or d.pending or d.wanted != null or d.percent() <= 20) continue;
+                d.dim_restore = d.percent();
+                d.wanted = 20;
+            } else if (d.dim_restore != null) {
+                if (!d.pending and d.wanted == 20) {
+                    d.wanted = null;
+                    d.dim_restore = null;
+                } else d.dim_restoring = true;
             }
-            if (!self.brightness_pending and self.brightness_wanted == 20) {
-                self.brightness_wanted = null;
-                self.dim_restore = null;
-                return;
-            }
-            // Re-read the device before restoring, including when no view polls it.
-            // Hardware hotkeys may change sysfs without an inotify notification.
-            self.dim_restoring = true;
-            self.scan();
         }
+        if (!active) self.scan();
+        self.syncBrightness();
+        self.arm();
+    }
+    pub fn selectedDisplay(self: *Power) ?*Backlight {
+        return self.displays.find(self.selected_display.slice());
+    }
+    pub fn deviceAvailable(self: *Power, d: *const Backlight) bool {
+        return self.session_active and !self.preparing and d.powered and d.maximum > 0 and d.reason == null and self.available(.session) != null;
     }
     pub fn brightnessAvailable(self: *Power) bool {
-        return self.session_active and !self.preparing and self.backlight.maximum > 0 and self.available(.session) != null;
+        return if (self.selectedDisplay()) |d| self.deviceAvailable(d) else false;
+    }
+    pub fn selectDisplay(self: *Power, id: []const u8) !void {
+        const d = self.displays.resolve(id) orelse return error.Unavailable;
+        self.selected_display = d.id;
+        self.err = null;
+        self.syncBrightness();
+        self.changed(self.context, .state);
+    }
+    pub fn preferOutput(self: *Power, output: []const u8) void {
+        if (!std.mem.eql(u8, self.preferred_output.slice(), output)) self.preferred_output.set(output);
+        if (self.displays.resolve(output)) |d| {
+            if (self.deviceAvailable(d)) self.selected_display = d.id;
+        }
+        self.syncBrightness();
     }
     pub fn setBrightness(self: *Power, percent: u8) !void {
-        _ = try policy.brightness(percent, self.backlight.maximum);
-        if (!self.brightnessAvailable()) return error.Unavailable;
-        self.dim_restore = null;
-        self.dim_restoring = false;
-        self.brightness_wanted = percent;
+        try self.setDisplayBrightness(null, percent);
+    }
+    pub fn adjustBrightness(self: *Power, target: ?[]const u8, delta: i16) !void {
+        if (delta == 0 or delta < -100 or delta > 100) return error.InvalidValue;
+        const d = (if (target) |id| self.displays.resolve(id) else self.selectedDisplay()) orelse return error.Unavailable;
+        const base: i16 = d.wanted orelse d.requested orelse d.percent();
+        try self.setDisplayBrightness(target, @intCast(std.math.clamp(base + delta, 0, 100)));
+    }
+    pub fn setDisplayBrightness(self: *Power, target: ?[]const u8, percent: u8) !void {
+        const d = (if (target) |id| self.displays.resolve(id) else self.selectedDisplay()) orelse return error.Unavailable;
+        _ = try d.raw(percent);
+        if (!self.deviceAvailable(d)) return error.Unavailable;
+        d.dim_restore = null;
+        d.dim_restoring = false;
+        d.write_error = null;
+        d.wanted = percent;
         self.err = null;
+        self.syncBrightness();
         self.arm();
+    }
+    pub fn displaySnapshot(self: *Power, alloc: std.mem.Allocator) ![]const presentation.DisplayBrightness {
+        const list = try alloc.alloc(presentation.DisplayBrightness, self.displays.len);
+        for (self.displays.slice(), list) |*d, *out| out.* = .{
+            .id = try alloc.dupe(u8, d.id.slice()),
+            .name = try alloc.dupe(u8, d.name.slice()),
+            .output = try alloc.dupe(u8, d.output.slice()),
+            .backend = d.backend,
+            .available = self.deviceAvailable(d),
+            .percent = d.percent(),
+            .pending = d.pending or d.wanted != null,
+            .reason = d.write_error orelse d.reason orelse "",
+        };
+        return list;
+    }
+    fn invalidateBrightness(self: *Power) void {
+        if (self.write_cancel) |c| c.cancel();
+        for (self.displays.slice()) |*d| {
+            d.wanted = null;
+            d.dim_restore = null;
+            d.dim_restoring = false;
+        }
+        self.syncBrightness();
+    }
+    pub fn updateOutputPower(self: *Power, idle: anytype) void {
+        self.output_states = @splat(.{});
+        for (idle.outputs, 0..) |output, i| {
+            if (output.proxy != null) self.output_states[i] = .{ .name = output.name, .powered = output.mode != .off };
+        }
+        self.mergeOutputs();
+        self.syncBrightness();
+        self.scan();
+    }
+    fn mergeOutputs(self: *Power) void {
+        for (self.output_states) |output| {
+            if (output.name.len == 0) continue;
+            var matches: usize = 0;
+            for (self.displays.slice()) |*d| if (std.mem.eql(u8, d.output.slice(), output.name.slice())) {
+                d.powered = output.powered;
+                matches += 1;
+            };
+            if (matches == 0) {
+                var d: Backlight = .{ .name = output.name, .output = output.name, .powered = output.powered, .reason = "Brightness control is unavailable for this display." };
+                var buf: [128]u8 = undefined;
+                d.id.set(std.fmt.bufPrint(&buf, "output:{s}", .{output.name.slice()}) catch continue);
+                if (self.displays.find(d.id.slice()) == null) self.displays.add(d);
+            }
+        }
+    }
+    pub fn brightnessBusy(self: *Power) bool {
+        for (self.displays.slice()) |d| if (d.pending or d.wanted != null) return true;
+        return false;
+    }
+    fn syncBrightness(self: *Power) void {
+        if (self.selectedDisplay()) |d| {
+            self.backlight = d.*;
+            self.brightness_pending = d.pending;
+            self.brightness_wanted = d.wanted;
+        } else {
+            self.backlight = .{};
+            self.brightness_pending = false;
+            self.brightness_wanted = null;
+        }
     }
     pub fn setProfile(self: *Power, index: u8) !void {
         if (index >= 3 or !self.profiles[index] or self.profilesSlot() == null) return error.Unavailable;
@@ -447,7 +577,10 @@ pub const Power = struct {
         self.arm();
     }
     pub fn brightnessGeneration(self: *Power) u64 {
-        return self.slots[@intFromEnum(Tag.session)].generation;
+        var hash = std.hash.Wyhash.init(self.slots[@intFromEnum(Tag.session)].generation);
+        hash.update(self.selected_display.slice());
+        if (self.selectedDisplay()) |d| hash.update(std.mem.asBytes(&d.generation));
+        return hash.final();
     }
     pub fn profileGeneration(self: *Power) u64 {
         const slot = self.profilesSlot() orelse return 0;
@@ -473,6 +606,7 @@ pub const Power = struct {
     // the generation check in called().
     pub fn useSession(self: *Power, path: [:0]const u8) void {
         if (std.mem.eql(u8, self.session_path.slice(), path)) return;
+        self.invalidateBrightness();
         self.session_path.set(path);
         self.session_active = false;
         self.brightness_wanted = null;
@@ -489,21 +623,21 @@ pub const Power = struct {
     fn pump(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Power = @ptrCast(@alignCast(data.?));
         self.write_source = 0;
-        if (!self.brightness_pending) if (self.brightness_wanted) |percent| {
-            self.brightness_wanted = null;
-            if (self.brightnessAvailable()) {
-                const value = policy.brightness(percent, self.backlight.maximum) catch return 0;
-                self.call(self.available(.session).?, .brightness, "SetBrightness", tuple(&.{ glib.Variant.newString("backlight"), glib.Variant.newString(self.backlight.name.z()), glib.Variant.newUint32(value) }), null) catch {
+        if (!self.brightness_io_pending and !self.scan_pending) {
+            for (self.displays.slice()) |*d| if (d.wanted) |percent| {
+                d.wanted = null;
+                if (!self.deviceAvailable(d)) {
+                    d.dim_restore = null;
+                    continue;
+                }
+                self.startBrightnessWrite(d, percent) catch {
                     self.err = "Brightness request failed.";
                     self.changed(self.context, .failure);
-                    return 0;
                 };
-                self.brightness_pending = true;
-            } else {
-                self.err = "Backlight or active session disappeared.";
-                self.changed(self.context, .failure);
-            }
-        };
+                break;
+            };
+            self.syncBrightness();
+        }
         if (!self.profile_pending) if (self.profile_wanted) |index| {
             self.profile_wanted = null;
             if (self.profilesSlot()) |slot| {
@@ -607,18 +741,13 @@ pub const Power = struct {
     fn panel(self: *Power, open: bool) void {
         if (open and !self.panel_open) self.capabilities();
         self.panel_open = open;
-        if (self.poll_source != 0) _ = glib.Source.remove(self.poll_source);
-        self.poll_source = 0;
-        if (open) {
-            self.scan();
-            if (self.backlight.maximum > 0) self.poll_source = glib.timeoutAdd(2000, poll, self);
-        }
+        if (open) self.scan();
     }
     fn poll(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Power = @ptrCast(@alignCast(data.?));
-        self.poll_source = 0;
-        if (self.panel_open) self.panel(true);
-        return 0;
+        if (!self.running) return 0;
+        self.scan();
+        return 1;
     }
     fn backlightChanged(_: *gio.FileMonitor, _: *gio.File, _: ?*gio.File, _: gio.FileMonitorEvent, self: *Power) callconv(.c) void {
         self.scan();
@@ -626,9 +755,9 @@ pub const Power = struct {
     // The directory monitor only reports device add/remove; a single-file monitor on the
     // selected backlight's brightness attribute reports writes by any external writer.
     fn watchBrightness(self: *Power) void {
-        if (self.brightness_monitor != null and self.backlight.maximum > 0 and std.mem.eql(u8, self.monitored.slice(), self.backlight.name.slice())) return;
+        if (self.brightness_monitor != null and self.backlight.backend == .backlight and self.backlight.maximum > 0 and std.mem.eql(u8, self.monitored.slice(), self.backlight.name.slice())) return;
         self.unwatchBrightness();
-        if (self.backlight.maximum == 0) return;
+        if (self.backlight.maximum == 0 or self.backlight.backend != .backlight) return;
         var buffer: [768]u8 = undefined;
         const path = std.fmt.bufPrintZ(&buffer, "{s}/{s}/brightness", .{ self.backlight_root.slice(), self.backlight.name.slice() }) catch return;
         const file = gio.File.newForPath(path.ptr);
@@ -650,12 +779,12 @@ pub const Power = struct {
     }
     pub fn scan(self: *Power) void {
         if (!self.running) return;
-        if (self.scan_pending) {
+        if (self.scan_pending or self.brightness_io_pending) {
             self.scan_again = true;
             return;
         }
         const job = a.create(Scan) catch return;
-        job.* = .{ .service = self, .root = self.backlight_root, .preferred = self.backlight.name };
+        job.* = .{ .service = self, .root = self.backlight_root, .drm = self.drm_root };
         self.scan_pending = true;
         self.app.hold();
         const task = gio.Task.new(self.app.as(object.Object), self.cancel, scanned, job);
@@ -666,80 +795,194 @@ pub const Power = struct {
     }
     fn scanThread(task: *gio.Task, _: *object.Object, data: ?*anyopaque, cancel: ?*gio.Cancellable) callconv(.c) void {
         const job: *Scan = @ptrCast(@alignCast(data.?));
-        const dir = glib.Dir.open(job.root.z(), 0, null) orelse {
-            task.returnBoolean(1);
-            return;
-        };
-        defer dir.close();
-        // GIR misses g_dir_read_name's nullable end-of-directory return.
-        const read: *const fn (*glib.Dir) callconv(.c) ?[*:0]const u8 = @ptrCast(&glib.Dir.readName);
-        var count: usize = 0;
-        while (read(dir)) |name| : (count += 1) {
-            if (count >= 64 or (cancel != null and cancel.?.isCancelled() != 0)) break;
-            const text = std.mem.span(name);
-            if (!policy.deviceName(text)) continue;
-            var buffer: [768]u8 = undefined;
-            const maxpath = std.fmt.bufPrintZ(&buffer, "{s}/{s}/max_brightness", .{ job.root.slice(), text }) catch continue;
-            const max = readNumber(maxpath) orelse continue;
-            if (max == 0 or max > std.math.maxInt(i32)) continue;
-            const path = std.fmt.bufPrintZ(&buffer, "{s}/{s}/brightness", .{ job.root.slice(), text }) catch continue;
-            const value = readNumber(path) orelse continue;
-            if (value > max) continue;
-            if (job.result.maximum == 0 or std.mem.eql(u8, text, job.preferred.slice()) or (!std.mem.eql(u8, job.result.name.slice(), job.preferred.slice()) and std.mem.order(u8, text, job.result.name.slice()) == .lt)) {
-                job.result = .{ .maximum = max, .value = value };
-                job.result.name.set(text);
-            }
-        }
+        job.result = brightness_io.scan(job.root.z(), job.drm.z(), cancel.?);
         task.returnBoolean(1);
-    }
-    fn readNumber(path: [:0]const u8) ?u32 {
-        var data: [*]u8 = undefined;
-        var len: usize = 0;
-        if (glib.fileGetContents(path, &data, &len, null) == 0) return null;
-        defer glib.free(data);
-        if (len > 32) return null;
-        return std.fmt.parseInt(u32, std.mem.trim(u8, data[0..len], " \t\r\n"), 10) catch null;
     }
     fn scanned(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
         const job: *Scan = @ptrCast(@alignCast(data.?));
         const self = job.service;
         defer self.app.release();
         defer a.destroy(job);
-        const task = object.ext.cast(gio.Task, result).?;
         var err: ?*glib.Error = null;
-        _ = task.propagateBoolean(&err);
-        if (err) |e| e.free();
+        _ = object.ext.cast(gio.Task, result).?.propagateBoolean(&err);
+        defer if (err) |e| e.free();
         self.scan_pending = false;
         if (!self.running) return;
-        if (!std.mem.eql(u8, self.backlight.name.slice(), job.result.name.slice())) self.brightness_wanted = null;
-        if (self.dim_restore) |before| {
-            if (!std.mem.eql(u8, self.backlight.name.slice(), job.result.name.slice()) or self.dim_generation != self.brightnessGeneration()) {
-                self.dim_restore = null;
-                self.dim_restoring = false;
-            } else if (!self.brightness_pending and self.brightness_wanted == null) {
-                if (self.dim_restoring) {
-                    self.dim_restoring = false;
-                    self.dim_restore = null;
-                    if (job.result.percent() == 20 and self.brightnessAvailable()) {
-                        self.brightness_wanted = before;
-                        self.arm();
+        for (job.result.slice()) |*d| {
+            if (self.displays.find(d.id.slice())) |old| {
+                d.generation = old.generation;
+                d.write_error = if (d.reason == null and d.value != old.value) null else old.write_error;
+                // Sleeping or temporarily inaccessible DDC displays keep the
+                // last confirmed value; availability is reported separately.
+                if (d.backend == .ddc and d.reason != null) {
+                    d.maximum = old.maximum;
+                    d.value = old.value;
+                }
+                d.powered = old.powered;
+                d.wanted = old.wanted;
+                d.observed = old.observed;
+                d.dim_restore = old.dim_restore;
+                d.dim_restoring = old.dim_restoring;
+                if (d.backend != old.backend or d.maximum != old.maximum) {
+                    self.next_brightness_generation += 1;
+                    d.generation = self.next_brightness_generation;
+                    d.wanted = null;
+                    d.dim_restore = null;
+                    d.observed = .{};
+                }
+                if (d.dim_restore) |before| {
+                    if (!self.session_active or self.preparing) {
+                        d.dim_restore = null;
+                        d.dim_restoring = false;
+                    } else if (d.powered and d.reason == null and d.wanted == null) {
+                        if (d.dim_restoring) {
+                            d.dim_restoring = false;
+                            d.dim_restore = null;
+                            if (d.percent() == 20) d.wanted = before;
+                        } else if (d.percent() != 20) d.dim_restore = null;
                     }
-                } else if (job.result.percent() != 20) self.dim_restore = null;
+                }
+            } else {
+                self.next_brightness_generation += 1;
+                d.generation = self.next_brightness_generation;
             }
         }
-        self.backlight = job.result;
-        self.brightness_change = self.observed.observe(if (self.backlight.maximum > 0) brightness_feedback.Brightness.from(self.backlight) else null);
+        self.displays = job.result;
+        self.mergeOutputs();
+        if (self.selectedDisplay() == null) {
+            self.selected_display = .{};
+            for (self.displays.slice()) |d| if (d.maximum > 0 and d.reason == null) {
+                self.selected_display = d.id;
+                break;
+            };
+            if (self.selected_display.len == 0 and self.displays.len > 0) self.selected_display = self.displays.items[0].id;
+            if (self.preferred_output.len != 0) self.preferOutput(self.preferred_output.slice());
+        }
+        self.syncBrightness();
         self.watchBrightness();
-        if (self.feedback != null and self.backlight.maximum == 0) {
-            self.err = "Backlight unavailable after the change; final brightness was not confirmed.";
-            self.changed(self.context, .failure);
-        } else self.changed(self.context, if (self.feedback != null) .applied else .state);
-        self.brightness_change = null;
-        self.feedback = null;
+        for (self.displays.slice()) |*d| self.observeBrightness(d);
+        self.changed(self.context, .state);
         if (self.scan_again) {
             self.scan_again = false;
             self.scan();
         }
+        self.arm();
+    }
+    fn observeBrightness(self: *Power, d: *Backlight) void {
+        self.brightness_change = d.observed.observe(if (d.maximum > 0 and d.reason == null) d.snapshot() else null);
+        self.observed = d.observed;
+        if (self.brightness_change == .brightness) {
+            self.feedback = .brightness;
+            self.changed(self.context, .applied);
+            self.feedback = null;
+        }
+        self.brightness_change = null;
+    }
+    fn startBrightnessWrite(self: *Power, d: *Backlight, percent: u8) !void {
+        const slot = self.available(.session) orelse return error.Unavailable;
+        const job = try a.create(BrightnessWrite);
+        job.* = .{ .service = self, .device = d.*, .percent = percent, .session_generation = slot.generation, .root = self.backlight_root, .drm = self.drm_root, .owner = slot.owner, .path = self.session_path };
+        if (d.backend == .backlight) {
+            job.connection = slot.proxy.?.getConnection();
+            job.connection.?.ref();
+        }
+        d.pending = true;
+        d.requested = percent;
+        self.brightness_io_pending = true;
+        self.app.hold();
+        self.write_cancel = gio.Cancellable.new();
+        const task = gio.Task.new(self.app.as(object.Object), self.write_cancel, brightnessWritten, job);
+        task.setTaskData(job, null);
+        _ = task.setReturnOnCancel(0);
+        task.runInThread(brightnessThread);
+        task.unref();
+    }
+    fn brightnessThread(task: *gio.Task, _: *object.Object, data: ?*anyopaque, cancel: ?*gio.Cancellable) callconv(.c) void {
+        const job: *BrightnessWrite = @ptrCast(@alignCast(data.?));
+        if (job.device.backend == .ddc) {
+            job.reason = brightness_io.writeDdc(&job.device, job.percent, job.drm.z(), cancel.?);
+        } else {
+            const raw = job.device.raw(job.percent) catch {
+                task.returnBoolean(0);
+                return;
+            };
+            const args = tuple(&.{ glib.Variant.newString("backlight"), glib.Variant.newString(job.device.name.z()), glib.Variant.newUint32(raw) });
+            _ = args.refSink();
+            defer args.unref();
+            var err: ?*glib.Error = null;
+            const result = job.connection.?.callSync(job.owner.z(), job.path.z(), interfaces[@intFromEnum(Tag.session)], "SetBrightness", args, null, .{ .no_auto_start = true }, 3000, cancel, &err);
+            defer if (err) |e| e.free();
+            if (result) |r| {
+                r.unref();
+                var fresh = brightness_io.scan(job.root.z(), "", cancel.?);
+                if (fresh.find(job.device.id.slice())) |d| {
+                    job.device.value = d.value;
+                    job.device.maximum = d.maximum;
+                } else job.reason = "Backlight disappeared; final brightness was not confirmed.";
+            } else {
+                job.reason = "Brightness request failed. Check active session and device permissions.";
+                if (err) |e| if (gio.DBusError.isRemoteError(e) != 0) {
+                    const name = gio.DBusError.getRemoteError(e);
+                    defer if (name) |n| glib.free(n);
+                    if (name) |n| if (std.mem.indexOf(u8, std.mem.span(n), "AccessDenied") != null or std.mem.indexOf(u8, std.mem.span(n), "NotAuthorized") != null) {
+                        job.reason = "Permission denied. No change was applied.";
+                    };
+                };
+            }
+        }
+        task.returnBoolean(1);
+    }
+    fn detachedBrightnessWritten(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const job: *BrightnessWrite = @ptrCast(@alignCast(data.?));
+        defer a.destroy(job);
+        defer job.service.app.release();
+        if (job.connection) |connection| connection.unref();
+        var err: ?*glib.Error = null;
+        _ = object.ext.cast(gio.Task, result).?.propagateBoolean(&err);
+        if (err) |e| e.free();
+    }
+    fn brightnessWritten(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const job: *BrightnessWrite = @ptrCast(@alignCast(data.?));
+        const self = job.service;
+        defer self.app.release();
+        defer a.destroy(job);
+        defer if (job.connection) |c| c.unref();
+        var err: ?*glib.Error = null;
+        _ = object.ext.cast(gio.Task, result).?.propagateBoolean(&err);
+        defer if (err) |e| e.free();
+        self.brightness_io_pending = false;
+        if (self.write_cancel) |c| c.unref();
+        self.write_cancel = null;
+        if (!self.running) return;
+        if (self.displays.find(job.device.id.slice())) |d| {
+            d.pending = false;
+            d.requested = null;
+            if (err == null and self.slots[@intFromEnum(Tag.session)].generation == job.session_generation and d.generation == job.device.generation) {
+                if (job.reason) |reason| {
+                    d.wanted = null;
+                    d.dim_restore = null;
+                    d.dim_restoring = false;
+                    d.write_error = reason;
+                    self.err = reason;
+                    self.syncBrightness();
+                    self.changed(self.context, .failure);
+                } else {
+                    d.value = job.device.value;
+                    self.syncBrightness();
+                    self.observeBrightness(d);
+                }
+            } else {
+                d.wanted = null;
+                d.dim_restore = null;
+            }
+        }
+        self.syncBrightness();
+        self.changed(self.context, .state);
+        if (self.scan_again) {
+            self.scan_again = false;
+            self.scan();
+        }
+        self.arm();
     }
 };
 fn tuple(values: []const *glib.Variant) *glib.Variant {

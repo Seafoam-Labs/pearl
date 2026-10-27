@@ -454,7 +454,7 @@ pub const Lifecycle = struct {
         const self: *Lifecycle = @ptrCast(@alignCast(data));
         if (!self.running) return;
         switch (event) {
-            .display_changed => {},
+            .display_changed => if (self.power) |power| power.updateOutputPower(&self.idle),
             .unavailable => {
                 self.idle.setScreenOff(false);
                 if (self.power) |power| power.dim(false);
