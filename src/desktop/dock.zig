@@ -531,7 +531,7 @@ pub const Dock = struct {
             const resolution_window = if (group.windows.items.len > 0) group.windows.items[0].id else null;
             if (group.desktop) |id| {
                 if (entry != null) items.append((try self.button("Open new window", .launch, id, false, null, resolution_window, null)).as(gtk.Widget));
-                if (p.desktopId(id)) items.append((try self.button(if (group.pinned) "Unpin" else "Pin to dock", if (group.pinned) .unpin else .pin, id, false, null, resolution_window, null)).as(gtk.Widget));
+                if (p.desktopId(id)) items.append((try self.button(if (group.pinned) "Unpin from dock" else "Pin to dock", if (group.pinned) .unpin else .pin, id, false, null, resolution_window, null)).as(gtk.Widget));
                 var actions: usize = 0;
                 if (self.index.catalog) |catalog| for (catalog.entries.items) |item| {
                     if (item.action != null and std.mem.eql(u8, item.id, id) and actions < 8) {
@@ -569,6 +569,8 @@ pub const Dock = struct {
                 choose.as(gtk.Widget).setSensitive(0);
                 choose.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "A unique application identity is needed. Existing choices can be removed in Settings."));
             }
+            // Split the persistent application actions from the per-window controls.
+            if (group.windows.items.len > 0) items.append(gtk.Separator.new(.horizontal).as(gtk.Widget));
             for (group.windows.items) |win| {
                 const title_text = win.title orelse "Untitled window";
                 const label = try alloc.dupeZ(u8, title_text);
